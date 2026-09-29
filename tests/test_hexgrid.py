@@ -6,6 +6,7 @@ from nektoids.graph.hexgrid import (
     DIRECTIONS,
     SQRT3,
     axis,
+    direction_to,
     from_pixel,
     neighbour,
     offset_rect,
@@ -23,6 +24,13 @@ def test_opposite_steps_cancel_and_share_an_axis():
         assert neighbour(neighbour((2, 3), d), opposite(d)) == (2, 3)
         assert axis(d) == axis(opposite(d))
     assert sorted(axis(d) for d in range(6)) == [0, 0, 1, 1, 2, 2]
+
+
+def test_direction_to_inverts_neighbour():
+    for d in range(6):
+        assert direction_to((2, 3), neighbour((2, 3), d)) == d
+    with pytest.raises(ValueError):
+        direction_to((2, 3), (4, 3))
 
 
 def test_offset_rect_has_distinct_cells_row_by_row():

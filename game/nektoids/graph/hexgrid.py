@@ -30,6 +30,11 @@ def neighbour(cell: Cell, direction: int) -> Cell:
     return (cell[0] + dq, cell[1] + dr)
 
 
+def direction_to(a: Cell, b: Cell) -> int:
+    """Direction of the single step from `a` to the adjacent cell `b`; ValueError otherwise."""
+    return DIRECTIONS.index((b[0] - a[0], b[1] - a[1]))
+
+
 def opposite(direction: int) -> int:
     """The direction pointing the other way along the same axis."""
     return (direction + 3) % 6
