@@ -43,3 +43,11 @@ distinct axes. Dropping a component on a cell a wire uses is refused.
 Every crossing reads unambiguously on screen (invariant 6), and layout stays part of the puzzle.
 Routes depend on build order and never move once drawn, so the board on screen is the layout. If
 crossings are to be expensive (brief §1), the cost goes into `complexity()`.
+
+**D-008 — 2026-09-29 — Sensors and thrusters are oriented; rotating them is post-jam.**
+Orientation is physical: where an eye looks, which way a thruster pushes. The editor draws it in
+the agent's frame with forward = E (the sim's +x): half-disc eyes, square thrusters with a nose.
+For the jam it is fixed per kind (left eye NE, right eye SE, thrusters E) and there is no rotate
+tool, because choosing it is sensor layout editing, which the scope lock excludes.
+Post-jam: a rotate tool in 60° steps, and one bundled icon font (open licence, small, loaded at
+startup, checked under pygbag) to mark sensor and actuator types (light, flow, ...) inside the shapes.

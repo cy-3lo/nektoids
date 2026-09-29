@@ -17,7 +17,17 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 
-from nektoids.graph.hexgrid import Cell, axis, direction_to, neighbour, offset_rect, opposite
+from nektoids.graph.hexgrid import (
+    NE,
+    SE,
+    Cell,
+    E,
+    axis,
+    direction_to,
+    neighbour,
+    offset_rect,
+    opposite,
+)
 
 
 class Category(Enum):
@@ -46,6 +56,14 @@ class Kind(Enum):
     def receives(self) -> bool:
         return self.category is not Category.SENSOR
 
+    @property
+    def facing(self) -> int | None:
+        """Hex direction it points to on the body, forward being E; None for converters.
+
+        Where an eye looks, or which way a thruster pushes. Fixed per kind for the jam (D-008).
+        """
+        return _FACING.get(self)
+
 
 _CATEGORY = {
     Kind.SENSOR_L: Category.SENSOR,
@@ -55,6 +73,7 @@ _CATEGORY = {
     Kind.THRUSTER_L: Category.ACTUATOR,
     Kind.THRUSTER_R: Category.ACTUATOR,
 }
+_FACING = {Kind.SENSOR_L: NE, Kind.SENSOR_R: SE, Kind.THRUSTER_L: E, Kind.THRUSTER_R: E}
 
 
 @dataclass(frozen=True)
@@ -98,6 +117,7 @@ class Board:
     """
 
     def __init__(self, cols: int, rows: int, stock: Mapping[Kind, int | None] | None = None):
+        self.cols, self.rows = cols, rows
         self.cells: list[Cell] = offset_rect(cols, rows)
         self._on_board = set(self.cells)
         self._stock: dict[Kind, int | None] = (

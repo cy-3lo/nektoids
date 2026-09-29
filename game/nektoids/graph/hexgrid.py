@@ -20,6 +20,7 @@ Cell = tuple[int, int]  # axial (q, r)
 
 # Axial step for each direction, in the order E, NE, NW, W, SW, SE.
 DIRECTIONS: tuple[Cell, ...] = ((1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1))
+E, NE, NW, W, SW, SE = range(6)
 
 SQRT3 = math.sqrt(3.0)
 
