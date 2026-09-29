@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# pygbag output
+game/build/
+
+# Personal Claude Code files (each contributor has his own)
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Misc
+.env
+.env.*
+.DS_Store

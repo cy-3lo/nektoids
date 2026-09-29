@@ -1,0 +1,14 @@
+# Tool configuration only. The game is not an installable package: pygbag bundles game/ as is.
+
+[tool.pytest.ini_options]
+pythonpath = ["game"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+src = ["game"]  # so `nektoids` is sorted as first-party
+line-length = 100
+extend-exclude = ["game/build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "NPY"]
