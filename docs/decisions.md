@@ -33,3 +33,13 @@ C. Eloy in leetspeak. Both came back clear on GitHub, Steam, the App Store and t
 registries; itch.io search, Google and TMview (classes 9 and 41) to be checked by hand.
 Canonical spellings: "Cy-3LO" and "Nektoids"; `cy-3lo` and `nektoids` in handles and URLs.
 The studio logo must not reference C-3PO visually.
+
+**D-007 — 2026-09-29 — Editor: small hex board, auto-routed wires, straight crossings only.**
+Pointy-top hexes; the level sets the board size and either pre-places the sensors and thrusters
+(locked, tutorial and first levels) or hands them out as palette stock. A wire joins two components
+by the shortest free path, then the fewest bends, then the fixed direction order E, NE, NW, W, SW,
+SE. A cell holds one component, or one wire that bends there, or up to three straight wires on
+distinct axes. Dropping a component on a cell a wire uses is refused.
+Every crossing reads unambiguously on screen (invariant 6), and layout stays part of the puzzle.
+Routes depend on build order and never move once drawn, so the board on screen is the layout. If
+crossings are to be expensive (brief §1), the cost goes into `complexity()`.
