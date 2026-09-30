@@ -21,7 +21,7 @@ from nektoids.editor.scene import EditorScene
 from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
 from nektoids.levels.sandbox import free_board
-from nektoids.levels.scenarios import scenarios
+from nektoids.levels.scenarios import Scenario, scenarios
 
 FPS = 60
 DEV_VIEW = True  # F2 opens the developer view; False hides it
@@ -38,7 +38,7 @@ scene = EditorScene(board, make_layout())
 
 def open_developer_view() -> SchematicScene:
     """Your board first, then the examples."""
-    return SchematicScene([("Your board", board), *((s.title, s.board) for s in scenarios())])
+    return SchematicScene([Scenario("Your board", board), *scenarios()])
 
 
 async def main() -> None:

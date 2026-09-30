@@ -1,12 +1,13 @@
-"""The developer view's state and input: the board as a circuit that runs (D-016).
+"""The developer view's state and input: the board as a circuit that runs (D-017).
 
 Shows the board as components joined by wires, without the grid or arrows, with beads on the
 wires, a level on every part and the equations beside it. Sliders set what the eyes and the
 sources send. One scene per entry, built from a list of boards (yours first, then the
 scenarios); Tab steps through them. Mutates nothing in the boards.
 
-Keys: Space pauses, `.` runs one frame while paused, W cycles the waveform the eyes follow, R
-starts again, Tab and Shift-Tab change board. Drag a slider to set a sensor.
+Keys: Space pauses, `.` runs one frame while paused, W cycles the waveform the eyes follow, B
+switches the bead style, R starts again from rest, Tab and Shift-Tab change board. Drag a slider
+to set a sensor.
 """
 
 from __future__ import annotations
@@ -29,17 +30,17 @@ from nektoids.editor.devdrive import (
 from nektoids.editor.geometry import cumulative_lengths, wire_points
 from nektoids.editor.layout import HEX_SIZE, SCREEN, Rect, View, fitted_view
 from nektoids.graph.analysis import LoopReport, loop_report, problems
-from nektoids.graph.board import Board
-from nektoids.graph.equations import composed, node_equations, report_lines
-from nektoids.graph.evaluate import (
+from nektoids.graph.dynamics import (
     RATE_MAX,
-    SOURCE_RATE,
-    AlgebraicLoopError,
-    evaluate,
+    given_rates,
+    initial_state,
+    step,
     wire_flux,
 )
+from nektoids.graph.equations import node_equations, report_lines
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import Network
+from nektoids.levels.scenarios import Scenario
 
 PANEL_WIDTH = 400  # equations, left [px]
 STATUS_HEIGHT = 32  # [px]
@@ -49,10 +50,11 @@ EYE_LEVEL = RATE_MAX / 2  # where an eye's slider starts
 
 
 class SchematicScene:
-    def __init__(self, boards: Sequence[tuple[str, Board]]):
+    def __init__(self, boards: Sequence[Scenario]):
         self.boards = list(boards)
         self.index = 0
         self.wave = "hold"
+        self.belt = False  # bead style: spacing shows the rate, or (belt) speed does
         self.clock = Clock()
         self.dragging: int | None = None  # network index of the sensor whose slider is held
         self._load()
@@ -60,7 +62,8 @@ class SchematicScene:
     # Loading a board
 
     def _load(self) -> None:
-        self.title, self.board = self.boards[self.index]
+        current = self.boards[self.index]
+        self.title, self.board = current.title, current.board
         self.net = net = Network.from_board(self.board)
         self.cells: list[Cell] = [self.board.nodes[i].cell for i in net.ids]
         self.paths = [wire.path for wire in self.board.wires]
@@ -73,14 +76,18 @@ class SchematicScene:
             self.view = fitted_view(BOARD_AREA, shown, MARGIN)
         self.beads = Beads([cumulative_lengths(points)[-1] for points in unit])
         self.levels = {int(i): EYE_LEVEL for i in net.eyes}
-        self.levels |= {int(i): SOURCE_RATE for i in net.sources}
-        self.y = np.zeros(net.n)
+        self.levels |= {int(i): current.source_level for i in net.sources}
+        self.state = initial_state(net)  # (1, n): every rate, from rest
         self.flux = np.zeros(len(self.paths))
-        self.error = ""
         self.report: LoopReport = loop_report(net)
         self.lines = _panel_lines(self)
         self.clock.reset()
-        self._last: tuple[float, ...] | None = None  # sensor rates the current y was computed for
+        self._show_sensors(0)
+
+    @property
+    def y(self) -> np.ndarray:
+        """The rate of every node now, shape (n,)."""
+        return self.state[0]
 
     # Per frame
 
@@ -89,25 +96,24 @@ class SchematicScene:
             self._tick(tick)
 
     def _tick(self, tick: int) -> None:
-        self._evaluate(tick)
+        eyes, sources = self._sensor_inputs(tick)
+        self.state = step(self.net, self.state, eyes, DT, sources)
+        self.flux = wire_flux(self.net, self.state)[0]
         self.beads.step((BEAD_RATE_AT_FULL / RATE_MAX * self.flux).tolist(), DT)
 
-    def _evaluate(self, tick: int) -> None:
-        """Rates at `tick`; only evaluated again when a sensor sends something new."""
+    def _sensor_inputs(self, tick: int) -> tuple[np.ndarray, np.ndarray]:
+        """What the eyes (following the waveform) and the sources send at `tick`."""
         net = self.net
         eyes = np.array([[waveform(self.wave, self.levels[int(i)], tick) for i in net.eyes]])
-        sources = np.array([self.levels[int(i)] for i in net.sources])
-        key = (*eyes[0].tolist(), *sources.tolist())
-        if key == self._last:
-            return
-        self._last = key
-        try:
-            self.y = evaluate(net, eyes, sources)[0]
-            self.flux = wire_flux(net, self.y[None, :])[0]
-            self.error = ""
-        except AlgebraicLoopError as refused:
-            self.y, self.flux = np.zeros(net.n), np.zeros(len(self.paths))
-            self.error = str(refused)
+        return eyes, np.array([self.levels[int(i)] for i in net.sources])
+
+    def _show_sensors(self, tick: int) -> None:
+        """Put the sensors' rates at `tick` in the state now, e.g. paused; nothing else moves."""
+        eyes, sources = self._sensor_inputs(tick)
+        given = given_rates(self.net, eyes, sources)
+        known = self.net.sensors
+        self.state[:, known] = given[:, known]
+        self.flux = wire_flux(self.net, self.state)[0]
 
     # Input
 
@@ -133,11 +139,14 @@ class SchematicScene:
             self.clock.step()
         elif event.unicode.lower() == "w":
             self.wave = next_wave(self.wave)
-            self._evaluate(self.clock.tick)
+            self._show_sensors(self.clock.tick)
+        elif event.unicode.lower() == "b":
+            self.belt = not self.belt
         elif event.unicode.lower() == "r":
             self.clock.reset()
             self.beads.reset()
-            self._evaluate(0)
+            self.state = initial_state(self.net)
+            self._show_sensors(0)
 
     def centre(self, i: int) -> tuple[float, float]:
         """Where network node i is drawn."""
@@ -153,7 +162,7 @@ class SchematicScene:
         if self.dragging is not None:
             track = track_for(self.centre(self.dragging), self.view.size)
             self.levels[self.dragging] = level_at(track, point[1])
-            self._evaluate(self.clock.tick)  # also while paused
+            self._show_sensors(self.clock.tick)  # also while paused
 
 
 def _panel_lines(scene: SchematicScene) -> list[tuple[str, str, int | None]]:
@@ -164,10 +173,6 @@ def _panel_lines(scene: SchematicScene) -> list[tuple[str, str, int | None]]:
     lines: list[tuple[str, str, int | None]] = [("head", "Equations", None)]
     lines.append(("eq", equations[0], None))
     lines += [("eq", text, i) for i, text in enumerate(equations[1:])]
-    direct = composed(net)
-    if direct:
-        lines += [("head", "From the sensors", None)]
-        lines += [("eq", text, None) for text in direct.values()]
     lines += [("head", "Loops", None)]
     lines += [("eq", text, None) for text in report_lines(net, scene.report)]
     found = problems(net)

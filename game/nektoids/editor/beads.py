@@ -1,21 +1,24 @@
 """Beads on the wires: the view of a rate, never read by the model (graph.md).
 
-A wire that carries f beads/s sends out one bead every 1/f seconds, and beads travel at a fixed
-speed, so their spacing is speed / f: density shows magnitude, spacing shows rate (brief,
-legibility).
-Positions are arc lengths in hex sizes, so they do not depend on zoom. No randomness: the same
-fluxes give the same beads. Pure numbers, no pygame.
+A wire that carries f beads/s shows beads `speed / f` apart, so the spacing shows the rate at
+this moment along the whole wire (brief, legibility: spacing = rate). The only memory is one
+phase per wire, the fraction of a bead released since the last whole one: phase += f dt, mod 1.
+Bead k sits at (phase + k) * speed / f from the source. A bead leaves the source when the phase
+wraps, and while f is steady the beads move at `speed`; when f changes the spacing follows it at
+once and the phase keeps the pattern continuous, so nothing jumps. Positions are arc lengths in
+hex sizes, so they do not depend on zoom. No randomness. Pure numbers, no pygame.
 
-The model couples wires instantly; a bead takes length / speed to arrive. The node meters show the
-rate at the node, the beads show how it got there (D-016).
+When the flux changes fast the lattice stretches about the source, and beads far from it move
+many times `speed` (and backwards when the flux rises): the pattern is continuous, but it
+whips. The `belt` style avoids it: fixed spacing, and the speed of the beads shows the rate.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 
-BEAD_SPEED = 7.0  # hex sizes per second: about 4 cells per second
-BEAD_RATE_AT_FULL = 8.0  # beads a second on a wire that carries RATE_MAX: the view's scale
+BEAD_SPEED = 3.5  # hex sizes per second at most (a wire at RATE_MAX): about 2 cells a second
+BEAD_RATE_AT_FULL = 4.0  # beads a second on a wire that carries RATE_MAX: the view's scale
 
 
 class Beads:
@@ -23,24 +26,28 @@ class Beads:
         """lengths: length of each wire [hex sizes]."""
         self.lengths = list(lengths)
         self.speed = speed
-        self.phase: list[float] = []  # beads owed on each wire, in [0, 1)
-        self.spawned: list[int] = []  # beads sent onto each wire so far
-        self.positions: list[list[float]] = []  # arc length of each bead, per wire
+        self.phase: list[float] = []  # fraction of a bead released on each wire, in [0, 1)
         self.reset()
 
     def reset(self) -> None:
         self.phase = [0.0] * len(self.lengths)
-        self.spawned = [0] * len(self.lengths)
-        self.positions = [[] for _ in self.lengths]
 
     def step(self, fluxes: Sequence[float], dt: float) -> None:
-        """Advance every bead by `dt` seconds and send out the ones the fluxes owe [beads/s]."""
-        for w, (flux, length) in enumerate(zip(fluxes, self.lengths, strict=True)):
-            moved = [s + self.speed * dt for s in self.positions[w]]
-            self.phase[w] += flux * dt
-            while self.phase[w] >= 1.0:
-                self.phase[w] -= 1.0
-                # It left the source this long ago, part-way through the step.
-                moved.append(self.speed * self.phase[w] / flux)
-                self.spawned[w] += 1
-            self.positions[w] = [s for s in moved if s < length]
+        """Advance every phase by `dt` seconds of the fluxes [beads/s]."""
+        self.phase = [(p + f * dt) % 1.0 for p, f in zip(self.phase, fluxes, strict=True)]
+
+    def positions(self, wire: int, flux: float, belt: bool = False) -> list[float]:
+        """Arc length of each bead on `wire` carrying `flux` beads/s now, nearest the source first.
+
+        Spacing shows the rate: `speed / flux` apart, the whole lattice stretching at once when
+        the flux changes. With `belt` the spacing is fixed, `speed / BEAD_RATE_AT_FULL`, and it is
+        the speed of the beads that shows the rate, `speed * flux / BEAD_RATE_AT_FULL`.
+        """
+        if flux <= 0.0:
+            return []
+        gap = self.speed / (BEAD_RATE_AT_FULL if belt else flux)
+        found, k = [], 0
+        while (x := (self.phase[wire] + k) * gap) < self.lengths[wire]:
+            found.append(x)
+            k += 1
+        return found
