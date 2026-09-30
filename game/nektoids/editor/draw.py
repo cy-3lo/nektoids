@@ -54,8 +54,8 @@ HINT = {
     Tool.DELETE: "Click a component to delete it, or a wire.",
 }
 
-# Icon height as a fraction of the hex size; the upright eye must fit a turned half-disc.
-ICON_SCALE = {Kind.EYE: 0.4}
+# Icon height as a fraction of the hex size.
+ICON_SCALE = {Kind.EYE: 0.55}
 
 # Shapes in a local frame: unit = hex size, forward = +x.
 _R = 0.68  # half-disc radius

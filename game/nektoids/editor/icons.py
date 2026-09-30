@@ -2,8 +2,8 @@
 
 The font is opened once at startup (web.md); each glyph is rendered the first time it is drawn at
 a given size, colour and turn, then reused. Icons are centred on their drawn pixels, not on the
-glyph box, which is uneven. Icons that point somewhere turn with their part, so they point where
-it does; the others stay upright.
+glyph box, which is uneven. The eye and the rocket turn with their part, so they point where it
+does; the converters' chevrons stay upright.
 """
 
 from __future__ import annotations
@@ -32,8 +32,9 @@ GLYPH = {
     "caret-right": 0xF0DA,
     "infinity": 0xF534,
 }
-# Direction an icon points to as drawn by the font [degrees, counter-clockwise from E].
-POINTS_TO = {"rocket": 45.0}
+# Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
+# looks up: turned to face E, its long axis runs along the half-disc's flat side.
+POINTS_TO = {"rocket": 45.0, "eye": 90.0}
 
 KIND_ICON = {
     Kind.EYE: "eye",
