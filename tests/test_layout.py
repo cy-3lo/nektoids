@@ -5,17 +5,20 @@ from nektoids.editor.layout import (
     TOOLBAR_HEIGHT,
     Tool,
     cell_at,
+    centred_view,
     contains,
     group_at,
     make_layout,
     palette_item_at,
     tool_at,
+    visible_cells,
 )
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import offset_rect, to_pixel
+from nektoids.graph.hexgrid import hex_disc, to_pixel
 from nektoids.levels.sandbox import free_board, tutorial_board
 
-LAYOUT = make_layout(9, 7)
+LAYOUT = make_layout()
+VIEW = centred_view(LAYOUT)
 
 
 def centre(rect):
@@ -23,12 +26,21 @@ def centre(rect):
     return (x + w // 2, y + h // 2)
 
 
-def test_every_cell_is_on_screen_and_clickable():
-    for cell in offset_rect(9, 7):
-        x, y = to_pixel(cell, LAYOUT.hex_size, LAYOUT.origin)
+def test_every_cell_of_the_zone_is_on_screen_and_clickable():
+    for cell in hex_disc(2):
+        x, y = to_pixel(cell, VIEW.size, VIEW.origin)
         point = (round(x), round(y))
         assert contains(LAYOUT.board_area, point)
-        assert cell_at(LAYOUT, point) == cell
+        assert cell_at(LAYOUT, VIEW, point) == cell
+
+
+def test_the_grid_fills_the_board_area():
+    shown = set(visible_cells(LAYOUT, VIEW))
+    x0, y0, w, h = LAYOUT.board_area
+    for x in range(x0, x0 + w, 7):
+        for y in range(y0, y0 + h, 7):
+            assert cell_at(LAYOUT, VIEW, (x, y)) in shown
+    assert set(hex_disc(2)) <= shown
 
 
 def test_palette_sits_right_of_the_board():
@@ -47,13 +59,13 @@ def test_palette_has_every_kind_once_inside_the_panel():
 
 
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
-    folded = make_layout(9, 7, frozenset({"Converters"}))
+    folded = make_layout(frozenset({"Converters"}))
     kinds = [kind for kind, _ in folded.palette_items]
     assert Kind.DOUBLE not in kinds and Kind.HALVE not in kinds and Kind.EYE in kinds
     titles_open, titles_folded = dict(LAYOUT.group_titles), dict(folded.group_titles)
     assert titles_folded["Sensors"] == titles_open["Sensors"]
     assert titles_folded["Actuators"][1] < titles_open["Actuators"][1]
-    assert folded.hex_size == LAYOUT.hex_size and folded.origin == LAYOUT.origin
+    assert folded.board_area == LAYOUT.board_area
     for title, rect in folded.group_titles:
         assert group_at(folded, centre(rect)) == title
 

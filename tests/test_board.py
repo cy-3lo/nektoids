@@ -1,5 +1,7 @@
 from nektoids.graph.board import Board, Category, Kind, Refused, Wire, can_pass
-from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to
+from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, offset_rect
+
+RECT = offset_rect(9, 7)  # a 9 x 7 zone for most tests
 
 # Row 3 of a 9 x 7 board runs from (-1, 3) to (7, 3) along the E-W axis.
 
@@ -12,7 +14,7 @@ def bends(path):
 
 
 def build(cells_and_kinds, cols=9, rows=7):
-    board = Board(cols, rows)
+    board = Board(offset_rect(cols, rows))
     nodes = [board.place(kind, cell) for cell, kind in cells_and_kinds]
     return board, nodes
 
@@ -31,7 +33,7 @@ def test_sensors_only_emit_and_thrusters_only_receive():
 
 
 def test_eyes_and_thrusters_point_where_placed_converters_nowhere():
-    board = Board(9, 7)
+    board = Board(RECT)
     assert board.place(Kind.EYE, (0, 1)).facing == E  # the kind's default: forward
     assert board.place(Kind.EYE, (0, 3), facing=W).facing == W
     assert board.place(Kind.THRUSTER, (4, 1), locked=True, facing=SE).facing == SE
@@ -39,7 +41,7 @@ def test_eyes_and_thrusters_point_where_placed_converters_nowhere():
 
 
 def test_rotate_turns_eyes_and_thrusters_in_place_only():
-    board = Board(9, 7)
+    board = Board(RECT)
     eye = board.place(Kind.EYE, (0, 1))
     assert board.rotate(eye.id, -1).facing == SE  # from E, one step clockwise
     assert board.rotate(eye.id, -1).facing == SW
@@ -81,7 +83,7 @@ def test_move_refusals():
     board.connect(other.id, half.id)  # runs straight down through (2, 3)
     assert board.move_node(eye.id, (2, 3)) == Refused("a wire runs here")
     assert board.move_node(eye.id, (4, 3)) == Refused("cell taken")
-    assert board.move_node(eye.id, (20, 3)) == Refused("off the board")
+    assert board.move_node(eye.id, (20, 3)) == Refused("outside the zone")
     fixed = board.place(Kind.THRUSTER, (6, 3), locked=True)
     assert board.move_node(fixed.id, (6, 2)) == Refused("placed by the level")
     # Onto a cell its own wire crosses is fine: that wire is routed again.
@@ -91,15 +93,15 @@ def test_move_refusals():
 
 
 def test_place_refuses_off_board_and_taken_cells():
-    board = Board(9, 7)
+    board = Board(RECT)
     node = board.place(Kind.DOUBLE, (2, 3))
     assert board.node_at((2, 3)) == node
     assert board.place(Kind.HALVE, (2, 3)) == Refused("cell taken")
-    assert board.place(Kind.HALVE, (20, 3)) == Refused("off the board")
+    assert board.place(Kind.HALVE, (20, 3)) == Refused("outside the zone")
 
 
 def test_stock_runs_out_and_comes_back_on_removal():
-    board = Board(9, 7, stock={Kind.EYE: 1, Kind.DOUBLE: None})
+    board = Board(RECT, stock={Kind.EYE: 1, Kind.DOUBLE: None})
     eye = board.place(Kind.EYE, (0, 3))
     assert board.remaining(Kind.EYE) == 0
     assert board.place(Kind.EYE, (1, 3)) == Refused("none left")
@@ -111,7 +113,7 @@ def test_stock_runs_out_and_comes_back_on_removal():
 
 
 def test_locked_nodes_use_no_stock_and_cannot_be_removed():
-    board = Board(9, 7, stock={})
+    board = Board(RECT, stock={})
     eye = board.place(Kind.EYE, (0, 3), locked=True)
     assert eye.locked
     assert board.remove_node(eye.id) == Refused("placed by the level")
@@ -219,14 +221,14 @@ def hand_drawn(board, path):
 
 
 def test_a_wire_crosses_straight_where_another_turns():
-    board = Board(9, 7)
+    board = Board(RECT)
     hand_drawn(board, ((2, 3), (3, 3), (3, 2)))  # turns in (3, 3): W edge to NW edge
     eye, gain = board.place(Kind.EYE, (2, 4)), board.place(Kind.DOUBLE, (4, 2))
     assert board.connect(eye.id, gain.id).path == ((2, 4), (3, 3), (4, 2))  # SW edge to NE edge
 
 
 def test_two_wires_turn_in_the_same_cell():
-    board = Board(9, 7)
+    board = Board(RECT)
     hand_drawn(board, ((2, 3), (3, 3), (3, 2)))  # turns in (3, 3): W edge to NW edge
     board.place(Kind.HALVE, (3, 4))  # blocks the other shortest path, via (3, 4)
     eye, gain = board.place(Kind.EYE, (2, 4)), board.place(Kind.DOUBLE, (4, 3))

@@ -1,12 +1,14 @@
 """Where everything sits on the 960 x 640 editor screen, and what is under a given pixel.
 
-Hex board on the left with a toolbar strip above and one status line below; palette on the
-right, in groups that fold under their title. Plain numbers and tuples, no pygame, so
-hit-testing is testable headless.
+Hex grid on the left, filling its area, with a toolbar strip above and one status line below;
+palette on the right, in groups that fold under their title. The screen regions are fixed; the
+View says how big a hex is and where the grid sits in its area. Plain numbers and tuples, no
+pygame, so hit-testing is testable headless.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import Enum
 
@@ -23,6 +25,7 @@ MARGIN = 16  # [px]
 BUTTON = 40  # toolbar button side [px]
 ITEM_HEIGHT = 44  # palette row [px]
 TITLE_HEIGHT = 28  # palette group title [px]
+HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
 
 PALETTE_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
     ("Sensors", (Kind.EYE,)),
@@ -41,8 +44,6 @@ class Tool(Enum):
 
 @dataclass(frozen=True)
 class Layout:
-    hex_size: float  # centre-to-corner [px]
-    origin: tuple[float, float]  # pixel centre of cell (0, 0) [px]
     board_area: Rect
     palette_area: Rect
     group_titles: tuple[tuple[str, Rect], ...]  # click one to fold or unfold its group
@@ -51,11 +52,16 @@ class Layout:
     status_at: tuple[int, int]  # top-left corner of the status line
 
 
-def make_layout(cols: int, rows: int, folded: frozenset[str] = frozenset()) -> Layout:
-    """Fit a cols x rows board into the space left of the palette, centred.
+@dataclass(frozen=True)
+class View:
+    """How the grid is seen: the size of a hex and where cell (0, 0) sits on screen."""
 
-    folded: titles of the palette groups shown closed, their items hidden.
-    """
+    size: float  # centre-to-corner [px]
+    origin: tuple[float, float]  # pixel centre of cell (0, 0) [px]
+
+
+def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
+    """The screen regions and palette rows. folded: titles of the groups shown closed."""
     width, height = SCREEN
     left = width - PALETTE_WIDTH  # palette's left edge
     palette = (left, 0, PALETTE_WIDTH, height)
@@ -65,15 +71,6 @@ def make_layout(cols: int, rows: int, folded: frozenset[str] = frozenset()) -> L
         width - PALETTE_WIDTH,
         height - TOOLBAR_HEIGHT - STATUS_HEIGHT,
     )
-    # Bounding box of an odd-r board, in units of the hex size.
-    span_x = SQRT3 * (cols + 0.5)
-    span_y = 1.5 * (rows - 1) + 2.0
-    size = min((area[2] - 2 * MARGIN) / span_x, (area[3] - 2 * MARGIN) / span_y)
-    origin = (
-        area[0] + 0.5 * (area[2] - size * span_x) + 0.5 * SQRT3 * size,
-        area[1] + 0.5 * (area[3] - size * span_y) + size,
-    )
-
     titles, items = [], []
     y = MARGIN
     for title, kinds in PALETTE_GROUPS:
@@ -89,8 +86,6 @@ def make_layout(cols: int, rows: int, folded: frozenset[str] = frozenset()) -> L
         (tool, (MARGIN + i * (BUTTON + 8), top, BUTTON, BUTTON)) for i, tool in enumerate(Tool)
     )
     return Layout(
-        hex_size=size,
-        origin=origin,
         board_area=area,
         palette_area=palette,
         group_titles=tuple(titles),
@@ -117,8 +112,28 @@ def tool_at(layout: Layout, point: tuple[int, int]) -> Tool | None:
     return next((tool for tool, rect in layout.tool_buttons if contains(rect, point)), None)
 
 
-def cell_at(layout: Layout, point: tuple[int, int]) -> Cell | None:
-    """The hex under `point`, or None outside the board area (the caller checks the board)."""
+def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
+    """Cell (0, 0) at the centre of the board area."""
+    x, y, w, h = layout.board_area
+    return View(size, (x + w / 2, y + h / 2))
+
+
+def cell_at(layout: Layout, view: View, point: tuple[int, int]) -> Cell | None:
+    """The hex under `point`, or None outside the board area (the caller checks the zone)."""
     if not contains(layout.board_area, point):
         return None
-    return from_pixel(point[0], point[1], layout.hex_size, layout.origin)
+    return from_pixel(point[0], point[1], view.size, view.origin)
+
+
+def visible_cells(layout: Layout, view: View) -> list[Cell]:
+    """Every cell whose hex shows, at least in part, in the board area; row by row."""
+    x, y, w, h = layout.board_area
+    s, (ox, oy) = view.size, view.origin
+    rows = range(math.floor((y - s - oy) / (1.5 * s)), math.ceil((y + h + s - oy) / (1.5 * s)) + 1)
+    cells = []
+    for r in rows:
+        # Cell (q, r) is centred at x = ox + sqrt(3) s (q + r / 2).
+        q_min = math.floor((x - s - ox) / (SQRT3 * s) - r / 2)
+        q_max = math.ceil((x + w + s - ox) / (SQRT3 * s) - r / 2)
+        cells += [(q, r) for q in range(q_min, q_max + 1)]
+    return cells

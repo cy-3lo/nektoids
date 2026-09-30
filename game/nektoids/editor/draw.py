@@ -18,7 +18,7 @@ import pygame
 
 from nektoids.editor.geometry import wire_points
 from nektoids.editor.icons import KIND_ICON, TOOL_ICON, Icons
-from nektoids.editor.layout import Layout, Tool
+from nektoids.editor.layout import Tool, View, visible_cells
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -26,7 +26,10 @@ from nektoids.graph.hexgrid import Cell, to_pixel
 BACKGROUND = (18, 20, 28)
 PANEL = (26, 29, 40)
 GRID_LINE = (60, 64, 78)
-HOVER = (40, 46, 62)
+ZONE = (26, 29, 40)  # cells of the level's zone
+OUTSIDE = (11, 12, 17)  # cells outside it
+OUTSIDE_LINE = (28, 30, 38)
+HOVER = (44, 50, 68)
 FLASH = (150, 50, 55)
 BUTTON = (40, 44, 58)
 ACTIVE = (78, 84, 100)  # selected tool or palette row
@@ -90,7 +93,7 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     _draw_board(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
-        size = scene.layout.hex_size
+        size = scene.view.size
         facing = scene.picked.default_facing
         _draw_node(screen, fonts, scene.picked, facing, scene.mouse, size, locked=False)
 
@@ -99,37 +102,43 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
 
 
 def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    layout, board = scene.layout, scene.board
-    for cell in board.cells:
+    view, board = scene.view, scene.board
+    zone = set(board.cells)
+    screen.set_clip(scene.layout.board_area)
+    for cell in visible_cells(scene.layout, view):
+        hexagon = _hexagon(view, cell)
         if scene.flash_frames > 0 and cell == scene.flash_cell:
-            pygame.draw.polygon(screen, FLASH, _hexagon(layout, cell))
-        elif cell == scene.hover:
-            pygame.draw.polygon(screen, HOVER, _hexagon(layout, cell))
-        pygame.draw.polygon(screen, GRID_LINE, _hexagon(layout, cell), 1)
+            pygame.draw.polygon(screen, FLASH, hexagon)
+        elif cell not in zone:
+            pygame.draw.polygon(screen, OUTSIDE, hexagon)
+        else:
+            pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
+        pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
 
     if isinstance(scene.ghost, tuple):
-        _draw_wire(screen, layout, scene.ghost, GHOST, 2)
+        _draw_wire(screen, view, scene.ghost, GHOST, 2)
     for wire in board.wires:
-        _draw_wire(screen, layout, wire.path, WIRE, 3)
+        _draw_wire(screen, view, wire.path, WIRE, 3)
 
     for node in board.nodes.values():
-        centre = _centre(layout, node.cell)
-        _draw_node(screen, fonts, node.kind, node.facing, centre, layout.hex_size, node.locked)
+        centre = _centre(view, node.cell)
+        _draw_node(screen, fonts, node.kind, node.facing, centre, view.size, node.locked)
         if node.id == scene.source:
-            pygame.draw.circle(screen, TEXT, centre, 0.8 * layout.hex_size, 2)
+            pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
-        pygame.draw.polygon(screen, REFUSED, _hexagon(layout, scene.hover), 2)
+        pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
+    screen.set_clip(None)
 
 
-def _draw_wire(screen, layout: Layout, path: tuple[Cell, ...], colour, width: int) -> None:
-    points = wire_points(path, layout.hex_size, layout.origin)  # arcs where it turns
+def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, width: int) -> None:
+    points = wire_points(path, view.size, view.origin)  # arcs where it turns
     pygame.draw.lines(screen, colour, False, points, width)
     # Chevron just outside the target's shape, pointing into it.
     (x0, y0), (x1, y1) = points[-2], points[-1]
     angle = math.atan2(y1 - y0, x1 - x0)
-    back = 0.68 * layout.hex_size
+    back = 0.68 * view.size
     tip = (x1 - back * math.cos(angle), y1 - back * math.sin(angle))
-    wing = 0.22 * layout.hex_size
+    wing = 0.22 * view.size
     wings = [
         (tip[0] - wing * math.cos(angle + s), tip[1] - wing * math.sin(angle + s))
         for s in (0.55, -0.55)
@@ -171,17 +180,17 @@ def _shape(kind: Kind, facing: int | None, centre, size: float) -> list[tuple[fl
     ]
 
 
-def _hexagon(layout: Layout, cell: Cell) -> list[tuple[float, float]]:
-    x, y = _centre(layout, cell)
-    r = layout.hex_size
+def _hexagon(view: View, cell: Cell) -> list[tuple[float, float]]:
+    x, y = _centre(view, cell)
+    r = view.size
     return [
         (x + r * math.cos(math.radians(30 + 60 * k)), y + r * math.sin(math.radians(30 + 60 * k)))
         for k in range(6)
     ]
 
 
-def _centre(layout: Layout, cell: Cell) -> tuple[float, float]:
-    return to_pixel(cell, layout.hex_size, layout.origin)
+def _centre(view: View, cell: Cell) -> tuple[float, float]:
+    return to_pixel(cell, view.size, view.origin)
 
 
 # Palette, toolbar, status

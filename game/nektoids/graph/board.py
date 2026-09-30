@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import heapq
 import itertools
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from enum import Enum
 
@@ -22,7 +22,6 @@ from nektoids.graph.hexgrid import (
     E,
     direction_to,
     neighbour,
-    offset_rect,
     opposite,
 )
 
@@ -113,16 +112,15 @@ def can_pass(edges_used: set[int], into: int, out: int) -> bool:
 
 
 class Board:
-    """Nodes and wires on a cols x rows board.
+    """Nodes and wires on the level's zone: the cells that can hold a component or a wire.
 
     stock: how many of each kind the player may still place; None means unlimited, and a kind
     left out means none. Without a stock, everything is unlimited. Locked nodes are placed by
     the level and do not use stock.
     """
 
-    def __init__(self, cols: int, rows: int, stock: Mapping[Kind, int | None] | None = None):
-        self.cols, self.rows = cols, rows
-        self.cells: list[Cell] = offset_rect(cols, rows)
+    def __init__(self, cells: Iterable[Cell], stock: Mapping[Kind, int | None] | None = None):
+        self.cells: list[Cell] = sorted(set(cells), key=lambda c: (c[1], c[0]))  # row by row
         self._on_board = set(self.cells)
         self._stock: dict[Kind, int | None] = (
             {kind: None for kind in Kind} if stock is None else dict(stock)
@@ -160,7 +158,7 @@ class Board:
         converters have no direction.
         """
         if cell not in self._on_board:
-            return Refused("off the board")
+            return Refused("outside the zone")
         if self.node_at(cell) is not None:
             return Refused("cell taken")
         if self.wires_in(cell):
@@ -203,7 +201,7 @@ class Board:
         if cell == node.cell:
             return node
         if cell not in self._on_board:
-            return Refused("off the board")
+            return Refused("outside the zone")
         if self.node_at(cell) is not None:
             return Refused("cell taken")
         saved = list(self.wires)

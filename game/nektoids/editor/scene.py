@@ -22,6 +22,7 @@ from nektoids.editor.layout import (
     Layout,
     Tool,
     cell_at,
+    centred_view,
     group_at,
     make_layout,
     palette_item_at,
@@ -39,6 +40,7 @@ class EditorScene:
     def __init__(self, board: Board, layout: Layout):
         self.board = board
         self.layout = layout
+        self.view = centred_view(layout)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the palette kind in hand
         self.dragging = False  # Add: mouse held since picking from the palette
@@ -47,7 +49,8 @@ class EditorScene:
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered target
         self.folded: set[str] = set()  # palette groups shown closed
         self.mouse = (0, 0)
-        self.hover: Cell | None = None  # board cell under the mouse
+        self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
+        self.hover: Cell | None = None  # the same, if it is in the zone
         self.message = ""  # last refusal, empty once something succeeds
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
@@ -74,13 +77,15 @@ class EditorScene:
 
     def _track(self, pos: tuple[int, int]) -> None:
         self.mouse = pos
-        cell = cell_at(self.layout, pos)
-        hover = cell if cell in self.board.cells else None
+        pointed = cell_at(self.layout, self.view, pos)
+        moved_on = pointed != self.pointed
+        self.pointed = pointed
+        hover = pointed if pointed in self.board.cells else None
         if hover != self.hover:
             self.hover = hover
             self._update_ghost()
-            if self.moving is not None and hover is not None:
-                self._drag_to(hover)
+        if moved_on and self.moving is not None and pointed is not None:
+            self._drag_to(pointed)
 
     def _press(self, pos: tuple[int, int]) -> None:
         tool = tool_at(self.layout, pos)
@@ -91,16 +96,18 @@ class EditorScene:
         title = group_at(self.layout, pos)
         if title is not None:
             self.folded ^= {title}
-            self.layout = make_layout(self.board.cols, self.board.rows, frozenset(self.folded))
+            self.layout = make_layout(frozenset(self.folded))
             return
         kind = palette_item_at(self.layout, pos)
         if kind is not None:
             self._pick(kind)
             return
-        if self.hover is None:
+        if self.pointed is None:
             return
         if self.tool is Tool.ADD:
-            self._add(self.hover)
+            self._add(self.pointed)  # the zone refuses cells outside it, with a reason
+        elif self.hover is None:
+            return
         elif self.tool is Tool.WIRE:
             self._wire(self.hover)
         elif self.tool is Tool.ROTATE:
@@ -115,8 +122,8 @@ class EditorScene:
         if not self.dragging:
             return
         self.dragging = False
-        if self.hover is not None:
-            self._add(self.hover)
+        if self.pointed is not None:
+            self._add(self.pointed)
 
     def _cancel(self) -> None:
         self.picked, self.dragging = None, False
@@ -201,7 +208,7 @@ class EditorScene:
         Wires count before the rest of a component's cell, because a wire between two
         neighbouring components crosses no free cell: it only shows between their shapes.
         """
-        size, origin = self.layout.hex_size, self.layout.origin
+        size, origin = self.view.size, self.view.origin
         node = self.board.node_at(cell)
         on_shape = (
             node is not None and math.dist(pos, to_pixel(cell, size, origin)) < NODE_HIT * size
