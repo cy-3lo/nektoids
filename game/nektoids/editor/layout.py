@@ -1,10 +1,14 @@
 """Where everything sits on the 960 x 640 editor screen, and what is under a given pixel.
 
-Hex grid on the left, filling its area, with a toolbar strip above and one status line below;
-palette on the right: a row of view buttons (zoom, pan), then groups that fold under their
-title. The screen regions are fixed; the View says how big a hex is and where the grid sits in
-its area, and zoom and pan change only the View (D-013). Plain numbers and tuples, no
-pygame, so hit-testing is testable headless.
+Three columns, with vertical separators:
+- left, the menu: component groups (sensors, converters, actuators) that fold under their title;
+- centre, the hex grid, filling its column, with one status line at its foot;
+- right, the palette: view buttons (zoom in, zoom out, hand), then the editing tools, then a
+  colour picker, inactive until colours carry a meaning.
+
+The screen regions are fixed; the View says how big a hex is and where the grid sits in its
+column, and zoom and pan change only the View (D-013). Plain numbers and tuples, no pygame, so
+hit-testing is testable headless.
 """
 
 from __future__ import annotations
@@ -19,18 +23,21 @@ from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel
 Rect = tuple[int, int, int, int]  # x, y, width, height [px]
 
 SCREEN = (960, 640)  # [px]
-PALETTE_WIDTH = 240  # [px]
-TOOLBAR_HEIGHT = 56  # [px]
+MENU_WIDTH = 200  # left column [px]
+PALETTE_WIDTH = 72  # right column [px]
 STATUS_HEIGHT = 32  # [px]
 MARGIN = 16  # [px]
-BUTTON = 40  # toolbar button side [px]
-ITEM_HEIGHT = 44  # palette row [px]
-TITLE_HEIGHT = 28  # palette group title [px]
+BUTTON = 40  # palette button side [px]
+BUTTON_STEP = 48  # palette button pitch [px]
+ITEM_HEIGHT = 44  # menu row [px]
+TITLE_HEIGHT = 28  # menu group title [px]
+SWATCH = 18  # colour picker square [px]
+SWATCH_ROWS = 4  # of two swatches each
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
 
-PALETTE_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
+MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
     ("Sensors", (Kind.EYE,)),
     ("Converters", (Kind.DOUBLE, Kind.HALVE)),
     ("Actuators", (Kind.THRUSTER,)),
@@ -43,10 +50,10 @@ class Tool(Enum):
     ROTATE = "rotate"
     MOVE = "move"
     DELETE = "delete"
-    PAN = "pan"  # moves the view, not a component; chosen in the palette
+    PAN = "pan"  # moves the view, not a component; the hand among the view buttons
 
 
-TOOLBAR = (Tool.ADD, Tool.WIRE, Tool.ROTATE, Tool.MOVE, Tool.DELETE)
+PALETTE_TOOLS = (Tool.ADD, Tool.WIRE, Tool.ROTATE, Tool.MOVE, Tool.DELETE)
 
 
 class ViewButton(Enum):
@@ -57,12 +64,15 @@ class ViewButton(Enum):
 
 @dataclass(frozen=True)
 class Layout:
+    menu_area: Rect
     board_area: Rect
     palette_area: Rect
-    view_buttons: tuple[tuple[ViewButton, Rect], ...]
     group_titles: tuple[tuple[str, Rect], ...]  # click one to fold or unfold its group
-    palette_items: tuple[tuple[Kind, Rect], ...]
+    menu_items: tuple[tuple[Kind, Rect], ...]
+    view_buttons: tuple[tuple[ViewButton, Rect], ...]
     tool_buttons: tuple[tuple[Tool, Rect], ...]
+    palette_rules: tuple[int, ...]  # y of the short separators between the palette's sets
+    swatches: tuple[Rect, ...]  # colour picker, inactive for now
     status_at: tuple[int, int]  # top-left corner of the status line
 
 
@@ -75,42 +85,54 @@ class View:
 
 
 def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
-    """The screen regions and palette rows. folded: titles of the groups shown closed."""
+    """The screen regions, menu rows and palette buttons. folded: menu groups shown closed."""
     width, height = SCREEN
-    left = width - PALETTE_WIDTH  # palette's left edge
-    palette = (left, 0, PALETTE_WIDTH, height)
-    area = (
-        0,
-        TOOLBAR_HEIGHT,
-        width - PALETTE_WIDTH,
-        height - TOOLBAR_HEIGHT - STATUS_HEIGHT,
-    )
-    view_buttons = tuple(
-        (button, (left + MARGIN + i * (BUTTON + 8), MARGIN, BUTTON, BUTTON))
-        for i, button in enumerate(ViewButton)
-    )
+    right = width - PALETTE_WIDTH  # palette's left edge
+    menu = (0, 0, MENU_WIDTH, height)
+    board = (MENU_WIDTH, 0, right - MENU_WIDTH, height - STATUS_HEIGHT)
+    palette = (right, 0, PALETTE_WIDTH, height)
+
     titles, items = [], []
-    y = MARGIN + BUTTON + MARGIN
-    for title, kinds in PALETTE_GROUPS:
-        titles.append((title, (left + MARGIN, y, PALETTE_WIDTH - 2 * MARGIN, TITLE_HEIGHT - 4)))
+    y = MARGIN
+    for title, kinds in MENU_GROUPS:
+        titles.append((title, (MARGIN, y, MENU_WIDTH - 2 * MARGIN, TITLE_HEIGHT - 4)))
         y += TITLE_HEIGHT
         for kind in () if title in folded else kinds:
-            items.append((kind, (left + MARGIN, y, PALETTE_WIDTH - 2 * MARGIN, ITEM_HEIGHT - 4)))
+            items.append((kind, (MARGIN, y, MENU_WIDTH - 2 * MARGIN, ITEM_HEIGHT - 4)))
             y += ITEM_HEIGHT
         y += MARGIN
 
-    top = (TOOLBAR_HEIGHT - BUTTON) // 2
-    buttons = tuple(
-        (tool, (MARGIN + i * (BUTTON + 8), top, BUTTON, BUTTON)) for i, tool in enumerate(TOOLBAR)
+    x = right + (PALETTE_WIDTH - BUTTON) // 2
+    y = MARGIN
+    view_buttons = []
+    for button in ViewButton:
+        view_buttons.append((button, (x, y, BUTTON, BUTTON)))
+        y += BUTTON_STEP
+    rules = [y]
+    y += MARGIN
+    tool_buttons = []
+    for tool in PALETTE_TOOLS:
+        tool_buttons.append((tool, (x, y, BUTTON, BUTTON)))
+        y += BUTTON_STEP
+    rules.append(y)
+    y += MARGIN
+    gap = BUTTON - 2 * SWATCH
+    swatches = tuple(
+        (x + col * (SWATCH + gap), y + row * (SWATCH + gap), SWATCH, SWATCH)
+        for row in range(SWATCH_ROWS)
+        for col in range(2)
     )
     return Layout(
-        board_area=area,
+        menu_area=menu,
+        board_area=board,
         palette_area=palette,
-        view_buttons=view_buttons,
         group_titles=tuple(titles),
-        palette_items=tuple(items),
-        tool_buttons=buttons,
-        status_at=(MARGIN, height - STATUS_HEIGHT + 8),
+        menu_items=tuple(items),
+        view_buttons=tuple(view_buttons),
+        tool_buttons=tuple(tool_buttons),
+        palette_rules=tuple(rules),
+        swatches=swatches,
+        status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
     )
 
 
@@ -123,8 +145,8 @@ def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
     return next((title for title, rect in layout.group_titles if contains(rect, point)), None)
 
 
-def palette_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
-    return next((kind for kind, rect in layout.palette_items if contains(rect, point)), None)
+def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
+    return next((kind for kind, rect in layout.menu_items if contains(rect, point)), None)
 
 
 def view_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:

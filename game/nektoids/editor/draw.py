@@ -32,7 +32,9 @@ OUTSIDE_LINE = (28, 30, 38)
 HOVER = (44, 50, 68)
 FLASH = (150, 50, 55)
 BUTTON = (40, 44, 58)
-ACTIVE = (78, 84, 100)  # selected tool or palette row
+ACTIVE = (78, 84, 100)  # selected tool or menu row
+RULE = (52, 56, 70)  # separators between columns and between sets of buttons
+SWATCH_OFF = (44, 47, 58)  # colour picker, not active yet
 TEXT = (220, 222, 230)
 DIM_TEXT = (130, 134, 150)
 REFUSED = (240, 110, 110)
@@ -51,7 +53,7 @@ NAME = {
     Kind.THRUSTER: "Thruster",
 }
 HINT = {
-    Tool.ADD: "Drag a component from the palette onto the grid.",
+    Tool.ADD: "Drag a component from the menu onto the grid.",
     Tool.WIRE: "Drag from a source to a target, or click one then the other.",
     Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
@@ -90,10 +92,11 @@ class Fonts:
 
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
+    _draw_menu(screen, scene, fonts)
     _draw_palette(screen, scene, fonts)
-    _draw_toolbar(screen, scene, fonts)
     _draw_board(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
+    _draw_separators(screen, scene)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
         facing = scene.picked.default_facing
@@ -196,23 +199,18 @@ def _centre(view: View, cell: Cell) -> tuple[float, float]:
     return to_pixel(cell, view.size, view.origin)
 
 
-# Palette, toolbar, status
+# Menu, palette, status
 
 
-def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+def _draw_menu(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     layout, board = scene.layout, scene.board
-    pygame.draw.rect(screen, PANEL, layout.palette_area)
-    for button, rect in layout.view_buttons:
-        active = button is ViewButton.PAN and scene.tool is Tool.PAN
-        pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
-        x, y, w, h = rect
-        fonts.icons.draw(screen, VIEW_ICON[button], (x + w // 2, y + h // 2), 20, TEXT)
+    pygame.draw.rect(screen, PANEL, layout.menu_area)
     for title, (x, y, _, h) in layout.group_titles:
         caret = "caret-right" if title in scene.folded else "caret-down"
         fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, DIM_TEXT)
         text = fonts.text.render(title.upper(), True, DIM_TEXT)
         screen.blit(text, (x + 16, y + (h - text.get_height()) // 2))
-    for kind, rect in layout.palette_items:
+    for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         empty = left == 0
         pygame.draw.rect(screen, ACTIVE if kind == scene.picked else BUTTON, rect, border_radius=6)
@@ -231,11 +229,31 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
             screen.blit(count, (right - count.get_width(), y + (h - count.get_height()) // 2))
 
 
-def _draw_toolbar(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    for tool, rect in scene.layout.tool_buttons:
-        pygame.draw.rect(screen, ACTIVE if tool is scene.tool else BUTTON, rect, border_radius=6)
-        x, y, w, h = rect
-        fonts.icons.draw(screen, TOOL_ICON[tool], (x + w // 2, y + h // 2), 20, TEXT)
+def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    layout = scene.layout
+    pygame.draw.rect(screen, PANEL, layout.palette_area)
+    for button, rect in layout.view_buttons:
+        active = button is ViewButton.PAN and scene.tool is Tool.PAN
+        _draw_button(screen, fonts, rect, VIEW_ICON[button], active)
+    for tool, rect in layout.tool_buttons:
+        _draw_button(screen, fonts, rect, TOOL_ICON[tool], tool is scene.tool)
+    px, _, pw, _ = layout.palette_area
+    for y in layout.palette_rules:
+        pygame.draw.line(screen, RULE, (px + 20, y), (px + pw - 20, y), 1)
+    # The colour picker keeps its place, inactive until colours carry a meaning.
+    for rect in layout.swatches:
+        pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
+
+
+def _draw_button(screen, fonts: Fonts, rect, icon: str, active: bool) -> None:
+    pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
+    x, y, w, h = rect
+    fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, TEXT)
+
+
+def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
+    for x in (scene.layout.menu_area[2], scene.layout.palette_area[0]):
+        pygame.draw.line(screen, RULE, (x, 0), (x, screen.get_height()), 2)
 
 
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

@@ -1,15 +1,15 @@
 """Editor state and input handling. Mutates the board only through its methods.
 
 Tools:
-- Add: drag a component from the palette onto a cell, or pick it and click cells.
+- Add: drag a component from the menu onto a cell, or pick it and click cells.
 - Wire: drag from a source to a target, or click one then the other. The route shows first,
   bright when it may connect.
 - Rotate: click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back (D-009).
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
-- Pan (from the palette, with the zoom buttons): drag the grid to move the view (D-013).
+- Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013).
 
-Clicking a palette title folds or unfolds its group. Right click or Escape cancels. Every refusal
+Clicking a menu title folds or unfolds its group. Right click or Escape cancels. Every refusal
 flashes the cell and puts the reason in the status line.
 """
 
@@ -29,7 +29,7 @@ from nektoids.editor.layout import (
     centred_view,
     group_at,
     make_layout,
-    palette_item_at,
+    menu_item_at,
     pan,
     tool_at,
     view_button_at,
@@ -49,15 +49,15 @@ class EditorScene:
         self.layout = layout
         self.view = centred_view(layout)
         self.tool = Tool.ADD
-        self.picked: Kind | None = None  # Add: the palette kind in hand
-        self.dragging = False  # Add: mouse held since picking from the palette
+        self.picked: Kind | None = None  # Add: the menu kind in hand
+        self.dragging = False  # Add: mouse held since picking from the menu
         self.source: int | None = None  # Wire: node id of the chosen source
         self.moving: int | None = None  # Move: node id being dragged
         self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
         self.wiring = False  # Wire: mouse held since pressing on the source
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered cell
         self.ghost_connects = False  # Wire: the ghost ends on a target it may connect to
-        self.folded: set[str] = set()  # palette groups shown closed
+        self.folded: set[str] = set()  # menu groups shown closed
         self.mouse = (0, 0)
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
         self.hover: Cell | None = None  # the same, if it is in the zone
@@ -115,7 +115,7 @@ class EditorScene:
             self.folded ^= {title}
             self.layout = make_layout(frozenset(self.folded))
             return
-        kind = palette_item_at(self.layout, pos)
+        kind = menu_item_at(self.layout, pos)
         if kind is not None:
             self._pick(kind)
             return
@@ -175,7 +175,7 @@ class EditorScene:
 
     def _add(self, cell: Cell) -> None:
         if self.picked is None:
-            self._refuse("pick a component in the palette first", None)
+            self._refuse("pick a component in the menu first", None)
             return
         result = self.board.place(self.picked, cell)
         if isinstance(result, Refused):

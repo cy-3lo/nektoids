@@ -3,9 +3,8 @@
 from nektoids.editor.layout import (
     MAX_HEX,
     MIN_HEX,
+    PALETTE_TOOLS,
     SCREEN,
-    TOOLBAR,
-    TOOLBAR_HEIGHT,
     Tool,
     ViewButton,
     cell_at,
@@ -13,7 +12,7 @@ from nektoids.editor.layout import (
     contains,
     group_at,
     make_layout,
-    palette_item_at,
+    menu_item_at,
     pan,
     tool_at,
     view_button_at,
@@ -50,24 +49,25 @@ def test_the_grid_fills_the_board_area():
     assert set(hex_disc(2)) <= shown
 
 
-def test_palette_sits_right_of_the_board():
-    board_right = LAYOUT.board_area[0] + LAYOUT.board_area[2]
-    assert LAYOUT.palette_area[0] == board_right
-    assert LAYOUT.palette_area[0] + LAYOUT.palette_area[2] == SCREEN[0]
+def test_three_columns_side_by_side():
+    menu, board, palette = LAYOUT.menu_area, LAYOUT.board_area, LAYOUT.palette_area
+    assert menu[0] == 0 and menu[0] + menu[2] == board[0]
+    assert board[0] + board[2] == palette[0] and palette[0] + palette[2] == SCREEN[0]
+    assert board[2] > menu[2] > palette[2]  # the grid gets the most room
 
 
-def test_palette_has_every_kind_once_inside_the_panel():
-    kinds = [kind for kind, _ in LAYOUT.palette_items]
+def test_menu_has_every_kind_once_inside_its_column():
+    kinds = [kind for kind, _ in LAYOUT.menu_items]
     assert sorted(kinds, key=lambda k: k.value) == sorted(Kind, key=lambda k: k.value)
-    for kind, rect in LAYOUT.palette_items:
-        assert contains(LAYOUT.palette_area, rect[:2])
-        assert contains(LAYOUT.palette_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
-        assert palette_item_at(LAYOUT, centre(rect)) == kind
+    for kind, rect in LAYOUT.menu_items:
+        assert contains(LAYOUT.menu_area, rect[:2])
+        assert contains(LAYOUT.menu_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
+        assert menu_item_at(LAYOUT, centre(rect)) == kind
 
 
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
     folded = make_layout(frozenset({"Converters"}))
-    kinds = [kind for kind, _ in folded.palette_items]
+    kinds = [kind for kind, _ in folded.menu_items]
     assert Kind.DOUBLE not in kinds and Kind.HALVE not in kinds and Kind.EYE in kinds
     titles_open, titles_folded = dict(LAYOUT.group_titles), dict(folded.group_titles)
     assert titles_folded["Sensors"] == titles_open["Sensors"]
@@ -77,13 +77,24 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_tool_buttons_sit_in_the_toolbar():
-    assert [tool for tool, _ in LAYOUT.tool_buttons] == list(TOOLBAR)
-    assert Tool.PAN not in TOOLBAR  # chosen in the palette, with the zoom buttons
+def test_palette_stacks_view_buttons_then_tools_then_the_colour_picker():
+    assert [button for button, _ in LAYOUT.view_buttons] == list(ViewButton)
+    assert [tool for tool, _ in LAYOUT.tool_buttons] == list(PALETTE_TOOLS)
+    assert Tool.PAN not in PALETTE_TOOLS  # the hand, among the view buttons
+    rects = [r for _, r in LAYOUT.view_buttons] + [r for _, r in LAYOUT.tool_buttons]
+    rects += list(LAYOUT.swatches)
+    for rect in rects:
+        assert contains(LAYOUT.palette_area, rect[:2])
+        assert contains(LAYOUT.palette_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
+    tops = [r[1] for r in rects]
+    assert tops == sorted(tops)
+    first_tool, last_view = LAYOUT.tool_buttons[0][1], LAYOUT.view_buttons[-1][1]
+    assert last_view[1] + last_view[3] < LAYOUT.palette_rules[0] < first_tool[1]
+    for button, rect in LAYOUT.view_buttons:
+        assert view_button_at(LAYOUT, centre(rect)) == button
     for tool, rect in LAYOUT.tool_buttons:
-        assert rect[1] + rect[3] <= TOOLBAR_HEIGHT
         assert tool_at(LAYOUT, centre(rect)) == tool
-    assert tool_at(LAYOUT, (SCREEN[0] - 1, SCREEN[1] - 1)) is None
+    assert tool_at(LAYOUT, centre(LAYOUT.board_area)) is None
 
 
 def test_sandbox_boards():
@@ -93,14 +104,6 @@ def test_sandbox_boards():
     tutorial = tutorial_board()
     assert len(tutorial.nodes) == 4 and all(node.locked for node in tutorial.nodes.values())
     assert tutorial.remaining(Kind.EYE) == 0
-
-
-def test_view_buttons_sit_at_the_top_of_the_palette():
-    assert [button for button, _ in LAYOUT.view_buttons] == list(ViewButton)
-    first_title = LAYOUT.group_titles[0][1]
-    for button, rect in LAYOUT.view_buttons:
-        assert contains(LAYOUT.palette_area, rect[:2]) and rect[1] + rect[3] <= first_title[1]
-        assert view_button_at(LAYOUT, centre(rect)) == button
 
 
 def test_zoom_keeps_its_anchor_and_stays_within_limits():
