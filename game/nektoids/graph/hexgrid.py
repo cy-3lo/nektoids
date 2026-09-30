@@ -51,6 +51,27 @@ def offset_rect(cols: int, rows: int) -> list[Cell]:
     return [(col - (row - (row & 1)) // 2, row) for row in range(rows) for col in range(cols)]
 
 
+def vertical_step(cell: Cell, rows: int) -> Cell:
+    """The cell `rows` rows down (negative: up) in the same odd-r column: the neighbour that
+    keeps a straight vertical line on screen, alternating NW / NE going up (SW / SE going down)."""
+    q, r = cell
+    col = q + (r - (r & 1)) // 2
+    r2 = r + rows
+    return (col - (r2 - (r2 & 1)) // 2, r2)
+
+
+def hex_distance(a: Cell, b: Cell) -> int:
+    """Number of single steps from `a` to `b`."""
+    dq, dr = a[0] - b[0], a[1] - b[1]
+    return max(abs(dq), abs(dr), abs(dq + dr))
+
+
+def hex_disc(radius: int) -> list[Cell]:
+    """Cells within `radius` steps of (0, 0), row by row: a hexagon of 3 r (r + 1) + 1 cells."""
+    span = range(-radius, radius + 1)
+    return [(q, r) for r in span for q in span if hex_distance((q, r), (0, 0)) <= radius]
+
+
 def to_pixel(cell: Cell, size: float, origin: tuple[float, float]) -> tuple[float, float]:
     """Pixel centre of `cell`.
 

@@ -7,6 +7,9 @@ You don't steer the agents. You wire their sensors to their thrusters, press run
 A small Zachtronics-style puzzle game about collective behaviour, built by a father and his son.
 Design brief: [`docs/brief.md`](docs/brief.md). Decisions: [`docs/decisions.md`](docs/decisions.md).
 
+**New to the code?** [`docs/walkthrough.md`](docs/walkthrough.md) is a guided tour of `graph/` and
+`editor/`, written for Camille: what runs when, the invariants, and what is still untested.
+
 ## Getting started
 
 ```bash
@@ -43,3 +46,8 @@ Personal configuration (not committed), one per contributor:
 - `CLAUDE.local.md` at the repo root, one or two lines saying who you are, for example
   `I am the CS student. Explain, then let me write the code in graph/ and editor/.`
 - Your output style, chosen in `/config` (for learning, try *Learning* or *Explanatory*).
+
+## Credits
+
+Icons: [Font Awesome Free](https://fontawesome.com) 6.7.2 Solid by Fonticons, Inc., under the
+SIL Open Font License 1.1, bundled unmodified with its licence in `game/nektoids/assets/fontawesome/`.

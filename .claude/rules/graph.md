@@ -5,7 +5,9 @@ paths:
 # Node graph rules
 
 - The graph is the player's artifact: discrete and structural only.
-- Jam vocabulary: Sensor (source), Wire, Double (×2), Halve (÷2), Thruster (sink).
+- Jam vocabulary: Eye and Source (sensors: emit only), Wire, Double (×2), Halve (÷2),
+  Sum (a + b) and Difference (|a − b|), each with two inputs and one output, Thruster (sink).
+  Rates are never negative (D-014).
   No Threshold node. No slider, no numeric field the player can type into.
 - Magnitude travels as bead *rate*. Thrusters integrate incoming rate over a tick.
   Keep the numeric rate (the model) separate from the drawn beads (the editor's view of it).

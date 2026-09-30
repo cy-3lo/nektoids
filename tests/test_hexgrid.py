@@ -8,10 +8,13 @@ from nektoids.graph.hexgrid import (
     axis,
     direction_to,
     from_pixel,
+    hex_disc,
+    hex_distance,
     neighbour,
     offset_rect,
     opposite,
     to_pixel,
+    vertical_step,
 )
 
 SIZE = 30.0  # [px]
@@ -80,3 +83,25 @@ def test_points_near_the_boundary_pick_the_right_hex(cell):
         assert from_pixel(*just_inside_corner, SIZE, ORIGIN) == cell
         assert from_pixel(*just_inside_edge, SIZE, ORIGIN) == cell
         assert from_pixel(*just_outside_edge, SIZE, ORIGIN) == neighbour(cell, d)
+
+
+def test_hex_disc_is_a_hexagon_of_cells_within_reach():
+    disc = hex_disc(2)
+    assert len(disc) == 19 and len(set(disc)) == 19
+    assert all(hex_distance(cell, (0, 0)) <= 2 for cell in disc)
+    assert [r for _, r in disc] == sorted(r for _, r in disc)  # row by row
+    assert all(hex_distance((0, 0), neighbour((0, 0), d)) == 1 for d in range(6))
+    assert hex_distance((-1, -1), (2, -1)) == 3 == hex_distance((2, -1), (-1, -1))
+
+
+def test_vertical_steps_zigzag_to_stay_in_one_column():
+    cell = (1, 2)
+    for rows in (-1, 1):
+        step = vertical_step(cell, rows)
+        direction_to(cell, step)  # a neighbour: raises otherwise
+    two_up = vertical_step(vertical_step(cell, -1), -1)
+    x0, _ = to_pixel(cell, SIZE, ORIGIN)
+    x1, _ = to_pixel(vertical_step(cell, -1), SIZE, ORIGIN)
+    x2, _ = to_pixel(two_up, SIZE, ORIGIN)
+    assert abs(x1 - x0) == pytest.approx(0.5 * SQRT3 * SIZE)  # half a cell sideways
+    assert x2 == pytest.approx(x0)  # and back: a straight column

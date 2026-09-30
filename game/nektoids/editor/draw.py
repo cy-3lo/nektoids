@@ -1,8 +1,12 @@
 """Drawing the editor. Reads the scene and the board; never changes them.
 
+Everything is grey: colour is reserved for telling signals apart, later. Red only marks a
+refusal; what the Delete tool would remove on a click turns a darker grey.
+
 Shapes carry the category: sensors are half-discs looking out of their round side,
 converters are diamonds, thrusters are squares with a nose pointing the way they push.
-Oriented shapes are drawn in the agent's frame, forward = E (D-008).
+Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
+them in place (D-009). An icon inside each shape says its role (D-012).
 """
 
 from __future__ import annotations
@@ -12,7 +16,9 @@ from dataclasses import dataclass
 
 import pygame
 
-from nektoids.editor.layout import Layout, Tool
+from nektoids.editor.geometry import wire_arrows, wire_points
+from nektoids.editor.icons import KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
+from nektoids.editor.layout import TOOL_KEYS, VIEW_KEYS, Tool, View, ViewButton, visible_cells
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -20,48 +26,69 @@ from nektoids.graph.hexgrid import Cell, to_pixel
 BACKGROUND = (18, 20, 28)
 PANEL = (26, 29, 40)
 GRID_LINE = (60, 64, 78)
-HOVER = (40, 46, 62)
+ZONE = (26, 29, 40)  # cells of the level's zone
+OUTSIDE = (11, 12, 17)  # cells outside it
+OUTSIDE_LINE = (28, 30, 38)
+HOVER = (44, 50, 68)
 FLASH = (150, 50, 55)
 BUTTON = (40, 44, 58)
-ACTIVE = (70, 90, 150)
+ACTIVE = (78, 84, 100)  # selected tool or menu row
+RULE = (52, 56, 70)  # separators between columns and between sets of buttons
+SWATCH_OFF = (44, 47, 58)  # colour picker, not active yet
+TOOLTIP_BG = (34, 37, 50)
 TEXT = (220, 222, 230)
 DIM_TEXT = (130, 134, 150)
 REFUSED = (240, 110, 110)
+DOOMED = (86, 90, 104)  # darker grey: what a Delete click would remove
 DARK = (18, 20, 28)
-WIRE = (200, 205, 220)
-GHOST = (110, 115, 135)
+WIRE = (150, 154, 166)
+GHOST = (96, 101, 118)  # where a wire would run
+GHOST_OK = (228, 231, 240)  # ... and it may connect there
 LOCK_RING = (170, 175, 190)
-FILL = {
-    Category.SENSOR: (240, 200, 90),
-    Category.CONVERTER: (120, 200, 240),
-    Category.ACTUATOR: (230, 120, 90),
-}
+COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
 
-LABEL = {
-    Kind.SENSOR_L: "L",
-    Kind.SENSOR_R: "R",
-    Kind.DOUBLE: "×2",
-    Kind.HALVE: "÷2",
-    Kind.THRUSTER_L: "L",
-    Kind.THRUSTER_R: "R",
-}
 NAME = {
-    Kind.SENSOR_L: "Left eye",
-    Kind.SENSOR_R: "Right eye",
+    Kind.EYE: "Eye",
+    Kind.SOURCE: "Source",
     Kind.DOUBLE: "Double",
     Kind.HALVE: "Halve",
-    Kind.THRUSTER_L: "Left thruster",
-    Kind.THRUSTER_R: "Right thruster",
+    Kind.SUM: "Sum",
+    Kind.DIFFERENCE: "Difference",
+    Kind.THRUSTER: "Thruster",
+}
+TIP = {
+    Tool.ADD: "Add a component",
+    Tool.WIRE: "Wire",
+    Tool.ROTATE: "Rotate",
+    Tool.MOVE: "Move a component",
+    Tool.DELETE: "Delete",
+    ViewButton.ZOOM_IN: "Zoom in",
+    ViewButton.ZOOM_OUT: "Zoom out",
+    ViewButton.PAN: "Move the view",
+    ViewButton.CENTRE: "Centre the view",
+    "colours": "Colours: not yet",
 }
 HINT = {
-    Tool.ADD: "Drag a component from the palette onto the grid.",
-    Tool.WIRE: "Click a source, then a target. Right click cancels.",
-    Tool.DELETE: "Click a component, or a wire where it crosses a cell.",
+    Tool.ADD: "Drag a component from the menu onto the grid (or its number, arrows, Enter).",
+    Tool.WIRE: "Drag from a source to a target, or click one then the other.",
+    Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
+    Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
+    Tool.DELETE: "Click a component to delete it, or a wire.",
+    Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
 }
 
+# How parts sit in the menu: eyes and sources flat side up, thrusters pointing up
+# [degrees, counter-clockwise from E]. On the grid they point along their facing.
+MENU_ANGLE = {Kind.EYE: 270.0, Kind.SOURCE: 270.0, Kind.THRUSTER: 90.0}
+# A source has no direction: on the grid too it sits flat side up.
+STILL_ANGLE = {Kind.SOURCE: 270.0}
+
+# Icon height as a fraction of the hex size.
+ICON_SCALE = {Kind.EYE: 0.55}
+
 # Shapes in a local frame: unit = hex size, forward = +x.
-_R = 0.62  # half-disc radius
+_R = 0.68  # half-disc radius
 _BACK = 4.0 / (3.0 * math.pi) * _R  # flat side behind the centre, so the centroid is centred
 HALF_DISC = (
     [(-_BACK, -_R)]
@@ -77,61 +104,78 @@ DIAMOND = [(0.0, -0.6), (0.6, 0.0), (0.0, 0.6), (-0.6, 0.0)]
 
 @dataclass(frozen=True)
 class Fonts:
-    label: pygame.font.Font
     text: pygame.font.Font
+    icons: Icons
 
     @classmethod
     def load(cls) -> Fonts:
         """Call once at startup, after pygame.init() (web.md: every asset at startup)."""
-        return cls(label=pygame.font.Font(None, 24), text=pygame.font.Font(None, 22))
+        return cls(text=pygame.font.Font(None, 22), icons=Icons())
 
 
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
+    _draw_menu(screen, scene, fonts)
     _draw_palette(screen, scene, fonts)
-    _draw_toolbar(screen, scene)
     _draw_board(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
+    _draw_separators(screen, scene)
+    _draw_tooltip(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
-        size = scene.layout.hex_size
-        _draw_node(screen, fonts, scene.picked, scene.mouse, size, locked=False)
+        size = scene.view.size
+        angle = _placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
+        _draw_node(screen, fonts, scene.picked, angle, scene.mouse, size, locked=False)
 
 
 # Board
 
 
 def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    layout, board = scene.layout, scene.board
-    for cell in board.cells:
+    view, board = scene.view, scene.board
+    zone = set(board.cells)
+    screen.set_clip(scene.layout.board_area)
+    for cell in visible_cells(scene.layout, view):
+        hexagon = _hexagon(view, cell)
         if scene.flash_frames > 0 and cell == scene.flash_cell:
-            pygame.draw.polygon(screen, FLASH, _hexagon(layout, cell))
-        elif cell == scene.hover:
-            pygame.draw.polygon(screen, HOVER, _hexagon(layout, cell))
-        pygame.draw.polygon(screen, GRID_LINE, _hexagon(layout, cell), 1)
+            pygame.draw.polygon(screen, FLASH, hexagon)
+        elif cell not in zone:
+            pygame.draw.polygon(screen, OUTSIDE, hexagon)
+        else:
+            pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
+        pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
 
     if isinstance(scene.ghost, tuple):
-        _draw_wire(screen, layout, scene.ghost, GHOST, 2)
+        colour, width = (GHOST_OK, 3) if scene.ghost_connects else (GHOST, 2)
+        _draw_wire(screen, view, scene.ghost, colour, width)
+    doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
     for wire in board.wires:
-        _draw_wire(screen, layout, wire.path, WIRE, 3)
+        _draw_wire(screen, view, wire.path, DOOMED if wire in doomed_wires else WIRE, 3)
 
     for node in board.nodes.values():
-        centre = _centre(layout, node.cell)
-        _draw_node(screen, fonts, node.kind, centre, layout.hex_size, node.locked)
-        if node.id == scene.source:
-            pygame.draw.circle(screen, TEXT, centre, 0.8 * layout.hex_size, 2)
+        centre = _centre(view, node.cell)
+        angle = _placed_angle(node.kind, node.facing)
+        fill = DOOMED if node.id == doomed_node else None
+        _draw_node(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
+        if node.id == scene.source or node.id == scene._wire_start():
+            pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
+    if scene.cursor is not None:
+        pygame.draw.polygon(screen, TEXT, _hexagon(view, scene.cursor), 3)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
-        pygame.draw.polygon(screen, REFUSED, _hexagon(layout, scene.hover), 2)
+        pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
+    screen.set_clip(None)
 
 
-def _draw_wire(screen, layout: Layout, path: tuple[Cell, ...], colour, width: int) -> None:
-    points = [_centre(layout, cell) for cell in path]
+def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, width: int) -> None:
+    points = wire_points(path, view.size, view.origin)  # arcs where it turns
     pygame.draw.lines(screen, colour, False, points, width)
+    for at, angle in wire_arrows(path, view.size, view.origin):
+        _draw_arrow(screen, at, angle, 0.14 * view.size, colour)
     # Chevron just outside the target's shape, pointing into it.
     (x0, y0), (x1, y1) = points[-2], points[-1]
     angle = math.atan2(y1 - y0, x1 - x0)
-    back = 0.68 * layout.hex_size
+    back = 0.68 * view.size
     tip = (x1 - back * math.cos(angle), y1 - back * math.sin(angle))
-    wing = 0.22 * layout.hex_size
+    wing = 0.22 * view.size
     wings = [
         (tip[0] - wing * math.cos(angle + s), tip[1] - wing * math.sin(angle + s))
         for s in (0.55, -0.55)
@@ -139,24 +183,50 @@ def _draw_wire(screen, layout: Layout, path: tuple[Cell, ...], colour, width: in
     pygame.draw.polygon(screen, colour, [tip, *wings])
 
 
-def _draw_node(screen, fonts: Fonts, kind: Kind, centre, size: float, locked: bool, fill=None):
-    fill = fill or FILL[kind.category]
-    outline = _shape(kind, centre, size)
+def _draw_arrow(screen, at, angle: float, half: float, colour) -> None:
+    """Small filled arrowhead centred on `at`, pointing along `angle` [rad, screen]."""
+    c, s = math.cos(angle), math.sin(angle)
+    tip = (at[0] + half * c, at[1] + half * s)
+    left = (at[0] - half * c - half * s, at[1] - half * s + half * c)
+    right = (at[0] - half * c + half * s, at[1] - half * s - half * c)
+    pygame.draw.polygon(screen, colour, [tip, left, right])
+
+
+def _draw_node(
+    screen,
+    fonts: Fonts,
+    kind: Kind,
+    angle: float | None,
+    centre,
+    size: float,
+    locked: bool,
+    fill=None,
+):
+    fill = fill or COMPONENT
+    outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if locked:
-        pygame.draw.polygon(screen, LOCK_RING, _shape(kind, centre, 1.25 * size), 2)
-    text = fonts.label.render(LABEL[kind], True, DARK)
-    screen.blit(text, text.get_rect(center=(round(centre[0]), round(centre[1]))))
+        pygame.draw.polygon(screen, LOCK_RING, _shape(kind, angle, centre, 1.25 * size), 2)
+    icon_size = max(10, round(ICON_SCALE.get(kind, 0.5) * size))
+    if kind in KIND_ICON:
+        fonts.icons.draw(screen, KIND_ICON[kind], centre, icon_size, DARK, angle)
 
 
-def _shape(kind: Kind, centre, size: float) -> list[tuple[float, float]]:
-    """Polygon for `kind`, turned to face its direction (direction d is at -60° * d, y down)."""
+def _placed_angle(kind: Kind, facing: int | None) -> float | None:
+    """Screen angle a part is drawn at on the grid [degrees, counter-clockwise from E]."""
+    if facing is not None:
+        return 60.0 * facing  # direction d lies at 60° * d
+    return STILL_ANGLE.get(kind)
+
+
+def _shape(kind: Kind, angle: float | None, centre, size: float) -> list[tuple[float, float]]:
+    """Polygon for `kind`, turned to point at `angle` [degrees, counter-clockwise on screen]."""
     template = {
         Category.SENSOR: HALF_DISC,
         Category.CONVERTER: DIAMOND,
         Category.ACTUATOR: NOSE,
     }[kind.category]
-    phi = math.radians(-60.0 * (kind.facing or 0))
+    phi = math.radians(-(angle or 0.0))  # y points down
     c, s = math.cos(phi), math.sin(phi)
     return [
         (centre[0] + size * (u * c - v * s), centre[1] + size * (u * s + v * c))
@@ -164,72 +234,91 @@ def _shape(kind: Kind, centre, size: float) -> list[tuple[float, float]]:
     ]
 
 
-def _hexagon(layout: Layout, cell: Cell) -> list[tuple[float, float]]:
-    x, y = _centre(layout, cell)
-    r = layout.hex_size
+def _hexagon(view: View, cell: Cell) -> list[tuple[float, float]]:
+    x, y = _centre(view, cell)
+    r = view.size
     return [
         (x + r * math.cos(math.radians(30 + 60 * k)), y + r * math.sin(math.radians(30 + 60 * k)))
         for k in range(6)
     ]
 
 
-def _centre(layout: Layout, cell: Cell) -> tuple[float, float]:
-    return to_pixel(cell, layout.hex_size, layout.origin)
+def _centre(view: View, cell: Cell) -> tuple[float, float]:
+    return to_pixel(cell, view.size, view.origin)
 
 
-# Palette, toolbar, status
+# Menu, palette, status
 
 
-def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+def _draw_menu(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     layout, board = scene.layout, scene.board
-    pygame.draw.rect(screen, PANEL, (0, 0, layout.board_area[0], screen.get_height()))
-    for title, at in layout.group_titles:
-        screen.blit(fonts.text.render(title.upper(), True, DIM_TEXT), at)
-    for kind, rect in layout.palette_items:
+    pygame.draw.rect(screen, PANEL, layout.menu_area)
+    for title, (x, y, _, h) in layout.group_titles:
+        caret = "caret-right" if title in scene.folded else "caret-down"
+        fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, DIM_TEXT)
+        text = fonts.text.render(title.upper(), True, DIM_TEXT)
+        screen.blit(text, (x + 16, y + (h - text.get_height()) // 2))
+    for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         empty = left == 0
         pygame.draw.rect(screen, ACTIVE if kind == scene.picked else BUTTON, rect, border_radius=6)
         x, y, w, h = rect
         icon = (x + 22, y + h / 2)
-        _draw_node(screen, fonts, kind, icon, 26, locked=False, fill=GREYED if empty else None)
+        fill = GREYED if empty else None
+        angle = MENU_ANGLE.get(kind)
+        _draw_node(screen, fonts, kind, angle, icon, 26, locked=False, fill=fill)
         name = fonts.text.render(NAME[kind], True, DIM_TEXT if empty else TEXT)
         screen.blit(name, (x + 46, y + (h - name.get_height()) // 2))
+        right = x + w - 12  # right edge of the count
         if left is None:
-            _draw_infinity(screen, (x + w - 18, y + h // 2), TEXT)
+            fonts.icons.draw(screen, "infinity", (right - 8, y + h // 2), 14, TEXT)
         else:
-            count = fonts.text.render(str(left), True, DIM_TEXT if empty else TEXT)
-            screen.blit(count, (x + w - 12 - count.get_width(), y + (h - count.get_height()) // 2))
+            colour = DIM_TEXT if empty else TEXT
+            count = fonts.text.render(f"{left}/{board.total(kind)}", True, colour)
+            screen.blit(count, (right - count.get_width(), y + (h - count.get_height()) // 2))
 
 
-def _draw_infinity(screen, centre, colour) -> None:
-    # The default font has no ∞ glyph (D-008: icon font is post-jam).
-    x, y = centre
-    pygame.draw.circle(screen, colour, (x - 4, y), 4, 2)
-    pygame.draw.circle(screen, colour, (x + 4, y), 4, 2)
+def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    layout = scene.layout
+    pygame.draw.rect(screen, PANEL, layout.palette_area)
+    for button, rect in layout.view_buttons:
+        active = button is ViewButton.PAN and scene.tool is Tool.PAN
+        _draw_button(screen, fonts, rect, VIEW_ICON[button], active)
+    for tool, rect in layout.tool_buttons:
+        _draw_button(screen, fonts, rect, TOOL_ICON[tool], tool is scene.tool)
+    px, _, pw, _ = layout.palette_area
+    for y in layout.palette_rules:
+        pygame.draw.line(screen, RULE, (px + 20, y), (px + pw - 20, y), 1)
+    # The colour picker keeps its place, inactive until colours carry a meaning.
+    for rect in layout.swatches:
+        pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
 
 
-def _draw_toolbar(screen: pygame.Surface, scene: EditorScene) -> None:
-    for tool, rect in scene.layout.tool_buttons:
-        pygame.draw.rect(screen, ACTIVE if tool is scene.tool else BUTTON, rect, border_radius=6)
-        x, y, w, h = rect
-        cx, cy = x + w // 2, y + h // 2
-        if tool is Tool.ADD:
-            pygame.draw.line(screen, TEXT, (cx - 10, cy), (cx + 10, cy), 3)
-            pygame.draw.line(screen, TEXT, (cx, cy - 10), (cx, cy + 10), 3)
-        elif tool is Tool.WIRE:
-            points = [(cx - 12, cy + 6), (cx - 4, cy + 6), (cx + 4, cy - 6), (cx + 12, cy - 6)]
-            pygame.draw.lines(screen, TEXT, False, points, 3)
-            pygame.draw.circle(screen, TEXT, points[0], 3)
-            pygame.draw.circle(screen, TEXT, points[-1], 3)
-        else:
-            pygame.draw.polygon(
-                screen,
-                TEXT,
-                [(cx - 8, cy - 6), (cx + 8, cy - 6), (cx + 6, cy + 11), (cx - 6, cy + 11)],
-                2,
-            )
-            pygame.draw.line(screen, TEXT, (cx - 11, cy - 9), (cx + 11, cy - 9), 3)
-            pygame.draw.line(screen, TEXT, (cx - 3, cy - 12), (cx + 3, cy - 12), 3)
+def _draw_button(screen, fonts: Fonts, rect, icon: str, active: bool) -> None:
+    pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
+    x, y, w, h = rect
+    fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, TEXT)
+
+
+def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Name and shortcut of the palette button under the mouse, to its left."""
+    target = scene.tooltip
+    if target is None:
+        return
+    layout = scene.layout
+    rects = dict(layout.tool_buttons) | dict(layout.view_buttons)
+    x, y, _, h = rects[target] if target in rects else layout.swatches[0]
+    key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target)
+    text = fonts.text.render(TIP[target] + (f" ({key})" if key else ""), True, TEXT)
+    box = text.get_rect(midright=(x - 10, y + h // 2)).inflate(16, 10)
+    pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=5)
+    pygame.draw.rect(screen, RULE, box, 1, border_radius=5)
+    screen.blit(text, text.get_rect(center=box.center))
+
+
+def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
+    for x in (scene.layout.menu_area[2], scene.layout.palette_area[0]):
+        pygame.draw.line(screen, RULE, (x, 0), (x, screen.get_height()), 2)
 
 
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

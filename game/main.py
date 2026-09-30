@@ -26,7 +26,7 @@ pygame.display.set_caption("Nektoids")
 clock = pygame.time.Clock()
 fonts = Fonts.load()
 board = free_board()  # tutorial_board() for pre-placed, locked eyes and thrusters
-scene = EditorScene(board, make_layout(board.cols, board.rows))
+scene = EditorScene(board, make_layout())
 
 
 async def main() -> None:

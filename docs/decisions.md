@@ -51,3 +51,54 @@ For the jam it is fixed per kind (left eye NE, right eye SE, thrusters E) and th
 tool, because choosing it is sensor layout editing, which the scope lock excludes.
 Post-jam: a rotate tool in 60° steps, and one bundled icon font (open licence, small, loaded at
 startup, checked under pygbag) to mark sensor and actuator types (light, flow, ...) inside the shapes.
+
+**D-009 — 2026-09-30 — Supersedes D-008's rotation clause: the player turns eyes and thrusters.**
+Where an eye looks and which way a thruster pushes are part of the mechanism the player authors.
+A Rotate tool in the toolbar turns a placed eye or thruster by 60° (click: clockwise, shift-click:
+back). New parts take their kind's default direction. Converters have no direction; locked parts
+placed by a level keep theirs. The scope lock in `CLAUDE.md` now has sensor directions in and
+moving sensors on the body out.
+The sim reads each eye's and thruster's direction from the board, never from a constant.
+
+**D-010 — 2026-09-30 — Supersedes D-007's crossing rule: wires share a cell unless they share an edge.**
+A wire crosses a free cell through two of its six edges. Any number of wires may cross or turn in
+the same cell provided no edge is used twice, so a cell holds at most three. Turns are drawn as
+circular arcs tangent to the wire at the edge midpoints: radius s/2 about the shared corner for a
+sharp 120° turn, 1.5 s for a gentle 60° one (s the hex size). Routing order is unchanged: shortest,
+then fewest bends, then direction order.
+Denser layouts than straight-only crossings. Wires still meet only at components, so a crossing
+never reads as a junction.
+
+**D-011 — 2026-09-30 — Amends D-007: moving a component routes its own wires again.**
+The Move tool drags a placed component cell by cell. At each step its wires are routed again, in
+the order they were drawn; other wires never move. A cell another wire crosses, a taken cell, or
+one from which its wires find no path is refused, and the component waits at the last cell that
+worked. Locked parts don't move.
+Rearranging a layout no longer means deleting and rewiring; routes still never change by themselves.
+
+**D-012 — 2026-09-30 — Supersedes D-008's icon-font clause: Font Awesome Free 6.7.2 Solid, in the jam.**
+One icon font, bundled unmodified with its licence (SIL OFL 1.1, 416 KB) in
+`game/nektoids/assets/fontawesome/` and opened once at startup. Eye for sensors, double chevrons
+up and down for ×2 and ÷2, rocket for thrusters. The eye and the rocket turn with their part: the
+rocket points where the thruster pushes, the eye lies along the half-disc's flat side and looks
+out of the round one; the chevrons stay upright. The toolbar, the fold marks and ∞ use the
+same font. Chosen over Material Icons, Phosphor, Tabler, Lucide and Bootstrap for legibility at
+20 px (solid glyphs, no thin strokes); Remix Icon is out, its 2026 licence is not open.
+Not subset: under OFL a subset is a modified font and could not keep the reserved name. Rendering
+under pygbag is still to be checked.
+
+**D-013 — 2026-09-30 — Supersedes the "no zoom" editor rule: zoom and pan move the view, never the zone.**
+Zoom in and out (hex size 20 to 80 px, ×1.25 per click, about the centre of the grid) and a pan
+tool sit in the palette, apart from the Move tool that moves components. They change only how the
+grid is seen: each level's zone stays small and fixed, so spatial scarcity (brief §1) still holds.
+`.claude/rules/web.md` is updated to match.
+A player can scroll the zone out of sight; the board, routing and scoring never depend on the view.
+
+**D-014 — 2026-09-30 — Extends the scope lock's node vocabulary: Source, Sum and Difference.**
+Source: a sensor that senses nothing and emits a signal of its own; it has no direction. Sum (+)
+and Difference (−): at most two inputs and one output; with a single input they pass it through.
+Difference is |a − b|, so the order of its inputs does not matter. Signals (bead rates) are never
+negative. Supersedes "nodes are wires, ×2 and ÷2 only" in the scope lock of `CLAUDE.md` and the
+jam vocabulary in `.claude/rules/graph.md`. Still no threshold node and no continuous parameter.
+What a source emits, and how every node turns input rates into output rates, is for the graph
+evaluation work; the editor only enforces the input and output counts.

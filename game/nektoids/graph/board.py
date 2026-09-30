@@ -1,9 +1,9 @@
 """The player's artifact: components placed on the hex board and the wires between them.
 
 A component fills one cell. A wire is directed, from a component that emits to one that
-receives, and runs centre to centre through free cells. Each free cell holds either nothing,
-one wire that bends there, or up to three straight wires on distinct axes (D-007). Wires are
-routed once, when drawn, and never move afterwards.
+receives, and runs through free cells, entering and leaving each through one of its six edges.
+Wires may cross or turn in the same cell as long as no edge is used twice (D-010), so a cell
+holds at most three. Wires are routed once, when drawn, and never move afterwards.
 
 Every operation that the player can trigger returns `Refused(reason)` instead of raising, so
 the editor can show the reason on screen. Pure Python, no pygame.
@@ -13,19 +13,15 @@ from __future__ import annotations
 
 import heapq
 import itertools
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, replace
 from enum import Enum
 
 from nektoids.graph.hexgrid import (
-    NE,
-    SE,
     Cell,
     E,
-    axis,
     direction_to,
     neighbour,
-    offset_rect,
     opposite,
 )
 
@@ -37,12 +33,13 @@ class Category(Enum):
 
 
 class Kind(Enum):
-    SENSOR_L = "sensor_l"
-    SENSOR_R = "sensor_r"
+    EYE = "eye"
+    SOURCE = "source"  # produces a signal of its own; senses nothing
     DOUBLE = "double"
     HALVE = "halve"
-    THRUSTER_L = "thruster_l"
-    THRUSTER_R = "thruster_r"
+    SUM = "sum"
+    DIFFERENCE = "difference"
+    THRUSTER = "thruster"
 
     @property
     def category(self) -> Category:
@@ -57,23 +54,36 @@ class Kind(Enum):
         return self.category is not Category.SENSOR
 
     @property
-    def facing(self) -> int | None:
-        """Hex direction it points to on the body, forward being E; None for converters.
+    def default_facing(self) -> int | None:
+        """Hex direction on the body until the player turns it (forward = E); None for converters.
 
-        Where an eye looks, or which way a thruster pushes. Fixed per kind for the jam (D-008).
+        Where an eye looks, or which way a thruster pushes (D-009).
         """
-        return _FACING.get(self)
+        return _DEFAULT_FACING.get(self)
+
+    @property
+    def max_inputs(self) -> int | None:
+        """How many wires may come in; None means no limit (D-014)."""
+        return _MAX_INPUTS.get(self)
+
+    @property
+    def max_outputs(self) -> int | None:
+        """How many wires may go out; None means no limit (D-014)."""
+        return _MAX_OUTPUTS.get(self)
 
 
 _CATEGORY = {
-    Kind.SENSOR_L: Category.SENSOR,
-    Kind.SENSOR_R: Category.SENSOR,
+    Kind.EYE: Category.SENSOR,
+    Kind.SOURCE: Category.SENSOR,
     Kind.DOUBLE: Category.CONVERTER,
     Kind.HALVE: Category.CONVERTER,
-    Kind.THRUSTER_L: Category.ACTUATOR,
-    Kind.THRUSTER_R: Category.ACTUATOR,
+    Kind.SUM: Category.CONVERTER,
+    Kind.DIFFERENCE: Category.CONVERTER,
+    Kind.THRUSTER: Category.ACTUATOR,
 }
-_FACING = {Kind.SENSOR_L: NE, Kind.SENSOR_R: SE, Kind.THRUSTER_L: E, Kind.THRUSTER_R: E}
+_DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward; the others have no direction
+_MAX_INPUTS = {Kind.SUM: 2, Kind.DIFFERENCE: 2}
+_MAX_OUTPUTS = {Kind.SUM: 1, Kind.DIFFERENCE: 1}
 
 
 @dataclass(frozen=True)
@@ -82,6 +92,7 @@ class Node:
     kind: Kind
     cell: Cell
     locked: bool = False  # pre-placed by the level: cannot be removed
+    facing: int | None = None  # hex direction on the body (eyes, thrusters); None for the rest
 
 
 @dataclass(frozen=True)
@@ -96,33 +107,43 @@ class Refused:
     reason: str  # short, shown to the player
 
 
-def can_pass(axes_used: set[int], has_bend: bool, into: int, out: int) -> bool:
+def crossings(path: tuple[Cell, ...]) -> list[tuple[Cell, int, int]]:
+    """For each free cell a wire crosses: (cell, edge it comes in by, edge it leaves by).
+
+    An edge is named by the direction from the cell's centre through it, so a wire heading E
+    comes in by the W edge.
+    """
+    return [
+        (cell, direction_to(cell, before), direction_to(cell, after))
+        for before, cell, after in zip(path, path[1:], path[2:], strict=False)
+    ]
+
+
+def can_pass(edges_used: set[int], into: int, out: int) -> bool:
     """Whether a new wire may cross a free cell, entering heading `into` and leaving heading `out`.
 
-    axes_used: axes of the straight wires already in the cell. has_bend: a wire bends there.
+    edges_used: edges of the cell already taken by other wires. The new wire needs the edge it
+    comes in by and the one it leaves by; a U-turn would need the same edge twice.
     """
-    if has_bend:
-        return False
-    if out == into:
-        return axis(into) not in axes_used
-    return out != opposite(into) and not axes_used
+    entry = opposite(into)
+    return out != entry and entry not in edges_used and out not in edges_used
 
 
 class Board:
-    """Nodes and wires on a cols x rows board.
+    """Nodes and wires on the level's zone: the cells that can hold a component or a wire.
 
     stock: how many of each kind the player may still place; None means unlimited, and a kind
     left out means none. Without a stock, everything is unlimited. Locked nodes are placed by
     the level and do not use stock.
     """
 
-    def __init__(self, cols: int, rows: int, stock: Mapping[Kind, int | None] | None = None):
-        self.cols, self.rows = cols, rows
-        self.cells: list[Cell] = offset_rect(cols, rows)
+    def __init__(self, cells: Iterable[Cell], stock: Mapping[Kind, int | None] | None = None):
+        self.cells: list[Cell] = sorted(set(cells), key=lambda c: (c[1], c[0]))  # row by row
         self._on_board = set(self.cells)
         self._stock: dict[Kind, int | None] = (
             {kind: None for kind in Kind} if stock is None else dict(stock)
         )
+        self._total = dict(self._stock)  # what the level handed out, for 'left/total'
         self.nodes: dict[int, Node] = {}  # by id; ids increase and are never reused
         self.wires: list[Wire] = []  # in the order they were drawn
         self._next_id = 0
@@ -133,6 +154,10 @@ class Board:
         """How many more of `kind` the player may place; None means unlimited."""
         return self._stock.get(kind, 0)
 
+    def total(self, kind: Kind) -> int | None:
+        """How many of `kind` the level hands out in all; None means unlimited."""
+        return self._total.get(kind, 0)
+
     def node_at(self, cell: Cell) -> Node | None:
         return next((node for node in self.nodes.values() if node.cell == cell), None)
 
@@ -142,9 +167,16 @@ class Board:
 
     # Components
 
-    def place(self, kind: Kind, cell: Cell, locked: bool = False) -> Node | Refused:
+    def place(
+        self, kind: Kind, cell: Cell, locked: bool = False, facing: int | None = None
+    ) -> Node | Refused:
+        """Put a component on an empty cell.
+
+        Eyes and thrusters point along `facing`, or their kind's default if it is None;
+        converters have no direction.
+        """
         if cell not in self._on_board:
-            return Refused("off the board")
+            return Refused("outside the zone")
         if self.node_at(cell) is not None:
             return Refused("cell taken")
         if self.wires_in(cell):
@@ -154,7 +186,11 @@ class Board:
             if left == 0:
                 return Refused("none left")
             self._stock[kind] = left - 1
-        node = Node(self._next_id, kind, cell, locked)
+        if kind.default_facing is None:
+            facing = None
+        elif facing is None:
+            facing = kind.default_facing
+        node = Node(self._next_id, kind, cell, locked=locked, facing=facing)
         self.nodes[node.id] = node
         self._next_id += 1
         return node
@@ -171,6 +207,51 @@ class Board:
             self._stock[node.kind] = left + 1
         return None
 
+    def move_node(self, node_id: int, cell: Cell) -> Node | Refused:
+        """Move a component to another cell, routing its wires again (D-011).
+
+        Its wires are routed in the order they were drawn; other wires stay put. If one of them
+        finds no free path from there, nothing changes.
+        """
+        node = self.nodes[node_id]
+        if node.locked:
+            return Refused("placed by the level")
+        if cell == node.cell:
+            return node
+        if cell not in self._on_board:
+            return Refused("outside the zone")
+        if self.node_at(cell) is not None:
+            return Refused("cell taken")
+        saved = list(self.wires)
+        attached = [i for i, wire in enumerate(saved) if node_id in (wire.source, wire.target)]
+        self.wires = [wire for i, wire in enumerate(saved) if i not in attached]
+        if self.wires_in(cell):
+            self.wires = saved
+            return Refused("a wire runs here")
+        self.nodes[node_id] = replace(node, cell=cell)
+        rerouted: dict[int, Wire] = {}
+        for i in attached:
+            old = saved[i]
+            path = self.route(self.nodes[old.source].cell, self.nodes[old.target].cell)
+            if path is None:
+                self.nodes[node_id], self.wires = node, saved
+                return Refused("its wires would find no free path")
+            rerouted[i] = Wire(old.source, old.target, path)
+            self.wires.append(rerouted[i])  # so the next ones route around it
+        self.wires = [rerouted.get(i, wire) for i, wire in enumerate(saved)]
+        return self.nodes[node_id]
+
+    def rotate(self, node_id: int, steps: int) -> Node | Refused:
+        """Turn an eye or a thruster by `steps` x 60°: counter-clockwise on screen if positive."""
+        node = self.nodes[node_id]
+        if node.facing is None:
+            return Refused(f"{node.kind.value}s have no direction")
+        if node.locked:
+            return Refused("placed by the level")
+        turned = replace(node, facing=(node.facing + steps) % 6)
+        self.nodes[node_id] = turned
+        return turned
+
     # Wires
 
     def preview(self, source_id: int, target_id: int) -> tuple[Cell, ...] | Refused:
@@ -186,6 +267,12 @@ class Board:
             return Refused("already wired")
         if self._reaches(target_id, source_id):
             return Refused("would close a loop")
+        outputs = sum(wire.source == source_id for wire in self.wires)
+        if source.kind.max_outputs is not None and outputs >= source.kind.max_outputs:
+            return Refused(f"a {source.kind.value} has {_count(source.kind.max_outputs)} output")
+        inputs = sum(wire.target == target_id for wire in self.wires)
+        if target.kind.max_inputs is not None and inputs >= target.kind.max_inputs:
+            return Refused(f"a {target.kind.value} takes {_count(target.kind.max_inputs)} inputs")
         path = self.route(source.cell, target.cell)
         return Refused("no free path") if path is None else path
 
@@ -207,7 +294,7 @@ class Board:
         Equal costs go to the path pushed first, with neighbours tried in direction order, so the
         result never depends on set or dict order.
         """
-        axes_used, bends = self._occupancy()
+        edges_used = self._edges_used()
         blocked = {node.cell for node in self.nodes.values()}
         counter = itertools.count()
         # (steps, bends, tie-break, cell, heading into cell, path so far); heading -1 at the start
@@ -216,8 +303,7 @@ class Board:
         while heap:
             steps, turns, _, cell, heading, path = heapq.heappop(heap)
             if cell == goal:
-                crossed = path[1:-1]
-                return path if len(set(crossed)) == len(crossed) else None
+                return path if _uses_each_edge_once(path) else None
             if (cell, heading) in settled:
                 continue
             settled.add((cell, heading))
@@ -225,9 +311,7 @@ class Board:
                 nxt = neighbour(cell, out)
                 if nxt not in self._on_board or (nxt in blocked and nxt != goal):
                     continue
-                if heading >= 0 and not can_pass(
-                    axes_used.get(cell, set()), cell in bends, heading, out
-                ):
+                if heading >= 0 and not can_pass(edges_used.get(cell, set()), heading, out):
                     continue
                 bend = int(heading >= 0 and out != heading)
                 heapq.heappush(
@@ -237,18 +321,13 @@ class Board:
 
     # Internals
 
-    def _occupancy(self) -> tuple[dict[Cell, set[int]], set[Cell]]:
-        """Axes of the straight wires in each cell, and the cells where a wire bends."""
-        axes_used: dict[Cell, set[int]] = {}
-        bends: set[Cell] = set()
+    def _edges_used(self) -> dict[Cell, set[int]]:
+        """Edges of each free cell already taken by a wire."""
+        used: dict[Cell, set[int]] = {}
         for wire in self.wires:
-            for before, cell, after in zip(wire.path, wire.path[1:], wire.path[2:], strict=False):
-                into, out = direction_to(before, cell), direction_to(cell, after)
-                if into == out:
-                    axes_used.setdefault(cell, set()).add(axis(into))
-                else:
-                    bends.add(cell)
-        return axes_used, bends
+            for cell, entry, exit_ in crossings(wire.path):
+                used.setdefault(cell, set()).update((entry, exit_))
+        return used
 
     def _reaches(self, start: int, goal: int) -> bool:
         """Whether signal from node `start` already flows to node `goal` along existing wires."""
@@ -262,3 +341,18 @@ class Board:
                     seen.add(wire.target)
                     frontier.append(wire.target)
         return False
+
+
+def _uses_each_edge_once(path: tuple[Cell, ...]) -> bool:
+    """A route found cell by cell could cross itself through an edge it already used."""
+    seen: set[tuple[Cell, int]] = set()
+    for cell, entry, exit_ in crossings(path):
+        for edge in (entry, exit_):
+            if (cell, edge) in seen:
+                return False
+            seen.add((cell, edge))
+    return True
+
+
+def _count(n: int) -> str:
+    return {1: "one", 2: "two", 3: "three"}.get(n, str(n))
