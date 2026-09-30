@@ -32,14 +32,14 @@ This is a learning project. The humans write the interesting parts.
 
 Changing this list requires an entry in `docs/decisions.md`.
 
-In: 2D top-down; one agent; two optical opacity sensors at fixed positions; two outputs
-(left and right thruster); eyes and thrusters point where the player turns them, in 60° steps
-(D-009); nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); three
+In: 2D top-down; one agent; two optical opacity sensors; two outputs (left and right thruster);
+the board is the body plan: eyes and thrusters sit where they are placed (D-018, fixed by tutorial
+boards) and point where the player turns them, in 60° steps (D-009); nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); three
 Braitenberg tutorial levels plus one real level with a countable win condition; fixed seed,
 fully deterministic; body size grows with graph complexity, which raises drag.
 
-Out: flocking and multiple agents, flow sensing, chemical fields, optical flow, moving sensors
-on the body, threshold nodes, the generalisation pillar (multi-seed validation), sound, art,
+Out: flocking and multiple agents, flow sensing, chemical fields, optical flow, parts that move
+on the body during a run, threshold nodes, the generalisation pillar (multi-seed validation), sound, art,
 saving, undo.
 
 If a request touches something out of scope, say so plainly and offer the smallest in-scope

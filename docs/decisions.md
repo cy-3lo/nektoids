@@ -152,3 +152,19 @@ steady step in one tick, for a flux swinging between 1/16 and 1 of the full rate
 so a `belt` style (fixed spacing, speed proportional to flux) is one
 key away. Beads and intensity are shades of grey.
 
+
+**D-018 — 2026-09-30 — The board is the body plan: where a part sits on the board is where it sits on the body. Supersedes "moving sensors on the body" (out) in the scope lock of `CLAUDE.md`.**
+The board is the body seen from above, forward = E = +x of the body, the board's up its left (+y);
+a part's facing (D-009) is where it points. The centre of the zone's cells is the centre of the
+body and the zone's outermost cells lie on its rim, so a mount is measured in body radii:
+`Network.mount`, (n, 2), and the part sits at R rot(heading) m in the world, R the body radius.
+The body is transparent to its own parts: its eyes see through it, and a thruster pushes
+whichever way it faces, even into the body. It still casts a shadow on everything else.
+A thruster's position is its lever arm, so the layout is part of the mechanism, and the tutorial
+reads as Braitenberg's vehicle: the upper-right thruster, pushing E, sits front-left and turns the
+body right, like his left wheel.
+Consequences: in a free board, placing an eye or a thruster chooses where it sits on the body,
+which is sensor layout (brief §2, "a second authored artifact"); tutorial boards lock their parts,
+so their positions stay fixed. Moving a part (D-011) moves it on the body. Sensors sit on the left
+of the board by habit, so eyes end up at the back of the body and still see ahead, since their
+own body is transparent to them. Operators have a mount too; nothing uses it.
