@@ -424,7 +424,7 @@ class EditorScene:
         return (None, wire) if wire is not None else (node, None)
 
     def doomed(self) -> tuple[int | None, list[Wire]]:
-        """In the Delete tool, what a click here would remove, shown in red before it happens:
+        """In the Delete tool, what a click here would remove, darkened before it happens:
         a component's id and its wires, or one wire. Nothing for a part the level locked."""
         if self.tool is not Tool.DELETE or self.hover is None:
             return None, []

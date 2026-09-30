@@ -1,7 +1,7 @@
 """Drawing the editor. Reads the scene and the board; never changes them.
 
 Everything is grey: colour is reserved for telling signals apart, later. Red only marks a
-refusal, or what the Delete tool would remove on a click.
+refusal; what the Delete tool would remove on a click turns a darker grey.
 
 Shapes carry the category: sensors are half-discs looking out of their round side,
 converters are diamonds, thrusters are squares with a nose pointing the way they push.
@@ -39,7 +39,7 @@ TOOLTIP_BG = (34, 37, 50)
 TEXT = (220, 222, 230)
 DIM_TEXT = (130, 134, 150)
 REFUSED = (240, 110, 110)
-DOOMED = (225, 90, 90)  # what a Delete click would remove
+DOOMED = (86, 90, 104)  # darker grey: what a Delete click would remove
 DARK = (18, 20, 28)
 WIRE = (150, 154, 166)
 GHOST = (96, 101, 118)  # where a wire would run
@@ -147,7 +147,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     if isinstance(scene.ghost, tuple):
         colour, width = (GHOST_OK, 3) if scene.ghost_connects else (GHOST, 2)
         _draw_wire(screen, view, scene.ghost, colour, width)
-    doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, in red
+    doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
     for wire in board.wires:
         _draw_wire(screen, view, wire.path, DOOMED if wire in doomed_wires else WIRE, 3)
 
