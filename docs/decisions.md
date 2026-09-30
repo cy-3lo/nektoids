@@ -75,3 +75,13 @@ the order they were drawn; other wires never move. A cell another wire crosses, 
 one from which its wires find no path is refused, and the component waits at the last cell that
 worked. Locked parts don't move.
 Rearranging a layout no longer means deleting and rewiring; routes still never change by themselves.
+
+**D-012 — 2026-09-30 — Supersedes D-008's icon-font clause: Font Awesome Free 6.7.2 Solid, in the jam.**
+One icon font, bundled unmodified with its licence (SIL OFL 1.1, 416 KB) in
+`game/nektoids/assets/fontawesome/` and opened once at startup. Eye for sensors, double chevrons
+up and down for ×2 and ÷2, rocket for thrusters, turned with the part so it points where the
+thruster pushes; the eye and the chevrons stay upright. The toolbar, the fold marks and ∞ use the
+same font. Chosen over Material Icons, Phosphor, Tabler, Lucide and Bootstrap for legibility at
+20 px (solid glyphs, no thin strokes); Remix Icon is out, its 2026 licence is not open.
+Not subset: under OFL a subset is a modified font and could not keep the reserved name. Rendering
+under pygbag is still to be checked.

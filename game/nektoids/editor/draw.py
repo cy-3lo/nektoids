@@ -6,7 +6,7 @@ refusal.
 Shapes carry the category: sensors are half-discs looking out of their round side,
 converters are diamonds, thrusters are squares with a nose pointing the way they push.
 Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
-them in place (D-009).
+them in place (D-009). An icon inside each shape says its role (D-012).
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from dataclasses import dataclass
 import pygame
 
 from nektoids.editor.geometry import wire_points
+from nektoids.editor.icons import KIND_ICON, TOOL_ICON, Icons
 from nektoids.editor.layout import Layout, Tool
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
@@ -39,12 +40,6 @@ LOCK_RING = (170, 175, 190)
 COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
 
-LABEL = {
-    Kind.EYE: "",  # the icon font will mark roles (D-008)
-    Kind.DOUBLE: "×2",
-    Kind.HALVE: "÷2",
-    Kind.THRUSTER: "",
-}
 NAME = {
     Kind.EYE: "Eye",
     Kind.DOUBLE: "Double",
@@ -59,8 +54,11 @@ HINT = {
     Tool.DELETE: "Click a component to delete it, or a wire.",
 }
 
+# Icon height as a fraction of the hex size; the upright eye must fit a turned half-disc.
+ICON_SCALE = {Kind.EYE: 0.4}
+
 # Shapes in a local frame: unit = hex size, forward = +x.
-_R = 0.62  # half-disc radius
+_R = 0.68  # half-disc radius
 _BACK = 4.0 / (3.0 * math.pi) * _R  # flat side behind the centre, so the centroid is centred
 HALF_DISC = (
     [(-_BACK, -_R)]
@@ -76,19 +74,19 @@ DIAMOND = [(0.0, -0.6), (0.6, 0.0), (0.0, 0.6), (-0.6, 0.0)]
 
 @dataclass(frozen=True)
 class Fonts:
-    label: pygame.font.Font
     text: pygame.font.Font
+    icons: Icons
 
     @classmethod
     def load(cls) -> Fonts:
         """Call once at startup, after pygame.init() (web.md: every asset at startup)."""
-        return cls(label=pygame.font.Font(None, 24), text=pygame.font.Font(None, 22))
+        return cls(text=pygame.font.Font(None, 22), icons=Icons())
 
 
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
     _draw_palette(screen, scene, fonts)
-    _draw_toolbar(screen, scene)
+    _draw_toolbar(screen, scene, fonts)
     _draw_board(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
@@ -154,9 +152,8 @@ def _draw_node(
     pygame.draw.polygon(screen, fill, outline)
     if locked:
         pygame.draw.polygon(screen, LOCK_RING, _shape(kind, facing, centre, 1.25 * size), 2)
-    if LABEL[kind]:
-        text = fonts.label.render(LABEL[kind], True, DARK)
-        screen.blit(text, text.get_rect(center=(round(centre[0]), round(centre[1]))))
+    icon_size = max(10, round(ICON_SCALE.get(kind, 0.5) * size))
+    fonts.icons.draw(screen, KIND_ICON[kind], centre, icon_size, DARK, facing)
 
 
 def _shape(kind: Kind, facing: int | None, centre, size: float) -> list[tuple[float, float]]:
@@ -194,7 +191,8 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     layout, board = scene.layout, scene.board
     pygame.draw.rect(screen, PANEL, (0, 0, layout.board_area[0], screen.get_height()))
     for title, (x, y, _, h) in layout.group_titles:
-        _draw_fold_mark(screen, (x + 5, y + h // 2), open_=title not in scene.folded)
+        caret = "caret-right" if title in scene.folded else "caret-down"
+        fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, DIM_TEXT)
         text = fonts.text.render(title.upper(), True, DIM_TEXT)
         screen.blit(text, (x + 16, y + (h - text.get_height()) // 2))
     for kind, rect in layout.palette_items:
@@ -209,91 +207,18 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         screen.blit(name, (x + 46, y + (h - name.get_height()) // 2))
         right = x + w - 12  # right edge of the count
         if left is None:
-            _draw_infinity(screen, (right - 6, y + h // 2), TEXT)
+            fonts.icons.draw(screen, "infinity", (right - 8, y + h // 2), 14, TEXT)
         else:
-            count = fonts.text.render(
-                f"{left}/{board.total(kind)}", True, DIM_TEXT if empty else TEXT
-            )
+            colour = DIM_TEXT if empty else TEXT
+            count = fonts.text.render(f"{left}/{board.total(kind)}", True, colour)
             screen.blit(count, (right - count.get_width(), y + (h - count.get_height()) // 2))
 
 
-def _draw_fold_mark(screen, centre, open_: bool) -> None:
-    """Small triangle: pointing down when the group is open, right when it is folded."""
-    x, y = centre
-    if open_:
-        points = [(x - 5, y - 3), (x + 5, y - 3), (x, y + 4)]
-    else:
-        points = [(x - 3, y - 5), (x - 3, y + 5), (x + 4, y)]
-    pygame.draw.polygon(screen, DIM_TEXT, points)
-
-
-def _draw_infinity(screen, centre, colour) -> None:
-    # The default font has no ∞ glyph (D-008: icon font is post-jam).
-    x, y = centre
-    pygame.draw.circle(screen, colour, (x - 4, y), 4, 2)
-    pygame.draw.circle(screen, colour, (x + 4, y), 4, 2)
-
-
-def _draw_rotate(screen, centre, r: float, colour) -> None:
-    """Clockwise circular arrow of radius r (the default font has no ↻)."""
-    cx, cy = centre
-    # pygame arcs run counter-clockwise on screen: this one leaves a gap on the right.
-    arc_box = (cx - r, cy - r, 2 * r, 2 * r)
-    pygame.draw.arc(screen, colour, arc_box, math.radians(30), math.radians(330), 2)
-    end = math.radians(30)  # the arrow ends up-right, heading clockwise (down-right)
-    px, py = cx + r * math.cos(end), cy - r * math.sin(end)
-    tx, ty = math.sin(end), math.cos(end)  # clockwise tangent, y down
-    nx, ny = math.cos(end), -math.sin(end)  # outward normal, y down
-    head = [
-        (px + 0.7 * r * tx, py + 0.7 * r * ty),
-        (px + 0.55 * r * nx - 0.15 * r * tx, py + 0.55 * r * ny - 0.15 * r * ty),
-        (px - 0.55 * r * nx - 0.15 * r * tx, py - 0.55 * r * ny - 0.15 * r * ty),
-    ]
-    pygame.draw.polygon(screen, colour, head)
-
-
-def _draw_move(screen, centre, r: float, colour) -> None:
-    """Four-way arrow of half-width r."""
-    cx, cy = centre
-    pygame.draw.line(screen, colour, (cx - r, cy), (cx + r, cy), 2)
-    pygame.draw.line(screen, colour, (cx, cy - r), (cx, cy + r), 2)
-    head = 0.4 * r
-    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        tip = (cx + dx * r, cy + dy * r)
-        back = (tip[0] - dx * head, tip[1] - dy * head)
-        wings = [
-            (back[0] - dy * head, back[1] - dx * head),
-            (back[0] + dy * head, back[1] + dx * head),
-        ]
-        pygame.draw.polygon(screen, colour, [tip, *wings])
-
-
-def _draw_toolbar(screen: pygame.Surface, scene: EditorScene) -> None:
+def _draw_toolbar(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     for tool, rect in scene.layout.tool_buttons:
         pygame.draw.rect(screen, ACTIVE if tool is scene.tool else BUTTON, rect, border_radius=6)
         x, y, w, h = rect
-        cx, cy = x + w // 2, y + h // 2
-        if tool is Tool.ADD:
-            pygame.draw.line(screen, TEXT, (cx - 10, cy), (cx + 10, cy), 3)
-            pygame.draw.line(screen, TEXT, (cx, cy - 10), (cx, cy + 10), 3)
-        elif tool is Tool.WIRE:
-            points = [(cx - 12, cy + 6), (cx - 4, cy + 6), (cx + 4, cy - 6), (cx + 12, cy - 6)]
-            pygame.draw.lines(screen, TEXT, False, points, 3)
-            pygame.draw.circle(screen, TEXT, points[0], 3)
-            pygame.draw.circle(screen, TEXT, points[-1], 3)
-        elif tool is Tool.ROTATE:
-            _draw_rotate(screen, (cx, cy), 10, TEXT)
-        elif tool is Tool.MOVE:
-            _draw_move(screen, (cx, cy), 12, TEXT)
-        else:
-            pygame.draw.polygon(
-                screen,
-                TEXT,
-                [(cx - 8, cy - 6), (cx + 8, cy - 6), (cx + 6, cy + 11), (cx - 6, cy + 11)],
-                2,
-            )
-            pygame.draw.line(screen, TEXT, (cx - 11, cy - 9), (cx + 11, cy - 9), 3)
-            pygame.draw.line(screen, TEXT, (cx - 3, cy - 12), (cx + 3, cy - 12), 3)
+        fonts.icons.draw(screen, TOOL_ICON[tool], (x + w // 2, y + h // 2), 20, TEXT)
 
 
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

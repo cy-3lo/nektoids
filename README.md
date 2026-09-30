@@ -43,3 +43,8 @@ Personal configuration (not committed), one per contributor:
 - `CLAUDE.local.md` at the repo root, one or two lines saying who you are, for example
   `I am the CS student. Explain, then let me write the code in graph/ and editor/.`
 - Your output style, chosen in `/config` (for learning, try *Learning* or *Explanatory*).
+
+## Credits
+
+Icons: [Font Awesome Free](https://fontawesome.com) 6.7.2 Solid by Fonticons, Inc., under the
+SIL Open Font License 1.1, bundled unmodified with its licence in `game/nektoids/assets/fontawesome/`.
