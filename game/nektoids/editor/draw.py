@@ -40,20 +40,16 @@ FILL = {
 GREYED = (80, 84, 96)
 
 LABEL = {
-    Kind.SENSOR_L: "L",
-    Kind.SENSOR_R: "R",
+    Kind.EYE: "",  # the icon font will mark roles (D-008)
     Kind.DOUBLE: "×2",
     Kind.HALVE: "÷2",
-    Kind.THRUSTER_L: "L",
-    Kind.THRUSTER_R: "R",
+    Kind.THRUSTER: "",
 }
 NAME = {
-    Kind.SENSOR_L: "Left eye",
-    Kind.SENSOR_R: "Right eye",
+    Kind.EYE: "Eye",
     Kind.DOUBLE: "Double",
     Kind.HALVE: "Halve",
-    Kind.THRUSTER_L: "Left thruster",
-    Kind.THRUSTER_R: "Right thruster",
+    Kind.THRUSTER: "Thruster",
 }
 HINT = {
     Tool.ADD: "Drag a component from the palette onto the grid.",
@@ -157,8 +153,9 @@ def _draw_node(
     pygame.draw.polygon(screen, fill, outline)
     if locked:
         pygame.draw.polygon(screen, LOCK_RING, _shape(kind, facing, centre, 1.25 * size), 2)
-    text = fonts.label.render(LABEL[kind], True, DARK)
-    screen.blit(text, text.get_rect(center=(round(centre[0]), round(centre[1]))))
+    if LABEL[kind]:
+        text = fonts.label.render(LABEL[kind], True, DARK)
+        screen.blit(text, text.get_rect(center=(round(centre[0]), round(centre[1]))))
 
 
 def _shape(kind: Kind, facing: int | None, centre, size: float) -> list[tuple[float, float]]:
@@ -211,7 +208,9 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         if left is None:
             _draw_infinity(screen, (right - 6, y + h // 2), TEXT)
         else:
-            count = fonts.text.render(str(left), True, DIM_TEXT if empty else TEXT)
+            count = fonts.text.render(
+                f"{left}/{board.total(kind)}", True, DIM_TEXT if empty else TEXT
+            )
             screen.blit(count, (right - count.get_width(), y + (h - count.get_height()) // 2))
 
 

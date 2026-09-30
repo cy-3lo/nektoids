@@ -24,9 +24,9 @@ ITEM_HEIGHT = 44  # palette row [px]
 TITLE_HEIGHT = 28  # palette group title [px]
 
 PALETTE_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
-    ("Sensors", (Kind.SENSOR_L, Kind.SENSOR_R)),
+    ("Sensors", (Kind.EYE,)),
     ("Converters", (Kind.DOUBLE, Kind.HALVE)),
-    ("Actuators", (Kind.THRUSTER_L, Kind.THRUSTER_R)),
+    ("Actuators", (Kind.THRUSTER,)),
 )
 
 

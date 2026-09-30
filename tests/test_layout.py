@@ -50,8 +50,8 @@ def test_tool_buttons_sit_in_the_toolbar():
 
 def test_sandbox_boards():
     free = free_board()
-    assert free.nodes == {} and free.remaining(Kind.SENSOR_L) == 1
+    assert free.nodes == {} and free.remaining(Kind.EYE) == free.total(Kind.EYE) == 2
     assert free.remaining(Kind.DOUBLE) is None
     tutorial = tutorial_board()
     assert len(tutorial.nodes) == 4 and all(node.locked for node in tutorial.nodes.values())
-    assert tutorial.remaining(Kind.SENSOR_L) == 0
+    assert tutorial.remaining(Kind.EYE) == 0

@@ -18,8 +18,6 @@ from dataclasses import dataclass, replace
 from enum import Enum
 
 from nektoids.graph.hexgrid import (
-    NE,
-    SE,
     Cell,
     E,
     axis,
@@ -37,12 +35,10 @@ class Category(Enum):
 
 
 class Kind(Enum):
-    SENSOR_L = "sensor_l"
-    SENSOR_R = "sensor_r"
+    EYE = "eye"
     DOUBLE = "double"
     HALVE = "halve"
-    THRUSTER_L = "thruster_l"
-    THRUSTER_R = "thruster_r"
+    THRUSTER = "thruster"
 
     @property
     def category(self) -> Category:
@@ -66,14 +62,12 @@ class Kind(Enum):
 
 
 _CATEGORY = {
-    Kind.SENSOR_L: Category.SENSOR,
-    Kind.SENSOR_R: Category.SENSOR,
+    Kind.EYE: Category.SENSOR,
     Kind.DOUBLE: Category.CONVERTER,
     Kind.HALVE: Category.CONVERTER,
-    Kind.THRUSTER_L: Category.ACTUATOR,
-    Kind.THRUSTER_R: Category.ACTUATOR,
+    Kind.THRUSTER: Category.ACTUATOR,
 }
-_DEFAULT_FACING = {Kind.SENSOR_L: NE, Kind.SENSOR_R: SE, Kind.THRUSTER_L: E, Kind.THRUSTER_R: E}
+_DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward
 
 
 @dataclass(frozen=True)
@@ -124,6 +118,7 @@ class Board:
         self._stock: dict[Kind, int | None] = (
             {kind: None for kind in Kind} if stock is None else dict(stock)
         )
+        self._total = dict(self._stock)  # what the level handed out, for 'left/total'
         self.nodes: dict[int, Node] = {}  # by id; ids increase and are never reused
         self.wires: list[Wire] = []  # in the order they were drawn
         self._next_id = 0
@@ -133,6 +128,10 @@ class Board:
     def remaining(self, kind: Kind) -> int | None:
         """How many more of `kind` the player may place; None means unlimited."""
         return self._stock.get(kind, 0)
+
+    def total(self, kind: Kind) -> int | None:
+        """How many of `kind` the level hands out in all; None means unlimited."""
+        return self._total.get(kind, 0)
 
     def node_at(self, cell: Cell) -> Node | None:
         return next((node for node in self.nodes.values() if node.cell == cell), None)

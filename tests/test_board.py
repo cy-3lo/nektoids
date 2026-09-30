@@ -1,5 +1,5 @@
 from nektoids.graph.board import Board, Category, Kind, Refused, can_pass
-from nektoids.graph.hexgrid import NE, SE, E, W, axis, direction_to
+from nektoids.graph.hexgrid import SE, SW, E, W, axis, direction_to
 
 # Row 3 of a 9 x 7 board runs from (-1, 3) to (7, 3) along the E-W axis.
 
@@ -21,10 +21,10 @@ def build(cells_and_kinds, cols=9, rows=7):
 
 
 def test_sensors_only_emit_and_thrusters_only_receive():
-    assert Kind.SENSOR_L.category is Category.SENSOR
-    assert Kind.SENSOR_L.emits and not Kind.SENSOR_L.receives
+    assert Kind.EYE.category is Category.SENSOR
+    assert Kind.EYE.emits and not Kind.EYE.receives
     assert Kind.DOUBLE.emits and Kind.DOUBLE.receives
-    assert Kind.THRUSTER_R.receives and not Kind.THRUSTER_R.emits
+    assert Kind.THRUSTER.receives and not Kind.THRUSTER.emits
 
 
 # Placement
@@ -32,22 +32,22 @@ def test_sensors_only_emit_and_thrusters_only_receive():
 
 def test_eyes_and_thrusters_point_where_placed_converters_nowhere():
     board = Board(9, 7)
-    assert board.place(Kind.SENSOR_L, (0, 1)).facing == NE  # the kind's default
-    assert board.place(Kind.SENSOR_R, (0, 3), facing=W).facing == W
-    assert board.place(Kind.THRUSTER_L, (4, 1), locked=True, facing=SE).facing == SE
+    assert board.place(Kind.EYE, (0, 1)).facing == E  # the kind's default: forward
+    assert board.place(Kind.EYE, (0, 3), facing=W).facing == W
+    assert board.place(Kind.THRUSTER, (4, 1), locked=True, facing=SE).facing == SE
     assert board.place(Kind.DOUBLE, (2, 3), facing=E).facing is None
 
 
 def test_rotate_turns_eyes_and_thrusters_in_place_only():
     board = Board(9, 7)
-    eye = board.place(Kind.SENSOR_L, (0, 1))
-    assert board.rotate(eye.id, -1).facing == E  # NE, one step clockwise
-    assert board.rotate(eye.id, -1).facing == SE
-    assert board.rotate(eye.id, 8).facing == NE  # two steps back, plus a full turn
+    eye = board.place(Kind.EYE, (0, 1))
+    assert board.rotate(eye.id, -1).facing == SE  # from E, one step clockwise
+    assert board.rotate(eye.id, -1).facing == SW
+    assert board.rotate(eye.id, 8).facing == E  # two steps back, plus a full turn
     assert board.nodes[eye.id].cell == (0, 1)
     gain = board.place(Kind.DOUBLE, (2, 3))
     assert board.rotate(gain.id, 1) == Refused("converters have no direction")
-    fixed = board.place(Kind.THRUSTER_L, (6, 1), locked=True)
+    fixed = board.place(Kind.THRUSTER, (6, 1), locked=True)
     assert board.rotate(fixed.id, 1) == Refused("placed by the level")
 
 
@@ -60,32 +60,33 @@ def test_place_refuses_off_board_and_taken_cells():
 
 
 def test_stock_runs_out_and_comes_back_on_removal():
-    board = Board(9, 7, stock={Kind.SENSOR_L: 1, Kind.DOUBLE: None})
-    eye = board.place(Kind.SENSOR_L, (0, 3))
-    assert board.remaining(Kind.SENSOR_L) == 0
-    assert board.place(Kind.SENSOR_L, (1, 3)) == Refused("none left")
+    board = Board(9, 7, stock={Kind.EYE: 1, Kind.DOUBLE: None})
+    eye = board.place(Kind.EYE, (0, 3))
+    assert board.remaining(Kind.EYE) == 0
+    assert board.place(Kind.EYE, (1, 3)) == Refused("none left")
     assert board.place(Kind.HALVE, (1, 3)) == Refused("none left")  # not in the stock at all
     assert board.remaining(Kind.DOUBLE) is None
+    assert board.total(Kind.EYE) == 1 and board.total(Kind.HALVE) == 0
     assert board.remove_node(eye.id) is None
-    assert board.remaining(Kind.SENSOR_L) == 1
+    assert board.remaining(Kind.EYE) == 1
 
 
 def test_locked_nodes_use_no_stock_and_cannot_be_removed():
     board = Board(9, 7, stock={})
-    eye = board.place(Kind.SENSOR_L, (0, 3), locked=True)
+    eye = board.place(Kind.EYE, (0, 3), locked=True)
     assert eye.locked
     assert board.remove_node(eye.id) == Refused("placed by the level")
     assert board.node_at((0, 3)) == eye
 
 
 def test_cannot_drop_a_component_on_a_wire():
-    board, (eye, gain) = build([((0, 3), Kind.SENSOR_L), ((4, 3), Kind.DOUBLE)])
+    board, (eye, gain) = build([((0, 3), Kind.EYE), ((4, 3), Kind.DOUBLE)])
     board.connect(eye.id, gain.id)
     assert board.place(Kind.HALVE, (2, 3)) == Refused("a wire runs here")
 
 
 def test_removing_a_node_removes_its_wires_and_frees_their_cells():
-    board, (eye, gain) = build([((0, 3), Kind.SENSOR_L), ((4, 3), Kind.DOUBLE)])
+    board, (eye, gain) = build([((0, 3), Kind.EYE), ((4, 3), Kind.DOUBLE)])
     board.connect(eye.id, gain.id)
     board.remove_node(gain.id)
     assert board.wires == []
@@ -99,10 +100,10 @@ def test_removing_a_node_removes_its_wires_and_frees_their_cells():
 def test_wires_run_from_outputs_to_inputs_without_loops():
     board, (eye, gain, half, thrust) = build(
         [
-            ((0, 1), Kind.SENSOR_L),
+            ((0, 1), Kind.EYE),
             ((2, 3), Kind.DOUBLE),
             ((4, 3), Kind.HALVE),
-            ((6, 1), Kind.THRUSTER_L),
+            ((6, 1), Kind.THRUSTER),
         ]
     )
     assert board.connect(thrust.id, gain.id) == Refused("thrusters have no output")
@@ -118,21 +119,19 @@ def test_wires_run_from_outputs_to_inputs_without_loops():
 
 
 def test_adjacent_components_are_wired_with_no_cell_between():
-    board, (eye, gain) = build([((0, 3), Kind.SENSOR_L), ((1, 3), Kind.DOUBLE)])
+    board, (eye, gain) = build([((0, 3), Kind.EYE), ((1, 3), Kind.DOUBLE)])
     assert board.connect(eye.id, gain.id).path == ((0, 3), (1, 3))
 
 
 def test_open_board_gives_a_straight_wire():
-    board, (eye, gain) = build([((0, 3), Kind.SENSOR_L), ((5, 3), Kind.DOUBLE)])
+    board, (eye, gain) = build([((0, 3), Kind.EYE), ((5, 3), Kind.DOUBLE)])
     path = board.connect(eye.id, gain.id).path
     assert path == tuple((q, 3) for q in range(6))
 
 
 def test_detour_is_shortest_then_straightest():
     # Pinned: if this route changes, every player's layout changes with it.
-    board, (eye, gain, _) = build(
-        [((0, 3), Kind.SENSOR_L), ((5, 3), Kind.DOUBLE), ((2, 3), Kind.HALVE)]
-    )
+    board, (eye, gain, _) = build([((0, 3), Kind.EYE), ((5, 3), Kind.DOUBLE), ((2, 3), Kind.HALVE)])
     path = board.connect(eye.id, gain.id).path
     assert path == ((0, 3), (1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (5, 3))
     assert (len(path) - 1, bends(path)) == (6, 2)
@@ -141,9 +140,9 @@ def test_detour_is_shortest_then_straightest():
 def test_wires_cross_straight_on_different_axes():
     board, (eye, gain, other_eye, half) = build(
         [
-            ((0, 3), Kind.SENSOR_L),
+            ((0, 3), Kind.EYE),
             ((6, 3), Kind.DOUBLE),
-            ((3, 1), Kind.SENSOR_R),
+            ((3, 1), Kind.EYE),
             ((3, 5), Kind.HALVE),
         ]
     )
@@ -171,7 +170,7 @@ def test_can_pass_rules():
 
 def test_no_free_path_leaves_the_board_unchanged():
     board, (eye, _, gain) = build(
-        [((0, 0), Kind.SENSOR_L), ((1, 0), Kind.HALVE), ((2, 0), Kind.DOUBLE)], cols=3, rows=1
+        [((0, 0), Kind.EYE), ((1, 0), Kind.HALVE), ((2, 0), Kind.DOUBLE)], cols=3, rows=1
     )
     assert board.connect(eye.id, gain.id) == Refused("no free path")
     assert board.wires == []
@@ -180,10 +179,10 @@ def test_no_free_path_leaves_the_board_unchanged():
 # Many wires at once
 
 LAYOUT = [
-    ((0, 1), Kind.SENSOR_L),
-    ((-2, 5), Kind.SENSOR_R),
-    ((8, 1), Kind.THRUSTER_L),
-    ((6, 5), Kind.THRUSTER_R),
+    ((0, 1), Kind.EYE),
+    ((-2, 5), Kind.EYE),
+    ((8, 1), Kind.THRUSTER),
+    ((6, 5), Kind.THRUSTER),
     ((1, 3), Kind.DOUBLE),
     ((3, 3), Kind.HALVE),
     ((5, 3), Kind.DOUBLE),
