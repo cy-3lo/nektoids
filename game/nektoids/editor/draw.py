@@ -129,7 +129,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
         _draw_node(screen, fonts, node.kind, node.facing, centre, view.size, node.locked)
-        if node.id == scene.source:
+        if node.id == scene.source or node.id == scene._wire_start():
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
         pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)

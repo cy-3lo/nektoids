@@ -54,7 +54,8 @@ class EditorScene:
         self.source: int | None = None  # Wire: node id of the chosen source
         self.moving: int | None = None  # Move: node id being dragged
         self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
-        self.wiring = False  # Wire: mouse held since pressing on the source
+        self.pressed: int | None = None  # Wire: node under the press, while the button is held
+        self.fresh = False  # Wire: that press is what chose the source
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered cell
         self.ghost_connects = False  # Wire: the ghost ends on a target it may connect to
         self.folded: set[str] = set()  # menu groups shown closed
@@ -138,7 +139,7 @@ class EditorScene:
 
     def _release(self, pos: tuple[int, int]) -> None:
         self.moving, self.panning_from = None, None
-        if self.wiring:
+        if self.pressed is not None:
             self._end_wiring()
         if not self.dragging:
             return
@@ -148,7 +149,7 @@ class EditorScene:
 
     def _cancel(self) -> None:
         self.picked, self.dragging = None, False
-        self.source, self.ghost, self.wiring = None, None, False
+        self.source, self.ghost, self.pressed = None, None, None
         self.moving = None
         self.message = ""
 
@@ -186,37 +187,56 @@ class EditorScene:
             self.picked = None
 
     def _wire(self, cell: Cell) -> None:
-        """Press in the Wire tool: pick a source (and start dragging), or finish on a target."""
+        """Press in the Wire tool. What it does is decided on release (_end_wiring)."""
         node = self.board.node_at(cell)
         if node is None:
             self.source, self.ghost = None, None
-        elif self.source is None:
+            return
+        self.pressed, self.fresh = node.id, False
+        if self.source is None:
             if not node.kind.emits:
+                self.pressed = None
                 self._refuse("thrusters have no output", cell)
                 return
-            self.source, self.wiring, self.message = node.id, True, ""
-            self._update_ghost()
-        elif node.id == self.source:
-            self.source, self.ghost = None, None
-        else:
-            self._connect_to(node.id, cell)
+            self.source, self.fresh = node.id, True
+        self.message = ""
+        self._update_ghost()
 
     def _end_wiring(self) -> None:
-        """Release after pressing on a source: on a target, connect; on the source, it was a
-        click, so wait for the target; anywhere else, give up."""
-        self.wiring = False
+        """Release in the Wire tool. Where the press was is a click: it picks the source,
+        connects the chosen source to it, or, on the chosen source again, drops it. Anywhere
+        else is a drag: it wires from where the press was to here, or gives up over an empty
+        cell."""
+        pressed, self.pressed = self.pressed, None
         target = self.board.node_at(self.hover) if self.hover is not None else None
-        if target is None:
+        if target is not None and target.id == pressed:
+            if pressed != self.source:
+                self._connect(self.source, pressed, self.hover)
+            elif not self.fresh:
+                self.source, self.ghost = None, None
+        elif target is None:
             self.source, self.ghost = None, None
-        elif target.id != self.source:
-            self._connect_to(target.id, self.hover)
+        elif not self.board.nodes[pressed].kind.emits:
+            self._refuse("thrusters have no output", self.board.nodes[pressed].cell)
+        else:
+            self.source = pressed
+            self._connect(pressed, target.id, self.hover)
+        self._update_ghost()
 
-    def _connect_to(self, target_id: int, cell: Cell) -> None:
-        result = self.board.connect(self.source, target_id)
+    def _connect(self, source_id: int, target_id: int, cell: Cell) -> None:
+        result = self.board.connect(source_id, target_id)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)  # keep the source: try another target
             return
         self.source, self.ghost, self.message = None, None, ""
+
+    def _wire_start(self) -> int | None:
+        """The node a wire would start from now: while dragging away from a press, that
+        press; otherwise the chosen source."""
+        if self.pressed is not None and self.hover != self.board.nodes[self.pressed].cell:
+            start = self.board.nodes[self.pressed]
+            return start.id if start.kind.emits else None
+        return self.source
 
     def _rotate(self, cell: Cell, back: bool) -> None:
         node = self.board.node_at(cell)
@@ -276,16 +296,17 @@ class EditorScene:
     # Helpers
 
     def _update_ghost(self) -> None:
-        """Where a wire from the source would run to the hovered cell, and whether it may end
+        """Where a wire from its start would run to the hovered cell, and whether it may end
         there: over an empty cell it only shows the way; over a target it is the real preview."""
         self.ghost, self.ghost_connects = None, False
-        if self.tool is not Tool.WIRE or self.source is None or self.hover is None:
+        start = self._wire_start() if self.tool is Tool.WIRE else None
+        if start is None or self.hover is None:
             return
         target = self.board.node_at(self.hover)
         if target is None:
-            self.ghost = self.board.route(self.board.nodes[self.source].cell, self.hover)
-        elif target.id != self.source:
-            self.ghost = self.board.preview(self.source, target.id)
+            self.ghost = self.board.route(self.board.nodes[start].cell, self.hover)
+        elif target.id != start:
+            self.ghost = self.board.preview(start, target.id)
             self.ghost_connects = isinstance(self.ghost, tuple)
 
     def _refuse(self, reason: str, cell: Cell | None) -> None:
