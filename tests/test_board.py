@@ -51,6 +51,45 @@ def test_rotate_turns_eyes_and_thrusters_in_place_only():
     assert board.rotate(fixed.id, 1) == Refused("placed by the level")
 
 
+def test_moving_a_component_reroutes_its_wires_only():
+    board, (eye, gain, other, half) = build(
+        [((0, 3), Kind.EYE), ((4, 3), Kind.DOUBLE), ((2, 1), Kind.EYE), ((2, 5), Kind.HALVE)]
+    )
+    mine = board.connect(eye.id, gain.id)
+    theirs = board.connect(other.id, half.id)
+    moved = board.move_node(gain.id, (4, 1))
+    assert moved.cell == (4, 1) and board.node_at((4, 3)) is None
+    assert board.wires[0].path[0] == (0, 3) and board.wires[0].path[-1] == (4, 1)
+    assert board.wires[0] != mine
+    assert board.wires[1] == theirs  # not attached: untouched, still second
+
+
+def test_a_move_its_wires_cannot_follow_changes_nothing():
+    board, (eye, gain, _) = build(
+        [((0, 0), Kind.EYE), ((1, 0), Kind.DOUBLE), ((2, 0), Kind.HALVE)], cols=4, rows=1
+    )
+    wire = board.connect(eye.id, gain.id)
+    assert board.move_node(gain.id, (3, 0)) == Refused("its wires would find no free path")
+    assert board.nodes[gain.id].cell == (1, 0)
+    assert board.wires == [wire]
+
+
+def test_move_refusals():
+    board, (eye, gain, other, half) = build(
+        [((0, 3), Kind.EYE), ((4, 3), Kind.DOUBLE), ((2, 1), Kind.EYE), ((2, 5), Kind.HALVE)]
+    )
+    board.connect(other.id, half.id)  # runs straight down through (2, 3)
+    assert board.move_node(eye.id, (2, 3)) == Refused("a wire runs here")
+    assert board.move_node(eye.id, (4, 3)) == Refused("cell taken")
+    assert board.move_node(eye.id, (20, 3)) == Refused("off the board")
+    fixed = board.place(Kind.THRUSTER, (6, 3), locked=True)
+    assert board.move_node(fixed.id, (6, 2)) == Refused("placed by the level")
+    # Onto a cell its own wire crosses is fine: that wire is routed again.
+    board.connect(eye.id, gain.id)
+    assert board.move_node(eye.id, (2, 3)) == Refused("a wire runs here")  # still the other's
+    assert board.move_node(eye.id, (1, 3)).cell == (1, 3)
+
+
 def test_place_refuses_off_board_and_taken_cells():
     board = Board(9, 7)
     node = board.place(Kind.DOUBLE, (2, 3))

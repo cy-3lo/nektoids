@@ -34,6 +34,7 @@ class Tool(Enum):
     ADD = "add"
     WIRE = "wire"
     ROTATE = "rotate"
+    MOVE = "move"
     DELETE = "delete"
 
 

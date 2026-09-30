@@ -55,6 +55,7 @@ HINT = {
     Tool.ADD: "Drag a component from the palette onto the grid.",
     Tool.WIRE: "Click a source, then a target. Right click cancels.",
     Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
+    Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",
 }
 
@@ -239,6 +240,22 @@ def _draw_rotate(screen, centre, r: float, colour) -> None:
     pygame.draw.polygon(screen, colour, head)
 
 
+def _draw_move(screen, centre, r: float, colour) -> None:
+    """Four-way arrow of half-width r."""
+    cx, cy = centre
+    pygame.draw.line(screen, colour, (cx - r, cy), (cx + r, cy), 2)
+    pygame.draw.line(screen, colour, (cx, cy - r), (cx, cy + r), 2)
+    head = 0.4 * r
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        tip = (cx + dx * r, cy + dy * r)
+        back = (tip[0] - dx * head, tip[1] - dy * head)
+        wings = [
+            (back[0] - dy * head, back[1] - dx * head),
+            (back[0] + dy * head, back[1] + dx * head),
+        ]
+        pygame.draw.polygon(screen, colour, [tip, *wings])
+
+
 def _draw_toolbar(screen: pygame.Surface, scene: EditorScene) -> None:
     for tool, rect in scene.layout.tool_buttons:
         pygame.draw.rect(screen, ACTIVE if tool is scene.tool else BUTTON, rect, border_radius=6)
@@ -254,6 +271,8 @@ def _draw_toolbar(screen: pygame.Surface, scene: EditorScene) -> None:
             pygame.draw.circle(screen, TEXT, points[-1], 3)
         elif tool is Tool.ROTATE:
             _draw_rotate(screen, (cx, cy), 10, TEXT)
+        elif tool is Tool.MOVE:
+            _draw_move(screen, (cx, cy), 12, TEXT)
         else:
             pygame.draw.polygon(
                 screen,

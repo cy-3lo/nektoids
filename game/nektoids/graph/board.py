@@ -191,6 +191,40 @@ class Board:
             self._stock[node.kind] = left + 1
         return None
 
+    def move_node(self, node_id: int, cell: Cell) -> Node | Refused:
+        """Move a component to another cell, routing its wires again (D-011).
+
+        Its wires are routed in the order they were drawn; other wires stay put. If one of them
+        finds no free path from there, nothing changes.
+        """
+        node = self.nodes[node_id]
+        if node.locked:
+            return Refused("placed by the level")
+        if cell == node.cell:
+            return node
+        if cell not in self._on_board:
+            return Refused("off the board")
+        if self.node_at(cell) is not None:
+            return Refused("cell taken")
+        saved = list(self.wires)
+        attached = [i for i, wire in enumerate(saved) if node_id in (wire.source, wire.target)]
+        self.wires = [wire for i, wire in enumerate(saved) if i not in attached]
+        if self.wires_in(cell):
+            self.wires = saved
+            return Refused("a wire runs here")
+        self.nodes[node_id] = replace(node, cell=cell)
+        rerouted: dict[int, Wire] = {}
+        for i in attached:
+            old = saved[i]
+            path = self.route(self.nodes[old.source].cell, self.nodes[old.target].cell)
+            if path is None:
+                self.nodes[node_id], self.wires = node, saved
+                return Refused("its wires would find no free path")
+            rerouted[i] = Wire(old.source, old.target, path)
+            self.wires.append(rerouted[i])  # so the next ones route around it
+        self.wires = [rerouted.get(i, wire) for i, wire in enumerate(saved)]
+        return self.nodes[node_id]
+
     def rotate(self, node_id: int, steps: int) -> Node | Refused:
         """Turn an eye or a thruster by `steps` x 60°: counter-clockwise on screen if positive."""
         node = self.nodes[node_id]

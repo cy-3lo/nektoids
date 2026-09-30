@@ -68,3 +68,10 @@ sharp 120° turn, 1.5 s for a gentle 60° one (s the hex size). Routing order is
 then fewest bends, then direction order.
 Denser layouts than straight-only crossings. Wires still meet only at components, so a crossing
 never reads as a junction.
+
+**D-011 — 2026-09-30 — Amends D-007: moving a component routes its own wires again.**
+The Move tool drags a placed component cell by cell. At each step its wires are routed again, in
+the order they were drawn; other wires never move. A cell another wire crosses, a taken cell, or
+one from which its wires find no path is refused, and the component waits at the last cell that
+worked. Locked parts don't move.
+Rearranging a layout no longer means deleting and rewiring; routes still never change by themselves.

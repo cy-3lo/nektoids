@@ -1,12 +1,14 @@
 """Editor state and input handling. Mutates the board only through its methods.
 
-Tools: Add (drag a component from the palette onto a cell, or pick it and click cells), Wire
-(click a source, then a target; hovering a target shows the route first), Delete (click a
-component, or a wire where it crosses a cell). Right click or Escape cancels. Every refusal
-flashes the cell and puts the reason in the status line.
+Tools:
+- Add: drag a component from the palette onto a cell, or pick it and click cells.
+- Wire: click a source, then a target; hovering a target shows the route first.
+- Rotate: click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back (D-009).
+- Move: drag a component; its wires follow while they find a path (D-011).
+- Delete: click a component's shape, or a wire.
 
-Rotate (click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back,
-D-009).
+Right click or Escape cancels. Every refusal flashes the cell and puts the reason in the status
+line.
 """
 
 from __future__ import annotations
@@ -39,6 +41,7 @@ class EditorScene:
         self.picked: Kind | None = None  # Add: the palette kind in hand
         self.dragging = False  # Add: mouse held since picking from the palette
         self.source: int | None = None  # Wire: node id of the chosen source
+        self.moving: int | None = None  # Move: node id being dragged
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered target
         self.mouse = (0, 0)
         self.hover: Cell | None = None  # board cell under the mouse
@@ -53,9 +56,9 @@ class EditorScene:
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION:
-            self._move(event.pos)
+            self._track(event.pos)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            self._move(event.pos)
+            self._track(event.pos)
             self._press(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._release(event.pos)
@@ -66,13 +69,15 @@ class EditorScene:
 
     # Mouse
 
-    def _move(self, pos: tuple[int, int]) -> None:
+    def _track(self, pos: tuple[int, int]) -> None:
         self.mouse = pos
         cell = cell_at(self.layout, pos)
         hover = cell if cell in self.board.cells else None
         if hover != self.hover:
             self.hover = hover
             self._update_ghost()
+            if self.moving is not None and hover is not None:
+                self._drag_to(hover)
 
     def _press(self, pos: tuple[int, int]) -> None:
         tool = tool_at(self.layout, pos)
@@ -92,10 +97,13 @@ class EditorScene:
             self._wire(self.hover)
         elif self.tool is Tool.ROTATE:
             self._rotate(self.hover, back=bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
+        elif self.tool is Tool.MOVE:
+            self._grab(self.hover)
         else:
             self._delete(self.hover, pos)
 
     def _release(self, pos: tuple[int, int]) -> None:
+        self.moving = None
         if not self.dragging:
             return
         self.dragging = False
@@ -105,6 +113,7 @@ class EditorScene:
     def _cancel(self) -> None:
         self.picked, self.dragging = None, False
         self.source, self.ghost = None, None
+        self.moving = None
         self.message = ""
 
     # Tools
@@ -156,6 +165,23 @@ class EditorScene:
             return
         # Direction indices run counter-clockwise on screen, so clockwise is -1.
         result = self.board.rotate(node.id, 1 if back else -1)
+        if isinstance(result, Refused):
+            self._refuse(result.reason, cell)
+        else:
+            self.message = ""
+
+    def _grab(self, cell: Cell) -> None:
+        node = self.board.node_at(cell)
+        if node is None:
+            self._refuse("drag a component", cell)
+        elif node.locked:
+            self._refuse("placed by the level", cell)
+        else:
+            self.moving, self.message = node.id, ""
+
+    def _drag_to(self, cell: Cell) -> None:
+        """One step of a move: the part stays at the last cell its wires could follow it to."""
+        result = self.board.move_node(self.moving, cell)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
         else:
