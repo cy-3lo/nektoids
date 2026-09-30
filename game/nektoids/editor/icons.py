@@ -44,7 +44,7 @@ GLYPH = {
     "location-crosshairs": 0xF601,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
-# looks up: turned to face E, its long axis runs along the half-disc's flat side.
+# looks up: turned to face E, its long axis runs along the eye's flat side.
 POINTS_TO = {"rocket": 45.0, "eye": 90.0}
 
 KIND_ICON = {  # a source is a blank sensor: it senses nothing

@@ -3,8 +3,9 @@
 Everything is grey: colour is reserved for telling signals apart, later. Red only marks a
 refusal; what the Delete tool would remove on a click turns a darker grey.
 
-Shapes carry the category: sensors are half-discs looking out of their round side,
-operators are diamonds, thrusters are squares with a nose pointing the way they push.
+Shapes carry the category, all inside one circle: eyes are discs cut flat at the back, looking
+out of their round side; sources are whole discs; operators are diamonds; thrusters are squares
+pointed (150°) the way they push.
 Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
 them in place (D-009). An icon inside each shape says its role (D-012).
 """
@@ -78,28 +79,33 @@ HINT = {
     Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
 }
 
-# How parts sit in the menu: eyes and sources flat side up, thrusters pointing up
+# How parts sit in the menu: eyes flat side up, thrusters pointing up
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.
-MENU_ANGLE = {Kind.EYE: 270.0, Kind.SOURCE: 270.0, Kind.THRUSTER: 90.0}
-# A source has no direction: on the grid too it sits flat side up.
-STILL_ANGLE = {Kind.SOURCE: 270.0}
+MENU_ANGLE = {Kind.EYE: 270.0, Kind.THRUSTER: 90.0}
+
+ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 
 # Icon height as a fraction of the hex size.
 ICON_SCALE = {Kind.EYE: 0.55}
 
-# Shapes in a local frame: unit = hex size, forward = +x.
-_R = 0.68  # half-disc radius
-_BACK = 4.0 / (3.0 * math.pi) * _R  # flat side behind the centre, so the centroid is centred
-HALF_DISC = (
-    [(-_BACK, -_R)]
-    + [
-        (-_BACK + _R * math.cos(t), _R * math.sin(t))
-        for t in (math.radians(a) for a in range(-90, 91, 10))
-    ]
-    + [(-_BACK, _R)]
-)
-NOSE = [(-0.5, -0.45), (0.2, -0.45), (0.6, 0.0), (0.2, 0.45), (-0.5, 0.45)]
-DIAMOND = [(0.0, -0.6), (0.6, 0.0), (0.0, 0.6), (-0.6, 0.0)]
+# Shapes in a local frame: unit = hex size, forward = +x. Every one fits the same circle of
+# radius SHAPE_R about the cell centre, so all parts look the same size.
+SHAPE_R = 0.6
+_S = SHAPE_R / math.sqrt(2.0)  # half-side of the square inscribed in that circle
+# Eye: the circle with its back cut off by a chord at half the radius, flat side behind.
+EYE_DISC = [
+    (SHAPE_R * math.cos(math.radians(a)), SHAPE_R * math.sin(math.radians(a)))
+    for a in range(-120, 121, 10)
+]
+# Source: the whole circle; it has no direction.
+DISC = [
+    (SHAPE_R * math.cos(math.radians(a)), SHAPE_R * math.sin(math.radians(a)))
+    for a in range(0, 360, 10)
+]
+DIAMOND = [(0.0, -SHAPE_R), (SHAPE_R, 0.0), (0.0, SHAPE_R), (-SHAPE_R, 0.0)]
+# Thruster: the inscribed square with its front edge raised into a point of 150°.
+_NOSE = _S * (1.0 + math.tan(math.radians(15.0)))
+SQUARE_POINT = [(-_S, -_S), (_S, -_S), (_NOSE, 0.0), (_S, _S), (-_S, _S)]
 
 
 @dataclass(frozen=True)
@@ -169,18 +175,13 @@ def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, width: int) -
     points = wire_points(path, view.size, view.origin)  # arcs where it turns
     pygame.draw.lines(screen, colour, False, points, width)
     for at, angle in wire_arrows(path, view.size, view.origin):
-        _draw_arrow(screen, at, angle, 0.14 * view.size, colour)
-    # Chevron just outside the target's shape, pointing into it.
+        _draw_arrow(screen, at, angle, ARROW_HALF * view.size, colour)
+    # And one more, the same size, just outside the target's circle, pointing into it.
     (x0, y0), (x1, y1) = points[-2], points[-1]
     angle = math.atan2(y1 - y0, x1 - x0)
-    back = 0.68 * view.size
-    tip = (x1 - back * math.cos(angle), y1 - back * math.sin(angle))
-    wing = 0.22 * view.size
-    wings = [
-        (tip[0] - wing * math.cos(angle + s), tip[1] - wing * math.sin(angle + s))
-        for s in (0.55, -0.55)
-    ]
-    pygame.draw.polygon(screen, colour, [tip, *wings])
+    back = (SHAPE_R + ARROW_HALF + 0.04) * view.size
+    at = (x1 - back * math.cos(angle), y1 - back * math.sin(angle))
+    _draw_arrow(screen, at, angle, ARROW_HALF * view.size, colour)
 
 
 def _draw_arrow(screen, at, angle: float, half: float, colour) -> None:
@@ -216,16 +217,19 @@ def _placed_angle(kind: Kind, facing: int | None) -> float | None:
     """Screen angle a part is drawn at on the grid [degrees, counter-clockwise from E]."""
     if facing is not None:
         return 60.0 * facing  # direction d lies at 60° * d
-    return STILL_ANGLE.get(kind)
+    return None
 
 
 def _shape(kind: Kind, angle: float | None, centre, size: float) -> list[tuple[float, float]]:
     """Polygon for `kind`, turned to point at `angle` [degrees, counter-clockwise on screen]."""
-    template = {
-        Category.SENSOR: HALF_DISC,
-        Category.OPERATOR: DIAMOND,
-        Category.ACTUATOR: NOSE,
-    }[kind.category]
+    if kind is Kind.SOURCE:
+        template = DISC
+    else:
+        template = {
+            Category.SENSOR: EYE_DISC,
+            Category.OPERATOR: DIAMOND,
+            Category.ACTUATOR: SQUARE_POINT,
+        }[kind.category]
     phi = math.radians(-(angle or 0.0))  # y points down
     c, s = math.cos(phi), math.sin(phi)
     return [
