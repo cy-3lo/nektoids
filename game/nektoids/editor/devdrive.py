@@ -43,19 +43,24 @@ def next_wave(name: str) -> str:
 
 
 class Clock:
-    """Which ticks to run in this frame: two while it runs, none while paused, unless stepped."""
+    """Which ticks to run in this frame: two while it runs (times `speed`), none while paused,
+    unless stepped: a step is always one frame's two ticks."""
 
     def __init__(self) -> None:
         self.tick = 0
         self.paused = False
+        self.speed = 1  # frames' worth of ticks per frame while running: fast forward if > 1
         self._stepped = False
 
     def frame(self) -> range:
         """The ticks to run now, in order; the clock moves past them."""
-        run = self.paused is False or self._stepped
+        if self._stepped:
+            count = TICKS_PER_FRAME
+        else:
+            count = 0 if self.paused else TICKS_PER_FRAME * self.speed
         self._stepped = False
         first = self.tick
-        self.tick += TICKS_PER_FRAME if run else 0
+        self.tick += count
         return range(first, self.tick)
 
     def toggle_pause(self) -> None:
