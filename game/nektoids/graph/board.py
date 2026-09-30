@@ -34,8 +34,11 @@ class Category(Enum):
 
 class Kind(Enum):
     EYE = "eye"
+    SOURCE = "source"  # produces a signal of its own; senses nothing
     DOUBLE = "double"
     HALVE = "halve"
+    SUM = "sum"
+    DIFFERENCE = "difference"
     THRUSTER = "thruster"
 
     @property
@@ -58,14 +61,29 @@ class Kind(Enum):
         """
         return _DEFAULT_FACING.get(self)
 
+    @property
+    def max_inputs(self) -> int | None:
+        """How many wires may come in; None means no limit (D-014)."""
+        return _MAX_INPUTS.get(self)
+
+    @property
+    def max_outputs(self) -> int | None:
+        """How many wires may go out; None means no limit (D-014)."""
+        return _MAX_OUTPUTS.get(self)
+
 
 _CATEGORY = {
     Kind.EYE: Category.SENSOR,
+    Kind.SOURCE: Category.SENSOR,
     Kind.DOUBLE: Category.CONVERTER,
     Kind.HALVE: Category.CONVERTER,
+    Kind.SUM: Category.CONVERTER,
+    Kind.DIFFERENCE: Category.CONVERTER,
     Kind.THRUSTER: Category.ACTUATOR,
 }
-_DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward
+_DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward; the others have no direction
+_MAX_INPUTS = {Kind.SUM: 2, Kind.DIFFERENCE: 2}
+_MAX_OUTPUTS = {Kind.SUM: 1, Kind.DIFFERENCE: 1}
 
 
 @dataclass(frozen=True)
@@ -74,7 +92,7 @@ class Node:
     kind: Kind
     cell: Cell
     locked: bool = False  # pre-placed by the level: cannot be removed
-    facing: int | None = None  # hex direction on the body (eyes, thrusters); None for converters
+    facing: int | None = None  # hex direction on the body (eyes, thrusters); None for the rest
 
 
 @dataclass(frozen=True)
@@ -227,7 +245,7 @@ class Board:
         """Turn an eye or a thruster by `steps` x 60°: counter-clockwise on screen if positive."""
         node = self.nodes[node_id]
         if node.facing is None:
-            return Refused("converters have no direction")
+            return Refused(f"{node.kind.value}s have no direction")
         if node.locked:
             return Refused("placed by the level")
         turned = replace(node, facing=(node.facing + steps) % 6)
@@ -249,6 +267,12 @@ class Board:
             return Refused("already wired")
         if self._reaches(target_id, source_id):
             return Refused("would close a loop")
+        outputs = sum(wire.source == source_id for wire in self.wires)
+        if source.kind.max_outputs is not None and outputs >= source.kind.max_outputs:
+            return Refused(f"a {source.kind.value} has {_count(source.kind.max_outputs)} output")
+        inputs = sum(wire.target == target_id for wire in self.wires)
+        if target.kind.max_inputs is not None and inputs >= target.kind.max_inputs:
+            return Refused(f"a {target.kind.value} takes {_count(target.kind.max_inputs)} inputs")
         path = self.route(source.cell, target.cell)
         return Refused("no free path") if path is None else path
 
@@ -328,3 +352,7 @@ def _uses_each_edge_once(path: tuple[Cell, ...]) -> bool:
                 return False
             seen.add((cell, edge))
     return True
+
+
+def _count(n: int) -> str:
+    return {1: "one", 2: "two", 3: "three"}.get(n, str(n))

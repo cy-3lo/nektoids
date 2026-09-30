@@ -34,9 +34,9 @@ Changing this list requires an entry in `docs/decisions.md`.
 
 In: 2D top-down; one agent; two optical opacity sensors at fixed positions; two outputs
 (left and right thruster); eyes and thrusters point where the player turns them, in 60° steps
-(D-009); nodes are wires, ×2 and ÷2 only; three Braitenberg tutorial levels plus one real
-level with a countable win condition; fixed seed, fully deterministic; body size grows with
-graph complexity, which raises drag.
+(D-009); nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); three
+Braitenberg tutorial levels plus one real level with a countable win condition; fixed seed,
+fully deterministic; body size grows with graph complexity, which raises drag.
 
 Out: flocking and multiple agents, flow sensing, chemical fields, optical flow, moving sensors
 on the body, threshold nodes, the generalisation pillar (multi-seed validation), sound, art,

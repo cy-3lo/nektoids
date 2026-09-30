@@ -10,7 +10,7 @@ Tools:
 - Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
   button brings the central cell back to the middle.
 
-Keyboard: letters pick tools (see the tooltips), 1-4 pick a component, the arrows move a cursor
+Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
 with the hand, the arrows move the view.
 
@@ -61,9 +61,10 @@ FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
 KEY_VIEWS = {key: button for button, key in VIEW_KEYS.items()}
-# 1-4 by physical key (the digits are shifted on AZERTY), or on the keypad.
-DIGIT_SCANCODES = (pygame.KSCAN_1, pygame.KSCAN_2, pygame.KSCAN_3, pygame.KSCAN_4)
-DIGIT_KEYPAD = (pygame.K_KP1, pygame.K_KP2, pygame.K_KP3, pygame.K_KP4)
+# 1-9 by physical key (the digits are shifted on AZERTY), or on the keypad: the menu's parts in
+# order.
+DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
+DIGIT_KEYPAD = tuple(getattr(pygame, f"K_KP{n}") for n in range(1, 10))
 ARROWS = (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN)
 ENTER = (pygame.K_RETURN, pygame.K_KP_ENTER)
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]

@@ -93,3 +93,12 @@ tool sit in the palette, apart from the Move tool that moves components. They ch
 grid is seen: each level's zone stays small and fixed, so spatial scarcity (brief §1) still holds.
 `.claude/rules/web.md` is updated to match.
 A player can scroll the zone out of sight; the board, routing and scoring never depend on the view.
+
+**D-014 — 2026-09-30 — Extends the scope lock's node vocabulary: Source, Sum and Difference.**
+Source: a sensor that senses nothing and emits a signal of its own; it has no direction. Sum (+)
+and Difference (−): at most two inputs and one output; with a single input they pass it through.
+Difference is |a − b|, so the order of its inputs does not matter. Signals (bead rates) are never
+negative. Supersedes "nodes are wires, ×2 and ÷2 only" in the scope lock of `CLAUDE.md` and the
+jam vocabulary in `.claude/rules/graph.md`. Still no threshold node and no continuous parameter.
+What a source emits, and how every node turns input rates into output rates, is for the graph
+evaluation work; the editor only enforces the input and output counts.

@@ -49,8 +49,11 @@ GREYED = (80, 84, 96)
 
 NAME = {
     Kind.EYE: "Eye",
+    Kind.SOURCE: "Source",
     Kind.DOUBLE: "Double",
     Kind.HALVE: "Halve",
+    Kind.SUM: "Sum",
+    Kind.DIFFERENCE: "Difference",
     Kind.THRUSTER: "Thruster",
 }
 TIP = {
@@ -66,13 +69,19 @@ TIP = {
     "colours": "Colours: not yet",
 }
 HINT = {
-    Tool.ADD: "Drag a component from the menu onto the grid (or 1-4, arrows, Enter).",
+    Tool.ADD: "Drag a component from the menu onto the grid (or its number, arrows, Enter).",
     Tool.WIRE: "Drag from a source to a target, or click one then the other.",
     Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",
     Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
 }
+
+# How parts sit in the menu: eyes and sources flat side up, thrusters pointing up
+# [degrees, counter-clockwise from E]. On the grid they point along their facing.
+MENU_ANGLE = {Kind.EYE: 270.0, Kind.SOURCE: 270.0, Kind.THRUSTER: 90.0}
+# A source has no direction: on the grid too it sits flat side up.
+STILL_ANGLE = {Kind.SOURCE: 270.0}
 
 # Icon height as a fraction of the hex size.
 ICON_SCALE = {Kind.EYE: 0.55}
@@ -113,8 +122,8 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     _draw_tooltip(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
-        facing = scene.picked.default_facing
-        _draw_node(screen, fonts, scene.picked, facing, scene.mouse, size, locked=False)
+        angle = _placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
+        _draw_node(screen, fonts, scene.picked, angle, scene.mouse, size, locked=False)
 
 
 # Board
@@ -142,7 +151,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
-        _draw_node(screen, fonts, node.kind, node.facing, centre, view.size, node.locked)
+        angle = _placed_angle(node.kind, node.facing)
+        _draw_node(screen, fonts, node.kind, angle, centre, view.size, node.locked)
         if node.id == scene.source or node.id == scene._wire_start():
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
     if scene.cursor is not None:
@@ -183,29 +193,37 @@ def _draw_node(
     screen,
     fonts: Fonts,
     kind: Kind,
-    facing: int | None,
+    angle: float | None,
     centre,
     size: float,
     locked: bool,
     fill=None,
 ):
     fill = fill or COMPONENT
-    outline = _shape(kind, facing, centre, size)
+    outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if locked:
-        pygame.draw.polygon(screen, LOCK_RING, _shape(kind, facing, centre, 1.25 * size), 2)
+        pygame.draw.polygon(screen, LOCK_RING, _shape(kind, angle, centre, 1.25 * size), 2)
     icon_size = max(10, round(ICON_SCALE.get(kind, 0.5) * size))
-    fonts.icons.draw(screen, KIND_ICON[kind], centre, icon_size, DARK, facing)
+    if kind in KIND_ICON:
+        fonts.icons.draw(screen, KIND_ICON[kind], centre, icon_size, DARK, angle)
 
 
-def _shape(kind: Kind, facing: int | None, centre, size: float) -> list[tuple[float, float]]:
-    """Polygon for `kind`, turned to `facing` (direction d is at -60° * d, y down)."""
+def _placed_angle(kind: Kind, facing: int | None) -> float | None:
+    """Screen angle a part is drawn at on the grid [degrees, counter-clockwise from E]."""
+    if facing is not None:
+        return 60.0 * facing  # direction d lies at 60° * d
+    return STILL_ANGLE.get(kind)
+
+
+def _shape(kind: Kind, angle: float | None, centre, size: float) -> list[tuple[float, float]]:
+    """Polygon for `kind`, turned to point at `angle` [degrees, counter-clockwise on screen]."""
     template = {
         Category.SENSOR: HALF_DISC,
         Category.CONVERTER: DIAMOND,
         Category.ACTUATOR: NOSE,
     }[kind.category]
-    phi = math.radians(-60.0 * (facing or 0))
+    phi = math.radians(-(angle or 0.0))  # y points down
     c, s = math.cos(phi), math.sin(phi)
     return [
         (centre[0] + size * (u * c - v * s), centre[1] + size * (u * s + v * c))
@@ -244,7 +262,8 @@ def _draw_menu(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         x, y, w, h = rect
         icon = (x + 22, y + h / 2)
         fill = GREYED if empty else None
-        _draw_node(screen, fonts, kind, kind.default_facing, icon, 26, locked=False, fill=fill)
+        angle = MENU_ANGLE.get(kind)
+        _draw_node(screen, fonts, kind, angle, icon, 26, locked=False, fill=fill)
         name = fonts.text.render(NAME[kind], True, DIM_TEXT if empty else TEXT)
         screen.blit(name, (x + 46, y + (h - name.get_height()) // 2))
         right = x + w - 12  # right edge of the count

@@ -38,8 +38,8 @@ MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
 
 MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
-    ("Sensors", (Kind.EYE,)),
-    ("Converters", (Kind.DOUBLE, Kind.HALVE)),
+    ("Sensors", (Kind.EYE, Kind.SOURCE)),
+    ("Converters", (Kind.DOUBLE, Kind.HALVE, Kind.SUM, Kind.DIFFERENCE)),
     ("Actuators", (Kind.THRUSTER,)),
 )
 

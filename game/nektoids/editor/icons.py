@@ -31,6 +31,7 @@ GLYPH = {
     "caret-down": 0xF0D7,
     "caret-right": 0xF0DA,
     "infinity": 0xF534,
+    "minus": 0xF068,
     "magnifying-glass-plus": 0xF00E,
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,
@@ -40,10 +41,12 @@ GLYPH = {
 # looks up: turned to face E, its long axis runs along the half-disc's flat side.
 POINTS_TO = {"rocket": 45.0, "eye": 90.0}
 
-KIND_ICON = {
+KIND_ICON = {  # a source is a blank sensor: it senses nothing
     Kind.EYE: "eye",
     Kind.DOUBLE: "angles-up",
     Kind.HALVE: "angles-down",
+    Kind.SUM: "plus",
+    Kind.DIFFERENCE: "minus",
     Kind.THRUSTER: "rocket",
 }
 TOOL_ICON = {
@@ -65,11 +68,12 @@ class Icons:
     def __init__(self) -> None:
         """Call once at startup, after pygame.init()."""
         self._fonts: dict[int, pygame.font.Font] = {}
-        self._glyphs: dict[tuple[str, int, tuple[int, int, int], int | None], pygame.Surface] = {}
+        self._glyphs: dict[tuple[str, int, tuple[int, int, int], float | None], pygame.Surface] = {}
 
-    def draw(self, screen, name: str, centre, size: int, colour, facing: int | None = None):
-        """Draw icon `name` centred on `centre`, `size` px tall, turned to `facing` if it points."""
-        turn = facing if name in POINTS_TO else None
+    def draw(self, screen, name: str, centre, size: int, colour, angle: float | None = None):
+        """Draw icon `name` centred on `centre`, `size` px tall; if it points somewhere, turned to
+        point at `angle` [degrees, counter-clockwise from E on screen]."""
+        turn = angle if name in POINTS_TO else None
         key = (name, size, tuple(colour), turn)
         if key not in self._glyphs:
             self._glyphs[key] = self._render(name, size, colour, turn)
@@ -83,5 +87,4 @@ class Icons:
         glyph = self._fonts[size].render(chr(GLYPH[name]), True, colour)
         if turn is None:
             return glyph
-        # Direction d lies at 60° * d counter-clockwise from E; pygame turns counter-clockwise.
-        return pygame.transform.rotozoom(glyph, 60.0 * turn - POINTS_TO[name], 1.0)
+        return pygame.transform.rotozoom(glyph, turn - POINTS_TO[name], 1.0)  # counter-clockwise

@@ -48,7 +48,10 @@ def test_rotate_turns_eyes_and_thrusters_in_place_only():
     assert board.rotate(eye.id, 8).facing == E  # two steps back, plus a full turn
     assert board.nodes[eye.id].cell == (0, 1)
     gain = board.place(Kind.DOUBLE, (2, 3))
-    assert board.rotate(gain.id, 1) == Refused("converters have no direction")
+    assert board.rotate(gain.id, 1) == Refused("doubles have no direction")
+    source = board.place(Kind.SOURCE, (4, 3))
+    assert source.facing is None
+    assert board.rotate(source.id, 1) == Refused("sources have no direction")
     fixed = board.place(Kind.THRUSTER, (6, 1), locked=True)
     assert board.rotate(fixed.id, 1) == Refused("placed by the level")
 
@@ -154,6 +157,28 @@ def test_wires_run_from_outputs_to_inputs_without_loops():
     assert board.connect(gain.id, half.id) == Refused("already wired")
     assert board.connect(half.id, gain.id) == Refused("would close a loop")
     assert len(board.wires) == 1
+
+
+def test_sum_and_difference_take_two_inputs_and_give_one_output():
+    board, (a, b, c, total, left, right) = build(
+        [
+            ((0, 1), Kind.SOURCE),
+            ((0, 3), Kind.EYE),
+            ((0, 5), Kind.EYE),
+            ((3, 3), Kind.SUM),
+            ((6, 1), Kind.THRUSTER),
+            ((6, 5), Kind.THRUSTER),
+        ]
+    )
+    assert Kind.SOURCE.emits and not Kind.SOURCE.receives
+    assert not isinstance(board.connect(a.id, total.id), Refused)
+    assert not isinstance(board.connect(b.id, total.id), Refused)
+    assert board.connect(c.id, total.id) == Refused("a sum takes two inputs")
+    assert not isinstance(board.connect(total.id, left.id), Refused)
+    assert board.connect(total.id, right.id) == Refused("a sum has one output")
+    # Other parts keep fanning out and in freely.
+    assert not isinstance(board.connect(c.id, right.id), Refused)
+    assert not isinstance(board.connect(c.id, left.id), Refused)
 
 
 # Routing
