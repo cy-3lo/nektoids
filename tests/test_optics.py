@@ -9,10 +9,12 @@ from nektoids.sim.arena import Arena, Disc, Light
 from nektoids.sim.optics import (
     R_MIN,
     add_lights,
+    angular_irradiance,
     exposure,
     eye_poses,
     eye_rates,
     light_map,
+    still_light,
     visible,
 )
 
@@ -175,9 +177,53 @@ def test_lights_add_only_where_they_are_seen():
         ((Light(50.0, 30.0, 0.0),), (), "power"),
         ((Light(150.0, 30.0, 1.0),), (), "off the arena"),
         ((), (Disc(0.5, 30.0),), "not inside"),
-        ((Light(50.0, 30.0, 1.0),), (Disc(50.5, 30.0),), "inside an obstacle"),
+        ((Light(50.0, 30.0, 1.0),), (Disc(50.5, 30.0),), "touches an obstacle"),
+        ((Light(50.0, 30.0, 1.0),), (Disc(51.9, 30.0),), "touches an obstacle"),  # 1.9 < 1 + 1
+        ((Light(0.5, 30.0, 1.0),), (), "off the arena"),  # its disc would cross the wall
     ],
 )
 def test_impossible_arenas_are_refused(lights, obstacles, message):
     with pytest.raises(ValueError, match=message):
         Arena(100.0, 60.0, lights, obstacles)
+
+
+# The light at a point, facing each way
+
+
+def test_facing_each_way_one_light_gives_a_cosine_lobe_pointing_at_it():
+    angles = np.radians(np.arange(0.0, 360.0, 30.0))
+    curve = angular_irradiance(lit(), np.array([30.0, 30.0]), angles, np.zeros((0, 2)), np.zeros(0))
+    expected = 10.0 / 20.0 * np.maximum(np.cos(angles), 0.0)  # the light is due E, 20 away
+    assert curve.tolist() == pytest.approx(expected.tolist(), abs=1e-15)
+
+
+def test_a_shadowed_light_gives_nothing_facing_any_way():
+    angles = np.radians(np.arange(0.0, 360.0, 30.0))
+    point = np.array([30.0, 30.0])
+    curve = angular_irradiance(lit(Disc(40.0, 30.0)), point, angles, np.zeros((0, 2)), np.zeros(0))
+    assert np.all(curve == 0.0)
+
+
+def test_each_eye_reads_its_own_polar_plot_at_the_angle_it_looks():
+    net = Network.from_board(tutorial_board())
+    mount, facing = net.mount[net.eyes], np.array([net.facing[i] for i in net.eyes])
+    arena = lit(Disc(40.0, 30.0), Disc(45.0, 36.0), lights=(LIGHT, Light(20.0, 50.0, 6.0)))
+    pos, radius = np.array([[30.0, 33.0], [37.0, 31.0]]), np.ones(2)
+    heading = np.array([0.4, 2.0])
+    rates = eye_rates(arena, pos, heading, radius, mount, facing)
+    points, looks = eye_poses(pos, heading, radius, mount, facing)
+    for k in range(2):
+        for e in range(len(facing)):
+            angle = np.array([np.arctan2(looks[k, e, 1], looks[k, e, 0])])
+            curve = angular_irradiance(arena, points[k, e], angle, pos, radius, own=k)
+            assert min(1.0, float(curve[0])) == pytest.approx(rates[k, e], abs=1e-12)
+
+
+def test_the_light_map_from_what_never_moves_is_the_same_bit_for_bit():
+    arena = lit(Disc(40.0, 30.0), Disc(60.0, 20.0), lights=(LIGHT, Light(10.0, 10.0, 5.0)))
+    points = np.random.default_rng(2).uniform((0.0, 0.0), (100.0, 60.0), size=(200, 2))
+    pos, radius = np.array([[30.0, 30.0], [70.0, 40.0]]), np.ones(2)
+    kept = still_light(arena, points)
+    assert np.array_equal(
+        light_map(arena, points, pos, radius, kept), light_map(arena, points, pos, radius)
+    )
