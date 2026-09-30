@@ -6,31 +6,27 @@
 """Nektoids entry point.
 
 Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
-For now it only proves the pipeline end to end: numpy + pygame-ce, native and WASM.
+For now it shows the wiring editor; the Run button and the simulation view come next.
 """
 
 import asyncio
 
-import numpy as np
 import pygame
 
-from nektoids.sim.world import make_world, step
+from nektoids.editor.draw import Fonts, draw
+from nektoids.editor.layout import SCREEN, make_layout
+from nektoids.editor.scene import EditorScene
+from nektoids.levels.sandbox import free_board
 
-WIDTH, HEIGHT = 960, 640
 FPS = 60
-# The simulation advances a fixed number of steps per frame, never by wall-clock time.
-STEPS_PER_FRAME = 2
-DT = 1.0 / (FPS * STEPS_PER_FRAME)  # [s]
-AGENT_RADIUS = 6  # [px]
-BACKGROUND = (18, 20, 28)
-AGENT_COLOUR = (240, 200, 90)
 
 pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode(SCREEN)
 pygame.display.set_caption("Nektoids")
 clock = pygame.time.Clock()
-world = make_world(seed=0, n_agents=1, width=WIDTH, height=HEIGHT)
-no_force = np.zeros_like(world.pos)
+fonts = Fonts.load()
+board = free_board()  # tutorial_board() for pre-placed, locked eyes and thrusters
+scene = EditorScene(board, make_layout(board.cols, board.rows))
 
 
 async def main() -> None:
@@ -39,13 +35,11 @@ async def main() -> None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            else:
+                scene.handle_event(event)
 
-        for _ in range(STEPS_PER_FRAME):
-            step(world, no_force, DT)
-
-        screen.fill(BACKGROUND)
-        for x, y in world.pos:
-            pygame.draw.circle(screen, AGENT_COLOUR, (int(x), int(y)), AGENT_RADIUS)
+        scene.update()
+        draw(screen, scene, fonts)
         pygame.display.flip()
         clock.tick(FPS)
 
