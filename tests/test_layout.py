@@ -5,6 +5,8 @@ from nektoids.editor.layout import (
     MIN_HEX,
     PALETTE_TOOLS,
     SCREEN,
+    TOOL_KEYS,
+    VIEW_KEYS,
     Tool,
     ViewButton,
     cell_at,
@@ -13,6 +15,7 @@ from nektoids.editor.layout import (
     group_at,
     make_layout,
     menu_item_at,
+    palette_target_at,
     pan,
     tool_at,
     view_button_at,
@@ -134,3 +137,12 @@ def test_the_grid_still_fills_the_area_zoomed_out():
 def test_the_palette_fits_on_screen():
     rects = [r for _, r in LAYOUT.view_buttons] + [r for _, r in LAYOUT.tool_buttons]
     assert max(y + h for _, y, _, h in [*rects, *LAYOUT.swatches]) <= SCREEN[1] - 8
+
+
+def test_every_palette_button_has_its_own_key_and_tooltip_target():
+    keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
+    assert len(set(keys)) == len(keys) and all(len(key) == 1 for key in keys)
+    for target, rect in [*LAYOUT.tool_buttons, *LAYOUT.view_buttons]:
+        assert palette_target_at(LAYOUT, centre(rect)) == target
+    assert palette_target_at(LAYOUT, centre(LAYOUT.swatches[2])) == "colours"
+    assert palette_target_at(LAYOUT, centre(LAYOUT.board_area)) is None

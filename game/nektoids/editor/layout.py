@@ -63,6 +63,18 @@ class ViewButton(Enum):
     CENTRE = "centre"  # bring cell (0, 0) back to the middle, at the same zoom
 
 
+# Shortcut keys, matched on the character typed (so they follow the keyboard layout) and shown
+# in the tooltips.
+TOOL_KEYS = {Tool.ADD: "A", Tool.WIRE: "W", Tool.ROTATE: "R", Tool.MOVE: "M", Tool.DELETE: "D"}
+VIEW_KEYS = {
+    ViewButton.ZOOM_IN: "+",
+    ViewButton.ZOOM_OUT: "-",
+    ViewButton.PAN: "H",
+    ViewButton.CENTRE: "C",
+}
+KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
+
+
 @dataclass(frozen=True)
 class Layout:
     menu_area: Rect
@@ -132,6 +144,14 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
         swatches=swatches,
         status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
     )
+
+
+def palette_target_at(layout: Layout, point: tuple[int, int]) -> Tool | ViewButton | str | None:
+    """What a tooltip would describe under `point`: a tool, a view button, or "colours"."""
+    target = tool_at(layout, point) or view_button_at(layout, point)
+    if target is None and any(contains(rect, point) for rect in layout.swatches):
+        return "colours"
+    return target
 
 
 def contains(rect: Rect, point: tuple[int, int]) -> bool:

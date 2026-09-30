@@ -22,6 +22,9 @@ import pygame
 
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.layout import (
+    KEY_ALIASES,
+    TOOL_KEYS,
+    VIEW_KEYS,
     ZOOM_STEP,
     Layout,
     Tool,
@@ -31,6 +34,7 @@ from nektoids.editor.layout import (
     group_at,
     make_layout,
     menu_item_at,
+    palette_target_at,
     pan,
     tool_at,
     view_button_at,
@@ -40,6 +44,9 @@ from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
+TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
+KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
+KEY_VIEWS = {key: button for button, key in VIEW_KEYS.items()}
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
@@ -64,6 +71,8 @@ class EditorScene:
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
         self.hover: Cell | None = None  # the same, if it is in the zone
         self.message = ""  # last refusal, empty once something succeeds
+        self.tip_target: Tool | ViewButton | str | None = None  # palette button under the mouse
+        self.tip_frames = 0  # how long it has been there
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
 
@@ -71,6 +80,13 @@ class EditorScene:
         """Once per frame."""
         if self.flash_frames > 0:
             self.flash_frames -= 1
+        if self.tip_target is not None:
+            self.tip_frames += 1
+
+    @property
+    def tooltip(self) -> Tool | ViewButton | str | None:
+        """The palette button whose tooltip shows now, if any."""
+        return self.tip_target if self.tip_frames >= TOOLTIP_FRAMES else None
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION:
@@ -84,6 +100,16 @@ class EditorScene:
             event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
         ):
             self._cancel()
+        elif event.type == pygame.KEYDOWN:
+            self._shortcut(event.unicode)
+
+    def _shortcut(self, typed: str) -> None:
+        key = KEY_ALIASES.get(typed, typed.upper())
+        if key in KEY_TOOLS:
+            self._cancel()
+            self.tool = KEY_TOOLS[key]
+        elif key in KEY_VIEWS:
+            self._view_button(KEY_VIEWS[key])
 
     # Mouse
 
@@ -92,6 +118,9 @@ class EditorScene:
             dx, dy = pos[0] - self.panning_from[0], pos[1] - self.panning_from[1]
             self.view, self.panning_from = pan(self.view, dx, dy), pos
         self.mouse = pos
+        target = palette_target_at(self.layout, pos)
+        if target != self.tip_target:
+            self.tip_target, self.tip_frames = target, 0
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
         self.pointed = pointed

@@ -18,7 +18,7 @@ import pygame
 
 from nektoids.editor.geometry import wire_arrows, wire_points
 from nektoids.editor.icons import KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
-from nektoids.editor.layout import Tool, View, ViewButton, visible_cells
+from nektoids.editor.layout import TOOL_KEYS, VIEW_KEYS, Tool, View, ViewButton, visible_cells
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -35,6 +35,7 @@ BUTTON = (40, 44, 58)
 ACTIVE = (78, 84, 100)  # selected tool or menu row
 RULE = (52, 56, 70)  # separators between columns and between sets of buttons
 SWATCH_OFF = (44, 47, 58)  # colour picker, not active yet
+TOOLTIP_BG = (34, 37, 50)
 TEXT = (220, 222, 230)
 DIM_TEXT = (130, 134, 150)
 REFUSED = (240, 110, 110)
@@ -51,6 +52,18 @@ NAME = {
     Kind.DOUBLE: "Double",
     Kind.HALVE: "Halve",
     Kind.THRUSTER: "Thruster",
+}
+TIP = {
+    Tool.ADD: "Add a component",
+    Tool.WIRE: "Wire",
+    Tool.ROTATE: "Rotate",
+    Tool.MOVE: "Move a component",
+    Tool.DELETE: "Delete",
+    ViewButton.ZOOM_IN: "Zoom in",
+    ViewButton.ZOOM_OUT: "Zoom out",
+    ViewButton.PAN: "Move the view",
+    ViewButton.CENTRE: "Centre the view",
+    "colours": "Colours: not yet",
 }
 HINT = {
     Tool.ADD: "Drag a component from the menu onto the grid.",
@@ -97,6 +110,7 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     _draw_board(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     _draw_separators(screen, scene)
+    _draw_tooltip(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
         facing = scene.picked.default_facing
@@ -260,6 +274,22 @@ def _draw_button(screen, fonts: Fonts, rect, icon: str, active: bool) -> None:
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
     x, y, w, h = rect
     fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, TEXT)
+
+
+def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Name and shortcut of the palette button under the mouse, to its left."""
+    target = scene.tooltip
+    if target is None:
+        return
+    layout = scene.layout
+    rects = dict(layout.tool_buttons) | dict(layout.view_buttons)
+    x, y, _, h = rects[target] if target in rects else layout.swatches[0]
+    key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target)
+    text = fonts.text.render(TIP[target] + (f" ({key})" if key else ""), True, TEXT)
+    box = text.get_rect(midright=(x - 10, y + h // 2)).inflate(16, 10)
+    pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=5)
+    pygame.draw.rect(screen, RULE, box, 1, border_radius=5)
+    screen.blit(text, text.get_rect(center=box.center))
 
 
 def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
