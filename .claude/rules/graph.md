@@ -11,10 +11,11 @@ paths:
   No Threshold node. No slider, no numeric field the player can type into.
 - Magnitude travels as bead *rate*. Thrusters integrate incoming rate over a tick.
   Keep the numeric rate (the model) separate from the drawn beads (the editor's view of it).
-- Evaluation is deterministic: topological order, ties broken by node id (D-016). The editor
-  rejects cycles for now; the evaluator accepts them and raises `AlgebraicLoopError` unless the
-  loop is contractive (memory and the leaky integrator come after the jam).
+- Dynamics (D-017): every node obeys tau dy/dt = F(y) - y with one global tau; one explicit Euler
+  step per fixed sim tick, dt/tau in (0, 1]. The state `y` (N, n) belongs to the agent and goes
+  into the hash. Inputs are gathered in a fixed order, never with `@`. The editor rejects cycles
+  for now; the dynamics accept them (a loop is feedback that the state remembers).
 - Complexity cost is one function, `complexity(graph) -> int`, which the simulation turns into
   body radius. Do not add a separate node-count score.
-- Dataclasses, and numpy for evaluation (D-016); no pygame import. Everything here is testable
+- Dataclasses, and numpy for the dynamics (D-017); no pygame import. Everything here is testable
   headless.

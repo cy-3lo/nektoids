@@ -1,4 +1,4 @@
-"""The board compiled for evaluation: nodes and wires as numpy arrays (D-016).
+"""The board compiled for the dynamics: nodes and wires as numpy arrays (D-017).
 
 A `Network` holds no positions and no wire paths, only what the maths needs. Node `i` of the
 network is the `i`-th node by id. Inputs are gathered slot by slot, sorted by source index, so the
@@ -202,10 +202,10 @@ def label(net: Network, i: int) -> str:
 def abs_coupling(net: Network) -> np.ndarray:
     """|W|, shape (n, n): how far node j's rate can move node i's; sensors have no row or column.
 
-    With sensors known, the unknown rates solve y = F(y; sensors), F piecewise affine.
-    |W|[i, j] = gain_i / outdeg_j if a wire runs j -> i. On every branch of F (a sign for each abs,
-    a saturated or free state for each cap) the matrix of the affine system has spectral radius at
-    most rho(|W|), because abs and cap only drop or flip entries. For a DAG, |W| is nilpotent.
+    |W|[i, j] = gain_i / outdeg_j if a wire runs j -> i: F(y) is piecewise affine in the rates
+    of the operators, sensors being given, and abs and cap only drop or flip entries of the
+    matrix of each piece, so |W| bounds how far one node can move another. For a DAG, |W| is
+    nilpotent.
     """
     n = net.n
     w = np.zeros((n, n))
@@ -221,8 +221,10 @@ def contraction_factor(net: Network) -> float | None:
     """q < 1 such that F shrinks distances by q in a weighted max-norm; None if rho(|W|) >= 1.
 
     With v = (I - |W|)^-1 1 we have |W| v = v - 1, so the norm weighted by v is shrunk by
-    q = max_i (|W| v)_i / v_i = 1 - 1 / max(v). Such a v >= 1 exists exactly when rho(|W|) < 1, and
-    then the solution is unique and Jacobi iteration converges to it.
+    q = max_i (|W| v)_i / v_i = 1 - 1 / max(v). Such a v >= 1 exists exactly when rho(|W|) < 1.
+    Then, for a constant input, the lagged system has one equilibrium and every start goes to it
+    (an Euler step of size h shrinks distances by 1 - h (1 - q)). Otherwise a loop may latch,
+    oscillate or integrate.
     """
     if topological_order(net) is not None:
         return 0.0

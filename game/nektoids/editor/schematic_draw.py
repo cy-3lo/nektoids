@@ -1,22 +1,22 @@
 """Drawing the developer view. Reads the scene; never changes it.
 
 Wires are plain lines, dimmer the less they carry, with beads running along them. A part's fill
-shows its rate, from slate (nothing) to amber (R); every part shows its rate as a number. Each
-sensor has a slider beside it (the knob is what you set, the bar is what it sends now) and each
-thruster a bar. No hex grid and no arrows.
+shows its rate in shades of grey, from dim (nothing) to light (R); every part shows its rate as a
+number. Each sensor has a slider beside it (the knob is what you set, the bar is what it sends
+now) and each thruster a bar. No hex grid and no arrows.
 """
 
 from __future__ import annotations
 
 import pygame
 
+from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.devdrive import knob_y, track_for
 from nektoids.editor.draw import (
     BACKGROUND,
     DARK,
     DIM_TEXT,
     PANEL,
-    REFUSED,
     RULE,
     TEXT,
     WIRE,
@@ -27,21 +27,23 @@ from nektoids.editor.draw import (
 from nektoids.editor.geometry import cumulative_lengths, point_at, wire_points
 from nektoids.editor.schematic import BOARD_AREA, PANEL_WIDTH, STATUS_HEIGHT, SchematicScene
 from nektoids.graph.board import Kind
-from nektoids.graph.evaluate import RATE_MAX
+from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 
-IDLE = (104, 112, 136)  # a part at rate 0
-FULL = (255, 208, 84)  # a part at RATE_MAX
+IDLE = (110, 114, 128)  # a part at rate 0
+FULL = (240, 242, 248)  # a part at RATE_MAX
 WIRE_OFF = (58, 62, 76)  # a wire that carries nothing
-BEAD = FULL
+BEAD = (232, 234, 242)  # a bead on a wire at RATE_MAX
+BEAD_OFF = (92, 96, 110)  # ... and on a wire that barely carries anything
+VALUE = (196, 200, 214)  # the live numbers in the panel
 WARN = (240, 184, 96)
-BEAD_RADIUS = 0.09  # hex sizes
+BEAD_RADIUS = 0.12  # hex sizes
 BAR_WIDTH = 6  # [px]
 HEADINGS = {"head": DIM_TEXT, "eq": TEXT, "warn": WARN}
 LINE_HEIGHT = 17  # [px]
 HINTS = (
     "Drag a slider to set a sensor.  Space: pause.  . : one frame.",
-    "W: waveform.  R: restart.  Tab: next board.  F2: editor.",
+    "W: waveform.  B: beads.  R: restart.  Tab: board.  F2: editor.",
 )
 
 
@@ -77,8 +79,6 @@ def draw_schematic(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) 
     if not scene.cells:
         note = _text(fonts.text, "This board is empty: Tab for the examples", DIM_TEXT)
         screen.blit(note, note.get_rect(center=(BOARD_AREA[0] + BOARD_AREA[2] // 2, 300)))
-    if scene.error:
-        screen.blit(_text(fonts.small, "Refused: " + scene.error, REFUSED), (PANEL_WIDTH + 16, 10))
     screen.set_clip(None)
     pygame.draw.line(screen, RULE, (PANEL_WIDTH, 0), (PANEL_WIDTH, screen.get_height()), 2)
     _draw_status(screen, scene, fonts)
@@ -86,16 +86,17 @@ def draw_schematic(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) 
 
 def _draw_wires(screen: pygame.Surface, scene: SchematicScene) -> None:
     view = scene.view
+    radius = max(2, round(BEAD_RADIUS * view.size))
     for k, path in enumerate(scene.paths):
         points = wire_points(path, view.size, view.origin)
-        pygame.draw.lines(
-            screen, mix(WIRE_OFF, WIRE, scene.flux[k] / (RATE_MAX / 2)), False, points, 2
-        )
+        flux = float(scene.flux[k])
+        colour = mix(WIRE_OFF, WIRE, flux / (RATE_MAX / 2))
+        pygame.draw.lines(screen, colour, False, points, 2)
         along = cumulative_lengths(points)
-        radius = max(2, round(BEAD_RADIUS * view.size))
-        for s in scene.beads.positions[k]:
+        bead = mix(BEAD_OFF, BEAD, flux / RATE_MAX)
+        for s in scene.beads.positions(k, BEAD_RATE_AT_FULL / RATE_MAX * flux, belt=scene.belt):
             x, y = point_at(points, along, s * view.size)
-            pygame.draw.circle(screen, BEAD, (round(x), round(y)), radius)
+            pygame.draw.circle(screen, bead, (round(x), round(y)), radius)
 
 
 def _draw_parts(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) -> None:
@@ -152,7 +153,7 @@ def _draw_panel(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) -> 
         y += 6 if kind == "head" else 0
         screen.blit(_text(fonts.small, text, HEADINGS[kind]), (12, y))
         if node is not None:
-            rate = _text(fonts.small, f"{scene.y[node]:.2f}", FULL)
+            rate = _text(fonts.small, f"{scene.y[node]:.2f}", VALUE)
             screen.blit(rate, rate.get_rect(topright=(PANEL_WIDTH - 12, y)))
         y += LINE_HEIGHT
 
@@ -160,7 +161,8 @@ def _draw_panel(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) -> 
 def _draw_status(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) -> None:
     clock = scene.clock
     state = "paused" if clock.paused else "running"
-    text = f"t = {clock.seconds:5.2f} s, {state}.  Eyes follow: {scene.wave}."
+    style = "belt" if scene.belt else "spacing"
+    text = f"t = {clock.seconds:5.2f} s, {state}.  Eyes follow: {scene.wave}.  Beads: {style}."
     y = screen.get_height() - 22
     screen.blit(
         fonts.small.render(text, True, DIM_TEXT), (PANEL_WIDTH + 16, y)

@@ -18,7 +18,7 @@ from nektoids.editor.devdrive import (
     waveform,
 )
 from nektoids.editor.layout import HEX_SIZE, MAX_HEX, View, fitted_view, make_layout
-from nektoids.graph.evaluate import RATE_MAX
+from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import to_pixel
 
 

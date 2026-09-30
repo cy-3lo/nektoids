@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from nektoids.graph.evaluate import RATE_MAX
+from nektoids.graph.dynamics import RATE_MAX
 
 SIM_HZ = 120  # ticks per second
 DT = 1.0 / SIM_HZ  # [s]

@@ -26,7 +26,7 @@ In the window, try:
 
 Hover a button on the right for a second to see its shortcut key.
 
-Press F2 for the developer view (section 6): the board as a running circuit, with its equations. Tab steps through ten example boards, and F2 brings you back.
+Press F2 for the developer view (section 6): the board as a running circuit, with its equations. Tab steps through eleven example boards, and F2 brings you back.
 
 ## 1. What it does
 
@@ -186,10 +186,10 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 | `tests/test_assets.py` | the icon font ships with its licence, under 500 KB |
 | `tests/test_architecture.py` | no pygame in `sim/` or `graph/` |
 | `tests/test_network.py` | the board compiled to arrays: numbering, input order, impossible wires, topological order, loops |
-| `tests/test_evaluate.py` | rates against an independent evaluator, the cap, split, determinism, loops solved or refused |
-| `tests/test_analysis.py`, `tests/test_equations.py` | the loop report, the affine branch, the equation text |
-| `tests/test_beads.py`, `tests/test_devdrive.py` | bead spacing and travel, the clock, sliders, waveforms, fitting the view |
-| `tests/test_scenarios.py` | the ten example boards build, and behave as their titles say |
+| `tests/test_dynamics.py` | the lag step by step, bounds for every graph, determinism, rates against an independent evaluator, loops that settle, hold, latch or oscillate |
+| `tests/test_analysis.py`, `tests/test_equations.py` | the loop report and the equation text |
+| `tests/test_beads.py`, `tests/test_devdrive.py` | the bead phase and its two styles, the clock, sliders, waveforms, fitting the view |
+| `tests/test_scenarios.py` | the eleven example boards build, and behave as their titles say |
 
 ## 3. Questions to answer after reading
 
@@ -210,32 +210,36 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 
 ## 5. Where to go next
 
-- **Graph evaluation** is written (D-016, section 6) and is yours to review. What is left is the
-  hook into the simulation: `thrust_rates` gives one rate per thruster, and `Node.facing` says
-  where it pushes.
+- **The graph's dynamics** are written (D-017, section 6) and are yours to review. What is left is
+  the hook into the simulation: `thrust_rates` gives one rate per thruster, `Node.facing` says
+  where it pushes, and the state `y` of shape (N, n) has to live with the agents.
 - **`complexity()`**, one integer per graph that the simulation will turn into body size
   (`.claude/rules/graph.md`).
 - **The web arrow-key bug** above.
 
-## 6. Graph evaluation and the developer view (D-016)
+## 6. The graph as dynamics, and the developer view (D-017)
 
 Your father wrote this part, and you review it (D-005): it is where your two packages meet the
-simulation. Read D-016 in [`decisions.md`](decisions.md) first, fifteen lines.
+simulation. Read D-016 and D-017 in [`decisions.md`](decisions.md) first; D-017 replaces part of
+D-016.
 
 ### 6.1 What it computes
 
-Every node has one number, its rate `y`, between 0 and `RATE_MAX = 1`: a fraction of what a
-wire can carry.
-Evaluation is a pure function from the eyes' rates to the thrusters' rates, with no time and no
-stored state:
+Every node has one number, its rate `y`, between 0 and `RATE_MAX = 1`: a fraction of what a wire
+can carry. The rate of a node relaxes towards what its inputs ask for, like a first-order filter
+with time constant `TAU = 1/60 s`:
+
+    TAU dy/dt = F(y) - y
 
 - a wire carries its source's rate divided by the number of wires leaving that node (a fork
   splits, so beads are conserved);
-- a node adds what arrives, then applies its gain: Double ×2, Halve ÷2, Sum ×1, Difference
-  |a − b|, Thruster ×1;
-- the result is capped at `RATE_MAX`. A Source emits `SOURCE_RATE = 1`.
+- `F` adds what arrives, applies the gain (Double ×2, Halve ÷2, Sum ×1, Difference |a − b|,
+  Thruster ×1) and caps the result at `RATE_MAX`;
+- eyes and sources are given, not computed. A Source emits `SOURCE_RATE = 1`.
 
-The beads in the developer view are only a picture of these rates: 8 a second on a wire at 1.
+The simulation advances this with one explicit Euler step per tick: `y + (dt / TAU) (F(y) - y)`.
+That makes the controller a piece of state, like a position: `y` of shape (N, n) must be kept
+from tick to tick, and it goes into the hash of the run.
 
 ### 6.2 The code
 
@@ -243,11 +247,12 @@ The beads in the developer view are only a picture of these rates: 8 a second on
   numpy arrays, with no positions and no wire paths. `from_board` compiles a real board,
   `from_edges` builds one from kinds and pairs, so tests can make graphs the board refuses.
   `topological_order` is Kahn's algorithm, ties by index, like a build system ordering its
-  dependencies. `cyclic_components` finds the loops.
-- [`graph/evaluate.py`](../game/nektoids/graph/evaluate.py): `evaluate(net, eyes)` returns one
-  row per agent. Each node gathers its inputs slot by slot, in a fixed order, instead of with a
-  matrix product: a BLAS row computed in a batch can differ in the last bits from the same row
-  computed alone, and invariant 1 forbids that.
+  dependencies; it is only used now to tell whether a graph has a loop.
+- [`graph/dynamics.py`](../game/nektoids/graph/dynamics.py): `step(net, y, eyes, dt)` returns the
+  rates one tick later. Each node gathers its inputs slot by slot, in a fixed order, instead of
+  with a matrix product: a BLAS row computed in a batch can differ in the last bits from the same
+  row computed alone, and invariant 1 forbids that. `step` refuses `dt > TAU`, because then the
+  new rate would overshoot its target and could leave `[0, RATE_MAX]`.
 - [`graph/analysis.py`](../game/nektoids/graph/analysis.py) and
   [`graph/equations.py`](../game/nektoids/graph/equations.py) are developer tools: the loop report
   and the equations as text. The game never calls them.
@@ -259,30 +264,43 @@ The beads in the developer view are only a picture of these rates: 8 a second on
 
 ### 6.3 Loops
 
-The editor still refuses loops; the evaluator does not assume it. A loop of operators with
-nothing stored in it is an equation, like a spreadsheet cell that refers to itself: it may have
-no solution, one, or several. `evaluate` accepts a loop only when it can prove that the solution
-is unique (the loop gain is below 1, `contraction_factor`), and raises `AlgebraicLoopError` for
-every other loop. A loop needs a state, a memory, and that is the tank of D-015, after the jam.
-Three of the example boards are loops; open them with Tab and read the panel.
+The editor still refuses loops; the dynamics do not. A loop is feedback that the state remembers,
+so it always has a trajectory from rest. What it does depends on its gain:
 
-### 6.4 Questions to answer after reading
+- below 1 (`contraction_factor`, in `network.py`), it settles to one value whatever its start;
+- at 1 it can hold a value: the board "Loop of gain 1" keeps what an eye pulse left in it;
+- above, it can latch or oscillate: the board "Toggle" keeps whichever stage won, and a ring of
+  three inverting stages of gain 4 oscillates.
+
+That is memory without a tank (D-015), which is why loops are a scope decision (D-017) and why the
+editor still says "would close a loop".
+
+### 6.4 The beads
+
+The beads are a picture of the flux now, not a second model. Each wire has one number of memory, a
+phase: `phase += flux dt`, modulo 1. A bead leaves the source each time it wraps, and bead k sits
+at `(phase + k) * speed / flux`, so the spacing shows the rate along the whole wire at once and
+nothing jumps. The catch: when a low flux changes fast, the far beads move 49 to 581 times their
+steady step in one tick (`test_beads.py` measures it). Press B in the view for the belt style,
+with a fixed spacing and a speed proportional to the flux, which does not do that.
+
+### 6.5 Questions to answer after reading
 
 1. **Why does `Network` sort each node's input slots by source index?** Which test fails if it
-   does not? (Look in `test_evaluate.py` for the drawing order.)
-2. **Work the board "Halve on one side" by hand**, wire by wire, and compare with the numbers in
-   the panel.
-3. **In `Beads.step`, why does a new bead start at `speed * phase / flux` and not at 0?** What
-   would the spacing look like at a high rate if it started at 0?
+   does not? (Look in `test_dynamics.py` for the drawing order.)
+2. **Why must `dt` not exceed `TAU`?** Work one step of a node whose target is 0.2 and whose rate
+   is 0.9, with `dt / TAU = 1.5`.
+3. **Why does `dt = TAU` make loops flicker?** What does a step do to a node when `dt / TAU` is 1?
+   (See the last test in `test_dynamics.py`.)
 4. **What does the player see when three wires leave one eye?** Is that what a player would
    expect? (The board "A fork splits the rate".)
 
-### 6.5 Weak or untested
+### 6.6 Weak or untested
 
 - **`schematic.py` and `schematic_draw.py` have no automated tests,** for the same reason as the
   editor. Everything pure in them (clock, sliders, beads, fitting) is tested.
-- **Beads take time to travel and the model does not:** a bead needs about a second to cross a
-  four-cell wire, while the rates change at once. The numbers next to each part are the truth.
+- **`TAU` is a game parameter, not only a number:** it sets the reaction time of every path and
+  the speed of every loop. At 1/60 s a ring oscillates at about 11 Hz, too fast for beads to show.
 - **The sliders exist only in the developer view** (`DEV_VIEW` in `main.py`); the player's
   graph has none.
 
