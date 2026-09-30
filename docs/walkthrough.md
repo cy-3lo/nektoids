@@ -28,7 +28,7 @@ Hover a button on the right for a second to see its shortcut key.
 
 ## 1. What it does
 
-The editor lets the player place components (sensors, converters, actuators) on a small hex
+The editor lets the player place components (sensors, operators, actuators) on a small hex
 board and join them with directed wires, which route themselves around everything already there.
 The result is the agent's controller: a small graph that the simulation will later evaluate at
 every step.
@@ -71,7 +71,7 @@ that).
 
 **Data:**
 - **`Kind`** is the vocabulary: Eye, Source, Double, Halve, Sum, Difference, Thruster. Each kind knows:
-  - its `category` (sensor, converter or actuator);
+  - its `category` (sensor, operator or actuator);
   - whether it `emits` and `receives`;
   - its `default_facing` (eyes and thrusters point somewhere, the others don't);
   - its input and output limits (Sum and Difference: two in, one out).

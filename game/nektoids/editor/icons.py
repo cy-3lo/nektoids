@@ -6,7 +6,7 @@ under pygbag cannot open a font from bytes in memory. Each glyph is rendered the
 it is drawn at a given size, colour and turn, then reused.
 
 Icons are centred on their drawn pixels, not on the glyph box, which is uneven. The eye and the
-rocket turn with their part, so they point where it does; the converters' chevrons stay upright.
+rocket turn with their part, so they point where it does; the operators' chevrons stay upright.
 """
 
 from __future__ import annotations

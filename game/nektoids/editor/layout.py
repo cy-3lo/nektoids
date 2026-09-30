@@ -1,7 +1,7 @@
 """Where everything sits on the 960 x 640 editor screen, and what is under a given pixel.
 
 Three columns, with vertical separators:
-- left, the menu: component groups (sensors, converters, actuators) that fold under their title;
+- left, the menu: component groups (sensors, operators, actuators) that fold under their title;
 - centre, the hex grid, filling its column, with one status line at its foot;
 - right, the palette: view buttons (zoom in, zoom out, hand, centre), then the editing tools,
   then a colour picker, inactive until colours carry a meaning.
@@ -39,7 +39,7 @@ ZOOM_STEP = 1.25  # hex size factor per click
 
 MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
     ("Sensors", (Kind.EYE, Kind.SOURCE)),
-    ("Converters", (Kind.DOUBLE, Kind.HALVE, Kind.SUM, Kind.DIFFERENCE)),
+    ("Operators", (Kind.DOUBLE, Kind.HALVE, Kind.SUM, Kind.DIFFERENCE)),
     ("Actuators", (Kind.THRUSTER,)),
 )
 

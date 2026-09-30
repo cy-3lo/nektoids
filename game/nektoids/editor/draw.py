@@ -4,7 +4,7 @@ Everything is grey: colour is reserved for telling signals apart, later. Red onl
 refusal; what the Delete tool would remove on a click turns a darker grey.
 
 Shapes carry the category: sensors are half-discs looking out of their round side,
-converters are diamonds, thrusters are squares with a nose pointing the way they push.
+operators are diamonds, thrusters are squares with a nose pointing the way they push.
 Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
 them in place (D-009). An icon inside each shape says its role (D-012).
 """
@@ -223,7 +223,7 @@ def _shape(kind: Kind, angle: float | None, centre, size: float) -> list[tuple[f
     """Polygon for `kind`, turned to point at `angle` [degrees, counter-clockwise on screen]."""
     template = {
         Category.SENSOR: HALF_DISC,
-        Category.CONVERTER: DIAMOND,
+        Category.OPERATOR: DIAMOND,
         Category.ACTUATOR: NOSE,
     }[kind.category]
     phi = math.radians(-(angle or 0.0))  # y points down

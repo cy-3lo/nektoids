@@ -28,7 +28,7 @@ from nektoids.graph.hexgrid import (
 
 class Category(Enum):
     SENSOR = "sensor"
-    CONVERTER = "converter"
+    OPERATOR = "operator"
     ACTUATOR = "actuator"
 
 
@@ -55,7 +55,7 @@ class Kind(Enum):
 
     @property
     def default_facing(self) -> int | None:
-        """Hex direction on the body until the player turns it (forward = E); None for converters.
+        """Hex direction on the body until the player turns it (forward = E); None for operators.
 
         Where an eye looks, or which way a thruster pushes (D-009).
         """
@@ -75,10 +75,10 @@ class Kind(Enum):
 _CATEGORY = {
     Kind.EYE: Category.SENSOR,
     Kind.SOURCE: Category.SENSOR,
-    Kind.DOUBLE: Category.CONVERTER,
-    Kind.HALVE: Category.CONVERTER,
-    Kind.SUM: Category.CONVERTER,
-    Kind.DIFFERENCE: Category.CONVERTER,
+    Kind.DOUBLE: Category.OPERATOR,
+    Kind.HALVE: Category.OPERATOR,
+    Kind.SUM: Category.OPERATOR,
+    Kind.DIFFERENCE: Category.OPERATOR,
     Kind.THRUSTER: Category.ACTUATOR,
 }
 _DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward; the others have no direction
@@ -173,7 +173,7 @@ class Board:
         """Put a component on an empty cell.
 
         Eyes and thrusters point along `facing`, or their kind's default if it is None;
-        converters have no direction.
+        operators have no direction.
         """
         if cell not in self._on_board:
             return Refused("outside the zone")

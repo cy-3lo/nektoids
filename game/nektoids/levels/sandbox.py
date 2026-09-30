@@ -12,7 +12,7 @@ from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import NE, SE, E, hex_disc
 
 ZONE = hex_disc(2)
-CONVERTERS = {kind: None for kind in (Kind.DOUBLE, Kind.HALVE, Kind.SUM, Kind.DIFFERENCE)}
+OPERATORS = {kind: None for kind in (Kind.DOUBLE, Kind.HALVE, Kind.SUM, Kind.DIFFERENCE)}
 # Tuples, not dicts: placement order sets the node ids (invariant 1).
 IO_PARTS = (
     (Kind.EYE, (-1, -1), NE),  # upper left
@@ -23,13 +23,13 @@ IO_PARTS = (
 
 
 def free_board() -> Board:
-    """Typical level: two eyes, a source and two thrusters in the menu, converters unlimited."""
-    return Board(ZONE, {Kind.EYE: 2, Kind.SOURCE: 1, Kind.THRUSTER: 2} | CONVERTERS)
+    """Typical level: two eyes, a source and two thrusters in the menu, operators unlimited."""
+    return Board(ZONE, {Kind.EYE: 2, Kind.SOURCE: 1, Kind.THRUSTER: 2} | OPERATORS)
 
 
 def tutorial_board() -> Board:
-    """Braitenberg tutorial: eyes and thrusters pre-placed and locked, converters unlimited."""
-    board = Board(ZONE, CONVERTERS)
+    """Braitenberg tutorial: eyes and thrusters pre-placed and locked, operators unlimited."""
+    board = Board(ZONE, OPERATORS)
     for kind, cell, facing in IO_PARTS:
         board.place(kind, cell, locked=True, facing=facing)
     return board

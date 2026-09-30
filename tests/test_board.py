@@ -32,7 +32,7 @@ def test_sensors_only_emit_and_thrusters_only_receive():
 # Placement
 
 
-def test_eyes_and_thrusters_point_where_placed_converters_nowhere():
+def test_eyes_and_thrusters_point_where_placed_operators_nowhere():
     board = Board(RECT)
     assert board.place(Kind.EYE, (0, 1)).facing == E  # the kind's default: forward
     assert board.place(Kind.EYE, (0, 3), facing=W).facing == W
@@ -237,7 +237,7 @@ def test_can_pass_rules():
 
 
 def hand_drawn(board, path):
-    """Add a wire along a given path, between two converters placed at its ends."""
+    """Add a wire along a given path, between two operators placed at its ends."""
     source = board.place(Kind.DOUBLE, path[0])
     target = board.place(Kind.HALVE, path[-1])
     wire = Wire(source.id, target.id, path)
