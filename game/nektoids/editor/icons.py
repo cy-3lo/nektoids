@@ -1,13 +1,15 @@
 """Icons from Font Awesome Free 6.7.2 Solid (D-012), bundled unmodified with its licence.
 
-The font is opened once at startup (web.md); each glyph is rendered the first time it is drawn at
-a given size, colour and turn, then reused. Icons are centred on their drawn pixels, not on the
+The font file is read once, at startup (web.md: no file I/O in the loop); each size is built
+from those bytes, and each glyph is rendered the first time it is drawn at a given size,
+colour and turn, then reused. Icons are centred on their drawn pixels, not on the
 glyph box, which is uneven. The eye and the rocket turn with their part, so they point where it
 does; the converters' chevrons stay upright.
 """
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
 import pygame
@@ -67,6 +69,7 @@ VIEW_ICON = {
 class Icons:
     def __init__(self) -> None:
         """Call once at startup, after pygame.init()."""
+        self._data = FONT_FILE.read_bytes()
         self._fonts: dict[int, pygame.font.Font] = {}
         self._glyphs: dict[tuple[str, int, tuple[int, int, int], float | None], pygame.Surface] = {}
 
@@ -83,7 +86,7 @@ class Icons:
 
     def _render(self, name, size, colour, turn):
         if size not in self._fonts:
-            self._fonts[size] = pygame.font.Font(str(FONT_FILE), size)
+            self._fonts[size] = pygame.font.Font(io.BytesIO(self._data), size)
         glyph = self._fonts[size].render(chr(GLYPH[name]), True, colour)
         if turn is None:
             return glyph
