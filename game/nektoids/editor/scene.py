@@ -7,7 +7,8 @@ Tools:
 - Rotate: click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back (D-009).
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
-- Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013).
+- Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
+  button brings the central cell back to the middle.
 
 Clicking a menu title folds or unfolds its group. Right click or Escape cancels. Every refusal
 flashes the cell and puts the reason in the status line.
@@ -159,6 +160,9 @@ class EditorScene:
         if button is ViewButton.PAN:
             self._cancel()
             self.tool = Tool.PAN
+            return
+        if button is ViewButton.CENTRE:
+            self.view = centred_view(self.layout, self.view.size)
             return
         x, y, w, h = self.layout.board_area
         factor = ZOOM_STEP if button is ViewButton.ZOOM_IN else 1.0 / ZOOM_STEP

@@ -34,6 +34,7 @@ GLYPH = {
     "magnifying-glass-plus": 0xF00E,
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,
+    "location-crosshairs": 0xF601,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the half-disc's flat side.
@@ -56,6 +57,7 @@ VIEW_ICON = {
     ViewButton.ZOOM_IN: "magnifying-glass-plus",
     ViewButton.ZOOM_OUT: "magnifying-glass-minus",
     ViewButton.PAN: "hand",
+    ViewButton.CENTRE: "location-crosshairs",
 }
 
 

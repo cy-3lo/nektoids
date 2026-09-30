@@ -3,8 +3,8 @@
 Three columns, with vertical separators:
 - left, the menu: component groups (sensors, converters, actuators) that fold under their title;
 - centre, the hex grid, filling its column, with one status line at its foot;
-- right, the palette: view buttons (zoom in, zoom out, hand), then the editing tools, then a
-  colour picker, inactive until colours carry a meaning.
+- right, the palette: view buttons (zoom in, zoom out, hand, centre), then the editing tools,
+  then a colour picker, inactive until colours carry a meaning.
 
 The screen regions are fixed; the View says how big a hex is and where the grid sits in its
 column, and zoom and pan change only the View (D-013). Plain numbers and tuples, no pygame, so
@@ -60,6 +60,7 @@ class ViewButton(Enum):
     ZOOM_IN = "zoom in"
     ZOOM_OUT = "zoom out"
     PAN = "pan"
+    CENTRE = "centre"  # bring cell (0, 0) back to the middle, at the same zoom
 
 
 @dataclass(frozen=True)

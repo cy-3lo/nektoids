@@ -129,3 +129,8 @@ def test_the_grid_still_fills_the_area_zoomed_out():
     for x in range(x0, x0 + w, 5):
         for y in range(y0, y0 + h, 5):
             assert cell_at(LAYOUT, far, (x, y)) in shown
+
+
+def test_the_palette_fits_on_screen():
+    rects = [r for _, r in LAYOUT.view_buttons] + [r for _, r in LAYOUT.tool_buttons]
+    assert max(y + h for _, y, _, h in [*rects, *LAYOUT.swatches]) <= SCREEN[1] - 8
