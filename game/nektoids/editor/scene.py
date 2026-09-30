@@ -4,6 +4,9 @@ Tools: Add (drag a component from the palette onto a cell, or pick it and click 
 (click a source, then a target; hovering a target shows the route first), Delete (click a
 component, or a wire where it crosses a cell). Right click or Escape cancels. Every refusal
 flashes the cell and puts the reason in the status line.
+
+Rotate (click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back,
+D-009).
 """
 
 from __future__ import annotations
@@ -12,7 +15,13 @@ import math
 
 import pygame
 
-from nektoids.editor.layout import Layout, Tool, cell_at, palette_item_at, tool_at
+from nektoids.editor.layout import (
+    Layout,
+    Tool,
+    cell_at,
+    palette_item_at,
+    tool_at,
+)
 from nektoids.graph.board import Board, Kind, Refused, Wire
 from nektoids.graph.hexgrid import Cell, direction_to, opposite, to_pixel
 
@@ -78,6 +87,8 @@ class EditorScene:
             self._add(self.hover)
         elif self.tool is Tool.WIRE:
             self._wire(self.hover)
+        elif self.tool is Tool.ROTATE:
+            self._rotate(self.hover, back=bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
         else:
             self._delete(self.hover, pos)
 
@@ -134,6 +145,18 @@ class EditorScene:
             self._refuse(result.reason, cell)
             return
         self.source, self.ghost, self.message = None, None, ""
+
+    def _rotate(self, cell: Cell, back: bool) -> None:
+        node = self.board.node_at(cell)
+        if node is None:
+            self._refuse("click an eye or a thruster", cell)
+            return
+        # Direction indices run counter-clockwise on screen, so clockwise is -1.
+        result = self.board.rotate(node.id, 1 if back else -1)
+        if isinstance(result, Refused):
+            self._refuse(result.reason, cell)
+        else:
+            self.message = ""
 
     def _delete(self, cell: Cell, pos: tuple[int, int]) -> None:
         node = self.board.node_at(cell)

@@ -51,3 +51,11 @@ For the jam it is fixed per kind (left eye NE, right eye SE, thrusters E) and th
 tool, because choosing it is sensor layout editing, which the scope lock excludes.
 Post-jam: a rotate tool in 60° steps, and one bundled icon font (open licence, small, loaded at
 startup, checked under pygbag) to mark sensor and actuator types (light, flow, ...) inside the shapes.
+
+**D-009 — 2026-09-30 — Supersedes D-008's rotation clause: the player turns eyes and thrusters.**
+Where an eye looks and which way a thruster pushes are part of the mechanism the player authors.
+A Rotate tool in the toolbar turns a placed eye or thruster by 60° (click: clockwise, shift-click:
+back). New parts take their kind's default direction. Converters have no direction; locked parts
+placed by a level keep theirs. The scope lock in `CLAUDE.md` now has sensor directions in and
+moving sensors on the body out.
+The sim reads each eye's and thruster's direction from the board, never from a constant.

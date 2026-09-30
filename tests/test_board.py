@@ -1,5 +1,5 @@
 from nektoids.graph.board import Board, Category, Kind, Refused, can_pass
-from nektoids.graph.hexgrid import axis, direction_to
+from nektoids.graph.hexgrid import NE, SE, E, W, axis, direction_to
 
 # Row 3 of a 9 x 7 board runs from (-1, 3) to (7, 3) along the E-W axis.
 
@@ -28,6 +28,27 @@ def test_sensors_only_emit_and_thrusters_only_receive():
 
 
 # Placement
+
+
+def test_eyes_and_thrusters_point_where_placed_converters_nowhere():
+    board = Board(9, 7)
+    assert board.place(Kind.SENSOR_L, (0, 1)).facing == NE  # the kind's default
+    assert board.place(Kind.SENSOR_R, (0, 3), facing=W).facing == W
+    assert board.place(Kind.THRUSTER_L, (4, 1), locked=True, facing=SE).facing == SE
+    assert board.place(Kind.DOUBLE, (2, 3), facing=E).facing is None
+
+
+def test_rotate_turns_eyes_and_thrusters_in_place_only():
+    board = Board(9, 7)
+    eye = board.place(Kind.SENSOR_L, (0, 1))
+    assert board.rotate(eye.id, -1).facing == E  # NE, one step clockwise
+    assert board.rotate(eye.id, -1).facing == SE
+    assert board.rotate(eye.id, 8).facing == NE  # two steps back, plus a full turn
+    assert board.nodes[eye.id].cell == (0, 1)
+    gain = board.place(Kind.DOUBLE, (2, 3))
+    assert board.rotate(gain.id, 1) == Refused("converters have no direction")
+    fixed = board.place(Kind.THRUSTER_L, (6, 1), locked=True)
+    assert board.rotate(fixed.id, 1) == Refused("placed by the level")
 
 
 def test_place_refuses_off_board_and_taken_cells():

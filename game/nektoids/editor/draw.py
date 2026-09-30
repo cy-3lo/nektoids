@@ -2,7 +2,8 @@
 
 Shapes carry the category: sensors are half-discs looking out of their round side,
 converters are diamonds, thrusters are squares with a nose pointing the way they push.
-Oriented shapes are drawn in the agent's frame, forward = E (D-008).
+Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
+them in place (D-009).
 """
 
 from __future__ import annotations
@@ -57,6 +58,7 @@ NAME = {
 HINT = {
     Tool.ADD: "Drag a component from the palette onto the grid.",
     Tool.WIRE: "Click a source, then a target. Right click cancels.",
+    Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
     Tool.DELETE: "Click a component, or a wire where it crosses a cell.",
 }
 
@@ -94,7 +96,8 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     _draw_status(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
         size = scene.layout.hex_size
-        _draw_node(screen, fonts, scene.picked, scene.mouse, size, locked=False)
+        facing = scene.picked.default_facing
+        _draw_node(screen, fonts, scene.picked, facing, scene.mouse, size, locked=False)
 
 
 # Board
@@ -116,7 +119,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 
     for node in board.nodes.values():
         centre = _centre(layout, node.cell)
-        _draw_node(screen, fonts, node.kind, centre, layout.hex_size, node.locked)
+        _draw_node(screen, fonts, node.kind, node.facing, centre, layout.hex_size, node.locked)
         if node.id == scene.source:
             pygame.draw.circle(screen, TEXT, centre, 0.8 * layout.hex_size, 2)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
@@ -139,24 +142,33 @@ def _draw_wire(screen, layout: Layout, path: tuple[Cell, ...], colour, width: in
     pygame.draw.polygon(screen, colour, [tip, *wings])
 
 
-def _draw_node(screen, fonts: Fonts, kind: Kind, centre, size: float, locked: bool, fill=None):
+def _draw_node(
+    screen,
+    fonts: Fonts,
+    kind: Kind,
+    facing: int | None,
+    centre,
+    size: float,
+    locked: bool,
+    fill=None,
+):
     fill = fill or FILL[kind.category]
-    outline = _shape(kind, centre, size)
+    outline = _shape(kind, facing, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if locked:
-        pygame.draw.polygon(screen, LOCK_RING, _shape(kind, centre, 1.25 * size), 2)
+        pygame.draw.polygon(screen, LOCK_RING, _shape(kind, facing, centre, 1.25 * size), 2)
     text = fonts.label.render(LABEL[kind], True, DARK)
     screen.blit(text, text.get_rect(center=(round(centre[0]), round(centre[1]))))
 
 
-def _shape(kind: Kind, centre, size: float) -> list[tuple[float, float]]:
-    """Polygon for `kind`, turned to face its direction (direction d is at -60° * d, y down)."""
+def _shape(kind: Kind, facing: int | None, centre, size: float) -> list[tuple[float, float]]:
+    """Polygon for `kind`, turned to `facing` (direction d is at -60° * d, y down)."""
     template = {
         Category.SENSOR: HALF_DISC,
         Category.CONVERTER: DIAMOND,
         Category.ACTUATOR: NOSE,
     }[kind.category]
-    phi = math.radians(-60.0 * (kind.facing or 0))
+    phi = math.radians(-60.0 * (facing or 0))
     c, s = math.cos(phi), math.sin(phi)
     return [
         (centre[0] + size * (u * c - v * s), centre[1] + size * (u * s + v * c))
@@ -191,14 +203,16 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         pygame.draw.rect(screen, ACTIVE if kind == scene.picked else BUTTON, rect, border_radius=6)
         x, y, w, h = rect
         icon = (x + 22, y + h / 2)
-        _draw_node(screen, fonts, kind, icon, 26, locked=False, fill=GREYED if empty else None)
+        fill = GREYED if empty else None
+        _draw_node(screen, fonts, kind, kind.default_facing, icon, 26, locked=False, fill=fill)
         name = fonts.text.render(NAME[kind], True, DIM_TEXT if empty else TEXT)
         screen.blit(name, (x + 46, y + (h - name.get_height()) // 2))
+        right = x + w - 12  # right edge of the count
         if left is None:
-            _draw_infinity(screen, (x + w - 18, y + h // 2), TEXT)
+            _draw_infinity(screen, (right - 6, y + h // 2), TEXT)
         else:
             count = fonts.text.render(str(left), True, DIM_TEXT if empty else TEXT)
-            screen.blit(count, (x + w - 12 - count.get_width(), y + (h - count.get_height()) // 2))
+            screen.blit(count, (right - count.get_width(), y + (h - count.get_height()) // 2))
 
 
 def _draw_infinity(screen, centre, colour) -> None:
@@ -206,6 +220,24 @@ def _draw_infinity(screen, centre, colour) -> None:
     x, y = centre
     pygame.draw.circle(screen, colour, (x - 4, y), 4, 2)
     pygame.draw.circle(screen, colour, (x + 4, y), 4, 2)
+
+
+def _draw_rotate(screen, centre, r: float, colour) -> None:
+    """Clockwise circular arrow of radius r (the default font has no ↻)."""
+    cx, cy = centre
+    # pygame arcs run counter-clockwise on screen: this one leaves a gap on the right.
+    arc_box = (cx - r, cy - r, 2 * r, 2 * r)
+    pygame.draw.arc(screen, colour, arc_box, math.radians(30), math.radians(330), 2)
+    end = math.radians(30)  # the arrow ends up-right, heading clockwise (down-right)
+    px, py = cx + r * math.cos(end), cy - r * math.sin(end)
+    tx, ty = math.sin(end), math.cos(end)  # clockwise tangent, y down
+    nx, ny = math.cos(end), -math.sin(end)  # outward normal, y down
+    head = [
+        (px + 0.7 * r * tx, py + 0.7 * r * ty),
+        (px + 0.55 * r * nx - 0.15 * r * tx, py + 0.55 * r * ny - 0.15 * r * ty),
+        (px - 0.55 * r * nx - 0.15 * r * tx, py - 0.55 * r * ny - 0.15 * r * ty),
+    ]
+    pygame.draw.polygon(screen, colour, head)
 
 
 def _draw_toolbar(screen: pygame.Surface, scene: EditorScene) -> None:
@@ -221,6 +253,8 @@ def _draw_toolbar(screen: pygame.Surface, scene: EditorScene) -> None:
             pygame.draw.lines(screen, TEXT, False, points, 3)
             pygame.draw.circle(screen, TEXT, points[0], 3)
             pygame.draw.circle(screen, TEXT, points[-1], 3)
+        elif tool is Tool.ROTATE:
+            _draw_rotate(screen, (cx, cy), 10, TEXT)
         else:
             pygame.draw.polygon(
                 screen,

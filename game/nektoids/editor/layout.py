@@ -15,7 +15,7 @@ from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel
 Rect = tuple[int, int, int, int]  # x, y, width, height [px]
 
 SCREEN = (960, 640)  # [px]
-PALETTE_WIDTH = 220  # [px]
+PALETTE_WIDTH = 240  # [px]
 TOOLBAR_HEIGHT = 56  # [px]
 STATUS_HEIGHT = 32  # [px]
 MARGIN = 16  # [px]
@@ -33,6 +33,7 @@ PALETTE_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
 class Tool(Enum):
     ADD = "add"
     WIRE = "wire"
+    ROTATE = "rotate"
     DELETE = "delete"
 
 

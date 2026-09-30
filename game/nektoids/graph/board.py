@@ -14,7 +14,7 @@ from __future__ import annotations
 import heapq
 import itertools
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 
 from nektoids.graph.hexgrid import (
@@ -57,12 +57,12 @@ class Kind(Enum):
         return self.category is not Category.SENSOR
 
     @property
-    def facing(self) -> int | None:
-        """Hex direction it points to on the body, forward being E; None for converters.
+    def default_facing(self) -> int | None:
+        """Hex direction on the body until the player turns it (forward = E); None for converters.
 
-        Where an eye looks, or which way a thruster pushes. Fixed per kind for the jam (D-008).
+        Where an eye looks, or which way a thruster pushes (D-009).
         """
-        return _FACING.get(self)
+        return _DEFAULT_FACING.get(self)
 
 
 _CATEGORY = {
@@ -73,7 +73,7 @@ _CATEGORY = {
     Kind.THRUSTER_L: Category.ACTUATOR,
     Kind.THRUSTER_R: Category.ACTUATOR,
 }
-_FACING = {Kind.SENSOR_L: NE, Kind.SENSOR_R: SE, Kind.THRUSTER_L: E, Kind.THRUSTER_R: E}
+_DEFAULT_FACING = {Kind.SENSOR_L: NE, Kind.SENSOR_R: SE, Kind.THRUSTER_L: E, Kind.THRUSTER_R: E}
 
 
 @dataclass(frozen=True)
@@ -82,6 +82,7 @@ class Node:
     kind: Kind
     cell: Cell
     locked: bool = False  # pre-placed by the level: cannot be removed
+    facing: int | None = None  # hex direction on the body (eyes, thrusters); None for converters
 
 
 @dataclass(frozen=True)
@@ -142,7 +143,14 @@ class Board:
 
     # Components
 
-    def place(self, kind: Kind, cell: Cell, locked: bool = False) -> Node | Refused:
+    def place(
+        self, kind: Kind, cell: Cell, locked: bool = False, facing: int | None = None
+    ) -> Node | Refused:
+        """Put a component on an empty cell.
+
+        Eyes and thrusters point along `facing`, or their kind's default if it is None;
+        converters have no direction.
+        """
         if cell not in self._on_board:
             return Refused("off the board")
         if self.node_at(cell) is not None:
@@ -154,7 +162,11 @@ class Board:
             if left == 0:
                 return Refused("none left")
             self._stock[kind] = left - 1
-        node = Node(self._next_id, kind, cell, locked)
+        if kind.default_facing is None:
+            facing = None
+        elif facing is None:
+            facing = kind.default_facing
+        node = Node(self._next_id, kind, cell, locked=locked, facing=facing)
         self.nodes[node.id] = node
         self._next_id += 1
         return node
@@ -170,6 +182,17 @@ class Board:
         if left is not None:
             self._stock[node.kind] = left + 1
         return None
+
+    def rotate(self, node_id: int, steps: int) -> Node | Refused:
+        """Turn an eye or a thruster by `steps` x 60°: counter-clockwise on screen if positive."""
+        node = self.nodes[node_id]
+        if node.facing is None:
+            return Refused("converters have no direction")
+        if node.locked:
+            return Refused("placed by the level")
+        turned = replace(node, facing=(node.facing + steps) % 6)
+        self.nodes[node_id] = turned
+        return turned
 
     # Wires
 
