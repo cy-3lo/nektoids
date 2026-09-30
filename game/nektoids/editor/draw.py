@@ -55,7 +55,7 @@ HINT = {
     Tool.ADD: "Drag a component from the palette onto the grid.",
     Tool.WIRE: "Click a source, then a target. Right click cancels.",
     Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
-    Tool.DELETE: "Click a component, or a wire where it crosses a cell.",
+    Tool.DELETE: "Click a component to delete it, or a wire.",
 }
 
 # Shapes in a local frame: unit = hex size, forward = +x.

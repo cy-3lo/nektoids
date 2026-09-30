@@ -4,8 +4,15 @@ import math
 
 import pytest
 
-from nektoids.editor.geometry import edge_midpoint, turn_centre, wire_points
-from nektoids.graph.hexgrid import NE, NW, SQRT3, W, to_pixel
+from nektoids.editor.geometry import (
+    distance_to_polyline,
+    edge_midpoint,
+    nearest_wire,
+    turn_centre,
+    wire_points,
+)
+from nektoids.graph.board import Wire
+from nektoids.graph.hexgrid import NE, NW, SQRT3, E, W, to_pixel
 
 SIZE = 40.0  # [px]
 ORIGIN = (100.0, 100.0)  # [px]
@@ -56,3 +63,28 @@ def test_wire_points_run_centre_to_centre_and_arc_inside_the_turning_cell():
 def test_adjacent_components_are_joined_by_one_segment():
     points = wire_points(((0, 0), (1, 0)), SIZE, ORIGIN)
     assert points == [to_pixel((0, 0), SIZE, ORIGIN), to_pixel((1, 0), SIZE, ORIGIN)]
+
+
+def test_distance_to_polyline():
+    square = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)]
+    assert distance_to_polyline((5.0, 3.0), square) == pytest.approx(3.0)
+    assert distance_to_polyline((12.0, 5.0), square) == pytest.approx(2.0)
+    assert distance_to_polyline((-3.0, -4.0), square) == pytest.approx(5.0)
+
+
+def test_a_wire_between_neighbours_is_found_between_their_shapes():
+    # Two components side by side: the wire crosses no free cell, only their shared edge.
+    wire = Wire(0, 1, ((1, 3), (2, 3)))
+    x, y = edge_midpoint((1, 3), E, SIZE, ORIGIN)
+    assert nearest_wire((x - 3.0, y + 2.0), [wire], SIZE, ORIGIN, within=8.0) == wire
+    assert nearest_wire((x, y + 20.0), [wire], SIZE, ORIGIN, within=8.0) is None
+
+
+def test_nearest_wire_picks_the_closer_of_two_crossing_wires():
+    across = Wire(0, 1, ((1, 3), (2, 3), (3, 3), (4, 3)))  # straight E-W through (3, 3)
+    diagonal = Wire(2, 3, ((2, 4), (3, 3), (4, 2)))  # straight SW-NE through (3, 3)
+    cx, cy = to_pixel((3, 3), SIZE, ORIGIN)
+    assert nearest_wire((cx + 12.0, cy + 1.0), [across, diagonal], SIZE, ORIGIN, 8.0) == across
+    ne = edge_midpoint((3, 3), NE, SIZE, ORIGIN)
+    near_ne = (0.5 * (cx + ne[0]), 0.5 * (cy + ne[1]))
+    assert nearest_wire(near_ne, [across, diagonal], SIZE, ORIGIN, 8.0) == diagonal

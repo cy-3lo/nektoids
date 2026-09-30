@@ -15,6 +15,7 @@ import math
 
 import pygame
 
+from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.layout import (
     Layout,
     Tool,
@@ -22,10 +23,12 @@ from nektoids.editor.layout import (
     palette_item_at,
     tool_at,
 )
-from nektoids.graph.board import Board, Kind, Refused, Wire
-from nektoids.graph.hexgrid import Cell, direction_to, opposite, to_pixel
+from nektoids.graph.board import Board, Kind, Refused
+from nektoids.graph.hexgrid import Cell, to_pixel
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
+NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
+WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
 
 class EditorScene:
@@ -159,38 +162,32 @@ class EditorScene:
             self.message = ""
 
     def _delete(self, cell: Cell, pos: tuple[int, int]) -> None:
+        """A click on a component's shape deletes it; otherwise the wire drawn under the click.
+
+        Wires count before the rest of a component's cell, because a wire between two
+        neighbouring components crosses no free cell: it only shows between their shapes.
+        """
+        size, origin = self.layout.hex_size, self.layout.origin
         node = self.board.node_at(cell)
-        if node is not None:
+        on_shape = (
+            node is not None and math.dist(pos, to_pixel(cell, size, origin)) < NODE_HIT * size
+        )
+        wire = (
+            None if on_shape else nearest_wire(pos, self.board.wires, size, origin, WIRE_HIT * size)
+        )
+        if wire is not None:
+            self.board.remove_wire(wire)
+            self.message = ""
+        elif node is not None:
             result = self.board.remove_node(node.id)
             if isinstance(result, Refused):
                 self._refuse(result.reason, cell)
             else:
                 self.message = ""
-            return
-        wires = self.board.wires_in(cell)
-        if not wires:
+        else:
             self._refuse("nothing to delete here", cell)
-            return
-        self.board.remove_wire(self._wire_toward(wires, cell, pos))
-        self.message = ""
 
     # Helpers
-
-    def _wire_toward(self, wires: list[Wire], cell: Cell, pos: tuple[int, int]) -> Wire:
-        """Of the wires crossing `cell`, the one whose segment points closest to the click."""
-        cx, cy = to_pixel(cell, self.layout.hex_size, self.layout.origin)
-        click = math.degrees(math.atan2(pos[1] - cy, pos[0] - cx))
-
-        def gap(wire: Wire) -> float:
-            i = wire.path.index(cell)
-            ends = (
-                opposite(direction_to(wire.path[i - 1], cell)),
-                direction_to(cell, wire.path[i + 1]),
-            )
-            # Direction d points at screen angle -60° * d (y down).
-            return min(abs((click + 60.0 * d + 180.0) % 360.0 - 180.0) for d in ends)
-
-        return min(wires, key=gap)
 
     def _update_ghost(self) -> None:
         self.ghost = None

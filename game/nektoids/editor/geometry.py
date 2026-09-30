@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import math
 
-from nektoids.graph.board import crossings
+from nektoids.graph.board import Wire, crossings
 from nektoids.graph.hexgrid import SQRT3, Cell, opposite, to_pixel
 
 Point = tuple[float, float]  # [px]
@@ -77,3 +77,28 @@ def _arc(centre: Point, a: Point, b: Point) -> list[Point]:
 
 def _unit(degrees: float) -> Point:
     return (math.cos(math.radians(degrees)), math.sin(math.radians(degrees)))
+
+
+def distance_to_polyline(point: Point, points: list[Point]) -> float:
+    """Shortest distance from `point` to the polyline through `points` [px]."""
+    return min(_distance_to_segment(point, a, b) for a, b in zip(points, points[1:], strict=False))
+
+
+def nearest_wire(
+    point: Point, wires: list[Wire], size: float, origin: Point, within: float
+) -> Wire | None:
+    """The wire drawn closest to `point`, if closer than `within` [px]; ties go to the first."""
+    best, best_distance = None, within
+    for wire in wires:
+        distance = distance_to_polyline(point, wire_points(wire.path, size, origin))
+        if distance < best_distance:
+            best, best_distance = wire, distance
+    return best
+
+
+def _distance_to_segment(p: Point, a: Point, b: Point) -> float:
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length2 = dx * dx + dy * dy
+    t = 0.0 if length2 == 0.0 else ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / length2
+    t = min(1.0, max(0.0, t))
+    return math.dist(p, (a[0] + t * dx, a[1] + t * dy))
