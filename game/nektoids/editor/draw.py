@@ -38,7 +38,8 @@ DIM_TEXT = (130, 134, 150)
 REFUSED = (240, 110, 110)
 DARK = (18, 20, 28)
 WIRE = (150, 154, 166)
-GHOST = (110, 115, 135)
+GHOST = (96, 101, 118)  # where a wire would run
+GHOST_OK = (228, 231, 240)  # ... and it may connect there
 LOCK_RING = (170, 175, 190)
 COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
@@ -51,7 +52,7 @@ NAME = {
 }
 HINT = {
     Tool.ADD: "Drag a component from the palette onto the grid.",
-    Tool.WIRE: "Click a source, then a target. Right click cancels.",
+    Tool.WIRE: "Drag from a source to a target, or click one then the other.",
     Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",
@@ -116,7 +117,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
 
     if isinstance(scene.ghost, tuple):
-        _draw_wire(screen, view, scene.ghost, GHOST, 2)
+        colour, width = (GHOST_OK, 3) if scene.ghost_connects else (GHOST, 2)
+        _draw_wire(screen, view, scene.ghost, colour, width)
     for wire in board.wires:
         _draw_wire(screen, view, wire.path, WIRE, 3)
 
