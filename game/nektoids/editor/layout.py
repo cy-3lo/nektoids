@@ -31,8 +31,8 @@ BUTTON = 40  # palette button side [px]
 BUTTON_STEP = 48  # palette button pitch [px]
 ITEM_HEIGHT = 44  # menu row [px]
 TITLE_HEIGHT = 28  # menu group title [px]
-SWATCH = 18  # colour picker square [px]
-SWATCH_ROWS = 4  # of two swatches each
+SWATCH_HEIGHT = 14  # colour picker swatch, as wide as a button [px]
+SWATCHES = 6
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
@@ -116,11 +116,8 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
         y += BUTTON_STEP
     rules.append(y)
     y += MARGIN
-    gap = BUTTON - 2 * SWATCH
     swatches = tuple(
-        (x + col * (SWATCH + gap), y + row * (SWATCH + gap), SWATCH, SWATCH)
-        for row in range(SWATCH_ROWS)
-        for col in range(2)
+        (x, y + i * (SWATCH_HEIGHT + 6), BUTTON, SWATCH_HEIGHT) for i in range(SWATCHES)
     )
     return Layout(
         menu_area=menu,
