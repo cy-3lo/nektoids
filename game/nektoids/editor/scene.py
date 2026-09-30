@@ -12,7 +12,7 @@ Tools:
 
 Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
-with the hand, the arrows move the view.
+with the hand, the arrows drag the view the way they point, as the mouse would.
 
 Clicking a menu title folds or unfolds its group. Right click or Escape cancels. Every refusal
 flashes the cell and puts the reason in the status line.
@@ -159,11 +159,12 @@ class EditorScene:
             self._shortcut(event.unicode)
 
     def _arrow(self, key: int) -> None:
-        """Move the keyboard cursor one cell within the zone (with the hand: move the view)."""
+        """Move the keyboard cursor one cell within the zone; with the hand, drag the view one
+        cell the way of the arrow, as the mouse would."""
         left, right, up, _ = ARROWS
         if self.tool is Tool.PAN:
             sx, sy = SQRT3 * self.view.size, 1.5 * self.view.size
-            dx, dy = {left: (sx, 0), right: (-sx, 0), up: (0, sy)}.get(key, (0, -sy))
+            dx, dy = {left: (-sx, 0), right: (sx, 0), up: (0, -sy)}.get(key, (0, sy))
             self.view = pan(self.view, dx, dy)
             return
         if self.cursor is None:
