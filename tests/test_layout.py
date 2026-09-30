@@ -1,7 +1,6 @@
 """Editor layout and hit-testing. layout.py imports no pygame, so this runs headless."""
 
 from nektoids.editor.layout import (
-    PALETTE_WIDTH,
     SCREEN,
     TOOLBAR_HEIGHT,
     Tool,
@@ -32,12 +31,18 @@ def test_every_cell_is_on_screen_and_clickable():
         assert cell_at(LAYOUT, point) == cell
 
 
+def test_palette_sits_right_of_the_board():
+    board_right = LAYOUT.board_area[0] + LAYOUT.board_area[2]
+    assert LAYOUT.palette_area[0] == board_right
+    assert LAYOUT.palette_area[0] + LAYOUT.palette_area[2] == SCREEN[0]
+
+
 def test_palette_has_every_kind_once_inside_the_panel():
     kinds = [kind for kind, _ in LAYOUT.palette_items]
     assert sorted(kinds, key=lambda k: k.value) == sorted(Kind, key=lambda k: k.value)
     for kind, rect in LAYOUT.palette_items:
-        x, y, w, h = rect
-        assert x + w <= PALETTE_WIDTH and y + h <= SCREEN[1]
+        assert contains(LAYOUT.palette_area, rect[:2])
+        assert contains(LAYOUT.palette_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
         assert palette_item_at(LAYOUT, centre(rect)) == kind
 
 

@@ -189,7 +189,7 @@ def _centre(layout: Layout, cell: Cell) -> tuple[float, float]:
 
 def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     layout, board = scene.layout, scene.board
-    pygame.draw.rect(screen, PANEL, (0, 0, layout.board_area[0], screen.get_height()))
+    pygame.draw.rect(screen, PANEL, layout.palette_area)
     for title, (x, y, _, h) in layout.group_titles:
         caret = "caret-right" if title in scene.folded else "caret-down"
         fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, DIM_TEXT)

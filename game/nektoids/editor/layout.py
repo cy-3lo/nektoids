@@ -1,8 +1,8 @@
 """Where everything sits on the 960 x 640 editor screen, and what is under a given pixel.
 
-Palette on the left, in groups that fold under their title; toolbar strip above the hex board;
-one status line below it. Plain numbers and tuples, no pygame, so hit-testing is testable
-headless.
+Hex board on the left with a toolbar strip above and one status line below; palette on the
+right, in groups that fold under their title. Plain numbers and tuples, no pygame, so
+hit-testing is testable headless.
 """
 
 from __future__ import annotations
@@ -44,6 +44,7 @@ class Layout:
     hex_size: float  # centre-to-corner [px]
     origin: tuple[float, float]  # pixel centre of cell (0, 0) [px]
     board_area: Rect
+    palette_area: Rect
     group_titles: tuple[tuple[str, Rect], ...]  # click one to fold or unfold its group
     palette_items: tuple[tuple[Kind, Rect], ...]
     tool_buttons: tuple[tuple[Tool, Rect], ...]
@@ -51,13 +52,15 @@ class Layout:
 
 
 def make_layout(cols: int, rows: int, folded: frozenset[str] = frozenset()) -> Layout:
-    """Fit a cols x rows board into the space right of the palette, centred.
+    """Fit a cols x rows board into the space left of the palette, centred.
 
     folded: titles of the palette groups shown closed, their items hidden.
     """
     width, height = SCREEN
+    left = width - PALETTE_WIDTH  # palette's left edge
+    palette = (left, 0, PALETTE_WIDTH, height)
     area = (
-        PALETTE_WIDTH,
+        0,
         TOOLBAR_HEIGHT,
         width - PALETTE_WIDTH,
         height - TOOLBAR_HEIGHT - STATUS_HEIGHT,
@@ -74,26 +77,26 @@ def make_layout(cols: int, rows: int, folded: frozenset[str] = frozenset()) -> L
     titles, items = [], []
     y = MARGIN
     for title, kinds in PALETTE_GROUPS:
-        titles.append((title, (MARGIN, y, PALETTE_WIDTH - 2 * MARGIN, TITLE_HEIGHT - 4)))
+        titles.append((title, (left + MARGIN, y, PALETTE_WIDTH - 2 * MARGIN, TITLE_HEIGHT - 4)))
         y += TITLE_HEIGHT
         for kind in () if title in folded else kinds:
-            items.append((kind, (MARGIN, y, PALETTE_WIDTH - 2 * MARGIN, ITEM_HEIGHT - 4)))
+            items.append((kind, (left + MARGIN, y, PALETTE_WIDTH - 2 * MARGIN, ITEM_HEIGHT - 4)))
             y += ITEM_HEIGHT
         y += MARGIN
 
     top = (TOOLBAR_HEIGHT - BUTTON) // 2
     buttons = tuple(
-        (tool, (PALETTE_WIDTH + MARGIN + i * (BUTTON + 8), top, BUTTON, BUTTON))
-        for i, tool in enumerate(Tool)
+        (tool, (MARGIN + i * (BUTTON + 8), top, BUTTON, BUTTON)) for i, tool in enumerate(Tool)
     )
     return Layout(
         hex_size=size,
         origin=origin,
         board_area=area,
+        palette_area=palette,
         group_titles=tuple(titles),
         palette_items=tuple(items),
         tool_buttons=buttons,
-        status_at=(PALETTE_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
+        status_at=(MARGIN, height - STATUS_HEIGHT + 8),
     )
 
 
