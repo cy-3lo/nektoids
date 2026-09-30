@@ -125,12 +125,13 @@ ICON_AHEAD = {Kind.EYE: 0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
 @dataclass(frozen=True)
 class Fonts:
     text: pygame.font.Font
+    small: pygame.font.Font  # the developer view's panel
     icons: Icons
 
     @classmethod
     def load(cls) -> Fonts:
         """Call once at startup, after pygame.init() (web.md: every asset at startup)."""
-        return cls(text=pygame.font.Font(None, 22), icons=Icons())
+        return cls(text=pygame.font.Font(None, 22), small=pygame.font.Font(None, 18), icons=Icons())
 
 
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
@@ -143,8 +144,8 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     _draw_tooltip(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
-        angle = _placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
-        _draw_node(screen, fonts, scene.picked, angle, scene.mouse, size, locked=False)
+        angle = placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
+        draw_part(screen, fonts, scene.picked, angle, scene.mouse, size, locked=False)
 
 
 # Board
@@ -167,18 +168,18 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     if isinstance(scene.ghost, tuple):
         colour, width = (GHOST_OK, 3) if scene.ghost_connects else (GHOST, 2)
         target = board.node_at(scene.ghost[-1])
-        reach = _extent(target.kind) if target is not None else 0.3
+        reach = extent(target.kind) if target is not None else 0.3
         _draw_wire(screen, view, scene.ghost, colour, width, reach)
     doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
     for wire in board.wires:
         colour = DOOMED if wire in doomed_wires else WIRE
-        _draw_wire(screen, view, wire.path, colour, 3, _extent(board.nodes[wire.target].kind))
+        _draw_wire(screen, view, wire.path, colour, 3, extent(board.nodes[wire.target].kind))
 
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
-        angle = _placed_angle(node.kind, node.facing)
+        angle = placed_angle(node.kind, node.facing)
         fill = DOOMED if node.id == doomed_node else None
-        _draw_node(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
+        draw_part(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
         if node.id == scene.source or node.id == scene._wire_start():
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
     if scene.cursor is not None:
@@ -213,7 +214,7 @@ def _draw_arrow(screen, at, angle: float, half: float, colour) -> None:
     pygame.draw.polygon(screen, colour, [tip, left, right])
 
 
-def _draw_node(
+def draw_part(
     screen,
     fonts: Fonts,
     kind: Kind,
@@ -236,7 +237,7 @@ def _draw_node(
         fonts.icons.draw(screen, KIND_ICON[kind], at, icon_size, DARK, angle)
 
 
-def _placed_angle(kind: Kind, facing: int | None) -> float | None:
+def placed_angle(kind: Kind, facing: int | None) -> float | None:
     """Screen angle a part is drawn at on the grid [degrees, counter-clockwise from E]."""
     if facing is not None:
         return 60.0 * facing  # direction d lies at 60° * d
@@ -253,7 +254,7 @@ def _template(kind: Kind) -> list[tuple[float, float]]:
     }[kind.category]
 
 
-def _extent(kind: Kind) -> float:
+def extent(kind: Kind) -> float:
     """How far the shape of `kind` reaches from its cell centre [hex sizes]."""
     return max(math.hypot(u, v) for u, v in _template(kind))
 
@@ -301,7 +302,7 @@ def _draw_menu(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         icon = (x + 22, y + h / 2)
         fill = GREYED if empty else None
         angle = MENU_ANGLE.get(kind)
-        _draw_node(screen, fonts, kind, angle, icon, 26, locked=False, fill=fill)
+        draw_part(screen, fonts, kind, angle, icon, 26, locked=False, fill=fill)
         name = fonts.text.render(NAME[kind], True, DIM_TEXT if empty else TEXT)
         screen.blit(name, (x + 46, y + (h - name.get_height()) // 2))
         right = x + w - 12  # right edge of the count

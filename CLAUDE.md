@@ -80,7 +80,7 @@ pygbag --build --archive game     # game/build/web.zip, ready for itch.io
 2. Simulation is independent of rendering. Fixed `dt`; the frame loop calls `step()` a fixed
    number of times per frame.
 3. Vectorised physics. Agent state lives in numpy arrays; no Python loop over agents in `sim/`.
-4. No continuous parameter in the graph. Magnitude is bead rate; gain only via ×2 and ÷2.
+4. No continuous parameter the player can set in the graph. Magnitude is bead rate (D-016).
 5. Web-safe. Python 3.11 compatible, pygame-ce only, no threads, no blocking I/O.
 6. Legibility beats features. A failure the player cannot see on screen is a bug.
 

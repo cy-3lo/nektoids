@@ -20,6 +20,7 @@ Pure numbers, no pygame, so the drawing and the delete tool's hit test share one
 from __future__ import annotations
 
 import math
+from bisect import bisect_right
 
 from nektoids.graph.board import Wire, crossings
 from nektoids.graph.hexgrid import SQRT3, Cell, opposite, to_pixel
@@ -101,6 +102,27 @@ def _arc(centre: Point, a: Point, b: Point) -> list[Point]:
 
 def _unit(degrees: float) -> Point:
     return (math.cos(math.radians(degrees)), math.sin(math.radians(degrees)))
+
+
+def cumulative_lengths(points: list[Point]) -> list[float]:
+    """Distance along the polyline to each of its points; starts at 0, ends at its length."""
+    lengths = [0.0]
+    for a, b in zip(points, points[1:], strict=False):
+        lengths.append(lengths[-1] + math.dist(a, b))
+    return lengths
+
+
+def point_at(points: list[Point], cumulative: list[float], distance: float) -> Point:
+    """The point `distance` along the polyline (clamped to its ends); `cumulative` from above."""
+    if distance <= 0.0:
+        return points[0]
+    if distance >= cumulative[-1]:
+        return points[-1]
+    k = bisect_right(cumulative, distance) - 1  # the segment points[k] -> points[k + 1]
+    span = cumulative[k + 1] - cumulative[k]
+    t = (distance - cumulative[k]) / span
+    (x0, y0), (x1, y1) = points[k], points[k + 1]
+    return (x0 + t * (x1 - x0), y0 + t * (y1 - y0))
 
 
 def distance_to_polyline(point: Point, points: list[Point]) -> float:

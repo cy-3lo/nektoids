@@ -14,6 +14,7 @@ hit-testing is testable headless.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 
@@ -179,6 +180,19 @@ def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
     """Cell (0, 0) at the centre of the board area."""
     x, y, w, h = layout.board_area
     return View(size, (x + w / 2, y + h / 2))
+
+
+def fitted_view(area: Rect, points: Sequence[tuple[float, float]], margin: float) -> View:
+    """The biggest view (up to MAX_HEX) that shows `points` with `margin` to spare, centred.
+
+    points: pixel positions at hex size 1 with cell (0, 0) at the origin; margin in hex sizes.
+    """
+    xs, ys = [p[0] for p in points], [p[1] for p in points]
+    x, y, w, h = area
+    wide, high = max(xs) - min(xs) + 2 * margin, max(ys) - min(ys) + 2 * margin
+    size = min(MAX_HEX, w / wide, h / high)
+    cx, cy = (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2
+    return View(size, (x + w / 2 - size * cx, y + h / 2 - size * cy))
 
 
 def zoom(view: View, factor: float, about: tuple[float, float]) -> View:
