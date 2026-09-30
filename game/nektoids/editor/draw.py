@@ -1,5 +1,8 @@
 """Drawing the editor. Reads the scene and the board; never changes them.
 
+Everything is grey: colour is reserved for telling signals apart, later. Red only marks a
+refusal.
+
 Shapes carry the category: sensors are half-discs looking out of their round side,
 converters are diamonds, thrusters are squares with a nose pointing the way they push.
 Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
@@ -24,19 +27,15 @@ GRID_LINE = (60, 64, 78)
 HOVER = (40, 46, 62)
 FLASH = (150, 50, 55)
 BUTTON = (40, 44, 58)
-ACTIVE = (70, 90, 150)
+ACTIVE = (78, 84, 100)  # selected tool or palette row
 TEXT = (220, 222, 230)
 DIM_TEXT = (130, 134, 150)
 REFUSED = (240, 110, 110)
 DARK = (18, 20, 28)
-WIRE = (200, 205, 220)
+WIRE = (150, 154, 166)
 GHOST = (110, 115, 135)
 LOCK_RING = (170, 175, 190)
-FILL = {
-    Category.SENSOR: (240, 200, 90),
-    Category.CONVERTER: (120, 200, 240),
-    Category.ACTUATOR: (230, 120, 90),
-}
+COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
 
 LABEL = {
@@ -148,7 +147,7 @@ def _draw_node(
     locked: bool,
     fill=None,
 ):
-    fill = fill or FILL[kind.category]
+    fill = fill or COMPONENT
     outline = _shape(kind, facing, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if locked:
