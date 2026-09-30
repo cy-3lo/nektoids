@@ -111,6 +111,10 @@ class EditorScene:
         return self.tip_target if self.tip_frames >= TOOLTIP_FRAMES else None
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.MOUSEMOTION and self.cursor is not None and event.rel == (0, 0):
+            # Browsers re-send the pointer position without any movement (Chrome does, whenever
+            # the page redraws under a still mouse): that is not the mouse taking over.
+            return
         if event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
             self.cursor = None  # the mouse takes over
         if event.type == pygame.MOUSEMOTION:
