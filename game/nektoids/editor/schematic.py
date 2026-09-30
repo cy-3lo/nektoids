@@ -6,8 +6,8 @@ sources send. One scene per entry, built from a list of boards (yours first, the
 scenarios); Tab steps through them. Mutates nothing in the boards.
 
 Keys: Space pauses, `.` runs one frame while paused, W cycles the waveform the eyes follow, B
-switches the bead style, R starts again from rest, Tab and Shift-Tab change board. Drag a slider
-to set a sensor.
+switches the bead style, 0 starts again from rest (as in the arena; R rotates in the editor), Tab
+and Shift-Tab change board. Drag a slider to set a sensor.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from collections.abc import Sequence
 import numpy as np
 import pygame
 
-from nektoids.editor.beads import BEAD_RATE_AT_FULL, Beads
+from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import (
     DT,
     Clock,
@@ -27,18 +27,10 @@ from nektoids.editor.devdrive import (
     track_for,
     waveform,
 )
-from nektoids.editor.geometry import cumulative_lengths, wire_points
-from nektoids.editor.layout import HEX_SIZE, SCREEN, Rect, View, fitted_view
+from nektoids.editor.layout import SCREEN, Rect
 from nektoids.graph.analysis import LoopReport, loop_report, problems
-from nektoids.graph.dynamics import (
-    RATE_MAX,
-    given_rates,
-    initial_state,
-    step,
-    wire_flux,
-)
+from nektoids.graph.dynamics import RATE_MAX, given_rates, initial_state, step
 from nektoids.graph.equations import node_equations, report_lines
-from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import Network
 from nektoids.levels.scenarios import Scenario
 
@@ -63,26 +55,20 @@ class SchematicScene:
 
     def _load(self) -> None:
         current = self.boards[self.index]
-        self.title, self.board = current.title, current.board
-        self.net = net = Network.from_board(self.board)
-        self.cells: list[Cell] = [self.board.nodes[i].cell for i in net.ids]
-        self.paths = [wire.path for wire in self.board.wires]
-        unit = [wire_points(path, 1.0, (0.0, 0.0)) for path in self.paths]
-        bx, by, bw, bh = BOARD_AREA
-        self.view: View = View(HEX_SIZE, (bx + bw / 2, by + bh / 2))  # an empty board
-        if self.cells:
-            shown = [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in self.cells]
-            shown += [point for points in unit for point in points]
-            self.view = fitted_view(BOARD_AREA, shown, MARGIN)
-        self.beads = Beads([cumulative_lengths(points)[-1] for points in unit])
+        self.title = current.title
+        self.circuit = Circuit(current.board, BOARD_AREA, MARGIN)
+        net = self.net
         self.levels = {int(i): EYE_LEVEL for i in net.eyes}
         self.levels |= {int(i): current.source_level for i in net.sources}
         self.state = initial_state(net)  # (1, n): every rate, from rest
-        self.flux = np.zeros(len(self.paths))
         self.report: LoopReport = loop_report(net)
         self.lines = _panel_lines(self)
         self.clock.reset()
         self._show_sensors(0)
+
+    @property
+    def net(self) -> Network:
+        return self.circuit.net
 
     @property
     def y(self) -> np.ndarray:
@@ -98,8 +84,7 @@ class SchematicScene:
     def _tick(self, tick: int) -> None:
         eyes, sources = self._sensor_inputs(tick)
         self.state = step(self.net, self.state, eyes, DT, sources)
-        self.flux = wire_flux(self.net, self.state)[0]
-        self.beads.step((BEAD_RATE_AT_FULL / RATE_MAX * self.flux).tolist(), DT)
+        self.circuit.advance(self.y, DT)
 
     def _sensor_inputs(self, tick: int) -> tuple[np.ndarray, np.ndarray]:
         """What the eyes (following the waveform) and the sources send at `tick`."""
@@ -113,7 +98,7 @@ class SchematicScene:
         given = given_rates(self.net, eyes, sources)
         known = self.net.sensors
         self.state[:, known] = given[:, known]
-        self.flux = wire_flux(self.net, self.state)[0]
+        self.circuit.show(self.y)
 
     # Input
 
@@ -142,25 +127,21 @@ class SchematicScene:
             self._show_sensors(self.clock.tick)
         elif event.unicode.lower() == "b":
             self.belt = not self.belt
-        elif event.unicode.lower() == "r":
+        elif event.scancode in (pygame.KSCAN_0, pygame.KSCAN_KP_0):  # "à" on AZERTY, unshifted
             self.clock.reset()
-            self.beads.reset()
+            self.circuit.beads.reset()
             self.state = initial_state(self.net)
             self._show_sensors(0)
 
-    def centre(self, i: int) -> tuple[float, float]:
-        """Where network node i is drawn."""
-        return to_pixel(self.cells[i], self.view.size, self.view.origin)
-
     def _slider_at(self, point: tuple[int, int]) -> int | None:
         for i in self.levels:
-            if on_track(track_for(self.centre(i), self.view.size), point):
+            if on_track(track_for(self.circuit.centre(i), self.circuit.view.size), point):
                 return i
         return None
 
     def _drag(self, point: tuple[int, int]) -> None:
         if self.dragging is not None:
-            track = track_for(self.centre(self.dragging), self.view.size)
+            track = track_for(self.circuit.centre(self.dragging), self.circuit.view.size)
             self.levels[self.dragging] = level_at(track, point[1])
             self._show_sensors(self.clock.tick)  # also while paused
 
