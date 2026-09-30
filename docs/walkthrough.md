@@ -28,7 +28,7 @@ Hover a button on the right for a second to see its shortcut key.
 
 ## 1. What it does
 
-The editor lets the player place components (sensors, converters, actuators) on a small hex
+The editor lets the player place components (sensors, operators, actuators) on a small hex
 board and join them with directed wires, which route themselves around everything already there.
 The result is the agent's controller: a small graph that the simulation will later evaluate at
 every step.
@@ -71,7 +71,7 @@ that).
 
 **Data:**
 - **`Kind`** is the vocabulary: Eye, Source, Double, Halve, Sum, Difference, Thruster. Each kind knows:
-  - its `category` (sensor, converter or actuator);
+  - its `category` (sensor, operator or actuator);
   - whether it `emits` and `receives`;
   - its `default_facing` (eyes and thrusters point somewhere, the others don't);
   - its input and output limits (Sum and Difference: two in, one out).
@@ -165,7 +165,7 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
   - Turning, it is the circular arc tangent to both edge normals: radius s/2 about the shared corner for a sharp 120° turn, 1.5 s for a gentle 60° one. `turn_centre` finds that centre as the point where the two edge lines meet.
   - Because the direction is the same on both sides of every edge, the drawn wire is smooth.
   - `wire_arrows` puts one arrow per crossed cell. `nearest_wire` is the hit test the Delete tool uses.
-- **`icons.py`** reads the Font Awesome file once at startup (D-012) and caches every glyph by size, colour and angle. The eye and the rocket turn with their part (`POINTS_TO`); the other icons stay upright.
+- **`icons.py`** opens the Font Awesome file at startup (D-012), once per size on a fixed ladder (by path: under pygbag, pygame-ce can't open a font from bytes in memory), and caches every glyph by size, colour and angle. The eye and the rocket turn with their part (`POINTS_TO`); the other icons stay upright.
 - **`draw.py`** draws in this order:
   1. the menu and the palette;
   2. the grid, clipped to its area: the hexes (darker outside the zone), the ghost, the wires, the parts, the keyboard cursor;

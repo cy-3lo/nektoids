@@ -102,3 +102,9 @@ negative. Supersedes "nodes are wires, ×2 and ÷2 only" in the scope lock of `C
 jam vocabulary in `.claude/rules/graph.md`. Still no threshold node and no continuous parameter.
 What a source emits, and how every node turns input rates into output rates, is for the graph
 evaluation work; the editor only enforces the input and output counts.
+
+**D-015 — 2026-09-30 — The middle category is called Operators, not Converters.**
+It will also hold tanks (reservoirs that store signal: the memory), which convert nothing; each
+of its parts operates on the signal: ×2, ÷2, sum, difference, and later store. "Gates" was set
+aside because it suggests logic and thresholds, which the brief keeps out of the early levels.
+Tanks themselves stay post-jam (`.claude/rules/graph.md`).

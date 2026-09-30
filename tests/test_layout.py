@@ -69,7 +69,7 @@ def test_menu_has_every_kind_once_inside_its_column():
 
 
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
-    folded = make_layout(frozenset({"Converters"}))
+    folded = make_layout(frozenset({"Operators"}))
     kinds = [kind for kind, _ in folded.menu_items]
     assert Kind.DOUBLE not in kinds and Kind.HALVE not in kinds and Kind.EYE in kinds
     titles_open, titles_folded = dict(LAYOUT.group_titles), dict(folded.group_titles)
