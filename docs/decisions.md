@@ -108,3 +108,24 @@ It will also hold tanks (reservoirs that store signal: the memory), which conver
 of its parts operates on the signal: ×2, ÷2, sum, difference, and later store. "Gates" was set
 aside because it suggests logic and thresholds, which the brief keeps out of the early levels.
 Tanks themselves stay post-jam (`.claude/rules/graph.md`).
+
+**D-016 — 2026-09-30 — How the graph is evaluated: instantaneous rates, split fan-out.**
+Resolves the open questions of D-014 and `docs/walkthrough.md` §5. Every node has an output rate
+y in [0, `RATE_MAX`] and no dynamics: operators, sensors and actuators are instantaneous. A rate
+is a fraction of what a wire can carry, so `RATE_MAX = 1`.
+A node with k outgoing wires sends y/k on each (split: beads are conserved at a fork). Incoming
+rates add; Double is ×2, Halve is ÷2, Sum is a + b, Difference is |a − b|; every output is capped
+at `RATE_MAX`. A Source emits `SOURCE_RATE = 1`, an Eye its sensor rate; the developer view
+starts its eyes at 0.5. The beads it draws are only a view: 8 a second on a wire at rate 1. A
+Thruster's y is the rate handed to the sim; "thrusters integrate" is done by the body's momentum,
+so the graph holds no integrator state.
+Loops: the editor still refuses them. The evaluator accepts any directed graph. Without lag a loop
+of operators is an algebraic loop, y_u = F(y_u; y_k) with F piecewise affine, sensors known. A DAG
+is solved in one pass, a loop by iteration when the loop gain rho(|W|) < 1 (unique solution),
+otherwise it raises `AlgebraicLoopError`: a loop needs a state. When tanks arrive they are the only
+states; the graph is cut at them and the rest must be acyclic or contractive.
+Amends invariant 4 of `CLAUDE.md`: "gain only via ×2 and ÷2" is dropped, since split gives 1/k and
+sensors are not powers of two anyway. The player still sets no continuous parameter.
+Consequences: with a Source and a Difference a player can build |x − c|, a threshold-like function;
+it costs nodes, so it is paid through `complexity()`. The developer view has sensor sliders, behind
+`DEV_VIEW` only; the player's graph has none (brief: "No sliders").
