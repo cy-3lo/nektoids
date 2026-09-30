@@ -1,6 +1,7 @@
 """The board compiled for the dynamics: nodes and wires as numpy arrays (D-017).
 
-A `Network` holds no positions and no wire paths, only what the maths needs. Node `i` of the
+A `Network` holds no screen positions and no wire paths, only what the maths and the physics
+need, including where each node sits on the body: the board is the body (D-018). Node `i` of the
 network is the `i`-th node by id. Inputs are gathered slot by slot, sorted by source index, so the
 order in which wires were drawn can never change a result (invariant 1).
 
@@ -17,6 +18,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.graph.board import Board, Kind
+from nektoids.graph.hexgrid import Cell, to_pixel
 
 MARGIN = 1e-9  # a loop gain this close to 1 counts as 1
 
@@ -40,6 +42,7 @@ class Network:
     ids: tuple[int, ...]  # board node id of each network node, ascending
     kinds: tuple[Kind, ...]
     facing: tuple[int | None, ...]  # hex direction of eyes and thrusters (D-009)
+    mount: np.ndarray  # (n, 2): where each node sits on the body, in body radii (D-018)
     edges: np.ndarray  # (E, 2) int: source index, target index, in the order wires were drawn
     slots: np.ndarray  # (n, K) int: source index feeding each input slot, sorted; n = unused
     signs: np.ndarray  # (n, K): +1, except the second input of a Difference (-1); 0 = unused
@@ -67,6 +70,7 @@ class Network:
             [(index[wire.source], index[wire.target]) for wire in board.wires],
             [board.nodes[i].facing for i in ids],
             ids=ids,
+            mount=body_mounts(board.cells, [board.nodes[i].cell for i in ids]),
         )
 
     @classmethod
@@ -76,8 +80,11 @@ class Network:
         edges: Iterable[tuple[int, int]],
         facing: Sequence[int | None] | None = None,
         ids: Sequence[int] | None = None,
+        mount: np.ndarray | None = None,
     ) -> Network:
         """Network of nodes 0..n-1 of the given kinds and directed wires (source, target).
+
+        mount: (n, 2) positions on the body in body radii; all at the centre if None.
 
         Raises ValueError for what no board could hold: a wire out of range, out of a thruster or
         into a sensor, a duplicate wire, or more inputs than the kind takes. Loops and a wire from
@@ -114,8 +121,9 @@ class Network:
         if facing is None:
             facing = [kind.default_facing for kind in kinds]
         ids = tuple(range(n)) if ids is None else tuple(ids)
-        if len(ids) != n or len(facing) != n:
-            raise ValueError("ids and facing need one entry per node")
+        mount = np.zeros((n, 2)) if mount is None else np.array(mount, dtype=np.float64)
+        if len(ids) != n or len(facing) != n or mount.shape != (n, 2):
+            raise ValueError("ids, facing and mount need one entry per node")
 
         def indices(kind: Kind) -> np.ndarray:
             return _frozen(np.array([i for i, k in enumerate(kinds) if k is kind], dtype=np.int64))
@@ -124,6 +132,7 @@ class Network:
             ids=ids,
             kinds=kinds,
             facing=tuple(facing),
+            mount=_frozen(mount),
             edges=_frozen(np.array(pairs, dtype=np.int64).reshape(-1, 2)),
             slots=_frozen(slots),
             signs=_frozen(signs),
@@ -133,6 +142,28 @@ class Network:
             sources=indices(Kind.SOURCE),
             thrusters=indices(Kind.THRUSTER),
         )
+
+
+def body_mounts(zone: Sequence[Cell], cells: Sequence[Cell]) -> np.ndarray:
+    """(len(cells), 2): where parts on these cells sit on the body, in body radii (D-018).
+
+    The board is the body seen from above, forward = E = +x, and the board's up is the body's
+    left, +y. The centre of the zone's cell centres is the body's centre, and the zone's
+    outermost cells lie on the rim. zone: every cell of the board, row by row (`Board.cells`),
+    so the sums run in a fixed order.
+    """
+    if not zone:
+        return np.zeros((len(cells), 2))
+
+    def body_frame(some: Sequence[Cell]) -> np.ndarray:
+        points = np.array([to_pixel(cell, 1.0, (0.0, 0.0)) for cell in some]).reshape(-1, 2)
+        return points * np.array([1.0, -1.0])  # screen y points down, the body's left is up
+
+    zone_points = body_frame(zone)
+    centre = zone_points.mean(axis=0)
+    offset = zone_points - centre
+    reach = float(np.sqrt(offset[:, 0] ** 2 + offset[:, 1] ** 2).max())
+    return (body_frame(cells) - centre) / (reach if reach > 0.0 else 1.0)
 
 
 def topological_order(net: Network) -> tuple[int, ...] | None:

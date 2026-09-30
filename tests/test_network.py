@@ -1,14 +1,18 @@
+import math
+
 import numpy as np
 import pytest
 
 from nektoids.graph.board import Board, Kind, Wire
-from nektoids.graph.hexgrid import SE, offset_rect
+from nektoids.graph.hexgrid import SE, hex_disc, neighbour, offset_rect
 from nektoids.graph.network import (
     Network,
+    body_mounts,
     components,
     cyclic_components,
     topological_order,
 )
+from nektoids.levels.sandbox import tutorial_board
 
 EYE, SRC, DBL, HLV, SUM, DIF, THR = (
     Kind.EYE,
@@ -89,9 +93,53 @@ def test_a_loop_drawn_by_hand_compiles():
 
 def test_arrays_cannot_be_written():
     net = Network.from_edges([EYE, THR], [(0, 1)])
-    for array in (net.edges, net.slots, net.signs, net.gain, net.outdeg, net.eyes):
+    for array in (net.edges, net.slots, net.signs, net.gain, net.outdeg, net.eyes, net.mount):
         with pytest.raises(ValueError, match="read-only"):
             array[...] = 0
+
+
+# Where each node sits on the body: the board is the body (D-018)
+
+
+def test_the_tutorial_puts_eyes_at_the_back_and_the_upper_row_on_the_left():
+    net = Network.from_board(tutorial_board())
+    eyes, thrusters = net.mount[net.eyes], net.mount[net.thrusters]
+    assert np.all(eyes[:, 0] < 0) and np.all(thrusters[:, 0] > 0)
+    # Placed upper eye first, then lower; upper thruster first, then lower.
+    assert eyes[0, 1] > 0 > eyes[1, 1]
+    assert thrusters[0, 1] > 0 > thrusters[1, 1]
+
+
+def test_a_step_in_hex_direction_d_lies_at_60_degrees_times_d_on_the_body():
+    zone = hex_disc(2)
+    for d in range(6):
+        (mount,) = body_mounts(zone, [neighbour((0, 0), d)])
+        angle = math.radians(60 * d)
+        unit = mount / np.hypot(*mount)
+        assert unit.tolist() == pytest.approx([math.cos(angle), math.sin(angle)], abs=1e-12)
+
+
+def test_the_centre_cell_is_the_centre_and_the_outermost_cells_are_on_the_rim():
+    zone = hex_disc(2)
+    radius = np.hypot(*body_mounts(zone, zone).T)
+    assert radius[zone.index((0, 0))] == pytest.approx(0.0, abs=1e-12)
+    assert radius.max() == pytest.approx(1.0)
+
+
+def test_a_mount_depends_on_the_cell_not_on_the_order_of_placement():
+    parts = [((0, 1), EYE), ((0, 3), SRC), ((3, 2), DBL), ((6, 2), THR)]
+    first, _ = build(parts)
+    second, _ = build(parts[::-1])
+    one, two = Network.from_board(first), Network.from_board(second)
+
+    def by_cell(board, net):
+        return {board.nodes[i].cell: net.mount[k].tolist() for k, i in enumerate(net.ids)}
+
+    assert by_cell(first, one) == by_cell(second, two)
+
+
+def test_without_a_board_every_node_sits_at_the_centre():
+    assert Network.from_edges([EYE, THR], [(0, 1)]).mount.tolist() == [[0.0, 0.0], [0.0, 0.0]]
 
 
 # What no board could hold
@@ -112,9 +160,11 @@ def test_impossible_wires_are_refused(kinds, edges, message):
         Network.from_edges(kinds, edges)
 
 
-def test_ids_and_facing_need_one_entry_per_node():
+def test_ids_facing_and_mount_need_one_entry_per_node():
     with pytest.raises(ValueError, match="one entry per node"):
         Network.from_edges([EYE, THR], [], ids=[0])
+    with pytest.raises(ValueError, match="one entry per node"):
+        Network.from_edges([EYE, THR], [], mount=np.zeros((1, 2)))
 
 
 # Degenerate graphs are valid

@@ -244,10 +244,13 @@ from tick to tick, and it goes into the hash of the run.
 ### 6.2 The code
 
 - [`graph/network.py`](../game/nektoids/graph/network.py): `Network` is the board flattened into
-  numpy arrays, with no positions and no wire paths. `from_board` compiles a real board,
+  numpy arrays, with no screen positions and no wire paths. `from_board` compiles a real board,
   `from_edges` builds one from kinds and pairs, so tests can make graphs the board refuses.
   `topological_order` is Kahn's algorithm, ties by index, like a build system ordering its
   dependencies; it is only used now to tell whether a graph has a loop.
+  `mount` says where each node sits on the body (D-018): the board is the body seen from above,
+  forward = E, the board's up the body's left, the zone's outermost cells on the rim. So a
+  thruster's cell is its lever arm. `body_mounts` computes it.
 - [`graph/dynamics.py`](../game/nektoids/graph/dynamics.py): `step(net, y, eyes, dt)` returns the
   rates one tick later. Each node gathers its inputs slot by slot, in a fixed order, instead of
   with a matrix product: a BLAS row computed in a batch can differ in the last bits from the same
