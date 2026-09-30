@@ -174,11 +174,15 @@ An eye is a flat detector at its mount (D-018), looking along its facing. It rea
 E = sum over lights of P max(0, n·s) / max(r, R_MIN) V, and sends min(`RATE_MAX`, E); s is the unit
 vector to the light, r its distance, and V is 0 when the segment to it meets a disc, an obstacle or
 another body (a body is transparent to its own eyes, D-018). The 2π of 2D spreading is folded into
-P, so a light's power is the distance at which an eye looking straight at it saturates.
+P, so a light's power is the distance at which an eye looking straight at it saturates. A light is
+a disc as big as a swimmer, R_MIN = 1 u: nearer than that counts as at its rim. It shadows nothing.
 Lengths are in u, the base body radius; obstacles are discs of 1 u by default; x right, y up,
-angles counter-clockwise. Pixels exist only in the view (10 px/u by default). Levels choose how
-many lights and obstacles. The light map shown to the player is what an eye looking straight at
-each light would read there, so what is drawn is what is sensed.
+angles counter-clockwise. Pixels exist only in the view, which fits the arena to the screen.
+Levels choose how many lights and obstacles. An eye reads E = ∫ I cos θ, θ from the normal of its
+flat face, which for point sources is the sum above. The player sees the light as rays, as many
+from each light as its power and each stopped by the first disc it meets, so their density is
+its 1/r and a shadow is where no ray goes; what each eye reads exactly shows as a polar plot of E
+against the way it faces.
 Braitenberg's vehicles steer by light, and the brief's opacity ray ("something is there, not how
 far") gives no gradient to follow. A graded reading does carry distance, which opacity withheld;
 the ambiguity the puzzle needs survives: a dim light near and a bright one far read alike, two
@@ -188,3 +192,19 @@ Point sources give hard shadows, so an eye crossing a shadow's edge jumps; the l
 (D-017) smooths it. Cost: one segment–disc test per eye, light and disc, in one numpy broadcast.
 Natively, `eye_rates` takes 0.04 ms a tick for the jam and 0.5 ms for 100 swimmers, 4 lights
 and 20 obstacles; a light map of 80 × 76 cells takes 0.3 ms. WASM is still to be measured.
+
+**D-020 — 2026-09-30 — An eye looks out of its flat face. Supersedes D-012's "the eye ... looks out of the round one".**
+The flat face of the cut disc is the photosensor of D-019: it is drawn towards where the eye
+faces, the round side behind. Where an eye looks (its facing, D-009) and what it reads are
+unchanged; only the drawing was the wrong way round, sensing through its back. The eye icon still
+lies along the flat face, centred in the shape; in the menu the eye looks up.
+
+**D-021 — 2026-09-30 — One key, one meaning, in every view.**
+A key the editor uses keeps its meaning everywhere, and the arena view's view keys are the
+editor's own (`VIEW_KEYS`: + and − zoom, H takes the hand, C centres); with the hand, the arrows
+drag the view the way they point, as the mouse would, in both. So R, which rotates in the editor,
+no longer starts a run again: 0 does (t = 0), in the arena and in the developer view (F2).
+Letters are matched on the character typed; digits, Space and the arrows on the physical key,
+since unshifted 0 types "à" on AZERTY and Safari reports the arrows as keypad keys (PR #3).
+A new view or key checks `TOOL_KEYS` and `VIEW_KEYS` first; `test_arena_layout.py` pins the rule
+for the arena. F2's W (waveform) still clashes with the editor's Wire, to be moved.
