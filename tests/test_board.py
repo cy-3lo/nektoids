@@ -1,5 +1,5 @@
-from nektoids.graph.board import Board, Category, Kind, Refused, can_pass
-from nektoids.graph.hexgrid import SE, SW, E, W, axis, direction_to
+from nektoids.graph.board import Board, Category, Kind, Refused, Wire, can_pass
+from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to
 
 # Row 3 of a 9 x 7 board runs from (-1, 3) to (7, 3) along the E-W axis.
 
@@ -153,19 +153,45 @@ def test_wires_cross_straight_on_different_axes():
 
 
 def test_can_pass_rules():
-    east, north_east = 0, 1
-    # Empty cell: straight or 60/120 degree bend, never a U-turn.
-    assert can_pass(set(), False, east, east)
-    assert can_pass(set(), False, east, north_east)
-    assert not can_pass(set(), False, east, 3)
-    # A straight wire on the E-W axis: crossing on another axis only.
-    assert not can_pass({axis(east)}, False, east, east)
-    assert not can_pass({axis(east)}, False, 3, 3)
-    assert can_pass({axis(east)}, False, north_east, north_east)
-    assert not can_pass({axis(east)}, False, north_east, 2)
-    # A bend owns its cell.
-    assert not can_pass(set(), True, east, east)
-    assert not can_pass(set(), True, east, north_east)
+    # Empty cell: straight, 60° or 120° turn; never a U-turn.
+    assert can_pass(set(), E, E)
+    assert can_pass(set(), E, NE)
+    assert can_pass(set(), E, NW)
+    assert not can_pass(set(), E, W)
+    # A wire heading E comes in by the W edge and leaves by the E edge.
+    straight = {W, E}
+    assert can_pass(straight, NE, NE)  # crossing on another axis: SW and NE edges
+    assert not can_pass(straight, E, E)  # superposed
+    assert not can_pass(straight, NE, E)  # would leave by the E edge
+    # A wire turning from the W edge to the NW edge leaves four edges free.
+    turn = {W, NW}
+    assert can_pass(turn, NE, E)  # SW edge in, E edge out: a second turn in the same cell
+    assert can_pass(turn, NW, NE)  # SE edge in, NE edge out: a third
+    assert not can_pass(turn, E, NE)  # would come in by the W edge
+
+
+def hand_drawn(board, path):
+    """Add a wire along a given path, between two converters placed at its ends."""
+    source = board.place(Kind.DOUBLE, path[0])
+    target = board.place(Kind.HALVE, path[-1])
+    wire = Wire(source.id, target.id, path)
+    board.wires.append(wire)
+    return wire
+
+
+def test_a_wire_crosses_straight_where_another_turns():
+    board = Board(9, 7)
+    hand_drawn(board, ((2, 3), (3, 3), (3, 2)))  # turns in (3, 3): W edge to NW edge
+    eye, gain = board.place(Kind.EYE, (2, 4)), board.place(Kind.DOUBLE, (4, 2))
+    assert board.connect(eye.id, gain.id).path == ((2, 4), (3, 3), (4, 2))  # SW edge to NE edge
+
+
+def test_two_wires_turn_in_the_same_cell():
+    board = Board(9, 7)
+    hand_drawn(board, ((2, 3), (3, 3), (3, 2)))  # turns in (3, 3): W edge to NW edge
+    board.place(Kind.HALVE, (3, 4))  # blocks the other shortest path, via (3, 4)
+    eye, gain = board.place(Kind.EYE, (2, 4)), board.place(Kind.DOUBLE, (4, 3))
+    assert board.connect(eye.id, gain.id).path == ((2, 4), (3, 3), (4, 3))  # SW edge to E edge
 
 
 def test_no_free_path_leaves_the_board_unchanged():
@@ -200,11 +226,11 @@ def wire_everything():
     return board
 
 
-def test_many_wires_never_superpose():
+def test_many_wires_never_share_an_edge():
     board = wire_everything()
     assert len(board.wires) >= 10  # enough wires for the check below to mean something
     component_cells = {node.cell for node in board.nodes.values()}
-    uses = {}  # cell -> list of axes (straight) or "bend"
+    edges = []  # (cell, edge) for every edge any wire goes through, counted with repeats
     for wire in board.wires:
         path = wire.path
         assert path[0] == board.nodes[wire.source].cell
@@ -212,10 +238,10 @@ def test_many_wires_never_superpose():
         assert all(cell in board.cells for cell in path)
         for a, b, c in zip(path, path[1:], path[2:], strict=False):
             assert b not in component_cells
-            into, out = direction_to(a, b), direction_to(b, c)
-            uses.setdefault(b, []).append(axis(into) if into == out else "bend")
-    for cell, used in uses.items():
-        assert used == ["bend"] or ("bend" not in used and len(set(used)) == len(used)), cell
+            entry, exit_ = direction_to(b, a), direction_to(b, c)
+            assert entry != exit_  # no U-turn
+            edges += [(b, entry), (b, exit_)]
+    assert len(edges) == len(set(edges))
 
 
 def test_same_moves_give_the_same_wires():

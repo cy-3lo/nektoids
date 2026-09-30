@@ -1,9 +1,9 @@
 """The player's artifact: components placed on the hex board and the wires between them.
 
 A component fills one cell. A wire is directed, from a component that emits to one that
-receives, and runs centre to centre through free cells. Each free cell holds either nothing,
-one wire that bends there, or up to three straight wires on distinct axes (D-007). Wires are
-routed once, when drawn, and never move afterwards.
+receives, and runs through free cells, entering and leaving each through one of its six edges.
+Wires may cross or turn in the same cell as long as no edge is used twice (D-010), so a cell
+holds at most three. Wires are routed once, when drawn, and never move afterwards.
 
 Every operation that the player can trigger returns `Refused(reason)` instead of raising, so
 the editor can show the reason on screen. Pure Python, no pygame.
@@ -20,7 +20,6 @@ from enum import Enum
 from nektoids.graph.hexgrid import (
     Cell,
     E,
-    axis,
     direction_to,
     neighbour,
     offset_rect,
@@ -91,16 +90,26 @@ class Refused:
     reason: str  # short, shown to the player
 
 
-def can_pass(axes_used: set[int], has_bend: bool, into: int, out: int) -> bool:
+def crossings(path: tuple[Cell, ...]) -> list[tuple[Cell, int, int]]:
+    """For each free cell a wire crosses: (cell, edge it comes in by, edge it leaves by).
+
+    An edge is named by the direction from the cell's centre through it, so a wire heading E
+    comes in by the W edge.
+    """
+    return [
+        (cell, direction_to(cell, before), direction_to(cell, after))
+        for before, cell, after in zip(path, path[1:], path[2:], strict=False)
+    ]
+
+
+def can_pass(edges_used: set[int], into: int, out: int) -> bool:
     """Whether a new wire may cross a free cell, entering heading `into` and leaving heading `out`.
 
-    axes_used: axes of the straight wires already in the cell. has_bend: a wire bends there.
+    edges_used: edges of the cell already taken by other wires. The new wire needs the edge it
+    comes in by and the one it leaves by; a U-turn would need the same edge twice.
     """
-    if has_bend:
-        return False
-    if out == into:
-        return axis(into) not in axes_used
-    return out != opposite(into) and not axes_used
+    entry = opposite(into)
+    return out != entry and entry not in edges_used and out not in edges_used
 
 
 class Board:
@@ -229,7 +238,7 @@ class Board:
         Equal costs go to the path pushed first, with neighbours tried in direction order, so the
         result never depends on set or dict order.
         """
-        axes_used, bends = self._occupancy()
+        edges_used = self._edges_used()
         blocked = {node.cell for node in self.nodes.values()}
         counter = itertools.count()
         # (steps, bends, tie-break, cell, heading into cell, path so far); heading -1 at the start
@@ -238,8 +247,7 @@ class Board:
         while heap:
             steps, turns, _, cell, heading, path = heapq.heappop(heap)
             if cell == goal:
-                crossed = path[1:-1]
-                return path if len(set(crossed)) == len(crossed) else None
+                return path if _uses_each_edge_once(path) else None
             if (cell, heading) in settled:
                 continue
             settled.add((cell, heading))
@@ -247,9 +255,7 @@ class Board:
                 nxt = neighbour(cell, out)
                 if nxt not in self._on_board or (nxt in blocked and nxt != goal):
                     continue
-                if heading >= 0 and not can_pass(
-                    axes_used.get(cell, set()), cell in bends, heading, out
-                ):
+                if heading >= 0 and not can_pass(edges_used.get(cell, set()), heading, out):
                     continue
                 bend = int(heading >= 0 and out != heading)
                 heapq.heappush(
@@ -259,18 +265,13 @@ class Board:
 
     # Internals
 
-    def _occupancy(self) -> tuple[dict[Cell, set[int]], set[Cell]]:
-        """Axes of the straight wires in each cell, and the cells where a wire bends."""
-        axes_used: dict[Cell, set[int]] = {}
-        bends: set[Cell] = set()
+    def _edges_used(self) -> dict[Cell, set[int]]:
+        """Edges of each free cell already taken by a wire."""
+        used: dict[Cell, set[int]] = {}
         for wire in self.wires:
-            for before, cell, after in zip(wire.path, wire.path[1:], wire.path[2:], strict=False):
-                into, out = direction_to(before, cell), direction_to(cell, after)
-                if into == out:
-                    axes_used.setdefault(cell, set()).add(axis(into))
-                else:
-                    bends.add(cell)
-        return axes_used, bends
+            for cell, entry, exit_ in crossings(wire.path):
+                used.setdefault(cell, set()).update((entry, exit_))
+        return used
 
     def _reaches(self, start: int, goal: int) -> bool:
         """Whether signal from node `start` already flows to node `goal` along existing wires."""
@@ -284,3 +285,14 @@ class Board:
                     seen.add(wire.target)
                     frontier.append(wire.target)
         return False
+
+
+def _uses_each_edge_once(path: tuple[Cell, ...]) -> bool:
+    """A route found cell by cell could cross itself through an edge it already used."""
+    seen: set[tuple[Cell, int]] = set()
+    for cell, entry, exit_ in crossings(path):
+        for edge in (entry, exit_):
+            if (cell, edge) in seen:
+                return False
+            seen.add((cell, edge))
+    return True

@@ -59,3 +59,12 @@ back). New parts take their kind's default direction. Converters have no directi
 placed by a level keep theirs. The scope lock in `CLAUDE.md` now has sensor directions in and
 moving sensors on the body out.
 The sim reads each eye's and thruster's direction from the board, never from a constant.
+
+**D-010 — 2026-09-30 — Supersedes D-007's crossing rule: wires share a cell unless they share an edge.**
+A wire crosses a free cell through two of its six edges. Any number of wires may cross or turn in
+the same cell provided no edge is used twice, so a cell holds at most three. Turns are drawn as
+circular arcs tangent to the wire at the edge midpoints: radius s/2 about the shared corner for a
+sharp 120° turn, 1.5 s for a gentle 60° one (s the hex size). Routing order is unchanged: shortest,
+then fewest bends, then direction order.
+Denser layouts than straight-only crossings. Wires still meet only at components, so a crossing
+never reads as a junction.

@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 import pygame
 
+from nektoids.editor.geometry import wire_points
 from nektoids.editor.layout import Layout, Tool
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
@@ -122,7 +123,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 
 
 def _draw_wire(screen, layout: Layout, path: tuple[Cell, ...], colour, width: int) -> None:
-    points = [_centre(layout, cell) for cell in path]
+    points = wire_points(path, layout.hex_size, layout.origin)  # arcs where it turns
     pygame.draw.lines(screen, colour, False, points, width)
     # Chevron just outside the target's shape, pointing into it.
     (x0, y0), (x1, y1) = points[-2], points[-1]
