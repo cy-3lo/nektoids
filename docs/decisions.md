@@ -168,3 +168,23 @@ which is sensor layout (brief §2, "a second authored artifact"); tutorial board
 so their positions stay fixed. Moving a part (D-011) moves it on the body. Sensors sit on the left
 of the board by habit, so eyes end up at the back of the body and still see ahead, since their
 own body is transparent to them. Operators have a mount too; nothing uses it.
+
+**D-019 — 2026-09-30 — Eyes read light: point sources, 1/r, a cosine for where the eye looks, hard shadows cast by discs, no reflection. Replaces the brief's opacity sensor for the jam.**
+An eye is a flat detector at its mount (D-018), looking along its facing. It reads
+E = sum over lights of P max(0, n·s) / max(r, R_MIN) V, and sends min(`RATE_MAX`, E); s is the unit
+vector to the light, r its distance, and V is 0 when the segment to it meets a disc, an obstacle or
+another body (a body is transparent to its own eyes, D-018). The 2π of 2D spreading is folded into
+P, so a light's power is the distance at which an eye looking straight at it saturates.
+Lengths are in u, the base body radius; obstacles are discs of 1 u by default; x right, y up,
+angles counter-clockwise. Pixels exist only in the view (10 px/u by default). Levels choose how
+many lights and obstacles. The light map shown to the player is what an eye looking straight at
+each light would read there, so what is drawn is what is sensed.
+Braitenberg's vehicles steer by light, and the brief's opacity ray ("something is there, not how
+far") gives no gradient to follow. A graded reading does carry distance, which opacity withheld;
+the ambiguity the puzzle needs survives: a dim light near and a bright one far read alike, two
+lights add, and a reading depends on where the eye looks as much as on where the light is.
+Consequences: near a light both eyes saturate and steering fades, which shows (both eyes white).
+Point sources give hard shadows, so an eye crossing a shadow's edge jumps; the lag of the nodes
+(D-017) smooths it. Cost: one segment–disc test per eye, light and disc, in one numpy broadcast.
+Natively, `eye_rates` takes 0.04 ms a tick for the jam and 0.5 ms for 100 swimmers, 4 lights
+and 20 obstacles; a light map of 80 × 76 cells takes 0.3 ms. WASM is still to be measured.
