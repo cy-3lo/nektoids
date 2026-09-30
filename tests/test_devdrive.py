@@ -143,3 +143,13 @@ def test_a_wide_graph_shrinks_the_view_to_fit():
     assert view.size == pytest.approx(400 / 32.0) and view.size < HEX_SIZE
     assert to_pixel((0, 0), view.size, view.origin)[0] >= 0.0
     assert isinstance(view, View)
+
+
+def test_fast_forward_runs_more_ticks_a_frame_but_a_step_is_still_one_frame():
+    clock = Clock()
+    clock.speed = 4
+    assert len(clock.frame()) == 4 * TICKS_PER_FRAME
+    clock.toggle_pause()
+    assert len(clock.frame()) == 0
+    clock.step()
+    assert len(clock.frame()) == TICKS_PER_FRAME

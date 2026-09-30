@@ -23,9 +23,9 @@ from __future__ import annotations
 import numpy as np
 
 from nektoids.graph.dynamics import RATE_MAX
-from nektoids.sim.arena import Arena
+from nektoids.sim.arena import LIGHT_RADIUS, Arena
 
-R_MIN = 0.5  # [u] a light closer than this counts as this far: its own size, no 1/0
+R_MIN = LIGHT_RADIUS  # [u] a light closer than this counts as this far: its own size, no 1/0
 TINY = 1e-12  # [u] below this a length is zero, and a direction along it is none
 FACING_STEP = np.pi / 3  # hex direction d points at 60° * d on the body (D-009)
 
@@ -133,11 +133,49 @@ def eye_rates(
     return np.minimum(RATE_MAX, add_lights(given, seen)).reshape(n, k)
 
 
-def light_map(arena: Arena, points: np.ndarray, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
-    """(P,): what an eye looking straight at each light would read at each point, in
-    [0, RATE_MAX], with the obstacles and the bodies at `pos` (N, 2), `radius` (N,) in the way.
+def angular_irradiance(
+    arena: Arena,
+    point: np.ndarray,
+    angles: np.ndarray,
+    pos: np.ndarray,
+    radius: np.ndarray,
+    own: int | None = None,
+) -> np.ndarray:
+    """(A,): what a flat eye at `point` (2,) would read facing each of `angles` (A,) [rad],
+    before the cap: the polar plot of the light there, E(phi) = sum of w_l max(0, cos(phi - psi_l)).
+
+    The bodies at `pos` (N, 2), `radius` (N,) shadow it, except body `own`, the eye's own.
     """
     centres, radii = discs(arena, pos, radius)
+    skip = None if own is None else np.array([len(arena.obstacles) + own])
+    seen = visible(point.reshape(1, 2), arena.light_xy, centres, radii, skip)  # (1, L)
+    points = np.broadcast_to(point.reshape(1, 2), (len(angles), 2))
+    looks = np.column_stack((np.cos(angles), np.sin(angles)))
+    given = exposure(points, looks, arena.light_xy, arena.light_power)
+    return add_lights(given, np.broadcast_to(seen, given.shape))
+
+
+def still_light(arena: Arena, points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """What the light map owes to what never moves, computed once per arena: the exposure
+    (P, L) of each point to each light, and whether the obstacles let it through (P, L)."""
     given = exposure(points, None, arena.light_xy, arena.light_power)
-    seen = visible(points, arena.light_xy, centres, radii)
+    return given, visible(points, arena.light_xy, arena.disc_xy, arena.disc_radius)
+
+
+def light_map(
+    arena: Arena,
+    points: np.ndarray,
+    pos: np.ndarray,
+    radius: np.ndarray,
+    still: tuple[np.ndarray, np.ndarray] | None = None,
+) -> np.ndarray:
+    """(P,): what an eye looking straight at each light would read at each point, in
+    [0, RATE_MAX], with the obstacles and the bodies at `pos` (N, 2), `radius` (N,) in the way.
+
+    still: `still_light(arena, points)`, kept by a caller that draws the map again and again;
+    only the bodies' shadows are then computed. The result is the same, bit for bit.
+    """
+    given, seen = still_light(arena, points) if still is None else still
+    bodies = np.asarray(pos, dtype=np.float64).reshape(-1, 2)
+    seen = seen & visible(points, arena.light_xy, bodies, np.asarray(radius, dtype=np.float64))
     return np.minimum(RATE_MAX, add_lights(given, seen))

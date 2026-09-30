@@ -5,17 +5,20 @@ import math
 import pytest
 
 from nektoids.editor.geometry import (
+    body_circle,
     cumulative_lengths,
     distance_to_polyline,
     edge_midpoint,
     nearest_wire,
     point_at,
+    symbol_corners,
     turn_centre,
     wire_arrows,
     wire_points,
 )
 from nektoids.graph.board import Wire
-from nektoids.graph.hexgrid import NE, NW, SQRT3, E, W, to_pixel
+from nektoids.graph.hexgrid import NE, NW, SQRT3, E, W, hex_disc, to_pixel
+from nektoids.graph.network import body_disc
 
 SIZE = 40.0  # [px]
 ORIGIN = (100.0, 100.0)  # [px]
@@ -143,3 +146,30 @@ def test_walking_a_drawn_wire_moves_one_step_at_a_time_along_it():
     steps = [math.dist(a, b) for a, b in zip(walked, walked[1:], strict=False)]
     assert max(steps) <= 0.5 + 1e-9  # never jumps, even round the arc
     assert walked[0] == points[0]
+
+
+# The swimmer's triangle behind the board (D-018)
+
+
+def test_the_body_is_the_disc_round_the_zone_centred_on_it():
+    zone = hex_disc(2)
+    (cx, cy), reach = body_disc(zone)
+    assert (cx, cy) == pytest.approx((0.0, 0.0), abs=1e-12) and reach == pytest.approx(2 * SQRT3)
+    centre, radius = body_circle(zone, 10.0, (100.0, 50.0))
+    assert centre == pytest.approx((100.0, 50.0)) and radius == pytest.approx(20 * SQRT3)
+    assert body_circle(zone, 10.0, (100.0, 50.0))[0][0] + radius == pytest.approx(
+        to_pixel((2, 0), 10.0, (100.0, 50.0))[0]
+    )  # the E-most cell is on the rim
+
+
+def test_the_symbol_is_an_equilateral_triangle_on_its_circle_with_a_corner_where_it_heads():
+    for heading in (0.0, 1.0, -2.5):
+        corners = symbol_corners((100.0, 50.0), 20.0, heading)
+        for x, y in corners:
+            assert math.hypot(x - 100.0, y - 50.0) == pytest.approx(20.0)
+        sides = [math.dist(a, b) for a, b in zip(corners, corners[1:] + corners[:1], strict=True)]
+        assert sides == pytest.approx([20.0 * SQRT3] * 3)
+        forward = corners[0]
+        assert forward == pytest.approx(
+            (100.0 + 20.0 * math.cos(heading), 50.0 - 20.0 * math.sin(heading))
+        )

@@ -3,11 +3,13 @@
 Everything is grey: colour is reserved for telling signals apart, later. Red only marks a
 refusal; what the Delete tool would remove on a click turns a darker grey.
 
-Shapes carry the category, all inside one circle: eyes are discs cut flat at the back, looking
-out of their round side; sources are whole discs; operators are diamonds; thrusters are squares
-whose front is cut to a 150° point, the way they push.
+Shapes carry the category, all inside one circle: eyes are discs cut flat in front, the flat
+face being the photosensor, which looks where the eye faces (D-020); sources are whole discs;
+operators are diamonds; thrusters are squares whose front is cut to a 150° point, the way they
+push.
 Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
-them in place (D-009). An icon inside each shape says its role (D-012).
+them in place (D-009). An icon inside each shape says its role (D-012). The board is the body
+(D-018): the swimmer's symbol lies faintly behind it, a circle round a wedge, tip forward.
 """
 
 from __future__ import annotations
@@ -17,7 +19,7 @@ from dataclasses import dataclass
 
 import pygame
 
-from nektoids.editor.geometry import wire_arrows, wire_points
+from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
 from nektoids.editor.icons import KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
 from nektoids.editor.layout import TOOL_KEYS, VIEW_KEYS, Tool, View, ViewButton, visible_cells
 from nektoids.editor.scene import EditorScene
@@ -48,6 +50,7 @@ GHOST_OK = (228, 231, 240)  # ... and it may connect there
 LOCK_RING = (170, 175, 190)
 COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
+BODY_OUTLINE = (54, 58, 74)  # the swimmer's symbol behind the board: which way is forward
 
 NAME = {
     Kind.EYE: "Eye",
@@ -79,9 +82,9 @@ HINT = {
     Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
 }
 
-# How parts sit in the menu: eyes flat side up, thrusters pointing up
+# How parts sit in the menu: eyes looking up (flat side up), thrusters pointing up
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.
-MENU_ANGLE = {Kind.EYE: 270.0, Kind.THRUSTER: 90.0}
+MENU_ANGLE = {Kind.EYE: 90.0, Kind.THRUSTER: 90.0}
 
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 
@@ -109,17 +112,18 @@ def _arc(start: int, stop: int) -> list[tuple[float, float]]:
 
 _S = 1.0 / math.sqrt(2.0)  # half-side of the square inscribed in the unit circle
 _SHOULDER = _S * (1.0 - math.tan(math.radians(15.0)))
-# Eye: a disc with its back cut off by a chord at half the radius, flat side behind.
-EYE_DISC = _to_area(_arc(-120, 121))
+# Eye: a disc with its front cut off by a chord at half the radius. The flat face is the
+# photosensor, and it looks forward (D-019, D-020).
+EYE_DISC = _to_area(_arc(60, 301))
 # Source: a whole disc; it has no direction.
 DISC = _to_area(_arc(0, 360))
 DIAMOND = _to_area([(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)])
 # Thruster: a square, its front corners cut so the front is a point of 150° that ends on the
 # square's front edge: the outline stays square, 1:1.
 SQUARE_POINT = _to_area([(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)])
-# Icon shift along the facing [hex sizes]: the eye's shape runs from its cut, half a radius R
-# behind the centre, to its rim, so its middle lies R/4 ahead of the centre.
-ICON_AHEAD = {Kind.EYE: 0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
+# Icon shift along the facing [hex sizes]: the eye's shape runs from its rim, a radius R behind
+# the centre, to its flat face, half a radius ahead, so its middle lies R/4 behind the centre.
+ICON_AHEAD = {Kind.EYE: -0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
 
 
 @dataclass(frozen=True)
@@ -164,6 +168,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         else:
             pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
         pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
+    if board.cells:
+        draw_body(screen, board.cells, view.size, view.origin)
 
     if isinstance(scene.ghost, tuple):
         colour, width = (GHOST_OK, 3) if scene.ghost_connects else (GHOST, 2)
@@ -212,6 +218,23 @@ def _draw_arrow(screen, at, angle: float, half: float, colour) -> None:
     left = (at[0] - half * c - half * s, at[1] - half * s + half * c)
     right = (at[0] - half * c + half * s, at[1] - half * s - half * c)
     pygame.draw.polygon(screen, colour, [tip, left, right])
+
+
+def draw_body(screen, zone: list[Cell], size: float, origin) -> None:
+    """The swimmer's symbol behind a board, a corner forward (E): the body is the board (D-018)."""
+    centre, radius = body_circle(zone, size, origin)
+    draw_symbol(screen, BODY_OUTLINE, centre, radius, 0.0, 3)
+
+
+def draw_symbol(screen, colour, centre, radius: float, heading: float, width: int) -> None:
+    """The swimmer's symbol: a circle of `radius` [px] round a wedge, the two sides of an
+    equilateral triangle that meet at its tip, at `heading` [rad, counter-clockwise on screen];
+    the back is open, so the tip shows the way. Both lines `width` px wide, anti-aliased. A
+    circle's line grows inwards from its radius, so the corners sit on the middle of that line."""
+    pygame.draw.aacircle(screen, colour, centre, radius, width)
+    tip, left, right = symbol_corners(centre, radius - width / 2, heading)
+    pygame.draw.aaline(screen, colour, left, tip, width)
+    pygame.draw.aaline(screen, colour, tip, right, width)
 
 
 def draw_part(
@@ -319,9 +342,9 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     pygame.draw.rect(screen, PANEL, layout.palette_area)
     for button, rect in layout.view_buttons:
         active = button is ViewButton.PAN and scene.tool is Tool.PAN
-        _draw_button(screen, fonts, rect, VIEW_ICON[button], active)
+        draw_button(screen, fonts, rect, VIEW_ICON[button], active)
     for tool, rect in layout.tool_buttons:
-        _draw_button(screen, fonts, rect, TOOL_ICON[tool], tool is scene.tool)
+        draw_button(screen, fonts, rect, TOOL_ICON[tool], tool is scene.tool)
     px, _, pw, _ = layout.palette_area
     for y in layout.palette_rules:
         pygame.draw.line(screen, RULE, (px + 20, y), (px + pw - 20, y), 1)
@@ -330,10 +353,20 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
 
 
-def _draw_button(screen, fonts: Fonts, rect, icon: str, active: bool) -> None:
+def draw_button(screen, fonts: Fonts, rect, icon: str, active: bool) -> None:
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
     x, y, w, h = rect
     fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, TEXT)
+
+
+def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
+    """A tooltip: `text` placed by keywords of `Rect.get_rect` (e.g. midright=(x, y)), in a box
+    8 px wider on each side."""
+    shown = fonts.text.render(text, True, TEXT)
+    box = shown.get_rect(**where).inflate(16, 10)
+    pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=5)
+    pygame.draw.rect(screen, RULE, box, 1, border_radius=5)
+    screen.blit(shown, shown.get_rect(center=box.center))
 
 
 def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
@@ -345,11 +378,9 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     rects = dict(layout.tool_buttons) | dict(layout.view_buttons)
     x, y, _, h = rects[target] if target in rects else layout.swatches[0]
     key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target)
-    text = fonts.text.render(TIP[target] + (f" ({key})" if key else ""), True, TEXT)
-    box = text.get_rect(midright=(x - 10, y + h // 2)).inflate(16, 10)
-    pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=5)
-    pygame.draw.rect(screen, RULE, box, 1, border_radius=5)
-    screen.blit(text, text.get_rect(center=box.center))
+    draw_tip(
+        screen, fonts, TIP[target] + (f" ({key})" if key else ""), midright=(x - 10, y + h // 2)
+    )
 
 
 def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:

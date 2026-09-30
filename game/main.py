@@ -6,25 +6,29 @@
 """Nektoids entry point.
 
 Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
-For now it shows the wiring editor; the Run button and the simulation view come next.
+For now it shows the wiring editor; the Run button comes with the swimmer's dynamics.
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.
+F3 switches to the arena view (D-019): a swimmer running the board in a lit arena, not moving yet.
 """
 
 import asyncio
 
 import pygame
 
+from nektoids.editor.arena import ArenaScene
+from nektoids.editor.arena_draw import draw_arena
 from nektoids.editor.devdrive import SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.layout import SCREEN, make_layout
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
+from nektoids.levels.arenas import arenas
 from nektoids.levels.sandbox import free_board
 from nektoids.levels.scenarios import Scenario, scenarios
 
 FPS = 60
-DEV_VIEW = True  # F2 opens the developer view; False hides it
+DEV_VIEW = True  # F2 opens the developer view and F3 the arena view; False hides both
 assert SIM_HZ == FPS * TICKS_PER_FRAME  # the developer view runs a whole number of ticks a frame
 
 pygame.init()
@@ -41,23 +45,39 @@ def open_developer_view() -> SchematicScene:
     return SchematicScene([Scenario("Your board", board), *scenarios()])
 
 
+def toggle(
+    open_view: SchematicScene | ArenaScene | None, key: int
+) -> SchematicScene | ArenaScene | None:
+    """F2 opens or closes the developer view, F3 the arena view; either replaces the other."""
+    if key == pygame.K_F2:
+        return None if isinstance(open_view, SchematicScene) else open_developer_view()
+    return None if isinstance(open_view, ArenaScene) else ArenaScene(board, arenas())
+
+
 async def main() -> None:
     running = True
-    developer: SchematicScene | None = None  # the developer view, while F2 has it open
+    developer: SchematicScene | ArenaScene | None = None  # the F2 or F3 view, while open
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F2:
-                developer = None if developer is not None else open_developer_view()
+            elif (
+                DEV_VIEW
+                and event.type == pygame.KEYDOWN
+                and event.key in (pygame.K_F2, pygame.K_F3)
+            ):
+                developer = toggle(developer, event.key)
             elif developer is not None:
                 developer.handle_event(event)
             else:
                 scene.handle_event(event)
 
-        if developer is not None:
+        if isinstance(developer, SchematicScene):
             developer.update()
             draw_schematic(screen, developer, fonts)
+        elif isinstance(developer, ArenaScene):
+            developer.update()
+            draw_arena(screen, developer, fonts)
         else:
             scene.update()
             draw(screen, scene, fonts)

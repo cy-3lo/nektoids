@@ -11,6 +11,8 @@ from functools import cached_property
 
 import numpy as np
 
+BASE_RADIUS = 1.0  # [u] a body's radius before complexity grows it: the unit of length
+LIGHT_RADIUS = BASE_RADIUS  # [u] a light is a disc as big as a swimmer; it shadows nothing
 OBSTACLE_RADIUS = 1.0  # [u]
 
 
@@ -43,14 +45,15 @@ class Arena:
     obstacles: tuple[Disc, ...] = ()
 
     def __post_init__(self) -> None:
-        """ValueError for what no level should hold: a light off the arena or inside an obstacle,
-        an obstacle not wholly inside the arena, a size or a power that is not positive."""
+        """ValueError for what no level should hold: a light not wholly on the arena or touching
+        an obstacle, an obstacle not wholly inside the arena, a size or a power not positive."""
         if not (self.width > 0 and self.height > 0):
             raise ValueError("the arena needs a positive width and height")
         for light in self.lights:
             if not light.power > 0:
                 raise ValueError(f"light at ({light.x}, {light.y}): power must be positive")
-            if not (0 <= light.x <= self.width and 0 <= light.y <= self.height):
+            r = LIGHT_RADIUS
+            if not (r <= light.x <= self.width - r and r <= light.y <= self.height - r):
                 raise ValueError(f"light at ({light.x}, {light.y}) is off the arena")
         for disc in self.obstacles:
             r = disc.radius
@@ -59,8 +62,9 @@ class Arena:
             if not (r <= disc.x <= self.width - r and r <= disc.y <= self.height - r):
                 raise ValueError(f"obstacle at ({disc.x}, {disc.y}) is not inside the arena")
             for light in self.lights:
-                if (light.x - disc.x) ** 2 + (light.y - disc.y) ** 2 <= r * r:
-                    raise ValueError(f"light at ({light.x}, {light.y}) is inside an obstacle")
+                clear = r + LIGHT_RADIUS
+                if (light.x - disc.x) ** 2 + (light.y - disc.y) ** 2 <= clear * clear:
+                    raise ValueError(f"light at ({light.x}, {light.y}) touches an obstacle")
 
     @cached_property
     def light_xy(self) -> np.ndarray:
