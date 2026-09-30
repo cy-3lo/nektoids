@@ -7,6 +7,9 @@ You don't steer the agents. You wire their sensors to their thrusters, press run
 A small Zachtronics-style puzzle game about collective behaviour, built by a father and his son.
 Design brief: [`docs/brief.md`](docs/brief.md). Decisions: [`docs/decisions.md`](docs/decisions.md).
 
+**New to the code?** [`docs/walkthrough.md`](docs/walkthrough.md) is a guided tour of `graph/` and
+`editor/`, written for Camille: what runs when, the invariants, and what is still untested.
+
 ## Getting started
 
 ```bash
