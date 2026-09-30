@@ -26,6 +26,8 @@ In the window, try:
 
 Hover a button on the right for a second to see its shortcut key.
 
+Press F2 for the developer view (section 6): the board as a running circuit, with its equations. Tab steps through ten example boards, and F2 brings you back.
+
 ## 1. What it does
 
 The editor lets the player place components (sensors, operators, actuators) on a small hex
@@ -183,6 +185,11 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 | `tests/test_layout.py` | three columns, hit-testing, folding, zoom and pan, shortcut keys |
 | `tests/test_assets.py` | the icon font ships with its licence, under 500 KB |
 | `tests/test_architecture.py` | no pygame in `sim/` or `graph/` |
+| `tests/test_network.py` | the board compiled to arrays: numbering, input order, impossible wires, topological order, loops |
+| `tests/test_evaluate.py` | rates against an independent evaluator, the cap, split, determinism, loops solved or refused |
+| `tests/test_analysis.py`, `tests/test_equations.py` | the loop report, the affine branch, the equation text |
+| `tests/test_beads.py`, `tests/test_devdrive.py` | bead spacing and travel, the clock, sliders, waveforms, fitting the view |
+| `tests/test_scenarios.py` | the ten example boards build, and behave as their titles say |
 
 ## 3. Questions to answer after reading
 
@@ -203,15 +210,81 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 
 ## 5. Where to go next
 
-- **Graph evaluation** is yours and not written yet. It turns sensor rates into thruster rates every step:
-  - evaluate in topological order, breaking ties by node id (`.claude/rules/graph.md`);
-  - rates are never negative;
-  - Difference is |a − b|, and a Sum or Difference with a single input passes it through (D-014).
-
-  Two things are still undecided: what a Source emits, and whether a fan-out copies the rate to each wire or splits it. Decide them with your father and log them in [`decisions.md`](decisions.md).
+- **Graph evaluation** is written (D-016, section 6) and is yours to review. What is left is the
+  hook into the simulation: `thrust_rates` gives one rate per thruster, and `Node.facing` says
+  where it pushes.
 - **`complexity()`**, one integer per graph that the simulation will turn into body size
   (`.claude/rules/graph.md`).
 - **The web arrow-key bug** above.
+
+## 6. Graph evaluation and the developer view (D-016)
+
+Your father wrote this part, and you review it (D-005): it is where your two packages meet the
+simulation. Read D-016 in [`decisions.md`](decisions.md) first, fifteen lines.
+
+### 6.1 What it computes
+
+Every node has one number, its rate `y`, between 0 and `RATE_MAX = 1`: a fraction of what a
+wire can carry.
+Evaluation is a pure function from the eyes' rates to the thrusters' rates, with no time and no
+stored state:
+
+- a wire carries its source's rate divided by the number of wires leaving that node (a fork
+  splits, so beads are conserved);
+- a node adds what arrives, then applies its gain: Double ×2, Halve ÷2, Sum ×1, Difference
+  |a − b|, Thruster ×1;
+- the result is capped at `RATE_MAX`. A Source emits `SOURCE_RATE = 1`.
+
+The beads in the developer view are only a picture of these rates: 8 a second on a wire at 1.
+
+### 6.2 The code
+
+- [`graph/network.py`](../game/nektoids/graph/network.py): `Network` is the board flattened into
+  numpy arrays, with no positions and no wire paths. `from_board` compiles a real board,
+  `from_edges` builds one from kinds and pairs, so tests can make graphs the board refuses.
+  `topological_order` is Kahn's algorithm, ties by index, like a build system ordering its
+  dependencies. `cyclic_components` finds the loops.
+- [`graph/evaluate.py`](../game/nektoids/graph/evaluate.py): `evaluate(net, eyes)` returns one
+  row per agent. Each node gathers its inputs slot by slot, in a fixed order, instead of with a
+  matrix product: a BLAS row computed in a batch can differ in the last bits from the same row
+  computed alone, and invariant 1 forbids that.
+- [`graph/analysis.py`](../game/nektoids/graph/analysis.py) and
+  [`graph/equations.py`](../game/nektoids/graph/equations.py) are developer tools: the loop report
+  and the equations as text. The game never calls them.
+- [`editor/schematic.py`](../game/nektoids/editor/schematic.py) (state and input),
+  [`schematic_draw.py`](../game/nektoids/editor/schematic_draw.py),
+  [`devdrive.py`](../game/nektoids/editor/devdrive.py) (clock, sliders, waveforms, pure),
+  [`beads.py`](../game/nektoids/editor/beads.py) (pure) and
+  [`levels/scenarios.py`](../game/nektoids/levels/scenarios.py) make the F2 view.
+
+### 6.3 Loops
+
+The editor still refuses loops; the evaluator does not assume it. A loop of operators with
+nothing stored in it is an equation, like a spreadsheet cell that refers to itself: it may have
+no solution, one, or several. `evaluate` accepts a loop only when it can prove that the solution
+is unique (the loop gain is below 1, `contraction_factor`), and raises `AlgebraicLoopError` for
+every other loop. A loop needs a state, a memory, and that is the tank of D-015, after the jam.
+Three of the example boards are loops; open them with Tab and read the panel.
+
+### 6.4 Questions to answer after reading
+
+1. **Why does `Network` sort each node's input slots by source index?** Which test fails if it
+   does not? (Look in `test_evaluate.py` for the drawing order.)
+2. **Work the board "Halve on one side" by hand**, wire by wire, and compare with the numbers in
+   the panel.
+3. **In `Beads.step`, why does a new bead start at `speed * phase / flux` and not at 0?** What
+   would the spacing look like at a high rate if it started at 0?
+4. **What does the player see when three wires leave one eye?** Is that what a player would
+   expect? (The board "A fork splits the rate".)
+
+### 6.5 Weak or untested
+
+- **`schematic.py` and `schematic_draw.py` have no automated tests,** for the same reason as the
+  editor. Everything pure in them (clock, sliders, beads, fitting) is tested.
+- **Beads take time to travel and the model does not:** a bead needs about a second to cross a
+  four-cell wire, while the rates change at once. The numbers next to each part are the truth.
+- **The sliders exist only in the developer view** (`DEV_VIEW` in `main.py`); the player's
+  graph has none.
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
