@@ -87,29 +87,39 @@ ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 
 # Icon height as a fraction of the hex size.
 ICON_SCALE = {Kind.EYE: 0.55}
-# Icon shift along the facing [hex sizes]: the eye's shape runs from its cut, half a radius
-# behind the centre, to the rim, so its middle lies ahead of the centre.
-ICON_AHEAD = {Kind.EYE: 0.15}
 
-# Shapes in a local frame: unit = hex size, forward = +x. Every one fits the same circle of
-# radius SHAPE_R about the cell centre, so all parts look the same size.
-SHAPE_R = 0.6
-_S = SHAPE_R / math.sqrt(2.0)  # half-side of the square inscribed in that circle
-# Eye: the circle with its back cut off by a chord at half the radius, flat side behind.
-EYE_DISC = [
-    (SHAPE_R * math.cos(math.radians(a)), SHAPE_R * math.sin(math.radians(a)))
-    for a in range(-120, 121, 10)
-]
-# Source: the whole circle; it has no direction.
-DISC = [
-    (SHAPE_R * math.cos(math.radians(a)), SHAPE_R * math.sin(math.radians(a)))
-    for a in range(0, 360, 10)
-]
-DIAMOND = [(0.0, -SHAPE_R), (SHAPE_R, 0.0), (0.0, SHAPE_R), (-SHAPE_R, 0.0)]
-# Thruster: the inscribed square, its front corners cut so the front is a point of 150° that
-# ends on the square's front edge: the outline stays square, 1:1.
+# Shapes in a local frame: unit = hex size, forward = +x. Each outline is scaled to the same
+# area, SHAPE_AREA, so that no part looks bigger than another: fitted to one circle, the disc
+# covered 1.7 times the thruster's area.
+SHAPE_AREA = 0.8
+
+
+def _to_area(outline: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """The outline scaled about the cell centre until it encloses SHAPE_AREA (shoelace formula)."""
+    closed = zip(outline, outline[1:] + outline[:1], strict=True)
+    area = 0.5 * abs(sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in closed))
+    k = math.sqrt(SHAPE_AREA / area)
+    return [(k * x, k * y) for x, y in outline]
+
+
+def _arc(start: int, stop: int) -> list[tuple[float, float]]:
+    """Points on the unit circle every 10°, from `start` to `stop` degrees."""
+    return [(math.cos(math.radians(a)), math.sin(math.radians(a))) for a in range(start, stop, 10)]
+
+
+_S = 1.0 / math.sqrt(2.0)  # half-side of the square inscribed in the unit circle
 _SHOULDER = _S * (1.0 - math.tan(math.radians(15.0)))
-SQUARE_POINT = [(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)]
+# Eye: a disc with its back cut off by a chord at half the radius, flat side behind.
+EYE_DISC = _to_area(_arc(-120, 121))
+# Source: a whole disc; it has no direction.
+DISC = _to_area(_arc(0, 360))
+DIAMOND = _to_area([(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)])
+# Thruster: a square, its front corners cut so the front is a point of 150° that ends on the
+# square's front edge: the outline stays square, 1:1.
+SQUARE_POINT = _to_area([(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)])
+# Icon shift along the facing [hex sizes]: the eye's shape runs from its cut, half a radius R
+# behind the centre, to its rim, so its middle lies R/4 ahead of the centre.
+ICON_AHEAD = {Kind.EYE: 0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
 
 
 @dataclass(frozen=True)
@@ -156,10 +166,13 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 
     if isinstance(scene.ghost, tuple):
         colour, width = (GHOST_OK, 3) if scene.ghost_connects else (GHOST, 2)
-        _draw_wire(screen, view, scene.ghost, colour, width)
+        target = board.node_at(scene.ghost[-1])
+        reach = _extent(target.kind) if target is not None else 0.3
+        _draw_wire(screen, view, scene.ghost, colour, width, reach)
     doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
     for wire in board.wires:
-        _draw_wire(screen, view, wire.path, DOOMED if wire in doomed_wires else WIRE, 3)
+        colour = DOOMED if wire in doomed_wires else WIRE
+        _draw_wire(screen, view, wire.path, colour, 3, _extent(board.nodes[wire.target].kind))
 
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
@@ -175,7 +188,10 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     screen.set_clip(None)
 
 
-def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, width: int) -> None:
+def _draw_wire(
+    screen, view: View, path: tuple[Cell, ...], colour, width: int, reach: float = 0.3
+) -> None:
+    """reach: how far the target's shape extends [hex sizes]; the last arrow sits just outside."""
     points = wire_points(path, view.size, view.origin)  # arcs where it turns
     pygame.draw.lines(screen, colour, False, points, width)
     for at, angle in wire_arrows(path, view.size, view.origin):
@@ -183,7 +199,7 @@ def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, width: int) -
     # And one more, the same size, just outside the target's circle, pointing into it.
     (x0, y0), (x1, y1) = points[-2], points[-1]
     angle = math.atan2(y1 - y0, x1 - x0)
-    back = (SHAPE_R + ARROW_HALF + 0.04) * view.size
+    back = (reach + ARROW_HALF + 0.04) * view.size
     at = (x1 - back * math.cos(angle), y1 - back * math.sin(angle))
     _draw_arrow(screen, at, angle, ARROW_HALF * view.size, colour)
 
@@ -227,16 +243,24 @@ def _placed_angle(kind: Kind, facing: int | None) -> float | None:
     return None
 
 
+def _template(kind: Kind) -> list[tuple[float, float]]:
+    if kind is Kind.SOURCE:
+        return DISC
+    return {
+        Category.SENSOR: EYE_DISC,
+        Category.OPERATOR: DIAMOND,
+        Category.ACTUATOR: SQUARE_POINT,
+    }[kind.category]
+
+
+def _extent(kind: Kind) -> float:
+    """How far the shape of `kind` reaches from its cell centre [hex sizes]."""
+    return max(math.hypot(u, v) for u, v in _template(kind))
+
+
 def _shape(kind: Kind, angle: float | None, centre, size: float) -> list[tuple[float, float]]:
     """Polygon for `kind`, turned to point at `angle` [degrees, counter-clockwise on screen]."""
-    if kind is Kind.SOURCE:
-        template = DISC
-    else:
-        template = {
-            Category.SENSOR: EYE_DISC,
-            Category.OPERATOR: DIAMOND,
-            Category.ACTUATOR: SQUARE_POINT,
-        }[kind.category]
+    template = _template(kind)
     phi = math.radians(-(angle or 0.0))  # y points down
     c, s = math.cos(phi), math.sin(phi)
     return [
