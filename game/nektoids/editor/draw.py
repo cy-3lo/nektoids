@@ -5,7 +5,7 @@ refusal; what the Delete tool would remove on a click turns a darker grey.
 
 Shapes carry the category, all inside one circle: eyes are discs cut flat at the back, looking
 out of their round side; sources are whole discs; operators are diamonds; thrusters are squares
-pointed (150°) the way they push.
+whose front is cut to a 150° point, the way they push.
 Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
 them in place (D-009). An icon inside each shape says its role (D-012).
 """
@@ -87,6 +87,9 @@ ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 
 # Icon height as a fraction of the hex size.
 ICON_SCALE = {Kind.EYE: 0.55}
+# Icon shift along the facing [hex sizes]: the eye's shape runs from its cut, half a radius
+# behind the centre, to the rim, so its middle lies ahead of the centre.
+ICON_AHEAD = {Kind.EYE: 0.15}
 
 # Shapes in a local frame: unit = hex size, forward = +x. Every one fits the same circle of
 # radius SHAPE_R about the cell centre, so all parts look the same size.
@@ -103,9 +106,10 @@ DISC = [
     for a in range(0, 360, 10)
 ]
 DIAMOND = [(0.0, -SHAPE_R), (SHAPE_R, 0.0), (0.0, SHAPE_R), (-SHAPE_R, 0.0)]
-# Thruster: the inscribed square with its front edge raised into a point of 150°.
-_NOSE = _S * (1.0 + math.tan(math.radians(15.0)))
-SQUARE_POINT = [(-_S, -_S), (_S, -_S), (_NOSE, 0.0), (_S, _S), (-_S, _S)]
+# Thruster: the inscribed square, its front corners cut so the front is a point of 150° that
+# ends on the square's front edge: the outline stays square, 1:1.
+_SHOULDER = _S * (1.0 - math.tan(math.radians(15.0)))
+SQUARE_POINT = [(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)]
 
 
 @dataclass(frozen=True)
@@ -210,7 +214,10 @@ def _draw_node(
         pygame.draw.polygon(screen, LOCK_RING, _shape(kind, angle, centre, 1.25 * size), 2)
     icon_size = max(10, round(ICON_SCALE.get(kind, 0.5) * size))
     if kind in KIND_ICON:
-        fonts.icons.draw(screen, KIND_ICON[kind], centre, icon_size, DARK, angle)
+        ahead = ICON_AHEAD.get(kind, 0.0) * size
+        phi = math.radians(angle or 0.0)  # counter-clockwise on screen, y down
+        at = (centre[0] + ahead * math.cos(phi), centre[1] - ahead * math.sin(phi))
+        fonts.icons.draw(screen, KIND_ICON[kind], at, icon_size, DARK, angle)
 
 
 def _placed_angle(kind: Kind, facing: int | None) -> float | None:
