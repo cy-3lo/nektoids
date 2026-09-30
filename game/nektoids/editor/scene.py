@@ -45,7 +45,7 @@ from nektoids.editor.layout import (
     view_button_at,
     zoom,
 )
-from nektoids.graph.board import Board, Kind, Refused
+from nektoids.graph.board import Board, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
     SQRT3,
     Cell,
@@ -392,23 +392,7 @@ class EditorScene:
             self.message = ""
 
     def _delete(self, cell: Cell, pos: tuple[int, int]) -> None:
-        """A click on a component's shape deletes it; otherwise the wire drawn under the click.
-
-        Wires count before the rest of a component's cell, because a wire between two
-        neighbouring components crosses no free cell: it only shows between their shapes.
-        """
-        size, origin = self.view.size, self.view.origin
-        node = self.board.node_at(cell)
-        on_shape = (
-            node is not None and math.dist(pos, to_pixel(cell, size, origin)) < NODE_HIT * size
-        )
-        wire = (
-            None if on_shape else nearest_wire(pos, self.board.wires, size, origin, WIRE_HIT * size)
-        )
-        if wire is None and node is None and self.board.wires_in(cell):
-            # Anywhere in a crossed cell: the nearest of its wires (the keyboard cursor sits at
-            # the centre, which a turning wire does not pass through).
-            wire = nearest_wire(pos, self.board.wires_in(cell), size, origin, math.inf)
+        node, wire = self._delete_target(cell, pos)
         if wire is not None:
             self.board.remove_wire(wire)
             self.message = ""
@@ -420,6 +404,36 @@ class EditorScene:
                 self.message = ""
         else:
             self._refuse("nothing to delete here", cell)
+
+    def _delete_target(self, cell: Cell, pos: tuple[int, int]) -> tuple[Node | None, Wire | None]:
+        """What a Delete click at `pos` would take: a component (with its wires) or one wire.
+
+        A click on a component's shape takes the component. Otherwise wires come first, before
+        the rest of a component's cell, because a wire between two neighbouring components
+        crosses no free cell: it only shows between their shapes.
+        """
+        size, origin = self.view.size, self.view.origin
+        node = self.board.node_at(cell)
+        if node is not None and math.dist(pos, to_pixel(cell, size, origin)) < NODE_HIT * size:
+            return node, None
+        wire = nearest_wire(pos, self.board.wires, size, origin, WIRE_HIT * size)
+        if wire is None and node is None and self.board.wires_in(cell):
+            # Anywhere in a crossed cell: the nearest of its wires (the keyboard cursor sits at
+            # the centre, which a turning wire does not pass through).
+            wire = nearest_wire(pos, self.board.wires_in(cell), size, origin, math.inf)
+        return (None, wire) if wire is not None else (node, None)
+
+    def doomed(self) -> tuple[int | None, list[Wire]]:
+        """In the Delete tool, what a click here would remove, shown in red before it happens:
+        a component's id and its wires, or one wire. Nothing for a part the level locked."""
+        if self.tool is not Tool.DELETE or self.hover is None:
+            return None, []
+        node, wire = self._delete_target(self.hover, self.mouse)
+        if wire is not None:
+            return None, [wire]
+        if node is None or node.locked:
+            return None, []
+        return node.id, [w for w in self.board.wires if node.id in (w.source, w.target)]
 
     # Helpers
 

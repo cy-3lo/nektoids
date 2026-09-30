@@ -1,7 +1,7 @@
 """Drawing the editor. Reads the scene and the board; never changes them.
 
 Everything is grey: colour is reserved for telling signals apart, later. Red only marks a
-refusal.
+refusal, or what the Delete tool would remove on a click.
 
 Shapes carry the category: sensors are half-discs looking out of their round side,
 converters are diamonds, thrusters are squares with a nose pointing the way they push.
@@ -39,6 +39,7 @@ TOOLTIP_BG = (34, 37, 50)
 TEXT = (220, 222, 230)
 DIM_TEXT = (130, 134, 150)
 REFUSED = (240, 110, 110)
+DOOMED = (225, 90, 90)  # what a Delete click would remove
 DARK = (18, 20, 28)
 WIRE = (150, 154, 166)
 GHOST = (96, 101, 118)  # where a wire would run
@@ -146,13 +147,15 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     if isinstance(scene.ghost, tuple):
         colour, width = (GHOST_OK, 3) if scene.ghost_connects else (GHOST, 2)
         _draw_wire(screen, view, scene.ghost, colour, width)
+    doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, in red
     for wire in board.wires:
-        _draw_wire(screen, view, wire.path, WIRE, 3)
+        _draw_wire(screen, view, wire.path, DOOMED if wire in doomed_wires else WIRE, 3)
 
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
         angle = _placed_angle(node.kind, node.facing)
-        _draw_node(screen, fonts, node.kind, angle, centre, view.size, node.locked)
+        fill = DOOMED if node.id == doomed_node else None
+        _draw_node(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
         if node.id == scene.source or node.id == scene._wire_start():
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
     if scene.cursor is not None:
