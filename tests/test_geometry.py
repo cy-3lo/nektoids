@@ -5,9 +5,11 @@ import math
 import pytest
 
 from nektoids.editor.geometry import (
+    cumulative_lengths,
     distance_to_polyline,
     edge_midpoint,
     nearest_wire,
+    point_at,
     turn_centre,
     wire_arrows,
     wire_points,
@@ -114,3 +116,30 @@ def test_crossing_wires_keep_distinct_arrows():
     a = dict(zip([(2, 3), (3, 3)], [p for p, _ in wire_arrows(across, SIZE, ORIGIN)], strict=True))
     ((b, _),) = wire_arrows(diagonal, SIZE, ORIGIN)
     assert math.dist(a[(3, 3)], b) > 0.2 * SIZE
+
+
+# Walking along a wire
+
+
+def test_cumulative_lengths_start_at_zero_and_end_at_the_length():
+    assert cumulative_lengths([(0.0, 0.0), (3.0, 4.0), (3.0, 10.0)]) == [0.0, 5.0, 11.0]
+
+
+def test_a_point_at_a_distance_lies_on_the_polyline_and_clamps_at_its_ends():
+    points = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)]
+    cumulative = cumulative_lengths(points)
+    assert point_at(points, cumulative, 0.5) == (0.5, 0.0)
+    assert point_at(points, cumulative, 1.0) == (1.0, 0.0)  # exactly at the corner
+    assert point_at(points, cumulative, 1.5) == (1.0, 0.5)
+    assert point_at(points, cumulative, -3.0) == (0.0, 0.0)
+    assert point_at(points, cumulative, 99.0) == (1.0, 1.0)
+
+
+def test_walking_a_drawn_wire_moves_one_step_at_a_time_along_it():
+    path = ((1, 3), (2, 3), (3, 3), (3, 2), (4, 1))  # straight, then a turn
+    points = wire_points(path, SIZE, ORIGIN)
+    cumulative = cumulative_lengths(points)
+    walked = [point_at(points, cumulative, k * 0.5) for k in range(int(cumulative[-1] / 0.5))]
+    steps = [math.dist(a, b) for a, b in zip(walked, walked[1:], strict=False)]
+    assert max(steps) <= 0.5 + 1e-9  # never jumps, even round the arc
+    assert walked[0] == points[0]
