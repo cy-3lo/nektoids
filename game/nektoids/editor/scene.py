@@ -7,8 +7,8 @@ Tools:
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
 
-Right click or Escape cancels. Every refusal flashes the cell and puts the reason in the status
-line.
+Clicking a palette title folds or unfolds its group. Right click or Escape cancels. Every refusal
+flashes the cell and puts the reason in the status line.
 """
 
 from __future__ import annotations
@@ -22,6 +22,8 @@ from nektoids.editor.layout import (
     Layout,
     Tool,
     cell_at,
+    group_at,
+    make_layout,
     palette_item_at,
     tool_at,
 )
@@ -43,6 +45,7 @@ class EditorScene:
         self.source: int | None = None  # Wire: node id of the chosen source
         self.moving: int | None = None  # Move: node id being dragged
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered target
+        self.folded: set[str] = set()  # palette groups shown closed
         self.mouse = (0, 0)
         self.hover: Cell | None = None  # board cell under the mouse
         self.message = ""  # last refusal, empty once something succeeds
@@ -84,6 +87,11 @@ class EditorScene:
         if tool is not None:
             self._cancel()
             self.tool = tool
+            return
+        title = group_at(self.layout, pos)
+        if title is not None:
+            self.folded ^= {title}
+            self.layout = make_layout(self.board.cols, self.board.rows, frozenset(self.folded))
             return
         kind = palette_item_at(self.layout, pos)
         if kind is not None:

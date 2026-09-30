@@ -193,8 +193,10 @@ def _centre(layout: Layout, cell: Cell) -> tuple[float, float]:
 def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     layout, board = scene.layout, scene.board
     pygame.draw.rect(screen, PANEL, (0, 0, layout.board_area[0], screen.get_height()))
-    for title, at in layout.group_titles:
-        screen.blit(fonts.text.render(title.upper(), True, DIM_TEXT), at)
+    for title, (x, y, _, h) in layout.group_titles:
+        _draw_fold_mark(screen, (x + 5, y + h // 2), open_=title not in scene.folded)
+        text = fonts.text.render(title.upper(), True, DIM_TEXT)
+        screen.blit(text, (x + 16, y + (h - text.get_height()) // 2))
     for kind, rect in layout.palette_items:
         left = board.remaining(kind)
         empty = left == 0
@@ -213,6 +215,16 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
                 f"{left}/{board.total(kind)}", True, DIM_TEXT if empty else TEXT
             )
             screen.blit(count, (right - count.get_width(), y + (h - count.get_height()) // 2))
+
+
+def _draw_fold_mark(screen, centre, open_: bool) -> None:
+    """Small triangle: pointing down when the group is open, right when it is folded."""
+    x, y = centre
+    if open_:
+        points = [(x - 5, y - 3), (x + 5, y - 3), (x, y + 4)]
+    else:
+        points = [(x - 3, y - 5), (x - 3, y + 5), (x + 4, y)]
+    pygame.draw.polygon(screen, DIM_TEXT, points)
 
 
 def _draw_infinity(screen, centre, colour) -> None:

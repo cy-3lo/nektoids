@@ -7,6 +7,7 @@ from nektoids.editor.layout import (
     Tool,
     cell_at,
     contains,
+    group_at,
     make_layout,
     palette_item_at,
     tool_at,
@@ -38,6 +39,18 @@ def test_palette_has_every_kind_once_inside_the_panel():
         x, y, w, h = rect
         assert x + w <= PALETTE_WIDTH and y + h <= SCREEN[1]
         assert palette_item_at(LAYOUT, centre(rect)) == kind
+
+
+def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
+    folded = make_layout(9, 7, frozenset({"Converters"}))
+    kinds = [kind for kind, _ in folded.palette_items]
+    assert Kind.DOUBLE not in kinds and Kind.HALVE not in kinds and Kind.EYE in kinds
+    titles_open, titles_folded = dict(LAYOUT.group_titles), dict(folded.group_titles)
+    assert titles_folded["Sensors"] == titles_open["Sensors"]
+    assert titles_folded["Actuators"][1] < titles_open["Actuators"][1]
+    assert folded.hex_size == LAYOUT.hex_size and folded.origin == LAYOUT.origin
+    for title, rect in folded.group_titles:
+        assert group_at(folded, centre(rect)) == title
 
 
 def test_tool_buttons_sit_in_the_toolbar():
