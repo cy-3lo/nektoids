@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pygame
 
-from nektoids.editor.layout import Tool
+from nektoids.editor.layout import Tool, ViewButton
 from nektoids.graph.board import Kind
 
 FONT_FILE = Path(__file__).resolve().parent.parent / "assets" / "fontawesome" / "fa-solid-900.ttf"
@@ -31,6 +31,9 @@ GLYPH = {
     "caret-down": 0xF0D7,
     "caret-right": 0xF0DA,
     "infinity": 0xF534,
+    "magnifying-glass-plus": 0xF00E,
+    "magnifying-glass-minus": 0xF010,
+    "hand": 0xF256,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the half-disc's flat side.
@@ -48,6 +51,11 @@ TOOL_ICON = {
     Tool.ROTATE: "rotate-right",
     Tool.MOVE: "up-down-left-right",
     Tool.DELETE: "trash-can",
+}
+VIEW_ICON = {
+    ViewButton.ZOOM_IN: "magnifying-glass-plus",
+    ViewButton.ZOOM_OUT: "magnifying-glass-minus",
+    ViewButton.PAN: "hand",
 }
 
 

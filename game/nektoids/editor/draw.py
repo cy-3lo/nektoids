@@ -17,8 +17,8 @@ from dataclasses import dataclass
 import pygame
 
 from nektoids.editor.geometry import wire_points
-from nektoids.editor.icons import KIND_ICON, TOOL_ICON, Icons
-from nektoids.editor.layout import Tool, View, visible_cells
+from nektoids.editor.icons import KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
+from nektoids.editor.layout import Tool, View, ViewButton, visible_cells
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -56,6 +56,7 @@ HINT = {
     Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",
+    Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
 }
 
 # Icon height as a fraction of the hex size.
@@ -201,6 +202,11 @@ def _centre(view: View, cell: Cell) -> tuple[float, float]:
 def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     layout, board = scene.layout, scene.board
     pygame.draw.rect(screen, PANEL, layout.palette_area)
+    for button, rect in layout.view_buttons:
+        active = button is ViewButton.PAN and scene.tool is Tool.PAN
+        pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
+        x, y, w, h = rect
+        fonts.icons.draw(screen, VIEW_ICON[button], (x + w // 2, y + h // 2), 20, TEXT)
     for title, (x, y, _, h) in layout.group_titles:
         caret = "caret-right" if title in scene.folded else "caret-down"
         fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, DIM_TEXT)

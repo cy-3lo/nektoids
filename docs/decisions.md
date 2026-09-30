@@ -86,3 +86,10 @@ same font. Chosen over Material Icons, Phosphor, Tabler, Lucide and Bootstrap fo
 20 px (solid glyphs, no thin strokes); Remix Icon is out, its 2026 licence is not open.
 Not subset: under OFL a subset is a modified font and could not keep the reserved name. Rendering
 under pygbag is still to be checked.
+
+**D-013 — 2026-09-30 — Supersedes the "no zoom" editor rule: zoom and pan move the view, never the zone.**
+Zoom in and out (hex size 20 to 80 px, ×1.25 per click, about the centre of the grid) and a pan
+tool sit in the palette, apart from the Move tool that moves components. They change only how the
+grid is seen: each level's zone stays small and fixed, so spatial scarcity (brief §1) still holds.
+`.claude/rules/web.md` is updated to match.
+A player can scroll the zone out of sight; the board, routing and scoring never depend on the view.

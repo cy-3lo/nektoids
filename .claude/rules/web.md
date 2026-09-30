@@ -11,5 +11,6 @@ paths:
 - Load every asset at startup. No file I/O, threads, subprocesses or network during the loop.
 - Web dependencies are declared in the `# /// script` header of `main.py`.
 - Drawing reads simulation state; it never mutates it.
-- Editor space is scarce by design: small fixed grid, no infinite canvas, no zoom.
+- Editor space is scarce by design: each level's zone is small and fixed, and the canvas is not
+  infinite. Zoom and pan move the view only, never the zone (D-013).
 - Click-to-inspect and beads on wires are core features, not polish.

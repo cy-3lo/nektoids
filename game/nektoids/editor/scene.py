@@ -7,6 +7,7 @@ Tools:
 - Rotate: click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back (D-009).
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
+- Pan (from the palette, with the zoom buttons): drag the grid to move the view (D-013).
 
 Clicking a palette title folds or unfolds its group. Right click or Escape cancels. Every refusal
 flashes the cell and puts the reason in the status line.
@@ -20,14 +21,19 @@ import pygame
 
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.layout import (
+    ZOOM_STEP,
     Layout,
     Tool,
+    ViewButton,
     cell_at,
     centred_view,
     group_at,
     make_layout,
     palette_item_at,
+    pan,
     tool_at,
+    view_button_at,
+    zoom,
 )
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -47,6 +53,7 @@ class EditorScene:
         self.dragging = False  # Add: mouse held since picking from the palette
         self.source: int | None = None  # Wire: node id of the chosen source
         self.moving: int | None = None  # Move: node id being dragged
+        self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
         self.wiring = False  # Wire: mouse held since pressing on the source
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered cell
         self.ghost_connects = False  # Wire: the ghost ends on a target it may connect to
@@ -79,6 +86,9 @@ class EditorScene:
     # Mouse
 
     def _track(self, pos: tuple[int, int]) -> None:
+        if self.panning_from is not None:
+            dx, dy = pos[0] - self.panning_from[0], pos[1] - self.panning_from[1]
+            self.view, self.panning_from = pan(self.view, dx, dy), pos
         self.mouse = pos
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
@@ -96,6 +106,10 @@ class EditorScene:
             self._cancel()
             self.tool = tool
             return
+        button = view_button_at(self.layout, pos)
+        if button is not None:
+            self._view_button(button)
+            return
         title = group_at(self.layout, pos)
         if title is not None:
             self.folded ^= {title}
@@ -107,7 +121,9 @@ class EditorScene:
             return
         if self.pointed is None:
             return
-        if self.tool is Tool.ADD:
+        if self.tool is Tool.PAN:
+            self.panning_from = pos
+        elif self.tool is Tool.ADD:
             self._add(self.pointed)  # the zone refuses cells outside it, with a reason
         elif self.hover is None:
             return
@@ -121,7 +137,7 @@ class EditorScene:
             self._delete(self.hover, pos)
 
     def _release(self, pos: tuple[int, int]) -> None:
-        self.moving = None
+        self.moving, self.panning_from = None, None
         if self.wiring:
             self._end_wiring()
         if not self.dragging:
@@ -135,6 +151,17 @@ class EditorScene:
         self.source, self.ghost, self.wiring = None, None, False
         self.moving = None
         self.message = ""
+
+    # View
+
+    def _view_button(self, button: ViewButton) -> None:
+        if button is ViewButton.PAN:
+            self._cancel()
+            self.tool = Tool.PAN
+            return
+        x, y, w, h = self.layout.board_area
+        factor = ZOOM_STEP if button is ViewButton.ZOOM_IN else 1.0 / ZOOM_STEP
+        self.view = zoom(self.view, factor, (x + w / 2, y + h / 2))
 
     # Tools
 

@@ -1,17 +1,24 @@
 """Editor layout and hit-testing. layout.py imports no pygame, so this runs headless."""
 
 from nektoids.editor.layout import (
+    MAX_HEX,
+    MIN_HEX,
     SCREEN,
+    TOOLBAR,
     TOOLBAR_HEIGHT,
     Tool,
+    ViewButton,
     cell_at,
     centred_view,
     contains,
     group_at,
     make_layout,
     palette_item_at,
+    pan,
     tool_at,
+    view_button_at,
     visible_cells,
+    zoom,
 )
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
@@ -71,7 +78,8 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
 
 
 def test_tool_buttons_sit_in_the_toolbar():
-    assert [tool for tool, _ in LAYOUT.tool_buttons] == list(Tool)
+    assert [tool for tool, _ in LAYOUT.tool_buttons] == list(TOOLBAR)
+    assert Tool.PAN not in TOOLBAR  # chosen in the palette, with the zoom buttons
     for tool, rect in LAYOUT.tool_buttons:
         assert rect[1] + rect[3] <= TOOLBAR_HEIGHT
         assert tool_at(LAYOUT, centre(rect)) == tool
@@ -85,3 +93,36 @@ def test_sandbox_boards():
     tutorial = tutorial_board()
     assert len(tutorial.nodes) == 4 and all(node.locked for node in tutorial.nodes.values())
     assert tutorial.remaining(Kind.EYE) == 0
+
+
+def test_view_buttons_sit_at_the_top_of_the_palette():
+    assert [button for button, _ in LAYOUT.view_buttons] == list(ViewButton)
+    first_title = LAYOUT.group_titles[0][1]
+    for button, rect in LAYOUT.view_buttons:
+        assert contains(LAYOUT.palette_area, rect[:2]) and rect[1] + rect[3] <= first_title[1]
+        assert view_button_at(LAYOUT, centre(rect)) == button
+
+
+def test_zoom_keeps_its_anchor_and_stays_within_limits():
+    anchor = (300.0, 250.0)
+    cell = cell_at(LAYOUT, VIEW, (300, 250))
+    closer = zoom(VIEW, 1.25, anchor)
+    assert closer.size == 1.25 * VIEW.size
+    assert cell_at(LAYOUT, closer, (300, 250)) == cell
+    assert zoom(VIEW, 100.0, anchor).size == MAX_HEX
+    assert zoom(VIEW, 0.01, anchor).size == MIN_HEX
+
+
+def test_pan_slides_the_grid_under_the_mouse():
+    moved = pan(VIEW, 30.0, -12.0)
+    assert moved.size == VIEW.size
+    assert cell_at(LAYOUT, moved, (330, 238)) == cell_at(LAYOUT, VIEW, (300, 250))
+
+
+def test_the_grid_still_fills_the_area_zoomed_out():
+    far = zoom(VIEW, 0.01, (0.0, 0.0))
+    shown = set(visible_cells(LAYOUT, far))
+    x0, y0, w, h = LAYOUT.board_area
+    for x in range(x0, x0 + w, 5):
+        for y in range(y0, y0 + h, 5):
+            assert cell_at(LAYOUT, far, (x, y)) in shown
