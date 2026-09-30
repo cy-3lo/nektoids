@@ -42,6 +42,14 @@ GLYPH = {
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,
     "location-crosshairs": 0xF601,
+    "sun": 0xF185,
+    "play": 0xF04B,
+    "pause": 0xF04C,
+    "forward-step": 0xF051,
+    "rotate-left": 0xF2EA,
+    "backward-step": 0xF048,
+    "forward": 0xF04E,
+    "lightbulb": 0xF0EB,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.

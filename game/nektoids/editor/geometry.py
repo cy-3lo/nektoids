@@ -24,11 +24,33 @@ from bisect import bisect_right
 
 from nektoids.graph.board import Wire, crossings
 from nektoids.graph.hexgrid import SQRT3, Cell, opposite, to_pixel
+from nektoids.graph.network import body_disc
 
 Point = tuple[float, float]  # [px]
 
 ARC_SAMPLES = 8  # segments per arc (even, so an arc has a middle sample)
 ARROW_PAST_CENTRE = 0.3  # where a straight run's arrow sits, past the centre [hex sizes]
+
+
+# The swimmer's symbol: a circle round a wedge, two sides of an equilateral triangle, tip
+# forward [rad]: the tip, then its two other corners.
+BODY_CORNERS = (0.0, 2.0 * math.pi / 3.0, -2.0 * math.pi / 3.0)
+
+
+def body_circle(zone: list[Cell], size: float, origin: Point) -> tuple[Point, float]:
+    """The swimmer's body on the board (D-018): its centre and radius [px]."""
+    (cx, cy), reach = body_disc(zone)
+    return (origin[0] + size * cx, origin[1] + size * cy), size * reach
+
+
+def symbol_corners(centre: Point, radius: float, heading: float = 0.0) -> list[Point]:
+    """The tip and the two other corners of the swimmer's wedge, on the circle of `radius` round
+    `centre` [px], the tip at `heading` [rad, counter-clockwise on screen, 0 = E], 120° apart."""
+    x, y = centre
+    return [
+        (x + radius * math.cos(heading + a), y - radius * math.sin(heading + a))
+        for a in BODY_CORNERS
+    ]
 
 
 def edge_midpoint(cell: Cell, edge: int, size: float, origin: Point) -> Point:
