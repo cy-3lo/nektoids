@@ -10,6 +10,10 @@ midpoint it always runs perpendicular to the edge, so the drawing is smooth:
   60° turn one edge lies between them and the arc, of radius 1.5 s, is centred outside the cell
   (s: centre-to-corner size of a hex).
 
+An arrow in each crossed cell shows which way the signal flows: a little past the centre on a
+straight run (so two wires crossing there keep distinct arrows), at the middle of the arc on a
+turn.
+
 Pure numbers, no pygame, so the drawing and the delete tool's hit test share one geometry.
 """
 
@@ -22,7 +26,8 @@ from nektoids.graph.hexgrid import SQRT3, Cell, opposite, to_pixel
 
 Point = tuple[float, float]  # [px]
 
-ARC_SAMPLES = 8  # segments per arc
+ARC_SAMPLES = 8  # segments per arc (even, so an arc has a middle sample)
+ARROW_PAST_CENTRE = 0.3  # where a straight run's arrow sits, past the centre [hex sizes]
 
 
 def edge_midpoint(cell: Cell, edge: int, size: float, origin: Point) -> Point:
@@ -58,6 +63,25 @@ def wire_points(path: tuple[Cell, ...], size: float, origin: Point) -> list[Poin
             points += _arc(turn_centre(cell, entry, exit_, size, origin), a, b)
     points.append(to_pixel(path[-1], size, origin))
     return points
+
+
+def wire_arrows(path: tuple[Cell, ...], size: float, origin: Point) -> list[tuple[Point, float]]:
+    """One arrow per free cell the wire crosses: where it sits, and its screen angle [rad]."""
+    arrows = []
+    for cell, entry, exit_ in crossings(path):
+        a = edge_midpoint(cell, entry, size, origin)
+        b = edge_midpoint(cell, exit_, size, origin)
+        if exit_ == opposite(entry):
+            angle = math.atan2(b[1] - a[1], b[0] - a[0])
+            x, y = to_pixel(cell, size, origin)
+            reach = ARROW_PAST_CENTRE * size
+            arrows.append(((x + reach * math.cos(angle), y + reach * math.sin(angle)), angle))
+        else:
+            arc = _arc(turn_centre(cell, entry, exit_, size, origin), a, b)
+            mid = ARC_SAMPLES // 2
+            before, after = arc[mid - 1], arc[mid + 1]
+            arrows.append((arc[mid], math.atan2(after[1] - before[1], after[0] - before[0])))
+    return arrows
 
 
 def _arc(centre: Point, a: Point, b: Point) -> list[Point]:

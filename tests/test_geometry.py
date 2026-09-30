@@ -9,6 +9,7 @@ from nektoids.editor.geometry import (
     edge_midpoint,
     nearest_wire,
     turn_centre,
+    wire_arrows,
     wire_points,
 )
 from nektoids.graph.board import Wire
@@ -88,3 +89,28 @@ def test_nearest_wire_picks_the_closer_of_two_crossing_wires():
     ne = edge_midpoint((3, 3), NE, SIZE, ORIGIN)
     near_ne = (0.5 * (cx + ne[0]), 0.5 * (cy + ne[1]))
     assert nearest_wire(near_ne, [across, diagonal], SIZE, ORIGIN, 8.0) == diagonal
+
+
+def test_one_arrow_per_crossed_cell_pointing_downstream():
+    path = ((1, 3), (2, 3), (3, 3), (3, 2))  # straight E through (2, 3), then turns in (3, 3)
+    arrows = wire_arrows(path, SIZE, ORIGIN)
+    assert len(arrows) == 2  # the two free cells; none on the components
+    (at, angle), (arc_at, arc_angle) = arrows
+    cx, cy = to_pixel((2, 3), SIZE, ORIGIN)
+    assert angle == pytest.approx(0.0)  # heading E
+    assert at[0] > cx and at[1] == pytest.approx(cy)  # past the centre, on the wire
+    # On the turn: on the arc, tangent to it, heading on towards NW (up the screen).
+    centre = turn_centre(CELL, W, NW, SIZE, ORIGIN)
+    assert math.dist(centre, arc_at) == pytest.approx(0.5 * SIZE)
+    radial = (arc_at[0] - centre[0], arc_at[1] - centre[1])
+    tangent = (math.cos(arc_angle), math.sin(arc_angle))
+    assert radial[0] * tangent[0] + radial[1] * tangent[1] == pytest.approx(0.0, abs=1e-6)
+    assert math.sin(arc_angle) < 0  # y down: moving up
+
+
+def test_crossing_wires_keep_distinct_arrows():
+    across = ((1, 3), (2, 3), (3, 3), (4, 3))
+    diagonal = ((2, 4), (3, 3), (4, 2))
+    a = dict(zip([(2, 3), (3, 3)], [p for p, _ in wire_arrows(across, SIZE, ORIGIN)], strict=True))
+    ((b, _),) = wire_arrows(diagonal, SIZE, ORIGIN)
+    assert math.dist(a[(3, 3)], b) > 0.2 * SIZE

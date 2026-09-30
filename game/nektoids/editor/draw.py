@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import pygame
 
-from nektoids.editor.geometry import wire_points
+from nektoids.editor.geometry import wire_arrows, wire_points
 from nektoids.editor.icons import KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
 from nektoids.editor.layout import Tool, View, ViewButton, visible_cells
 from nektoids.editor.scene import EditorScene
@@ -139,6 +139,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, width: int) -> None:
     points = wire_points(path, view.size, view.origin)  # arcs where it turns
     pygame.draw.lines(screen, colour, False, points, width)
+    for at, angle in wire_arrows(path, view.size, view.origin):
+        _draw_arrow(screen, at, angle, 0.14 * view.size, colour)
     # Chevron just outside the target's shape, pointing into it.
     (x0, y0), (x1, y1) = points[-2], points[-1]
     angle = math.atan2(y1 - y0, x1 - x0)
@@ -150,6 +152,15 @@ def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, width: int) -
         for s in (0.55, -0.55)
     ]
     pygame.draw.polygon(screen, colour, [tip, *wings])
+
+
+def _draw_arrow(screen, at, angle: float, half: float, colour) -> None:
+    """Small filled arrowhead centred on `at`, pointing along `angle` [rad, screen]."""
+    c, s = math.cos(angle), math.sin(angle)
+    tip = (at[0] + half * c, at[1] + half * s)
+    left = (at[0] - half * c - half * s, at[1] - half * s + half * c)
+    right = (at[0] - half * c + half * s, at[1] - half * s - half * c)
+    pygame.draw.polygon(screen, colour, [tip, left, right])
 
 
 def _draw_node(
