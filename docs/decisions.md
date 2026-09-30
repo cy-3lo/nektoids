@@ -129,3 +129,26 @@ sensors are not powers of two anyway. The player still sets no continuous parame
 Consequences: with a Source and a Difference a player can build |x − c|, a threshold-like function;
 it costs nodes, so it is paid through `complexity()`. The developer view has sensor sliders, behind
 `DEV_VIEW` only; the player's graph has none (brief: "No sliders").
+
+**D-017 — 2026-09-30 — Every node lags: tau dy/dt = F(y) - y, tau = 1/60 s. Supersedes D-016's instantaneous rates.**
+F is D-016's rule (split fan-out, gain, |a − b|, cap at `RATE_MAX`); the rate of a node now relaxes
+towards F instead of equalling it. One global `TAU = 1/60 s`. Eyes and sources are given, not
+lagged: a sensor's rate in a tick drives that tick. The controller has state: `y` of shape
+(N, n) lives with the agent, starts at rest (all 0) and goes into the hash of the run. One explicit
+Euler step of the sim's dt is y + (dt/tau)(F(y) − y); `step` refuses dt/tau outside (0, 1], which
+keeps every rate in [0, `RATE_MAX`] for every graph. Use dt = tau/2 (the sim's 1/120 s): at
+dt = tau the step is y ← F(y) and loops that settle in continuous time flicker at every tick.
+Supersedes D-016's `evaluate`, `AlgebraicLoopError` and "a loop needs a state": a loop is feedback
+that the state remembers. It may settle, hold a value, latch (two stages inhibiting each other keep
+the winner) or oscillate (three inverting stages of gain 4). `contraction_factor`, rho(|W|) < 1,
+stays as a diagnostic: the loop then settles to one value from any start. The editor still
+refuses loops; allowing them gives memory without tanks (D-015), so that is a scope decision.
+Consequences: a path of d operators reaches 95% of a step in 5, 11 and 18 ticks for d = 1, 3 and
+6 (42, 92 and 150 ms at dt = 1/120 s); tau sets both the reaction time and the speed of loop
+dynamics. Developer view: each wire shows its flux now, along its whole length, with one phase
+per wire (`phase += flux dt`, mod 1) so that nothing jumps. The default style puts beads
+`speed / flux` apart; when a low flux changes fast this whips the far beads (49 to 581 times the
+steady step in one tick, for a flux swinging between 1/16 and 1 of the full rate in 2 s to 0.1 s),
+so a `belt` style (fixed spacing, speed proportional to flux) is one
+key away. Beads and intensity are shades of grey.
+
