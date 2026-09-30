@@ -61,12 +61,22 @@ FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
 KEY_VIEWS = {key: button for button, key in VIEW_KEYS.items()}
-# 1-9 by physical key (the digits are shifted on AZERTY), or on the keypad: the menu's parts in
-# order.
-DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
-DIGIT_KEYPAD = tuple(getattr(pygame, f"K_KP{n}") for n in range(1, 10))
+# Arrows, Enter and digits are matched on their scancode, the physical key, which every platform
+# reports alike: Safari on macOS tags the arrows as keypad keys (its `key` for the right arrow is
+# keypad 6), and the digits are shifted on AZERTY. The key code is only a fallback.
 ARROWS = (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN)
+ARROW_SCANCODES = dict(
+    zip(
+        (pygame.KSCAN_LEFT, pygame.KSCAN_RIGHT, pygame.KSCAN_UP, pygame.KSCAN_DOWN),
+        ARROWS,
+        strict=True,
+    )
+)
 ENTER = (pygame.K_RETURN, pygame.K_KP_ENTER)
+ENTER_SCANCODES = (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
+# 1-9 on the top row or on the keypad: the menu's parts in order.
+DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
+KEYPAD_SCANCODES = tuple(getattr(pygame, f"KSCAN_KP_{n}") for n in range(1, 10))
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
@@ -134,16 +144,13 @@ class EditorScene:
     # Keyboard
 
     def _key(self, event: pygame.event.Event) -> None:
-        if event.key in ARROWS:
-            self._arrow(event.key)
-        elif event.key in ENTER:
+        arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
+        if arrow is not None:
+            self._arrow(arrow)
+        elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
             self._enter()
-        elif event.scancode in DIGIT_SCANCODES or event.key in DIGIT_KEYPAD:
-            digit = (
-                DIGIT_SCANCODES.index(event.scancode)
-                if event.scancode in DIGIT_SCANCODES
-                else DIGIT_KEYPAD.index(event.key)
-            )
+        elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
+            digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
             kinds = [kind for _, group in MENU_GROUPS for kind in group]
             if digit < len(kinds):
                 self._pick(kinds[digit])
