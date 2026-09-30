@@ -10,6 +10,10 @@ Tools:
 - Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
   button brings the central cell back to the middle.
 
+Keyboard: letters pick tools (see the tooltips), 1-4 pick a component, the arrows move a cursor
+over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
+with the hand, the arrows move the view.
+
 Clicking a menu title folds or unfolds its group. Right click or Escape cancels. Every refusal
 flashes the cell and puts the reason in the status line.
 """
@@ -23,6 +27,7 @@ import pygame
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.layout import (
     KEY_ALIASES,
+    MENU_GROUPS,
     TOOL_KEYS,
     VIEW_KEYS,
     ZOOM_STEP,
@@ -41,12 +46,26 @@ from nektoids.editor.layout import (
     zoom,
 )
 from nektoids.graph.board import Board, Kind, Refused
-from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.graph.hexgrid import (
+    SQRT3,
+    Cell,
+    E,
+    W,
+    hex_distance,
+    neighbour,
+    to_pixel,
+    vertical_step,
+)
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
 KEY_VIEWS = {key: button for button, key in VIEW_KEYS.items()}
+# 1-4 by physical key (the digits are shifted on AZERTY), or on the keypad.
+DIGIT_SCANCODES = (pygame.KSCAN_1, pygame.KSCAN_2, pygame.KSCAN_3, pygame.KSCAN_4)
+DIGIT_KEYPAD = (pygame.K_KP1, pygame.K_KP2, pygame.K_KP3, pygame.K_KP4)
+ARROWS = (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN)
+ENTER = (pygame.K_RETURN, pygame.K_KP_ENTER)
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
@@ -71,6 +90,8 @@ class EditorScene:
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
         self.hover: Cell | None = None  # the same, if it is in the zone
         self.message = ""  # last refusal, empty once something succeeds
+        self.cursor: Cell | None = None  # keyboard cursor, while the keyboard drives
+        self.carrying = False  # Move by keyboard: grabbed with Enter, not yet dropped
         self.tip_target: Tool | ViewButton | str | None = None  # palette button under the mouse
         self.tip_frames = 0  # how long it has been there
         self.flash_cell: Cell | None = None
@@ -89,6 +110,8 @@ class EditorScene:
         return self.tip_target if self.tip_frames >= TOOLTIP_FRAMES else None
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
+            self.cursor = None  # the mouse takes over
         if event.type == pygame.MOUSEMOTION:
             self._track(event.pos)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -101,7 +124,74 @@ class EditorScene:
         ):
             self._cancel()
         elif event.type == pygame.KEYDOWN:
+            self._key(event)
+
+    # Keyboard
+
+    def _key(self, event: pygame.event.Event) -> None:
+        if event.key in ARROWS:
+            self._arrow(event.key)
+        elif event.key in ENTER:
+            self._enter()
+        elif event.scancode in DIGIT_SCANCODES or event.key in DIGIT_KEYPAD:
+            digit = (
+                DIGIT_SCANCODES.index(event.scancode)
+                if event.scancode in DIGIT_SCANCODES
+                else DIGIT_KEYPAD.index(event.key)
+            )
+            kinds = [kind for _, group in MENU_GROUPS for kind in group]
+            if digit < len(kinds):
+                self._pick(kinds[digit])
+                self.dragging = False  # placed with Enter, not by releasing a button
+        else:
             self._shortcut(event.unicode)
+
+    def _arrow(self, key: int) -> None:
+        """Move the keyboard cursor one cell within the zone (with the hand: move the view)."""
+        left, right, up, _ = ARROWS
+        if self.tool is Tool.PAN:
+            sx, sy = SQRT3 * self.view.size, 1.5 * self.view.size
+            dx, dy = {left: (sx, 0), right: (-sx, 0), up: (0, sy)}.get(key, (0, -sy))
+            self.view = pan(self.view, dx, dy)
+            return
+        if self.cursor is None:
+            self.cursor = self._cursor_start()
+        else:
+            if key == left:
+                step = neighbour(self.cursor, W)
+            elif key == right:
+                step = neighbour(self.cursor, E)
+            else:
+                step = vertical_step(self.cursor, -1 if key == up else 1)
+            if step in self.board.cells:
+                self.cursor = step
+        self._track(self._cursor_pos())
+
+    def _enter(self) -> None:
+        """A click at the keyboard cursor; in the Move tool, grab on one Enter, drop on the next."""
+        if self.cursor is None:
+            self.cursor = self._cursor_start()
+            self._track(self._cursor_pos())
+            return
+        pos = self._cursor_pos()
+        if self.tool is Tool.MOVE and self.carrying:
+            self._release(pos)
+            self.carrying = False
+            return
+        self._press(pos)
+        if self.tool is Tool.MOVE:
+            self.carrying = self.moving is not None
+        else:
+            self._release(pos)
+
+    def _cursor_start(self) -> Cell:
+        if self.hover is not None:
+            return self.hover
+        return min(self.board.cells, key=lambda cell: hex_distance(cell, (0, 0)))
+
+    def _cursor_pos(self) -> tuple[int, int]:
+        x, y = to_pixel(self.cursor, self.view.size, self.view.origin)
+        return (round(x), round(y))
 
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
@@ -180,7 +270,7 @@ class EditorScene:
     def _cancel(self) -> None:
         self.picked, self.dragging = None, False
         self.source, self.ghost, self.pressed = None, None, None
-        self.moving = None
+        self.moving, self.carrying = None, False
         self.message = ""
 
     # View
@@ -314,6 +404,10 @@ class EditorScene:
         wire = (
             None if on_shape else nearest_wire(pos, self.board.wires, size, origin, WIRE_HIT * size)
         )
+        if wire is None and node is None and self.board.wires_in(cell):
+            # Anywhere in a crossed cell: the nearest of its wires (the keyboard cursor sits at
+            # the centre, which a turning wire does not pass through).
+            wire = nearest_wire(pos, self.board.wires_in(cell), size, origin, math.inf)
         if wire is not None:
             self.board.remove_wire(wire)
             self.message = ""

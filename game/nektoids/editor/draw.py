@@ -66,7 +66,7 @@ TIP = {
     "colours": "Colours: not yet",
 }
 HINT = {
-    Tool.ADD: "Drag a component from the menu onto the grid.",
+    Tool.ADD: "Drag a component from the menu onto the grid (or 1-4, arrows, Enter).",
     Tool.WIRE: "Drag from a source to a target, or click one then the other.",
     Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
@@ -145,6 +145,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         _draw_node(screen, fonts, node.kind, node.facing, centre, view.size, node.locked)
         if node.id == scene.source or node.id == scene._wire_start():
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
+    if scene.cursor is not None:
+        pygame.draw.polygon(screen, TEXT, _hexagon(view, scene.cursor), 3)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
         pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
     screen.set_clip(None)
