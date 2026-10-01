@@ -327,8 +327,9 @@ has a key, which its tooltip names; a key means the same here as in the editor (
 centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each with a bar: for now
 "Reach a light", how much of the way from its start to touching a light the swimmer has come.
 At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
-beads on the wires, no numbers (F2 has those). There are no dynamics yet: drag the swimmer,
-turn it with the wheel or Q and E, and watch which eye lights up and which thruster fires.
+beads on the wires, no numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
+the swimmer, turn it with the wheel or Q and E, and watch which eye lights up and which thruster
+fires.
 
 What an eye reads (D-019): E = sum over lights of P max(0, n·s) / r, capped at 1, where n is
 where the eye looks (out of its flat face, D-020) and s points at the light, and only the lights
@@ -375,6 +376,95 @@ makes a circle through the centre, pointing at it.
   parts do. A headless script drove every key and mouse action once before the PR.
 - **The map is smoothed, the eyes are not:** a shadow's edge on screen is soft over about half a
   body radius, while an eye crossing it jumps. The polar plot is exact.
+
+## 8. The swimmer swims: thrust against Stokes drag (D-022)
+
+Read D-022 first. Wire the tutorial eyes to the thrusters crossed, open F3 and press Space: the
+swimmer curves to the light and touches it after about 9 s. Uncrossed, it turns its back to the
+light and stops in the dark.
+
+### 8.1 What it computes
+
+Each thruster pushes the body; the water pushes back in proportion to the speed, and at this
+scale the two balance at once. So the velocity is a function of the thrust, not something that
+builds up: there is no inertia, and a swimmer whose thrusters stop stops. Walls and obstacles
+are hard and slippery: a swimmer that runs into one slides along it.
+
+The arrays, for N swimmers with k thrusters each:
+
+| Name | Shape | Unit | What |
+|---|---|---|---|
+| `pos` | (N, 2) | u | centre of each body (u = base body radius) |
+| `heading` | (N,) | rad | where it points, counter-clockwise from +x |
+| `radius` | (N,) | u | body radius, 1 until `complexity()` exists |
+| `y` | (N, n) | rate | the nodes' rates (D-017): the controller's state |
+| `force` | (N, 2) | f | total push, in the body's frame; one thruster at rate 1 gives 1 f |
+| `torque` | (N,) | f u | total turning push; positive turns left |
+| `vel`, `spin` | (N, 2), (N,) | u/s, rad/s | how fast it moves (body frame) and turns |
+
+The equations: F = Σ y_k f_k and T = R Σ y_k (m_k × f_k), with f_k the unit vector a thruster
+pushes along, m_k where it sits in body radii (D-018), and m × f = m_x f_y − m_y f_x the 2D cross
+product. Then the drag of a sphere in a viscous fluid (Stokes' law): V = F / (6πμR) and
+Ω = T / (8πμR³). The intuition: viscous drag grows with speed like a damper, a bigger body is
+dragged more, and much more when it spins (R³). μ is chosen so that one thruster moves a base
+body at 3 u/s (`SPEED`).
+
+The scheme is explicit Euler on position and heading: x += dt V and θ += dt Ω, with V turned by
+the heading at the start of the tick. Velocity is not state, so symplectic Euler, which keeps a
+position and a velocity in step, has nothing to do here. Under a constant thrust the path is a
+regular polygon, which closes, so the swimmer circles without spiralling outwards.
+
+If `dt` doubled to 1/60 s, the swimmer would be fine: at 6 u/s it moves 0.1 u a tick, and a
+contact only misses an obstacle when a tick carries it about 2 u. The nodes are the limit: at
+dt = TAU each tick sets y to F(y) and loops flicker (D-017); above TAU, `graph.dynamics.step`
+raises.
+
+### 8.2 The code, in the order it runs
+
+1. [`editor/arena.py` `_tick`](../game/nektoids/editor/arena.py#L217): one call to `world.step`,
+   then the eyes for the drawing are read from the state, then the beads move.
+2. [`sim/world.py` `step`](../game/nektoids/sim/world.py#L37), a pure function that returns new
+   arrays: move (`motion`), touch (`contact.confine`), see (`optics.eye_rates`), think
+   (`graph.dynamics.step`). The order is chosen so that after a tick, y's eye columns are what the
+   eyes read where the body now is, the same thing `_moved` ensures after a drag.
+3. [`sim/motion.py` `thrust`](../game/nektoids/sim/motion.py#L32): a Python loop over the thrusters
+   (two), with numpy across the swimmers. Thrusters are added one by one, never with `@`, so a row
+   does not depend on the batch (invariant 1, as in `optics.add_lights` and `dynamics.targets`).
+   Then [`stokes`](../game/nektoids/sim/motion.py#L55) and
+   [`advance`](../game/nektoids/sim/motion.py#L66).
+4. [`sim/contact.py` `confine`](../game/nektoids/sim/contact.py#L24): each obstacle in turn moves an
+   overlapping body radially out to touching, then `np.clip` holds it inside the walls; three
+   passes, walls last. A body centred exactly on an obstacle (only by dragging) leaves along +x.
+5. Back in `arena.py`: `update` redraws the light map once per frame while it shows (the
+   swimmer's shadow moves), and `_drag` uses `confine` too, so a dragged swimmer cannot be dropped
+   into an obstacle.
+
+Tests: [`test_motion.py`](../tests/test_motion.py) checks the physics on its own (the sphere's
+4/3, which way the tutorial's thrusters turn, a straight line, a circle that does not spiral),
+[`test_contact.py`](../tests/test_contact.py) checks sliding along walls, round obstacles and into
+a crevice, and [`test_determinism.py`](../tests/test_determinism.py) now runs the real tick: 50
+swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
+
+### 8.3 Questions to answer after reading
+
+1. **Why does `world.step` move the bodies first and read the eyes after?** What would the panel
+   and the polar plot show after a tick if the order were reversed?
+2. **Why does the swimmer stop the moment its eyes go dark?** What would change, in the code and
+   on screen, if the body had mass?
+3. **`confine` loops over obstacles in Python but handles the swimmers as a numpy axis.** Which
+   count grows when flocking arrives, and why is that the right way round?
+
+### 8.4 Weak or untested
+
+- **Lights are not solid:** a charging swimmer ends up on top of the light.
+- **Swimmers do not touch each other:** with N > 1 they pass through one another.
+- **In a crevice narrower than a body,** the swimmer overlaps the obstacle by up to one tick's
+  travel (under 0.02 u, less than a pixel).
+- **No momentum:** an eye crossing the hard edge of a shadow stops the swimmer within a few ticks,
+  since TAU = 1/60 s barely smooths it. Look for it in "Two lights, four obstacles", where the
+  swimmer also starts in the shadow of the obstacle at (21, 21).
+- **`arena.py`'s tick has no automated test,** like the rest of the scene; `world.step` has. A
+  headless script ran both arenas for 10 s and 20 s before the PR.
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
