@@ -9,7 +9,7 @@ from nektoids.graph.dynamics import TAU, initial_state
 from nektoids.graph.hexgrid import NE, NW, SE, SW, E
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
-from nektoids.levels.objectives import REACH, Outcome, latch, marks, outcome
+from nektoids.levels.objectives import REACH, Outcome, begin, follow, outcome
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.motion import SPEED
@@ -63,15 +63,15 @@ def last(states):
 
 
 def play(net, title):
-    """Run the level until it is over, as the arena view does: (outcome, ticks, marked), the
-    marks of its objectives latched tick by tick (D-038)."""
+    """Run the level until it is over, as the arena view does: (outcome, ticks, kept), what its
+    objectives keep, followed tick by tick (D-038, D-040)."""
     level = LEVELS[title]
-    marked = marks(level, np.array([level.start[:2]]), np.ones(1))
+    kept = begin(level, np.array([level.start[:2]]), np.ones(1))
     for tick, (pos, _, _) in enumerate(run(net, title, level.time_limit), start=1):
-        marked = latch(marked, marks(level, pos, np.ones(1)))
-        ended = outcome(level, marked, tick, DT)
+        kept = follow(level, kept, pos, np.ones(1), DT)
+        ended = outcome(level, kept, tick, DT)
         if ended is not None:
-            return ended, tick, marked
+            return ended, tick, kept
     raise AssertionError("the run outlived its time limit")
 
 
@@ -158,6 +158,54 @@ def test_fear_fails_crossed_or_with_its_eyes_looking_forward():
     assert play(fear(NW, SW, crossed=True), "Fear")[0] is Outcome.TIME_UP  # it closes in
     assert play(fear(NE, SE), "Fear")[0] is Outcome.TIME_UP  # it turns away, then stops
     assert play(fear(E, E), "Fear")[0] is Outcome.TIME_UP  # as placed, before any turn
+
+
+def love(upper, lower, wiring="love"):
+    """The love board (D-040): the eyes and thrusters where fear has them, the eyes turned to
+    `upper` and `lower`. "love": each eye takes from a Source's 1 in a Diff, which drives the
+    thruster on the eye's own side; "aggression": each eye drives the other side; "fear": its
+    own; "drive": a Source on each thruster, the eyes unwired."""
+    board = LEVELS["Love"].new_board()
+    eyes = [
+        board.place(Kind.EYE, cell, facing=f) for cell, f in (((2, -1), upper), ((1, 1), lower))
+    ]
+    thrusters = [board.place(Kind.THRUSTER, cell) for cell in ((1, -2), (-1, 2))]
+    sources = []
+    if wiring in ("love", "drive"):
+        sources = [board.place(Kind.SOURCE, cell) for cell in ((0, -1), (-1, 1))]
+    if wiring == "love":
+        diffs = [board.place(Kind.DIFFERENCE, cell) for cell in ((1, -1), (0, 0))]
+        wires = [
+            pair
+            for source, eye, diff, thruster in zip(sources, eyes, diffs, thrusters, strict=True)
+            for pair in ((source, diff), (eye, diff), (diff, thruster))
+        ]
+    else:
+        drives = {"aggression": eyes[::-1], "fear": eyes, "drive": sources}[wiring]
+        wires = list(zip(drives, thrusters, strict=True))
+    for a, b in wires:
+        assert not isinstance(board.connect(a.id, b.id), Refused)
+    return Network.from_board(board)
+
+
+def test_love_comes_to_the_light_stops_short_of_it_and_stays_with_time_and_room_to_spare():
+    ended, ticks, _ = play(love(NE, SE), "Love")
+    assert ended is Outcome.WON and ticks * DT < LEVELS["Love"].time_limit / 2
+    assert play(love(NE, SE), "Love")[1] == ticks  # the same tick, every run
+    light = LEVELS["Love"].arena.light_xy[0]
+    nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(love(NE, SE), "Love", 20.0))
+    assert nearest > REACH * (LIGHT_RADIUS + 1.0) + 1.0  # a unit clear of touching (D-004)
+
+
+def test_love_with_its_eyes_straight_ahead_stops_too_far_out_to_stay_by_the_light():
+    ended, _, (stayed, _) = play(love(E, E), "Love")
+    assert ended is Outcome.TIME_UP and not stayed.any()  # the eyes saturate 8.7 u out
+
+
+def test_without_a_diff_the_swimmer_touches_the_light_and_loses_at_once():
+    for wiring, upper, lower in (("aggression", NE, SE), ("fear", E, E), ("drive", E, E)):
+        ended, ticks, _ = play(love(upper, lower, wiring), "Love")
+        assert ended is Outcome.LOST and ticks * DT < 5.0, wiring
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
