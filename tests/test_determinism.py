@@ -1,13 +1,12 @@
 import math
 from collections import deque
-from dataclasses import replace
 
 import numpy as np
 import pytest
 
 from nektoids.graph.board import Kind, Refused
 from nektoids.graph.dynamics import TAU, initial_state
-from nektoids.graph.hexgrid import NE, NW, SE, SW
+from nektoids.graph.hexgrid import NE, NW, SE, SW, E
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import REACH, Outcome, latch, marks, outcome
@@ -137,12 +136,15 @@ def test_in_the_shadow_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spa
 
 
 def fear(upper, lower, crossed=False):
-    """The tutorial board's cells, the eyes turned to `upper` and `lower`, wired (D-038)."""
-    board = tutorial_board()
-    board.nodes[0] = replace(board.nodes[0], facing=upper)
-    board.nodes[1] = replace(board.nodes[1], facing=lower)
-    for a, b in ((0, 3), (1, 2)) if crossed else ((0, 2), (1, 3)):
-        assert not isinstance(board.connect(a, b), Refused)
+    """The fear tutorial's board (D-039): the eyes at the front, turned to `upper` and `lower`,
+    the thrusters at the back corners, pushing forward, each eye wired to its own side."""
+    board = LEVELS["Fear"].new_board()
+    eyes = [
+        board.place(Kind.EYE, cell, facing=f) for cell, f in (((2, -1), upper), ((1, 1), lower))
+    ]
+    thrusters = [board.place(Kind.THRUSTER, cell) for cell in ((1, -2), (-1, 2))]
+    for eye, thruster in zip(eyes, reversed(thrusters) if crossed else thrusters, strict=True):
+        assert not isinstance(board.connect(eye.id, thruster.id), Refused)
     return Network.from_board(board)
 
 
@@ -155,6 +157,7 @@ def test_fear_flees_the_light_with_its_eyes_looking_back_and_leaves_the_ring_in_
 def test_fear_fails_crossed_or_with_its_eyes_looking_forward():
     assert play(fear(NW, SW, crossed=True), "Fear")[0] is Outcome.TIME_UP  # it closes in
     assert play(fear(NE, SE), "Fear")[0] is Outcome.TIME_UP  # it turns away, then stops
+    assert play(fear(E, E), "Fear")[0] is Outcome.TIME_UP  # as placed, before any turn
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():

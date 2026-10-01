@@ -9,7 +9,8 @@ Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
 It opens on the first level's board in the editor, under the title card. Run (Space) runs it in
 its arena; Edit (Esc) comes back to the board as it was left; once a level is won, Next level
 (Enter) opens the next one's board, and after the last, the end. Map (Tab) lists the chapter's
-levels and the sandbox (`editor/router.py`, D-030, D-035).
+levels and the sandbox (`editor/router.py`, D-030, D-035). A level's tutorial or hints show over
+the editor and the run, and follow what the player does (`editor/tutorial.py`, D-039).
 Developer tools, while DEV_VIEW is on:
 F1 goes to the editor of the open level, from any view or screen.
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.
@@ -25,6 +26,7 @@ import pygame
 
 from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
+from nektoids.editor.arena_layout import ARENA_AREA
 from nektoids.editor.devdrive import SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.layout import SCREEN, contains, make_layout
@@ -34,6 +36,9 @@ from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
 from nektoids.editor.shell import bottom_button, map_row_at
 from nektoids.editor.shell_draw import draw_end, draw_map, draw_title_card
+from nektoids.editor.tutorial import Context, Tutorial, box_rect, next_rect, target_rects
+from nektoids.editor.tutorial_draw import draw_tutorial
+from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.scenarios import Scenario, scenarios
@@ -50,6 +55,24 @@ fonts = Fonts.load()
 levels = arenas()  # read from their files once, at startup (web.md: no file I/O in the loop)
 router = Router(levels, sandbox())
 editors: dict[int, EditorScene] = {}  # each level's editor, and its undo history with it
+tutorials: dict[int, Tutorial] = {}  # each level's tutorial or hints, where it has got to
+
+
+def tutorial() -> Tutorial | None:
+    """The open level's tutorial while a step remains, or None (the sandbox has none)."""
+    data = None if router.in_sandbox else router.level.tutorial
+    if data is not None and router.index not in tutorials:
+        tutorials[router.index] = Tutorial.from_dict(data)
+    guide = tutorials.get(router.index)
+    return guide if guide is not None and guide.step is not None else None
+
+
+def tutorial_box(guide: Tutorial) -> tuple:
+    """Where the step's target and its box are, on the screen now open."""
+    scene = editor()
+    targets = target_rects(guide.step.show, router.screen, scene.layout, scene.view)
+    beside = ARENA_AREA if router.screen is Screen.RUN else scene.layout.board_area
+    return targets, box_rect(targets, len(guide.step.say), beside)
 
 
 def editor() -> EditorScene:
@@ -57,7 +80,9 @@ def editor() -> EditorScene:
     if router.index not in editors:
         level = router.level
         caption = (f"{router.label}. {level.title}", level.spec)
-        editors[router.index] = EditorScene(router.board, make_layout(), caption)
+        board = router.board
+        handed_out = frozenset(kind for kind in Kind if board.total(kind) != 0)
+        editors[router.index] = EditorScene(board, make_layout(kinds=handed_out), caption)
     return editors[router.index]
 
 
@@ -124,6 +149,14 @@ async def main() -> None:
                 print(json.dumps(router.board.to_dict(), separators=(",", ":")), flush=True)
             elif developer is not None:
                 developer.handle_event(event)
+            elif (
+                (guide := tutorial()) is not None
+                and router.screen in (Screen.EDIT, Screen.RUN)
+                and event.type == pygame.MOUSEBUTTONDOWN
+                and event.button == 1
+                and contains(next_rect(tutorial_box(guide)[1]), event.pos)
+            ):
+                guide.next()  # Next, and nothing else
             elif router.screen in (Screen.TITLE, Screen.MAP, Screen.END):
                 shell_event(event)
             elif playing is not None:
@@ -153,6 +186,13 @@ async def main() -> None:
             elif asked == "map":
                 router.open_map()
 
+        guide = tutorial()
+        if guide is not None:  # on past what the player has done
+            ended = playing.outcome if playing is not None else None
+            guide.follow(Context(router.board, editor().tool, router.screen, ended))
+            guide = tutorial()
+        editor().ghosts = guide.ghosts if guide is not None else ()
+
         if isinstance(developer, SchematicScene):
             developer.update()
             draw_schematic(screen, developer, fonts)
@@ -171,6 +211,8 @@ async def main() -> None:
             draw(screen, editor(), fonts)
             if router.screen is Screen.TITLE:
                 draw_title_card(screen, fonts)
+        if developer is None and guide is not None and router.screen in (Screen.EDIT, Screen.RUN):
+            draw_tutorial(screen, fonts, guide, *tutorial_box(guide), pointer)
         pygame.display.flip()
         clock.tick(FPS)
 

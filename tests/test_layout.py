@@ -199,3 +199,10 @@ def test_each_menu_row_has_its_info_disc_inside_it_and_unfolding_moves_it_along(
     assert info_at(LAYOUT, centre(rows[Kind.EYE])[:1] + (0,)) is None
     folded = make_layout(frozenset({"Sensors"}))
     assert Kind.EYE not in dict(folded.info_buttons)
+
+
+def test_the_menu_shows_only_the_parts_the_level_hands_out_and_no_empty_group():
+    first = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
+    assert [kind for kind, _ in first.menu_items] == [Kind.EYE, Kind.THRUSTER]
+    assert [title for title, _ in first.group_titles] == ["Sensors", "Actuators"]
+    assert [kind for kind, _ in first.info_buttons] == [Kind.EYE, Kind.THRUSTER]

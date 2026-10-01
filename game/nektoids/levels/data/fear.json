@@ -16,10 +16,10 @@
   "objectives": [{"kind": "leave ring", "radius": 12.0}],
   "tutorial": {
     "ghosts": [
-      {"kind": "eye", "cell": [-1, -1], "facing": "NW"},
-      {"kind": "eye", "cell": [-2, 1], "facing": "SW"},
-      {"kind": "thruster", "cell": [2, -1], "facing": "E"},
-      {"kind": "thruster", "cell": [1, 1], "facing": "E"}
+      {"kind": "eye", "cell": [2, -1], "facing": "NW"},
+      {"kind": "eye", "cell": [1, 1], "facing": "SW"},
+      {"kind": "thruster", "cell": [1, -2], "facing": "E"},
+      {"kind": "thruster", "cell": [-1, 2], "facing": "E"}
     ],
     "steps": [
       {
@@ -41,16 +41,16 @@
         "say": ["The palette holds the tools, and at its", "foot Run, which sets the swimmer going."]
       },
       {
-        "show": {"cell": [-1, -1]},
-        "until": {"placed": {"kind": "eye", "cell": [-1, -1]}},
+        "show": {"cell": [2, -1]},
+        "until": {"placed": {"kind": "eye", "cell": [2, -1]}},
         "say": [
           "The faint shapes show where each part goes",
           "and which way it points. Drag an Eye from", "the menu onto this cell."
         ]
       },
       {
-        "show": {"tool": "turn left"},
-        "until": {"facing": {"cell": [-1, -1], "facing": "NW"}},
+        "show": [{"tool": "turn left"}, {"cell": [2, -1]}],
+        "until": {"facing": {"cell": [2, -1], "facing": "NW"}},
         "say": [
           "It looks forward, but this eye must look",
           "back and to the left: press Turn left, or L,",
@@ -58,39 +58,39 @@
         ]
       },
       {
-        "show": {"cell": [-2, 1]},
-        "until": {"placed": {"kind": "eye", "cell": [-2, 1]}},
+        "show": {"cell": [1, 1]},
+        "until": {"placed": {"kind": "eye", "cell": [1, 1]}},
         "say": [
           "Now the second eye, on this cell: pick the",
           "Eye in the menu, or press 1, and click here."
         ]
       },
       {
-        "show": {"tool": "turn right"},
-        "until": {"facing": {"cell": [-2, 1], "facing": "SW"}},
+        "show": [{"tool": "turn right"}, {"cell": [1, 1]}],
+        "until": {"facing": {"cell": [1, 1], "facing": "SW"}},
         "say": ["This one looks back and to the right:", "press Turn right, or R, twice."]
       },
       {
-        "show": {"cell": [2, -1]},
-        "until": {"placed": {"kind": "thruster", "cell": [2, -1]}},
+        "show": {"cell": [1, -2]},
+        "until": {"placed": {"kind": "thruster", "cell": [1, -2]}},
         "say": ["Thrusters push the way they point, forward", "already. Put one on this cell..."]
       },
       {
-        "show": {"cell": [1, 1]},
-        "until": {"placed": {"kind": "thruster", "cell": [1, 1]}},
+        "show": {"cell": [-1, 2]},
+        "until": {"placed": {"kind": "thruster", "cell": [-1, 2]}},
         "say": ["...and the other one here."]
       },
       {
-        "show": {"tool": "wire"},
-        "until": {"wired": {"from": [-1, -1], "to": [2, -1]}},
+        "show": [{"tool": "wire"}, {"cell": [2, -1]}, {"cell": [1, -2]}],
+        "until": {"wired": {"from": [2, -1], "to": [1, -2]}},
         "say": [
           "Wire each eye to the thruster on its own", "side: take Wire, or W, and drag from the",
           "upper eye to the upper thruster."
         ]
       },
       {
-        "show": {"cell": [-2, 1]},
-        "until": {"wired": {"from": [-2, 1], "to": [1, 1]}},
+        "show": [{"cell": [1, 1]}, {"cell": [-1, 2]}],
+        "until": {"wired": {"from": [1, 1], "to": [-1, 2]}},
         "say": ["Then from the lower eye to the lower", "thruster."]
       },
       {

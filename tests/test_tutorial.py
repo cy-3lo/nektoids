@@ -8,7 +8,7 @@ from nektoids.editor.tutorial import (
     box_rect,
     met,
     next_rect,
-    target_rect,
+    target_rects,
 )
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NW, SW
@@ -35,8 +35,7 @@ def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for
             if step.until:
                 met(step.until, context)  # a condition it knows
             for screen in (Screen.EDIT, Screen.RUN):
-                rect = target_rect(step.show, screen, LAYOUT, VIEW)
-                assert rect is None or on_screen(rect)
+                assert all(on_screen(r) for r in target_rects(step.show, screen, LAYOUT, VIEW))
 
 
 def test_only_the_first_level_leads_the_later_ones_only_hint():
@@ -55,8 +54,8 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     for _ in range(3):  # the board, the menu, the palette: Next
         tutorial.follow(context())
         tutorial.next()
-    assert tutorial.step.until == {"placed": {"kind": "eye", "cell": [-1, -1]}}
-    upper = board.place(Kind.EYE, (-1, -1))
+    assert tutorial.step.until == {"placed": {"kind": "eye", "cell": [2, -1]}}
+    upper = board.place(Kind.EYE, (2, -1))
     tutorial.follow(context())
     assert "facing" in tutorial.step.until
     board.rotate(upper.id, 1)  # NE: not yet
@@ -64,10 +63,10 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     assert "facing" in tutorial.step.until
     board.rotate(upper.id, 1)  # NW
     tutorial.follow(context(Tool.TURN_LEFT))
-    lower = board.place(Kind.EYE, (-2, 1), facing=SW)  # placed already turned: two steps at once
+    lower = board.place(Kind.EYE, (1, 1), facing=SW)  # placed already turned: two steps at once
     tutorial.follow(context())
-    assert tutorial.step.until == {"placed": {"kind": "thruster", "cell": [2, -1]}}
-    left, right = board.place(Kind.THRUSTER, (2, -1)), board.place(Kind.THRUSTER, (1, 1))
+    assert tutorial.step.until == {"placed": {"kind": "thruster", "cell": [1, -2]}}
+    left, right = board.place(Kind.THRUSTER, (1, -2)), board.place(Kind.THRUSTER, (-1, 2))
     board.connect(upper.id, left.id)
     board.connect(lower.id, right.id)
     tutorial.follow(context(Tool.WIRE))
@@ -81,16 +80,26 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     assert [g.facing for g in tutorial.ghosts][:2] == [NW, SW]
 
 
-def test_the_box_sits_beside_its_target_on_screen_with_next_inside_it():
+def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_inside_it():
     eye_row = dict(LAYOUT.menu_items)[Kind.EYE]
-    box = box_rect(eye_row, 3, LAYOUT.board_area)
+    box = box_rect([eye_row], 3, LAYOUT.board_area)
     assert box[0] > eye_row[0] + eye_row[2] and on_screen(box)  # right of the menu
     tool = dict(LAYOUT.tool_buttons)[Tool.WIRE]
-    box = box_rect(tool, 3, LAYOUT.board_area)
+    box = box_rect([tool], 3, LAYOUT.board_area)
     assert box[0] + box[2] < tool[0] and on_screen(box)  # left of the palette
-    board = box_rect(LAYOUT.board_area, 3, LAYOUT.board_area)
-    assert on_screen(board)  # too wide to sit beside: across it, on screen
-    hint = box_rect(None, 2, LAYOUT.board_area)
+    hint = box_rect([], 2, LAYOUT.board_area)
     assert contains(LAYOUT.board_area, hint[:2]) and on_screen(hint)
     nx, ny, nw, nh = next_rect(box)
     assert contains(box, (nx, ny)) and contains(box, (nx + nw - 1, ny + nh - 1))
+    for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:  # never over what it shows
+        for screen in (Screen.EDIT, Screen.RUN):
+            targets = target_rects(step.show, screen, LAYOUT, VIEW)
+            if len(targets) > 1 or (targets and targets[0][2] < 400):
+                box = box_rect(targets, len(step.say), LAYOUT.board_area)
+                assert on_screen(box) and not any(overlap(box, t) for t in targets), step.say
+
+
+def overlap(a, b):
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    return ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah

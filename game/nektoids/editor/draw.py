@@ -70,6 +70,7 @@ DARK = (18, 20, 28)
 WIRE = (150, 154, 166)
 GHOST = (96, 101, 118)  # where a wire would run
 GHOST_OK = (228, 231, 240)  # ... and it may connect there
+GHOST_FILL = (40, 44, 58)  # a tutorial's ghost part, under the real one
 LOCK_RING = (170, 175, 190)
 COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
@@ -216,6 +217,10 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         colour = DOOMED if wire in doomed_wires else WIRE
         _draw_wire(screen, view, wire.path, colour, 3, extent(board.nodes[wire.target].kind))
 
+    for ghost in scene.ghosts:  # where a part goes, facing the way it should (D-039)
+        centre, angle = _centre(view, ghost.cell), placed_angle(ghost.kind, ghost.facing)
+        pygame.draw.polygon(screen, GHOST_FILL, _shape(ghost.kind, angle, centre, view.size))
+        pygame.draw.polygon(screen, GHOST, _shape(ghost.kind, angle, centre, view.size), 2)
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
         angle = placed_angle(node.kind, node.facing)
@@ -223,6 +228,12 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         draw_part(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
         if node.id == scene.source or node.id == scene._wire_start():
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
+    for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
+        node = board.node_at(ghost.cell)
+        if node is not None and node.kind is ghost.kind and node.facing != ghost.facing:
+            angle = placed_angle(ghost.kind, ghost.facing)
+            outline = _shape(ghost.kind, angle, _centre(view, ghost.cell), view.size)
+            pygame.draw.polygon(screen, GHOST_OK, outline, 2)
     if scene.cursor is not None:
         pygame.draw.polygon(screen, TEXT, _hexagon(view, scene.cursor), 3)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:

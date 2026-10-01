@@ -2,7 +2,8 @@
 
 Three columns, with vertical separators:
 - left, the menu: component groups (sensors, operators, actuators) that fold under their title,
-  each part's row with an info disc after its name (D-036);
+  each part's row with an info disc after its name (D-036); only the parts the level hands out,
+  and no group left empty;
 - centre, the hex grid, filling its column, the level's caption at its top, one status line at
   its foot;
 - right, the palette, in titled sections of two buttons a row (D-025, D-027): the view (zoom
@@ -114,6 +115,7 @@ KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layou
 
 @dataclass(frozen=True)
 class Layout:
+    kinds: frozenset[Kind]  # the parts the menu shows: what the level hands out
     menu_area: Rect
     board_area: Rect
     palette_area: Rect
@@ -139,8 +141,11 @@ class View:
     origin: tuple[float, float]  # pixel centre of cell (0, 0) [px]
 
 
-def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
-    """The screen regions, menu rows and palette buttons. folded: menu groups shown closed."""
+def make_layout(
+    folded: frozenset[str] = frozenset(), kinds: frozenset[Kind] = frozenset(Kind)
+) -> Layout:
+    """The screen regions, menu rows and palette buttons. folded: menu groups shown closed;
+    kinds: the parts the level hands out, the only ones the menu shows (D-039)."""
     width, height = SCREEN
     right = width - PALETTE_WIDTH  # palette's left edge
     menu = (0, 0, MENU_WIDTH, height)
@@ -149,10 +154,13 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
 
     titles, items = [], []
     y = MARGIN
-    for title, kinds in MENU_GROUPS:
+    for title, group in MENU_GROUPS:
+        shown = [kind for kind in group if kind in kinds]
+        if not shown:
+            continue  # a group with nothing in this level: no title either
         titles.append((title, (MARGIN, y, MENU_WIDTH - 2 * MARGIN, TITLE_HEIGHT - 4)))
         y += TITLE_HEIGHT
-        for kind in () if title in folded else kinds:
+        for kind in () if title in folded else shown:
             items.append((kind, (MARGIN, y, MENU_WIDTH - 2 * MARGIN, ITEM_HEIGHT - 4)))
             y += ITEM_HEIGHT
         y += MARGIN
@@ -167,6 +175,7 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
     edit_rects, file_rects = rects[: len(EditButton)], rects[len(EditButton) :]
     level, level_rects, y = _section(right, y, "Level", len(LevelButton), BUTTON, BUTTON_STEP)
     return Layout(
+        kinds=kinds,
         menu_area=menu,
         board_area=board,
         palette_area=palette,

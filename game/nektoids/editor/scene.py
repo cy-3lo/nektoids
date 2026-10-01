@@ -133,6 +133,7 @@ class EditorScene:
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
         self.info: Kind | None = None  # the part whose info box is open
+        self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
 
     def update(self) -> None:
         """Once per frame."""
@@ -195,7 +196,7 @@ class EditorScene:
             self.request = "map"
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
-            kinds = [kind for _, group in MENU_GROUPS for kind in group]
+            kinds = [k for _, group in MENU_GROUPS for k in group if k in self.layout.kinds]
             if digit < len(kinds):
                 self._pick(kinds[digit])
                 self.dragging = False  # placed with Enter, not by releasing a button
@@ -301,7 +302,7 @@ class EditorScene:
         title = group_at(self.layout, pos)
         if title is not None:
             self.folded ^= {title}
-            self.layout = make_layout(frozenset(self.folded))
+            self.layout = make_layout(frozenset(self.folded), self.layout.kinds)
             return
         kind = info_at(self.layout, pos)
         if kind is not None:
