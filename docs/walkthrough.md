@@ -307,5 +307,74 @@ with a fixed spacing and a speed proportional to the flux, which does not do tha
 - **The sliders exist only in the developer view** (`DEV_VIEW` in `main.py`); the player's
   graph has none.
 
+## 7. The arena view: your board in a lit arena (D-018, D-019)
+
+F3 opens it. Read D-018 (the board is the body plan) and D-019 (eyes read light) first.
+
+### 7.1 What it shows
+
+Left, the arena: the light as rays, the obstacles, the lights and the swimmer, a circle (its
+body) round a wedge whose tip is where it heads. Swimmers, lights and obstacles are all unit
+discs. Each light sends as many rays as its power, each stopped by the first obstacle or swimmer
+it meets, so their density falls as 1/r, like the light, and a shadow is where no ray goes; the
+fans turn slowly, at random but the same at every run; L hides them or shows them again. I, a
+developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
+
+Right, one column. At the top, two palettes, one row each: the player (start again, one frame
+back, play or pause, one frame, fast forward) and the view (zoom in, zoom out, the hand to move
+the view, centre, which frames the swimmers and the lights, and the rays on or off). Every button
+has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
+centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each with a bar: for now
+"Reach a light", how much of the way from its start to touching a light the swimmer has come.
+At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
+beads on the wires, no numbers (F2 has those). There are no dynamics yet: drag the swimmer,
+turn it with the wheel or Q and E, and watch which eye lights up and which thruster fires.
+
+What an eye reads (D-019): E = sum over lights of P max(0, n·s) / r, capped at 1, where n is
+where the eye looks (out of its flat face, D-020) and s points at the light, and only the lights
+no disc hides count. The map is what an eye looking straight at each light would read, summed
+over lights. P shows, over the arena, a developer's polar plot of E(phi), what an eye would read
+turned to each direction phi, one curve per eye, with a tick where it actually looks. Each light
+makes a circle through the centre, pointing at it.
+
+### 7.2 The code
+
+- [`sim/arena.py`](../game/nektoids/sim/arena.py) and [`sim/optics.py`](../game/nektoids/sim/optics.py)
+  (your father's): the arena, and the light. `visible` is the shadow test, one segment against
+  one disc for every eye, light and disc, done in one numpy broadcast; `eye_rates` is what the
+  game will call every tick.
+- [`editor/circuit.py`](../game/nektoids/editor/circuit.py): what F2 and the panel share, taken out
+  of `SchematicScene`: the network, where its parts and wires sit in a screen area, the beads.
+  `schematic_draw.draw_circuit` draws one, `plain` for the panel. The F2 view is pixel for pixel
+  what it was.
+- [`editor/arena_layout.py`](../game/nektoids/editor/arena_layout.py), pure, like `layout.py`: where
+  the arena, the palettes, the objectives and the wiring sit, and `button_at` for the mouse.
+- [`editor/arena_view.py`](../game/nektoids/editor/arena_view.py), pure: from u (y up) to pixels
+  (y down) and back, `zoom_view` and `frame` for the view buttons, `Rays` and `ray_ends` for the
+  rays, the grid of the light map, `smooth` and `tone` for its greys, `polar_scale`, and
+  `body_at` for the mouse.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py) (state and input) and
+  [`arena_draw.py`](../game/nektoids/editor/arena_draw.py) (drawing), like `schematic.py` and
+  `schematic_draw.py`. The map is computed only while it shows; the shadows of the obstacles
+  once per arena (`still_light`), the swimmer's own again when it moves.
+- [`levels/arenas.py`](../game/nektoids/levels/arenas.py): two arenas to try things in, and
+  [`levels/objectives.py`](../game/nektoids/levels/objectives.py): what a level asks, each as a
+  fraction from 0 to 1. `ReachLight` is the first; the countable ones come with the real levels.
+
+### 7.3 Questions to answer after reading
+
+1. **Why does `visible` skip the eye's own body?** What would the tutorial's eyes read if it did
+   not? (D-018; `test_a_body_never_shadows_its_own_eyes`.)
+2. **Why is the light map computed on a grid of 4-pixel cells and then smoothed and scaled,
+   rather than pixel by pixel?** Count the segment–disc tests for each.
+3. **Why does `light_map` with `still` give the same bits as without?** What would break that?
+
+### 7.4 Weak or untested
+
+- **`arena.py` and `arena_draw.py` have no automated tests,** like the other scenes; their pure
+  parts do. A headless script drove every key and mouse action once before the PR.
+- **The map is smoothed, the eyes are not:** a shadow's edge on screen is soft over about half a
+  body radius, while an eye crossing it jumps. The polar plot is exact.
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

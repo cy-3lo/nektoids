@@ -3,14 +3,17 @@
 Wires are plain lines, dimmer the less they carry, with beads running along them. A part's fill
 shows its rate in shades of grey, from dim (nothing) to light (R); every part shows its rate as a
 number. Each sensor has a slider beside it (the knob is what you set, the bar is what it sends
-now) and each thruster a bar. No hex grid and no arrows.
+now) and each thruster a bar. No hex grid and no arrows. `draw_circuit` draws the circuit alone,
+for the arena's panel too.
 """
 
 from __future__ import annotations
 
+import numpy as np
 import pygame
 
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
+from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import knob_y, track_for
 from nektoids.editor.draw import (
     BACKGROUND,
@@ -43,7 +46,7 @@ HEADINGS = {"head": DIM_TEXT, "eq": TEXT, "warn": WARN}
 LINE_HEIGHT = 17  # [px]
 HINTS = (
     "Drag a slider to set a sensor.  Space: pause.  . : one frame.",
-    "W: waveform.  B: beads.  R: restart.  Tab: board.  F2: editor.",
+    "W: waveform.  B: beads.  0: restart.  Tab: board.  F2: editor.",
 )
 
 
@@ -74,9 +77,10 @@ def draw_schematic(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) 
     screen.fill(BACKGROUND)
     _draw_panel(screen, scene, fonts)
     screen.set_clip(BOARD_AREA)
-    _draw_wires(screen, scene)
-    _draw_parts(screen, scene, fonts)
-    if not scene.cells:
+    draw_circuit(screen, scene.circuit, scene.y, fonts, belt=scene.belt)
+    for i in scene.levels:
+        _draw_slider(screen, scene, i)
+    if not scene.circuit.cells:
         note = _text(fonts.text, "This board is empty: Tab for the examples", DIM_TEXT)
         screen.blit(note, note.get_rect(center=(BOARD_AREA[0] + BOARD_AREA[2] // 2, 300)))
     screen.set_clip(None)
@@ -84,41 +88,57 @@ def draw_schematic(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) 
     _draw_status(screen, scene, fonts)
 
 
-def _draw_wires(screen: pygame.Surface, scene: SchematicScene) -> None:
-    view = scene.view
+def draw_circuit(
+    screen: pygame.Surface,
+    circuit: Circuit,
+    y: np.ndarray,
+    fonts: Fonts,
+    belt: bool = False,
+    plain: bool = False,
+) -> None:
+    """Wires, beads and parts at the rates y (n,), each part shaded by its rate. Unless `plain`,
+    every part has its name and its rate as a number, and every thruster a bar."""
+    _draw_wires(screen, circuit, belt)
+    _draw_parts(screen, circuit, y, fonts, plain)
+
+
+def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
+    view = circuit.view
     radius = max(2, round(BEAD_RADIUS * view.size))
-    for k, path in enumerate(scene.paths):
+    for k, path in enumerate(circuit.paths):
         points = wire_points(path, view.size, view.origin)
-        flux = float(scene.flux[k])
+        flux = float(circuit.flux[k])
         colour = mix(WIRE_OFF, WIRE, flux / (RATE_MAX / 2))
         pygame.draw.lines(screen, colour, False, points, 2)
         along = cumulative_lengths(points)
         bead = mix(BEAD_OFF, BEAD, flux / RATE_MAX)
-        for s in scene.beads.positions(k, BEAD_RATE_AT_FULL / RATE_MAX * flux, belt=scene.belt):
+        for s in circuit.beads.positions(k, BEAD_RATE_AT_FULL / RATE_MAX * flux, belt=belt):
             x, y = point_at(points, along, s * view.size)
             pygame.draw.circle(screen, bead, (round(x), round(y)), radius)
 
 
-def _draw_parts(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) -> None:
-    net, size = scene.net, scene.view.size
+def _draw_parts(
+    screen: pygame.Surface, circuit: Circuit, y: np.ndarray, fonts: Fonts, plain: bool
+) -> None:
+    net, size = circuit.net, circuit.view.size
     for i, node_id in enumerate(net.ids):
-        kind, rate = net.kinds[i], float(scene.y[i])
-        cx, cy = scene.centre(i)
-        facing = scene.board.nodes[node_id].facing
+        kind, rate = net.kinds[i], float(y[i])
+        cx, cy = circuit.centre(i)
+        facing = circuit.board.nodes[node_id].facing
         fill = mix(IDLE, FULL, rate / RATE_MAX)
         draw_part(screen, fonts, kind, placed_angle(kind, facing), (cx, cy), size, False, fill)
+        if plain:
+            continue
         name = _text(fonts.small, label(net, i), DIM_TEXT)
         screen.blit(name, name.get_rect(center=(cx, cy - 1.35 * size)))
         number = _text(fonts.small, f"{rate:.2f}", TEXT)
         screen.blit(number, number.get_rect(center=(cx, cy + 1.3 * size)))
-        if i in scene.levels:
-            _draw_slider(screen, scene, i)
-        elif kind is Kind.THRUSTER:
+        if kind is Kind.THRUSTER:
             _draw_bar(screen, (cx + 1.45 * size, cy), size, rate)
 
 
 def _draw_slider(screen: pygame.Surface, scene: SchematicScene, i: int) -> None:
-    track = track_for(scene.centre(i), scene.view.size)
+    track = track_for(scene.circuit.centre(i), scene.circuit.view.size)
     x = round(track.x)
     pygame.draw.line(screen, RULE, (x, track.top), (x, track.bottom), 3)
     sending = knob_y(track, float(scene.y[i]))  # what it sends now, from the foot up

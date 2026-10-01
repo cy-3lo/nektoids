@@ -144,26 +144,30 @@ class Network:
         )
 
 
+def body_disc(zone: Sequence[Cell]) -> tuple[tuple[float, float], float]:
+    """Where the body lies on the board (D-018), at hex size 1 with cell (0, 0) at the origin and
+    screen y down: the centre of the zone's cell centres, and the distance from it to the
+    farthest of them, the body's radius. zone: every cell of the board, row by row
+    (`Board.cells`), so the sums run in a fixed order."""
+    if not zone:
+        return (0.0, 0.0), 0.0
+    points = np.array([to_pixel(cell, 1.0, (0.0, 0.0)) for cell in zone])
+    centre = points.mean(axis=0)
+    offset = points - centre
+    reach = float(np.sqrt(offset[:, 0] ** 2 + offset[:, 1] ** 2).max())
+    return (float(centre[0]), float(centre[1])), reach
+
+
 def body_mounts(zone: Sequence[Cell], cells: Sequence[Cell]) -> np.ndarray:
     """(len(cells), 2): where parts on these cells sit on the body, in body radii (D-018).
 
     The board is the body seen from above, forward = E = +x, and the board's up is the body's
-    left, +y. The centre of the zone's cell centres is the body's centre, and the zone's
-    outermost cells lie on the rim. zone: every cell of the board, row by row (`Board.cells`),
-    so the sums run in a fixed order.
+    left, +y: the zone's outermost cells lie on the rim of `body_disc`.
     """
-    if not zone:
-        return np.zeros((len(cells), 2))
-
-    def body_frame(some: Sequence[Cell]) -> np.ndarray:
-        points = np.array([to_pixel(cell, 1.0, (0.0, 0.0)) for cell in some]).reshape(-1, 2)
-        return points * np.array([1.0, -1.0])  # screen y points down, the body's left is up
-
-    zone_points = body_frame(zone)
-    centre = zone_points.mean(axis=0)
-    offset = zone_points - centre
-    reach = float(np.sqrt(offset[:, 0] ** 2 + offset[:, 1] ** 2).max())
-    return (body_frame(cells) - centre) / (reach if reach > 0.0 else 1.0)
+    (cx, cy), reach = body_disc(zone)
+    points = np.array([to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells]).reshape(-1, 2)
+    offset = (points - np.array([cx, cy])) * np.array([1.0, -1.0])  # the body's left is up
+    return offset / (reach if reach > 0.0 else 1.0)
 
 
 def topological_order(net: Network) -> tuple[int, ...] | None:
