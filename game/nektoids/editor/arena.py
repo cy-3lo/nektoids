@@ -240,6 +240,11 @@ class ArenaScene:
         """How the run stands now; None while it runs."""
         return outcome(self.level, self.visited, self.clock.tick, DT)
 
+    @property
+    def time_left(self) -> float:
+        """Of the level's time limit, how much is left now [s]."""
+        return max(0.0, self.level.time_limit - self.clock.seconds)
+
     def counts(self) -> list[tuple[str, int, int]]:
         """Each objective of the level: its name, how many are met, out of how many."""
         return [(o.name, *o.count(self.visited)) for o in self.level.objectives]

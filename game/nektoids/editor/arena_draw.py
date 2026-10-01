@@ -11,7 +11,8 @@ its body's circle round a wedge, its tip forward, bright when selected. When the
 banner over the arena says how it ended.
 
 The column on the right (`arena_layout.py`): the palettes, with a tooltip naming each button and
-its key; the objectives, each counted (so many of so many) and with a bar; the selected
+its key; the objectives, each counted (so many of so many) and with a bar, and the time left,
+its bar running down to zero, red if it runs out; the selected
 swimmer's wiring on its body, plain: the parts shaded by their rate and the beads on the wires,
 no numbers. With P, an inset over the
 arena shows the light at its eyes as a polar plot in the arena's frame: E(phi) for each eye, a
@@ -49,6 +50,7 @@ from nektoids.editor.draw import (
     DARK,
     DIM_TEXT,
     PANEL,
+    REFUSED,
     RULE,
     TEXT,
     Fonts,
@@ -246,28 +248,50 @@ def _draw_button_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) ->
 
 
 def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """Each objective: its name, so many met of so many, a tick once all are, and a bar."""
-    x, y, w, _ = SCORE_AREA
-    left, width = x + MARGIN, w - 2 * MARGIN
-    screen.blit(fonts.small.render("Objectives", True, DIM_TEXT), (left, y + 4))
+    """Each objective: its name, so many met of so many, a tick once all are, and a bar filling
+    up; then the time left, its bar running down, all red once the time is up."""
+    x, y, _, _ = SCORE_AREA
+    screen.blit(fonts.small.render("Objectives", True, DIM_TEXT), (x + MARGIN, y + 4))
     rows = scene.counts()
     if not rows:
-        screen.blit(fonts.small.render("None in this arena yet.", True, DIM_TEXT), (left, y + 30))
+        none = fonts.small.render("None in this arena yet.", True, DIM_TEXT)
+        screen.blit(none, (x + MARGIN, y + 30))
     for k, (name, met, needed) in enumerate(rows):
-        top = y + 28 + k * ROW_PITCH
-        screen.blit(fonts.text.render(name, True, TEXT), (left, top))
-        tally = fonts.text.render(f"{met} of {needed}", True, TEXT)
-        screen.blit(tally, tally.get_rect(topright=(left + width, top)))
-        if met >= needed:
-            tick_at = (left + width - tally.get_width() - 14, top + 7)
-            fonts.icons.draw(screen, "check", tick_at, 14, FULL)
         fraction = met / needed if needed else 1.0
-        bar = pygame.Rect(left, top + 20, width, BAR_HEIGHT)
-        pygame.draw.rect(screen, RULE, bar, border_radius=3)
-        filled = bar.copy()
-        filled.width = round(width * min(1.0, max(0.0, fraction)))
-        if filled.width > 0:
-            pygame.draw.rect(screen, FULL, filled, border_radius=3)
+        _draw_row(screen, fonts, k, name, f"{met} of {needed}", fraction, met >= needed)
+    left, limit = scene.time_left, scene.level.time_limit
+    late = scene.outcome is Outcome.TIME_UP
+    k = max(1, len(rows))
+    _draw_row(screen, fonts, k, "Time left", f"{left:.1f} s", left / limit, False, late)
+
+
+def _draw_row(
+    screen: pygame.Surface,
+    fonts: Fonts,
+    k: int,
+    name: str,
+    value: str,
+    fraction: float,
+    done: bool,
+    failed: bool = False,
+) -> None:
+    """Row k of the objectives: its name, its value at the right with a tick if `done`, and a
+    bar `fraction` full; the text and the bar's track red if `failed`."""
+    x, y, w, _ = SCORE_AREA
+    left, width, top = x + MARGIN, w - 2 * MARGIN, y + 28 + k * ROW_PITCH
+    colour = REFUSED if failed else TEXT
+    screen.blit(fonts.text.render(name, True, colour), (left, top))
+    shown = fonts.text.render(value, True, colour)
+    screen.blit(shown, shown.get_rect(topright=(left + width, top)))
+    if done:
+        tick_at = (left + width - shown.get_width() - 14, top + 7)
+        fonts.icons.draw(screen, "check", tick_at, 14, FULL)
+    bar = pygame.Rect(left, top + 20, width, BAR_HEIGHT)
+    pygame.draw.rect(screen, REFUSED if failed else RULE, bar, border_radius=3)
+    filled = bar.copy()
+    filled.width = round(width * min(1.0, max(0.0, fraction)))
+    if filled.width > 0:
+        pygame.draw.rect(screen, FULL, filled, border_radius=3)
 
 
 def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
