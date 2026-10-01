@@ -349,3 +349,18 @@ player reads as reaching it, did not count. The win needs no exact trajectory an
 Consequences: the pinned wins come a little earlier, crossed wiring in "One light" at 8.59 s
 (8.66 s before), the one-eyed circler in "Two lights" at 22.81 s (23.06 s); the time limits stand.
 At 3.6 u/s a tick moves 0.03 u against a reach of 2.4 u, so still no visit falls between ticks.
+
+**D-030 — 2026-10-01 — A level is played in a loop: its board in the editor, Run, the run, Edit back, Next level once won. Each level keeps its board for the session.**
+The game opens on the first level's board in the editor, its title and spec over the board. Run,
+a wide button at the foot of the menu, or Space (play, as in the arena, D-021), opens the run
+view on that level alone. Edit, a button in the player's row, or Esc, goes back to the editor,
+the board as it was left. Once the level is won, the banner offers Next level (Enter), when
+there is one, and Edit, to do better on time or parts (D-028); when time is up, Edit only. Each
+level keeps its board, and its editor with its undo history, until the game closes.
+The player's run view touches nothing of the programmed swimmer: no dragging or turning it, and
+none of the developer's tools (light map, polar plot, Tab between levels); clicking it to see
+its wiring stays. F3 keeps the developer's run view of every level, with all of them.
+`editor/router.py` holds which level is open and whether it is edited or run, with no pygame,
+and `main.py` turns that into scenes; a scene asks for a change through its `request`.
+Consequences: the arena's palette gains Edit; the banner has a fixed size, so its buttons can
+be hit-tested headless. The title card, the map and the end screen come next (D-028).

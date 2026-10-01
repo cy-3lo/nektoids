@@ -545,5 +545,38 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
   has, and a headless script drove both arenas to their ends before the PR.
 - **The JSON has no version number,** and `from_dict` does not keep saved paths exactly.
 
+## 10. Playing a level: edit, run, next (D-030)
+
+Read D-030 first. `python game/main.py` now opens on level 1's board: build, press Space, watch,
+Esc to change the board, and after a win Enter for the next level.
+
+### 10.1 The code
+
+- [`editor/router.py`](../game/nektoids/editor/router.py), pure: `Router` holds the open level
+  (`index`), whether it is edited or run (`screen`), and each level's board, made from the
+  level's data the first time (`Level.new_board`). `next` refuses to go past the last level.
+- [`main.py`](../game/main.py) turns the router into scenes: one `EditorScene` per level, kept
+  in `editors` (so undo history stays with its level), and a fresh `ArenaScene` for each run,
+  with `developer=False`.
+- Scenes never call `main.py`; they set `request` ("run" in the editor; "edit" or "next" in
+  the run view), and the loop reads and clears it once a frame. That keeps the scenes free of
+  any knowledge of each other.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py): `developer` switches the player's run
+  view (one level, nothing touches the swimmer) from F3's; `banner_buttons` says what the end
+  banner offers. Its buttons' rects come from `arena_layout.banner_rects`, pure, so tests can
+  click them.
+
+### 10.2 Questions to answer after reading
+
+1. **Why does each level get its own `EditorScene` instead of one editor whose board changes?**
+   What would undo do across levels otherwise?
+2. **Why is `request` a field read by the loop, not a callback the scene calls?**
+3. **What does F3 run, and why is it still useful once the player's run view exists?**
+
+### 10.3 Weak or untested
+
+- **`main.py`'s loop has no automated test.** A scratch script drove it through edit, run, a
+  win, next level, run and Esc before the PR; `Router` itself is tested.
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

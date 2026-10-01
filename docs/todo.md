@@ -25,7 +25,7 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 - [x] No walls: `contact.confine` loses its clamp; rays and the light map go as far as the view
       shows; the view frames the items. The tests that lean on walls change
       (`test_a_source_on_both_thrusters_drives_the_body_onto_the_wall_and_holds_it_there`).
-- [ ] A Run button in the editor: it runs the current level; back in the editor the board is as
+- [x] A Run button in the editor: it runs the current level; back in the editor the board is as
       it was; a win opens the next level.
 
 ## 2. The levels themselves
