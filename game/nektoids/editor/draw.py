@@ -86,7 +86,7 @@ TIP = {
 HINT = {
     Tool.ADD: "Drag a component from the menu onto the grid (or its number, arrows, Enter).",
     Tool.WIRE: "Drag from a source to a target, or click one then the other.",
-    Tool.TURN_LEFT: "Click an eye or a thruster to turn it left. Shift+R turns the selected one.",
+    Tool.TURN_LEFT: "Click an eye or a thruster to turn it left. L turns the selected one.",
     Tool.TURN_RIGHT: "Click an eye or a thruster to turn it right. R turns the selected one.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",

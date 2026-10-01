@@ -268,9 +268,9 @@ Consequences: a path comes back as saved unless the board was edited with Move o
 which a wire drawn again may take another route as short; keeping saved paths exactly is for
 when saving arrives. The format has no version number yet.
 
-**D-025 — 2026-10-01 — Turning acts on the selected part, from two buttons and two keys; the palette is titled sections, two buttons a row, with room kept for editing and files. Amends D-009's Rotate tool.**
-Turn left and Turn right replace Rotate. Pressing either button, or R (right, clockwise) or
-Shift+R (left), turns the selected eye or thruster by 60° at once and takes that tool; with the
+**D-025 — 2026-10-01 — Turning acts on the selected part, from two buttons and L and R; the palette is titled sections, two buttons a row, with room kept for editing and files. Amends D-009's Rotate tool and D-021's arena keys.**
+Turn left and Turn right replace Rotate. Pressing either button, or L (left, counter-clockwise)
+or R (right), turns the selected eye or thruster by 60° at once and takes that tool; with the
 tool, a click turns the part clicked and selects it, and shift-click still turns it the other
 way (D-009). The selected part is the last one placed, wired from, moved or turned: a click on a
 part with any tool but Delete selects it, its cell is lit like the tool in hand, Escape or a
@@ -283,6 +283,6 @@ Colours. Tooltips sit left of the palette.
 Turning a part took the Rotate tool, then a click, and a shift-click to go back; with a
 selection, the same key or button acts at once, and left and right sit side by side. The room
 lets undo and saving arrive without moving every button again.
-Consequences: R keeps its meaning (D-021); Shift+R is the only shifted shortcut, so `_shortcut`
-reads the Shift modifier for R. The Turn left icon, Font Awesome's rotate-left, is also the
-arena's Start again (F3): no key clashes, but one of the two may want another glyph.
+Consequences, in the arena view (F3), so that a key keeps one meaning (D-021): L and R turn the
+swimmer left and right, as Q and E did, and X (x-rays) shows or hides the rays, as L did. Start
+again takes Font Awesome's backward-fast (|◀◀, back to t = 0), leaving rotate-left to Turn left.

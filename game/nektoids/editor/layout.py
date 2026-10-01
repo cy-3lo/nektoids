@@ -73,13 +73,13 @@ class ViewButton(Enum):
 
 
 # Shortcut keys, matched on the character typed (so they follow the keyboard layout) and shown
-# in the tooltips. R turns right and Shift+R left, the scene telling them apart by Shift.
+# in the tooltips. L and R turn left and right, here and in the arena view (D-025).
 TOOL_KEYS = {
     Tool.ADD: "A",
     Tool.WIRE: "W",
     Tool.MOVE: "M",
     Tool.DELETE: "D",
-    Tool.TURN_LEFT: "Shift+R",
+    Tool.TURN_LEFT: "L",
     Tool.TURN_RIGHT: "R",
 }
 VIEW_KEYS = {

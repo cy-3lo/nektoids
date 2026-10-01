@@ -20,8 +20,8 @@ python game/main.py
 In the window, try:
 - drag an Eye, a Sum and a Thruster from the left menu onto the lighter cells;
 - wire them with the Wire tool (drag from one part to another);
-- turn a part: it is selected once placed (or click it with Move), then R turns it right,
-  Shift+R left, as do the two turn buttons;
+- turn a part: it is selected once placed (or click it with Move), then L turns it left and R
+  right, as do the two turn buttons;
 - drag a part with Move and watch its wires follow;
 - hover with Delete to see what would go.
 
@@ -157,8 +157,8 @@ It calls only the board's public methods.
   - `board.preview` over a target, drawn bright if it may connect.
 
 **Turning (D-025):** `_choose(tool)` is where a tool's button and its key meet. A turn tool turns
-the selected part at once (`_turn`), then turns whatever part is clicked. `_shortcut` tells R from
-Shift+R by the Shift modifier, since it upper-cases the character typed.
+the selected part at once (`_turn`), then turns whatever part is clicked. L and R also turn the
+swimmer in the arena view: one key, one meaning (D-021).
 
 **Delete:** `_delete_target(cell, pos)` is the single hit test. A click on a component's shape takes the component. Otherwise the wire drawn nearest the click is taken, which is the only way to reach a wire between two neighbouring parts, since it crosses no free cell. `doomed()` asks the same function, so the darkened preview is exactly what a click would remove.
 
@@ -327,7 +327,7 @@ Left, the arena: the light as rays, the obstacles, the lights and the swimmer, a
 body) round a wedge whose tip is where it heads. Swimmers, lights and obstacles are all unit
 discs. Each light sends as many rays as its power, each stopped by the first obstacle or swimmer
 it meets, so their density falls as 1/r, like the light, and a shadow is where no ray goes; the
-fans turn slowly, at random but the same at every run; L hides them or shows them again. I, a
+fans turn slowly, at random but the same at every run; X hides them or shows them again. I, a
 developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
 
 Right, one column. At the top, two palettes, one row each: the player (start again, one frame
@@ -338,7 +338,7 @@ centre are the editor's own keys, and with the hand the arrows drag the view, in
 "Visit every light", so many touched of so many (section 9).
 At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
 beads on the wires, no numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
-the swimmer, turn it with the wheel or Q and E, and watch which eye lights up and which thruster
+the swimmer, turn it with the wheel or L and R, and watch which eye lights up and which thruster
 fires.
 
 What an eye reads (D-019): E = sum over lights of P max(0, n·s) / r, capped at 1, where n is
