@@ -2,8 +2,10 @@
 
 Tools:
 - Add: drag a component from the menu onto a cell, or pick it and click cells.
-- Wire: drag from a source to a target, or click one then the other. The route shows first,
-  bright when it may connect.
+- Wire: drag from one part to another, or click one then the other. The route shows first,
+  bright when it may connect. A wire runs from the part that sends to the part that receives:
+  drawn from a thruster or into a sensor, it is turned round; between two operators it runs
+  the way it is drawn (D-026).
 - Turn left, Turn right: pressing the button, or R (right) and Shift+R (left), turns the selected
   part by 60° at once and takes that tool; with it, click an eye or a thruster to turn it,
   shift-click to turn it the other way (D-009, D-025).
@@ -94,7 +96,7 @@ class EditorScene:
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
         self.dragging = False  # Add: mouse held since picking from the menu
-        self.source: int | None = None  # Wire: node id of the chosen source
+        self.source: int | None = None  # Wire: node id chosen first, its source unless turned
         self.moving: int | None = None  # Move: node id being dragged
         self.selected: int | None = None  # what the turn buttons and keys act on
         self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
@@ -345,19 +347,15 @@ class EditorScene:
             return
         self.pressed, self.fresh, self.selected = node.id, False, node.id
         if self.source is None:
-            if not node.kind.emits:
-                self.pressed = None
-                self._refuse("thrusters have no output", cell)
-                return
             self.source, self.fresh = node.id, True
         self.message = ""
         self._update_ghost()
 
     def _end_wiring(self) -> None:
-        """Release in the Wire tool. Where the press was is a click: it picks the source,
-        connects the chosen source to it, or, on the chosen source again, drops it. Anywhere
-        else is a drag: it wires from where the press was to here, or gives up over an empty
-        cell."""
+        """Release in the Wire tool. Where the press was is a click: it picks the first part,
+        wires it to this one, or, on the first part again, drops it. Anywhere else is a drag: it
+        wires where the press was to here, or gives up over an empty cell. Which way a wire
+        runs is `Board.orient`'s to say (D-026)."""
         pressed, self.pressed = self.pressed, None
         target = self.board.node_at(self.hover) if self.hover is not None else None
         if target is not None and target.id == pressed:
@@ -367,26 +365,23 @@ class EditorScene:
                 self.source, self.ghost = None, None
         elif target is None:
             self.source, self.ghost = None, None
-        elif not self.board.nodes[pressed].kind.emits:
-            self._refuse("thrusters have no output", self.board.nodes[pressed].cell)
         else:
             self.source = pressed
             self._connect(pressed, target.id, self.hover)
         self._update_ghost()
 
-    def _connect(self, source_id: int, target_id: int, cell: Cell) -> None:
-        result = self.board.connect(source_id, target_id)
+    def _connect(self, first_id: int, second_id: int, cell: Cell) -> None:
+        result = self.board.connect(*self.board.orient(first_id, second_id))
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)  # keep the source: try another target
             return
         self.source, self.ghost, self.message = None, None, ""
 
     def _wire_start(self) -> int | None:
-        """The node a wire would start from now: while dragging away from a press, that
-        press; otherwise the chosen source."""
+        """The node a wire is drawn from now: while dragging away from a press, that press;
+        otherwise the part chosen first. Not always the wire's source (D-026)."""
         if self.pressed is not None and self.hover != self.board.nodes[self.pressed].cell:
-            start = self.board.nodes[self.pressed]
-            return start.id if start.kind.emits else None
+            return self.pressed
         return self.source
 
     def _turn(self, cell: Cell, steps: int) -> None:
@@ -476,11 +471,13 @@ class EditorScene:
         start = self._wire_start() if self.tool is Tool.WIRE else None
         if start is None or self.hover is None:
             return
-        target = self.board.node_at(self.hover)
-        if target is None:
-            self.ghost = self.board.route(self.board.nodes[start].cell, self.hover)
+        target, begin = self.board.node_at(self.hover), self.board.nodes[start]
+        if target is None and begin.kind.emits:
+            self.ghost = self.board.route(begin.cell, self.hover)
+        elif target is None:  # a thruster: the way a wire into it would come
+            self.ghost = self.board.route(self.hover, begin.cell)
         elif target.id != start:
-            self.ghost = self.board.preview(start, target.id)
+            self.ghost = self.board.preview(*self.board.orient(start, target.id))
             self.ghost_connects = isinstance(self.ghost, tuple)
 
     def _refuse(self, reason: str, cell: Cell | None) -> None:

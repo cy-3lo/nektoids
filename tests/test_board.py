@@ -318,6 +318,48 @@ def test_same_moves_give_the_same_wires():
     assert wire_everything().wires == wire_everything().wires
 
 
+def test_a_wire_drawn_backwards_is_turned_round_only_when_the_kinds_say_so():
+    board, (eye, other_eye, double, total, thruster, other_thruster) = build(
+        [
+            ((0, 1), Kind.EYE),
+            ((0, 5), Kind.EYE),
+            ((3, 1), Kind.DOUBLE),
+            ((3, 5), Kind.SUM),
+            ((6, 1), Kind.THRUSTER),
+            ((6, 5), Kind.THRUSTER),
+        ]
+    )
+    turned = {
+        (thruster, eye): (eye, thruster),  # from a thruster
+        (double, eye): (eye, double),  # into a sensor
+        (thruster, double): (double, thruster),
+    }
+    as_drawn = [
+        (eye, thruster),
+        (double, total),  # two operators: the way it is drawn
+        (total, double),
+        (eye, other_eye),  # neither way: left for connect to refuse
+        (thruster, other_thruster),
+    ]
+    for (a, b), (source, target) in turned.items():
+        assert board.orient(a.id, b.id) == (source.id, target.id)
+    for a, b in as_drawn:
+        assert board.orient(a.id, b.id) == (a.id, b.id)
+    assert isinstance(board.connect(*board.orient(eye.id, other_eye.id)), Refused)
+
+
+def test_a_wire_drawn_backwards_is_the_wire_drawn_forwards_route_and_all():
+    # From (0, 0) to (2, 1) the route heads E first, from (2, 1) to (0, 0) it heads SE (D-007).
+    forwards, (eye, thruster) = build([((0, 0), Kind.EYE), ((2, 1), Kind.THRUSTER)])
+    backwards, _ = build([((0, 0), Kind.EYE), ((2, 1), Kind.THRUSTER)])
+    drawn = forwards.connect(eye.id, thruster.id)
+    turned = backwards.connect(*backwards.orient(thruster.id, eye.id))
+    assert turned == drawn
+    assert drawn.path == ((0, 0), (1, 0), (2, 0), (2, 1))
+    # Routed the way it was drawn, from the thruster, it would have been another wire.
+    assert backwards.route((2, 1), (0, 0)) != tuple(reversed(drawn.path))
+
+
 # As plain data (D-024)
 
 

@@ -2,6 +2,7 @@
 
 A component fills one cell. A wire is directed, from a component that emits to one that
 receives, and runs through free cells, entering and leaving each through one of its six edges.
+`orient` says which way a wire drawn between two components runs (D-026).
 Wires may cross or turn in the same cell as long as no edge is used twice (D-010), so a cell
 holds at most three. Wires are routed once, when drawn, and never move afterwards.
 
@@ -277,6 +278,15 @@ class Board:
             return Refused(f"a {target.kind.value} takes {_count(target.kind.max_inputs)} inputs")
         path = self.route(source.cell, target.cell)
         return Refused("no free path") if path is None else path
+
+    def orient(self, first_id: int, second_id: int) -> tuple[int, int]:
+        """(source, target) of a wire drawn from `first_id` to `second_id` (D-026): turned round
+        when only that way do their kinds allow it, from a thruster or into a sensor; as drawn
+        otherwise, including between two operators, whatever the wires already there."""
+        first, second = self.nodes[first_id].kind, self.nodes[second_id].kind
+        forward = first.emits and second.receives
+        backward = second.emits and first.receives
+        return (second_id, first_id) if backward and not forward else (first_id, second_id)
 
     def connect(self, source_id: int, target_id: int) -> Wire | Refused:
         path = self.preview(source_id, target_id)
