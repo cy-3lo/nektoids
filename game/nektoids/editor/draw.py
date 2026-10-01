@@ -24,6 +24,7 @@ from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, w
 from nektoids.editor.icons import EDIT_ICON, FILE_ICON, KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
 from nektoids.editor.layout import (
     EDIT_KEYS,
+    MAP_KEY,
     PALETTE_TITLE,
     RUN_KEY,
     TOOL_KEYS,
@@ -149,12 +150,18 @@ ICON_AHEAD = {Kind.EYE: -0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
 class Fonts:
     text: pygame.font.Font
     small: pygame.font.Font  # the developer view's panel
+    big: pygame.font.Font  # the title card's name, the end's thanks
     icons: Icons
 
     @classmethod
     def load(cls) -> Fonts:
         """Call once at startup, after pygame.init() (web.md: every asset at startup)."""
-        return cls(text=pygame.font.Font(None, 22), small=pygame.font.Font(None, 18), icons=Icons())
+        return cls(
+            text=pygame.font.Font(None, 22),
+            small=pygame.font.Font(None, 18),
+            big=pygame.font.Font(None, 64),
+            icons=Icons(),
+        )
 
 
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
@@ -431,14 +438,19 @@ def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
 
 
 def _draw_run_button(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """At the foot of the menu: a play mark, "Run", and its key."""
-    x, y, w, h = scene.layout.run_button
-    pygame.draw.rect(screen, ACTIVE, (x, y, w, h), border_radius=6)
-    fonts.icons.draw(screen, "play", (x + 22, y + h // 2), 18, TEXT)
-    label = fonts.text.render("Run", True, TEXT)
-    screen.blit(label, (x + 46, y + (h - label.get_height()) // 2))
-    key = fonts.small.render(RUN_KEY, True, DIM_TEXT)
-    screen.blit(key, (x + w - 12 - key.get_width(), y + (h - key.get_height()) // 2))
+    """At the foot of the menu: Map, then Run, lit, each with its icon, its name and its key."""
+    layout = scene.layout
+    for rect, icon, name, key, fill in (
+        (layout.map_button, "map", "Map", MAP_KEY, BUTTON),
+        (layout.run_button, "play", "Run", RUN_KEY, ACTIVE),
+    ):
+        x, y, w, h = rect
+        pygame.draw.rect(screen, fill, rect, border_radius=6)
+        fonts.icons.draw(screen, icon, (x + 22, y + h // 2), 18, TEXT)
+        label = fonts.text.render(name, True, TEXT)
+        screen.blit(label, (x + 46, y + (h - label.get_height()) // 2))
+        shown = fonts.small.render(key, True, DIM_TEXT)
+        screen.blit(shown, (x + w - 12 - shown.get_width(), y + (h - shown.get_height()) // 2))
 
 
 def _draw_caption(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

@@ -183,3 +183,11 @@ def test_the_run_button_sits_at_the_foot_of_the_menu_below_every_row_even_unfold
     lowest = max(ry + rh for _, (_, ry, _, rh) in [*LAYOUT.menu_items, *LAYOUT.group_titles])
     assert lowest < y
     assert contains(LAYOUT.board_area, LAYOUT.caption_at)
+
+
+def test_the_map_button_sits_over_run_below_every_row():
+    mx, my, mw, mh = LAYOUT.map_button
+    rx, ry, _, _ = LAYOUT.run_button
+    assert mx == rx and my + mh < ry
+    lowest = max(y + h for _, (_, y, _, h) in [*LAYOUT.menu_items, *LAYOUT.group_titles])
+    assert lowest < my

@@ -2,7 +2,7 @@
 
 Three columns, with vertical separators:
 - left, the menu: component groups (sensors, operators, actuators) that fold under their title,
-  and at its foot the Run button;
+  and at its foot the Map button, then the Run button;
 - centre, the hex grid, filling its column, the level's caption at its top, one status line at
   its foot;
 - right, the palette, in titled sections of two buttons a row (D-025, D-027): the view (zoom
@@ -41,6 +41,8 @@ SECTION_GAP = 8  # between palette sections [px]
 SWATCH_HEIGHT = 14  # colour picker swatch, as wide as a button [px]
 RUN_HEIGHT = 48  # the Run button, as wide as the menu's rows [px]
 RUN_KEY = "Space"  # as the arena's play (D-021), matched on the physical key
+MAP_HEIGHT = 40  # the Map button, over Run [px]
+MAP_KEY = "Tab"  # the levels, as Tab steps through them in F3; on the physical key
 SWATCHES = 6
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
@@ -118,6 +120,7 @@ class Layout:
     edit_buttons: tuple[tuple[EditButton, Rect], ...]
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
     swatches: tuple[Rect, ...]  # colour picker, inactive for now
+    map_button: Rect  # over the Run button
     run_button: Rect  # at the foot of the menu
     caption_at: tuple[int, int]  # top-left corner of the level's title and spec
     status_at: tuple[int, int]  # top-left corner of the status line
@@ -169,6 +172,12 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
         file_buttons=tuple(zip(FileButton, file_rects, strict=True)),
         palette_titles=(view, tools, colours, edit),
         swatches=tuple(swatches),
+        map_button=(
+            MARGIN,
+            height - MARGIN - RUN_HEIGHT - 8 - MAP_HEIGHT,
+            MENU_WIDTH - 2 * MARGIN,
+            MAP_HEIGHT,
+        ),
         run_button=(MARGIN, height - MARGIN - RUN_HEIGHT, MENU_WIDTH - 2 * MARGIN, RUN_HEIGHT),
         caption_at=(MENU_WIDTH + MARGIN, 10),
         status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),

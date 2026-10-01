@@ -13,8 +13,13 @@ from pathlib import Path
 from nektoids.levels.level import Level, load
 
 DATA = Path(__file__).resolve().parent / "data"
-ORDER = ("one-light", "in-the-shadow")  # the files, in the order the levels come
+ORDER = ("one-light", "in-the-shadow")  # the route's files, in the order the levels come
+SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)
 
 
 def arenas() -> list[Level]:
     return [load(DATA / f"{name}.json") for name in ORDER]
+
+
+def sandbox() -> Level:
+    return load(DATA / f"{SANDBOX}.json")

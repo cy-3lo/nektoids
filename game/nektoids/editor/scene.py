@@ -17,8 +17,8 @@ Tools:
   gesture, from press to release, so a whole Move drag goes back at once. Save and Load are
   there, inactive, until saving exists.
 
-Run (the button at the foot of the menu, or Space) asks `main.py` to run the board: the scene
-sets `request` and `main.py` acts on it.
+Run (the button at the foot of the menu, or Space) asks `main.py` to run the board, Map (over
+it, or Tab) to show the map: the scene sets `request` and `main.py` acts on it.
 
 Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
@@ -104,7 +104,7 @@ class EditorScene:
         self.board = board
         self.layout = layout
         self.caption = caption  # the level's title and spec, shown over the board
-        self.request: str | None = None  # "run": for main.py, which clears it
+        self.request: str | None = None  # "run" or "map": for main.py, which clears it
         self.view = centred_view(layout)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
@@ -184,6 +184,9 @@ class EditorScene:
         elif event.scancode == pygame.KSCAN_SPACE:  # RUN_KEY, on the physical key
             self._cancel()
             self.request = "run"
+        elif event.scancode == pygame.KSCAN_TAB:  # MAP_KEY
+            self._cancel()
+            self.request = "map"
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
             kinds = [kind for _, group in MENU_GROUPS for kind in group]
@@ -272,6 +275,10 @@ class EditorScene:
         if contains(self.layout.run_button, pos):
             self._cancel()
             self.request = "run"
+            return
+        if contains(self.layout.map_button, pos):
+            self._cancel()
+            self.request = "map"
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:
