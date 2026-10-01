@@ -6,7 +6,7 @@ Tools:
   bright when it may connect. A wire runs from the part that sends to the part that receives:
   drawn from a thruster or into a sensor, it is turned round; between two operators it runs
   the way it is drawn (D-026).
-- Turn left, Turn right: pressing the button, or R (right) and Shift+R (left), turns the selected
+- Turn left, Turn right: pressing the button, or L (left) and R (right), turns the selected
   part by 60° at once and takes that tool; with it, click an eye or a thruster to turn it,
   shift-click to turn it the other way (D-009, D-025).
 - Move: drag a component; its wires follow while they find a path (D-011).
@@ -165,7 +165,7 @@ class EditorScene:
                 self._pick(kinds[digit])
                 self.dragging = False  # placed with Enter, not by releasing a button
         else:
-            self._shortcut(event.unicode, shift=bool(event.mod & pygame.KMOD_SHIFT))
+            self._shortcut(event.unicode)
 
     def _arrow(self, key: int) -> None:
         """Move the keyboard cursor one cell within the zone; with the hand, drag the view one
@@ -215,11 +215,9 @@ class EditorScene:
         x, y = to_pixel(self.cursor, self.view.size, self.view.origin)
         return (round(x), round(y))
 
-    def _shortcut(self, typed: str, shift: bool) -> None:
+    def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
-        if key == TOOL_KEYS[Tool.TURN_RIGHT]:
-            self._choose(Tool.TURN_LEFT if shift else Tool.TURN_RIGHT)
-        elif key in KEY_TOOLS:
+        if key in KEY_TOOLS:
             self._choose(KEY_TOOLS[key])
         elif key in KEY_VIEWS:
             self._view_button(KEY_VIEWS[key])

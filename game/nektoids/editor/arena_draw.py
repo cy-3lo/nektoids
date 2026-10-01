@@ -2,7 +2,7 @@
 
 The arena shows only the light, the obstacles, the lights and the swimmers. The light is drawn
 as rays of one grey, from each light until the first obstacle, swimmer or wall (`Rays`): their
-density is the light's 1/r, and a shadow is where no ray goes; L hides them. With I (developer)
+density is the light's 1/r, and a shadow is where no ray goes; X hides them. With I (developer)
 the light is a map instead, grey, dark in shadow and white where an eye looking at a light
 saturates; the square root of the reading sets the grey (`tone`), and it is smoothed over a few
 cells (`smooth`). Obstacles are grey discs, lights white discs with a sun, as big as a swimmer
@@ -81,7 +81,7 @@ ROW_PITCH = 40  # one objective [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
 BANNER_TOP = 16  # [px] below the top of the arena
 ICON = {
-    ArenaButton.RESTART: "rotate-left",
+    ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
     ArenaButton.BACK: "backward-step",
     ArenaButton.STEP: "forward-step",
     ArenaButton.FAST: "forward",
@@ -360,6 +360,6 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     limit = f"{scene.level.time_limit:g}"
     text = (
         f"t = {clock.seconds:5.2f} / {limit} s, {state}{speed}.  I: map{cost}.  P: polar plot.  "
-        "Wheel, Q, E: turn.  Tab: arena.  F3: editor."
+        "Wheel, L, R: turn.  Tab: arena.  F3: editor."
     )
     screen.blit(fonts.small.render(text, True, DIM_TEXT), (16, screen.get_height() - 22))

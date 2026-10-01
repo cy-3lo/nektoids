@@ -15,7 +15,7 @@ from nektoids.editor.arena_layout import (
     button_at,
     button_rects,
 )
-from nektoids.editor.layout import SCREEN, TOOL_KEYS, VIEW_KEYS, ViewButton
+from nektoids.editor.layout import SCREEN, TOOL_KEYS, VIEW_KEYS, Tool, ViewButton
 
 
 def test_the_palettes_sit_on_two_rows_in_the_column_without_overlapping():
@@ -55,8 +55,11 @@ def test_a_key_means_the_same_here_as_in_the_editor():
     }
     for here, there in same.items():
         assert BUTTON_KEYS[here] == VIEW_KEYS[there]
-    ours = {*BUTTON_KEYS.values(), *TURN_KEYS, MAP_KEY, POLAR_KEY}
-    assert not ours & set(TOOL_KEYS.values())  # the editor's tools: Add, Wire, Rotate, Move...
+    # Turning the swimmer left and right, as the editor turns a part (D-025).
+    assert TURN_KEYS == (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
+    others = {*BUTTON_KEYS.values(), MAP_KEY, POLAR_KEY}
+    assert not others & set(TOOL_KEYS.values())  # nothing else means an editor tool here
+    ours = others | set(TURN_KEYS)
     assert len(ours) == len(BUTTON_KEYS) + len(TURN_KEYS) + 2  # and no key twice here
 
 

@@ -12,13 +12,14 @@ plot: what a flat eye there would read facing each way, E(phi), with a tick wher
 
 Mouse: the palettes' buttons; click the swimmer to show its wiring (it is shown to begin with),
 click beside it to hide it, drag it to move it (with the hand, drag the view); the wheel turns
-it by 15°, as do Q (counter-clockwise) and E. Keys (`arena_layout.BUTTON_KEYS`, named in the
-tooltips), the same as the editor's wherever they do the same: 0 starts again, `,` goes one frame
-back, Space plays or pauses, `.` runs one frame, F fast forwards, + and - zoom, H takes the hand
-(then the arrows drag the view), C centres, L shows or hides the rays; and I (light map), P
-(polar plot), Tab and Shift-Tab (arena). One frame back replays nothing: the scene keeps the last
-HISTORY frames as they were, so it also takes back the end of a run. Moving and turning the
-swimmer by hand are for trying things out; the run takes no notice. Mutates nothing in the board.
+it by 15°, as do L (left, counter-clockwise) and R, the editor's turn keys. Keys
+(`arena_layout.BUTTON_KEYS`, named in the tooltips), the same as the editor's wherever they do
+the same: 0 starts again, `,` goes one frame back, Space plays or pauses, `.` runs one frame, F
+fast forwards, + and - zoom, H takes the hand (then the arrows drag the view), C centres, X
+shows or hides the rays; and I (light map), P (polar plot), Tab and Shift-Tab (arena). One frame
+back replays nothing: the scene keeps the last HISTORY frames as they were, so it also takes
+back the end of a run. Moving and turning the swimmer by hand are for trying things out; the run
+takes no notice. Mutates nothing in the board.
 """
 
 from __future__ import annotations

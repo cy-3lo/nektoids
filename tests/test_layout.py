@@ -159,10 +159,8 @@ def test_the_palette_fits_on_screen():
 
 def test_every_palette_button_has_its_own_key_and_tooltip_target():
     keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
-    assert len(set(keys)) == len(keys)
-    for key in keys:  # one character, or Shift and another tool's key
-        assert len(key) == 1 or key.removeprefix("Shift+") in TOOL_KEYS.values()
-    assert TOOL_KEYS[Tool.TURN_LEFT] == "Shift+" + TOOL_KEYS[Tool.TURN_RIGHT]
+    assert len(set(keys)) == len(keys) and all(len(key) == 1 for key in keys)
+    assert (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT]) == ("L", "R")
     assert TURNS == {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # directions run counter-clockwise
     for target, rect in [*LAYOUT.tool_buttons, *LAYOUT.view_buttons]:
         assert palette_target_at(LAYOUT, centre(rect)) == target

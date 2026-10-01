@@ -12,7 +12,16 @@ from __future__ import annotations
 
 from enum import Enum
 
-from nektoids.editor.layout import BUTTON, SCREEN, VIEW_KEYS, Rect, ViewButton, contains
+from nektoids.editor.layout import (
+    BUTTON,
+    SCREEN,
+    TOOL_KEYS,
+    VIEW_KEYS,
+    Rect,
+    Tool,
+    ViewButton,
+    contains,
+)
 
 PANEL_WIDTH = 320  # the right column [px]
 STATUS_HEIGHT = 32  # [px]
@@ -69,10 +78,10 @@ BUTTON_KEYS = {
     ArenaButton.ZOOM_OUT: VIEW_KEYS[ViewButton.ZOOM_OUT],
     ArenaButton.HAND: VIEW_KEYS[ViewButton.PAN],
     ArenaButton.CENTRE: VIEW_KEYS[ViewButton.CENTRE],
-    ArenaButton.LIGHT: "L",
+    ArenaButton.LIGHT: "X",  # the rays, as in x-rays: L turns left (D-025)
 }
 # Keys with no button, for developers: turn the swimmer, the light map, the polar plot.
-TURN_KEYS = ("Q", "E")  # counter-clockwise, clockwise
+TURN_KEYS = (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])  # the editor's: L, R
 MAP_KEY, POLAR_KEY = "I", "P"
 # Typed characters that press a button; Space and 0 are matched on the physical key instead.
 KEY_BUTTONS = {key: b for b, key in BUTTON_KEYS.items() if len(key) == 1 and not key.isdigit()}
