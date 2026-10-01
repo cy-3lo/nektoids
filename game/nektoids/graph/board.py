@@ -2,7 +2,8 @@
 
 A component fills one cell. A wire is directed, from a component that emits to one that
 receives, and runs through free cells, entering and leaving each through one of its six edges.
-`orient` says which way a wire drawn between two components runs (D-026).
+`orient` says which way a wire drawn between two components runs (D-026); `snapshot` and
+`restore` are for undo (D-027).
 Wires may cross or turn in the same cell as long as no edge is used twice (D-010), so a cell
 holds at most three. Wires are routed once, when drawn, and never move afterwards.
 
@@ -103,6 +104,15 @@ class Wire:
     source: int  # node id
     target: int  # node id
     path: tuple[Cell, ...]  # source cell, free cells crossed, target cell
+
+
+@dataclass(frozen=True)
+class BoardState:
+    """What the player has built, frozen, for undo (D-027): equal states are equal boards."""
+
+    nodes: tuple[Node, ...]  # by id
+    wires: tuple[Wire, ...]  # in the order they were drawn
+    stock: tuple[tuple[Kind, int | None], ...]  # what is left of each kind
 
 
 @dataclass(frozen=True)
@@ -298,6 +308,20 @@ class Board:
 
     def remove_wire(self, wire: Wire) -> None:
         self.wires.remove(wire)
+
+    # Undo (D-027)
+
+    def snapshot(self) -> BoardState:
+        """The parts, the wires as drawn and the stock left, frozen."""
+        nodes = tuple(self.nodes[i] for i in sorted(self.nodes))
+        return BoardState(nodes, tuple(self.wires), tuple(self._stock.items()))
+
+    def restore(self, state: BoardState) -> None:
+        """Put the board back as it was in `state`, in place, routes and all. Ids still never
+        come back: the next part placed gets a new one."""
+        self.nodes = {node.id: node for node in state.nodes}
+        self.wires = list(state.wires)
+        self._stock = dict(state.stock)
 
     # As plain data (D-024)
 
