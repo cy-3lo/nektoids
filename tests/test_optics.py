@@ -32,7 +32,7 @@ def one_eye(arena, x, y, heading=0.0, radius=1.0, mount=CENTRE, facing=AHEAD):
 
 
 def lit(*obstacles, lights=(LIGHT,)):
-    return Arena(100.0, 60.0, lights, obstacles)
+    return Arena(lights, obstacles)
 
 
 # 1/r, cosine, cap
@@ -103,7 +103,7 @@ def test_two_lights_add_and_shadowing_one_leaves_the_other():
 
 
 def test_without_lights_every_eye_reads_nothing():
-    assert one_eye(Arena(100.0, 60.0), 30.0, 30.0) == 0.0
+    assert one_eye(Arena(), 30.0, 30.0) == 0.0
 
 
 # Batches and consistency
@@ -175,16 +175,14 @@ def test_lights_add_only_where_they_are_seen():
     ("lights", "obstacles", "message"),
     [
         ((Light(50.0, 30.0, 0.0),), (), "power"),
-        ((Light(150.0, 30.0, 1.0),), (), "off the arena"),
-        ((), (Disc(0.5, 30.0),), "not inside"),
+        ((), (Disc(50.0, 30.0, 0.0),), "radius"),
         ((Light(50.0, 30.0, 1.0),), (Disc(50.5, 30.0),), "touches an obstacle"),
         ((Light(50.0, 30.0, 1.0),), (Disc(51.9, 30.0),), "touches an obstacle"),  # 1.9 < 1 + 1
-        ((Light(0.5, 30.0, 1.0),), (), "off the arena"),  # its disc would cross the wall
     ],
 )
 def test_impossible_arenas_are_refused(lights, obstacles, message):
     with pytest.raises(ValueError, match=message):
-        Arena(100.0, 60.0, lights, obstacles)
+        Arena(lights, obstacles)
 
 
 # The light at a point, facing each way

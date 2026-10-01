@@ -2,15 +2,17 @@ import math
 from collections import deque
 
 import numpy as np
+import pytest
 
 from nektoids.graph.board import Kind, Refused
-from nektoids.graph.dynamics import initial_state
+from nektoids.graph.dynamics import TAU, initial_state
 from nektoids.graph.hexgrid import NE, NW
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
-from nektoids.levels.objectives import Outcome, outcome, touching
+from nektoids.levels.objectives import REACH, Outcome, outcome, reaching
 from nektoids.levels.sandbox import free_board, tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
+from nektoids.sim.motion import SPEED
 from nektoids.sim.optics import eye_rates
 from nektoids.sim.world import parts, state_hash, step
 
@@ -73,9 +75,9 @@ def last(states):
 def play(net, title):
     """Run the level until it is over, as the arena view does: (outcome, ticks, visited)."""
     level = LEVELS[title]
-    visited = touching(level.arena, np.array([level.start[:2]]), np.ones(1))
+    visited = reaching(level.arena, np.array([level.start[:2]]), np.ones(1))
     for tick, (pos, _, _) in enumerate(run(net, title, level.time_limit), start=1):
-        visited |= touching(level.arena, pos, np.ones(1))
+        visited |= reaching(level.arena, pos, np.ones(1))
         ended = outcome(level, visited, tick, DT)
         if ended is not None:
             return ended, tick, visited
@@ -85,13 +87,13 @@ def play(net, title):
 # Determinism (invariant 1)
 
 
+CROWD = ((2.0, 2.0, 0.0), (38.0, 36.0, 2 * math.pi))  # where and how the crowd starts
+
+
 def crowd_hash(seed, seconds=5.0, n_swimmers=50):
     title = "Two lights, four obstacles"
-    arena = LEVELS[title].arena
     rng = np.random.default_rng(seed)
-    start = rng.uniform(
-        (2.0, 2.0, 0.0), (arena.width - 2.0, arena.height - 2.0, 2 * math.pi), (n_swimmers, 3)
-    )
+    start = rng.uniform(*CROWD, (n_swimmers, 3))
     pos, heading, y = last(run(CROSSED, title, seconds, start))
     return state_hash(pos, heading, np.ones(n_swimmers), y, round(seconds / DT))
 
@@ -116,11 +118,11 @@ def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
     ended, _, visited = play(UNCROSSED, "One light")
     assert ended is Outcome.TIME_UP and not visited.any()
-    light, touch = LEVELS["One light"].arena.light_xy[0], LIGHT_RADIUS + 1.0
+    light, touch = LEVELS["One light"].arena.light_xy[0], REACH * (LIGHT_RADIUS + 1.0)
     begun = np.hypot(*(np.array(LEVELS["One light"].start[:2]) - light)) - touch
     states = list(run(UNCROSSED, "One light", 12.0))
     nearest = min(np.hypot(*(pos[0] - light)) - touch for pos, _, _ in states)
-    assert nearest > 0.8 * begun  # never a fifth of the way to touching it
+    assert nearest > 0.8 * begun  # never a fifth of the way to reaching it
     _, _, y = states[-1]
     assert np.all(y[:, UNCROSSED.eyes] < 0.01)  # still fading: it slows as it darkens
 
@@ -144,8 +146,9 @@ def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
         assert np.array_equal(y[:, CROSSED.eyes], seen)
 
 
-def test_a_source_on_both_thrusters_drives_the_body_onto_the_wall_and_holds_it_there():
+def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no_walls():
     net = Network.from_edges([Kind.SOURCE, Kind.THRUSTER, Kind.THRUSTER], [(0, 1), (0, 2)])
     pos, heading, _ = last(run(net, "One light", 15.0))  # from (9, 15), heading E
-    assert pos.tolist() == [[39.0, 15.0]]
-    assert heading.tolist() == [0.0]
+    lag = SPEED * TAU  # the thrusters take TAU to reach their rate (D-017)
+    assert pos[0, 0] == pytest.approx(9.0 + SPEED * 15.0 - lag, abs=1e-9)  # far past x = 40
+    assert pos[0, 1] == 15.0 and heading.tolist() == [0.0]

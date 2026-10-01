@@ -5,7 +5,7 @@ The state of N swimmers is four arrays that the caller keeps (the arena view, a 
 of dt [s]:
 
 1. move: with the thrust the nodes have now, against the Stokes drag of a sphere (`motion`);
-2. touch: back outside the obstacles and inside the walls (`contact`);
+2. touch: back outside the obstacles (`contact`); the plane is open (D-028);
 3. see: the eyes read the light where the bodies now are (`optics`);
 4. think: the nodes follow, one lagged step (`graph.dynamics`).
 

@@ -1,9 +1,9 @@
 """How the arena is seen: from the sim's u (y up) to screen pixels (y down), and back.
 
 Also the rays drawn from the lights, the grid of the light map (the other way to show the light)
-and the grey level of a reading, and which swimmer is under the mouse. The view fits the arena
-in its screen area, whatever its size in u (16 px/u for the arenas of `levels/arenas.py`). Pure
-numbers, no pygame.
+and the grey level of a reading, and which swimmer is under the mouse. The plane is open
+(D-028): a view frames what a level holds, and shows as much of the plane as its area allows;
+rays and the light map go as far as it shows. Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.editor.layout import Rect
-from nektoids.sim.arena import Arena
 
 DARKEST = np.array([16, 17, 22])  # a reading of 0: shadow
 BRIGHTEST = np.array([236, 238, 244])  # a reading of RATE_MAX
@@ -22,6 +21,7 @@ GRAB = 6.0  # a press this far outside a body still grabs it [px]
 SMOOTHING = 2  # passes of the 1-2-1 filter over the light map
 POLAR_STEPS = 8  # the polar plot zooms in by halves down to 1/256 of RATE_MAX
 MIN_SCALE, MAX_SCALE = 4.0, 48.0  # how far the view zooms [px/u]
+MAP_COLUMNS = 160  # at most this many light-map cells across, however far the view zooms out
 ZOOM_STEP = 1.25  # scale factor per click
 RAYS_PER_POWER = 4.5  # rays drawn per u of a light's power: 36 for a power of 8, 18 for 4
 MIN_RAYS = 6
@@ -35,7 +35,7 @@ SWAY_PERIOD = (12.0, 30.0)  # ... over this long [s]
 @dataclass(frozen=True)
 class ArenaView:
     scale: float  # [px / u]
-    origin: tuple[float, float]  # screen pixel of the arena's corner (0, 0), its bottom left
+    origin: tuple[float, float]  # screen pixel of the plane's point (0, 0)
 
     def to_screen(self, x: float, y: float) -> tuple[float, float]:
         return (self.origin[0] + self.scale * x, self.origin[1] - self.scale * y)
@@ -43,19 +43,13 @@ class ArenaView:
     def to_world(self, px: float, py: float) -> tuple[float, float]:
         return ((px - self.origin[0]) / self.scale, (self.origin[1] - py) / self.scale)
 
-    def rect(self, arena: Arena) -> Rect:
-        """The arena on screen, (left, top, width, height) [px]."""
-        w, h = self.scale * arena.width, self.scale * arena.height
-        return (round(self.origin[0]), round(self.origin[1] - h), round(w), round(h))
 
-
-def fit(area: Rect, arena: Arena) -> ArenaView:
-    """The biggest view that shows the whole arena in `area`, centred, same scale on both axes."""
+def shown(view: ArenaView, area: Rect) -> tuple[float, float, float, float]:
+    """The part of the plane that `area` shows: (left, bottom, right, top) [u]."""
     x, y, w, h = area
-    scale = min(w / arena.width, h / arena.height)
-    left = x + (w - scale * arena.width) / 2
-    bottom = y + (h + scale * arena.height) / 2
-    return ArenaView(scale, (left, bottom))
+    left, top = view.to_world(x, y)
+    right, bottom = view.to_world(x + w, y + h)
+    return (left, bottom, right, top)
 
 
 def zoom_view(view: ArenaView, factor: float, about: tuple[float, float]) -> ArenaView:
@@ -82,15 +76,25 @@ def frame(area: Rect, points: np.ndarray, margin: float) -> ArenaView:
     return ArenaView(scale, (cx - scale * centre[0], cy + scale * centre[1]))
 
 
-def map_points(arena: Arena, cell: float) -> tuple[np.ndarray, tuple[int, int]]:
-    """Centres of squares of side `cell` [u] covering the arena, row by row from its top edge,
-    left to right. Returns the points [u], shape (rows * cols, 2), and (rows, cols)."""
-    cols = math.ceil(arena.width / cell)
-    rows = math.ceil(arena.height / cell)
-    x = np.minimum((np.arange(cols) + 0.5) * cell, arena.width)
-    y = np.maximum(arena.height - (np.arange(rows) + 0.5) * cell, 0.0)
-    gx, gy = np.meshgrid(x, y)
-    return np.column_stack((gx.ravel(), gy.ravel())), (rows, cols)
+def map_grid(
+    region: tuple[float, float, float, float], finest: float, columns: int = MAP_COLUMNS
+) -> tuple[tuple[float, float], float, tuple[int, int]]:
+    """The light map's grid over `region` (left, bottom, right, top) [u]: its top-left corner
+    [u], on a multiple of the cell so that panning does not shift it; the cell [u], `finest` or
+    coarser, so that at most `columns` fit across; and (rows, cols), covering the region."""
+    left, bottom, right, top = region
+    cell = max(finest, (right - left) / columns)
+    x0, y0 = math.floor(left / cell) * cell, math.ceil(top / cell) * cell
+    cols, rows = math.ceil((right - x0) / cell), math.ceil((y0 - bottom) / cell)
+    return (x0, y0), cell, (rows, cols)
+
+
+def map_points(corner: tuple[float, float], cell: float, shape: tuple[int, int]) -> np.ndarray:
+    """(rows * cols, 2): centres of the grid's squares [u], row by row from its top-left
+    `corner`, left to right."""
+    (x0, y0), (rows, cols) = corner, shape
+    gx, gy = np.meshgrid(x0 + (np.arange(cols) + 0.5) * cell, y0 - (np.arange(rows) + 0.5) * cell)
+    return np.column_stack((gx.ravel(), gy.ravel()))
 
 
 def smooth(readings: np.ndarray, passes: int = SMOOTHING) -> np.ndarray:
@@ -180,21 +184,17 @@ def ray_ends(
     angles: np.ndarray,
     centres: np.ndarray,
     radii: np.ndarray,
-    width: float,
-    height: float,
+    length: float,
 ) -> np.ndarray:
     """(K, 2): where rays from `origin` at `angles` (K,) stop [u]: the first disc they meet, or
-    the arena's wall. A ray that starts inside a disc stops at once.
+    `length` [u] away. A ray that starts inside a disc stops at once.
 
     centres (M, 2), radii (M,). Along a ray x = s + t u, a disc c, R is met at the smaller root
     of t^2 - 2 (u.w) t + |w|^2 - R^2 = 0, w = c - s, if that root is positive.
     """
     sx, sy = origin
     ux, uy = np.cos(angles), np.sin(angles)
-    with np.errstate(divide="ignore"):
-        tx = np.where(ux > 0, (width - sx) / ux, np.where(ux < 0, -sx / ux, np.inf))
-        ty = np.where(uy > 0, (height - sy) / uy, np.where(uy < 0, -sy / uy, np.inf))
-    reach = np.minimum(tx, ty)
+    reach = np.full(len(ux), float(length))
     if len(radii):
         wx, wy = centres[:, 0] - sx, centres[:, 1] - sy  # (M,)
         b = ux[:, None] * wx[None, :] + uy[:, None] * wy[None, :]  # (K, M)

@@ -14,57 +14,57 @@ from nektoids.editor.arena_view import (
     ArenaView,
     Rays,
     body_at,
-    fit,
     frame,
+    map_grid,
     map_points,
     pan_view,
     polar_scale,
     ray_ends,
+    shown,
     smooth,
     tone,
     zoom_view,
 )
-from nektoids.sim.arena import Arena
 
-ARENA = Arena(40.0, 38.0)
 AREA = (0, 0, 640, 608)
+VIEW = ArenaView(16.0, (0.0, 608.0))  # (0, 0) at the area's bottom left, 16 px/u
 
 
 # Seeing the arena
 
 
-def test_the_arena_fills_its_area_at_16_px_per_u_with_y_up():
-    view = fit(AREA, ARENA)
-    assert view.scale == pytest.approx(16.0)
-    assert view.to_screen(0.0, 0.0) == pytest.approx((0.0, 608.0))  # bottom left
-    assert view.to_screen(40.0, 38.0) == pytest.approx((640.0, 0.0))  # top right
-    assert view.rect(ARENA) == (0, 0, 640, 608)
+def test_the_view_shows_a_part_of_the_open_plane_with_y_up():
+    assert VIEW.to_screen(0.0, 0.0) == pytest.approx((0.0, 608.0))  # bottom left
+    assert VIEW.to_screen(40.0, 38.0) == pytest.approx((640.0, 0.0))  # top right
+    assert shown(VIEW, AREA) == pytest.approx((0.0, 0.0, 40.0, 38.0))  # left, bottom, right, top
+    assert shown(pan_view(VIEW, 160.0, 0.0), AREA) == pytest.approx((-10.0, 0.0, 30.0, 38.0))
 
 
 def test_screen_and_world_are_inverse():
     view = ArenaView(12.5, (30.0, 500.0))
-    for x, y in [(0.0, 0.0), (3.2, 17.9), (40.0, 38.0)]:
+    for x, y in [(0.0, 0.0), (3.2, 17.9), (40.0, 38.0), (-7.0, -3.5)]:
         assert view.to_world(*view.to_screen(x, y)) == pytest.approx((x, y))
 
 
-def test_a_wide_arena_is_centred_vertically_at_the_same_scale_on_both_axes():
-    view = fit(AREA, Arena(80.0, 20.0))
-    left, top, width, height = view.rect(Arena(80.0, 20.0))
-    assert view.scale == pytest.approx(8.0) and (left, width) == (0, 640)
-    assert top + height / 2 == pytest.approx(304.0)
-
-
-def test_the_map_grid_runs_row_by_row_from_the_top_left_and_stays_in_the_arena():
-    points, (rows, cols) = map_points(ARENA, 0.25)  # 4 px at 16 px/u
-    assert (rows, cols) == (152, 160) and points.shape == (rows * cols, 2)
+def test_the_map_grid_covers_what_is_shown_row_by_row_from_the_top_left():
+    corner, cell, (rows, cols) = map_grid((0.0, 0.0, 40.0, 38.0), 0.25)  # 4 px at 16 px/u
+    assert (corner, cell, (rows, cols)) == ((0.0, 38.0), 0.25, (152, 160))
+    points = map_points(corner, cell, (rows, cols))
+    assert points.shape == (rows * cols, 2)
     assert points[0].tolist() == pytest.approx([0.125, 37.875])  # half a cell from the corner
     assert points[-1].tolist() == pytest.approx([39.875, 0.125])
-    assert points[:, 0].min() >= 0 and points[:, 0].max() <= 40.0
-    assert points[:, 1].min() >= 0 and points[:, 1].max() <= 38.0
+
+
+def test_the_map_grid_sits_on_whole_cells_and_coarsens_when_zoomed_out():
+    corner, cell, (rows, cols) = map_grid((0.1, 0.1, 40.1, 38.1), 0.25)  # panned a little
+    assert corner == pytest.approx((0.0, 38.25)) and cell == 0.25  # the same cells as before
+    assert corner[0] + cols * cell >= 40.1 and corner[1] - rows * cell <= 0.1  # covering it
+    _, cell, (_, cols) = map_grid((0.0, 0.0, 160.0, 152.0), 0.25, columns=160)  # at 4 px/u
+    assert cell == 1.0 and cols == 160  # never more than 160 cells across
 
 
 def test_zooming_keeps_the_pixel_it_is_about_still_and_stays_within_the_limits():
-    view = fit(AREA, ARENA)
+    view = VIEW
     about = (320.0, 304.0)
     under = view.to_world(*about)
     closer = zoom_view(view, 1.25, about)
@@ -75,7 +75,7 @@ def test_zooming_keeps_the_pixel_it_is_about_still_and_stays_within_the_limits()
 
 
 def test_the_hand_slides_the_view_without_zooming():
-    view = pan_view(fit(AREA, ARENA), 30.0, -12.0)
+    view = pan_view(VIEW, 30.0, -12.0)
     assert view.scale == pytest.approx(16.0)
     assert view.to_screen(0.0, 0.0) == pytest.approx((30.0, 596.0))
 
@@ -123,7 +123,7 @@ def test_the_polar_plot_halves_its_circle_while_the_peak_still_fits(peak, scale)
 
 
 def test_a_press_on_a_body_or_just_beside_it_finds_it_and_further_away_does_not():
-    view = fit(AREA, ARENA)
+    view = VIEW
     pos, radius = np.array([[10.0, 10.0], [12.5, 10.0]]), np.ones(2)
     on_first = view.to_screen(9.5, 10.0)
     assert body_at(view, pos, radius, on_first) == 0
@@ -165,25 +165,18 @@ def test_rays_turn_slowly_however_they_wander():
 
 def test_a_ray_stops_on_the_near_side_of_the_first_disc_it_meets():
     centres, radii = np.array([[20.0, 10.0], [30.0, 10.0]]), np.array([1.0, 2.0])
-    (end,) = ray_ends((10.0, 10.0), np.array([0.0]), centres, radii, 40.0, 38.0)
+    (end,) = ray_ends((10.0, 10.0), np.array([0.0]), centres, radii, 50.0)
     assert end.tolist() == pytest.approx([19.0, 10.0])
 
 
-def test_a_ray_that_meets_no_disc_stops_at_the_wall():
+def test_a_ray_that_meets_no_disc_goes_as_far_as_it_is_drawn():
     centres, radii = np.array([[20.0, 12.5]]), np.ones(1)  # 2.5 off the ray: missed
-    ends = ray_ends(
-        (10.0, 10.0), np.array([0.0, np.pi, np.pi / 2, -np.pi / 2]), centres, radii, 40.0, 38.0
-    )
-    expected = [[40.0, 10.0], [0.0, 10.0], [10.0, 38.0], [10.0, 0.0]]
+    angles = np.array([0.0, np.pi, np.pi / 2, -np.pi / 2])
+    ends = ray_ends((10.0, 10.0), angles, centres, radii, 30.0)
+    expected = [[40.0, 10.0], [-20.0, 10.0], [10.0, 40.0], [10.0, -20.0]]  # no walls (D-028)
     np.testing.assert_allclose(ends, expected, atol=1e-12)
-    (corner,) = ray_ends(
-        (0.0, 0.0), np.array([np.pi / 4]), np.zeros((0, 2)), np.zeros(0), 40.0, 38.0
-    )
-    assert corner.tolist() == pytest.approx([38.0, 38.0])  # the top wall comes first
 
 
 def test_a_light_inside_a_body_shows_no_rays():
-    ends = ray_ends(
-        (10.0, 10.0), np.array([0.0, 2.0]), np.array([[10.5, 10.0]]), np.ones(1), 40.0, 38.0
-    )
+    ends = ray_ends((10.0, 10.0), np.array([0.0, 2.0]), np.array([[10.5, 10.0]]), np.ones(1), 30.0)
     np.testing.assert_allclose(ends, [[10.0, 10.0], [10.0, 10.0]])

@@ -345,7 +345,7 @@ back, play or pause, one frame, fast forward) and the view (zoom in, zoom out, t
 the view, centre, which frames the swimmers and the lights, and the rays on or off). Every button
 has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
 centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
-"Visit every light", so many touched of so many (section 9).
+"Visit every light", so many reached of so many (section 9).
 At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
 beads on the wires, no numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
 the swimmer, turn it with the wheel or L and R, and watch which eye lights up and which thruster
@@ -378,7 +378,10 @@ makes a circle through the centre, pointing at it.
   [`arena_draw.py`](../game/nektoids/editor/arena_draw.py) (drawing), like `schematic.py` and
   `schematic_draw.py`. The map is computed only while it shows; the shadows of the obstacles
   once per arena (`still_light`), the swimmer's own again when it moves.
-- [`levels/arenas.py`](../game/nektoids/levels/arenas.py): two arenas to try things in, and
+- [`levels/level.py`](../game/nektoids/levels/level.py): a level as data (D-028), its lights and
+  obstacles as items, each a kind, a point and one setting, as a part is a kind, a cell and a
+  facing; the levels themselves are JSON files in `levels/data/`, loaded by
+  [`levels/arenas.py`](../game/nektoids/levels/arenas.py) in the order of `ORDER`. And
   [`levels/objectives.py`](../game/nektoids/levels/objectives.py): what a level asks, counted,
   and when a run is over (section 9).
 
@@ -407,8 +410,9 @@ light and stops in the dark.
 
 Each thruster pushes the body; the water pushes back in proportion to the speed, and at this
 scale the two balance at once. So the velocity is a function of the thrust, not something that
-builds up: there is no inertia, and a swimmer whose thrusters stop stops. Walls and obstacles
-are hard and slippery: a swimmer that runs into one slides along it.
+builds up: there is no inertia, and a swimmer whose thrusters stop stops. Obstacles are hard and
+slippery: a swimmer that runs into one slides round it. Since D-028 there are no walls: the plane
+is open, and a swimmer that leaves the view swims on until its time is up.
 
 The arrays, for N swimmers with k thrusters each:
 
@@ -453,16 +457,16 @@ raises.
    Then [`stokes`](../game/nektoids/sim/motion.py#L55) and
    [`advance`](../game/nektoids/sim/motion.py#L66).
 4. [`sim/contact.py` `confine`](../game/nektoids/sim/contact.py#L24): each obstacle in turn moves an
-   overlapping body radially out to touching, then `np.clip` holds it inside the walls; three
-   passes, walls last. A body centred exactly on an obstacle (only by dragging) leaves along +x.
+   overlapping body radially out to touching; three passes, for a crevice between two obstacles.
+   A body centred exactly on an obstacle (only by dragging) leaves along +x.
 5. Back in `arena.py`: `update` redraws the light map once per frame while it shows (the
    swimmer's shadow moves), and `_drag` uses `confine` too, so a dragged swimmer cannot be dropped
    into an obstacle.
 
 Tests: [`test_motion.py`](../tests/test_motion.py) checks the physics on its own (the sphere's
 4/3, which way the tutorial's thrusters turn, a straight line, a circle that does not spiral),
-[`test_contact.py`](../tests/test_contact.py) checks sliding along walls, round obstacles and into
-a crevice, and [`test_determinism.py`](../tests/test_determinism.py) now runs the real tick: 50
+[`test_contact.py`](../tests/test_contact.py) checks sliding round obstacles, into a crevice
+between two, and that nothing stops a body in the open, and [`test_determinism.py`](../tests/test_determinism.py) now runs the real tick: 50
 swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 
 ### 8.3 Questions to answer after reading
@@ -489,24 +493,28 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 ## 9. A run ends; F4 prints your board (D-023, D-024)
 
 Read D-023 and D-024 first. In F3, wire the tutorial eyes crossed and press Space: after 8.7 s the
-swimmer touches the light, the run stops and a banner says "Done in 8.66 s". Uncrossed, it runs
+swimmer reaches the light, the run stops and a banner says "Done in 8.59 s". Uncrossed, it runs
 out of time at 20 s. In the editor, F4 prints your board as one line of JSON in the terminal (in the browser, in
 pygbag's terminal on the page).
 
 ### 9.1 What it computes
 
-A run remembers which lights each swimmer has touched: `visited`, a boolean array of shape
-(N, L), OR-ed with "touching now" after every tick, so a visit counts once whatever comes next.
+A run remembers which lights each swimmer has reached: `visited`, a boolean array of shape
+(N, L), OR-ed with "reaching now" after every tick, so a visit counts once whatever comes next.
+A light is reached a little before the two discs touch: when the centres are within `REACH`
+= 1.2 times the sum of the radii, 2.4 u for a base body (D-029).
 An objective turns that into a count, `(met, needed)`. `outcome` is a pure function of the level,
 `visited` and the tick: won when every objective is met, time up at the level's limit, otherwise
 `None`. Because the end is derived, never stored, going one frame back simply un-ends the run.
 
 ### 9.2 The code
 
-- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): `touching` (one numpy
+- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): `reaching` (one numpy
   broadcast, swimmers by lights), `VisitLights.count`, `outcome`. `Objective` is a `Protocol`:
-  anything with a `name` and a `count` is one.
-- [`levels/arenas.py`](../game/nektoids/levels/arenas.py): `Level.time_limit`.
+  anything with a `kind`, a `name` and a `count` is one, and `OBJECTIVES` finds its class from
+  the `kind` a level's JSON names.
+- [`levels/level.py`](../game/nektoids/levels/level.py): `Level.time_limit`, in each level's
+  JSON file.
 - [`editor/arena.py`](../game/nektoids/editor/arena.py): `visited` lives with the run and in
   `Snapshot`; `update` checks `outcome` after each tick and stops the clock at the tick the run
   ended, since `Clock.frame` hands out a whole frame's ticks at once. Play and Step do nothing

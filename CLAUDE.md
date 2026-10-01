@@ -8,6 +8,7 @@ and watch a deterministic 2D simulation play out.
 
 - Design brief: `docs/brief.md` — read sections 1 and 3 before proposing any feature.
 - Decision log: `docs/decisions.md` — append-only; check it before re-opening a question.
+- What is left for the jam: `docs/todo.md`; ideas for after it: `docs/ideas.md` (D-028).
 
 ## Who works here
 
@@ -44,7 +45,7 @@ on the body during a run, threshold nodes, the generalisation pillar (multi-seed
 sound, art, saving (F4 prints a board, D-024; Save and Load wait, greyed, D-027).
 
 If a request touches something out of scope, say so plainly and offer the smallest in-scope
-version. `/scope-check` does this formally.
+version, and log the idea in `docs/ideas.md`. `/scope-check` does this formally.
 
 ## Layout
 
@@ -54,9 +55,9 @@ game/                    everything pygbag bundles; keep it lean
   nektoids/sim/          physics: state arrays, integrator, sensors (numpy, no pygame)
   nektoids/graph/        node graph: data structure, evaluation, bead rates (no pygame)
   nektoids/editor/       pygame UI: grid, node placement, wires, beads, inspector
-  nektoids/levels/       level definitions: layout, seed, win condition
+  nektoids/levels/       levels as data (JSON in levels/data/, D-028): items, board, objectives
 tests/                   pytest; never import pygame here
-docs/                    brief, decisions
+docs/                    brief, decisions, todo, ideas, walkthrough
 ```
 
 Path-specific rules live in `.claude/rules/` and load when the matching files are touched.

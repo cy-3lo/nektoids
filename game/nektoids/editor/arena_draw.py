@@ -1,14 +1,14 @@
 """Drawing the arena view. Reads the scene; never changes it.
 
 The arena shows only the light, the obstacles, the lights and the swimmers. The light is drawn
-as rays of one grey, from each light until the first obstacle, swimmer or wall (`Rays`): their
-density is the light's 1/r, and a shadow is where no ray goes; X hides them. With I (developer)
-the light is a map instead, grey, dark in shadow and white where an eye looking at a light
-saturates; the square root of the reading sets the grey (`tone`), and it is smoothed over a few
-cells (`smooth`). Obstacles are grey discs, lights white discs with a sun, as big as a swimmer
-(`LIGHT_RADIUS`), their rays leaving from the rim, a ring round the ones visited, and a swimmer
-its body's circle round a wedge, its tip forward, bright when selected. When the run is over, a
-banner over the arena says how it ended.
+as rays of one grey, from each light until the first obstacle or swimmer, or out of view
+(`Rays`): their density is the light's 1/r, and a shadow is where no ray goes; X hides them.
+With I (developer) the light is a map instead, grey, dark in shadow and white where an eye
+looking at a light saturates; the square root of the reading sets the grey (`tone`), and it is
+smoothed over a few cells (`smooth`). Obstacles are grey discs, lights white discs with a sun,
+as big as a swimmer (`LIGHT_RADIUS`), their rays leaving from the rim, a ring round the ones
+visited, and a swimmer its body's circle round a wedge, its tip forward, bright when selected.
+When the run is over, a banner over the arena says how it ended.
 
 The column on the right (`arena_layout.py`): the palettes, with a tooltip naming each button and
 its key; the objectives, each counted (so many of so many) and with a bar, and the time left,
@@ -44,7 +44,7 @@ from nektoids.editor.arena_layout import (
     ArenaButton,
     button_rects,
 )
-from nektoids.editor.arena_view import DARKEST, polar_scale, ray_ends, smooth, tone
+from nektoids.editor.arena_view import DARKEST, polar_scale, ray_ends, shown, smooth, tone
 from nektoids.editor.draw import (
     BACKGROUND,
     DARK,
@@ -120,11 +120,19 @@ def draw_arena(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     _draw_status(screen, scene, fonts)
 
 
+def _map_rect(scene: ArenaScene) -> pygame.Rect:
+    """Where the light map's grid lies on screen [px]."""
+    corner, cell, (rows, cols) = scene.map_key
+    left, top = scene.view.to_screen(*corner)
+    size = cell * scene.view.scale
+    return pygame.Rect(round(left), round(top), round(cols * size), round(rows * size))
+
+
 def _map_surface(scene: ArenaScene, size: tuple[int, int]) -> pygame.Surface:
     """The light map scaled to `size` [px], rebuilt only when it or the zoom changed."""
     key = (id(scene), scene.map_version, size)
     if _map_cache["key"] != key:
-        rows, cols = scene.grid_shape
+        rows, cols = scene.map_key[2]
         greys = tone(smooth(scene.shade))
         small = pygame.image.frombuffer(greys.tobytes(), (cols, rows), "RGB")
         _map_cache["surface"] = pygame.transform.smoothscale(small, size)
@@ -134,15 +142,12 @@ def _map_surface(scene: ArenaScene, size: tuple[int, int]) -> pygame.Surface:
 
 def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     view, arena = scene.view, scene.arena
-    rect = view.rect(arena)
-    screen.set_clip(pygame.Rect(rect).clip(ARENA_AREA))
+    pygame.draw.rect(screen, DARK_ARENA, ARENA_AREA)  # the open plane, as far as it shows
     if scene.show_map:
-        screen.blit(_map_surface(scene, rect[2:]), rect[:2])
-    else:
-        pygame.draw.rect(screen, DARK_ARENA, rect)
-        if scene.show_rays:
-            _draw_rays(screen, scene)
-    screen.set_clip(ARENA_AREA)
+        rect = _map_rect(scene)
+        screen.blit(_map_surface(scene, rect.size), rect.topleft)
+    elif scene.show_rays:
+        _draw_rays(screen, scene)
     for disc in arena.obstacles:
         centre = view.to_screen(disc.x, disc.y)
         pygame.draw.circle(screen, OBSTACLE, centre, disc.radius * view.scale)
@@ -154,16 +159,17 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     for light in np.flatnonzero(scene.visited.any(axis=0)):  # by any swimmer
         centre = view.to_screen(*arena.light_xy[light])
         pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale + VISITED_GAP, 2)
-    pygame.draw.rect(screen, RULE, rect, 1)
 
 
 def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:
     view, arena = scene.view, scene.arena
     centres, radii = discs(arena, scene.pos, scene.radius)
+    left, bottom, right, top = shown(view, ARENA_AREA)
     t = scene.clock.seconds
     for light, (x, y) in enumerate(arena.light_xy):
         angles = scene.rays.angles(light, t)
-        ends = ray_ends((x, y), angles, centres, radii, arena.width, arena.height)
+        length = max(math.hypot(cx - x, cy - y) for cx in (left, right) for cy in (bottom, top))
+        ends = ray_ends((x, y), angles, centres, radii, length)  # out of view, or a disc
         for a, (ex, ey) in zip(angles, ends, strict=True):
             if math.hypot(ex - x, ey - y) > LIGHT_RADIUS:  # from the light's rim outwards
                 rim = (x + LIGHT_RADIUS * math.cos(a), y + LIGHT_RADIUS * math.sin(a))
