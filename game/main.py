@@ -11,6 +11,7 @@ its arena; Edit (Esc) comes back to the board as it was left; once a level is wo
 (Enter) opens the next one's board, and after the last, the end. Map (Tab) lists the chapter's
 levels and the sandbox (`editor/router.py`, D-030, D-035).
 Developer tools, while DEV_VIEW is on:
+F1 goes to the editor of the open level, from any view or screen.
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.
 F3 switches to the arena view (D-019, D-022): the board in every arena, with the tools.
 F4 prints the board as one line of JSON (D-024): in the terminal natively, in pygbag's
@@ -38,7 +39,7 @@ from nektoids.levels.objectives import Outcome
 from nektoids.levels.scenarios import Scenario, scenarios
 
 FPS = 60
-DEV_VIEW = True  # F2 opens the developer view, F3 the arena view, F4 prints the board
+DEV_VIEW = True  # F1 the editor, F2 the developer view, F3 the arena view, F4 prints the board
 assert SIM_HZ == FPS * TICKS_PER_FRAME  # the developer view runs a whole number of ticks a frame
 
 pygame.init()
@@ -116,6 +117,9 @@ async def main() -> None:
                 and event.key in (pygame.K_F2, pygame.K_F3)
             ):
                 developer = toggle(developer, event.key)
+            elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                developer, playing = None, None  # straight to the editor, from anywhere
+                router.edit()
             elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
                 print(json.dumps(router.board.to_dict(), separators=(",", ":")), flush=True)
             elif developer is not None:
