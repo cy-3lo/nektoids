@@ -40,6 +40,7 @@ pygame.display.set_caption("Nektoids")
 clock = pygame.time.Clock()
 fonts = Fonts.load()
 board = free_board()  # tutorial_board() for pre-placed, locked eyes and thrusters
+levels = arenas()  # read from their files once, at startup (web.md: no file I/O in the loop)
 scene = EditorScene(board, make_layout())
 
 
@@ -54,7 +55,7 @@ def toggle(
     """F2 opens or closes the developer view, F3 the arena view; either replaces the other."""
     if key == pygame.K_F2:
         return None if isinstance(open_view, SchematicScene) else open_developer_view()
-    return None if isinstance(open_view, ArenaScene) else ArenaScene(board, arenas())
+    return None if isinstance(open_view, ArenaScene) else ArenaScene(board, levels)
 
 
 async def main() -> None:
