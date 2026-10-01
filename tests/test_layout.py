@@ -84,9 +84,9 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_the_palette_runs_view_tools_edit_file_then_colours_two_a_row():
+def test_the_palette_runs_view_tools_colours_then_edit_two_a_row():
     titles = [title for title, _ in LAYOUT.palette_titles]
-    assert titles == ["View", "Tools", "Edit", "File", "Colours"]
+    assert titles == ["View", "Tools", "Colours", "Edit"]
     for (_, (_, y, _, h)), (_, (_, below, _, _)) in zip(
         LAYOUT.palette_titles, LAYOUT.palette_titles[1:], strict=False
     ):
@@ -100,9 +100,8 @@ def test_the_palette_runs_view_tools_edit_file_then_colours_two_a_row():
     for title, items in (
         ("View", [r for _, r in LAYOUT.view_buttons]),
         ("Tools", [r for _, r in LAYOUT.tool_buttons]),
-        ("Edit", [r for _, r in LAYOUT.edit_buttons]),
-        ("File", [r for _, r in LAYOUT.file_buttons]),
         ("Colours", list(LAYOUT.swatches)),
+        ("Edit", [r for _, r in [*LAYOUT.edit_buttons, *LAYOUT.file_buttons]]),
     ):
         x, y, w, h = sections[title]
         for rect in items:
@@ -112,6 +111,9 @@ def test_the_palette_runs_view_tools_edit_file_then_colours_two_a_row():
         assert len({rx for rx, _, _, _ in items}) == 2  # two columns
         for left, right in zip(items[::2], items[1::2], strict=False):
             assert left[1] == right[1] and left[0] + left[2] < right[0]  # side by side
+    (_, undo), _ = LAYOUT.edit_buttons
+    (_, save), _ = LAYOUT.file_buttons
+    assert undo[1] < save[1] and undo[0] == save[0]  # undo and redo, then save and load below
     turns = dict(LAYOUT.tool_buttons)
     assert turns[Tool.TURN_LEFT][1] == turns[Tool.TURN_RIGHT][1]  # left and right, one row
     for button, rect in LAYOUT.view_buttons:

@@ -116,7 +116,8 @@ This file holds two starting boards on the 19-cell zone `hex_disc(2)`:
 ### 2.5 Screen and view: [`editor/layout.py`](../game/nektoids/editor/layout.py)
 
 The screen has three columns: the menu on the left, the grid in the centre, the palette on the
-right, in titled sections of two buttons a row, with room kept for undo and saving (D-025). This
+right, in titled sections of two buttons a row: View, Tools, Colours, then Edit, with undo,
+redo and, greyed until saving exists, save and load (D-025, D-027). This
 module has no pygame either (tested in `tests/test_layout.py`).
 - **`Layout`** is frozen. It holds the fixed rectangles, and `make_layout(folded)` builds it again when a menu group folds.
 - **`View`** is how the grid is seen: the hex size and where cell (0, 0) sits on screen. `zoom` (which keeps the point under the zoom fixed) and `pan` return a new `View`. They never touch the board (D-013).

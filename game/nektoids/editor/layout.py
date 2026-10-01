@@ -3,10 +3,10 @@
 Three columns, with vertical separators:
 - left, the menu: component groups (sensors, operators, actuators) that fold under their title;
 - centre, the hex grid, filling its column, with one status line at its foot;
-- right, the palette, in titled sections of two buttons a row: the view (zoom in, zoom out,
-  hand, centre), the tools (add, wire, move, delete, turn left, turn right), editing (undo,
-  redo, D-027), files (save and load, inactive until saving exists), then a colour picker,
-  inactive until colours carry a meaning (D-025).
+- right, the palette, in titled sections of two buttons a row (D-025, D-027): the view (zoom
+  in, zoom out, hand, centre), the tools (add, wire, move, delete, turn left, turn right), a
+  colour picker, inactive until colours carry a meaning, and editing (undo, redo, then save and
+  load, inactive until saving exists).
 
 The screen regions are fixed; the View says how big a hex is and where the grid sits in its
 column, and zoom and pan change only the View (D-013). Plain numbers and tuples, no pygame, so
@@ -146,10 +146,11 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
     y = MARGIN
     view, view_rects, y = _section(right, y, "View", len(ViewButton), BUTTON, BUTTON_STEP)
     tools, tool_rects, y = _section(right, y, "Tools", len(PALETTE_TOOLS), BUTTON, BUTTON_STEP)
-    edit, edit_rects, y = _section(right, y, "Edit", len(EditButton), BUTTON, BUTTON_STEP)
-    files, file_rects, y = _section(right, y, "File", len(FileButton), BUTTON, BUTTON_STEP)
     pitch = SWATCH_HEIGHT + 6
     colours, swatches, y = _section(right, y, "Colours", SWATCHES, SWATCH_HEIGHT, pitch)
+    count = len(EditButton) + len(FileButton)  # undo and redo, then save and load
+    edit, rects, y = _section(right, y, "Edit", count, BUTTON, BUTTON_STEP)
+    edit_rects, file_rects = rects[: len(EditButton)], rects[len(EditButton) :]
     return Layout(
         menu_area=menu,
         board_area=board,
@@ -160,7 +161,7 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
         tool_buttons=tuple(zip(PALETTE_TOOLS, tool_rects, strict=True)),
         edit_buttons=tuple(zip(EditButton, edit_rects, strict=True)),
         file_buttons=tuple(zip(FileButton, file_rects, strict=True)),
-        palette_titles=(view, tools, edit, files, colours),
+        palette_titles=(view, tools, colours, edit),
         swatches=tuple(swatches),
         status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
     )

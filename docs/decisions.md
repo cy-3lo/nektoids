@@ -313,7 +313,8 @@ States, not edits: routes depend on the order wires were drawn and never move (D
 replaying edits could route a wire differently, while a state comes back routes and all. A board
 is a few dozen frozen parts and wires, so a hundred states cost nothing. Ids are not put back:
 the next part placed after an undo still gets a new one.
-Consequences: the File section shows Save and Load, greyed, until saving exists (still out of
-scope; F4 prints a board, D-024). The undo and redo icons are Font Awesome's hooked arrows (reply,
+Consequences: supersedes D-025's order of the palette, which becomes View, Tools, Colours, Edit;
+Edit holds Undo and Redo, then Save and Load, greyed until saving exists (still out of scope; F4
+prints a board, D-024). The undo and redo icons are Font Awesome's hooked arrows (reply,
 share), since its round arrows are the turn tools. The arena view (F3) undoes nothing: it runs
 the board as it was when it opened.
