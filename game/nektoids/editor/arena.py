@@ -73,7 +73,7 @@ from nektoids.graph.board import Board
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
-from nektoids.levels.objectives import Outcome, outcome, reaching
+from nektoids.levels.objectives import LeaveRing, Marks, Outcome, VisitLights, latch, marks, outcome
 from nektoids.sim import world
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 from nektoids.sim.contact import confine
@@ -98,12 +98,12 @@ SEEK_TICKS = 40  # a frame's worth of ticks while the run races ahead to a time 
 @dataclass(frozen=True)
 class Snapshot:
     """The run at one tick, as the timeline puts it back: the swimmers, their controllers, the
-    lights they have visited, the beads."""
+    marks their objectives keep (D-038), the beads."""
 
     pos: np.ndarray
     heading: np.ndarray
     state: np.ndarray
-    visited: np.ndarray
+    marked: Marks
     phase: tuple[float, ...]
 
 
@@ -172,7 +172,12 @@ class ArenaScene:
         self.rays = Rays(self.arena.light_power)
         self._restart()
         x, y, _ = self.level.start  # the open plane (D-028): frame what the level holds
-        points = np.concatenate(([[x, y]], self.arena.light_xy, self.arena.disc_xy))
+        rims = [
+            self.arena.light_xy + d
+            for r, _ in self.rings
+            for d in ((r, 0), (-r, 0), (0, r), (0, -r))
+        ]
+        points = np.concatenate(([[x, y]], self.arena.light_xy, self.arena.disc_xy, *rims))
         reach = float(np.concatenate(([LIGHT_RADIUS], self.arena.disc_radius, self.radius)).max())
         self._look(frame(ARENA_AREA, points, FRAME_MARGIN + reach))
 
@@ -182,7 +187,7 @@ class ArenaScene:
         self.heading = np.array([math.radians(heading)])  # (N,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (N,) [u], until complexity() sets it
         self.state = initial_state(self.net, len(self.pos))  # (N, n), from rest
-        self.visited = reaching(self.arena, self.pos, self.radius)  # (N, L): lights reached
+        self.marked = marks(self.level, self.pos, self.radius)  # each objective's, latched
         self.clock.reset()
         self.circuit.beads.reset()
         self._moved()
@@ -241,7 +246,7 @@ class ArenaScene:
             ticks = self.clock.frame()
         for tick in ticks:
             self._advance(tick)
-            if outcome(self.level, self.visited, tick + 1, DT) is not None:
+            if outcome(self.level, self.marked, tick + 1, DT) is not None:
                 self.clock.tick, self.clock.paused, self.seek_to = tick + 1, True, None
                 break
         if len(ticks) and self.show_map:
@@ -259,7 +264,7 @@ class ArenaScene:
     def ended_at(self) -> int | None:
         """The tick the run ended at, won or out of time, once it got there; None until then."""
         end = self.recording.frontier
-        done = outcome(self.level, self.recording.at(end).visited, end, DT)
+        done = outcome(self.level, self.recording.at(end).marked, end, DT)
         return end if done is not None else None
 
     def seek(self, seconds: float) -> None:
@@ -277,7 +282,7 @@ class ArenaScene:
     def _restore(self, then: Snapshot) -> None:
         """The run as it was at a recorded tick, in copies: what follows changes them in place."""
         self.pos, self.heading = then.pos.copy(), then.heading.copy()
-        self.state, self.visited = then.state.copy(), then.visited.copy()
+        self.state, self.marked = then.state.copy(), tuple(m.copy() for m in then.marked)
         self.circuit.beads.phase = list(then.phase)
         self.eyes = self.state[:, self.net.eyes]
         self.circuit.show(self.y)
@@ -287,7 +292,7 @@ class ArenaScene:
             self.pos.copy(),
             self.heading.copy(),
             self.state.copy(),
-            self.visited.copy(),
+            tuple(m.copy() for m in self.marked),
             tuple(self.circuit.beads.phase),
         )
 
@@ -296,13 +301,13 @@ class ArenaScene:
             self.arena, self.net, self.pos, self.heading, self.radius, self.state, DT
         )
         self.eyes = self.state[:, self.net.eyes]  # what they read where the swimmers now are
-        self.visited |= reaching(self.arena, self.pos, self.radius)
+        self.marked = latch(self.marked, marks(self.level, self.pos, self.radius))
         self.circuit.advance(self.y, DT)
 
     @property
     def outcome(self) -> Outcome | None:
         """How the run stands now; None while it runs."""
-        return outcome(self.level, self.visited, self.clock.tick, DT)
+        return outcome(self.level, self.marked, self.clock.tick, DT)
 
     @property
     def time_left(self) -> float:
@@ -311,7 +316,22 @@ class ArenaScene:
 
     def counts(self) -> list[tuple[str, int, int]]:
         """Each objective of the level: its name, how many are met, out of how many."""
-        return [(o.name, *o.count(self.visited)) for o in self.level.objectives]
+        pairs = zip(self.level.objectives, self.marked, strict=True)
+        return [(o.name, *o.count(m)) for o, m in pairs]
+
+    @property
+    def lights_reached(self) -> np.ndarray:
+        """(L,): the lights a swimmer has reached, if the level asks for visits; else none."""
+        for objective, marked in zip(self.level.objectives, self.marked, strict=True):
+            if isinstance(objective, VisitLights):
+                return marked.any(axis=0)
+        return np.zeros(len(self.arena.lights), dtype=bool)
+
+    @property
+    def rings(self) -> list[tuple[float, bool]]:
+        """Each ring to leave round the lights: its radius [u], and whether it has been left."""
+        pairs = zip(self.level.objectives, self.marked, strict=True)
+        return [(o.radius, bool(m.all())) for o, m in pairs if isinstance(o, LeaveRing)]
 
     def eye_polar(self) -> np.ndarray:
         """(n_eyes, A): E(phi) at each eye of the selected swimmer, for POLAR_ANGLES, uncapped.

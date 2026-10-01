@@ -420,3 +420,47 @@ them to leave a comment on the itch.io page (the brief's contact line), and Esc 
 the map.
 `editor/router.py` gains the screens (title, map, edit, run, end) and the session's wins, still
 with no pygame; `editor/shell.py` places the map's rows and the buttons, `shell_draw.py` draws.
+
+**D-036 — 2026-10-01 — Each part in the menu has an info disc; clicked, a box beside the menu says what the part does and what may go in and out. "Difference" reads "Diff".**
+A small ⓘ sits on each menu row between the name and the count. A click on it opens a box at
+that row, to the right of the menu: the part's name, what it does in a few lines, then "In:" and
+"Out:", written from the board's own rules (D-014, D-016: a Sum or a Diff takes two wires at
+most and sends one; what a part sends is shared among its wires out). The next click or key
+closes the box and does nothing else, so a click meant to close it never places or wires a
+part. The texts live in `editor/parts.py`, with the names, where a test checks every part has
+both. Difference is shown as "Diff", to fit the row; the kind and the levels' data keep
+`difference`.
+
+**D-037 — 2026-10-01 — Run and Map move to the palette, under LEVEL, as icon buttons; levels come in chapters, not routes; the eye and rocket icons grow. Amends D-030 and D-035.**
+The palette ends with a LEVEL section: Map, then Run, lit, icons only, Tab and Space in their
+tooltips as before. The menu's foot is empty again. The map's title reads "CHAPTER 1: LIGHT";
+LEVEL 1.2 is the chapter's second level (D-034), and `router.CHAPTER` replaces `ROUTE`. Inside
+their shapes, the eye's icon goes from 0.55 to 0.68 of the hex size and the rocket's from 0.5 to
+0.62 (`draw.ICON_SCALE`), as large as they go and still clear of the shapes' edges.
+
+**D-038 — 2026-10-01 — Each objective keeps its own latched marks; a new one, Leave the ring, asks the swimmer to get out of a ring round the light. Generalises D-023's `visited`.**
+An objective says what counts at a tick, `marks(arena, pos, radius)`, a boolean array (N, K),
+and the run ORs each tick's into its own array (`latch`): once marked, always marked. Visit
+every light marks the lights reached (D-029); Leave the ring (`radius`, 12 u for Fear) marks a
+swimmer once its centre is farther than the radius from every light. The ring is drawn dashed
+round the light and lights up once left; the view frames it. The marks go into the recording,
+so the timeline restores them (D-033).
+Fear could not be "end in the dark": that wins only at the end. A ring to cross is countable,
+shows on screen, and is passed or not, with margin: the winner leaves it in about 3 s of 10.
+
+**D-039 — 2026-10-01 — The first level teaches by a tutorial that shows, says and waits; later levels only hint. LEVEL 1.1 is Fear, with no operator.**
+A level's data may carry a tutorial: its ghosts, the parts it builds, drawn faintly in their
+cells facing the way they should (and outlined over a part that does not face its way yet),
+and its steps. A step says a few lines, shows one or more targets (an area, a menu row, a tool,
+a Level button, a cell, a part of the run view), which stay lit while the rest is dimmed, and
+waits: until a part is placed, faces a way, a tool is taken, a wire is drawn, the run starts, or
+the run is won. It moves on as soon as that happens, by mouse or by keyboard, or on Next. Its box
+sits beside its targets, clear of them. A step that shows nothing is a hint: nothing is dimmed.
+LEVEL 1.1, Fear, has a tutorial of 14 steps: the board, the menu, the palette, then placing two
+eyes at the front and turning them to look back (NW, SW), two thrusters at the back corners,
+wiring each eye to its own side, Run, and the swimmer fleeing out of the ring (D-038). The level
+hands out two eyes and two thrusters only, and the menu shows only the parts a level hands out,
+so no operator appears yet. One light (1.2) and In the shadow (1.3) each carry two hints. F1, a
+developer's key, goes to the editor from anywhere.
+`editor/tutorial.py` reads and follows a tutorial with no pygame, tested by walking Fear's;
+`tutorial_draw.py` draws the overlay; `main.py` keeps one per level for the session.

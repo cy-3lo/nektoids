@@ -21,5 +21,21 @@
     "wires": []
   },
   "time_limit": 20.0,
-  "objectives": [{"kind": "visit lights"}]
+  "objectives": [{"kind": "visit lights"}],
+  "tutorial": {
+    "steps": [
+      {
+        "say": [
+          "This time the swimmer must reach the light:",
+          "its eyes have to see it ahead of them."
+        ]
+      },
+      {
+        "say": [
+          "Fear wired each eye to the thruster on its",
+          "own side. What if each drove the other side?"
+        ]
+      }
+    ]
+  }
 }

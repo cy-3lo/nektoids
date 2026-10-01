@@ -17,17 +17,18 @@ Tools:
   gesture, from press to release, so a whole Move drag goes back at once. Save and Load are
   there, inactive, until saving exists.
 
-Run (the button at the foot of the menu, or Space) asks `main.py` to run the board, Map (over
-it, or Tab) to show the map: the scene sets `request` and `main.py` acts on it.
+Run (its button in the palette's Level section, or Space) asks `main.py` to run the board, Map
+(beside it, or Tab) to show the map (D-037): the scene sets `request` and `main.py` acts on it.
 
 Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
 with the hand, the arrows drag the view the way they point, as the mouse would.
 
 The selected part is the last one placed, wired from, moved or turned: a click on a part with
-any tool but Delete selects it, and its cell is lit. Clicking a menu title folds or unfolds its
-group. Right click or Escape cancels, and drops the selection. Every refusal flashes the cell
-and puts the reason in the status line.
+any tool but Delete selects it, and its cell is lit. A part's info disc in the menu opens a box
+that says what the part does; the next click or key closes it and does nothing else (D-036).
+Clicking a menu title folds or unfolds its group. Right click or Escape cancels, and drops the
+selection. Every refusal flashes the cell and puts the reason in the status line.
 """
 
 from __future__ import annotations
@@ -51,10 +52,11 @@ from nektoids.editor.layout import (
     ViewButton,
     cell_at,
     centred_view,
-    contains,
     edit_button_at,
     file_button_at,
     group_at,
+    info_at,
+    level_button_at,
     make_layout,
     menu_item_at,
     palette_target_at,
@@ -130,6 +132,8 @@ class EditorScene:
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
+        self.info: Kind | None = None  # the part whose info box is open
+        self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
 
     def update(self) -> None:
         """Once per frame."""
@@ -147,6 +151,9 @@ class EditorScene:
         if event.type == pygame.MOUSEMOTION and self.cursor is not None and event.rel == (0, 0):
             # Browsers re-send the pointer position without any movement (Chrome does, whenever
             # the page redraws under a still mouse): that is not the mouse taking over.
+            return
+        if self.info is not None and event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
+            self.info = None  # the next click or key closes the box, and only that
             return
         if event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
             self.cursor = None  # the mouse takes over
@@ -181,15 +188,15 @@ class EditorScene:
             self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
             self._enter()
-        elif event.scancode == pygame.KSCAN_SPACE:  # RUN_KEY, on the physical key
+        elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._cancel()
             self.request = "run"
-        elif event.scancode == pygame.KSCAN_TAB:  # MAP_KEY
+        elif event.scancode == pygame.KSCAN_TAB:  # LEVEL_KEYS[MAP]
             self._cancel()
             self.request = "map"
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
-            kinds = [kind for _, group in MENU_GROUPS for kind in group]
+            kinds = [k for _, group in MENU_GROUPS for k in group if k in self.layout.kinds]
             if digit < len(kinds):
                 self._pick(kinds[digit])
                 self.dragging = False  # placed with Enter, not by releasing a button
@@ -272,13 +279,10 @@ class EditorScene:
             self._drag_to(pointed)
 
     def _press(self, pos: tuple[int, int]) -> None:
-        if contains(self.layout.run_button, pos):
+        level = level_button_at(self.layout, pos)
+        if level is not None:
             self._cancel()
-            self.request = "run"
-            return
-        if contains(self.layout.map_button, pos):
-            self._cancel()
-            self.request = "map"
+            self.request = level.value  # "run" or "map"
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:
@@ -298,7 +302,11 @@ class EditorScene:
         title = group_at(self.layout, pos)
         if title is not None:
             self.folded ^= {title}
-            self.layout = make_layout(frozenset(self.folded))
+            self.layout = make_layout(frozenset(self.folded), self.layout.kinds)
+            return
+        kind = info_at(self.layout, pos)
+        if kind is not None:
+            self.info = kind
             return
         kind = menu_item_at(self.layout, pos)
         if kind is not None:

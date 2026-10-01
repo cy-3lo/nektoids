@@ -106,6 +106,8 @@ EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot
 BAR_HEIGHT = 8  # an objective's bar [px]
 ROW_PITCH = 40  # one objective [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
+RING = (150, 154, 166)  # the ring to leave round a light, until it is left
+RING_DASHES = 72  # half of them drawn
 ICON = {
     ArenaButton.EDIT: "pen",
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
@@ -190,9 +192,24 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
         pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
         pygame.draw.aacircle(screen, DARK, centre, LIGHT_RADIUS * view.scale + 1, 1)
         fonts.icons.draw(screen, "sun", centre, round(SUN * LIGHT_RADIUS * view.scale), DARK)
-    for light in np.flatnonzero(scene.visited.any(axis=0)):  # by any swimmer
+    for radius, left in scene.rings:  # the ring to leave round each light, dashed (D-038)
+        for x, y in arena.light_xy:
+            _dashed_circle(
+                screen, view.to_screen(x, y), radius * view.scale, LIGHT if left else RING
+            )
+    for light in np.flatnonzero(scene.lights_reached):  # by any swimmer
         centre = view.to_screen(*arena.light_xy[light])
         pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale + VISITED_GAP, 2)
+
+
+def _dashed_circle(screen: pygame.Surface, centre, radius: float, colour) -> None:
+    """A circle of `radius` [px] in RING_DASHES dashes, every other one drawn."""
+    step = 2.0 * math.pi / RING_DASHES
+    for k in range(0, RING_DASHES, 2):
+        a, b = k * step, (k + 1) * step
+        start = (centre[0] + radius * math.cos(a), centre[1] + radius * math.sin(a))
+        end = (centre[0] + radius * math.cos(b), centre[1] + radius * math.sin(b))
+        pygame.draw.line(screen, colour, start, end, 2)
 
 
 def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:

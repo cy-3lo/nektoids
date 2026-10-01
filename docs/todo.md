@@ -12,7 +12,7 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
       machine, tested headless; F2, F3 and F4 stay developer tools behind `DEV_VIEW`.
 - [x] The map: one route, light (three tutorials, then the real level), and the sandbox.
       Levels open one after the other.
-- [ ] An explanation for each part (sensor, operator, actuator): clicked, it opens a small box
+- [x] An explanation for each part (sensor, operator, actuator): clicked, it opens a small box
       next to it that says what it does; another click or any key closes it. To settle: which
       click opens it, since a click on a part already wires, moves, turns or deletes it (in the
       menu, a click on its row that does not pick it up; on the board, the Add tool, or a ?).
@@ -30,8 +30,10 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 
 ## 2. The levels themselves
 
-- [ ] Tutorial 1, fear (uncrossed: flees the light). Its countable objective is to be chosen:
-      end in the dark, or never come within d of the light.
+- [x] Tutorial 1, fear (uncrossed: flees the light): leave the ring, with a guided tutorial
+      (D-038, D-039).
+- [ ] The level after Fear introduces Sum and Diff, with a challenge that needs them. Diff is
+      the new operation (thruster inputs already add); Diff(Source, eye) = 1 - e is inhibition.
 - [ ] Tutorial 2, aggression (crossed: charges the light). Visit the light.
 - [ ] Tutorial 3, ÷2 on one side (orbits). Its objective is to be chosen: stay within a ring
       round the light for T s, or circle it N times.

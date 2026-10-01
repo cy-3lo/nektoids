@@ -6,9 +6,10 @@ import pytest
 
 from nektoids.graph.board import Kind, Refused
 from nektoids.graph.dynamics import TAU, initial_state
+from nektoids.graph.hexgrid import NE, NW, SE, SW, E
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
-from nektoids.levels.objectives import REACH, Outcome, outcome, reaching
+from nektoids.levels.objectives import REACH, Outcome, latch, marks, outcome
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.motion import SPEED
@@ -62,14 +63,15 @@ def last(states):
 
 
 def play(net, title):
-    """Run the level until it is over, as the arena view does: (outcome, ticks, visited)."""
+    """Run the level until it is over, as the arena view does: (outcome, ticks, marked), the
+    marks of its objectives latched tick by tick (D-038)."""
     level = LEVELS[title]
-    visited = reaching(level.arena, np.array([level.start[:2]]), np.ones(1))
+    marked = marks(level, np.array([level.start[:2]]), np.ones(1))
     for tick, (pos, _, _) in enumerate(run(net, title, level.time_limit), start=1):
-        visited |= reaching(level.arena, pos, np.ones(1))
-        ended = outcome(level, visited, tick, DT)
+        marked = latch(marked, marks(level, pos, np.ones(1)))
+        ended = outcome(level, marked, tick, DT)
         if ended is not None:
-            return ended, tick, visited
+            return ended, tick, marked
     raise AssertionError("the run outlived its time limit")
 
 
@@ -105,7 +107,7 @@ def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
 
 
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
-    ended, _, visited = play(UNCROSSED, "One light")
+    ended, _, (visited,) = play(UNCROSSED, "One light")
     assert ended is Outcome.TIME_UP and not visited.any()
     light, touch = LEVELS["One light"].arena.light_xy[0], REACH * (LIGHT_RADIUS + 1.0)
     begun = np.hypot(*(np.array(LEVELS["One light"].start[:2]) - light)) - touch
@@ -131,6 +133,31 @@ def test_in_the_shadow_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spa
     light = LEVELS[title].arena.light_xy[0]
     nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(DRIVEN, title, ticks * DT + 2.0))
     assert nearest < 0.5 * (LIGHT_RADIUS + 1.0)  # deep in, not grazing it (D-004)
+
+
+def fear(upper, lower, crossed=False):
+    """The fear tutorial's board (D-039): the eyes at the front, turned to `upper` and `lower`,
+    the thrusters at the back corners, pushing forward, each eye wired to its own side."""
+    board = LEVELS["Fear"].new_board()
+    eyes = [
+        board.place(Kind.EYE, cell, facing=f) for cell, f in (((2, -1), upper), ((1, 1), lower))
+    ]
+    thrusters = [board.place(Kind.THRUSTER, cell) for cell in ((1, -2), (-1, 2))]
+    for eye, thruster in zip(eyes, reversed(thrusters) if crossed else thrusters, strict=True):
+        assert not isinstance(board.connect(eye.id, thruster.id), Refused)
+    return Network.from_board(board)
+
+
+def test_fear_flees_the_light_with_its_eyes_looking_back_and_leaves_the_ring_in_time():
+    ended, ticks, _ = play(fear(NW, SW), "Fear")
+    assert ended is Outcome.WON and ticks * DT < LEVELS["Fear"].time_limit / 2
+    assert play(fear(NW, SW), "Fear")[1] == ticks  # the same tick, every run
+
+
+def test_fear_fails_crossed_or_with_its_eyes_looking_forward():
+    assert play(fear(NW, SW, crossed=True), "Fear")[0] is Outcome.TIME_UP  # it closes in
+    assert play(fear(NE, SE), "Fear")[0] is Outcome.TIME_UP  # it turns away, then stops
+    assert play(fear(E, E), "Fear")[0] is Outcome.TIME_UP  # as placed, before any turn
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():

@@ -160,6 +160,10 @@ It calls only the board's public methods.
   - `board.route` over an empty cell, drawn dim, into the part if it is a thruster;
   - `board.preview` over the other end, oriented, drawn bright if it may connect.
 
+**Info boxes (D-036):** `info_at` comes before `menu_item_at` in `_press`, so a click on a row's
+disc opens its box instead of picking the part up; while a box is open, `handle_event` spends the
+next click or key on closing it. The texts are in [`editor/parts.py`](../game/nektoids/editor/parts.py).
+
 **Turning (D-025):** `_choose(tool)` is where a tool's button and its key meet. A turn tool turns
 the selected part at once (`_turn`), then turns whatever part is clicked. L and R also turn the
 swimmer in the arena view: one key, one meaning (D-021).
@@ -590,7 +594,8 @@ Esc to change the board, and after a win Enter for the next level.
 
 ## 11. Around the levels: title card, map, end (D-035)
 
-Read D-035 first. The game now opens under a title card; Tab (or Map, over Run) shows the map.
+Read D-035 first. The game now opens under a title card; Tab, or Map in the palette's LEVEL
+section beside Run (D-037), shows the map.
 
 - [`editor/router.py`](../game/nektoids/editor/router.py) holds the screen (`Screen`: title,
   map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the levels
@@ -603,6 +608,27 @@ Read D-035 first. The game now opens under a title card; Tab (or Map, over Run) 
 
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What
 would a player see on the map if the mark were only set when Next level is pressed?
+
+## 12. Tutorials and hints (D-038, D-039)
+
+Read D-038 and D-039 first. `python game/main.py` now opens on Fear, whose tutorial walks the
+player through the board, placing, turning and wiring.
+
+- [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
+  a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
+  wait is over (`met`); `next` is the Next button. `target_rects` finds what a step shows on the
+  screen now open, `box_rect` the first spot beside a target clear of them all.
+- [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) dims everything but the
+  targets and draws the box; the ghosts are drawn by `draw.py`, from `EditorScene.ghosts`, which
+  `main.py` sets every frame.
+- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
+  own marks (`marks`, `latch`), which is what lets Leave the ring sit beside Visit every light.
+- Tests: [`test_tutorial.py`](../tests/test_tutorial.py) walks Fear's tutorial as a player
+  would; [`test_determinism.py`](../tests/test_determinism.py) pins Fear's winner and its two
+  failures, crossed and with the eyes looking forward.
+
+Questions: why does `follow` loop, rather than move one step? (Place an eye already turned.) Why
+does the tutorial live in `main.py` rather than in the editor's scene?
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

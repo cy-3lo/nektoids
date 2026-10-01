@@ -2,6 +2,7 @@
 
 from nektoids.editor.layout import (
     EDIT_KEYS,
+    LEVEL_KEYS,
     MAX_HEX,
     MIN_HEX,
     PALETTE_TOOLS,
@@ -11,12 +12,15 @@ from nektoids.editor.layout import (
     VIEW_KEYS,
     EditButton,
     FileButton,
+    LevelButton,
     Tool,
     ViewButton,
     cell_at,
     centred_view,
     contains,
     group_at,
+    info_at,
+    level_button_at,
     make_layout,
     menu_item_at,
     palette_target_at,
@@ -84,9 +88,9 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_the_palette_runs_view_tools_colours_then_edit_two_a_row():
+def test_the_palette_runs_view_tools_colours_edit_then_level_two_a_row():
     titles = [title for title, _ in LAYOUT.palette_titles]
-    assert titles == ["View", "Tools", "Colours", "Edit"]
+    assert titles == ["View", "Tools", "Colours", "Edit", "Level"]
     for (_, (_, y, _, h)), (_, (_, below, _, _)) in zip(
         LAYOUT.palette_titles, LAYOUT.palette_titles[1:], strict=False
     ):
@@ -102,6 +106,7 @@ def test_the_palette_runs_view_tools_colours_then_edit_two_a_row():
         ("Tools", [r for _, r in LAYOUT.tool_buttons]),
         ("Colours", list(LAYOUT.swatches)),
         ("Edit", [r for _, r in [*LAYOUT.edit_buttons, *LAYOUT.file_buttons]]),
+        ("Level", [r for _, r in LAYOUT.level_buttons]),
     ):
         x, y, w, h = sections[title]
         for rect in items:
@@ -176,18 +181,28 @@ def test_every_palette_button_has_its_own_key_and_tooltip_target():
     assert palette_target_at(LAYOUT, centre(LAYOUT.board_area)) is None
 
 
-def test_the_run_button_sits_at_the_foot_of_the_menu_below_every_row_even_unfolded():
-    x, y, w, h = LAYOUT.run_button
-    assert contains(LAYOUT.menu_area, (x, y)) and contains(LAYOUT.menu_area, (x + w - 1, y + h - 1))
-    assert y + h == SCREEN[1] - 16
-    lowest = max(ry + rh for _, (_, ry, _, rh) in [*LAYOUT.menu_items, *LAYOUT.group_titles])
-    assert lowest < y
+def test_map_and_run_sit_in_the_palettes_level_section_with_their_keys():
+    assert [button for button, _ in LAYOUT.level_buttons] == list(LevelButton)
+    for button, rect in LAYOUT.level_buttons:
+        assert level_button_at(LAYOUT, centre(rect)) is button
+        assert palette_target_at(LAYOUT, centre(rect)) is button
+    assert LEVEL_KEYS == {LevelButton.MAP: "Tab", LevelButton.RUN: "Space"}
     assert contains(LAYOUT.board_area, LAYOUT.caption_at)
 
 
-def test_the_map_button_sits_over_run_below_every_row():
-    mx, my, mw, mh = LAYOUT.map_button
-    rx, ry, _, _ = LAYOUT.run_button
-    assert mx == rx and my + mh < ry
-    lowest = max(y + h for _, (_, y, _, h) in [*LAYOUT.menu_items, *LAYOUT.group_titles])
-    assert lowest < my
+def test_each_menu_row_has_its_info_disc_inside_it_and_unfolding_moves_it_along():
+    rows = dict(LAYOUT.menu_items)
+    for kind, rect in LAYOUT.info_buttons:
+        assert contains(rows[kind], rect[:2])
+        assert contains(rows[kind], (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
+        assert info_at(LAYOUT, centre(rect)) is kind and menu_item_at(LAYOUT, centre(rect)) is kind
+    assert info_at(LAYOUT, centre(rows[Kind.EYE])[:1] + (0,)) is None
+    folded = make_layout(frozenset({"Sensors"}))
+    assert Kind.EYE not in dict(folded.info_buttons)
+
+
+def test_the_menu_shows_only_the_parts_the_level_hands_out_and_no_empty_group():
+    first = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
+    assert [kind for kind, _ in first.menu_items] == [Kind.EYE, Kind.THRUSTER]
+    assert [title for title, _ in first.group_titles] == ["Sensors", "Actuators"]
+    assert [kind for kind, _ in first.info_buttons] == [Kind.EYE, Kind.THRUSTER]

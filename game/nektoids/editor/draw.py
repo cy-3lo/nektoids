@@ -21,21 +21,30 @@ from dataclasses import dataclass
 import pygame
 
 from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
-from nektoids.editor.icons import EDIT_ICON, FILE_ICON, KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
+from nektoids.editor.icons import (
+    EDIT_ICON,
+    FILE_ICON,
+    KIND_ICON,
+    LEVEL_ICON,
+    TOOL_ICON,
+    VIEW_ICON,
+    Icons,
+)
 from nektoids.editor.layout import (
     EDIT_KEYS,
-    MAP_KEY,
+    LEVEL_KEYS,
     PALETTE_TITLE,
-    RUN_KEY,
     TOOL_KEYS,
     VIEW_KEYS,
     EditButton,
     FileButton,
+    LevelButton,
     Tool,
     View,
     ViewButton,
     visible_cells,
 )
+from nektoids.editor.parts import NAME, info
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -61,20 +70,12 @@ DARK = (18, 20, 28)
 WIRE = (150, 154, 166)
 GHOST = (96, 101, 118)  # where a wire would run
 GHOST_OK = (228, 231, 240)  # ... and it may connect there
+GHOST_FILL = (40, 44, 58)  # a tutorial's ghost part, under the real one
 LOCK_RING = (170, 175, 190)
 COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
 BODY_OUTLINE = (54, 58, 74)  # the swimmer's symbol behind the board: which way is forward
 
-NAME = {
-    Kind.EYE: "Eye",
-    Kind.SOURCE: "Source",
-    Kind.DOUBLE: "Double",
-    Kind.HALVE: "Halve",
-    Kind.SUM: "Sum",
-    Kind.DIFFERENCE: "Difference",
-    Kind.THRUSTER: "Thruster",
-}
 TIP = {
     Tool.ADD: "Add a component",
     Tool.WIRE: "Wire",
@@ -90,6 +91,8 @@ TIP = {
     EditButton.REDO: "Redo",
     FileButton.SAVE: "Save: not yet",
     FileButton.LOAD: "Load: not yet",
+    LevelButton.MAP: "Map",
+    LevelButton.RUN: "Run",
     "colours": "Colours: not yet",
 }
 HINT = {
@@ -107,9 +110,11 @@ HINT = {
 MENU_ANGLE = {Kind.EYE: 90.0, Kind.THRUSTER: 90.0}
 
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
+INFO_ICON = 12  # a menu row's info disc [px]
+INFO_PAD = 12  # inside the info box [px]
 
 # Icon height as a fraction of the hex size.
-ICON_SCALE = {Kind.EYE: 0.55}
+ICON_SCALE = {Kind.EYE: 0.68, Kind.THRUSTER: 0.62}  # the rest: 0.5
 
 # Shapes in a local frame: unit = hex size, forward = +x. Each outline is scaled to the same
 # area, SHAPE_AREA, so that no part looks bigger than another: fitted to one circle, the disc
@@ -167,13 +172,13 @@ class Fonts:
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
     _draw_menu(screen, scene, fonts)
-    _draw_run_button(screen, scene, fonts)
     _draw_palette(screen, scene, fonts)
     _draw_board(screen, scene, fonts)
     _draw_caption(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     _draw_separators(screen, scene)
     _draw_tooltip(screen, scene, fonts)
+    _draw_info(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
         angle = placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
@@ -212,6 +217,10 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         colour = DOOMED if wire in doomed_wires else WIRE
         _draw_wire(screen, view, wire.path, colour, 3, extent(board.nodes[wire.target].kind))
 
+    for ghost in scene.ghosts:  # where a part goes, facing the way it should (D-039)
+        centre, angle = _centre(view, ghost.cell), placed_angle(ghost.kind, ghost.facing)
+        pygame.draw.polygon(screen, GHOST_FILL, _shape(ghost.kind, angle, centre, view.size))
+        pygame.draw.polygon(screen, GHOST, _shape(ghost.kind, angle, centre, view.size), 2)
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
         angle = placed_angle(node.kind, node.facing)
@@ -219,6 +228,12 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         draw_part(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
         if node.id == scene.source or node.id == scene._wire_start():
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
+    for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
+        node = board.node_at(ghost.cell)
+        if node is not None and node.kind is ghost.kind and node.facing != ghost.facing:
+            angle = placed_angle(ghost.kind, ghost.facing)
+            outline = _shape(ghost.kind, angle, _centre(view, ghost.cell), view.size)
+            pygame.draw.polygon(screen, GHOST_OK, outline, 2)
     if scene.cursor is not None:
         pygame.draw.polygon(screen, TEXT, _hexagon(view, scene.cursor), 3)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
@@ -361,8 +376,11 @@ def _draw_menu(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         angle = MENU_ANGLE.get(kind)
         draw_part(screen, fonts, kind, angle, icon, 26, locked=False, fill=fill)
         name = fonts.text.render(NAME[kind], True, DIM_TEXT if empty else TEXT)
+        disc = dict(layout.info_buttons)[kind]
+        lit = TEXT if kind is scene.info else DIM_TEXT
+        fonts.icons.draw(screen, "circle-info", pygame.Rect(disc).center, INFO_ICON, lit)
         screen.blit(name, (x + 46, y + (h - name.get_height()) // 2))
-        right = x + w - 12  # right edge of the count
+        right = x + w - 8  # right edge of the count, clear of the info disc
         if left is None:
             fonts.icons.draw(screen, "infinity", (right - 8, y + h // 2), 14, TEXT)
         else:
@@ -384,6 +402,8 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         draw_button(screen, fonts, rect, EDIT_ICON[button], False, enabled=can[button])
     for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
         draw_button(screen, fonts, rect, FILE_ICON[button], False, enabled=False)
+    for button, rect in layout.level_buttons:  # Run lit: what the board is built for
+        draw_button(screen, fonts, rect, LEVEL_ICON[button], button is LevelButton.RUN)
     for title, (x, y, _, _) in layout.palette_titles:
         draw_title(screen, fonts, title, (x, y))
     # The colour picker keeps its place, inactive until colours carry a meaning.
@@ -425,9 +445,11 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         | dict(layout.view_buttons)
         | dict(layout.edit_buttons)
         | dict(layout.file_buttons)
+        | dict(layout.level_buttons)
     )
     x, y, _, h = rects[target] if target in rects else layout.swatches[0]
-    key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target) or EDIT_KEYS.get(target)
+    keys = (TOOL_KEYS, VIEW_KEYS, EDIT_KEYS, LEVEL_KEYS)
+    key = next((table[target] for table in keys if target in table), None)
     left = layout.palette_area[0] - 10
     draw_tip(screen, fonts, TIP[target] + (f" ({key})" if key else ""), midright=(left, y + h // 2))
 
@@ -437,20 +459,23 @@ def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
         pygame.draw.line(screen, RULE, (x, 0), (x, screen.get_height()), 2)
 
 
-def _draw_run_button(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """At the foot of the menu: Map, then Run, lit, each with its icon, its name and its key."""
-    layout = scene.layout
-    for rect, icon, name, key, fill in (
-        (layout.map_button, "map", "Map", MAP_KEY, BUTTON),
-        (layout.run_button, "play", "Run", RUN_KEY, ACTIVE),
-    ):
-        x, y, w, h = rect
-        pygame.draw.rect(screen, fill, rect, border_radius=6)
-        fonts.icons.draw(screen, icon, (x + 22, y + h // 2), 18, TEXT)
-        label = fonts.text.render(name, True, TEXT)
-        screen.blit(label, (x + 46, y + (h - label.get_height()) // 2))
-        shown = fonts.small.render(key, True, DIM_TEXT)
-        screen.blit(shown, (x + w - 12 - shown.get_width(), y + (h - shown.get_height()) // 2))
+def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The open info box, beside the menu at its part's row: the name, then what it does."""
+    if scene.info is None:
+        return
+    rows = [fonts.text.render(NAME[scene.info], True, TEXT)]
+    rows += [fonts.small.render(line, True, TEXT) for line in info(scene.info)]
+    width = max(row.get_width() for row in rows) + 2 * INFO_PAD
+    height = sum(row.get_height() + 4 for row in rows) + 2 * INFO_PAD
+    _, top, _, _ = dict(scene.layout.menu_items)[scene.info]
+    top = min(top, screen.get_height() - height - 8)  # kept on screen
+    box = pygame.Rect(scene.layout.menu_area[2] + 8, top, width, height)
+    pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=6)
+    pygame.draw.rect(screen, RULE, box, 1, border_radius=6)
+    y = box.top + INFO_PAD
+    for row in rows:
+        screen.blit(row, (box.left + INFO_PAD, y))
+        y += row.get_height() + 4
 
 
 def _draw_caption(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
