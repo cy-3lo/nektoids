@@ -340,8 +340,8 @@ it meets, so their density falls as 1/r, like the light, and a shadow is where n
 fans turn slowly, at random but the same at every run; X hides them or shows them again. I, a
 developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
 
-Right, one column. At the top, two palettes, one row each: the player (start again, one frame
-back, play or pause, one frame, fast forward) and the view (zoom in, zoom out, the hand to move
+Right, one column. At the top, two palettes of five, one row each: the player (back to the
+editor, start again, play or pause, one frame, fast forward), then the timeline (D-033), and the view (zoom in, zoom out, the hand to move
 the view, centre, which frames the swimmers and the lights, and the rays on or off). Every button
 has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
 centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
@@ -506,7 +506,8 @@ A light is reached a little before the two discs touch: when the centres are wit
 = 1.2 times the sum of the radii, 2.4 u for a base body (D-029).
 An objective turns that into a count, `(met, needed)`. `outcome` is a pure function of the level,
 `visited` and the tick: won when every objective is met, time up at the level's limit, otherwise
-`None`. Because the end is derived, never stored, going one frame back simply un-ends the run.
+`None`. Because the end is derived, never stored, going back along the timeline simply
+un-ends the run.
 
 ### 9.2 The code
 
@@ -521,7 +522,7 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
   ended, since `Clock.frame` hands out a whole frame's ticks at once. Play and Step do nothing
   once it is over; 0 starts again.
 - [`editor/arena_draw.py`](../game/nektoids/editor/arena_draw.py): the ring round a visited
-  light, "1 of 2", the banner, `t = 8.66 / 20 s`, and the time left as a last row whose bar runs
+  light, "1 of 2", the banner, the time over the timeline, and the time left as a last row whose bar runs
   down to zero, red once the time is up (`_draw_row` draws every row).
 - [`graph/board.py`](../game/nektoids/graph/board.py) `to_dict` and `from_dict`, and the F4
   branch in [`main.py`](../game/main.py). Wires refer to parts by their place in the list, not
@@ -533,7 +534,7 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
 
 ### 9.3 Questions to answer after reading
 
-1. **Why is `outcome` computed and not stored as a flag on the scene?** What would one frame back
+1. **Why is `outcome` computed and not stored as a flag on the scene?** What would the timeline
    need to do if it were a flag?
 2. **`from_dict` draws the wires again instead of reading their paths.** When does that give a
    different picture from the one saved, and why does it never give a different network?
@@ -565,6 +566,12 @@ Esc to change the board, and after a win Enter for the next level.
   view (one level, nothing touches the swimmer) from F3's; `banner_buttons` says what the end
   banner offers. Its buttons' rects come from `arena_layout.banner_rects`, pure, so tests can
   click them.
+
+- [`editor/recording.py`](../game/nektoids/editor/recording.py), pure: every tick of the run, kept
+  as it was (D-033). The run is deterministic, so the timeline restores a tick kept and, ahead of
+  the furthest one run, `ArenaScene.seek` races there (`SEEK_TICKS` a frame); moving the swimmer
+  by hand, in F3, cuts the recording where it happened. `_restore` copies what it puts back,
+  because the next ticks change those arrays in place.
 
 ### 10.2 Questions to answer after reading
 

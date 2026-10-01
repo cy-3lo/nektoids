@@ -380,3 +380,19 @@ level; it waits in `docs/ideas.md`.
 The lesson follows the first level's: an eye in the dark sees nothing, and the drive has to come
 from somewhere. `test_determinism.py` pins the driven, crossed winner and the stillness without
 a drive.
+
+**D-033 — 2026-10-01 — The run view has a timeline instead of one frame back: every tick is recorded, a click or a drag puts the run at any time, a checkered flag marks the win. Supersedes D-021's `,` (one frame back) and the time in the status line.**
+Under the two rows of buttons, now five each (edit, start again, play, one frame, fast; zoom in,
+zoom out, hand, centre, rays), a bar spans the level's time: the part run so far is lighter, the
+part played brighter, a playhead sits at the time shown, and once the run is won a checkered
+flag stands at that time. Every tick run is kept (`editor/recording.py`). A click or a drag on
+the bar puts the run there, paused: a tick kept comes back at once; ahead of the furthest tick
+run the run races there, 40 ticks a frame, and stops on arriving; never past the run's end.
+The run is deterministic (invariant 1), so this is the run one would have watched straight
+through, as a test checks to the bit. Start again (0) goes back to tick 0 of the same run.
+In F3, moving or turning the swimmer by hand cuts the recording there. The time shows over the
+timeline, "3.7 / 15 s", and the status line keeps only the keys. Time left stays among the
+objectives (D-023).
+One frame back went one frame at a time over the last 20 s; the timeline goes anywhere, and a
+level's run is short (15 s, 20 s), so keeping all of it costs little. The rows of buttons were
+uneven.

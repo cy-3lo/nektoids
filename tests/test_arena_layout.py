@@ -1,3 +1,5 @@
+import pytest
+
 from nektoids.editor.arena_layout import (
     ARENA_AREA,
     BANNER,
@@ -10,6 +12,7 @@ from nektoids.editor.arena_layout import (
     POLAR_KEY,
     RULES,
     SCORE_AREA,
+    TIMELINE,
     TURN_KEYS,
     VIEW,
     ArenaButton,
@@ -17,13 +20,15 @@ from nektoids.editor.arena_layout import (
     banner_rects,
     button_at,
     button_rects,
+    timeline_at,
+    timeline_x,
 )
 from nektoids.editor.layout import SCREEN, TOOL_KEYS, VIEW_KEYS, Tool, ViewButton
 
 
 def test_the_palettes_sit_on_two_rows_in_the_column_without_overlapping():
     rects = dict(button_rects())
-    assert list(rects) == [*PLAYER, *VIEW] and len(rects) == 11
+    assert list(rects) == [*PLAYER, *VIEW] and len(PLAYER) == len(VIEW) == 5  # equal rows
     for palette in (PLAYER, VIEW):
         row = [rects[b] for b in palette]
         assert len({y for _, y, _, _ in row}) == 1
@@ -80,3 +85,13 @@ def test_the_banner_holds_its_buttons_side_by_side_and_finds_them():
     assert banner_button_at(both, (x1 + 5, y1 + 5)) is ArenaButton.NEXT
     assert banner_button_at((ArenaButton.EDIT,), (x1 + 5, y1 + 5)) is None  # one button: centred
     assert ARENA_AREA[0] <= bx and bx + bw <= ARENA_AREA[0] + ARENA_AREA[2]
+
+
+def test_the_timeline_runs_from_zero_to_the_limit_under_the_buttons_and_finds_a_time():
+    x, y, w, h = TIMELINE
+    lowest = max(by + bh for _, (_, by, _, bh) in button_rects())
+    assert lowest < y and y + h <= RULES[0] and PANEL_LEFT < x and x + w < PANEL_LEFT + 320
+    assert timeline_x(0.0, 20.0) == x and timeline_x(20.0, 20.0) == x + w
+    assert timeline_x(30.0, 20.0) == x + w  # past the limit: at the end
+    assert timeline_at((x + w // 2, y + h // 2), 20.0) == pytest.approx(10.0, abs=0.1)
+    assert timeline_at((x + w // 2, y - 1), 20.0) is None

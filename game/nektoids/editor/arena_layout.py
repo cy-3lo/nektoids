@@ -1,9 +1,9 @@
 """Where the arena view puts things on the 960 x 640 screen, and what is under a given pixel.
 
 Left, the arena, with a status line at its foot, and once a run is over a banner at its top with
-Next level and Edit. Right, one column: at the top the title and two palettes, one row each: the
-player (back to the editor, start again, one frame back, play or pause, one frame, fast forward)
-and the view (zoom in, zoom out, move the view, centre, rays on or off); in the
+Next level and Edit. Right, one column: at the top the title and two palettes of five buttons,
+one row each: the player (back to the editor, start again, play or pause, one frame, fast
+forward) and the view (zoom in, zoom out, move the view, centre, rays on or off); in the
 middle the objectives, each with its bar; at the bottom the swimmer's wiring on its body. The
 polar plot of the light at the eyes, a developer's tool, is an inset over the arena's top left
 corner. Plain numbers, no pygame, so hit-testing is testable headless.
@@ -32,9 +32,11 @@ ARENA_AREA: Rect = (0, 0, PANEL_LEFT, SCREEN[1] - STATUS_HEIGHT)
 TITLE_AT = (PANEL_LEFT + MARGIN, 12)
 BUTTONS_TOP = 40  # the player's row; the view's is one pitch lower [px]
 BUTTON_PITCH = 48  # [px], across and down
-SCORE_AREA: Rect = (PANEL_LEFT, 146, PANEL_WIDTH, 156)
+TIMELINE: Rect = (PANEL_LEFT + MARGIN, 140, PANEL_WIDTH - 2 * MARGIN, 36)  # the bar, room above
+TIMELINE_BAR = 8  # the bar's height, at the foot of TIMELINE [px]
+SCORE_AREA: Rect = (PANEL_LEFT, 190, PANEL_WIDTH, 112)
 CIRCUIT_AREA: Rect = (PANEL_LEFT, 316, PANEL_WIDTH, SCREEN[1] - 316)
-RULES = (140, 308)  # y of the separators between the three parts of the column
+RULES = (184, 308)  # y of the separators between the three parts of the column
 POLAR_BOX: Rect = (8, 8, 236, 252)  # over the arena's top left corner
 POLAR_CENTRE = (POLAR_BOX[0] + POLAR_BOX[2] // 2, POLAR_BOX[1] + 128)
 POLAR_RADIUS = 80  # of the plot's circle [px]
@@ -44,7 +46,6 @@ class ArenaButton(Enum):
     EDIT = "edit"  # back to the editor, the board as it was
     NEXT = "next"  # on to the next level, once this one is won: in the banner
     RESTART = "restart"
-    BACK = "back"  # one frame back
     PLAY = "play"  # play or pause, the one button
     STEP = "step"  # one frame on
     FAST = "fast"  # fast forward, on or off
@@ -58,7 +59,6 @@ class ArenaButton(Enum):
 PLAYER = (
     ArenaButton.EDIT,
     ArenaButton.RESTART,
-    ArenaButton.BACK,
     ArenaButton.PLAY,
     ArenaButton.STEP,
     ArenaButton.FAST,
@@ -76,7 +76,6 @@ BUTTON_KEYS = {
     ArenaButton.EDIT: "Esc",  # leave the run, as Escape leaves a gesture in the editor
     ArenaButton.NEXT: "Enter",
     ArenaButton.RESTART: "0",
-    ArenaButton.BACK: ",",
     ArenaButton.PLAY: "Space",
     ArenaButton.STEP: ".",
     ArenaButton.FAST: "F",
@@ -108,6 +107,23 @@ def button_rects() -> tuple[tuple[ArenaButton, Rect], ...]:
 
 def button_at(point: tuple[int, int]) -> ArenaButton | None:
     return next((button for button, rect in button_rects() if contains(rect, point)), None)
+
+
+def timeline_x(seconds: float, limit: float) -> float:
+    """Where a time [s] of a run lasting at most `limit` [s] sits along the timeline [px]."""
+    x, _, w, _ = TIMELINE
+    return x + w * min(1.0, max(0.0, seconds / limit))
+
+
+def timeline_time(px: float, limit: float) -> float:
+    """The time [s], from 0 to `limit`, at the screen x `px` along the timeline."""
+    x, _, w, _ = TIMELINE
+    return limit * min(1.0, max(0.0, (px - x) / w))
+
+
+def timeline_at(point: tuple[int, int], limit: float) -> float | None:
+    """The time [s] a press at `point` asks for; None off the timeline."""
+    return timeline_time(point[0], limit) if contains(TIMELINE, point) else None
 
 
 BANNER: Rect = (ARENA_AREA[0] + (ARENA_AREA[2] - 320) // 2, 16, 320, 132)  # over the arena's top

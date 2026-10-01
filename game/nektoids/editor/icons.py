@@ -57,6 +57,7 @@ GLYPH = {
     "floppy-disk": 0xF0C7,
     "folder-open": 0xF07C,
     "pen": 0xF304,
+    "flag-checkered": 0xF11E,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.
