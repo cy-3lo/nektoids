@@ -19,7 +19,7 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 
 ## 1. Levels as data, in an open plane (D-028)
 
-- [ ] A level as plain data, with `to_dict` and `from_dict` like a board (D-024): title, spec,
+- [x] A level as plain data, with `to_dict` and `from_dict` like a board (D-024): title, spec,
       the swimmer's start, the items placed in the plane (lights, obstacles), the board (zone,
       stock, locked parts), the objectives, the time limit.
 - [x] No walls: `contact.confine` loses its clamp; rays and the light map go as far as the view

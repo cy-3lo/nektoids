@@ -4,25 +4,27 @@ A run remembers which lights each swimmer has touched, `visited` of shape (N, L)
 touches a light when their discs meet, and a visit counts once, whatever comes after. Each
 objective counts what it asks from that, so many met out of so many needed (brief section 1:
 countable win conditions). A run ends when every objective is met, or when its time is up.
-Pure numbers, no pygame.
+In a level's data an objective is its `kind` and its settings (D-028). Pure numbers, no pygame.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, fields
 from enum import Enum
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, ClassVar, Protocol
 
 import numpy as np
 
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
 
 if TYPE_CHECKING:
-    from nektoids.levels.arenas import Level
+    from nektoids.levels.level import Level
 
 
 class Objective(Protocol):
-    name: str
+    kind: ClassVar[str]  # how a level's data names it; stays put if `name` is reworded
+    name: str  # as the player reads it
 
     def count(self, visited: np.ndarray) -> tuple[int, int]:
         """How many are met, out of how many needed; visited (N, L), see the module."""
@@ -61,7 +63,23 @@ def outcome(level: Level, visited: np.ndarray, tick: int, dt: float) -> Outcome 
 class VisitLights:
     """Every swimmer touches every light of the arena, in any order."""
 
+    kind: ClassVar[str] = "visit lights"
     name: str = "Visit every light"
 
     def count(self, visited: np.ndarray) -> tuple[int, int]:
         return int(visited.sum()), int(visited.size)
+
+
+OBJECTIVES: dict[str, type] = {VisitLights.kind: VisitLights}
+
+
+def objective_to_dict(objective: Objective) -> dict:
+    """Its kind and its settings, as a level's data holds it; the name is the code's."""
+    settings = {f.name: getattr(objective, f.name) for f in fields(objective) if f.name != "name"}
+    return {"kind": objective.kind, **settings}
+
+
+def objective_from_dict(data: Mapping) -> Objective:
+    if data["kind"] not in OBJECTIVES:
+        raise ValueError(f"no objective is called {data['kind']!r}")
+    return OBJECTIVES[data["kind"]](**{k: v for k, v in data.items() if k != "kind"})

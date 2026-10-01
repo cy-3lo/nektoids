@@ -378,7 +378,10 @@ makes a circle through the centre, pointing at it.
   [`arena_draw.py`](../game/nektoids/editor/arena_draw.py) (drawing), like `schematic.py` and
   `schematic_draw.py`. The map is computed only while it shows; the shadows of the obstacles
   once per arena (`still_light`), the swimmer's own again when it moves.
-- [`levels/arenas.py`](../game/nektoids/levels/arenas.py): two arenas to try things in, and
+- [`levels/level.py`](../game/nektoids/levels/level.py): a level as data (D-028), its lights and
+  obstacles as items, each a kind, a point and one setting, as a part is a kind, a cell and a
+  facing; the levels themselves are JSON files in `levels/data/`, loaded by
+  [`levels/arenas.py`](../game/nektoids/levels/arenas.py) in the order of `ORDER`. And
   [`levels/objectives.py`](../game/nektoids/levels/objectives.py): what a level asks, counted,
   and when a run is over (section 9).
 
@@ -506,8 +509,10 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
 
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): `touching` (one numpy
   broadcast, swimmers by lights), `VisitLights.count`, `outcome`. `Objective` is a `Protocol`:
-  anything with a `name` and a `count` is one.
-- [`levels/arenas.py`](../game/nektoids/levels/arenas.py): `Level.time_limit`.
+  anything with a `kind`, a `name` and a `count` is one, and `OBJECTIVES` finds its class from
+  the `kind` a level's JSON names.
+- [`levels/level.py`](../game/nektoids/levels/level.py): `Level.time_limit`, in each level's
+  JSON file.
 - [`editor/arena.py`](../game/nektoids/editor/arena.py): `visited` lives with the run and in
   `Snapshot`; `update` checks `outcome` after each tick and stops the clock at the tick the run
   ended, since `Clock.frame` hands out a whole frame's ticks at once. Play and Step do nothing

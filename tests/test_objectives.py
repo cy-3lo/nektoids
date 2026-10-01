@@ -1,11 +1,14 @@
 import numpy as np
 
-from nektoids.levels.arenas import Level
+from nektoids.graph.board import Board
+from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.objectives import Outcome, VisitLights, outcome, touching
 from nektoids.sim.arena import LIGHT_RADIUS, Arena, Light
 
 ARENA = Arena(lights=(Light(30.0, 20.0, 8.0), Light(5.0, 5.0, 4.0)))
-LEVEL = Level("Two", ARENA, start=(10.0, 20.0, 0.0), time_limit=10.0, objectives=(VisitLights(),))
+LIGHTS = (Item(ItemKind.LIGHT, (30.0, 20.0), 8.0), Item(ItemKind.LIGHT, (5.0, 5.0), 4.0))
+EMPTY = Board(()).to_dict()
+LEVEL = Level("Two", "", (10.0, 20.0, 0.0), LIGHTS, EMPTY, 10.0, (VisitLights(),))
 DT = 1.0 / 120.0
 ONE = np.ones(1)
 TOUCH = LIGHT_RADIUS + 1.0  # centre to centre, for a body of radius 1
@@ -40,6 +43,6 @@ def test_a_run_is_won_when_every_light_is_visited_and_over_when_its_time_is_up()
 
 
 def test_a_level_without_objectives_is_never_won_only_timed_out():
-    bare = Level("Bare", ARENA, start=(10.0, 20.0, 0.0), time_limit=1.0)
+    bare = Level("Bare", "", (10.0, 20.0, 0.0), LIGHTS, EMPTY, time_limit=1.0)
     assert outcome(bare, np.array([[True, True]]), 0, DT) is None
     assert outcome(bare, np.array([[True, True]]), 120, DT) is Outcome.TIME_UP

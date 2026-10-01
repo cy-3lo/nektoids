@@ -62,7 +62,7 @@ from nektoids.editor.scene import ARROW_SCANCODES, ARROWS, TOOLTIP_FRAMES
 from nektoids.graph.board import Board
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
-from nektoids.levels.arenas import Level
+from nektoids.levels.level import Level
 from nektoids.levels.objectives import Outcome, outcome, touching
 from nektoids.sim import world
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
