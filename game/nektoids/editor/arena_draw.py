@@ -12,7 +12,7 @@ When the run is over, a banner over the arena says how it ended.
 
 The column on the right (`arena_layout.py`): the title and the time, the palettes, with a
 tooltip naming each button and its key; the timeline, the part of the time allowed already run in
-a lighter grey, the part played brighter, and a checkered flag where the run was won (D-033);
+a lighter grey, the part played brighter, and a red mark where the run ended (D-033);
 the objectives, each counted (so many of so many) and with a bar, and the time left, its bar
 running down to zero, red if it runs out; the selected swimmer's wiring on its body, plain: the
 parts shaded by their rate and the beads on the wires, no numbers. The status line under the
@@ -95,7 +95,7 @@ SYMBOL_WIDTH = 2  # [px]
 MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
 RUN_SO_FAR = (110, 114, 128)  # the timeline's part already run, ahead of the playhead
 PLAYHEAD = 6  # [px]
-FLAG = 16  # the checkered flag over the timeline, where the run was won [px]
+END_MARK = 3  # the red mark across the timeline where the run ended [px]
 PART_DOT = 4  # an eye's reading in the polar plot [px]
 POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its circle
 EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot, in turn
@@ -116,7 +116,7 @@ ICON = {
 TIP = {
     ArenaButton.EDIT: "Back to the editor",
     ArenaButton.RESTART: "Start again",
-    ArenaButton.STEP: "One frame",
+    ArenaButton.STEP: "A step (0.1 s)",
     ArenaButton.FAST: "Fast forward",
     ArenaButton.ZOOM_IN: "Zoom in",
     ArenaButton.ZOOM_OUT: "Zoom out",
@@ -253,22 +253,23 @@ def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
 
 
 def _draw_timeline(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """The time allowed as a bar: run so far lighter, played brighter, the playhead, the flag."""
+    """The time allowed as a bar: run so far lighter, played brighter, the playhead, and a red
+    mark where the run ended, won or out of time."""
     x, y, w, h = TIMELINE
     limit, run = scene.level.time_limit, scene.recording
-    bar = pygame.Rect(x, y + h - TIMELINE_BAR, w, TIMELINE_BAR)
+    bar = pygame.Rect(x, y + (h - TIMELINE_BAR) // 2, w, TIMELINE_BAR)
     pygame.draw.rect(screen, RULE, bar, border_radius=3)
     for seconds, colour in ((run.frontier * DT, RUN_SO_FAR), (scene.clock.seconds, FULL)):
         part = bar.copy()
         part.width = round(timeline_x(seconds, limit) - x)
         if part.width > 0:
             pygame.draw.rect(screen, colour, part, border_radius=3)
+    if scene.ended_at is not None:
+        end = round(timeline_x(scene.ended_at * DT, limit))
+        pygame.draw.rect(screen, REFUSED, (end - END_MARK // 2, y + 1, END_MARK, h - 2))
     head = (round(timeline_x(scene.clock.seconds, limit)), bar.centery)
     pygame.draw.circle(screen, FULL, head, PLAYHEAD)
     pygame.draw.circle(screen, DARK, head, PLAYHEAD, 1)
-    if run.won_at is not None:
-        at = (timeline_x(run.won_at * DT, limit), bar.top - FLAG // 2 - 4)
-        fonts.icons.draw(screen, "flag-checkered", at, FLAG, TEXT)
 
 
 def _icon(scene: ArenaScene, button: ArenaButton) -> str:
@@ -445,7 +446,7 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """Only the keys: the time is on the timeline and over it."""
-    keys = "Space: play or pause.  .: one frame.  0: start again.  F: fast."
+    keys = "Space: play or pause.  .: a step.  0: start again.  F: fast."
     if scene.developer:
         cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
         text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F3: editor."

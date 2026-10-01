@@ -26,18 +26,19 @@ from nektoids.editor.arena_layout import (
 from nektoids.editor.layout import SCREEN, TOOL_KEYS, VIEW_KEYS, Tool, ViewButton
 
 
-def test_the_palettes_sit_on_two_rows_in_the_column_without_overlapping():
+def test_the_palettes_sit_on_two_rows_the_players_over_the_timeline():
     rects = dict(button_rects())
-    assert list(rects) == [*PLAYER, *VIEW] and len(PLAYER) == len(VIEW) == 5  # equal rows
+    assert list(rects) == [*VIEW, *PLAYER] and len(PLAYER) == len(VIEW) == 5  # equal rows
     for palette in (PLAYER, VIEW):
         row = [rects[b] for b in palette]
         assert len({y for _, y, _, _ in row}) == 1
         for (x, _, w, _), (x2, _, _, _) in zip(row, row[1:], strict=False):
             assert x + w < x2
-    player_y, view_y = rects[PLAYER[0]][1], rects[VIEW[0]][1]
-    assert player_y + rects[PLAYER[0]][3] < view_y
-    for x, y, w, h in rects.values():
-        assert PANEL_LEFT < x and x + w < SCREEN[0] and y + h < RULES[0]
+    view_y, player_y = rects[VIEW[0]][1], rects[PLAYER[0]][1]
+    assert view_y + rects[VIEW[0]][3] < player_y  # the view's row first
+    assert 0 < TIMELINE[1] - (player_y + rects[PLAYER[0]][3]) <= 8  # the timeline right under
+    assert RULES[1] < CIRCUIT_AREA[1] and CIRCUIT_AREA[1] + CIRCUIT_AREA[3] == SCREEN[1]
+    assert ARENA_AREA[0] + ARENA_AREA[2] == PANEL_LEFT
 
 
 def test_a_press_finds_the_button_under_it_and_nothing_between_them():

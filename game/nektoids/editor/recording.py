@@ -18,7 +18,6 @@ Frame = TypeVar("Frame")
 class Recording(Generic[Frame]):
     def __init__(self, start: Frame) -> None:
         self._frames: list[Frame] = [start]  # the frame of each tick, from 0
-        self.won_at: int | None = None  # the tick the run was won at, once the run got there
 
     @property
     def frontier(self) -> int:
@@ -39,5 +38,3 @@ class Recording(Generic[Frame]):
         """The run was changed by hand at `tick`, to `frame`: nothing after it holds any more."""
         del self._frames[tick:]
         self._frames.append(frame)
-        if self.won_at is not None and self.won_at > tick:
-            self.won_at = None

@@ -2,11 +2,12 @@
 
 Left, the arena, with a status line at its foot, and once a run is over a banner at its top with
 Next level and Edit. Right, one column: at the top the title and two palettes of five buttons,
-one row each: the player (back to the editor, start again, play or pause, one frame, fast
-forward) and the view (zoom in, zoom out, move the view, centre, rays on or off); in the
-middle the objectives, each with its bar; at the bottom the swimmer's wiring on its body. The
-polar plot of the light at the eyes, a developer's tool, is an inset over the arena's top left
-corner. Plain numbers, no pygame, so hit-testing is testable headless.
+one row each: the view's (zoom in, zoom out, move the view, centre, rays on or off), then the
+player's (back to the editor, start again, play or pause, a step of 0.1 s, fast forward) with the
+timeline right under it; in the middle the objectives, each with its bar; at the bottom the
+swimmer's wiring on its body. The polar plot of the light at the eyes, a developer's tool, is an
+inset over the arena's top left corner. Plain numbers, no pygame, so hit-testing is testable
+headless.
 """
 
 from __future__ import annotations
@@ -30,13 +31,13 @@ MARGIN = 16  # [px]
 PANEL_LEFT = SCREEN[0] - PANEL_WIDTH
 ARENA_AREA: Rect = (0, 0, PANEL_LEFT, SCREEN[1] - STATUS_HEIGHT)
 TITLE_AT = (PANEL_LEFT + MARGIN, 12)
-BUTTONS_TOP = 40  # the player's row; the view's is one pitch lower [px]
+BUTTONS_TOP = 40  # the view's row; the player's is one pitch lower, over the timeline [px]
 BUTTON_PITCH = 48  # [px], across and down
-TIMELINE: Rect = (PANEL_LEFT + MARGIN, 140, PANEL_WIDTH - 2 * MARGIN, 36)  # the bar, room above
-TIMELINE_BAR = 8  # the bar's height, at the foot of TIMELINE [px]
-SCORE_AREA: Rect = (PANEL_LEFT, 190, PANEL_WIDTH, 112)
+TIMELINE: Rect = (PANEL_LEFT + MARGIN, 134, PANEL_WIDTH - 2 * MARGIN, 20)  # under the player's
+TIMELINE_BAR = 8  # the bar's height, centred in TIMELINE [px]
+SCORE_AREA: Rect = (PANEL_LEFT, 168, PANEL_WIDTH, 134)
 CIRCUIT_AREA: Rect = (PANEL_LEFT, 316, PANEL_WIDTH, SCREEN[1] - 316)
-RULES = (184, 308)  # y of the separators between the three parts of the column
+RULES = (162, 308)  # y of the separators between the three parts of the column
 POLAR_BOX: Rect = (8, 8, 236, 252)  # over the arena's top left corner
 POLAR_CENTRE = (POLAR_BOX[0] + POLAR_BOX[2] // 2, POLAR_BOX[1] + 128)
 POLAR_RADIUS = 80  # of the plot's circle [px]
@@ -47,7 +48,7 @@ class ArenaButton(Enum):
     NEXT = "next"  # on to the next level, once this one is won: in the banner
     RESTART = "restart"
     PLAY = "play"  # play or pause, the one button
-    STEP = "step"  # one frame on
+    STEP = "step"  # a step on: STEP_FRAMES frames, 0.1 s
     FAST = "fast"  # fast forward, on or off
     ZOOM_IN = "zoom in"
     ZOOM_OUT = "zoom out"
@@ -93,9 +94,9 @@ KEY_BUTTONS = {key: b for b, key in BUTTON_KEYS.items() if len(key) == 1 and not
 
 
 def button_rects() -> tuple[tuple[ArenaButton, Rect], ...]:
-    """The player's palette on one row, the view's on the next, both centred in the column."""
+    """The view's palette on one row, the player's on the next, over the timeline, centred."""
     rects = []
-    for row, palette in enumerate((PLAYER, VIEW)):
+    for row, palette in enumerate((VIEW, PLAYER)):
         width = BUTTON + (len(palette) - 1) * BUTTON_PITCH
         left = PANEL_LEFT + (PANEL_WIDTH - width) // 2
         top = BUTTONS_TOP + row * BUTTON_PITCH

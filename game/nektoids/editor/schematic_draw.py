@@ -45,7 +45,7 @@ BAR_WIDTH = 6  # [px]
 HEADINGS = {"head": DIM_TEXT, "eq": TEXT, "warn": WARN}
 LINE_HEIGHT = 17  # [px]
 HINTS = (
-    "Drag a slider to set a sensor.  Space: pause.  . : one frame.",
+    "Drag a slider to set a sensor.  Space: pause.  . : a step (0.1 s).",
     "W: waveform.  B: beads.  0: restart.  Tab: board.  F2: editor.",
 )
 

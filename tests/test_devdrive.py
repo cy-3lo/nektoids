@@ -7,6 +7,7 @@ from nektoids.editor.devdrive import (
     PERIOD,
     SLIDER_GRAB,
     STEP_AT,
+    STEP_FRAMES,
     TICKS_PER_FRAME,
     WAVES,
     Clock,
@@ -64,16 +65,17 @@ def test_a_running_clock_gives_two_ticks_a_frame_in_order():
     assert TICKS_PER_FRAME == 2 and clock.seconds == pytest.approx(4 * DT)
 
 
-def test_a_paused_clock_gives_nothing_until_stepped_once():
+def test_a_paused_clock_gives_nothing_until_stepped_and_a_step_is_a_tenth_of_a_second():
     clock = Clock()
     clock.frame()
     clock.toggle_pause()
     assert list(clock.frame()) == []
     clock.step()
-    assert list(clock.frame()) == [2, 3]
+    assert list(clock.frame()) == list(range(2, 2 + STEP_FRAMES * TICKS_PER_FRAME))
+    assert STEP_FRAMES * TICKS_PER_FRAME * DT == pytest.approx(0.1)
     assert list(clock.frame()) == []
     clock.toggle_pause()
-    assert list(clock.frame()) == [4, 5]
+    assert list(clock.frame()) == [14, 15]
 
 
 def test_stepping_a_running_clock_does_not_skip_ahead_later():
@@ -145,11 +147,11 @@ def test_a_wide_graph_shrinks_the_view_to_fit():
     assert isinstance(view, View)
 
 
-def test_fast_forward_runs_more_ticks_a_frame_but_a_step_is_still_one_frame():
+def test_fast_forward_runs_more_ticks_a_frame_but_a_step_stays_a_step():
     clock = Clock()
     clock.speed = 4
     assert len(clock.frame()) == 4 * TICKS_PER_FRAME
     clock.toggle_pause()
     assert len(clock.frame()) == 0
     clock.step()
-    assert len(clock.frame()) == TICKS_PER_FRAME
+    assert len(clock.frame()) == STEP_FRAMES * TICKS_PER_FRAME

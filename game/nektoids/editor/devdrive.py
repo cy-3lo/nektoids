@@ -15,6 +15,7 @@ from nektoids.graph.dynamics import RATE_MAX
 SIM_HZ = 120  # ticks per second
 DT = 1.0 / SIM_HZ  # [s]
 TICKS_PER_FRAME = 2  # at 60 frames per second; main.py checks the product
+STEP_FRAMES = 6  # a step, paused, runs this many frames' worth of ticks: 0.1 s, enough to see
 WAVES = ("hold", "step", "sine", "square")
 STEP_AT = 1.0  # the step wave jumps from 0 to the slider level after this long [s]
 PERIOD = 4.0  # of the sine and square waves [s]
@@ -44,7 +45,7 @@ def next_wave(name: str) -> str:
 
 class Clock:
     """Which ticks to run in this frame: two while it runs (times `speed`), none while paused,
-    unless stepped: a step is always one frame's two ticks."""
+    unless stepped: a step is STEP_FRAMES frames' worth of ticks at once, whatever the speed."""
 
     def __init__(self) -> None:
         self.tick = 0
@@ -54,8 +55,8 @@ class Clock:
 
     def frame(self) -> range:
         """The ticks to run now, in order; the clock moves past them."""
-        if self._stepped:
-            count = TICKS_PER_FRAME
+        if self._stepped and self.paused:
+            count = TICKS_PER_FRAME * STEP_FRAMES
         else:
             count = 0 if self.paused else TICKS_PER_FRAME * self.speed
         self._stepped = False
@@ -67,7 +68,7 @@ class Clock:
         self.paused = not self.paused
 
     def step(self) -> None:
-        """While paused, run one frame's worth of ticks at the next frame."""
+        """While paused, run a step (STEP_FRAMES frames' worth of ticks) at the next frame."""
         self._stepped = True
 
     def reset(self) -> None:

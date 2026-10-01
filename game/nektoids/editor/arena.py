@@ -19,12 +19,12 @@ Mouse: the palettes' buttons; click the swimmer to show its wiring (it is shown 
 click beside it to hide it, drag it to move it (with the hand, drag the view); the wheel turns
 it by 15°, as do L (left, counter-clockwise) and R, the editor's turn keys. Keys
 (`arena_layout.BUTTON_KEYS`, named in the tooltips), the same as the editor's wherever they do
-the same: 0 starts again, Space plays or pauses, `.` runs one frame, F fast forwards, + and -
+the same: 0 starts again, Space plays or pauses, `.` runs a step of 0.1 s, F fast forwards, + and -
 zoom, H takes the hand (then the arrows drag the view), C centres, X shows or hides the rays;
 and I (light map), P (polar plot), Tab and Shift-Tab (arena). The timeline under the buttons
 puts the run at any time, clicked or dragged (D-033): every tick run is recorded, so going back
-restores it as it was, and going ahead of the furthest tick run races there; the checkered flag
-is where the run was won. Moving or turning the swimmer by hand, for trying things out, cuts the
+restores it as it was, and going ahead of the furthest tick run races there; a red mark across
+it is where the run ended. Moving or turning the swimmer by hand, for trying things out, cuts the
 recording there. Mutates nothing in the board.
 """
 
@@ -233,11 +233,8 @@ class ArenaScene:
             ticks = self.clock.frame()
         for tick in ticks:
             self._advance(tick)
-            ended = outcome(self.level, self.visited, tick + 1, DT)
-            if ended is not None:
+            if outcome(self.level, self.visited, tick + 1, DT) is not None:
                 self.clock.tick, self.clock.paused, self.seek_to = tick + 1, True, None
-                if ended is Outcome.WON:
-                    self.recording.won_at = tick + 1
                 break
         if len(ticks) and self.show_map:
             self._map()  # the swimmers' shadows moved
@@ -250,13 +247,19 @@ class ArenaScene:
             self._tick()
             self.recording.add(self._snapshot())
 
+    @property
+    def ended_at(self) -> int | None:
+        """The tick the run ended at, won or out of time, once it got there; None until then."""
+        end = self.recording.frontier
+        done = outcome(self.level, self.recording.at(end).visited, end, DT)
+        return end if done is not None else None
+
     def seek(self, seconds: float) -> None:
         """Put the run at `seconds` [s], paused: a tick recorded comes back at once; ahead of the
         frontier the run races there and pauses on arriving; never past the run's end."""
         frontier = self.recording.frontier
-        last = self.recording.at(frontier)
         target = min(round(seconds / DT), round(self.level.time_limit / DT))
-        if outcome(self.level, last.visited, frontier, DT) is not None:
+        if self.ended_at is not None:
             target = min(target, frontier)  # the run ended there: nothing comes after
         self._restore(self.recording.at(min(target, frontier)))
         self.clock.tick = min(target, frontier)
@@ -386,7 +389,7 @@ class ArenaScene:
             self.clock.toggle_pause()
         elif button is ArenaButton.STEP:
             self.seek_to = None
-            self.clock.paused = True  # one frame, then it waits
+            self.clock.paused = True  # a step, then it waits
             self.clock.step()
         elif button in (ArenaButton.ZOOM_IN, ArenaButton.ZOOM_OUT):
             factor = ZOOM_STEP if button is ArenaButton.ZOOM_IN else 1.0 / ZOOM_STEP
