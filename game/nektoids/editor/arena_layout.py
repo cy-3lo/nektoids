@@ -30,15 +30,17 @@ STATUS_HEIGHT = 32  # [px]
 MARGIN = 16  # [px]
 PANEL_LEFT = SCREEN[0] - PANEL_WIDTH
 ARENA_AREA: Rect = (0, 0, PANEL_LEFT, SCREEN[1] - STATUS_HEIGHT)
-TITLE_AT = (PANEL_LEFT + MARGIN, 12)
+TITLE_AT = (PANEL_LEFT + MARGIN, 12)  # CONTROLS, the column's first title
+CAPTION_AT = (MARGIN, 10)  # the level's number and title, over the arena's top left
 BUTTONS_TOP = 40  # the view's row; the player's is one pitch lower, over the timeline [px]
 BUTTON_PITCH = 48  # [px], across and down
 TIMELINE: Rect = (PANEL_LEFT + MARGIN, 134, PANEL_WIDTH - 2 * MARGIN, 20)  # under the player's
 TIMELINE_BAR = 8  # the bar's height, centred in TIMELINE [px]
 SCORE_AREA: Rect = (PANEL_LEFT, 168, PANEL_WIDTH, 134)
-CIRCUIT_AREA: Rect = (PANEL_LEFT, 316, PANEL_WIDTH, SCREEN[1] - 316)
+INSIDE_AT = (PANEL_LEFT + MARGIN, 316)  # the title over the swimmer's wiring
+CIRCUIT_AREA: Rect = (PANEL_LEFT, 340, PANEL_WIDTH, SCREEN[1] - 340)
 RULES = (162, 308)  # y of the separators between the three parts of the column
-POLAR_BOX: Rect = (8, 8, 236, 252)  # over the arena's top left corner
+POLAR_BOX: Rect = (8, 40, 236, 252)  # over the arena's top left, under the caption
 POLAR_CENTRE = (POLAR_BOX[0] + POLAR_BOX[2] // 2, POLAR_BOX[1] + 128)
 POLAR_RADIUS = 80  # of the plot's circle [px]
 
@@ -127,7 +129,7 @@ def timeline_at(point: tuple[int, int], limit: float) -> float | None:
     return timeline_time(point[0], limit) if contains(TIMELINE, point) else None
 
 
-BANNER: Rect = (ARENA_AREA[0] + (ARENA_AREA[2] - 320) // 2, 16, 320, 132)  # over the arena's top
+BANNER: Rect = (ARENA_AREA[0] + (ARENA_AREA[2] - 320) // 2, 44, 320, 132)  # under the caption
 BANNER_BUTTON = (132, 32)  # [px]
 
 

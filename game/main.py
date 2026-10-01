@@ -51,14 +51,16 @@ def editor() -> EditorScene:
     """The current level's editor, made the first time the level opens."""
     if router.index not in editors:
         level = router.level
-        caption = (f"{router.index + 1}. {level.title}", level.spec)
+        caption = (f"{router.label}. {level.title}", level.spec)
         editors[router.index] = EditorScene(router.board, make_layout(), caption)
     return editors[router.index]
 
 
 def play() -> ArenaScene:
     """The player's run of the current level, on its board as it stands."""
-    return ArenaScene(router.board, [router.level], developer=False, has_next=router.has_next)
+    return ArenaScene(
+        router.board, [router.level], developer=False, has_next=router.has_next, label=router.label
+    )
 
 
 def open_developer_view() -> SchematicScene:

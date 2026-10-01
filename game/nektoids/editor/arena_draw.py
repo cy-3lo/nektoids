@@ -34,7 +34,9 @@ from nektoids.editor.arena_layout import (
     ARENA_AREA,
     BANNER,
     BUTTON_KEYS,
+    CAPTION_AT,
     CIRCUIT_AREA,
+    INSIDE_AT,
     MARGIN,
     PANEL_LEFT,
     PANEL_WIDTH,
@@ -75,7 +77,9 @@ from nektoids.editor.draw import (
     draw_button,
     draw_symbol,
     draw_tip,
+    draw_title,
 )
+from nektoids.editor.layout import PALETTE_TITLE
 from nektoids.editor.schematic_draw import FULL, draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
@@ -134,10 +138,20 @@ def draw_arena(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     _draw_swimmers(screen, scene)
     if scene.show_polar:
         _draw_polar(screen, scene, fonts)
+    _draw_caption(screen, scene, fonts)
     screen.set_clip(None)
     _draw_banner(screen, scene, fonts)
     _draw_panel(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
+
+
+def _draw_caption(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """The level's number and title over the arena's top left, on a backdrop so that it reads
+    over the rays and the light map alike."""
+    shown = fonts.text.render(scene.caption, True, TEXT)
+    box = shown.get_rect(topleft=CAPTION_AT).inflate(12, 8)
+    pygame.draw.rect(screen, PANEL, box, border_radius=5)
+    screen.blit(shown, CAPTION_AT)
 
 
 def _map_rect(scene: ArenaScene) -> pygame.Rect:
@@ -236,11 +250,12 @@ def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     height = screen.get_height()
     pygame.draw.rect(screen, PANEL, (PANEL_LEFT, 0, PANEL_WIDTH, height))
     pygame.draw.line(screen, RULE, (PANEL_LEFT, 0), (PANEL_LEFT, height), 2)
-    count = f"  ({scene.index + 1}/{len(scene.levels)})" if scene.developer else ""  # for Tab
-    screen.blit(fonts.text.render(f"{scene.title}{count}", True, TEXT), TITLE_AT)
+    draw_title(screen, fonts, "Controls", TITLE_AT)
     elapsed = f"{scene.clock.seconds:.1f} / {scene.level.time_limit:g} s"
     shown = fonts.text.render(elapsed, True, DIM_TEXT)
-    screen.blit(shown, shown.get_rect(topright=(PANEL_LEFT + PANEL_WIDTH - MARGIN, TITLE_AT[1])))
+    right = PANEL_LEFT + PANEL_WIDTH - MARGIN
+    screen.blit(shown, shown.get_rect(midright=(right, TITLE_AT[1] + PALETTE_TITLE // 2)))
+    draw_title(screen, fonts, "Inside", INSIDE_AT)
     for y in RULES:
         pygame.draw.line(
             screen, RULE, (PANEL_LEFT + MARGIN, y), (PANEL_LEFT + PANEL_WIDTH - MARGIN, y)
@@ -316,7 +331,7 @@ def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     """Each objective: its name, so many met of so many, a tick once all are, and a bar filling
     up; then the time left, its bar running down, all red once the time is up."""
     x, y, _, _ = SCORE_AREA
-    screen.blit(fonts.small.render("Objectives", True, DIM_TEXT), (x + MARGIN, y + 4))
+    draw_title(screen, fonts, "Objectives", (x + MARGIN, y))
     rows = scene.counts()
     if not rows:
         none = fonts.small.render("None in this arena yet.", True, DIM_TEXT)

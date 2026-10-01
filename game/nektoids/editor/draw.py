@@ -378,11 +378,16 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
         draw_button(screen, fonts, rect, FILE_ICON[button], False, enabled=False)
     for title, (x, y, _, _) in layout.palette_titles:
-        text = fonts.text.render(title.upper(), True, DIM_TEXT)
-        screen.blit(text, (x, y + (PALETTE_TITLE - text.get_height()) // 2))
+        draw_title(screen, fonts, title, (x, y))
     # The colour picker keeps its place, inactive until colours carry a meaning.
     for rect in layout.swatches:
         pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
+
+
+def draw_title(screen, fonts: Fonts, title: str, topleft, height: int = PALETTE_TITLE) -> None:
+    """A section's title, as every view writes them: upper case, dimmed, centred in `height`."""
+    text = fonts.text.render(title.upper(), True, DIM_TEXT)
+    screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 
 def draw_button(screen, fonts: Fonts, rect, icon: str, active: bool, enabled: bool = True) -> None:

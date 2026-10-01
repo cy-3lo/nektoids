@@ -398,3 +398,12 @@ objectives (D-023).
 One frame back went one frame at a time over the last 20 s; the timeline goes anywhere, and a
 level's run is short (15 s, 20 s), so keeping all of it costs little. The rows of buttons were
 uneven, and the timeline belongs with the buttons that play the run.
+
+**D-034 — 2026-10-01 — A level is named by its route and its place, "LEVEL 1.2", before its title; every view writes its section titles alike.**
+The jam's one route is 1 (light, D-028), so its levels are LEVEL 1.1, LEVEL 1.2 and so on
+(`router.level_label`). The editor writes "LEVEL 1.2. In the shadow" and the spec over the board;
+the run view writes it over the arena's top left, on a backdrop that reads over the rays and the
+light map, and its column falls into three titled parts, CONTROLS (with the time at its right),
+OBJECTIVES and INSIDE (the swimmer's wiring), in the style of the editor's palette titles
+(`draw.draw_title`: upper case, dimmed). F3's "(2/2)" goes: the number says it. The end banner
+moves down to leave the title clear.

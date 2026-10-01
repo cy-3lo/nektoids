@@ -14,6 +14,13 @@ from enum import Enum
 from nektoids.graph.board import Board
 from nektoids.levels.level import Level
 
+ROUTE = 1  # the jam's one route, light (D-028): its levels are LEVEL 1.1, LEVEL 1.2...
+
+
+def level_label(index: int) -> str:
+    """How the level at `index` in the route is named on screen, before its title (D-034)."""
+    return f"LEVEL {ROUTE}.{index + 1}"
+
 
 class Screen(Enum):
     EDIT = "edit"  # the level's board in the editor
@@ -37,6 +44,10 @@ class Router:
         if self.index not in self._boards:
             self._boards[self.index] = self.level.new_board()
         return self._boards[self.index]
+
+    @property
+    def label(self) -> str:
+        return level_label(self.index)
 
     @property
     def has_next(self) -> bool:

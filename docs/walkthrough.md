@@ -340,9 +340,12 @@ it meets, so their density falls as 1/r, like the light, and a shadow is where n
 fans turn slowly, at random but the same at every run; X hides them or shows them again. I, a
 developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
 
-Right, one column. At the top, two palettes of five, one row each: the player (back to the
-editor, start again, play or pause, a step of 0.1 s, fast forward), then the timeline (D-033), and the view (zoom in, zoom out, the hand to move
-the view, centre, which frames the swimmers and the lights, and the rays on or off). Every button
+Over the arena's top left, the level's number and title, "LEVEL 1.2. In the shadow" (D-034).
+Right, one column in three titled parts, as the editor's palette writes its titles. CONTROLS, with
+the time at its right: two palettes of five, one row each, the view (zoom in, zoom out, the hand
+to move the view, centre, which frames the swimmers and the lights, and the rays on or off), then
+the player (back to the editor, start again, play or pause, a step of 0.1 s, fast forward), and
+right under it the timeline (D-033). Then OBJECTIVES, and INSIDE, the swimmer's wiring. Every button
 has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
 centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
 "Visit every light", so many reached of so many (section 9).

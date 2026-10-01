@@ -67,6 +67,7 @@ from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT, Clock
 from nektoids.editor.layout import KEY_ALIASES
 from nektoids.editor.recording import Recording
+from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS, TOOLTIP_FRAMES
 from nektoids.graph.board import Board
 from nektoids.graph.dynamics import initial_state
@@ -113,8 +114,10 @@ class ArenaScene:
         levels: Sequence[Level],
         developer: bool = True,
         has_next: bool = False,
+        label: str | None = None,
     ):
         self.levels = list(levels)
+        self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.has_next = has_next  # the player's: a level comes after this one
         self.request: str | None = None  # "edit" or "next": for main.py, which clears it
@@ -150,6 +153,11 @@ class ArenaScene:
     @property
     def level(self) -> Level:
         return self.levels[self.index]
+
+    @property
+    def caption(self) -> str:
+        """The level's number and title, over the arena (D-034)."""
+        return f"{self.label or level_label(self.index)}. {self.level.title}"
 
     @property
     def tooltip(self) -> ArenaButton | None:

@@ -2,7 +2,7 @@
 
 import pytest
 
-from nektoids.editor.router import Router, Screen
+from nektoids.editor.router import Router, Screen, level_label
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas
 
@@ -34,3 +34,10 @@ def test_the_next_level_has_its_own_board_and_there_is_none_after_the_last():
     assert not router.has_next
     with pytest.raises(ValueError, match="last level"):
         router.next()
+
+
+def test_levels_are_named_by_route_and_place():
+    router = Router(arenas())
+    assert router.label == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"
+    router.next()
+    assert router.label == "LEVEL 1.2"
