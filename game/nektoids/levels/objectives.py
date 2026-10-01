@@ -1,13 +1,15 @@
-"""What a level asks of its swimmers, counted, and when a run is over (D-023, D-038).
+"""What a level asks of its swimmers, counted, and when a run is over (D-023, D-038, D-040).
 
 Each objective says what counts at a tick, `marks`, a boolean array (N, K): which lights each
-swimmer reaches (`VisitLights`: a light is reached when their centres come within REACH times the
-sum of their radii, a little short of touching, D-029), or whether it is out of the ring round
-the light (`LeaveRing`). The run keeps one such array per objective and ORs each tick's into it,
-`latch`, so a mark counts once, whatever comes after. Each objective then counts what it asks
-from its marks, so many met out of so many needed (brief section 1: countable win conditions). A
-run ends when every objective is met, or when its time is up. In a level's data an objective is
-its `kind` and its settings (D-028). Pure numbers, no pygame.
+swimmer reaches (a light is reached when their centres come within REACH times the sum of their
+radii, a little short of touching, D-029), whether it is out of the ring round the light, or in
+the ring it must stay in. The run keeps something for each objective, from `start` and then
+`keep` at every tick: latched marks for most (once marked, always marked), the time spent in the
+ring for `StayNear`. Each objective counts what it asks from what was kept, so many met out of
+so many needed (brief section 1: countable win conditions), and may lose the run (`KeepOff`: a
+light touched). A run is lost as soon as an objective loses it, won when every objective is met,
+over when its time is up. In a level's data an objective is its `kind` and its settings
+(D-028). Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -26,25 +28,44 @@ REACH = 1.2  # a light counts as reached this many times its touching distance a
 if TYPE_CHECKING:
     from nektoids.levels.level import Level
 
-Marks = tuple[np.ndarray, ...]  # the run's latched marks, one (N, K) array per objective
+Kept = tuple[np.ndarray, ...]  # what the run keeps for each objective, one array apiece
+EPS = 1e-9  # a timer this close to its seconds has reached them
 
 
 class Objective(Protocol):
     kind: ClassVar[str]  # how a level's data names it; stays put if `name` is reworded
     name: str  # as the player reads it
+    broken: ClassVar[str]  # what the run's end says if it loses the run
 
     def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
         """(N, K): what counts now, for swimmers at pos (N, 2) [u] of radius (N,) [u]."""
         ...
 
-    def count(self, marked: np.ndarray) -> tuple[int, int]:
-        """How many are met, out of how many needed, from the run's latched marks."""
+    def start(self, now: np.ndarray) -> np.ndarray:
+        """What the run keeps for it at t = 0, from what counts then."""
+        ...
+
+    def keep(self, kept: np.ndarray, now: np.ndarray, dt: float) -> np.ndarray:
+        """What the run keeps after a tick of `dt` [s], from what it kept and what counts now."""
+        ...
+
+    def count(self, kept: np.ndarray) -> tuple[int, int]:
+        """How many are met, out of how many needed."""
+        ...
+
+    def progress(self, kept: np.ndarray) -> float:
+        """How far along it is, from 0 to 1: its bar."""
+        ...
+
+    def lost(self, kept: np.ndarray) -> bool:
+        """Whether it has lost the run, whatever the rest."""
         ...
 
 
 class Outcome(Enum):
     WON = "won"
     TIME_UP = "time up"
+    LOST = "lost"  # an objective lost the run: a light touched (D-040)
 
 
 def reaching(arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
@@ -56,34 +77,60 @@ def reaching(arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
     return dx * dx + dy * dy <= reach * reach
 
 
-def marks(level: Level, pos: np.ndarray, radius: np.ndarray) -> Marks:
-    """What counts now for each of the level's objectives."""
-    return tuple(o.marks(level.arena, pos, radius) for o in level.objectives)
+def begin(level: Level, pos: np.ndarray, radius: np.ndarray) -> Kept:
+    """What the run keeps for each of the level's objectives at t = 0."""
+    return tuple(o.start(o.marks(level.arena, pos, radius)) for o in level.objectives)
 
 
-def latch(marked: Marks, now: Marks) -> Marks:
-    """The run's marks with this tick's added: once marked, always marked."""
-    return tuple(before | new for before, new in zip(marked, now, strict=True))
+def follow(level: Level, kept: Kept, pos: np.ndarray, radius: np.ndarray, dt: float) -> Kept:
+    """What the run keeps after a tick of `dt` [s], the swimmers now at `pos`."""
+    pairs = zip(level.objectives, kept, strict=True)
+    return tuple(o.keep(k, o.marks(level.arena, pos, radius), dt) for o, k in pairs)
 
 
-def met(objective: Objective, marked: np.ndarray) -> bool:
-    done, needed = objective.count(marked)
+def met(objective: Objective, kept: np.ndarray) -> bool:
+    done, needed = objective.count(kept)
     return done >= needed
 
 
-def outcome(level: Level, marked: Marks, tick: int, dt: float) -> Outcome | None:
-    """How the run stands after `tick` ticks of `dt` [s]: won when the level has objectives and
-    every one is met, else over when its time is up, else still running (None)."""
-    pairs = zip(level.objectives, marked, strict=True)
-    if level.objectives and all(met(o, m) for o, m in pairs):
+def outcome(level: Level, kept: Kept, tick: int, dt: float) -> Outcome | None:
+    """How the run stands after `tick` ticks of `dt` [s]: lost as soon as an objective loses it,
+    won when the level has objectives and every one is met, else over when its time is up, else
+    still running (None)."""
+    pairs = list(zip(level.objectives, kept, strict=True))
+    if any(o.lost(k) for o, k in pairs):
+        return Outcome.LOST
+    if level.objectives and all(met(o, k) for o, k in pairs):
         return Outcome.WON
     if tick >= round(level.time_limit / dt):
         return Outcome.TIME_UP
     return None
 
 
+class Latched:
+    """What most objectives keep: their marks, latched; met as they count; never lost."""
+
+    broken: ClassVar[str] = "Lost"
+
+    def start(self, now: np.ndarray) -> np.ndarray:
+        return now
+
+    def keep(self, kept: np.ndarray, now: np.ndarray, dt: float) -> np.ndarray:
+        return kept | now
+
+    def count(self, kept: np.ndarray) -> tuple[int, int]:
+        return int(kept.sum()), int(kept.size)
+
+    def progress(self, kept: np.ndarray) -> float:
+        done, needed = self.count(kept)
+        return done / needed if needed else 1.0
+
+    def lost(self, kept: np.ndarray) -> bool:
+        return False
+
+
 @dataclass(frozen=True)
-class VisitLights:
+class VisitLights(Latched):
     """Every swimmer reaches every light of the arena, in any order."""
 
     kind: ClassVar[str] = "visit lights"
@@ -92,12 +139,9 @@ class VisitLights:
     def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
         return reaching(arena, pos, radius)  # (N, L)
 
-    def count(self, marked: np.ndarray) -> tuple[int, int]:
-        return int(marked.sum()), int(marked.size)
-
 
 @dataclass(frozen=True, kw_only=True)  # LeaveRing(radius=12.0), never by position
-class LeaveRing:
+class LeaveRing(Latched):
     """Every swimmer gets out of the ring of `radius` round every light: fear (D-038)."""
 
     kind: ClassVar[str] = "leave ring"
@@ -109,11 +153,59 @@ class LeaveRing:
         dy = arena.light_xy[None, :, 1] - pos[:, None, 1]
         return (dx * dx + dy * dy > self.radius * self.radius).all(axis=1)[:, None]  # (N, 1)
 
-    def count(self, marked: np.ndarray) -> tuple[int, int]:
-        return int(marked.sum()), int(marked.size)
+
+@dataclass(frozen=True, kw_only=True)
+class StayNear:
+    """Every swimmer stays within `radius` of a light for `seconds` in a row: love (D-040).
+    The run keeps each swimmer's time in the ring, back to 0 when it leaves, kept once full."""
+
+    kind: ClassVar[str] = "stay near"
+    name: str = "Stay by the light"
+    radius: float = 6.0  # [u], from the light's centre to the swimmer's
+    seconds: float = 5.0  # [s]
+    broken: ClassVar[str] = "Lost"
+
+    def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
+        dx = arena.light_xy[None, :, 0] - pos[:, None, 0]
+        dy = arena.light_xy[None, :, 1] - pos[:, None, 1]
+        return (dx * dx + dy * dy <= self.radius * self.radius).any(axis=1)[:, None]  # (N, 1)
+
+    def start(self, now: np.ndarray) -> np.ndarray:
+        return np.zeros(now.shape)
+
+    def keep(self, kept: np.ndarray, now: np.ndarray, dt: float) -> np.ndarray:
+        full = kept >= self.seconds - EPS
+        return np.where(full, kept, np.where(now, kept + dt, 0.0))
+
+    def count(self, kept: np.ndarray) -> tuple[int, int]:
+        return int((kept >= self.seconds - EPS).sum()), int(kept.size)
+
+    def progress(self, kept: np.ndarray) -> float:
+        return float(min(1.0, kept.max() / self.seconds)) if kept.size else 0.0
+
+    def lost(self, kept: np.ndarray) -> bool:
+        return False
 
 
-OBJECTIVES: dict[str, type] = {VisitLights.kind: VisitLights, LeaveRing.kind: LeaveRing}
+@dataclass(frozen=True)
+class KeepOff(Latched):
+    """No swimmer reaches a light: one that does loses the run at once (D-040)."""
+
+    kind: ClassVar[str] = "keep off"
+    name: str = "Don't touch the light"
+    broken: ClassVar[str] = "It touched the light"
+
+    def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
+        return reaching(arena, pos, radius)  # (N, L): the lights touched
+
+    def count(self, kept: np.ndarray) -> tuple[int, int]:
+        return int((~kept.any(axis=1)).sum()), int(kept.shape[0])
+
+    def lost(self, kept: np.ndarray) -> bool:
+        return bool(kept.any())
+
+
+OBJECTIVES: dict[str, type] = {o.kind: o for o in (VisitLights, LeaveRing, StayNear, KeepOff)}
 
 
 def objective_to_dict(objective: Objective) -> dict:
