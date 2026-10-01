@@ -8,7 +8,7 @@
 Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
 For now it shows the wiring editor; the Run button comes with the swimmer's dynamics.
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.
-F3 switches to the arena view (D-019): a swimmer running the board in a lit arena, not moving yet.
+F3 switches to the arena view (D-019, D-022): a swimmer running the board in a lit arena.
 """
 
 import asyncio

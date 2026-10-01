@@ -4,8 +4,9 @@ Left, the arena: the light as rays (or, with I, as a map), the obstacles and the
 swimmer as a circle round a wedge; its eyes and thrusters sit where the board puts them on it.
 Right, from the top (`arena_layout.py`): the player's and the view's palettes, the objectives and
 how far along each is, and the selected swimmer's wiring, live: its eyes read the light every
-tick and every node follows with its lag (D-017), as it will in the game. No dynamics yet: the
-thrusters fire, the swimmer stays put. P shows, over the arena, the light at its eyes as a polar
+tick and every node follows with its lag (D-017), as it will in the game. The thrusters push
+against Stokes drag (D-022): the swimmer swims, sliding along the walls and round the obstacles.
+P shows, over the arena, the light at its eyes as a polar
 plot: what a flat eye there would read facing each way, E(phi), with a tick where each eye looks.
 
 Mouse: the palettes' buttons; click the swimmer to show its wiring (it is shown to begin with),
@@ -55,10 +56,12 @@ from nektoids.editor.devdrive import DT, Clock
 from nektoids.editor.layout import KEY_ALIASES
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS, TOOLTIP_FRAMES
 from nektoids.graph.board import Board
-from nektoids.graph.dynamics import initial_state, step
+from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import Level
+from nektoids.sim import world
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+from nektoids.sim.contact import confine
 from nektoids.sim.optics import (
     angular_irradiance,
     eye_poses,
@@ -88,19 +91,13 @@ class Snapshot:
     phase: tuple[float, ...]
 
 
-def _eyes(net: Network) -> tuple[np.ndarray, np.ndarray]:
-    """Mounts (k, 2) and facings (k,) of the network's eyes."""
-    facing = np.array([net.facing[i] for i in net.eyes], dtype=np.int64)
-    return net.mount[net.eyes], facing
-
-
 class ArenaScene:
     def __init__(self, board: Board, levels: Sequence[Level]):
         self.levels = list(levels)
         self.index = 0
         self.clock = Clock()
         self.circuit = Circuit(board, CIRCUIT_AREA, CIRCUIT_MARGIN, body=True)
-        self.eye_mount, self.eye_facing = _eyes(self.net)
+        self.eye_mount, self.eye_facing = world.parts(self.net, self.net.eyes)
         self.selected: int | None = 0  # the swimmer whose wiring the panel shows
         self.dragging: int | None = None
         self.show_rays = True  # the light's rays, drawn or not
@@ -191,6 +188,8 @@ class ArenaScene:
             self.history.append(before)
         for _ in ticks:
             self._tick()
+        if len(ticks) and self.show_map:
+            self._map()  # the swimmers' shadows moved
 
     def _snapshot(self) -> Snapshot:
         return Snapshot(
@@ -216,8 +215,10 @@ class ArenaScene:
             self._map()
 
     def _tick(self) -> None:
-        self.eyes = self._read_eyes()
-        self.state = step(self.net, self.state, self.eyes, DT)
+        self.pos, self.heading, self.state = world.step(
+            self.arena, self.net, self.pos, self.heading, self.radius, self.state, DT
+        )
+        self.eyes = self.state[:, self.net.eyes]  # what they read where the swimmers now are
         self.circuit.advance(self.y, DT)
 
     def progress(self) -> list[tuple[str, float]]:
@@ -325,12 +326,10 @@ class ArenaScene:
         self.view = pan_view(self.view, dx, dy)
 
     def _drag(self, point: tuple[int, int]) -> None:
+        """Move the dragged swimmer under the mouse, outside the obstacles and inside the walls."""
+        k = self.dragging
         x, y = self.view.to_world(*point)
-        r = self.radius[self.dragging]
-        self.pos[self.dragging] = (
-            min(max(x, r), self.arena.width - r),
-            min(max(y, r), self.arena.height - r),
-        )
+        self.pos[k] = confine(self.arena, np.array([[x, y]]), self.radius[k : k + 1])[0]
         self._moved()
 
     def _turn(self, steps: float) -> None:
