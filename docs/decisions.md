@@ -267,3 +267,22 @@ without transcribing it.
 Consequences: a path comes back as saved unless the board was edited with Move or Delete, after
 which a wire drawn again may take another route as short; keeping saved paths exactly is for
 when saving arrives. The format has no version number yet.
+
+**D-025 — 2026-10-01 — Turning acts on the selected part, from two buttons and two keys; the palette is titled sections, two buttons a row, with room kept for editing and files. Amends D-009's Rotate tool.**
+Turn left and Turn right replace Rotate. Pressing either button, or R (right, clockwise) or
+Shift+R (left), turns the selected eye or thruster by 60° at once and takes that tool; with the
+tool, a click turns the part clicked and selects it, and shift-click still turns it the other
+way (D-009). The selected part is the last one placed, wired from, moved or turned: a click on a
+part with any tool but Delete selects it, its cell is lit like the tool in hand, Escape or a
+right click drops it, and deleting it clears it. Operators and locked parts refuse as before.
+The palette widens from 72 to 120 px, so the grid's column narrows from 688 to 640 px; the zone
+and the hex size are unchanged (D-013). Its sections, each under its title: View (zoom in, zoom
+out; hand, centre), Tools (add, wire; move, delete; turn left, turn right), a row each kept free
+for Edit (undo, redo, D-027) and File (save, load, post-jam), nothing drawn there yet, and
+Colours. Tooltips sit left of the palette.
+Turning a part took the Rotate tool, then a click, and a shift-click to go back; with a
+selection, the same key or button acts at once, and left and right sit side by side. The room
+lets undo and saving arrive without moving every button again.
+Consequences: R keeps its meaning (D-021); Shift+R is the only shifted shortcut, so `_shortcut`
+reads the Shift modifier for R. The Turn left icon, Font Awesome's rotate-left, is also the
+arena's Start again (F3): no key clashes, but one of the two may want another glyph.

@@ -20,7 +20,8 @@ python game/main.py
 In the window, try:
 - drag an Eye, a Sum and a Thruster from the left menu onto the lighter cells;
 - wire them with the Wire tool (drag from one part to another);
-- turn a part with Rotate;
+- turn a part: it is selected once placed (or click it with Move), then R turns it right,
+  Shift+R left, as do the two turn buttons;
 - drag a part with Move and watch its wires follow;
 - hover with Delete to see what would go.
 
@@ -114,12 +115,16 @@ This file holds two starting boards on the 19-cell zone `hex_disc(2)`:
 ### 2.5 Screen and view: [`editor/layout.py`](../game/nektoids/editor/layout.py)
 
 The screen has three columns: the menu on the left, the grid in the centre, the palette on the
-right. This module has no pygame either (tested in `tests/test_layout.py`).
+right, in titled sections of two buttons a row, with room kept for undo and saving (D-025). This
+module has no pygame either (tested in `tests/test_layout.py`).
 - **`Layout`** is frozen. It holds the fixed rectangles, and `make_layout(folded)` builds it again when a menu group folds.
 - **`View`** is how the grid is seen: the hex size and where cell (0, 0) sits on screen. `zoom` (which keeps the point under the zoom fixed) and `pan` return a new `View`. They never touch the board (D-013).
 - **Hit-testing** answers "what is under this pixel": `cell_at`, `menu_item_at`, `tool_at`, `view_button_at`, `group_at`, `palette_target_at`.
 - **`visible_cells`** lists every hex that shows in the grid area.
-- **`TOOL_KEYS` and `VIEW_KEYS`** are the shortcut letters.
+- **`_section`** lays out one palette section: its title, its buttons two a row, and where the
+  next starts. `palette_titles` are drawn; `palette_room` is kept free.
+- **`TOOL_KEYS` and `VIEW_KEYS`** are the shortcut letters; `TURNS` says which way each turn tool
+  goes, in hex directions (counter-clockwise is +1).
 
 ### 2.6 Input and interactive state: [`editor/scene.py`](../game/nektoids/editor/scene.py)
 
@@ -127,6 +132,7 @@ right. This module has no pygame either (tested in `tests/test_layout.py`).
 - the current `tool` and the `view`;
 - what is being carried: `picked` and `dragging` for Add, `source`, `pressed` and `fresh` for Wire, `moving` for Move, `panning_from` for the hand, `cursor` and `carrying` for the keyboard;
 - what is under the mouse: `pointed` (any grid cell) and `hover` (only zone cells);
+- `selected`, the part the turn buttons and keys act on (D-025);
 - the last refusal (`message`, `flash_cell`).
 
 It calls only the board's public methods.
@@ -149,6 +155,10 @@ It calls only the board's public methods.
 - `_wire_start` says where the ghost route starts, and `_update_ghost` computes it:
   - `board.route` over an empty cell, drawn dim;
   - `board.preview` over a target, drawn bright if it may connect.
+
+**Turning (D-025):** `_choose(tool)` is where a tool's button and its key meet. A turn tool turns
+the selected part at once (`_turn`), then turns whatever part is clicked. `_shortcut` tells R from
+Shift+R by the Shift modifier, since it upper-cases the character typed.
 
 **Delete:** `_delete_target(cell, pos)` is the single hit test. A click on a component's shape takes the component. Otherwise the wire drawn nearest the click is taken, which is the only way to reach a wire between two neighbouring parts, since it crosses no free cell. `doomed()` asks the same function, so the darkened preview is exactly what a click would remove.
 
