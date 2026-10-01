@@ -8,7 +8,7 @@ from nektoids.graph.board import Kind, Refused
 from nektoids.graph.dynamics import TAU, initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
-from nektoids.levels.objectives import REACH, Outcome, outcome, reaching
+from nektoids.levels.objectives import REACH, Outcome, latch, marks, outcome
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.motion import SPEED
@@ -62,14 +62,15 @@ def last(states):
 
 
 def play(net, title):
-    """Run the level until it is over, as the arena view does: (outcome, ticks, visited)."""
+    """Run the level until it is over, as the arena view does: (outcome, ticks, marked), the
+    marks of its objectives latched tick by tick (D-038)."""
     level = LEVELS[title]
-    visited = reaching(level.arena, np.array([level.start[:2]]), np.ones(1))
+    marked = marks(level, np.array([level.start[:2]]), np.ones(1))
     for tick, (pos, _, _) in enumerate(run(net, title, level.time_limit), start=1):
-        visited |= reaching(level.arena, pos, np.ones(1))
-        ended = outcome(level, visited, tick, DT)
+        marked = latch(marked, marks(level, pos, np.ones(1)))
+        ended = outcome(level, marked, tick, DT)
         if ended is not None:
-            return ended, tick, visited
+            return ended, tick, marked
     raise AssertionError("the run outlived its time limit")
 
 
@@ -105,7 +106,7 @@ def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
 
 
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
-    ended, _, visited = play(UNCROSSED, "One light")
+    ended, _, (visited,) = play(UNCROSSED, "One light")
     assert ended is Outcome.TIME_UP and not visited.any()
     light, touch = LEVELS["One light"].arena.light_xy[0], REACH * (LIGHT_RADIUS + 1.0)
     begun = np.hypot(*(np.array(LEVELS["One light"].start[:2]) - light)) - touch
