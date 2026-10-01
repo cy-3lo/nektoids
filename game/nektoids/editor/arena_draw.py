@@ -453,7 +453,7 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         screen.blit(line, line.get_rect(midtop=(box.centerx, top)))
         top += line.get_height() + 4
     for button, rect in banner_rects(scene.banner_buttons):
-        label = "Next level" if button is ArenaButton.NEXT else "Edit"
+        label = (scene.next_label or "Next level") if button is ArenaButton.NEXT else "Edit"
         pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
         shown = fonts.text.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
         screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))

@@ -113,13 +113,13 @@ class ArenaScene:
         board: Board,
         levels: Sequence[Level],
         developer: bool = True,
-        has_next: bool = False,
+        next_label: str | None = None,
         label: str | None = None,
     ):
         self.levels = list(levels)
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
-        self.has_next = has_next  # the player's: a level comes after this one
+        self.next_label = next_label  # what the banner's next button says after a win; None: none
         self.request: str | None = None  # "edit" or "next": for main.py, which clears it
         self.index = 0
         self.clock = Clock()
@@ -333,7 +333,7 @@ class ArenaScene:
         """What the banner offers once the run is over: the next level after a win, and Edit."""
         if self.outcome is None:
             return ()
-        if self.outcome is Outcome.WON and (self.developer or self.has_next):
+        if self.outcome is Outcome.WON and (self.developer or self.next_label):
             return (ArenaButton.NEXT, ArenaButton.EDIT)
         return (ArenaButton.EDIT,)
 

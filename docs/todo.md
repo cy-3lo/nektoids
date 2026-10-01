@@ -6,11 +6,11 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 
 ## 0. What the player sees first, and how they move around (D-028)
 
-- [ ] Open on Tutorial 1's board under a title card ("Nektoids — wire the eyes to the
+- [x] Open on Tutorial 1's board under a title card ("Nektoids — wire the eyes to the
       thrusters, then Run"), gone at the first click; a Map button from the start.
-- [ ] A screen router in `main.py`: map, level (edit and run), sandbox, end screen. A pure state
+- [x] A screen router in `main.py`: map, level (edit and run), sandbox, end screen. A pure state
       machine, tested headless; F2, F3 and F4 stay developer tools behind `DEV_VIEW`.
-- [ ] The map: one route, light (three tutorials, then the real level), and the sandbox.
+- [x] The map: one route, light (three tutorials, then the real level), and the sandbox.
       Levels open one after the other.
 - [ ] An explanation for each part (sensor, operator, actuator): clicked, it opens a small box
       next to it that says what it does; another click or any key closes it. To settle: which
@@ -54,8 +54,8 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 
 ## 5. Ship
 
-- [ ] The end screen: "If you liked this and want to support development, reach out", with a
-      contact link (brief §3).
+- [x] The end screen: "If you liked this and want to support development, reach out", with a
+      contact link (brief §3): a comment on the itch.io page (D-035).
 - [ ] `DEV_VIEW = False` for the build that is uploaded.
 - [ ] `pygbag --build --archive game`, upload to itch.io.
 - [ ] Check in Chrome and in Safari. Safari has never been checked: the keys (Cmd+Y opens its

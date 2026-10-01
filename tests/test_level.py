@@ -6,7 +6,7 @@ import pytest
 
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NE
-from nektoids.levels.arenas import DATA, ORDER, arenas
+from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas
 from nektoids.levels.level import Item, ItemKind, Level, load, to_json
 from nektoids.levels.objectives import VisitLights
 from nektoids.levels.sandbox import tutorial_board
@@ -32,8 +32,8 @@ def a_level(**changes):
 
 
 def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_writes():
-    assert sorted(path.stem for path in DATA.glob("*.json")) == sorted(ORDER)
-    for name in ORDER:
+    assert sorted(path.stem for path in DATA.glob("*.json")) == sorted((*ORDER, SANDBOX))
+    for name in (*ORDER, SANDBOX):
         path = DATA / f"{name}.json"
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
     assert [level.title for level in arenas()] == ["One light", "In the shadow"]
