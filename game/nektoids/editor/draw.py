@@ -25,6 +25,7 @@ from nektoids.editor.icons import EDIT_ICON, FILE_ICON, KIND_ICON, TOOL_ICON, VI
 from nektoids.editor.layout import (
     EDIT_KEYS,
     PALETTE_TITLE,
+    RUN_KEY,
     TOOL_KEYS,
     VIEW_KEYS,
     EditButton,
@@ -93,8 +94,8 @@ TIP = {
 HINT = {
     Tool.ADD: "Drag a component from the menu onto the grid (or its number, arrows, Enter).",
     Tool.WIRE: "Drag from one part to another, or click one then the other.",
-    Tool.TURN_LEFT: "Click an eye or a thruster to turn it left. L turns the selected one.",
-    Tool.TURN_RIGHT: "Click an eye or a thruster to turn it right. R turns the selected one.",
+    Tool.TURN_LEFT: "Click a part to select it, again to turn it left. L turns the selected one.",
+    Tool.TURN_RIGHT: "Click a part to select it, again to turn it right. R turns the selected one.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",
     Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
@@ -159,8 +160,10 @@ class Fonts:
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
     _draw_menu(screen, scene, fonts)
+    _draw_run_button(screen, scene, fonts)
     _draw_palette(screen, scene, fonts)
     _draw_board(screen, scene, fonts)
+    _draw_caption(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     _draw_separators(screen, scene)
     _draw_tooltip(screen, scene, fonts)
@@ -375,11 +378,16 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
         draw_button(screen, fonts, rect, FILE_ICON[button], False, enabled=False)
     for title, (x, y, _, _) in layout.palette_titles:
-        text = fonts.text.render(title.upper(), True, DIM_TEXT)
-        screen.blit(text, (x, y + (PALETTE_TITLE - text.get_height()) // 2))
+        draw_title(screen, fonts, title, (x, y))
     # The colour picker keeps its place, inactive until colours carry a meaning.
     for rect in layout.swatches:
         pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
+
+
+def draw_title(screen, fonts: Fonts, title: str, topleft, height: int = PALETTE_TITLE) -> None:
+    """A section's title, as every view writes them: upper case, dimmed, centred in `height`."""
+    text = fonts.text.render(title.upper(), True, DIM_TEXT)
+    screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 
 def draw_button(screen, fonts: Fonts, rect, icon: str, active: bool, enabled: bool = True) -> None:
@@ -420,6 +428,28 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
 def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
     for x in (scene.layout.menu_area[2], scene.layout.palette_area[0]):
         pygame.draw.line(screen, RULE, (x, 0), (x, screen.get_height()), 2)
+
+
+def _draw_run_button(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """At the foot of the menu: a play mark, "Run", and its key."""
+    x, y, w, h = scene.layout.run_button
+    pygame.draw.rect(screen, ACTIVE, (x, y, w, h), border_radius=6)
+    fonts.icons.draw(screen, "play", (x + 22, y + h // 2), 18, TEXT)
+    label = fonts.text.render("Run", True, TEXT)
+    screen.blit(label, (x + 46, y + (h - label.get_height()) // 2))
+    key = fonts.small.render(RUN_KEY, True, DIM_TEXT)
+    screen.blit(key, (x + w - 12 - key.get_width(), y + (h - key.get_height()) // 2))
+
+
+def _draw_caption(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The level's title and, after it, what it asks: the spec comes first (brief §1)."""
+    title, spec = scene.caption
+    if not title:
+        return
+    x, y = scene.layout.caption_at
+    shown = fonts.text.render(title, True, TEXT)
+    screen.blit(shown, (x, y))
+    screen.blit(fonts.text.render(spec, True, DIM_TEXT), (x + shown.get_width() + 12, y))
 
 
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

@@ -14,6 +14,7 @@ from nektoids.editor.arena_view import (
     ArenaView,
     Rays,
     body_at,
+    edge_marker,
     frame,
     map_grid,
     map_points,
@@ -89,6 +90,17 @@ def test_centring_puts_the_mean_of_the_points_in_the_middle_and_shows_them_all()
         assert 0 <= px <= 640 and 0 <= py <= 608
     close = frame(AREA, np.array([[20.0, 19.0], [20.5, 19.0]]), 0.1)
     assert close.scale == MAX_SCALE  # a tight group: as close as the view goes
+
+
+def test_a_swimmer_out_of_view_gets_a_marker_at_the_edge_pointing_to_it():
+    assert edge_marker(VIEW, AREA, (20.0, 19.0)) is None  # in view: nothing
+    (x, y), angle = edge_marker(VIEW, AREA, (60.0, 19.0), inset=10.0)  # off the right edge
+    assert (x, y) == pytest.approx((630.0, 304.0)) and angle == pytest.approx(0.0)
+    (x, y), angle = edge_marker(VIEW, AREA, (20.0, -100.0), inset=10.0)  # far below
+    assert (x, y) == pytest.approx((320.0, 598.0)) and angle == pytest.approx(np.pi / 2)
+    (x, y), _ = edge_marker(VIEW, AREA, (-200.0, 300.0), inset=10.0)  # off a corner
+    assert 10.0 <= x <= 630.0 and 10.0 <= y <= 598.0  # still inside the area
+    assert x == pytest.approx(10.0) or y == pytest.approx(10.0)  # on the inset edge
 
 
 # Grey levels

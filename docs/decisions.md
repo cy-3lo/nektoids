@@ -349,3 +349,61 @@ player reads as reaching it, did not count. The win needs no exact trajectory an
 Consequences: the pinned wins come a little earlier, crossed wiring in "One light" at 8.59 s
 (8.66 s before), the one-eyed circler in "Two lights" at 22.81 s (23.06 s); the time limits stand.
 At 3.6 u/s a tick moves 0.03 u against a reach of 2.4 u, so still no visit falls between ticks.
+
+**D-030 — 2026-10-01 — A level is played in a loop: its board in the editor, Run, the run, Edit back, Next level once won. Each level keeps its board for the session.**
+The game opens on the first level's board in the editor, its title and spec over the board. Run,
+a wide button at the foot of the menu, or Space (play, as in the arena, D-021), opens the run
+view on that level alone. Edit, a button in the player's row, or Esc, goes back to the editor,
+the board as it was left. Once the level is won, the banner offers Next level (Enter), when
+there is one, and Edit, to do better on time or parts (D-028); when time is up, Edit only. Each
+level keeps its board, and its editor with its undo history, until the game closes.
+The player's run view touches nothing of the programmed swimmer: no dragging or turning it, and
+none of the developer's tools (light map, polar plot, Tab between levels); clicking it to see
+its wiring stays. F3 keeps the developer's run view of every level, with all of them.
+`editor/router.py` holds which level is open and whether it is edited or run, with no pygame,
+and `main.py` turns that into scenes; a scene asks for a change through its `request`.
+Consequences: the arena's palette gains Edit; the banner has a fixed size, so its buttons can
+be hit-tested headless. The title card, the map and the end screen come next (D-028).
+
+**D-031 — 2026-10-01 — With a turn tool, a click on a part that is not selected only selects it; a click on the selected part turns it. Amends D-025.**
+The turn buttons and L and R still turn the selected part at once, the part just placed among
+them. A click with the tool used to turn whatever it landed on, so picking out the part to turn
+turned it by mistake.
+
+**D-032 — 2026-10-01 — Level 2 is "In the shadow": one light, three obstacles, the swimmer starting in the shadow of one. "Two lights, four obstacles" is set aside.**
+The light (power 8) is 15 u ahead of the start, behind an obstacle of radius 1.5 whose shadow
+covers both eyes: they read 0, so a Braitenberg wiring alone never moves. A Source gives the
+swimmer a drive of its own; with it, crossed wiring slides round the obstacle, sees the light and
+reaches it in 3.7 s; uncrossed flees out of sight. The time limit is 15 s, leaving room for
+slower solutions. Two lights, where 5 random wirings in 2,603 won, was too hard for a second
+level; it waits in `docs/ideas.md`.
+The lesson follows the first level's: an eye in the dark sees nothing, and the drive has to come
+from somewhere. `test_determinism.py` pins the driven, crossed winner and the stillness without
+a drive.
+
+**D-033 — 2026-10-01 — The run view has a timeline instead of one frame back: every tick is recorded, a click or a drag puts the run at any time, a red mark shows where it ended. A step is 0.1 s. Supersedes D-021's `,` (one frame back) and the time in the status line.**
+Two rows of five buttons, the view's first (zoom in, zoom out, hand, centre, rays), then the
+player's (edit, start again, play, a step, fast), and right under it a bar spanning the level's
+time: the part run so far is lighter, the part played brighter, a playhead sits at the time
+shown, and once the run is over, won or out of time, a red mark stands across the bar where it
+ended. Every tick run is kept (`editor/recording.py`). A click or a drag on the bar puts the run
+there, paused: a tick kept comes back at once; ahead of the furthest tick run the run races
+there, 40 ticks a frame, and stops on arriving; never past the run's end. The run is
+deterministic (invariant 1), so this is the run one would have watched straight through, as a
+check showed to the bit. Start again (0) goes back to tick 0 of the same run. A step (`.`),
+paused, runs `STEP_FRAMES` = 6 frames, 0.1 s: one frame, 1/60 s, showed no motion. In F3,
+moving or turning the swimmer by hand cuts the recording there. The time shows over the
+timeline, "3.7 / 15 s", and the status line keeps only the keys. Time left stays among the
+objectives (D-023).
+One frame back went one frame at a time over the last 20 s; the timeline goes anywhere, and a
+level's run is short (15 s, 20 s), so keeping all of it costs little. The rows of buttons were
+uneven, and the timeline belongs with the buttons that play the run.
+
+**D-034 — 2026-10-01 — A level is named by its route and its place, "LEVEL 1.2", before its title; every view writes its section titles alike.**
+The jam's one route is 1 (light, D-028), so its levels are LEVEL 1.1, LEVEL 1.2 and so on
+(`router.level_label`). The editor writes "LEVEL 1.2. In the shadow" and the spec over the board;
+the run view writes it over the arena's top left, on a backdrop that reads over the rays and the
+light map, and its column falls into three titled parts, CONTROLS (with the time at its right),
+OBJECTIVES and INSIDE (the swimmer's wiring), in the style of the editor's palette titles
+(`draw.draw_title`: upper case, dimmed). F3's "(2/2)" goes: the number says it. The end banner
+moves down to leave the title clear.

@@ -10,11 +10,13 @@ as big as a swimmer (`LIGHT_RADIUS`), their rays leaving from the rim, a ring ro
 visited, and a swimmer its body's circle round a wedge, its tip forward, bright when selected.
 When the run is over, a banner over the arena says how it ended.
 
-The column on the right (`arena_layout.py`): the palettes, with a tooltip naming each button and
-its key; the objectives, each counted (so many of so many) and with a bar, and the time left,
-its bar running down to zero, red if it runs out; the selected
-swimmer's wiring on its body, plain: the parts shaded by their rate and the beads on the wires,
-no numbers. With P, an inset over the
+The column on the right (`arena_layout.py`): the title and the time, the palettes, with a
+tooltip naming each button and its key; the timeline, the part of the time allowed already run in
+a lighter grey, the part played brighter, and a red mark where the run ended (D-033);
+the objectives, each counted (so many of so many) and with a bar, and the time left, its bar
+running down to zero, red if it runs out; the selected swimmer's wiring on its body, plain: the
+parts shaded by their rate and the beads on the wires, no numbers. The status line under the
+arena recalls the keys. With P, an inset over the
 arena shows the light at its eyes as a polar plot in the arena's frame: E(phi) for each eye, a
 circle for the scale, and a tick along each eye's look as long as what it reads. The plot is
 exact; the map is smoothed.
@@ -30,8 +32,11 @@ import pygame
 from nektoids.editor.arena import POLAR_ANGLES, ArenaScene
 from nektoids.editor.arena_layout import (
     ARENA_AREA,
+    BANNER,
     BUTTON_KEYS,
+    CAPTION_AT,
     CIRCUIT_AREA,
+    INSIDE_AT,
     MARGIN,
     PANEL_LEFT,
     PANEL_WIDTH,
@@ -40,12 +45,26 @@ from nektoids.editor.arena_layout import (
     POLAR_RADIUS,
     RULES,
     SCORE_AREA,
+    TIMELINE,
+    TIMELINE_BAR,
     TITLE_AT,
     ArenaButton,
+    banner_rects,
     button_rects,
+    timeline_x,
 )
-from nektoids.editor.arena_view import DARKEST, polar_scale, ray_ends, shown, smooth, tone
+from nektoids.editor.arena_view import (
+    DARKEST,
+    edge_marker,
+    polar_scale,
+    ray_ends,
+    shown,
+    smooth,
+    tone,
+)
+from nektoids.editor.devdrive import DT
 from nektoids.editor.draw import (
+    ACTIVE,
     BACKGROUND,
     DARK,
     DIM_TEXT,
@@ -58,7 +77,9 @@ from nektoids.editor.draw import (
     draw_button,
     draw_symbol,
     draw_tip,
+    draw_title,
 )
+from nektoids.editor.layout import PALETTE_TITLE
 from nektoids.editor.schematic_draw import FULL, draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
@@ -75,16 +96,19 @@ LIGHT = (236, 238, 244)
 BODY = (228, 231, 240)  # the selected swimmer
 BODY_UNSELECTED = (132, 136, 150)
 SYMBOL_WIDTH = 2  # [px]
+MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
+RUN_SO_FAR = (110, 114, 128)  # the timeline's part already run, ahead of the playhead
+PLAYHEAD = 6  # [px]
+END_MARK = 3  # the red mark across the timeline where the run ended [px]
 PART_DOT = 4  # an eye's reading in the polar plot [px]
 POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its circle
 EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot, in turn
 BAR_HEIGHT = 8  # an objective's bar [px]
 ROW_PITCH = 40  # one objective [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
-BANNER_TOP = 16  # [px] below the top of the arena
 ICON = {
+    ArenaButton.EDIT: "pen",
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
-    ArenaButton.BACK: "backward-step",
     ArenaButton.STEP: "forward-step",
     ArenaButton.FAST: "forward",
     ArenaButton.ZOOM_IN: "magnifying-glass-plus",
@@ -94,9 +118,9 @@ ICON = {
     ArenaButton.LIGHT: "lightbulb",
 }
 TIP = {
+    ArenaButton.EDIT: "Back to the editor",
     ArenaButton.RESTART: "Start again",
-    ArenaButton.BACK: "One frame back",
-    ArenaButton.STEP: "One frame",
+    ArenaButton.STEP: "A step (0.1 s)",
     ArenaButton.FAST: "Fast forward",
     ArenaButton.ZOOM_IN: "Zoom in",
     ArenaButton.ZOOM_OUT: "Zoom out",
@@ -114,10 +138,20 @@ def draw_arena(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     _draw_swimmers(screen, scene)
     if scene.show_polar:
         _draw_polar(screen, scene, fonts)
+    _draw_caption(screen, scene, fonts)
     screen.set_clip(None)
     _draw_banner(screen, scene, fonts)
     _draw_panel(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
+
+
+def _draw_caption(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """The level's number and title over the arena's top left, on a backdrop so that it reads
+    over the rays and the light map alike."""
+    shown = fonts.text.render(scene.caption, True, TEXT)
+    box = shown.get_rect(topleft=CAPTION_AT).inflate(12, 8)
+    pygame.draw.rect(screen, PANEL, box, border_radius=5)
+    screen.blit(shown, CAPTION_AT)
 
 
 def _map_rect(scene: ArenaScene) -> pygame.Rect:
@@ -179,7 +213,8 @@ def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:
 
 def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
     """Each swimmer its body's circle round a wedge, its tip where it heads; the selected one
-    bright, the others dimmer. The view keeps angles (y flips, heading stays counter-clockwise)."""
+    bright, the others dimmer. The view keeps angles (y flips, heading stays counter-clockwise).
+    A swimmer out of view gets an arrow at the edge, pointing to where it is."""
     view = scene.view
     for k in range(len(scene.pos)):
         centre = view.to_screen(*scene.pos[k])
@@ -187,6 +222,20 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
         radius, heading = float(scene.radius[k]) * view.scale, float(scene.heading[k])
         draw_symbol(screen, DARK, centre, radius + 1, heading, SYMBOL_WIDTH + 2)  # on a light map
         draw_symbol(screen, colour, centre, radius, heading, SYMBOL_WIDTH)
+        marker = edge_marker(view, ARENA_AREA, tuple(scene.pos[k]))
+        if marker is not None:
+            _draw_marker(screen, *marker, colour)
+
+
+def _draw_marker(screen: pygame.Surface, at: tuple[float, float], angle: float, colour) -> None:
+    """An arrowhead centred on `at`, pointing along `angle` [rad, on screen], outlined so that
+    it shows on the rays and on the light map alike."""
+    c, s = math.cos(angle), math.sin(angle)
+    tip = (at[0] + MARKER * c, at[1] + MARKER * s)
+    left = (at[0] - MARKER * c - 0.8 * MARKER * s, at[1] - MARKER * s + 0.8 * MARKER * c)
+    right = (at[0] - MARKER * c + 0.8 * MARKER * s, at[1] - MARKER * s - 0.8 * MARKER * c)
+    pygame.draw.polygon(screen, colour, [tip, left, right])
+    pygame.draw.polygon(screen, DARK, [tip, left, right], 1)
 
 
 def _dot(screen: pygame.Surface, at: tuple[float, float], fill: tuple[int, int, int]) -> None:
@@ -201,16 +250,41 @@ def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     height = screen.get_height()
     pygame.draw.rect(screen, PANEL, (PANEL_LEFT, 0, PANEL_WIDTH, height))
     pygame.draw.line(screen, RULE, (PANEL_LEFT, 0), (PANEL_LEFT, height), 2)
-    count = f"{scene.index + 1}/{len(scene.levels)}"
-    screen.blit(fonts.text.render(f"{scene.title}  ({count})", True, TEXT), TITLE_AT)
+    draw_title(screen, fonts, "Controls", TITLE_AT)
+    elapsed = f"{scene.clock.seconds:.1f} / {scene.level.time_limit:g} s"
+    shown = fonts.text.render(elapsed, True, DIM_TEXT)
+    right = PANEL_LEFT + PANEL_WIDTH - MARGIN
+    screen.blit(shown, shown.get_rect(midright=(right, TITLE_AT[1] + PALETTE_TITLE // 2)))
+    draw_title(screen, fonts, "Inside", INSIDE_AT)
     for y in RULES:
         pygame.draw.line(
             screen, RULE, (PANEL_LEFT + MARGIN, y), (PANEL_LEFT + PANEL_WIDTH - MARGIN, y)
         )
     _draw_palettes(screen, scene, fonts)
+    _draw_timeline(screen, scene, fonts)
     _draw_score(screen, scene, fonts)
     _draw_wiring(screen, scene, fonts)
     _draw_button_tip(screen, scene, fonts)
+
+
+def _draw_timeline(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """The time allowed as a bar: run so far lighter, played brighter, the playhead, and a red
+    mark where the run ended, won or out of time."""
+    x, y, w, h = TIMELINE
+    limit, run = scene.level.time_limit, scene.recording
+    bar = pygame.Rect(x, y + (h - TIMELINE_BAR) // 2, w, TIMELINE_BAR)
+    pygame.draw.rect(screen, RULE, bar, border_radius=3)
+    for seconds, colour in ((run.frontier * DT, RUN_SO_FAR), (scene.clock.seconds, FULL)):
+        part = bar.copy()
+        part.width = round(timeline_x(seconds, limit) - x)
+        if part.width > 0:
+            pygame.draw.rect(screen, colour, part, border_radius=3)
+    if scene.ended_at is not None:
+        end = round(timeline_x(scene.ended_at * DT, limit))
+        pygame.draw.rect(screen, REFUSED, (end - END_MARK // 2, y + 1, END_MARK, h - 2))
+    head = (round(timeline_x(scene.clock.seconds, limit)), bar.centery)
+    pygame.draw.circle(screen, FULL, head, PLAYHEAD)
+    pygame.draw.circle(screen, DARK, head, PLAYHEAD, 1)
 
 
 def _icon(scene: ArenaScene, button: ArenaButton) -> str:
@@ -257,7 +331,7 @@ def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     """Each objective: its name, so many met of so many, a tick once all are, and a bar filling
     up; then the time left, its bar running down, all red once the time is up."""
     x, y, _, _ = SCORE_AREA
-    screen.blit(fonts.small.render("Objectives", True, DIM_TEXT), (x + MARGIN, y + 4))
+    draw_title(screen, fonts, "Objectives", (x + MARGIN, y))
     rows = scene.counts()
     if not rows:
         none = fonts.small.render("None in this arena yet.", True, DIM_TEXT)
@@ -307,7 +381,8 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     if scene.selected is None:
         note = "Click the swimmer to see its wiring"
     elif not scene.circuit.cells:
-        note = "Your board is empty: build one in the editor (F3)"
+        back = "F3" if scene.developer else BUTTON_KEYS[ArenaButton.EDIT]
+        note = f"Your board is empty: build one in the editor ({back})"
     else:
         circuit = scene.circuit
         screen.set_clip(CIRCUIT_AREA)
@@ -370,27 +445,26 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     rows = [f"{name}: {met} of {needed}" for name, met, needed in scene.counts()]
     lines = [fonts.text.render(head, True, TEXT)]
     lines += [fonts.small.render(row, True, DIM_TEXT) for row in [*rows, "0: start again"]]
-    x, y, w, _ = ARENA_AREA
-    width = max(line.get_width() for line in lines) + 32
-    height = sum(line.get_height() + 4 for line in lines) + 16
-    box = pygame.Rect(0, 0, width, height)
-    box.midtop = (x + w // 2, y + BANNER_TOP)
+    box = pygame.Rect(BANNER)
     pygame.draw.rect(screen, PANEL, box, border_radius=6)
     pygame.draw.rect(screen, LIGHT if ended is Outcome.WON else RULE, box, 2, border_radius=6)
     top = box.top + 10
     for line in lines:
         screen.blit(line, line.get_rect(midtop=(box.centerx, top)))
         top += line.get_height() + 4
+    for button, rect in banner_rects(scene.banner_buttons):
+        label = "Next level" if button is ArenaButton.NEXT else "Edit"
+        pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
+        shown = fonts.text.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
+        screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))
 
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    clock = scene.clock
-    state = "over" if scene.outcome is not None else "paused" if clock.paused else "running"
-    speed = f" x{clock.speed}" if clock.speed > 1 else ""
-    cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
-    limit = f"{scene.level.time_limit:g}"
-    text = (
-        f"t = {clock.seconds:5.2f} / {limit} s, {state}{speed}.  I: map{cost}.  P: polar plot.  "
-        "Wheel, L, R: turn.  Tab: arena.  F3: editor."
-    )
+    """Only the keys: the time is on the timeline and over it."""
+    keys = "Space: play or pause.  .: a step.  0: start again.  F: fast."
+    if scene.developer:
+        cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
+        text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F3: editor."
+    else:
+        text = f"{keys}  Esc: back to the editor."
     screen.blit(fonts.small.render(text, True, DIM_TEXT), (16, screen.get_height() - 22))

@@ -6,11 +6,10 @@ import pytest
 
 from nektoids.graph.board import Kind, Refused
 from nektoids.graph.dynamics import TAU, initial_state
-from nektoids.graph.hexgrid import NE, NW
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import REACH, Outcome, outcome, reaching
-from nektoids.levels.sandbox import free_board, tutorial_board
+from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.motion import SPEED
 from nektoids.sim.optics import eye_rates
@@ -32,26 +31,16 @@ CROSSED = wired((0, 3), (1, 2))  # Braitenberg's aggression: charges the light
 UNCROSSED = wired((0, 2), (1, 3))  # ... and fear: turns away from it
 
 
-def one_eyed_circler():
-    """Found by a search of the free board: both thrusters push NW, the front one at half the
-    Source's rate and the back one as much as the single eye, looking NE, reads."""
-    board = free_board()
-    eye, source, half, back, front = (
-        board.place(kind, cell, facing=facing)
-        for kind, cell, facing in (
-            (Kind.EYE, (0, -2), NE),
-            (Kind.SOURCE, (0, 0), None),
-            (Kind.HALVE, (1, 0), None),
-            (Kind.THRUSTER, (-2, 2), NW),
-            (Kind.THRUSTER, (1, -1), NW),
-        )
-    )
-    for a, b in ((eye, back), (source, half), (half, front)):
-        assert not isinstance(board.connect(a.id, b.id), Refused)
+def driven(*wires):
+    """The tutorial board, wired, with a Source on both thrusters: a drive of its own."""
+    board = tutorial_board()
+    source = board.place(Kind.SOURCE, (0, 0), locked=True)
+    for a, b in ((source.id, 2), (source.id, 3), *wires):
+        assert not isinstance(board.connect(a, b), Refused)
     return Network.from_board(board)
 
 
-CIRCLER = one_eyed_circler()  # visits both lights of "Two lights, four obstacles"
+DRIVEN = driven((0, 3), (1, 2))  # crossed, and driven: out of a shadow, then to the light
 
 
 def run(net, title, seconds, start=None):
@@ -91,7 +80,7 @@ CROWD = ((2.0, 2.0, 0.0), (38.0, 36.0, 2 * math.pi))  # where and how the crowd 
 
 
 def crowd_hash(seed, seconds=5.0, n_swimmers=50):
-    title = "Two lights, four obstacles"
+    title = "In the shadow"
     rng = np.random.default_rng(seed)
     start = rng.uniform(*CROWD, (n_swimmers, 3))
     pos, heading, y = last(run(CROSSED, title, seconds, start))
@@ -127,16 +116,21 @@ def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
     assert np.all(y[:, UNCROSSED.eyes] < 0.01)  # still fading: it slows as it darkens
 
 
-def test_two_lights_can_be_won_with_time_and_room_to_spare():
-    title = "Two lights, four obstacles"
-    ended, ticks, _ = play(CIRCLER, title)
-    assert ended is Outcome.WON and ticks * DT < LEVELS[title].time_limit / 1.5
-    assert play(CIRCLER, title)[1] == ticks  # the same tick, every run
-    lights = LEVELS[title].arena.light_xy
-    nearest = np.full(len(lights), np.inf)
-    for pos, _, _ in run(CIRCLER, title, ticks * DT + 2.0):  # it heads on past the last touch
-        nearest = np.minimum(nearest, np.hypot(*(lights - pos[0]).T))
-    assert np.all(nearest < 0.5 * (LIGHT_RADIUS + 1.0))  # deep in, not grazing (D-004)
+def test_in_the_shadow_the_eyes_see_nothing_and_a_swimmer_without_a_drive_never_moves():
+    level = LEVELS["In the shadow"]
+    pos, _, y = last(run(CROSSED, "In the shadow", 5.0))
+    assert pos.tolist() == [list(level.start[:2])]
+    assert np.all(y[:, CROSSED.eyes] == 0.0)
+
+
+def test_in_the_shadow_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spare():
+    title = "In the shadow"
+    ended, ticks, _ = play(DRIVEN, title)
+    assert ended is Outcome.WON and ticks * DT < LEVELS[title].time_limit / 2
+    assert play(DRIVEN, title)[1] == ticks  # the same tick, every run
+    light = LEVELS[title].arena.light_xy[0]
+    nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(DRIVEN, title, ticks * DT + 2.0))
+    assert nearest < 0.5 * (LIGHT_RADIUS + 1.0)  # deep in, not grazing it (D-004)
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():

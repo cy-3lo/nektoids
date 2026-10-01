@@ -1,4 +1,9 @@
-"""The arena view (F3, developer): a swimmer running your board in a lit arena (D-018, D-019).
+"""The arena view: a swimmer running your board in a lit arena (D-018, D-019).
+
+Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Esc)
+goes back to it, and once the level is won the banner's Next level (Enter) moves on. Nothing
+touches the programmed swimmer: no dragging or turning it, and none of the developer's tools.
+The developer's (F3): every level, Tab between them, and the tools below.
 
 Left, the arena: the light as rays (or, with I, as a map), the obstacles and the lights, and the
 swimmer as a circle round a wedge; its eyes and thrusters sit where the board puts them on it.
@@ -14,19 +19,19 @@ Mouse: the palettes' buttons; click the swimmer to show its wiring (it is shown 
 click beside it to hide it, drag it to move it (with the hand, drag the view); the wheel turns
 it by 15°, as do L (left, counter-clockwise) and R, the editor's turn keys. Keys
 (`arena_layout.BUTTON_KEYS`, named in the tooltips), the same as the editor's wherever they do
-the same: 0 starts again, `,` goes one frame back, Space plays or pauses, `.` runs one frame, F
-fast forwards, + and - zoom, H takes the hand (then the arrows drag the view), C centres, X
-shows or hides the rays; and I (light map), P (polar plot), Tab and Shift-Tab (arena). One frame
-back replays nothing: the scene keeps the last HISTORY frames as they were, so it also takes
-back the end of a run. Moving and turning the swimmer by hand are for trying things out; the run
-takes no notice. Mutates nothing in the board.
+the same: 0 starts again, Space plays or pauses, `.` runs a step of 0.1 s, F fast forwards, + and -
+zoom, H takes the hand (then the arrows drag the view), C centres, X shows or hides the rays;
+and I (light map), P (polar plot), Tab and Shift-Tab (arena). The timeline under the buttons
+puts the run at any time, clicked or dragged (D-033): every tick run is recorded, so going back
+restores it as it was, and going ahead of the furthest tick run races there; a red mark across
+it is where the run ended. Moving or turning the swimmer by hand, for trying things out, cuts the
+recording there. Mutates nothing in the board.
 """
 
 from __future__ import annotations
 
 import math
 import time
-from collections import deque
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -41,7 +46,10 @@ from nektoids.editor.arena_layout import (
     POLAR_KEY,
     TURN_KEYS,
     ArenaButton,
+    banner_button_at,
     button_at,
+    timeline_at,
+    timeline_time,
 )
 from nektoids.editor.arena_view import (
     ZOOM_STEP,
@@ -58,6 +66,8 @@ from nektoids.editor.arena_view import (
 from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT, Clock
 from nektoids.editor.layout import KEY_ALIASES
+from nektoids.editor.recording import Recording
+from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS, TOOLTIP_FRAMES
 from nektoids.graph.board import Board
 from nektoids.graph.dynamics import initial_state
@@ -82,15 +92,14 @@ FRAME_MARGIN = 3.0  # room round the swimmers, lights and obstacles when framing
 TURN = math.radians(15.0)
 FAST = 4  # fast forward runs this many frames' worth of ticks a frame
 ARROW_PAN = 2.0  # with the hand, an arrow drags the view this far [u]
-HISTORY = 1200  # frames kept for going back: 20 s at 60 frames a second
+SEEK_TICKS = 40  # a frame's worth of ticks while the run races ahead to a time asked for
 
 
 @dataclass(frozen=True)
 class Snapshot:
-    """What one frame back puts back: the clock, the swimmers, their controllers, the lights
-    they have visited, the beads."""
+    """The run at one tick, as the timeline puts it back: the swimmers, their controllers, the
+    lights they have visited, the beads."""
 
-    tick: int
     pos: np.ndarray
     heading: np.ndarray
     state: np.ndarray
@@ -99,8 +108,19 @@ class Snapshot:
 
 
 class ArenaScene:
-    def __init__(self, board: Board, levels: Sequence[Level]):
+    def __init__(
+        self,
+        board: Board,
+        levels: Sequence[Level],
+        developer: bool = True,
+        has_next: bool = False,
+        label: str | None = None,
+    ):
         self.levels = list(levels)
+        self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
+        self.developer = developer  # the developer's tools, every level; or the player's run
+        self.has_next = has_next  # the player's: a level comes after this one
+        self.request: str | None = None  # "edit" or "next": for main.py, which clears it
         self.index = 0
         self.clock = Clock()
         self.circuit = Circuit(board, CIRCUIT_AREA, CIRCUIT_MARGIN, body=True)
@@ -112,7 +132,8 @@ class ArenaScene:
         self.show_polar = False  # the polar plot of the light at the eyes (developer)
         self.hand = False  # dragging moves the view, not a swimmer
         self.panning: tuple[int, int] | None = None  # where the hand last was, while it drags
-        self.history: deque[Snapshot] = deque(maxlen=HISTORY)
+        self.seek_to: int | None = None  # the tick the run races ahead to, if it does
+        self.scrubbing = False  # the timeline held down: the run follows the mouse along it
         self.pointer = (0, 0)  # where the mouse is [px]
         self.tip_target: ArenaButton | None = None  # the button under the mouse
         self.tip_frames = 0  # ... for this many frames
@@ -132,6 +153,11 @@ class ArenaScene:
     @property
     def level(self) -> Level:
         return self.levels[self.index]
+
+    @property
+    def caption(self) -> str:
+        """The level's number and title, over the arena (D-034)."""
+        return f"{self.label or level_label(self.index)}. {self.level.title}"
 
     @property
     def tooltip(self) -> ArenaButton | None:
@@ -159,8 +185,9 @@ class ArenaScene:
         self.visited = reaching(self.arena, self.pos, self.radius)  # (N, L): lights reached
         self.clock.reset()
         self.circuit.beads.reset()
-        self.history.clear()
         self._moved()
+        self.recording: Recording[Snapshot] = Recording(self._snapshot())
+        self.seek_to = None
 
     def _moved(self) -> None:
         """A swimmer moved or turned: what the eyes read now, even paused; the map if shown."""
@@ -203,43 +230,66 @@ class ArenaScene:
         self.tip_frames = self.tip_frames + 1 if target is self.tip_target else 0
         self.tip_target = target
         if self.outcome is not None:
-            return  # over: 0 starts it again, one frame back takes the end back
-        before = self._snapshot()
-        ticks = self.clock.frame()
-        if len(ticks):
-            self.history.append(before)
+            return  # over: 0 starts it again, the timeline goes back into it
+        if self.seek_to is not None:  # racing ahead to a time asked for
+            first = self.clock.tick
+            ticks = range(first, min(first + SEEK_TICKS, self.seek_to))
+            self.clock.tick = ticks.stop
+            if ticks.stop == self.seek_to:
+                self.seek_to, self.clock.paused = None, True
+        else:
+            ticks = self.clock.frame()
         for tick in ticks:
-            self._tick()
+            self._advance(tick)
             if outcome(self.level, self.visited, tick + 1, DT) is not None:
-                self.clock.tick, self.clock.paused = tick + 1, True  # stop where it ended
+                self.clock.tick, self.clock.paused, self.seek_to = tick + 1, True, None
                 break
         if len(ticks) and self.show_map:
             self._map()  # the swimmers' shadows moved
 
+    def _advance(self, tick: int) -> None:
+        """From `tick` to the next: as recorded if the run got there before, else run on."""
+        if tick + 1 <= self.recording.frontier:
+            self._restore(self.recording.at(tick + 1))
+        else:
+            self._tick()
+            self.recording.add(self._snapshot())
+
+    @property
+    def ended_at(self) -> int | None:
+        """The tick the run ended at, won or out of time, once it got there; None until then."""
+        end = self.recording.frontier
+        done = outcome(self.level, self.recording.at(end).visited, end, DT)
+        return end if done is not None else None
+
+    def seek(self, seconds: float) -> None:
+        """Put the run at `seconds` [s], paused: a tick recorded comes back at once; ahead of the
+        frontier the run races there and pauses on arriving; never past the run's end."""
+        frontier = self.recording.frontier
+        target = min(round(seconds / DT), round(self.level.time_limit / DT))
+        if self.ended_at is not None:
+            target = min(target, frontier)  # the run ended there: nothing comes after
+        self._restore(self.recording.at(min(target, frontier)))
+        self.clock.tick = min(target, frontier)
+        self.clock.paused = target <= frontier
+        self.seek_to = target if target > frontier else None
+
+    def _restore(self, then: Snapshot) -> None:
+        """The run as it was at a recorded tick, in copies: what follows changes them in place."""
+        self.pos, self.heading = then.pos.copy(), then.heading.copy()
+        self.state, self.visited = then.state.copy(), then.visited.copy()
+        self.circuit.beads.phase = list(then.phase)
+        self.eyes = self.state[:, self.net.eyes]
+        self.circuit.show(self.y)
+
     def _snapshot(self) -> Snapshot:
         return Snapshot(
-            self.clock.tick,
             self.pos.copy(),
             self.heading.copy(),
             self.state.copy(),
             self.visited.copy(),
             tuple(self.circuit.beads.phase),
         )
-
-    def _back(self) -> None:
-        """One frame back, paused: the frame before the last one run, as it was."""
-        self.clock.paused = True
-        if not self.history:
-            return
-        then = self.history.pop()
-        self.clock.tick = then.tick
-        self.pos, self.heading, self.state = then.pos, then.heading, then.state
-        self.visited = then.visited
-        self.circuit.beads.phase = list(then.phase)
-        self.eyes = self._read_eyes()
-        self.circuit.show(self.y)
-        if self.show_map:
-            self._map()
 
     def _tick(self) -> None:
         self.pos, self.heading, self.state = world.step(
@@ -278,18 +328,34 @@ class ArenaScene:
 
     # Input
 
+    @property
+    def banner_buttons(self) -> tuple[ArenaButton, ...]:
+        """What the banner offers once the run is over: the next level after a win, and Edit."""
+        if self.outcome is None:
+            return ()
+        if self.outcome is Outcome.WON and (self.developer or self.has_next):
+            return (ArenaButton.NEXT, ArenaButton.EDIT)
+        return (ArenaButton.EDIT,)
+
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            button = button_at(event.pos)
+            button = banner_button_at(self.banner_buttons, event.pos) or button_at(event.pos)
+            asked = timeline_at(event.pos, self.level.time_limit)
             if button is not None:
                 self.press(button)
+            elif asked is not None:
+                self.scrubbing = True
+                self.seek(asked)
             elif self.hand:
                 self.panning = event.pos
-            else:
-                self.selected = self.dragging = body_at(self.view, self.pos, self.radius, event.pos)
+            else:  # click to inspect; only a developer drags the swimmer about
+                self.selected = body_at(self.view, self.pos, self.radius, event.pos)
+                self.dragging = self.selected if self.developer else None
         elif event.type == pygame.MOUSEMOTION:
             self.pointer = event.pos
-            if self.panning is not None:
+            if self.scrubbing:
+                self.seek(timeline_time(event.pos[0], self.level.time_limit))
+            elif self.panning is not None:
                 dx, dy = event.pos[0] - self.panning[0], event.pos[1] - self.panning[1]
                 self._look(pan_view(self.view, dx, dy))
                 self.panning = event.pos
@@ -297,16 +363,27 @@ class ArenaScene:
                 self._drag(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = self.panning = None
-        elif event.type == pygame.MOUSEWHEEL:
+            self.scrubbing = False
+        elif event.type == pygame.MOUSEWHEEL and self.developer:
             self._turn(float(event.y))
         elif event.type == pygame.KEYDOWN:
             self._key(event)
 
     def press(self, button: ArenaButton) -> None:
-        if button is ArenaButton.RESTART:
-            self._restart()
-        elif button is ArenaButton.BACK:
-            self._back()
+        if button is ArenaButton.EDIT:
+            self.request = "edit"
+        elif button is ArenaButton.NEXT:
+            if ArenaButton.NEXT not in self.banner_buttons:
+                return
+            if self.developer:
+                self.index = (self.index + 1) % len(self.levels)
+                self._load()
+            else:
+                self.request = "next"
+        elif button is ArenaButton.RESTART:
+            self.seek_to = None
+            self._restore(self.recording.at(0))  # the same run, from its start
+            self.clock.tick = 0
         elif button is ArenaButton.FAST:
             self.clock.speed = 1 if self.clock.speed > 1 else FAST
         elif button is ArenaButton.HAND:
@@ -316,9 +393,11 @@ class ArenaScene:
         elif button in (ArenaButton.PLAY, ArenaButton.STEP) and self.outcome is not None:
             return  # over: 0 starts it again
         elif button is ArenaButton.PLAY:
+            self.seek_to = None
             self.clock.toggle_pause()
         elif button is ArenaButton.STEP:
-            self.clock.paused = True  # one frame, then it waits
+            self.seek_to = None
+            self.clock.paused = True  # a step, then it waits
             self.clock.step()
         elif button in (ArenaButton.ZOOM_IN, ArenaButton.ZOOM_OUT):
             factor = ZOOM_STEP if button is ArenaButton.ZOOM_IN else 1.0 / ZOOM_STEP
@@ -338,6 +417,13 @@ class ArenaScene:
             self.press(ArenaButton.PLAY)
         elif event.scancode in (pygame.KSCAN_0, pygame.KSCAN_KP_0):  # "à" on AZERTY, unshifted
             self.press(ArenaButton.RESTART)
+        elif event.key == pygame.K_ESCAPE:
+            self.press(ArenaButton.EDIT)
+        elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
+            self.press(ArenaButton.NEXT)
+        elif not self.developer:
+            if typed in KEY_BUTTONS:
+                self.press(KEY_BUTTONS[typed])
         elif event.scancode == pygame.KSCAN_TAB:
             back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
             self.index = (self.index + (-1 if back else 1)) % len(self.levels)
@@ -367,9 +453,11 @@ class ArenaScene:
         x, y = self.view.to_world(*point)
         self.pos[k] = confine(self.arena, np.array([[x, y]]), self.radius[k : k + 1])[0]
         self._moved()
+        self.recording.cut(self.clock.tick, self._snapshot())  # the run is not what it was
 
     def _turn(self, steps: float) -> None:
         """Turn the selected swimmer by `steps` x 15°, counter-clockwise if positive."""
         if self.selected is not None:
             self.heading[self.selected] += steps * TURN
             self._moved()
+            self.recording.cut(self.clock.tick, self._snapshot())

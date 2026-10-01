@@ -25,7 +25,7 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 - [x] No walls: `contact.confine` loses its clamp; rays and the light map go as far as the view
       shows; the view frames the items. The tests that lean on walls change
       (`test_a_source_on_both_thrusters_drives_the_body_onto_the_wall_and_holds_it_there`).
-- [ ] A Run button in the editor: it runs the current level; back in the editor the board is as
+- [x] A Run button in the editor: it runs the current level; back in the editor the board is as
       it was; a win opens the next level.
 
 ## 2. The levels themselves
@@ -35,8 +35,10 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 - [ ] Tutorial 2, aggression (crossed: charges the light). Visit the light.
 - [ ] Tutorial 3, ÷2 on one side (orbits). Its objective is to be chosen: stay within a ring
       round the light for T s, or circle it N times.
-- [ ] The real level, "Two lights, four obstacles": check it is still winnable in the open
-      plane, and pin a winner with margin (D-004), as `test_determinism.py` does now.
+- [x] Level 2, "In the shadow": one light, three obstacles, the start in the shadow of one, so
+      the eyes see nothing until a drive moves the swimmer out (D-032). Pinned in
+      `test_determinism.py`.
+- [ ] The real level: to design, with a winner pinned with margin (D-004).
 
 ## 3. Body size grows with complexity (brief §1: thrust budget, not node budget)
 

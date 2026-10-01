@@ -340,9 +340,12 @@ it meets, so their density falls as 1/r, like the light, and a shadow is where n
 fans turn slowly, at random but the same at every run; X hides them or shows them again. I, a
 developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
 
-Right, one column. At the top, two palettes, one row each: the player (start again, one frame
-back, play or pause, one frame, fast forward) and the view (zoom in, zoom out, the hand to move
-the view, centre, which frames the swimmers and the lights, and the rays on or off). Every button
+Over the arena's top left, the level's number and title, "LEVEL 1.2. In the shadow" (D-034).
+Right, one column in three titled parts, as the editor's palette writes its titles. CONTROLS, with
+the time at its right: two palettes of five, one row each, the view (zoom in, zoom out, the hand
+to move the view, centre, which frames the swimmers and the lights, and the rays on or off), then
+the player (back to the editor, start again, play or pause, a step of 0.1 s, fast forward), and
+right under it the timeline (D-033). Then OBJECTIVES, and INSIDE, the swimmer's wiring. Every button
 has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
 centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
 "Visit every light", so many reached of so many (section 9).
@@ -412,7 +415,8 @@ Each thruster pushes the body; the water pushes back in proportion to the speed,
 scale the two balance at once. So the velocity is a function of the thrust, not something that
 builds up: there is no inertia, and a swimmer whose thrusters stop stops. Obstacles are hard and
 slippery: a swimmer that runs into one slides round it. Since D-028 there are no walls: the plane
-is open, and a swimmer that leaves the view swims on until its time is up.
+is open, and a swimmer that leaves the view swims on until its time is up; an arrow at the
+edge of the view points to it (`arena_view.edge_marker`), so it never vanishes unseen.
 
 The arrays, for N swimmers with k thrusters each:
 
@@ -485,8 +489,8 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 - **In a crevice narrower than a body,** the swimmer overlaps the obstacle by up to one tick's
   travel (under 0.02 u, less than a pixel).
 - **No momentum:** an eye crossing the hard edge of a shadow stops the swimmer within a few ticks,
-  since TAU = 1/60 s barely smooths it. Look for it in "Two lights, four obstacles", where the
-  swimmer also starts in the shadow of the obstacle at (21, 21).
+  since TAU = 1/60 s barely smooths it. Look for it in "In the shadow", where the swimmer starts
+  behind the obstacle at (19, 19).
 - **`arena.py`'s tick has no automated test,** like the rest of the scene; `world.step` has. A
   headless script ran both arenas for 10 s and 20 s before the PR.
 
@@ -505,7 +509,8 @@ A light is reached a little before the two discs touch: when the centres are wit
 = 1.2 times the sum of the radii, 2.4 u for a base body (D-029).
 An objective turns that into a count, `(met, needed)`. `outcome` is a pure function of the level,
 `visited` and the tick: won when every objective is met, time up at the level's limit, otherwise
-`None`. Because the end is derived, never stored, going one frame back simply un-ends the run.
+`None`. Because the end is derived, never stored, going back along the timeline simply
+un-ends the run.
 
 ### 9.2 The code
 
@@ -520,19 +525,19 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
   ended, since `Clock.frame` hands out a whole frame's ticks at once. Play and Step do nothing
   once it is over; 0 starts again.
 - [`editor/arena_draw.py`](../game/nektoids/editor/arena_draw.py): the ring round a visited
-  light, "1 of 2", the banner, `t = 8.66 / 20 s`, and the time left as a last row whose bar runs
+  light, "1 of 2", the banner, the time over the timeline, and the time left as a last row whose bar runs
   down to zero, red once the time is up (`_draw_row` draws every row).
 - [`graph/board.py`](../game/nektoids/graph/board.py) `to_dict` and `from_dict`, and the F4
   branch in [`main.py`](../game/main.py). Wires refer to parts by their place in the list, not
   by id, since ids have gaps after a delete.
 - Tests: [`test_objectives.py`](../tests/test_objectives.py), the round trip in
   [`test_board.py`](../tests/test_board.py), and in
-  [`test_determinism.py`](../tests/test_determinism.py) a one-eyed board that wins "Two
-  lights" in 23.1 s, found by a random search, so the level is known to be winnable.
+  [`test_determinism.py`](../tests/test_determinism.py) a board that wins "In the shadow": the
+  crossed wiring with a Source on both thrusters, so the level is known to be winnable.
 
 ### 9.3 Questions to answer after reading
 
-1. **Why is `outcome` computed and not stored as a flag on the scene?** What would one frame back
+1. **Why is `outcome` computed and not stored as a flag on the scene?** What would the timeline
    need to do if it were a flag?
 2. **`from_dict` draws the wires again instead of reading their paths.** When does that give a
    different picture from the one saved, and why does it never give a different network?
@@ -543,6 +548,45 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
 - **The scene's stop-at-the-end has no automated test,** like the rest of `arena.py`; `outcome`
   has, and a headless script drove both arenas to their ends before the PR.
 - **The JSON has no version number,** and `from_dict` does not keep saved paths exactly.
+
+## 10. Playing a level: edit, run, next (D-030)
+
+Read D-030 first. `python game/main.py` now opens on level 1's board: build, press Space, watch,
+Esc to change the board, and after a win Enter for the next level.
+
+### 10.1 The code
+
+- [`editor/router.py`](../game/nektoids/editor/router.py), pure: `Router` holds the open level
+  (`index`), whether it is edited or run (`screen`), and each level's board, made from the
+  level's data the first time (`Level.new_board`). `next` refuses to go past the last level.
+- [`main.py`](../game/main.py) turns the router into scenes: one `EditorScene` per level, kept
+  in `editors` (so undo history stays with its level), and a fresh `ArenaScene` for each run,
+  with `developer=False`.
+- Scenes never call `main.py`; they set `request` ("run" in the editor; "edit" or "next" in
+  the run view), and the loop reads and clears it once a frame. That keeps the scenes free of
+  any knowledge of each other.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py): `developer` switches the player's run
+  view (one level, nothing touches the swimmer) from F3's; `banner_buttons` says what the end
+  banner offers. Its buttons' rects come from `arena_layout.banner_rects`, pure, so tests can
+  click them.
+
+- [`editor/recording.py`](../game/nektoids/editor/recording.py), pure: every tick of the run, kept
+  as it was (D-033). The run is deterministic, so the timeline restores a tick kept and, ahead of
+  the furthest one run, `ArenaScene.seek` races there (`SEEK_TICKS` a frame); moving the swimmer
+  by hand, in F3, cuts the recording where it happened. `_restore` copies what it puts back,
+  because the next ticks change those arrays in place.
+
+### 10.2 Questions to answer after reading
+
+1. **Why does each level get its own `EditorScene` instead of one editor whose board changes?**
+   What would undo do across levels otherwise?
+2. **Why is `request` a field read by the loop, not a callback the scene calls?**
+3. **What does F3 run, and why is it still useful once the player's run view exists?**
+
+### 10.3 Weak or untested
+
+- **`main.py`'s loop has no automated test.** A scratch script drove it through edit, run, a
+  win, next level, run and Esc before the PR; `Router` itself is tested.
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

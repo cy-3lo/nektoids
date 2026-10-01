@@ -18,6 +18,7 @@ from nektoids.editor.layout import Rect
 DARKEST = np.array([16, 17, 22])  # a reading of 0: shadow
 BRIGHTEST = np.array([236, 238, 244])  # a reading of RATE_MAX
 GRAB = 6.0  # a press this far outside a body still grabs it [px]
+EDGE_INSET = 14.0  # a marker for a swimmer out of view sits this far inside the edge [px]
 SMOOTHING = 2  # passes of the 1-2-1 filter over the light map
 POLAR_STEPS = 8  # the polar plot zooms in by halves down to 1/256 of RATE_MAX
 MIN_SCALE, MAX_SCALE = 4.0, 48.0  # how far the view zooms [px/u]
@@ -129,6 +130,25 @@ def polar_scale(peak: float, top: float = 1.0, steps: int = POLAR_STEPS) -> floa
             break
         scale /= 2
     return scale
+
+
+def edge_marker(
+    view: ArenaView, area: Rect, point: tuple[float, float], inset: float = EDGE_INSET
+) -> tuple[tuple[float, float], float] | None:
+    """Where to point at `point` [u] while it is out of `area`, so that nothing leaves the screen
+    unseen (invariant 6): the spot `inset` [px] inside the edge on the line from the area's
+    centre to it, and that line's angle on screen [rad, y down]. None while it shows."""
+    x, y, w, h = area
+    px, py = view.to_screen(*point)
+    if x <= px <= x + w and y <= py <= y + h:
+        return None
+    cx, cy = x + w / 2, y + h / 2
+    dx, dy = px - cx, py - cy
+    t = min(
+        (w / 2 - inset) / abs(dx) if dx else math.inf,
+        (h / 2 - inset) / abs(dy) if dy else math.inf,
+    )
+    return (cx + t * dx, cy + t * dy), math.atan2(dy, dx)
 
 
 def body_at(

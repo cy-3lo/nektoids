@@ -7,8 +7,8 @@ Tools:
   drawn from a thruster or into a sensor, it is turned round; between two operators it runs
   the way it is drawn (D-026).
 - Turn left, Turn right: pressing the button, or L (left) and R (right), turns the selected
-  part by 60° at once and takes that tool; with it, click an eye or a thruster to turn it,
-  shift-click to turn it the other way (D-009, D-025).
+  part by 60° at once and takes that tool; with it, a click on another part only selects it, and
+  a click on the selected part turns it, shift-click the other way (D-009, D-025, D-031).
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
 - Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
@@ -16,6 +16,9 @@ Tools:
 - Undo and Redo (D-027), also Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on a Mac): one step is one
   gesture, from press to release, so a whole Move drag goes back at once. Save and Load are
   there, inactive, until saving exists.
+
+Run (the button at the foot of the menu, or Space) asks `main.py` to run the board: the scene
+sets `request` and `main.py` acts on it.
 
 Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
@@ -48,6 +51,7 @@ from nektoids.editor.layout import (
     ViewButton,
     cell_at,
     centred_view,
+    contains,
     edit_button_at,
     file_button_at,
     group_at,
@@ -96,9 +100,11 @@ WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
 
 class EditorScene:
-    def __init__(self, board: Board, layout: Layout):
+    def __init__(self, board: Board, layout: Layout, caption: tuple[str, str] = ("", "")):
         self.board = board
         self.layout = layout
+        self.caption = caption  # the level's title and spec, shown over the board
+        self.request: str | None = None  # "run": for main.py, which clears it
         self.view = centred_view(layout)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
@@ -175,6 +181,9 @@ class EditorScene:
             self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
             self._enter()
+        elif event.scancode == pygame.KSCAN_SPACE:  # RUN_KEY, on the physical key
+            self._cancel()
+            self.request = "run"
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
             kinds = [kind for _, group in MENU_GROUPS for kind in group]
@@ -260,6 +269,10 @@ class EditorScene:
             self._drag_to(pointed)
 
     def _press(self, pos: tuple[int, int]) -> None:
+        if contains(self.layout.run_button, pos):
+            self._cancel()
+            self.request = "run"
+            return
         tool = tool_at(self.layout, pos)
         if tool is not None:
             self._choose(tool)
@@ -295,8 +308,12 @@ class EditorScene:
         elif self.tool is Tool.WIRE:
             self._wire(self.hover)
         elif self.tool in TURNS:
-            back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
-            self._turn(self.hover, -TURNS[self.tool] if back else TURNS[self.tool])
+            node = self.board.node_at(self.hover)
+            if node is not None and node.id != self.selected:
+                self.selected, self.message = node.id, ""  # the first click picks it out
+            else:
+                back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+                self._turn(self.hover, -TURNS[self.tool] if back else TURNS[self.tool])
         elif self.tool is Tool.MOVE:
             self._grab(self.hover)
         else:

@@ -13,7 +13,7 @@ from pathlib import Path
 from nektoids.levels.level import Level, load
 
 DATA = Path(__file__).resolve().parent / "data"
-ORDER = ("one-light", "two-lights")  # the files, in the order the levels come
+ORDER = ("one-light", "in-the-shadow")  # the files, in the order the levels come
 
 
 def arenas() -> list[Level]:
