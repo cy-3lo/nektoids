@@ -71,6 +71,7 @@ class Level:
     board: Mapping = field(repr=False)  # `Board.to_dict`'s data: zone, stock, the parts it places
     time_limit: float  # the run is over after this long [s]
     objectives: tuple[Objective, ...] = ()
+    tutorial: Mapping | None = field(default=None, repr=False)  # its ghosts and steps (D-039)
 
     @cached_property
     def arena(self) -> Arena:
@@ -97,7 +98,7 @@ class Level:
             "board": self.board,
             "time_limit": self.time_limit,
             "objectives": [objective_to_dict(o) for o in self.objectives],
-        }
+        } | ({"tutorial": self.tutorial} if self.tutorial is not None else {})
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Level:
@@ -112,6 +113,7 @@ class Level:
             board=data["board"],
             time_limit=float(data["time_limit"]),
             objectives=tuple(objective_from_dict(o) for o in data["objectives"]),
+            tutorial=data.get("tutorial"),
         )
         level.arena  # noqa: B018 - built now, so that bad items fail here, not mid-run
         level.new_board()
