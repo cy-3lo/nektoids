@@ -5,7 +5,7 @@ swimmer as a circle round a wedge; its eyes and thrusters sit where the board pu
 Right, from the top (`arena_layout.py`): the player's and the view's palettes, the objectives and
 how many of each are met, and the selected swimmer's wiring, live: its eyes read the light every
 tick and every node follows with its lag (D-017), as it will in the game. The thrusters push
-against Stokes drag (D-022): the swimmer swims, sliding along the walls and round the obstacles.
+against Stokes drag (D-022): the swimmer swims, sliding round the obstacles, in an open plane.
 A run stops when every objective is met or the level's time is up (D-023); 0 starts it again.
 P shows, over the arena, the light at its eyes as a polar
 plot: what a flat eye there would read facing each way, E(phi), with a tick where each eye looks.
@@ -48,10 +48,11 @@ from nektoids.editor.arena_view import (
     ArenaView,
     Rays,
     body_at,
-    fit,
     frame,
+    map_grid,
     map_points,
     pan_view,
+    shown,
     zoom_view,
 )
 from nektoids.editor.circuit import Circuit
@@ -77,7 +78,7 @@ from nektoids.sim.optics import (
 POLAR_ANGLES = np.radians(np.arange(0.0, 361.0, 5.0))  # closed curve, every 5°
 CIRCUIT_MARGIN = 1.0  # room round the body's circle [hex sizes]
 LIGHT_CELL = 0.25  # side of a light-map cell [u]
-FRAME_MARGIN = 3.0  # room round the swimmers and lights when centring [u]
+FRAME_MARGIN = 3.0  # room round the swimmers, lights and obstacles when framing [u]
 TURN = math.radians(15.0)
 FAST = 4  # fast forward runs this many frames' worth of ticks a frame
 ARROW_PAN = 2.0  # with the hand, an arrow drags the view this far [u]
@@ -141,11 +142,13 @@ class ArenaScene:
 
     def _load(self) -> None:
         self.title, self.arena = self.level.title, self.level.arena
-        self.view: ArenaView = fit(ARENA_AREA, self.arena)
-        self.grid, self.grid_shape = map_points(self.arena, LIGHT_CELL)
-        self.still: tuple[np.ndarray, np.ndarray] | None = None  # the obstacles' shadows
+        self.map_key: tuple | None = None  # the light map's grid: corner, cell, shape
         self.rays = Rays(self.arena.light_power)
         self._restart()
+        x, y, _ = self.level.start  # the open plane (D-028): frame what the level holds
+        points = np.concatenate(([[x, y]], self.arena.light_xy, self.arena.disc_xy))
+        reach = float(np.concatenate(([LIGHT_RADIUS], self.arena.disc_radius, self.radius)).max())
+        self._look(frame(ARENA_AREA, points, FRAME_MARGIN + reach))
 
     def _restart(self) -> None:
         x, y, heading = self.level.start
@@ -167,12 +170,23 @@ class ArenaScene:
         if self.show_map:
             self._map()
 
+    def _look(self, view: ArenaView) -> None:
+        """See the plane through `view`; the light map, if shown, covers what it now shows."""
+        self.view = view
+        if self.show_map:
+            self._map()
+
     def _map(self) -> None:
+        """The light map over the part of the plane in view, its grid built again only when that
+        part changes; the obstacles' shadows on it with it, once."""
         start = time.perf_counter()
-        if self.still is None:
+        key = map_grid(shown(self.view, ARENA_AREA), LIGHT_CELL)
+        if key != self.map_key:
+            self.map_key = key
+            self.grid = map_points(*key)
             self.still = still_light(self.arena, self.grid)
         shade = light_map(self.arena, self.grid, self.pos, self.radius, self.still)
-        self.shade = shade.reshape(self.grid_shape)
+        self.shade = shade.reshape(key[2])
         self.map_ms = 1000.0 * (time.perf_counter() - start)
         self.map_version += 1
 
@@ -277,7 +291,7 @@ class ArenaScene:
             self.pointer = event.pos
             if self.panning is not None:
                 dx, dy = event.pos[0] - self.panning[0], event.pos[1] - self.panning[1]
-                self.view = pan_view(self.view, dx, dy)
+                self._look(pan_view(self.view, dx, dy))
                 self.panning = event.pos
             elif self.dragging is not None:
                 self._drag(event.pos)
@@ -309,11 +323,11 @@ class ArenaScene:
         elif button in (ArenaButton.ZOOM_IN, ArenaButton.ZOOM_OUT):
             factor = ZOOM_STEP if button is ArenaButton.ZOOM_IN else 1.0 / ZOOM_STEP
             x, y, w, h = ARENA_AREA
-            self.view = zoom_view(self.view, factor, (x + w / 2, y + h / 2))
+            self._look(zoom_view(self.view, factor, (x + w / 2, y + h / 2)))
         elif button is ArenaButton.CENTRE:
             points = np.concatenate((self.pos, self.arena.light_xy))
             margin = FRAME_MARGIN + max(float(self.radius.max()), LIGHT_RADIUS)
-            self.view = frame(ARENA_AREA, points, margin)
+            self._look(frame(ARENA_AREA, points, margin))
 
     def _key(self, event: pygame.event.Event) -> None:
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
@@ -345,10 +359,10 @@ class ArenaScene:
         left, right, up, _ = ARROWS
         step = ARROW_PAN * self.view.scale
         dx, dy = {left: (-step, 0.0), right: (step, 0.0), up: (0.0, -step)}.get(key, (0.0, step))
-        self.view = pan_view(self.view, dx, dy)
+        self._look(pan_view(self.view, dx, dy))
 
     def _drag(self, point: tuple[int, int]) -> None:
-        """Move the dragged swimmer under the mouse, outside the obstacles and inside the walls."""
+        """Move the dragged swimmer under the mouse, outside the obstacles."""
         k = self.dragging
         x, y = self.view.to_world(*point)
         self.pos[k] = confine(self.arena, np.array([[x, y]]), self.radius[k : k + 1])[0]

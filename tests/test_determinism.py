@@ -2,15 +2,17 @@ import math
 from collections import deque
 
 import numpy as np
+import pytest
 
 from nektoids.graph.board import Kind, Refused
-from nektoids.graph.dynamics import initial_state
+from nektoids.graph.dynamics import TAU, initial_state
 from nektoids.graph.hexgrid import NE, NW
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome, outcome, touching
 from nektoids.levels.sandbox import free_board, tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
+from nektoids.sim.motion import SPEED
 from nektoids.sim.optics import eye_rates
 from nektoids.sim.world import parts, state_hash, step
 
@@ -85,13 +87,13 @@ def play(net, title):
 # Determinism (invariant 1)
 
 
+CROWD = ((2.0, 2.0, 0.0), (38.0, 36.0, 2 * math.pi))  # where and how the crowd starts
+
+
 def crowd_hash(seed, seconds=5.0, n_swimmers=50):
     title = "Two lights, four obstacles"
-    arena = LEVELS[title].arena
     rng = np.random.default_rng(seed)
-    start = rng.uniform(
-        (2.0, 2.0, 0.0), (arena.width - 2.0, arena.height - 2.0, 2 * math.pi), (n_swimmers, 3)
-    )
+    start = rng.uniform(*CROWD, (n_swimmers, 3))
     pos, heading, y = last(run(CROSSED, title, seconds, start))
     return state_hash(pos, heading, np.ones(n_swimmers), y, round(seconds / DT))
 
@@ -144,8 +146,9 @@ def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
         assert np.array_equal(y[:, CROSSED.eyes], seen)
 
 
-def test_a_source_on_both_thrusters_drives_the_body_onto_the_wall_and_holds_it_there():
+def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no_walls():
     net = Network.from_edges([Kind.SOURCE, Kind.THRUSTER, Kind.THRUSTER], [(0, 1), (0, 2)])
     pos, heading, _ = last(run(net, "One light", 15.0))  # from (9, 15), heading E
-    assert pos.tolist() == [[39.0, 15.0]]
-    assert heading.tolist() == [0.0]
+    lag = SPEED * TAU  # the thrusters take TAU to reach their rate (D-017)
+    assert pos[0, 0] == pytest.approx(9.0 + SPEED * 15.0 - lag, abs=1e-9)  # far past x = 40
+    assert pos[0, 1] == 15.0 and heading.tolist() == [0.0]

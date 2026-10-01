@@ -407,8 +407,9 @@ light and stops in the dark.
 
 Each thruster pushes the body; the water pushes back in proportion to the speed, and at this
 scale the two balance at once. So the velocity is a function of the thrust, not something that
-builds up: there is no inertia, and a swimmer whose thrusters stop stops. Walls and obstacles
-are hard and slippery: a swimmer that runs into one slides along it.
+builds up: there is no inertia, and a swimmer whose thrusters stop stops. Obstacles are hard and
+slippery: a swimmer that runs into one slides round it. Since D-028 there are no walls: the plane
+is open, and a swimmer that leaves the view swims on until its time is up.
 
 The arrays, for N swimmers with k thrusters each:
 
@@ -453,16 +454,16 @@ raises.
    Then [`stokes`](../game/nektoids/sim/motion.py#L55) and
    [`advance`](../game/nektoids/sim/motion.py#L66).
 4. [`sim/contact.py` `confine`](../game/nektoids/sim/contact.py#L24): each obstacle in turn moves an
-   overlapping body radially out to touching, then `np.clip` holds it inside the walls; three
-   passes, walls last. A body centred exactly on an obstacle (only by dragging) leaves along +x.
+   overlapping body radially out to touching; three passes, for a crevice between two obstacles.
+   A body centred exactly on an obstacle (only by dragging) leaves along +x.
 5. Back in `arena.py`: `update` redraws the light map once per frame while it shows (the
    swimmer's shadow moves), and `_drag` uses `confine` too, so a dragged swimmer cannot be dropped
    into an obstacle.
 
 Tests: [`test_motion.py`](../tests/test_motion.py) checks the physics on its own (the sphere's
 4/3, which way the tutorial's thrusters turn, a straight line, a circle that does not spiral),
-[`test_contact.py`](../tests/test_contact.py) checks sliding along walls, round obstacles and into
-a crevice, and [`test_determinism.py`](../tests/test_determinism.py) now runs the real tick: 50
+[`test_contact.py`](../tests/test_contact.py) checks sliding round obstacles, into a crevice
+between two, and that nothing stops a body in the open, and [`test_determinism.py`](../tests/test_determinism.py) now runs the real tick: 50
 swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 
 ### 8.3 Questions to answer after reading

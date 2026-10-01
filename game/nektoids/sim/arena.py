@@ -1,4 +1,4 @@
-"""The arena: a rectangle with point lights and disc obstacles (D-019).
+"""The arena: an open plane with point lights and disc obstacles (D-019), no walls (D-028).
 
 Lengths in u, the base body radius; x right, y up. A level builds its arena once and nothing
 changes it. The arrays the optics need are built once, read-only. Pure numpy, no pygame.
@@ -37,30 +37,21 @@ def _frozen(array: np.ndarray) -> np.ndarray:
 
 @dataclass(frozen=True, eq=False)
 class Arena:
-    """[0, width] x [0, height]. Tuples, not sets: their order is the order of the arrays."""
+    """The plane and what sits in it. Tuples, not sets: their order is the order of the arrays."""
 
-    width: float  # [u]
-    height: float  # [u]
     lights: tuple[Light, ...] = ()
     obstacles: tuple[Disc, ...] = ()
 
     def __post_init__(self) -> None:
-        """ValueError for what no level should hold: a light not wholly on the arena or touching
-        an obstacle, an obstacle not wholly inside the arena, a size or a power not positive."""
-        if not (self.width > 0 and self.height > 0):
-            raise ValueError("the arena needs a positive width and height")
+        """ValueError for what no level should hold: a light touching an obstacle, a power or a
+        radius not positive."""
         for light in self.lights:
             if not light.power > 0:
                 raise ValueError(f"light at ({light.x}, {light.y}): power must be positive")
-            r = LIGHT_RADIUS
-            if not (r <= light.x <= self.width - r and r <= light.y <= self.height - r):
-                raise ValueError(f"light at ({light.x}, {light.y}) is off the arena")
         for disc in self.obstacles:
             r = disc.radius
             if not r > 0:
                 raise ValueError(f"obstacle at ({disc.x}, {disc.y}): radius must be positive")
-            if not (r <= disc.x <= self.width - r and r <= disc.y <= self.height - r):
-                raise ValueError(f"obstacle at ({disc.x}, {disc.y}) is not inside the arena")
             for light in self.lights:
                 clear = r + LIGHT_RADIUS
                 if (light.x - disc.x) ** 2 + (light.y - disc.y) ** 2 <= clear * clear:

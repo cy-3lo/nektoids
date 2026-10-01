@@ -4,7 +4,7 @@ from nektoids.levels.arenas import Level
 from nektoids.levels.objectives import Outcome, VisitLights, outcome, touching
 from nektoids.sim.arena import LIGHT_RADIUS, Arena, Light
 
-ARENA = Arena(40.0, 38.0, lights=(Light(30.0, 20.0, 8.0), Light(5.0, 5.0, 4.0)))
+ARENA = Arena(lights=(Light(30.0, 20.0, 8.0), Light(5.0, 5.0, 4.0)))
 LEVEL = Level("Two", ARENA, start=(10.0, 20.0, 0.0), time_limit=10.0, objectives=(VisitLights(),))
 DT = 1.0 / 120.0
 ONE = np.ones(1)
