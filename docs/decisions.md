@@ -208,3 +208,62 @@ Letters are matched on the character typed; digits, Space and the arrows on the 
 since unshifted 0 types "à" on AZERTY and Safari reports the arrows as keypad keys (PR #3).
 A new view or key checks `TOOL_KEYS` and `VIEW_KEYS` first; `test_arena_layout.py` pins the rule
 for the arena. F2's W (waveform) still clashes with the editor's Wire, to be moved.
+
+**D-022 — 2026-10-01 — Swimmers are overdamped: the thrust is balanced by the Stokes drag of a sphere of the body's radius. Supersedes D-016's "thrusters integrate is done by the body's momentum".**
+A thruster at rate y pushes with y `THRUST` along its facing (D-009), at its mount, R m from the
+centre (D-018). The body has no inertia: its velocity and spin balance the thrusters' total force
+F and torque T at once, V = F / (6πμR) and Ω = T / (8πμR³). `THRUST = 1` is the unit of force,
+and μ is set by `SPEED`: one thruster at `RATE_MAX` pushing a base body through its centre moves it
+at 3 u/s. The state is position, heading and radius; velocity is not state, so the simulation
+rule's symplectic Euler gives way to explicit Euler on x and θ, and the nodes' lag (D-017) is the
+only smoothing.
+One tick: the bodies move with the thrust the nodes have, contacts put them back outside the
+obstacles and inside the walls, the eyes read the light where the bodies now are, the nodes follow.
+After a tick, as after a restart or a drag, the eyes' rates in y are what they read where the body is.
+Contacts are hard and frictionless: a body overlapping an obstacle is moved radially out until it
+touches it, obstacles in arena order, then its centre is clamped to [R, W − R] × [R, H − R]; three
+passes a tick, for crevices. For an overdamped body this cancels the normal velocity and keeps the
+tangential one, so it slides. Contacts exert no torque, and walls have no hydrodynamic effect.
+Walls come last, so a body never leaves the arena. Lights are not solid; bodies do not touch each
+other yet (one swimmer).
+A sphere, because a disc in 2D has no Stokes drag (Stokes' paradox). One μ sets one scale and the
+sphere sets the other: a thruster with lever ℓ = m × f (body radii) turns its body on a circle of
+radius (4/3) R/ℓ, so Ω = (3/4) ℓ V/R. On the tutorial board (ℓ = √3/4), crossed wiring in "One
+light" touches the light in 8.7 s and uncrossed turns away and stops in the dark; speeds stay
+within 3.6 u/s and turning within 26°/s, 56°/s for one thruster at full rate.
+Consequences: V ∝ 1/R and Ω ∝ 1/R², so a body that complexity grows loses its turning first.
+Explicit Euler under a constant thrust draws a closed regular polygon, not a spiral. Without
+momentum, an eye crossing the edge of a shadow stops the body within a few ticks: it shows, and it
+is the eye's doing; smoothing it is a question for TAU.
+
+**D-023 — 2026-10-01 — A run ends when every objective is met or the level's time is up; objectives count visits to lights, and a visit counts once. Supersedes the "Reach a light" bar.**
+A swimmer visits a light when their discs touch, centre distance ≤ `LIGHT_RADIUS` + R, checked
+after every tick; the run remembers it in `visited`, (N, L), whatever the swimmer does next. An
+objective counts from that, so many met out of so many needed: `VisitLights` needs every swimmer
+to touch every light, in any order, the one light in "One light" and both in "Two lights". Each
+level has a `time_limit` [s]. The arena view stops at the tick the run is won, or after
+round(time_limit / dt) ticks, and says which in a banner; visited lights get a ring and the
+objective a count, "1 of 2". A level without objectives is never won, only timed out. The end is
+derived from the tick and `visited`, never stored, so one frame back takes it back.
+The old bar was a live fraction of the way to the nearest light, any light, which fell again when
+the swimmer left, and nothing ended a run; the brief asks for countable win conditions (§1).
+Consequences: a count jumps from 0 to 1 where the bar filled; at 3.6 u/s a tick moves 0.03 u
+against a touch at 2 u, so no visit falls between ticks. Limits: "One light" 20 s (crossed wiring
+touches at 8.7 s); "Two lights" 45 s, where a one-eyed circler found by a search of the free board
+(5 winners in 2,603 random wirings) visits both in 23.1 s, passing 0.08 u from each centre, deep
+enough to survive the ulps of D-004; `test_determinism.py` pins it. Dragging and turning a
+swimmer by hand stay a developer's tool and are not scored: the player will not touch a
+programmed swimmer.
+
+**D-024 — 2026-10-01 — F4 prints the editor's board as one line of JSON, the start of a save format. Saving for the player stays out of scope.**
+`Board.to_dict` gives the zone, what the level handed out, the parts in id order (kind, cell
+[q, r], facing by name, locked) and the wires in the order they were drawn, each naming its ends
+by their place in that list, with its path. `Board.from_dict` places the parts and draws the
+wires again in that order, so the network is the one saved; ids left by deleted parts close up.
+F4 works in every view, behind `DEV_VIEW`, and only prints: to the terminal natively, to
+pygbag's terminal on the page in the browser, so no file is written (`.claude/rules/web.md`).
+A board built in the editor can now be handed over, to a test or to the other contributor,
+without transcribing it.
+Consequences: a path comes back as saved unless the board was edited with Move or Delete, after
+which a wire drawn again may take another route as short; keeping saved paths exactly is for
+when saving arrives. The format has no version number yet.
