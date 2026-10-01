@@ -412,7 +412,8 @@ Each thruster pushes the body; the water pushes back in proportion to the speed,
 scale the two balance at once. So the velocity is a function of the thrust, not something that
 builds up: there is no inertia, and a swimmer whose thrusters stop stops. Obstacles are hard and
 slippery: a swimmer that runs into one slides round it. Since D-028 there are no walls: the plane
-is open, and a swimmer that leaves the view swims on until its time is up.
+is open, and a swimmer that leaves the view swims on until its time is up; an arrow at the
+edge of the view points to it (`arena_view.edge_marker`), so it never vanishes unseen.
 
 The arrays, for N swimmers with k thrusters each:
 

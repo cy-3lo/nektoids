@@ -44,7 +44,15 @@ from nektoids.editor.arena_layout import (
     ArenaButton,
     button_rects,
 )
-from nektoids.editor.arena_view import DARKEST, polar_scale, ray_ends, shown, smooth, tone
+from nektoids.editor.arena_view import (
+    DARKEST,
+    edge_marker,
+    polar_scale,
+    ray_ends,
+    shown,
+    smooth,
+    tone,
+)
 from nektoids.editor.draw import (
     BACKGROUND,
     DARK,
@@ -75,6 +83,7 @@ LIGHT = (236, 238, 244)
 BODY = (228, 231, 240)  # the selected swimmer
 BODY_UNSELECTED = (132, 136, 150)
 SYMBOL_WIDTH = 2  # [px]
+MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
 PART_DOT = 4  # an eye's reading in the polar plot [px]
 POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its circle
 EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot, in turn
@@ -179,7 +188,8 @@ def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:
 
 def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
     """Each swimmer its body's circle round a wedge, its tip where it heads; the selected one
-    bright, the others dimmer. The view keeps angles (y flips, heading stays counter-clockwise)."""
+    bright, the others dimmer. The view keeps angles (y flips, heading stays counter-clockwise).
+    A swimmer out of view gets an arrow at the edge, pointing to where it is."""
     view = scene.view
     for k in range(len(scene.pos)):
         centre = view.to_screen(*scene.pos[k])
@@ -187,6 +197,20 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
         radius, heading = float(scene.radius[k]) * view.scale, float(scene.heading[k])
         draw_symbol(screen, DARK, centre, radius + 1, heading, SYMBOL_WIDTH + 2)  # on a light map
         draw_symbol(screen, colour, centre, radius, heading, SYMBOL_WIDTH)
+        marker = edge_marker(view, ARENA_AREA, tuple(scene.pos[k]))
+        if marker is not None:
+            _draw_marker(screen, *marker, colour)
+
+
+def _draw_marker(screen: pygame.Surface, at: tuple[float, float], angle: float, colour) -> None:
+    """An arrowhead centred on `at`, pointing along `angle` [rad, on screen], outlined so that
+    it shows on the rays and on the light map alike."""
+    c, s = math.cos(angle), math.sin(angle)
+    tip = (at[0] + MARKER * c, at[1] + MARKER * s)
+    left = (at[0] - MARKER * c - 0.8 * MARKER * s, at[1] - MARKER * s + 0.8 * MARKER * c)
+    right = (at[0] - MARKER * c + 0.8 * MARKER * s, at[1] - MARKER * s - 0.8 * MARKER * c)
+    pygame.draw.polygon(screen, colour, [tip, left, right])
+    pygame.draw.polygon(screen, DARK, [tip, left, right], 1)
 
 
 def _dot(screen: pygame.Surface, at: tuple[float, float], fill: tuple[int, int, int]) -> None:
