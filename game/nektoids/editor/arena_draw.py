@@ -262,7 +262,8 @@ def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     left, limit = scene.time_left, scene.level.time_limit
     late = scene.outcome is Outcome.TIME_UP
     k = max(1, len(rows))
-    _draw_row(screen, fonts, k, "Time left", f"{left:.1f} s", left / limit, False, late)
+    fraction = left / limit if limit > 0 else 0.0
+    _draw_row(screen, fonts, k, "Time left", f"{left:.1f} s", fraction, False, late)
 
 
 def _draw_row(

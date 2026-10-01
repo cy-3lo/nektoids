@@ -314,7 +314,8 @@ class Board:
     def snapshot(self) -> BoardState:
         """The parts, the wires as drawn and the stock left, frozen."""
         nodes = tuple(self.nodes[i] for i in sorted(self.nodes))
-        return BoardState(nodes, tuple(self.wires), tuple(self._stock.items()))
+        stock = tuple((kind, self._stock[kind]) for kind in Kind if kind in self._stock)
+        return BoardState(nodes, tuple(self.wires), stock)  # in fixed orders, not dict order
 
     def restore(self, state: BoardState) -> None:
         """Put the board back as it was in `state`, in place, routes and all. Ids still never
