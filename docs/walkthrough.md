@@ -486,8 +486,8 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 - **In a crevice narrower than a body,** the swimmer overlaps the obstacle by up to one tick's
   travel (under 0.02 u, less than a pixel).
 - **No momentum:** an eye crossing the hard edge of a shadow stops the swimmer within a few ticks,
-  since TAU = 1/60 s barely smooths it. Look for it in "Two lights, four obstacles", where the
-  swimmer also starts in the shadow of the obstacle at (21, 21).
+  since TAU = 1/60 s barely smooths it. Look for it in "In the shadow", where the swimmer starts
+  behind the obstacle at (19, 19).
 - **`arena.py`'s tick has no automated test,** like the rest of the scene; `world.step` has. A
   headless script ran both arenas for 10 s and 20 s before the PR.
 
@@ -528,8 +528,8 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
   by id, since ids have gaps after a delete.
 - Tests: [`test_objectives.py`](../tests/test_objectives.py), the round trip in
   [`test_board.py`](../tests/test_board.py), and in
-  [`test_determinism.py`](../tests/test_determinism.py) a one-eyed board that wins "Two
-  lights" in 23.1 s, found by a random search, so the level is known to be winnable.
+  [`test_determinism.py`](../tests/test_determinism.py) a board that wins "In the shadow": the
+  crossed wiring with a Source on both thrusters, so the level is known to be winnable.
 
 ### 9.3 Questions to answer after reading
 

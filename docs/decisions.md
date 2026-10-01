@@ -369,3 +369,14 @@ be hit-tested headless. The title card, the map and the end screen come next (D-
 The turn buttons and L and R still turn the selected part at once, the part just placed among
 them. A click with the tool used to turn whatever it landed on, so picking out the part to turn
 turned it by mistake.
+
+**D-032 — 2026-10-01 — Level 2 is "In the shadow": one light, three obstacles, the swimmer starting in the shadow of one. "Two lights, four obstacles" is set aside.**
+The light (power 8) is 15 u ahead of the start, behind an obstacle of radius 1.5 whose shadow
+covers both eyes: they read 0, so a Braitenberg wiring alone never moves. A Source gives the
+swimmer a drive of its own; with it, crossed wiring slides round the obstacle, sees the light and
+reaches it in 3.7 s; uncrossed flees out of sight. The time limit is 15 s, leaving room for
+slower solutions. Two lights, where 5 random wirings in 2,603 won, was too hard for a second
+level; it waits in `docs/ideas.md`.
+The lesson follows the first level's: an eye in the dark sees nothing, and the drive has to come
+from somewhere. `test_determinism.py` pins the driven, crossed winner and the stillness without
+a drive.

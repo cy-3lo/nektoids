@@ -49,6 +49,9 @@ puts it in scope. Until D-028 these were logged in the decision log as "post-jam
 - **Saving and loading**: the format of D-024, with a version number, keeping wire paths
   exactly. Save and Load wait, greyed, in the palette (D-027).
 - **A level editor**, Super Mario Maker-like: levels are data already (D-028).
+- **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
+  2,603 random wirings, the fastest a one-eyed circler. Its file is in the history
+  (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
 - **Sharing levels and solutions.**
 
 ## Score
