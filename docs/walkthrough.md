@@ -324,8 +324,8 @@ Right, one column. At the top, two palettes, one row each: the player (start aga
 back, play or pause, one frame, fast forward) and the view (zoom in, zoom out, the hand to move
 the view, centre, which frames the swimmers and the lights, and the rays on or off). Every button
 has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
-centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each with a bar: for now
-"Reach a light", how much of the way from its start to touching a light the swimmer has come.
+centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
+"Visit every light", so many touched of so many (section 9).
 At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
 beads on the wires, no numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
 the swimmer, turn it with the wheel or Q and E, and watch which eye lights up and which thruster
@@ -359,8 +359,8 @@ makes a circle through the centre, pointing at it.
   `schematic_draw.py`. The map is computed only while it shows; the shadows of the obstacles
   once per arena (`still_light`), the swimmer's own again when it moves.
 - [`levels/arenas.py`](../game/nektoids/levels/arenas.py): two arenas to try things in, and
-  [`levels/objectives.py`](../game/nektoids/levels/objectives.py): what a level asks, each as a
-  fraction from 0 to 1. `ReachLight` is the first; the countable ones come with the real levels.
+  [`levels/objectives.py`](../game/nektoids/levels/objectives.py): what a level asks, counted,
+  and when a run is over (section 9).
 
 ### 7.3 Questions to answer after reading
 
@@ -421,7 +421,7 @@ raises.
 
 ### 8.2 The code, in the order it runs
 
-1. [`editor/arena.py` `_tick`](../game/nektoids/editor/arena.py#L217): one call to `world.step`,
+1. [`editor/arena.py` `_tick`](../game/nektoids/editor/arena.py#L229): one call to `world.step`,
    then the eyes for the drawing are read from the state, then the beads move.
 2. [`sim/world.py` `step`](../game/nektoids/sim/world.py#L37), a pure function that returns new
    arrays: move (`motion`), touch (`contact.confine`), see (`optics.eye_rates`), think
@@ -465,6 +465,54 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
   swimmer also starts in the shadow of the obstacle at (21, 21).
 - **`arena.py`'s tick has no automated test,** like the rest of the scene; `world.step` has. A
   headless script ran both arenas for 10 s and 20 s before the PR.
+
+## 9. A run ends; F4 prints your board (D-023, D-024)
+
+Read D-023 and D-024 first. In F3, wire the tutorial eyes crossed and press Space: after 8.7 s the
+swimmer touches the light, the run stops and a banner says "Done in 8.66 s". Uncrossed, it runs
+out of time at 20 s. In the editor, F4 prints your board as one line of JSON in the terminal.
+
+### 9.1 What it computes
+
+A run remembers which lights each swimmer has touched: `visited`, a boolean array of shape
+(N, L), OR-ed with "touching now" after every tick, so a visit counts once whatever comes next.
+An objective turns that into a count, `(met, needed)`. `outcome` is a pure function of the level,
+`visited` and the tick: won when every objective is met, time up at the level's limit, otherwise
+`None`. Because the end is derived, never stored, going one frame back simply un-ends the run.
+
+### 9.2 The code
+
+- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): `touching` (one numpy
+  broadcast, swimmers by lights), `VisitLights.count`, `outcome`. `Objective` is a `Protocol`:
+  anything with a `name` and a `count` is one.
+- [`levels/arenas.py`](../game/nektoids/levels/arenas.py): `Level.time_limit`.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py): `visited` lives with the run and in
+  `Snapshot`; `update` checks `outcome` after each tick and stops the clock at the tick the run
+  ended, since `Clock.frame` hands out a whole frame's ticks at once. Play and Step do nothing
+  once it is over; 0 starts again.
+- [`editor/arena_draw.py`](../game/nektoids/editor/arena_draw.py): the ring round a visited
+  light, "1 of 2", the banner, `t = 8.66 / 20 s`.
+- [`graph/board.py`](../game/nektoids/graph/board.py) `to_dict` and `from_dict`, and the F4
+  branch in [`main.py`](../game/main.py). Wires refer to parts by their place in the list, not
+  by id, since ids have gaps after a delete.
+- Tests: [`test_objectives.py`](../tests/test_objectives.py), the round trip in
+  [`test_board.py`](../tests/test_board.py), and in
+  [`test_determinism.py`](../tests/test_determinism.py) a one-eyed board that wins "Two
+  lights" in 23.1 s, found by a random search, so the level is known to be winnable.
+
+### 9.3 Questions to answer after reading
+
+1. **Why is `outcome` computed and not stored as a flag on the scene?** What would one frame back
+   need to do if it were a flag?
+2. **`from_dict` draws the wires again instead of reading their paths.** When does that give a
+   different picture from the one saved, and why does it never give a different network?
+3. **Why does `update` set `clock.tick` back when a run ends inside a frame?**
+
+### 9.4 Weak or untested
+
+- **The scene's stop-at-the-end has no automated test,** like the rest of `arena.py`; `outcome`
+  has, and a headless script drove both arenas to their ends before the PR.
+- **The JSON has no version number,** and `from_dict` does not keep saved paths exactly.
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

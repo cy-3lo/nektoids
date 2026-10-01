@@ -235,3 +235,35 @@ Consequences: V ∝ 1/R and Ω ∝ 1/R², so a body that complexity grows loses 
 Explicit Euler under a constant thrust draws a closed regular polygon, not a spiral. Without
 momentum, an eye crossing the edge of a shadow stops the body within a few ticks: it shows, and it
 is the eye's doing; smoothing it is a question for TAU.
+
+**D-023 — 2026-10-01 — A run ends when every objective is met or the level's time is up; objectives count visits to lights, and a visit counts once. Supersedes the "Reach a light" bar.**
+A swimmer visits a light when their discs touch, centre distance ≤ `LIGHT_RADIUS` + R, checked
+after every tick; the run remembers it in `visited`, (N, L), whatever the swimmer does next. An
+objective counts from that, so many met out of so many needed: `VisitLights` needs every swimmer
+to touch every light, in any order, the one light in "One light" and both in "Two lights". Each
+level has a `time_limit` [s]. The arena view stops at the tick the run is won, or after
+round(time_limit / dt) ticks, and says which in a banner; visited lights get a ring and the
+objective a count, "1 of 2". A level without objectives is never won, only timed out. The end is
+derived from the tick and `visited`, never stored, so one frame back takes it back.
+The old bar was a live fraction of the way to the nearest light, any light, which fell again when
+the swimmer left, and nothing ended a run; the brief asks for countable win conditions (§1).
+Consequences: a count jumps from 0 to 1 where the bar filled; at 3.6 u/s a tick moves 0.03 u
+against a touch at 2 u, so no visit falls between ticks. Limits: "One light" 20 s (crossed wiring
+touches at 8.7 s); "Two lights" 45 s, where a one-eyed circler found by a search of the free board
+(5 winners in 2,603 random wirings) visits both in 23.1 s, passing 0.08 u from each centre, deep
+enough to survive the ulps of D-004; `test_determinism.py` pins it. Dragging and turning a
+swimmer by hand stay a developer's tool and are not scored: the player will not touch a
+programmed swimmer.
+
+**D-024 — 2026-10-01 — F4 prints the editor's board as one line of JSON, the start of a save format. Saving for the player stays out of scope.**
+`Board.to_dict` gives the zone, what the level handed out, the parts in id order (kind, cell
+[q, r], facing by name, locked) and the wires in the order they were drawn, each naming its ends
+by their place in that list, with its path. `Board.from_dict` places the parts and draws the
+wires again in that order, so the network is the one saved; ids left by deleted parts close up.
+F4 works in every view, behind `DEV_VIEW`, and only prints: to the terminal natively, to the
+browser's console under pygbag, so no file is written (`.claude/rules/web.md`).
+A board built in the editor can now be handed over, to a test or to the other contributor,
+without transcribing it.
+Consequences: a path comes back as saved unless the board was edited with Move or Delete, after
+which a wire drawn again may take another route as short; keeping saved paths exactly is for
+when saving arrives. The format has no version number yet.
