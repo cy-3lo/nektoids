@@ -14,5 +14,5 @@ Do not start implementing. Answer in at most ten lines.
    thrust budget rather than node budget; determinism; countable win conditions;
    spatial scarcity in the editor.
 5. Give the verdict, quote the line of the brief or decision that settles it, and for OUT or
-   GREY propose the smallest in-scope version — or suggest logging it in `docs/decisions.md`
-   as "post-jam".
+   GREY propose the smallest in-scope version — or suggest logging it in `docs/ideas.md`
+   (D-028).

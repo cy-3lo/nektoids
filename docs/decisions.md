@@ -318,3 +318,23 @@ Edit holds Undo and Redo, then Save and Load, greyed until saving exists (still 
 prints a board, D-024). The undo and redo icons are Font Awesome's hooked arrows (reply,
 share), since its round arrows are the turn tools. The arena view (F3) undoes nothing: it runs
 the board as it was when it opened.
+
+**D-028 — 2026-10-01 — The game opens on the first tutorial; a level is data, with its items in an open plane; it is scored on time and number of parts. Supersedes D-022's walls, and D-003's "post-jam" entries in this log.**
+The first screen is Tutorial 1's board under a title card that a click dismisses, with a Map
+button from the start. The map holds the levels as routes, the sandbox, and later the rest. In
+the jam it has one route, light: three Braitenberg tutorials, then the real level. How routes
+divide later, by sense or by collective, is left open: the jam has one swimmer and one sense.
+A level is plain data, as a board is (D-024): its title and spec, the swimmer's start, the items
+placed in the plane (lights and obstacles, others to come), its board (zone, stock, locked
+parts), its objectives and its time limit. A level editor, saving and sharing levels will read
+and write the same thing. There are no walls: the plane is open, a swimmer that leaves simply
+runs out of time, and rays and the light map are drawn as far as the view shows.
+Each level is scored on the time to win and the number of parts on the board, two axes that pull
+against each other; the session's runs show as points with their Pareto front. Nothing is kept
+between sessions: saving stays out.
+The brief's success criterion is strangers finishing the real level, and every screen before
+the first puzzle loses some; the loop starts with a spec. Levels written in Python could not come
+out of a level editor. The walls were a box for trying things, part of no spec.
+Consequences: `contact.confine` loses its clamp to the walls; the arenas of D-019 become levels.
+What is left to do is in `docs/todo.md`; ideas for after the jam are in `docs/ideas.md`, no
+longer logged here as "post-jam".
