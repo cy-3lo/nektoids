@@ -1,4 +1,9 @@
-"""The arena view (F3, developer): a swimmer running your board in a lit arena (D-018, D-019).
+"""The arena view: a swimmer running your board in a lit arena (D-018, D-019).
+
+Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Esc)
+goes back to it, and once the level is won the banner's Next level (Enter) moves on. Nothing
+touches the programmed swimmer: no dragging or turning it, and none of the developer's tools.
+The developer's (F3): every level, Tab between them, and the tools below.
 
 Left, the arena: the light as rays (or, with I, as a map), the obstacles and the lights, and the
 swimmer as a circle round a wedge; its eyes and thrusters sit where the board puts them on it.
@@ -41,6 +46,7 @@ from nektoids.editor.arena_layout import (
     POLAR_KEY,
     TURN_KEYS,
     ArenaButton,
+    banner_button_at,
     button_at,
 )
 from nektoids.editor.arena_view import (
@@ -99,8 +105,17 @@ class Snapshot:
 
 
 class ArenaScene:
-    def __init__(self, board: Board, levels: Sequence[Level]):
+    def __init__(
+        self,
+        board: Board,
+        levels: Sequence[Level],
+        developer: bool = True,
+        has_next: bool = False,
+    ):
         self.levels = list(levels)
+        self.developer = developer  # the developer's tools, every level; or the player's run
+        self.has_next = has_next  # the player's: a level comes after this one
+        self.request: str | None = None  # "edit" or "next": for main.py, which clears it
         self.index = 0
         self.clock = Clock()
         self.circuit = Circuit(board, CIRCUIT_AREA, CIRCUIT_MARGIN, body=True)
@@ -278,15 +293,25 @@ class ArenaScene:
 
     # Input
 
+    @property
+    def banner_buttons(self) -> tuple[ArenaButton, ...]:
+        """What the banner offers once the run is over: the next level after a win, and Edit."""
+        if self.outcome is None:
+            return ()
+        if self.outcome is Outcome.WON and (self.developer or self.has_next):
+            return (ArenaButton.NEXT, ArenaButton.EDIT)
+        return (ArenaButton.EDIT,)
+
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            button = button_at(event.pos)
+            button = banner_button_at(self.banner_buttons, event.pos) or button_at(event.pos)
             if button is not None:
                 self.press(button)
             elif self.hand:
                 self.panning = event.pos
-            else:
-                self.selected = self.dragging = body_at(self.view, self.pos, self.radius, event.pos)
+            else:  # click to inspect; only a developer drags the swimmer about
+                self.selected = body_at(self.view, self.pos, self.radius, event.pos)
+                self.dragging = self.selected if self.developer else None
         elif event.type == pygame.MOUSEMOTION:
             self.pointer = event.pos
             if self.panning is not None:
@@ -297,13 +322,23 @@ class ArenaScene:
                 self._drag(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = self.panning = None
-        elif event.type == pygame.MOUSEWHEEL:
+        elif event.type == pygame.MOUSEWHEEL and self.developer:
             self._turn(float(event.y))
         elif event.type == pygame.KEYDOWN:
             self._key(event)
 
     def press(self, button: ArenaButton) -> None:
-        if button is ArenaButton.RESTART:
+        if button is ArenaButton.EDIT:
+            self.request = "edit"
+        elif button is ArenaButton.NEXT:
+            if ArenaButton.NEXT not in self.banner_buttons:
+                return
+            if self.developer:
+                self.index = (self.index + 1) % len(self.levels)
+                self._load()
+            else:
+                self.request = "next"
+        elif button is ArenaButton.RESTART:
             self._restart()
         elif button is ArenaButton.BACK:
             self._back()
@@ -338,6 +373,13 @@ class ArenaScene:
             self.press(ArenaButton.PLAY)
         elif event.scancode in (pygame.KSCAN_0, pygame.KSCAN_KP_0):  # "à" on AZERTY, unshifted
             self.press(ArenaButton.RESTART)
+        elif event.key == pygame.K_ESCAPE:
+            self.press(ArenaButton.EDIT)
+        elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
+            self.press(ArenaButton.NEXT)
+        elif not self.developer:
+            if typed in KEY_BUTTONS:
+                self.press(KEY_BUTTONS[typed])
         elif event.scancode == pygame.KSCAN_TAB:
             back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
             self.index = (self.index + (-1 if back else 1)) % len(self.levels)

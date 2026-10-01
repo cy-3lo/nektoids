@@ -174,3 +174,12 @@ def test_every_palette_button_has_its_own_key_and_tooltip_target():
         assert palette_target_at(LAYOUT, centre(rect)) == target
     assert palette_target_at(LAYOUT, centre(LAYOUT.swatches[2])) == "colours"
     assert palette_target_at(LAYOUT, centre(LAYOUT.board_area)) is None
+
+
+def test_the_run_button_sits_at_the_foot_of_the_menu_below_every_row_even_unfolded():
+    x, y, w, h = LAYOUT.run_button
+    assert contains(LAYOUT.menu_area, (x, y)) and contains(LAYOUT.menu_area, (x + w - 1, y + h - 1))
+    assert y + h == SCREEN[1] - 16
+    lowest = max(ry + rh for _, (_, ry, _, rh) in [*LAYOUT.menu_items, *LAYOUT.group_titles])
+    assert lowest < y
+    assert contains(LAYOUT.board_area, LAYOUT.caption_at)

@@ -1,5 +1,6 @@
 from nektoids.editor.arena_layout import (
     ARENA_AREA,
+    BANNER,
     BUTTON_KEYS,
     CIRCUIT_AREA,
     KEY_BUTTONS,
@@ -12,6 +13,8 @@ from nektoids.editor.arena_layout import (
     TURN_KEYS,
     VIEW,
     ArenaButton,
+    banner_button_at,
+    banner_rects,
     button_at,
     button_rects,
 )
@@ -20,7 +23,7 @@ from nektoids.editor.layout import SCREEN, TOOL_KEYS, VIEW_KEYS, Tool, ViewButto
 
 def test_the_palettes_sit_on_two_rows_in_the_column_without_overlapping():
     rects = dict(button_rects())
-    assert list(rects) == [*PLAYER, *VIEW] and len(rects) == 10
+    assert list(rects) == [*PLAYER, *VIEW] and len(rects) == 11
     for palette in (PLAYER, VIEW):
         row = [rects[b] for b in palette]
         assert len({y for _, y, _, _ in row}) == 1
@@ -67,3 +70,13 @@ def test_every_button_has_a_key_and_typed_ones_find_their_button():
     assert set(BUTTON_KEYS) == set(ArenaButton)
     for key, button in KEY_BUTTONS.items():
         assert BUTTON_KEYS[button] == key and len(key) == 1
+
+
+def test_the_banner_holds_its_buttons_side_by_side_and_finds_them():
+    both = (ArenaButton.NEXT, ArenaButton.EDIT)
+    (_, (x1, y1, w1, h1)), (_, (x2, y2, _, _)) = banner_rects(both)
+    bx, by, bw, bh = BANNER
+    assert y1 == y2 and x1 + w1 < x2 and bx < x1 and x2 + w1 < bx + bw and y1 + h1 < by + bh
+    assert banner_button_at(both, (x1 + 5, y1 + 5)) is ArenaButton.NEXT
+    assert banner_button_at((ArenaButton.EDIT,), (x1 + 5, y1 + 5)) is None  # one button: centred
+    assert ARENA_AREA[0] <= bx and bx + bw <= ARENA_AREA[0] + ARENA_AREA[2]

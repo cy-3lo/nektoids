@@ -1,8 +1,9 @@
 """Where the arena view puts things on the 960 x 640 screen, and what is under a given pixel.
 
-Left, the arena, with a status line at its foot. Right, one column: at the top the title and two
-palettes, one row each: the player (start again, one frame back, play or pause, one frame, fast
-forward) and the view (zoom in, zoom out, move the view, centre, rays on or off); in the
+Left, the arena, with a status line at its foot, and once a run is over a banner at its top with
+Next level and Edit. Right, one column: at the top the title and two palettes, one row each: the
+player (back to the editor, start again, one frame back, play or pause, one frame, fast forward)
+and the view (zoom in, zoom out, move the view, centre, rays on or off); in the
 middle the objectives, each with its bar; at the bottom the swimmer's wiring on its body. The
 polar plot of the light at the eyes, a developer's tool, is an inset over the arena's top left
 corner. Plain numbers, no pygame, so hit-testing is testable headless.
@@ -40,6 +41,8 @@ POLAR_RADIUS = 80  # of the plot's circle [px]
 
 
 class ArenaButton(Enum):
+    EDIT = "edit"  # back to the editor, the board as it was
+    NEXT = "next"  # on to the next level, once this one is won: in the banner
     RESTART = "restart"
     BACK = "back"  # one frame back
     PLAY = "play"  # play or pause, the one button
@@ -53,6 +56,7 @@ class ArenaButton(Enum):
 
 
 PLAYER = (
+    ArenaButton.EDIT,
     ArenaButton.RESTART,
     ArenaButton.BACK,
     ArenaButton.PLAY,
@@ -69,6 +73,8 @@ VIEW = (
 # One key, one meaning, in the editor and here: the view's keys are the editor's own, and no key
 # the editor uses means anything else here (R rotates there, so starting again is 0: t = 0).
 BUTTON_KEYS = {
+    ArenaButton.EDIT: "Esc",  # leave the run, as Escape leaves a gesture in the editor
+    ArenaButton.NEXT: "Enter",
     ArenaButton.RESTART: "0",
     ArenaButton.BACK: ",",
     ArenaButton.PLAY: "Space",
@@ -83,7 +89,7 @@ BUTTON_KEYS = {
 # Keys with no button, for developers: turn the swimmer, the light map, the polar plot.
 TURN_KEYS = (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])  # the editor's: L, R
 MAP_KEY, POLAR_KEY = "I", "P"
-# Typed characters that press a button; Space and 0 are matched on the physical key instead.
+# Typed characters that press a button; Space, 0, Esc and Enter are matched on the physical key.
 KEY_BUTTONS = {key: b for b, key in BUTTON_KEYS.items() if len(key) == 1 and not key.isdigit()}
 
 
@@ -102,3 +108,25 @@ def button_rects() -> tuple[tuple[ArenaButton, Rect], ...]:
 
 def button_at(point: tuple[int, int]) -> ArenaButton | None:
     return next((button for button, rect in button_rects() if contains(rect, point)), None)
+
+
+BANNER: Rect = (ARENA_AREA[0] + (ARENA_AREA[2] - 320) // 2, 16, 320, 132)  # over the arena's top
+BANNER_BUTTON = (132, 32)  # [px]
+
+
+def banner_rects(
+    buttons: tuple[ArenaButton, ...],
+) -> tuple[tuple[ArenaButton, Rect], ...]:
+    """The banner's buttons, side by side along its foot, centred."""
+    x, y, w, h = BANNER
+    bw, bh = BANNER_BUTTON
+    gap = 16
+    width = len(buttons) * bw + (len(buttons) - 1) * gap
+    left, top = x + (w - width) // 2, y + h - bh - 12
+    return tuple((b, (left + k * (bw + gap), top, bw, bh)) for k, b in enumerate(buttons))
+
+
+def banner_button_at(
+    buttons: tuple[ArenaButton, ...], point: tuple[int, int]
+) -> ArenaButton | None:
+    return next((b for b, rect in banner_rects(buttons) if contains(rect, point)), None)

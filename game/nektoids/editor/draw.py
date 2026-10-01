@@ -25,6 +25,7 @@ from nektoids.editor.icons import EDIT_ICON, FILE_ICON, KIND_ICON, TOOL_ICON, VI
 from nektoids.editor.layout import (
     EDIT_KEYS,
     PALETTE_TITLE,
+    RUN_KEY,
     TOOL_KEYS,
     VIEW_KEYS,
     EditButton,
@@ -159,8 +160,10 @@ class Fonts:
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
     _draw_menu(screen, scene, fonts)
+    _draw_run_button(screen, scene, fonts)
     _draw_palette(screen, scene, fonts)
     _draw_board(screen, scene, fonts)
+    _draw_caption(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     _draw_separators(screen, scene)
     _draw_tooltip(screen, scene, fonts)
@@ -420,6 +423,28 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
 def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
     for x in (scene.layout.menu_area[2], scene.layout.palette_area[0]):
         pygame.draw.line(screen, RULE, (x, 0), (x, screen.get_height()), 2)
+
+
+def _draw_run_button(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """At the foot of the menu: a play mark, "Run", and its key."""
+    x, y, w, h = scene.layout.run_button
+    pygame.draw.rect(screen, ACTIVE, (x, y, w, h), border_radius=6)
+    fonts.icons.draw(screen, "play", (x + 22, y + h // 2), 18, TEXT)
+    label = fonts.text.render("Run", True, TEXT)
+    screen.blit(label, (x + 46, y + (h - label.get_height()) // 2))
+    key = fonts.small.render(RUN_KEY, True, DIM_TEXT)
+    screen.blit(key, (x + w - 12 - key.get_width(), y + (h - key.get_height()) // 2))
+
+
+def _draw_caption(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The level's title and, after it, what it asks: the spec comes first (brief §1)."""
+    title, spec = scene.caption
+    if not title:
+        return
+    x, y = scene.layout.caption_at
+    shown = fonts.text.render(title, True, TEXT)
+    screen.blit(shown, (x, y))
+    screen.blit(fonts.text.render(spec, True, DIM_TEXT), (x + shown.get_width() + 12, y))
 
 
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

@@ -30,6 +30,7 @@ import pygame
 from nektoids.editor.arena import POLAR_ANGLES, ArenaScene
 from nektoids.editor.arena_layout import (
     ARENA_AREA,
+    BANNER,
     BUTTON_KEYS,
     CIRCUIT_AREA,
     MARGIN,
@@ -42,6 +43,7 @@ from nektoids.editor.arena_layout import (
     SCORE_AREA,
     TITLE_AT,
     ArenaButton,
+    banner_rects,
     button_rects,
 )
 from nektoids.editor.arena_view import (
@@ -54,6 +56,7 @@ from nektoids.editor.arena_view import (
     tone,
 )
 from nektoids.editor.draw import (
+    ACTIVE,
     BACKGROUND,
     DARK,
     DIM_TEXT,
@@ -90,8 +93,8 @@ EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot
 BAR_HEIGHT = 8  # an objective's bar [px]
 ROW_PITCH = 40  # one objective [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
-BANNER_TOP = 16  # [px] below the top of the arena
 ICON = {
+    ArenaButton.EDIT: "pen",
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
     ArenaButton.BACK: "backward-step",
     ArenaButton.STEP: "forward-step",
@@ -103,6 +106,7 @@ ICON = {
     ArenaButton.LIGHT: "lightbulb",
 }
 TIP = {
+    ArenaButton.EDIT: "Back to the editor",
     ArenaButton.RESTART: "Start again",
     ArenaButton.BACK: "One frame back",
     ArenaButton.STEP: "One frame",
@@ -225,8 +229,8 @@ def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     height = screen.get_height()
     pygame.draw.rect(screen, PANEL, (PANEL_LEFT, 0, PANEL_WIDTH, height))
     pygame.draw.line(screen, RULE, (PANEL_LEFT, 0), (PANEL_LEFT, height), 2)
-    count = f"{scene.index + 1}/{len(scene.levels)}"
-    screen.blit(fonts.text.render(f"{scene.title}  ({count})", True, TEXT), TITLE_AT)
+    count = f"  ({scene.index + 1}/{len(scene.levels)})" if scene.developer else ""  # for Tab
+    screen.blit(fonts.text.render(f"{scene.title}{count}", True, TEXT), TITLE_AT)
     for y in RULES:
         pygame.draw.line(
             screen, RULE, (PANEL_LEFT + MARGIN, y), (PANEL_LEFT + PANEL_WIDTH - MARGIN, y)
@@ -394,17 +398,18 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     rows = [f"{name}: {met} of {needed}" for name, met, needed in scene.counts()]
     lines = [fonts.text.render(head, True, TEXT)]
     lines += [fonts.small.render(row, True, DIM_TEXT) for row in [*rows, "0: start again"]]
-    x, y, w, _ = ARENA_AREA
-    width = max(line.get_width() for line in lines) + 32
-    height = sum(line.get_height() + 4 for line in lines) + 16
-    box = pygame.Rect(0, 0, width, height)
-    box.midtop = (x + w // 2, y + BANNER_TOP)
+    box = pygame.Rect(BANNER)
     pygame.draw.rect(screen, PANEL, box, border_radius=6)
     pygame.draw.rect(screen, LIGHT if ended is Outcome.WON else RULE, box, 2, border_radius=6)
     top = box.top + 10
     for line in lines:
         screen.blit(line, line.get_rect(midtop=(box.centerx, top)))
         top += line.get_height() + 4
+    for button, rect in banner_rects(scene.banner_buttons):
+        label = "Next level" if button is ArenaButton.NEXT else "Edit"
+        pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
+        shown = fonts.text.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
+        screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))
 
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
@@ -413,8 +418,9 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     speed = f" x{clock.speed}" if clock.speed > 1 else ""
     cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
     limit = f"{scene.level.time_limit:g}"
-    text = (
-        f"t = {clock.seconds:5.2f} / {limit} s, {state}{speed}.  I: map{cost}.  P: polar plot.  "
-        "Wheel, L, R: turn.  Tab: arena.  F3: editor."
-    )
+    if scene.developer:
+        keys = f"I: map{cost}.  P: polar plot.  Wheel, L, R: turn.  Tab: arena.  F3: editor."
+    else:
+        keys = "Space: play.  0: start again.  Esc: back to the editor."
+    text = f"t = {clock.seconds:5.2f} / {limit} s, {state}{speed}.  {keys}"
     screen.blit(fonts.small.render(text, True, DIM_TEXT), (16, screen.get_height() - 22))
