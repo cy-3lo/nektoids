@@ -59,6 +59,7 @@ GLYPH = {
     "pen": 0xF304,
     "map": 0xF279,
     "lock": 0xF023,
+    "circle-info": 0xF05A,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.

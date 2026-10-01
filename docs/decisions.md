@@ -420,3 +420,13 @@ them to leave a comment on the itch.io page (the brief's contact line), and Esc 
 the map.
 `editor/router.py` gains the screens (title, map, edit, run, end) and the session's wins, still
 with no pygame; `editor/shell.py` places the map's rows and the buttons, `shell_draw.py` draws.
+
+**D-036 — 2026-10-01 — Each part in the menu has an info disc; clicked, a box beside the menu says what the part does and what may go in and out. "Difference" reads "Diff".**
+A small ⓘ sits on each menu row between the name and the count. A click on it opens a box at
+that row, to the right of the menu: the part's name, what it does in a few lines, then "In:" and
+"Out:", written from the board's own rules (D-014, D-016: a Sum or a Diff takes two wires at
+most and sends one; what a part sends is shared among its wires out). The next click or key
+closes the box and does nothing else, so a click meant to close it never places or wires a
+part. The texts live in `editor/parts.py`, with the names, where a test checks every part has
+both. Difference is shown as "Diff", to fit the row; the kind and the levels' data keep
+`difference`.

@@ -36,6 +36,7 @@ from nektoids.editor.layout import (
     ViewButton,
     visible_cells,
 )
+from nektoids.editor.parts import NAME, info
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -66,15 +67,6 @@ COMPONENT = (178, 182, 194)
 GREYED = (80, 84, 96)
 BODY_OUTLINE = (54, 58, 74)  # the swimmer's symbol behind the board: which way is forward
 
-NAME = {
-    Kind.EYE: "Eye",
-    Kind.SOURCE: "Source",
-    Kind.DOUBLE: "Double",
-    Kind.HALVE: "Halve",
-    Kind.SUM: "Sum",
-    Kind.DIFFERENCE: "Difference",
-    Kind.THRUSTER: "Thruster",
-}
 TIP = {
     Tool.ADD: "Add a component",
     Tool.WIRE: "Wire",
@@ -107,6 +99,8 @@ HINT = {
 MENU_ANGLE = {Kind.EYE: 90.0, Kind.THRUSTER: 90.0}
 
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
+INFO_ICON = 12  # a menu row's info disc [px]
+INFO_PAD = 12  # inside the info box [px]
 
 # Icon height as a fraction of the hex size.
 ICON_SCALE = {Kind.EYE: 0.55}
@@ -174,6 +168,7 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     _draw_status(screen, scene, fonts)
     _draw_separators(screen, scene)
     _draw_tooltip(screen, scene, fonts)
+    _draw_info(screen, scene, fonts)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
         angle = placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
@@ -361,8 +356,11 @@ def _draw_menu(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         angle = MENU_ANGLE.get(kind)
         draw_part(screen, fonts, kind, angle, icon, 26, locked=False, fill=fill)
         name = fonts.text.render(NAME[kind], True, DIM_TEXT if empty else TEXT)
+        disc = dict(layout.info_buttons)[kind]
+        lit = TEXT if kind is scene.info else DIM_TEXT
+        fonts.icons.draw(screen, "circle-info", pygame.Rect(disc).center, INFO_ICON, lit)
         screen.blit(name, (x + 46, y + (h - name.get_height()) // 2))
-        right = x + w - 12  # right edge of the count
+        right = x + w - 8  # right edge of the count, clear of the info disc
         if left is None:
             fonts.icons.draw(screen, "infinity", (right - 8, y + h // 2), 14, TEXT)
         else:
@@ -435,6 +433,25 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
 def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:
     for x in (scene.layout.menu_area[2], scene.layout.palette_area[0]):
         pygame.draw.line(screen, RULE, (x, 0), (x, screen.get_height()), 2)
+
+
+def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The open info box, beside the menu at its part's row: the name, then what it does."""
+    if scene.info is None:
+        return
+    rows = [fonts.text.render(NAME[scene.info], True, TEXT)]
+    rows += [fonts.small.render(line, True, TEXT) for line in info(scene.info)]
+    width = max(row.get_width() for row in rows) + 2 * INFO_PAD
+    height = sum(row.get_height() + 4 for row in rows) + 2 * INFO_PAD
+    _, top, _, _ = dict(scene.layout.menu_items)[scene.info]
+    top = min(top, screen.get_height() - height - 8)  # kept on screen
+    box = pygame.Rect(scene.layout.menu_area[2] + 8, top, width, height)
+    pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=6)
+    pygame.draw.rect(screen, RULE, box, 1, border_radius=6)
+    y = box.top + INFO_PAD
+    for row in rows:
+        screen.blit(row, (box.left + INFO_PAD, y))
+        y += row.get_height() + 4
 
 
 def _draw_run_button(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

@@ -25,9 +25,10 @@ over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a s
 with the hand, the arrows drag the view the way they point, as the mouse would.
 
 The selected part is the last one placed, wired from, moved or turned: a click on a part with
-any tool but Delete selects it, and its cell is lit. Clicking a menu title folds or unfolds its
-group. Right click or Escape cancels, and drops the selection. Every refusal flashes the cell
-and puts the reason in the status line.
+any tool but Delete selects it, and its cell is lit. A part's info disc in the menu opens a box
+that says what the part does; the next click or key closes it and does nothing else (D-036).
+Clicking a menu title folds or unfolds its group. Right click or Escape cancels, and drops the
+selection. Every refusal flashes the cell and puts the reason in the status line.
 """
 
 from __future__ import annotations
@@ -55,6 +56,7 @@ from nektoids.editor.layout import (
     edit_button_at,
     file_button_at,
     group_at,
+    info_at,
     make_layout,
     menu_item_at,
     palette_target_at,
@@ -130,6 +132,7 @@ class EditorScene:
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
+        self.info: Kind | None = None  # the part whose info box is open
 
     def update(self) -> None:
         """Once per frame."""
@@ -147,6 +150,9 @@ class EditorScene:
         if event.type == pygame.MOUSEMOTION and self.cursor is not None and event.rel == (0, 0):
             # Browsers re-send the pointer position without any movement (Chrome does, whenever
             # the page redraws under a still mouse): that is not the mouse taking over.
+            return
+        if self.info is not None and event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
+            self.info = None  # the next click or key closes the box, and only that
             return
         if event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
             self.cursor = None  # the mouse takes over
@@ -299,6 +305,10 @@ class EditorScene:
         if title is not None:
             self.folded ^= {title}
             self.layout = make_layout(frozenset(self.folded))
+            return
+        kind = info_at(self.layout, pos)
+        if kind is not None:
+            self.info = kind
             return
         kind = menu_item_at(self.layout, pos)
         if kind is not None:

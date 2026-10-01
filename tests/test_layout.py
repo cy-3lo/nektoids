@@ -17,6 +17,7 @@ from nektoids.editor.layout import (
     centred_view,
     contains,
     group_at,
+    info_at,
     make_layout,
     menu_item_at,
     palette_target_at,
@@ -191,3 +192,14 @@ def test_the_map_button_sits_over_run_below_every_row():
     assert mx == rx and my + mh < ry
     lowest = max(y + h for _, (_, y, _, h) in [*LAYOUT.menu_items, *LAYOUT.group_titles])
     assert lowest < my
+
+
+def test_each_menu_row_has_its_info_disc_inside_it_and_unfolding_moves_it_along():
+    rows = dict(LAYOUT.menu_items)
+    for kind, rect in LAYOUT.info_buttons:
+        assert contains(rows[kind], rect[:2])
+        assert contains(rows[kind], (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
+        assert info_at(LAYOUT, centre(rect)) is kind and menu_item_at(LAYOUT, centre(rect)) is kind
+    assert info_at(LAYOUT, centre(rows[Kind.EYE])[:1] + (0,)) is None
+    folded = make_layout(frozenset({"Sensors"}))
+    assert Kind.EYE not in dict(folded.info_buttons)

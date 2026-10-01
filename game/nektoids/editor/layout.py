@@ -2,7 +2,8 @@
 
 Three columns, with vertical separators:
 - left, the menu: component groups (sensors, operators, actuators) that fold under their title,
-  and at its foot the Map button, then the Run button;
+  each part's row with an info disc after its name (D-036), and at its foot the Map button, then
+  the Run button;
 - centre, the hex grid, filling its column, the level's caption at its top, one status line at
   its foot;
 - right, the palette, in titled sections of two buttons a row (D-025, D-027): the view (zoom
@@ -40,6 +41,8 @@ PALETTE_TITLE = 24  # palette section title [px]
 SECTION_GAP = 8  # between palette sections [px]
 SWATCH_HEIGHT = 14  # colour picker swatch, as wide as a button [px]
 RUN_HEIGHT = 48  # the Run button, as wide as the menu's rows [px]
+INFO_AT = 128  # a menu row's info disc: its centre, this far from the row's left [px]
+INFO_HIT = 20  # ... and the square a click on it falls in [px]
 RUN_KEY = "Space"  # as the arena's play (D-021), matched on the physical key
 MAP_HEIGHT = 40  # the Map button, over Run [px]
 MAP_KEY = "Tab"  # the levels, as Tab steps through them in F3; on the physical key
@@ -114,6 +117,7 @@ class Layout:
     palette_area: Rect
     group_titles: tuple[tuple[str, Rect], ...]  # click one to fold or unfold its group
     menu_items: tuple[tuple[Kind, Rect], ...]
+    info_buttons: tuple[tuple[Kind, Rect], ...]  # one per menu row, a click opens its box
     view_buttons: tuple[tuple[ViewButton, Rect], ...]
     tool_buttons: tuple[tuple[Tool, Rect], ...]
     palette_titles: tuple[tuple[str, Rect], ...]  # one above each section shown
@@ -166,6 +170,10 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
         palette_area=palette,
         group_titles=tuple(titles),
         menu_items=tuple(items),
+        info_buttons=tuple(
+            (kind, (x + INFO_AT - INFO_HIT // 2, y + (h - INFO_HIT) // 2, INFO_HIT, INFO_HIT))
+            for kind, (x, y, _, h) in items
+        ),
         view_buttons=tuple(zip(ViewButton, view_rects, strict=True)),
         tool_buttons=tuple(zip(PALETTE_TOOLS, tool_rects, strict=True)),
         edit_buttons=tuple(zip(EditButton, edit_rects, strict=True)),
@@ -220,6 +228,11 @@ def contains(rect: Rect, point: tuple[int, int]) -> bool:
 
 def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
     return next((title for title, rect in layout.group_titles if contains(rect, point)), None)
+
+
+def info_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
+    """The part whose info disc is under `point`, if any."""
+    return next((kind for kind, rect in layout.info_buttons if contains(rect, point)), None)
 
 
 def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:

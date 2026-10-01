@@ -160,6 +160,10 @@ It calls only the board's public methods.
   - `board.route` over an empty cell, drawn dim, into the part if it is a thruster;
   - `board.preview` over the other end, oriented, drawn bright if it may connect.
 
+**Info boxes (D-036):** `info_at` comes before `menu_item_at` in `_press`, so a click on a row's
+disc opens its box instead of picking the part up; while a box is open, `handle_event` spends the
+next click or key on closing it. The texts are in [`editor/parts.py`](../game/nektoids/editor/parts.py).
+
 **Turning (D-025):** `_choose(tool)` is where a tool's button and its key meet. A turn tool turns
 the selected part at once (`_turn`), then turns whatever part is clicked. L and R also turn the
 swimmer in the arena view: one key, one meaning (D-021).
