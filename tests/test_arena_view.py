@@ -152,7 +152,7 @@ def test_rays_are_the_same_at_every_run_and_spread_evenly_round_the_light():
         assert np.all(gaps < (1 + 2 * RAY_SWAY) * spacing + 1e-12)
 
 
-def test_rays_turn_slowly():
+def test_rays_turn_slowly_however_they_wander():
     rays, dt = Rays(np.array([8.0])), 0.01
     fastest = np.radians(FAN_DRIFT[1] + FAN_SWING[1]) + RAY_SWAY * 2 * np.pi / 36 * (
         2 * np.pi / SWAY_PERIOD[0]
@@ -160,7 +160,7 @@ def test_rays_turn_slowly():
     for t in np.arange(0.0, 60.0, 1.3):
         speed = np.abs(rays.angles(0, t + dt) - rays.angles(0, t)) / dt
         assert np.all(speed <= fastest * 1.01)
-    assert fastest < np.radians(2.5)  # under 2.5°/s
+    assert fastest < np.radians(5.0)  # under 5°/s
 
 
 def test_a_ray_stops_on_the_near_side_of_the_first_disc_it_meets():

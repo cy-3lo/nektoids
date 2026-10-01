@@ -25,11 +25,11 @@ MIN_SCALE, MAX_SCALE = 4.0, 48.0  # how far the view zooms [px/u]
 ZOOM_STEP = 1.25  # scale factor per click
 RAYS_PER_POWER = 4.5  # rays drawn per u of a light's power: 36 for a power of 8, 18 for 4
 MIN_RAYS = 6
-FAN_DRIFT = (0.125, 0.5)  # a light's fan of rays turns at this speed, one way or the other [°/s]
-FAN_SWING = (0.25, 1.0)  # ... give or take this much, back and forth [°/s]
-SWING_PERIOD = (40.0, 120.0)  # ... over this long [s]
+FAN_DRIFT = (0.25, 1.0)  # a light's fan of rays turns at this speed, one way or the other [°/s]
+FAN_SWING = (0.5, 2.0)  # ... give or take this much, back and forth [°/s]
+SWING_PERIOD = (20.0, 60.0)  # ... over this long [s]
 RAY_SWAY = 0.25  # each ray sways about its place by up to this fraction of the spacing
-SWAY_PERIOD = (24.0, 60.0)  # ... over this long [s]
+SWAY_PERIOD = (12.0, 30.0)  # ... over this long [s]
 
 
 @dataclass(frozen=True)
