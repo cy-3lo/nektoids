@@ -335,7 +335,8 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     if scene.selected is None:
         note = "Click the swimmer to see its wiring"
     elif not scene.circuit.cells:
-        note = "Your board is empty: build one in the editor (F3)"
+        back = "F3" if scene.developer else BUTTON_KEYS[ArenaButton.EDIT]
+        note = f"Your board is empty: build one in the editor ({back})"
     else:
         circuit = scene.circuit
         screen.set_clip(CIRCUIT_AREA)
