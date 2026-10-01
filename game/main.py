@@ -9,9 +9,12 @@ Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
 For now it shows the wiring editor; the Run button comes with the swimmer's dynamics.
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.
 F3 switches to the arena view (D-019, D-022): a swimmer running the board in a lit arena.
+F4 prints the editor's board as one line of JSON (D-024): in the terminal natively, in the
+browser's console under pygbag. Nothing is written to a file.
 """
 
 import asyncio
+import json
 
 import pygame
 
@@ -28,7 +31,7 @@ from nektoids.levels.sandbox import free_board
 from nektoids.levels.scenarios import Scenario, scenarios
 
 FPS = 60
-DEV_VIEW = True  # F2 opens the developer view and F3 the arena view; False hides both
+DEV_VIEW = True  # F2 opens the developer view, F3 the arena view, F4 prints the board
 assert SIM_HZ == FPS * TICKS_PER_FRAME  # the developer view runs a whole number of ticks a frame
 
 pygame.init()
@@ -67,6 +70,8 @@ async def main() -> None:
                 and event.key in (pygame.K_F2, pygame.K_F3)
             ):
                 developer = toggle(developer, event.key)
+            elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
+                print(json.dumps(board.to_dict(), separators=(",", ":")), flush=True)
             elif developer is not None:
                 developer.handle_event(event)
             else:

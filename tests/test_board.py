@@ -1,4 +1,8 @@
-from nektoids.graph.board import Board, Category, Kind, Refused, Wire, can_pass
+import json
+
+import pytest
+
+from nektoids.graph.board import FACING_NAMES, Board, Category, Kind, Refused, Wire, can_pass
 from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, offset_rect
 
 RECT = offset_rect(9, 7)  # a 9 x 7 zone for most tests
@@ -312,3 +316,52 @@ def test_many_wires_never_share_an_edge():
 
 def test_same_moves_give_the_same_wires():
     assert wire_everything().wires == wire_everything().wires
+
+
+# As plain data (D-024)
+
+
+def test_direction_names_follow_the_hex_directions():
+    assert [FACING_NAMES.index(name) for name in ("E", "NE", "NW", "W", "SW", "SE")] == [
+        E,
+        NE,
+        NW,
+        W,
+        SW,
+        SE,
+    ]
+
+
+def test_a_board_saved_and_loaded_is_the_same_board_and_survives_json():
+    board = Board(RECT, {Kind.EYE: 2, Kind.SOURCE: 1, Kind.HALVE: None, Kind.THRUSTER: 2})
+    eye = board.place(Kind.EYE, (0, 1), facing=NE)
+    source = board.place(Kind.SOURCE, (0, 5))
+    half = board.place(Kind.HALVE, (3, 3))
+    thruster = board.place(Kind.THRUSTER, (6, 3), facing=SW)
+    for a, b in ((eye, half), (half, thruster), (source, thruster)):
+        assert not isinstance(board.connect(a.id, b.id), Refused)
+    data = board.to_dict()
+    loaded = Board.from_dict(json.loads(json.dumps(data)))
+    assert loaded.to_dict() == data
+    assert loaded.nodes == board.nodes and loaded.wires == board.wires
+    assert loaded.remaining(Kind.EYE) == board.remaining(Kind.EYE) == 1
+    assert data["parts"][0] == {"kind": "eye", "cell": [0, 1], "facing": "NE", "locked": False}
+    assert data["parts"][1]["facing"] is None
+
+
+def test_ids_left_by_a_deleted_part_close_up_on_loading():
+    board = Board(RECT)
+    first, gone, last = (board.place(Kind.EYE, (q, 1)) for q in (0, 2, 4))
+    thruster = board.place(Kind.THRUSTER, (4, 3))
+    board.connect(last.id, thruster.id)
+    board.remove_node(gone.id)
+    loaded = Board.from_dict(board.to_dict())
+    assert sorted(loaded.nodes) == [0, 1, 2]
+    assert [(w.source, w.target) for w in loaded.wires] == [(1, 2)]
+
+
+def test_data_no_board_could_hold_is_an_error():
+    data = Board(RECT).to_dict()
+    data["parts"] = [{"kind": "eye", "cell": [99, 99], "facing": "E", "locked": False}]
+    with pytest.raises(ValueError, match="outside the zone"):
+        Board.from_dict(data)
