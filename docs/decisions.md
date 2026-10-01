@@ -464,3 +464,24 @@ so no operator appears yet. One light (1.2) and In the shadow (1.3) each carry t
 developer's key, goes to the editor from anywhere.
 `editor/tutorial.py` reads and follows a tutorial with no pygame, tested by walking Fear's;
 `tutorial_draw.py` draws the overlay; `main.py` keeps one per level for the session.
+
+**D-040 — 2026-10-01 — LEVEL 1.2 is Love: stay by the light without touching it, with two Sources, two Sums and two Diffs handed out. Objectives keep any state, not only latched marks; a run can be lost. Generalises D-038.**
+Love is Braitenberg's vehicle 3a: each eye inhibits the thruster on its own side, Diff(Source,
+eye) = 1 - e, so the swimmer swims to the light, slows as its eyes brighten, and stops where they
+saturate. The level: one light of power 8, the swimmer 15 u away facing it, 20 s; two
+objectives, Stay by the light (within 6 u of its centre for 5 s in a row) and Don't touch the
+light (no swimmer reaches it, D-029); two eyes, two Sources, two Sums, two Diffs, two thrusters;
+two hints. The Sums are handed out and not needed: thruster inputs already add. Love with the
+eyes turned NE and SE wins at 7.6 s and stops 3.7 u from the light, 1.3 u clear of touching;
+with the eyes straight ahead it stops 8.7 u out, outside the ring, and runs out of time (where
+it stops is roughly P cos of the eye's angle to the light). Aggression, fear head on and a bare
+Source drive touch the light within 5 s. All pinned in `test_determinism.py`. The chapter is now
+Fear (1.1), Love (1.2), One light (1.3), In the shadow (1.4).
+An objective now keeps what it needs: `start(now)` at t = 0, then `keep(kept, now, dt)` each
+tick, from what counts now (`marks`). Visit every light, Leave the ring and Don't touch keep
+latched marks, as before; Stay by the light keeps each swimmer's time in its ring, back to 0 when
+it leaves, kept once full. `count(kept)` says how many are met, `progress(kept)` fills its bar,
+and `lost(kept)` may lose the run: Outcome gains LOST, checked before WON and TIME_UP, so a
+touch ends the run at once. The banner says what lost it ("It touched the light at 4.72 s"),
+with Edit only, and the objective's row turns red. The ring to stay in is drawn dashed like the
+ring to leave, lit once met. What the objectives keep goes into the recording (D-033).

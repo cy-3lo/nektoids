@@ -622,13 +622,35 @@ player through the board, placing, turning and wiring.
   targets and draws the box; the ghosts are drawn by `draw.py`, from `EditorScene.ghosts`, which
   `main.py` sets every frame.
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
-  own marks (`marks`, `latch`), which is what lets Leave the ring sit beside Visit every light.
+  own marks, which is what lets Leave the ring sit beside Visit every light (section 13 makes
+  that any state).
 - Tests: [`test_tutorial.py`](../tests/test_tutorial.py) walks Fear's tutorial as a player
   would; [`test_determinism.py`](../tests/test_determinism.py) pins Fear's winner and its two
   failures, crossed and with the eyes looking forward.
 
 Questions: why does `follow` loop, rather than move one step? (Place an eye already turned.) Why
 does the tutorial live in `main.py` rather than in the editor's scene?
+
+## 13. Love, and a run that can be lost (D-040)
+
+Read D-040 first. LEVEL 1.2 is Love: the swimmer must come to the light and stay by it without
+touching it, which needs a Diff on each side, Diff(Source, eye) = 1 - e.
+
+- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): an objective keeps whatever
+  it needs, `start` then `keep` each tick (the module's `begin` and `follow` do it for a whole
+  level). `Latched` is what most keep: their marks, ORed. `StayNear` keeps a timer per swimmer;
+  `KeepOff` loses the run (`lost`), and `outcome` checks that first.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py): `kept` replaces `marked`, in the run
+  and in each `Snapshot`; `counts()` returns a `Count` per objective, with its bar and whether
+  it lost; `lost_by` says which one did, for the banner.
+- [`levels/data/love.json`](../game/nektoids/levels/data/love.json): the level, written by
+  `to_json`.
+- Tests: [`test_objectives.py`](../tests/test_objectives.py) for the timer and the touch;
+  [`test_determinism.py`](../tests/test_determinism.py) pins love's win and the three ways to
+  lose, and love with its eyes straight ahead, which stops outside the ring.
+
+Questions: why does `StayNear.keep` freeze the timer once full rather than let it run on? Why
+is LOST checked before WON in `outcome`? (Make a level with Visit every light and Don't touch.)
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
