@@ -41,7 +41,9 @@ size grows with graph complexity, which raises drag.
 
 Out: flocking and multiple agents, flow sensing, chemical fields, optical flow, parts that move
 on the body during a run, threshold nodes, the generalisation pillar (multi-seed validation),
-sound, art, saving, undo.
+sound, art, saving (F4 prints a board, D-024; Save and Load wait, greyed, D-027).
+
+Undo and redo are in (D-027).
 
 If a request touches something out of scope, say so plainly and offer the smallest in-scope
 version. `/scope-check` does this formally.

@@ -23,7 +23,8 @@ In the window, try:
 - turn a part: it is selected once placed (or click it with Move), then L turns it left and R
   right, as do the two turn buttons;
 - drag a part with Move and watch its wires follow;
-- hover with Delete to see what would go.
+- hover with Delete to see what would go;
+- undo and redo with the Edit buttons or Ctrl+Z, Ctrl+Shift+Z (Cmd on a Mac).
 
 Hover a button on the right for a second to see its shortcut key.
 
@@ -161,6 +162,12 @@ It calls only the board's public methods.
 **Turning (D-025):** `_choose(tool)` is where a tool's button and its key meet. A turn tool turns
 the selected part at once (`_turn`), then turns whatever part is clicked. L and R also turn the
 swimmer in the arena view: one key, one meaning (D-021).
+
+**Undo (D-027):** [`editor/history.py`](../game/nektoids/editor/history.py) keeps whole board
+states (`Board.snapshot`), not edits. At the end of `handle_event`, unless a Move is under way,
+`_keep` compares the board with the last state kept and records the old one if it changed: one
+step per gesture, whatever the tool. `_edit` puts a state back with `Board.restore`, in place,
+because `main.py` and the arena view hold the same board.
 
 **Delete:** `_delete_target(cell, pos)` is the single hit test. A click on a component's shape takes the component. Otherwise the wire drawn nearest the click is taken, which is the only way to reach a wire between two neighbouring parts, since it crosses no free cell. `doomed()` asks the same function, so the darkened preview is exactly what a click would remove.
 
@@ -504,7 +511,8 @@ An objective turns that into a count, `(met, needed)`. `outcome` is a pure funct
   ended, since `Clock.frame` hands out a whole frame's ticks at once. Play and Step do nothing
   once it is over; 0 starts again.
 - [`editor/arena_draw.py`](../game/nektoids/editor/arena_draw.py): the ring round a visited
-  light, "1 of 2", the banner, `t = 8.66 / 20 s`.
+  light, "1 of 2", the banner, `t = 8.66 / 20 s`, and the time left as a last row whose bar runs
+  down to zero, red once the time is up (`_draw_row` draws every row).
 - [`graph/board.py`](../game/nektoids/graph/board.py) `to_dict` and `from_dict`, and the F4
   branch in [`main.py`](../game/main.py). Wires refer to parts by their place in the list, not
   by id, since ids have gaps after a delete.

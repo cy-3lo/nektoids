@@ -299,3 +299,21 @@ one drawn forwards; routing it the way it was drawn would not be, since D-007's 
 follows the direction (from (0, 0) to (2, 1) the route heads E first, the other way SE).
 Starting from the wrong end was refused although only one wire could be meant. Turning a wire
 round on the board's state, a full Sum or a loop, would make a wire the player did not draw.
+
+**D-027 — 2026-10-01 — Undo and redo in the jam, by whole board states; one step is one gesture. Takes "undo" off the scope lock's Out list in `CLAUDE.md`.**
+`Board.snapshot` freezes what the player has built, the parts, the wires as drawn and the stock
+left, and `Board.restore` puts it back in place, so the views that hold the board see it. The
+editor keeps a `History` of up to 100 states: between gestures, from a press to its release or a
+key, it compares the board with the last state kept and, if it changed, keeps it, so a whole Move
+drag is one step and a palette click none. Undo and Redo sit in the palette's Edit section, greyed
+when there is nothing to take back, and answer Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on a Mac),
+matched on the key code; with Ctrl or Cmd no other shortcut acts. A new edit after an undo forgets
+what could be redone. Undo drops a wire half drawn, and a selection whose part is gone.
+States, not edits: routes depend on the order wires were drawn and never move (D-007), so
+replaying edits could route a wire differently, while a state comes back routes and all. A board
+is a few dozen frozen parts and wires, so a hundred states cost nothing. Ids are not put back:
+the next part placed after an undo still gets a new one.
+Consequences: the File section shows Save and Load, greyed, until saving exists (still out of
+scope; F4 prints a board, D-024). The undo and redo icons are Font Awesome's hooked arrows (reply,
+share), since its round arrows are the turn tools. The arena view (F3) undoes nothing: it runs
+the board as it was when it opened.
