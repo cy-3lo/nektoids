@@ -1,14 +1,16 @@
 """Editor layout and hit-testing. layout.py imports no pygame, so this runs headless."""
 
 from nektoids.editor.layout import (
+    EDIT_KEYS,
     MAX_HEX,
     MIN_HEX,
-    PALETTE_ROOM,
     PALETTE_TOOLS,
     SCREEN,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
+    EditButton,
+    FileButton,
     Tool,
     ViewButton,
     cell_at,
@@ -82,21 +84,24 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_the_palette_runs_view_tools_room_to_edit_and_file_then_colours_two_a_row():
+def test_the_palette_runs_view_tools_edit_file_then_colours_two_a_row():
     titles = [title for title, _ in LAYOUT.palette_titles]
-    room = [title for title, _ in LAYOUT.palette_room]
-    assert titles == ["View", "Tools", "Colours"] and room == list(PALETTE_ROOM)
-    areas = sorted([*LAYOUT.palette_titles, *LAYOUT.palette_room], key=lambda t: t[1][1])
-    assert [title for title, _ in areas] == ["View", "Tools", "Edit", "File", "Colours"]
-    for (_, (_, y, _, h)), (_, (_, below, _, _)) in zip(areas, areas[1:], strict=False):
-        assert y + h < below  # sections do not overlap
+    assert titles == ["View", "Tools", "Edit", "File", "Colours"]
+    for (_, (_, y, _, h)), (_, (_, below, _, _)) in zip(
+        LAYOUT.palette_titles, LAYOUT.palette_titles[1:], strict=False
+    ):
+        assert y + h < below  # top to bottom, without overlapping
     assert [button for button, _ in LAYOUT.view_buttons] == list(ViewButton)
     assert [tool for tool, _ in LAYOUT.tool_buttons] == list(PALETTE_TOOLS)
+    assert [button for button, _ in LAYOUT.edit_buttons] == list(EditButton)
+    assert [button for button, _ in LAYOUT.file_buttons] == list(FileButton)
     assert Tool.PAN not in PALETTE_TOOLS  # the hand, among the view buttons
     sections = dict(LAYOUT.palette_titles)
     for title, items in (
         ("View", [r for _, r in LAYOUT.view_buttons]),
         ("Tools", [r for _, r in LAYOUT.tool_buttons]),
+        ("Edit", [r for _, r in LAYOUT.edit_buttons]),
+        ("File", [r for _, r in LAYOUT.file_buttons]),
         ("Colours", list(LAYOUT.swatches)),
     ):
         x, y, w, h = sections[title]
@@ -113,8 +118,8 @@ def test_the_palette_runs_view_tools_room_to_edit_and_file_then_colours_two_a_ro
         assert view_button_at(LAYOUT, centre(rect)) == button
     for tool, rect in LAYOUT.tool_buttons:
         assert tool_at(LAYOUT, centre(rect)) == tool
-    for _, rect in LAYOUT.palette_room:
-        assert palette_target_at(LAYOUT, centre(rect)) is None  # room, nothing there yet
+    for button, rect in [*LAYOUT.edit_buttons, *LAYOUT.file_buttons]:
+        assert palette_target_at(LAYOUT, centre(rect)) == button
     assert tool_at(LAYOUT, centre(LAYOUT.board_area)) is None
 
 
@@ -160,6 +165,7 @@ def test_the_palette_fits_on_screen():
 def test_every_palette_button_has_its_own_key_and_tooltip_target():
     keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
     assert len(set(keys)) == len(keys) and all(len(key) == 1 for key in keys)
+    assert EDIT_KEYS == {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Shift+Z"}
     assert (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT]) == ("L", "R")
     assert TURNS == {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # directions run counter-clockwise
     for target, rect in [*LAYOUT.tool_buttons, *LAYOUT.view_buttons]:

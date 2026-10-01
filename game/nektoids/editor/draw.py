@@ -21,11 +21,14 @@ from dataclasses import dataclass
 import pygame
 
 from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
-from nektoids.editor.icons import KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
+from nektoids.editor.icons import EDIT_ICON, FILE_ICON, KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
 from nektoids.editor.layout import (
+    EDIT_KEYS,
     PALETTE_TITLE,
     TOOL_KEYS,
     VIEW_KEYS,
+    EditButton,
+    FileButton,
     Tool,
     View,
     ViewButton,
@@ -81,6 +84,10 @@ TIP = {
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Move the view",
     ViewButton.CENTRE: "Centre the view",
+    EditButton.UNDO: "Undo",
+    EditButton.REDO: "Redo",
+    FileButton.SAVE: "Save: not yet",
+    FileButton.LOAD: "Load: not yet",
     "colours": "Colours: not yet",
 }
 HINT = {
@@ -362,6 +369,11 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         draw_button(screen, fonts, rect, VIEW_ICON[button], active)
     for tool, rect in layout.tool_buttons:
         draw_button(screen, fonts, rect, TOOL_ICON[tool], tool is scene.tool)
+    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
+    for button, rect in layout.edit_buttons:
+        draw_button(screen, fonts, rect, EDIT_ICON[button], False, enabled=can[button])
+    for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
+        draw_button(screen, fonts, rect, FILE_ICON[button], False, enabled=False)
     for title, (x, y, _, _) in layout.palette_titles:
         text = fonts.text.render(title.upper(), True, DIM_TEXT)
         screen.blit(text, (x, y + (PALETTE_TITLE - text.get_height()) // 2))
@@ -370,10 +382,11 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
 
 
-def draw_button(screen, fonts: Fonts, rect, icon: str, active: bool) -> None:
+def draw_button(screen, fonts: Fonts, rect, icon: str, active: bool, enabled: bool = True) -> None:
+    """A palette button: lit while `active`, its icon greyed when it would do nothing."""
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
     x, y, w, h = rect
-    fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, TEXT)
+    fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, TEXT if enabled else GREYED)
 
 
 def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
@@ -392,9 +405,14 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     if target is None:
         return
     layout = scene.layout
-    rects = dict(layout.tool_buttons) | dict(layout.view_buttons)
+    rects = (
+        dict(layout.tool_buttons)
+        | dict(layout.view_buttons)
+        | dict(layout.edit_buttons)
+        | dict(layout.file_buttons)
+    )
     x, y, _, h = rects[target] if target in rects else layout.swatches[0]
-    key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target)
+    key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target) or EDIT_KEYS.get(target)
     left = layout.palette_area[0] - 10
     draw_tip(screen, fonts, TIP[target] + (f" ({key})" if key else ""), midright=(left, y + h // 2))
 

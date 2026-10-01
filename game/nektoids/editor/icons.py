@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pygame
 
-from nektoids.editor.layout import Tool, ViewButton
+from nektoids.editor.layout import EditButton, FileButton, Tool, ViewButton
 from nektoids.graph.board import Kind
 
 FONT_FILE = Path(__file__).resolve().parent.parent / "assets" / "fontawesome" / "fa-solid-900.ttf"
@@ -52,6 +52,10 @@ GLYPH = {
     "lightbulb": 0xF0EB,
     "check": 0xF00C,
     "backward-fast": 0xF049,
+    "reply": 0xF3E5,
+    "share": 0xF064,
+    "floppy-disk": 0xF0C7,
+    "folder-open": 0xF07C,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.
@@ -73,6 +77,9 @@ TOOL_ICON = {
     Tool.MOVE: "up-down-left-right",
     Tool.DELETE: "trash-can",
 }
+# Hooked arrows for undo and redo: the round ones are the turn tools'.
+EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
+FILE_ICON = {FileButton.SAVE: "floppy-disk", FileButton.LOAD: "folder-open"}
 VIEW_ICON = {
     ViewButton.ZOOM_IN: "magnifying-glass-plus",
     ViewButton.ZOOM_OUT: "magnifying-glass-minus",

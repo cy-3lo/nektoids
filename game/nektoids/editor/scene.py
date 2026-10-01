@@ -13,6 +13,9 @@ Tools:
 - Delete: click a component's shape, or a wire.
 - Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
   button brings the central cell back to the middle.
+- Undo and Redo (D-027), also Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on a Mac): one step is one
+  gesture, from press to release, so a whole Move drag goes back at once. Save and Load are
+  there, inactive, until saving exists.
 
 Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
@@ -31,6 +34,7 @@ import math
 import pygame
 
 from nektoids.editor.geometry import nearest_wire
+from nektoids.editor.history import History
 from nektoids.editor.layout import (
     KEY_ALIASES,
     MENU_GROUPS,
@@ -38,11 +42,14 @@ from nektoids.editor.layout import (
     TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
+    EditButton,
     Layout,
     Tool,
     ViewButton,
     cell_at,
     centred_view,
+    edit_button_at,
+    file_button_at,
     group_at,
     make_layout,
     menu_item_at,
@@ -115,6 +122,8 @@ class EditorScene:
         self.tip_frames = 0  # how long it has been there
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
+        self.history = History()
+        self._kept = board.snapshot()  # the board as of the last step undo can go back to
 
     def update(self) -> None:
         """Once per frame."""
@@ -149,10 +158,18 @@ class EditorScene:
             self.selected = None
         elif event.type == pygame.KEYDOWN:
             self._key(event)
+        if self.moving is None and not self.carrying:  # between gestures
+            self._keep()
 
     # Keyboard
 
     def _key(self, event: pygame.event.Event) -> None:
+        if event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
+            if event.key == pygame.K_z:
+                self._edit(EditButton.REDO if event.mod & pygame.KMOD_SHIFT else EditButton.UNDO)
+            elif event.key == pygame.K_y:
+                self._edit(EditButton.REDO)
+            return  # no other shortcut with Ctrl or Cmd: they are the browser's
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         if arrow is not None:
             self._arrow(arrow)
@@ -247,6 +264,13 @@ class EditorScene:
         if tool is not None:
             self._choose(tool)
             return
+        edit = edit_button_at(self.layout, pos)
+        if edit is not None:
+            self._edit(edit)
+            return
+        if file_button_at(self.layout, pos) is not None:
+            self._refuse("saving is not in the game yet", None)
+            return
         button = view_button_at(self.layout, pos)
         if button is not None:
             self._view_button(button)
@@ -307,6 +331,29 @@ class EditorScene:
         x, y, w, h = self.layout.board_area
         factor = ZOOM_STEP if button is ViewButton.ZOOM_IN else 1.0 / ZOOM_STEP
         self.view = zoom(self.view, factor, (x + w / 2, y + h / 2))
+
+    # Undo (D-027)
+
+    def _keep(self) -> None:
+        """Between gestures: if the board changed since the last step kept, keep this one."""
+        now = self.board.snapshot()
+        if now != self._kept:
+            self.history.record(self._kept)
+            self._kept = now
+
+    def _edit(self, button: EditButton) -> None:
+        """Undo or redo one step; a gesture under way ends first, and counts as a step."""
+        self._cancel()
+        self._keep()
+        step = self.history.undo if button is EditButton.UNDO else self.history.redo
+        state = step(self._kept)
+        if state is None:
+            self._refuse(f"nothing to {button.value}", None)
+            return
+        self.board.restore(state)
+        self._kept = state
+        if self.selected not in self.board.nodes:
+            self.selected = None
 
     # Tools
 

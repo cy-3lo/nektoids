@@ -4,9 +4,9 @@ Three columns, with vertical separators:
 - left, the menu: component groups (sensors, operators, actuators) that fold under their title;
 - centre, the hex grid, filling its column, with one status line at its foot;
 - right, the palette, in titled sections of two buttons a row: the view (zoom in, zoom out,
-  hand, centre), the tools (add, wire, move, delete, turn left, turn right), room kept for
-  editing (undo, redo) and for files (save, load), then a colour picker, inactive until colours
-  carry a meaning (D-025).
+  hand, centre), the tools (add, wire, move, delete, turn left, turn right), editing (undo,
+  redo, D-027), files (save and load, inactive until saving exists), then a colour picker,
+  inactive until colours carry a meaning (D-025).
 
 The screen regions are fixed; the View says how big a hex is and where the grid sits in its
 column, and zoom and pan change only the View (D-013). Plain numbers and tuples, no pygame, so
@@ -61,8 +61,16 @@ class Tool(Enum):
 
 PALETTE_TOOLS = (Tool.ADD, Tool.WIRE, Tool.MOVE, Tool.DELETE, Tool.TURN_LEFT, Tool.TURN_RIGHT)
 TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-clockwise
-# Sections kept free for what is to come, each one row: undo and redo, save and load.
-PALETTE_ROOM = ("Edit", "File")
+
+
+class EditButton(Enum):
+    UNDO = "undo"
+    REDO = "redo"
+
+
+class FileButton(Enum):  # inactive: saving is not in the game yet
+    SAVE = "save"
+    LOAD = "load"
 
 
 class ViewButton(Enum):
@@ -88,6 +96,8 @@ VIEW_KEYS = {
     ViewButton.PAN: "H",
     ViewButton.CENTRE: "C",
 }
+# With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
+EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Shift+Z"}
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
 
@@ -101,7 +111,8 @@ class Layout:
     view_buttons: tuple[tuple[ViewButton, Rect], ...]
     tool_buttons: tuple[tuple[Tool, Rect], ...]
     palette_titles: tuple[tuple[str, Rect], ...]  # one above each section shown
-    palette_room: tuple[tuple[str, Rect], ...]  # sections kept free, nothing drawn yet
+    edit_buttons: tuple[tuple[EditButton, Rect], ...]
+    file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
     swatches: tuple[Rect, ...]  # colour picker, inactive for now
     status_at: tuple[int, int]  # top-left corner of the status line
 
@@ -135,10 +146,8 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
     y = MARGIN
     view, view_rects, y = _section(right, y, "View", len(ViewButton), BUTTON, BUTTON_STEP)
     tools, tool_rects, y = _section(right, y, "Tools", len(PALETTE_TOOLS), BUTTON, BUTTON_STEP)
-    room = []
-    for title in PALETTE_ROOM:
-        area, _, y = _section(right, y, title, 2, BUTTON, BUTTON_STEP)
-        room.append(area)
+    edit, edit_rects, y = _section(right, y, "Edit", len(EditButton), BUTTON, BUTTON_STEP)
+    files, file_rects, y = _section(right, y, "File", len(FileButton), BUTTON, BUTTON_STEP)
     pitch = SWATCH_HEIGHT + 6
     colours, swatches, y = _section(right, y, "Colours", SWATCHES, SWATCH_HEIGHT, pitch)
     return Layout(
@@ -149,8 +158,9 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
         menu_items=tuple(items),
         view_buttons=tuple(zip(ViewButton, view_rects, strict=True)),
         tool_buttons=tuple(zip(PALETTE_TOOLS, tool_rects, strict=True)),
-        palette_titles=(view, tools, colours),
-        palette_room=tuple(room),
+        edit_buttons=tuple(zip(EditButton, edit_rects, strict=True)),
+        file_buttons=tuple(zip(FileButton, file_rects, strict=True)),
+        palette_titles=(view, tools, edit, files, colours),
         swatches=tuple(swatches),
         status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
     )
@@ -170,9 +180,16 @@ def _section(
     return (title, area), items, first + rows * pitch + SECTION_GAP
 
 
-def palette_target_at(layout: Layout, point: tuple[int, int]) -> Tool | ViewButton | str | None:
-    """What a tooltip would describe under `point`: a tool, a view button, or "colours"."""
-    target = tool_at(layout, point) or view_button_at(layout, point)
+def palette_target_at(
+    layout: Layout, point: tuple[int, int]
+) -> Tool | ViewButton | EditButton | FileButton | str | None:
+    """What a tooltip would describe under `point`: a button, or "colours"."""
+    target = (
+        tool_at(layout, point)
+        or view_button_at(layout, point)
+        or edit_button_at(layout, point)
+        or file_button_at(layout, point)
+    )
     if target is None and any(contains(rect, point) for rect in layout.swatches):
         return "colours"
     return target
@@ -197,6 +214,14 @@ def view_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:
 
 def tool_at(layout: Layout, point: tuple[int, int]) -> Tool | None:
     return next((tool for tool, rect in layout.tool_buttons if contains(rect, point)), None)
+
+
+def edit_button_at(layout: Layout, point: tuple[int, int]) -> EditButton | None:
+    return next((b for b, rect in layout.edit_buttons if contains(rect, point)), None)
+
+
+def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
+    return next((b for b, rect in layout.file_buttons if contains(rect, point)), None)
 
 
 def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
