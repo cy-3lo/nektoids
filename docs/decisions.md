@@ -407,3 +407,16 @@ light map, and its column falls into three titled parts, CONTROLS (with the time
 OBJECTIVES and INSIDE (the swimmer's wiring), in the style of the editor's palette titles
 (`draw.draw_title`: upper case, dimmed). F3's "(2/2)" goes: the number says it. The end banner
 moves down to leave the title clear.
+
+**D-035 — 2026-10-01 — Around the levels: a title card over the first, a map of the route and the sandbox, an end after the last. A level opens once the one before it is won.**
+The game opens on LEVEL 1.1's board under a veil and a card, "NEKTOIDS, a game by Cy-3LO, Wire
+the eyes to the thrusters, then Run", gone at the first click or key (D-028). The map, from the
+editor's Map button over Run or Tab, lists the route's levels, each won, open or locked, then the
+sandbox apart; a click opens a level, Esc or Back returns to the open one. A level opens once the
+one before it is won, this session: nothing is saved. The sandbox, always open, is the old "Two
+lights, four obstacles" (D-032) on the free board, with no objective and 120 s. On the route's
+last level a win offers "The end" instead of Next level; the end thanks the player and asks
+them to leave a comment on the itch.io page (the brief's contact line), and Esc or Map goes to
+the map.
+`editor/router.py` gains the screens (title, map, edit, run, end) and the session's wins, still
+with no pygame; `editor/shell.py` places the map's rows and the buttons, `shell_draw.py` draws.

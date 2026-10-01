@@ -588,5 +588,21 @@ Esc to change the board, and after a win Enter for the next level.
 - **`main.py`'s loop has no automated test.** A scratch script drove it through edit, run, a
   win, next level, run and Esc before the PR; `Router` itself is tested.
 
+## 11. Around the levels: title card, map, end (D-035)
+
+Read D-035 first. The game now opens under a title card; Tab (or Map, over Run) shows the map.
+
+- [`editor/router.py`](../game/nektoids/editor/router.py) holds the screen (`Screen`: title,
+  map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the levels
+  won this session; `unlocked` says which places the map lets the player open.
+- [`editor/shell.py`](../game/nektoids/editor/shell.py), pure: where the map's rows and the
+  bottom button sit, and what is under a pixel; [`shell_draw.py`](../game/nektoids/editor/shell_draw.py)
+  draws the card, the map and the end from the router, changing nothing.
+- [`main.py`](../game/main.py): `shell_event` hands the title card, the map and the end their
+  events; a run that is won marks its level won, which opens the next one on the map.
+
+Questions: why does a won run mark its level won every frame it stays won, rather than once? What
+would a player see on the map if the mark were only set when Next level is pressed?
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
