@@ -37,13 +37,11 @@ and right thruster); the board is the body plan: eyes and thrusters sit where th
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
 nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); three Braitenberg tutorial
 levels plus one real level with a countable win condition; fixed seed, fully deterministic; body
-size grows with graph complexity, which raises drag.
+size grows with graph complexity, which raises drag; undo and redo in the editor (D-027).
 
 Out: flocking and multiple agents, flow sensing, chemical fields, optical flow, parts that move
 on the body during a run, threshold nodes, the generalisation pillar (multi-seed validation),
 sound, art, saving (F4 prints a board, D-024; Save and Load wait, greyed, D-027).
-
-Undo and redo are in (D-027).
 
 If a request touches something out of scope, say so plainly and offer the smallest in-scope
 version. `/scope-check` does this formally.
