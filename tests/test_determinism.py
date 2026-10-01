@@ -1,11 +1,13 @@
 import math
 from collections import deque
+from dataclasses import replace
 
 import numpy as np
 import pytest
 
 from nektoids.graph.board import Kind, Refused
 from nektoids.graph.dynamics import TAU, initial_state
+from nektoids.graph.hexgrid import NE, NW, SE, SW
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import REACH, Outcome, latch, marks, outcome
@@ -132,6 +134,27 @@ def test_in_the_shadow_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spa
     light = LEVELS[title].arena.light_xy[0]
     nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(DRIVEN, title, ticks * DT + 2.0))
     assert nearest < 0.5 * (LIGHT_RADIUS + 1.0)  # deep in, not grazing it (D-004)
+
+
+def fear(upper, lower, crossed=False):
+    """The tutorial board's cells, the eyes turned to `upper` and `lower`, wired (D-038)."""
+    board = tutorial_board()
+    board.nodes[0] = replace(board.nodes[0], facing=upper)
+    board.nodes[1] = replace(board.nodes[1], facing=lower)
+    for a, b in ((0, 3), (1, 2)) if crossed else ((0, 2), (1, 3)):
+        assert not isinstance(board.connect(a, b), Refused)
+    return Network.from_board(board)
+
+
+def test_fear_flees_the_light_with_its_eyes_looking_back_and_leaves_the_ring_in_time():
+    ended, ticks, _ = play(fear(NW, SW), "Fear")
+    assert ended is Outcome.WON and ticks * DT < LEVELS["Fear"].time_limit / 2
+    assert play(fear(NW, SW), "Fear")[1] == ticks  # the same tick, every run
+
+
+def test_fear_fails_crossed_or_with_its_eyes_looking_forward():
+    assert play(fear(NW, SW, crossed=True), "Fear")[0] is Outcome.TIME_UP  # it closes in
+    assert play(fear(NE, SE), "Fear")[0] is Outcome.TIME_UP  # it turns away, then stops
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():

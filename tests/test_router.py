@@ -16,7 +16,7 @@ def test_the_game_opens_on_the_first_level_under_its_title_card():
     assert router.screen is Screen.TITLE and router.index == 0
     router.begin()
     assert router.screen is Screen.EDIT and router.label == "LEVEL 1.1"
-    assert router.board.nodes == {} and router.board.remaining(Kind.EYE) == 2  # the free board
+    assert router.board.nodes == {} and router.board.remaining(Kind.EYE) == 2  # its own stock
 
 
 def test_run_and_back_to_edit_keeps_the_board_as_it_was_left():
@@ -48,11 +48,13 @@ def test_next_goes_on_with_its_own_board_and_after_the_last_level_comes_the_end(
     router.next()
     assert (router.index, router.screen) == (1, Screen.EDIT) and 0 in router.won
     assert router.board is not first and router.board.nodes == {}
-    assert not router.has_next and router.is_last
+    while router.has_next:
+        router.next()
+    assert router.is_last and router.index == len(router.levels) - 1
     with pytest.raises(ValueError, match="last level"):
         router.next()
     router.finish()
-    assert router.screen is Screen.END and router.won == {0, 1}
+    assert router.screen is Screen.END and router.won == set(range(len(router.levels)))
 
 
 def test_the_sandbox_has_no_next_and_is_never_won():
