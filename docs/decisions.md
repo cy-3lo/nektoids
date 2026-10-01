@@ -286,3 +286,16 @@ lets undo and saving arrive without moving every button again.
 Consequences: R keeps its meaning (D-021); Shift+R is the only shifted shortcut, so `_shortcut`
 reads the Shift modifier for R. The Turn left icon, Font Awesome's rotate-left, is also the
 arena's Start again (F3): no key clashes, but one of the two may want another glyph.
+
+**D-026 — 2026-10-01 — A wire may be drawn from either end: it is turned round when only that way do the kinds allow it.**
+`Board.orient(first, second)` gives the wire's source and target. A wire drawn from a thruster,
+or into a sensor, runs the other way, provided that way is allowed: thruster to eye is eye to
+thruster, ×2 to eye is eye to ×2. Otherwise it runs the way it was drawn: between two operators,
+whose direction only the player knows, even when that way is then refused for a count or a loop;
+and thruster to thruster or eye to eye, which no direction allows, are refused as before. The
+editor no longer refuses a thruster pressed first; over an empty cell its preview runs into it.
+The wire is routed from its source, so one drawn backwards is the same wire, route and all, as
+one drawn forwards; routing it the way it was drawn would not be, since D-007's tie-break
+follows the direction (from (0, 0) to (2, 1) the route heads E first, the other way SE).
+Starting from the wrong end was refused although only one wire could be meant. Turning a wire
+round on the board's state, a full Sum or a loop, would make a wire the player did not draw.

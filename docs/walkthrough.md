@@ -152,9 +152,11 @@ It calls only the board's public methods.
 - The release decides (`_end_wiring`):
   - releasing on the node you pressed is a click: it picks the source, connects the chosen source to that node, or drops the source on a second click (`fresh` tells the two apart);
   - releasing anywhere else is a drag, from the pressed node to the one under the mouse.
-- `_wire_start` says where the ghost route starts, and `_update_ghost` computes it:
-  - `board.route` over an empty cell, drawn dim;
-  - `board.preview` over a target, drawn bright if it may connect.
+- Either way, `_connect` asks `board.orient` which end is the source (D-026): a wire drawn from a
+  thruster or into a sensor is turned round; between two operators it runs as drawn.
+- `_wire_start` says where the ghost route is drawn from, and `_update_ghost` computes it:
+  - `board.route` over an empty cell, drawn dim, into the part if it is a thruster;
+  - `board.preview` over the other end, oriented, drawn bright if it may connect.
 
 **Turning (D-025):** `_choose(tool)` is where a tool's button and its key meet. A turn tool turns
 the selected part at once (`_turn`), then turns whatever part is clicked. `_shortcut` tells R from
