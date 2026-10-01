@@ -9,8 +9,8 @@ Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
 For now it shows the wiring editor; the Run button comes with the swimmer's dynamics.
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.
 F3 switches to the arena view (D-019, D-022): a swimmer running the board in a lit arena.
-F4 prints the editor's board as one line of JSON (D-024): in the terminal natively, in the
-browser's console under pygbag. Nothing is written to a file.
+F4 prints the editor's board as one line of JSON (D-024): in the terminal natively, in pygbag's
+terminal on the page in the browser. Nothing is written to a file.
 """
 
 import asyncio

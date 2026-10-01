@@ -260,8 +260,8 @@ programmed swimmer.
 [q, r], facing by name, locked) and the wires in the order they were drawn, each naming its ends
 by their place in that list, with its path. `Board.from_dict` places the parts and draws the
 wires again in that order, so the network is the one saved; ids left by deleted parts close up.
-F4 works in every view, behind `DEV_VIEW`, and only prints: to the terminal natively, to the
-browser's console under pygbag, so no file is written (`.claude/rules/web.md`).
+F4 works in every view, behind `DEV_VIEW`, and only prints: to the terminal natively, to
+pygbag's terminal on the page in the browser, so no file is written (`.claude/rules/web.md`).
 A board built in the editor can now be handed over, to a test or to the other contributor,
 without transcribing it.
 Consequences: a path comes back as saved unless the board was edited with Move or Delete, after

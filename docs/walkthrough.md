@@ -470,7 +470,8 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 
 Read D-023 and D-024 first. In F3, wire the tutorial eyes crossed and press Space: after 8.7 s the
 swimmer touches the light, the run stops and a banner says "Done in 8.66 s". Uncrossed, it runs
-out of time at 20 s. In the editor, F4 prints your board as one line of JSON in the terminal.
+out of time at 20 s. In the editor, F4 prints your board as one line of JSON in the terminal (in the browser, in
+pygbag's terminal on the page).
 
 ### 9.1 What it computes
 
