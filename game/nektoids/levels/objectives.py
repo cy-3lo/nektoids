@@ -1,50 +1,67 @@
-"""What a level asks of its swimmers, each measured as how far along it is: 0, then 1 when met.
+"""What a level asks of its swimmers, counted, and when a run is over (D-023).
 
-An objective reads the swimmers' positions and never changes them. Countable ones (so many
-swimmers past the gap, brief section 1) come with the real levels; `ReachLight` is the first.
+A run remembers which lights each swimmer has touched, `visited` of shape (N, L): a swimmer
+touches a light when their discs meet, and a visit counts once, whatever comes after. Each
+objective counts what it asks from that, so many met out of so many needed (brief section 1:
+countable win conditions). A run ends when every objective is met, or when its time is up.
 Pure numbers, no pygame.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from enum import Enum
+from typing import TYPE_CHECKING, Protocol
 
 import numpy as np
 
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
 
+if TYPE_CHECKING:
+    from nektoids.levels.arenas import Level
+
 
 class Objective(Protocol):
     name: str
 
-    def progress(
-        self, arena: Arena, start: np.ndarray, pos: np.ndarray, radius: np.ndarray
-    ) -> float:
-        """In [0, 1]. start, pos: (N, 2) where the swimmers began and are now [u]; radius (N,)."""
+    def count(self, visited: np.ndarray) -> tuple[int, int]:
+        """How many are met, out of how many needed; visited (N, L), see the module."""
         ...
 
 
-def _nearest_light(arena: Arena, pos: np.ndarray) -> np.ndarray:
-    """(N,): how far each point is from the centre of its nearest light [u]."""
+class Outcome(Enum):
+    WON = "won"
+    TIME_UP = "time up"
+
+
+def touching(arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
+    """(N, L): whether each swimmer touches each light now; pos (N, 2) [u], radius (N,) [u]."""
     dx = arena.light_xy[None, :, 0] - pos[:, None, 0]
     dy = arena.light_xy[None, :, 1] - pos[:, None, 1]
-    return np.sqrt(dx * dx + dy * dy).min(axis=1)
+    reach = LIGHT_RADIUS + np.asarray(radius, dtype=np.float64)[:, None]
+    return dx * dx + dy * dy <= reach * reach
+
+
+def met(objective: Objective, visited: np.ndarray) -> bool:
+    done, needed = objective.count(visited)
+    return done >= needed
+
+
+def outcome(level: Level, visited: np.ndarray, tick: int, dt: float) -> Outcome | None:
+    """How the run stands after `tick` ticks of `dt` [s]: won when the level has objectives and
+    every one is met, else over when its time is up, else still running (None)."""
+    if level.objectives and all(met(o, visited) for o in level.objectives):
+        return Outcome.WON
+    if tick >= round(level.time_limit / dt):
+        return Outcome.TIME_UP
+    return None
 
 
 @dataclass(frozen=True)
-class ReachLight:
-    """Touch a light: each swimmer's fraction of the way from where it began to touching the
-    nearest light, averaged over the swimmers. Moving away from the lights counts as 0."""
+class VisitLights:
+    """Every swimmer touches every light of the arena, in any order."""
 
-    name: str = "Reach a light"
+    name: str = "Visit every light"
 
-    def progress(
-        self, arena: Arena, start: np.ndarray, pos: np.ndarray, radius: np.ndarray
-    ) -> float:
-        if len(arena.lights) == 0 or len(pos) == 0:
-            return 0.0
-        touch = LIGHT_RADIUS + np.asarray(radius, dtype=np.float64)
-        begun, now = _nearest_light(arena, start) - touch, _nearest_light(arena, pos) - touch
-        way = np.where(begun > 0, 1.0 - np.maximum(now, 0.0) / np.where(begun > 0, begun, 1.0), 1.0)
-        return float(np.clip(way, 0.0, 1.0).mean())
+    def count(self, visited: np.ndarray) -> tuple[int, int]:
+        return int(visited.sum()), int(visited.size)

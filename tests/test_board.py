@@ -1,4 +1,8 @@
-from nektoids.graph.board import Board, Category, Kind, Refused, Wire, can_pass
+import json
+
+import pytest
+
+from nektoids.graph.board import FACING_NAMES, Board, Category, Kind, Refused, Wire, can_pass
 from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, offset_rect
 
 RECT = offset_rect(9, 7)  # a 9 x 7 zone for most tests
@@ -312,3 +316,94 @@ def test_many_wires_never_share_an_edge():
 
 def test_same_moves_give_the_same_wires():
     assert wire_everything().wires == wire_everything().wires
+
+
+def test_a_wire_drawn_backwards_is_turned_round_only_when_the_kinds_say_so():
+    board, (eye, other_eye, double, total, thruster, other_thruster) = build(
+        [
+            ((0, 1), Kind.EYE),
+            ((0, 5), Kind.EYE),
+            ((3, 1), Kind.DOUBLE),
+            ((3, 5), Kind.SUM),
+            ((6, 1), Kind.THRUSTER),
+            ((6, 5), Kind.THRUSTER),
+        ]
+    )
+    turned = {
+        (thruster, eye): (eye, thruster),  # from a thruster
+        (double, eye): (eye, double),  # into a sensor
+        (thruster, double): (double, thruster),
+    }
+    as_drawn = [
+        (eye, thruster),
+        (double, total),  # two operators: the way it is drawn
+        (total, double),
+        (eye, other_eye),  # neither way: left for connect to refuse
+        (thruster, other_thruster),
+    ]
+    for (a, b), (source, target) in turned.items():
+        assert board.orient(a.id, b.id) == (source.id, target.id)
+    for a, b in as_drawn:
+        assert board.orient(a.id, b.id) == (a.id, b.id)
+    assert isinstance(board.connect(*board.orient(eye.id, other_eye.id)), Refused)
+
+
+def test_a_wire_drawn_backwards_is_the_wire_drawn_forwards_route_and_all():
+    # From (0, 0) to (2, 1) the route heads E first, from (2, 1) to (0, 0) it heads SE (D-007).
+    forwards, (eye, thruster) = build([((0, 0), Kind.EYE), ((2, 1), Kind.THRUSTER)])
+    backwards, _ = build([((0, 0), Kind.EYE), ((2, 1), Kind.THRUSTER)])
+    drawn = forwards.connect(eye.id, thruster.id)
+    turned = backwards.connect(*backwards.orient(thruster.id, eye.id))
+    assert turned == drawn
+    assert drawn.path == ((0, 0), (1, 0), (2, 0), (2, 1))
+    # Routed the way it was drawn, from the thruster, it would have been another wire.
+    assert backwards.route((2, 1), (0, 0)) != tuple(reversed(drawn.path))
+
+
+# As plain data (D-024)
+
+
+def test_direction_names_follow_the_hex_directions():
+    assert [FACING_NAMES.index(name) for name in ("E", "NE", "NW", "W", "SW", "SE")] == [
+        E,
+        NE,
+        NW,
+        W,
+        SW,
+        SE,
+    ]
+
+
+def test_a_board_saved_and_loaded_is_the_same_board_and_survives_json():
+    board = Board(RECT, {Kind.EYE: 2, Kind.SOURCE: 1, Kind.HALVE: None, Kind.THRUSTER: 2})
+    eye = board.place(Kind.EYE, (0, 1), facing=NE)
+    source = board.place(Kind.SOURCE, (0, 5))
+    half = board.place(Kind.HALVE, (3, 3))
+    thruster = board.place(Kind.THRUSTER, (6, 3), facing=SW)
+    for a, b in ((eye, half), (half, thruster), (source, thruster)):
+        assert not isinstance(board.connect(a.id, b.id), Refused)
+    data = board.to_dict()
+    loaded = Board.from_dict(json.loads(json.dumps(data)))
+    assert loaded.to_dict() == data
+    assert loaded.nodes == board.nodes and loaded.wires == board.wires
+    assert loaded.remaining(Kind.EYE) == board.remaining(Kind.EYE) == 1
+    assert data["parts"][0] == {"kind": "eye", "cell": [0, 1], "facing": "NE", "locked": False}
+    assert data["parts"][1]["facing"] is None
+
+
+def test_ids_left_by_a_deleted_part_close_up_on_loading():
+    board = Board(RECT)
+    first, gone, last = (board.place(Kind.EYE, (q, 1)) for q in (0, 2, 4))
+    thruster = board.place(Kind.THRUSTER, (4, 3))
+    board.connect(last.id, thruster.id)
+    board.remove_node(gone.id)
+    loaded = Board.from_dict(board.to_dict())
+    assert sorted(loaded.nodes) == [0, 1, 2]
+    assert [(w.source, w.target) for w in loaded.wires] == [(1, 2)]
+
+
+def test_data_no_board_could_hold_is_an_error():
+    data = Board(RECT).to_dict()
+    data["parts"] = [{"kind": "eye", "cell": [99, 99], "facing": "E", "locked": False}]
+    with pytest.raises(ValueError, match="outside the zone"):
+        Board.from_dict(data)

@@ -208,3 +208,113 @@ Letters are matched on the character typed; digits, Space and the arrows on the 
 since unshifted 0 types "à" on AZERTY and Safari reports the arrows as keypad keys (PR #3).
 A new view or key checks `TOOL_KEYS` and `VIEW_KEYS` first; `test_arena_layout.py` pins the rule
 for the arena. F2's W (waveform) still clashes with the editor's Wire, to be moved.
+
+**D-022 — 2026-10-01 — Swimmers are overdamped: the thrust is balanced by the Stokes drag of a sphere of the body's radius. Supersedes D-016's "thrusters integrate is done by the body's momentum".**
+A thruster at rate y pushes with y `THRUST` along its facing (D-009), at its mount, R m from the
+centre (D-018). The body has no inertia: its velocity and spin balance the thrusters' total force
+F and torque T at once, V = F / (6πμR) and Ω = T / (8πμR³). `THRUST = 1` is the unit of force,
+and μ is set by `SPEED`: one thruster at `RATE_MAX` pushing a base body through its centre moves it
+at 3 u/s. The state is position, heading and radius; velocity is not state, so the simulation
+rule's symplectic Euler gives way to explicit Euler on x and θ, and the nodes' lag (D-017) is the
+only smoothing.
+One tick: the bodies move with the thrust the nodes have, contacts put them back outside the
+obstacles and inside the walls, the eyes read the light where the bodies now are, the nodes follow.
+After a tick, as after a restart or a drag, the eyes' rates in y are what they read where the body is.
+Contacts are hard and frictionless: a body overlapping an obstacle is moved radially out until it
+touches it, obstacles in arena order, then its centre is clamped to [R, W − R] × [R, H − R]; three
+passes a tick, for crevices. For an overdamped body this cancels the normal velocity and keeps the
+tangential one, so it slides. Contacts exert no torque, and walls have no hydrodynamic effect.
+Walls come last, so a body never leaves the arena. Lights are not solid; bodies do not touch each
+other yet (one swimmer).
+A sphere, because a disc in 2D has no Stokes drag (Stokes' paradox). One μ sets one scale and the
+sphere sets the other: a thruster with lever ℓ = m × f (body radii) turns its body on a circle of
+radius (4/3) R/ℓ, so Ω = (3/4) ℓ V/R. On the tutorial board (ℓ = √3/4), crossed wiring in "One
+light" touches the light in 8.7 s and uncrossed turns away and stops in the dark; speeds stay
+within 3.6 u/s and turning within 26°/s, 56°/s for one thruster at full rate.
+Consequences: V ∝ 1/R and Ω ∝ 1/R², so a body that complexity grows loses its turning first.
+Explicit Euler under a constant thrust draws a closed regular polygon, not a spiral. Without
+momentum, an eye crossing the edge of a shadow stops the body within a few ticks: it shows, and it
+is the eye's doing; smoothing it is a question for TAU.
+
+**D-023 — 2026-10-01 — A run ends when every objective is met or the level's time is up; objectives count visits to lights, and a visit counts once. Supersedes the "Reach a light" bar.**
+A swimmer visits a light when their discs touch, centre distance ≤ `LIGHT_RADIUS` + R, checked
+after every tick; the run remembers it in `visited`, (N, L), whatever the swimmer does next. An
+objective counts from that, so many met out of so many needed: `VisitLights` needs every swimmer
+to touch every light, in any order, the one light in "One light" and both in "Two lights". Each
+level has a `time_limit` [s]. The arena view stops at the tick the run is won, or after
+round(time_limit / dt) ticks, and says which in a banner; visited lights get a ring and the
+objective a count, "1 of 2". A level without objectives is never won, only timed out. The end is
+derived from the tick and `visited`, never stored, so one frame back takes it back.
+The old bar was a live fraction of the way to the nearest light, any light, which fell again when
+the swimmer left, and nothing ended a run; the brief asks for countable win conditions (§1).
+Consequences: a count jumps from 0 to 1 where the bar filled; at 3.6 u/s a tick moves 0.03 u
+against a touch at 2 u, so no visit falls between ticks. Limits: "One light" 20 s (crossed wiring
+touches at 8.7 s); "Two lights" 45 s, where a one-eyed circler found by a search of the free board
+(5 winners in 2,603 random wirings) visits both in 23.1 s, passing 0.08 u from each centre, deep
+enough to survive the ulps of D-004; `test_determinism.py` pins it. Dragging and turning a
+swimmer by hand stay a developer's tool and are not scored: the player will not touch a
+programmed swimmer.
+
+**D-024 — 2026-10-01 — F4 prints the editor's board as one line of JSON, the start of a save format. Saving for the player stays out of scope.**
+`Board.to_dict` gives the zone, what the level handed out, the parts in id order (kind, cell
+[q, r], facing by name, locked) and the wires in the order they were drawn, each naming its ends
+by their place in that list, with its path. `Board.from_dict` places the parts and draws the
+wires again in that order, so the network is the one saved; ids left by deleted parts close up.
+F4 works in every view, behind `DEV_VIEW`, and only prints: to the terminal natively, to
+pygbag's terminal on the page in the browser, so no file is written (`.claude/rules/web.md`).
+A board built in the editor can now be handed over, to a test or to the other contributor,
+without transcribing it.
+Consequences: a path comes back as saved unless the board was edited with Move or Delete, after
+which a wire drawn again may take another route as short; keeping saved paths exactly is for
+when saving arrives. The format has no version number yet.
+
+**D-025 — 2026-10-01 — Turning acts on the selected part, from two buttons and L and R; the palette is titled sections, two buttons a row, with room kept for editing and files. Amends D-009's Rotate tool and D-021's arena keys.**
+Turn left and Turn right replace Rotate. Pressing either button, or L (left, counter-clockwise)
+or R (right), turns the selected eye or thruster by 60° at once and takes that tool; with the
+tool, a click turns the part clicked and selects it, and shift-click still turns it the other
+way (D-009). The selected part is the last one placed, wired from, moved or turned: a click on a
+part with any tool but Delete selects it, its cell is lit like the tool in hand, Escape or a
+right click drops it, and deleting it clears it. Operators and locked parts refuse as before.
+The palette widens from 72 to 120 px, so the grid's column narrows from 688 to 640 px; the zone
+and the hex size are unchanged (D-013). Its sections, each under its title: View (zoom in, zoom
+out; hand, centre), Tools (add, wire; move, delete; turn left, turn right), a row each kept free
+for Edit (undo, redo, D-027) and File (save, load, post-jam), nothing drawn there yet, and
+Colours. Tooltips sit left of the palette.
+Turning a part took the Rotate tool, then a click, and a shift-click to go back; with a
+selection, the same key or button acts at once, and left and right sit side by side. The room
+lets undo and saving arrive without moving every button again.
+Consequences, in the arena view (F3), so that a key keeps one meaning (D-021): L and R turn the
+swimmer left and right, as Q and E did, and X (x-rays) shows or hides the rays, as L did. Start
+again takes Font Awesome's backward-fast (|◀◀, back to t = 0), leaving rotate-left to Turn left.
+
+**D-026 — 2026-10-01 — A wire may be drawn from either end: it is turned round when only that way do the kinds allow it.**
+`Board.orient(first, second)` gives the wire's source and target. A wire drawn from a thruster,
+or into a sensor, runs the other way, provided that way is allowed: thruster to eye is eye to
+thruster, ×2 to eye is eye to ×2. Otherwise it runs the way it was drawn: between two operators,
+whose direction only the player knows, even when that way is then refused for a count or a loop;
+and thruster to thruster or eye to eye, which no direction allows, are refused as before. The
+editor no longer refuses a thruster pressed first; over an empty cell its preview runs into it.
+The wire is routed from its source, so one drawn backwards is the same wire, route and all, as
+one drawn forwards; routing it the way it was drawn would not be, since D-007's tie-break
+follows the direction (from (0, 0) to (2, 1) the route heads E first, the other way SE).
+Starting from the wrong end was refused although only one wire could be meant. Turning a wire
+round on the board's state, a full Sum or a loop, would make a wire the player did not draw.
+
+**D-027 — 2026-10-01 — Undo and redo in the jam, by whole board states; one step is one gesture. Takes "undo" off the scope lock's Out list in `CLAUDE.md`.**
+`Board.snapshot` freezes what the player has built, the parts, the wires as drawn and the stock
+left, and `Board.restore` puts it back in place, so the views that hold the board see it. The
+editor keeps a `History` of up to 100 states: between gestures, from a press to its release or a
+key, it compares the board with the last state kept and, if it changed, keeps it, so a whole Move
+drag is one step and a palette click none. Undo and Redo sit in the palette's Edit section, greyed
+when there is nothing to take back, and answer Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on a Mac),
+matched on the key code; with Ctrl or Cmd no other shortcut acts. A new edit after an undo forgets
+what could be redone. Undo drops a wire half drawn, and a selection whose part is gone.
+States, not edits: routes depend on the order wires were drawn and never move (D-007), so
+replaying edits could route a wire differently, while a state comes back routes and all. A board
+is a few dozen frozen parts and wires, so a hundred states cost nothing. Ids are not put back:
+the next part placed after an undo still gets a new one.
+Consequences: supersedes D-025's order of the palette, which becomes View, Tools, Colours, Edit;
+Edit holds Undo and Redo, then Save and Load, greyed until saving exists (still out of scope; F4
+prints a board, D-024). The undo and redo icons are Font Awesome's hooked arrows (reply,
+share), since its round arrows are the turn tools. The arena view (F3) undoes nothing: it runs
+the board as it was when it opened.

@@ -2,11 +2,14 @@
 
 A component fills one cell. A wire is directed, from a component that emits to one that
 receives, and runs through free cells, entering and leaving each through one of its six edges.
+`orient` says which way a wire drawn between two components runs (D-026); `snapshot` and
+`restore` are for undo (D-027).
 Wires may cross or turn in the same cell as long as no edge is used twice (D-010), so a cell
 holds at most three. Wires are routed once, when drawn, and never move afterwards.
 
 Every operation that the player can trigger returns `Refused(reason)` instead of raising, so
-the editor can show the reason on screen. Pure Python, no pygame.
+the editor can show the reason on screen. `to_dict` and `from_dict` turn a board into plain
+data and back (D-024). Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -84,6 +87,7 @@ _CATEGORY = {
 _DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward; the others have no direction
 _MAX_INPUTS = {Kind.SUM: 2, Kind.DIFFERENCE: 2}
 _MAX_OUTPUTS = {Kind.SUM: 1, Kind.DIFFERENCE: 1}
+FACING_NAMES = ("E", "NE", "NW", "W", "SW", "SE")  # hex directions 0..5, for `to_dict`
 
 
 @dataclass(frozen=True)
@@ -100,6 +104,15 @@ class Wire:
     source: int  # node id
     target: int  # node id
     path: tuple[Cell, ...]  # source cell, free cells crossed, target cell
+
+
+@dataclass(frozen=True)
+class BoardState:
+    """What the player has built, frozen, for undo (D-027): equal states are equal boards."""
+
+    nodes: tuple[Node, ...]  # by id
+    wires: tuple[Wire, ...]  # in the order they were drawn
+    stock: tuple[tuple[Kind, int | None], ...]  # what is left of each kind
 
 
 @dataclass(frozen=True)
@@ -276,6 +289,15 @@ class Board:
         path = self.route(source.cell, target.cell)
         return Refused("no free path") if path is None else path
 
+    def orient(self, first_id: int, second_id: int) -> tuple[int, int]:
+        """(source, target) of a wire drawn from `first_id` to `second_id` (D-026): turned round
+        when only that way do their kinds allow it, from a thruster or into a sensor; as drawn
+        otherwise, including between two operators, whatever the wires already there."""
+        first, second = self.nodes[first_id].kind, self.nodes[second_id].kind
+        forward = first.emits and second.receives
+        backward = second.emits and first.receives
+        return (second_id, first_id) if backward and not forward else (first_id, second_id)
+
     def connect(self, source_id: int, target_id: int) -> Wire | Refused:
         path = self.preview(source_id, target_id)
         if isinstance(path, Refused):
@@ -286,6 +308,75 @@ class Board:
 
     def remove_wire(self, wire: Wire) -> None:
         self.wires.remove(wire)
+
+    # Undo (D-027)
+
+    def snapshot(self) -> BoardState:
+        """The parts, the wires as drawn and the stock left, frozen."""
+        nodes = tuple(self.nodes[i] for i in sorted(self.nodes))
+        stock = tuple((kind, self._stock[kind]) for kind in Kind if kind in self._stock)
+        return BoardState(nodes, tuple(self.wires), stock)  # in fixed orders, not dict order
+
+    def restore(self, state: BoardState) -> None:
+        """Put the board back as it was in `state`, in place, routes and all. Ids still never
+        come back: the next part placed gets a new one."""
+        self.nodes = {node.id: node for node in state.nodes}
+        self.wires = list(state.wires)
+        self._stock = dict(state.stock)
+
+    # As plain data (D-024)
+
+    def to_dict(self) -> dict:
+        """The board as JSON-able data: the zone, what the level handed out, the components in
+        id order and the wires in the order they were drawn, each naming its ends by their place
+        in that list."""
+        ids = sorted(self.nodes)
+        index = {node_id: i for i, node_id in enumerate(ids)}
+        return {
+            "zone": [list(cell) for cell in self.cells],
+            "stock": {kind.value: self._total[kind] for kind in Kind if kind in self._total},
+            "parts": [
+                {
+                    "kind": node.kind.value,
+                    "cell": list(node.cell),
+                    "facing": None if node.facing is None else FACING_NAMES[node.facing],
+                    "locked": node.locked,
+                }
+                for node in (self.nodes[i] for i in ids)
+            ],
+            "wires": [
+                {
+                    "from": index[wire.source],
+                    "to": index[wire.target],
+                    "path": [list(cell) for cell in wire.path],
+                }
+                for wire in self.wires
+            ],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping) -> Board:
+        """A board from `to_dict`'s data: the parts placed in order, then the wires drawn in
+        order, so the network is the one saved. A path comes back as saved unless the board had
+        been edited with Move or Delete; then it may take another route as short. Raises
+        ValueError for data no board could hold."""
+        stock = {Kind(name): left for name, left in data["stock"].items()}
+        board = cls([tuple(cell) for cell in data["zone"]], stock)
+        for part in data["parts"]:
+            facing = part["facing"]
+            placed = board.place(
+                Kind(part["kind"]),
+                tuple(part["cell"]),
+                locked=part["locked"],
+                facing=None if facing is None else FACING_NAMES.index(facing),
+            )
+            if isinstance(placed, Refused):
+                raise ValueError(f"part {part}: {placed.reason}")
+        for wire in data["wires"]:
+            drawn = board.connect(wire["from"], wire["to"])
+            if isinstance(drawn, Refused):
+                raise ValueError(f"wire {wire['from']} -> {wire['to']}: {drawn.reason}")
+        return board
 
     def route(self, start: Cell, goal: Cell) -> tuple[Cell, ...] | None:
         """Shortest free path between two component cells, both included; None if there is none.

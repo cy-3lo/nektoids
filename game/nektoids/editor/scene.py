@@ -2,20 +2,29 @@
 
 Tools:
 - Add: drag a component from the menu onto a cell, or pick it and click cells.
-- Wire: drag from a source to a target, or click one then the other. The route shows first,
-  bright when it may connect.
-- Rotate: click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back (D-009).
+- Wire: drag from one part to another, or click one then the other. The route shows first,
+  bright when it may connect. A wire runs from the part that sends to the part that receives:
+  drawn from a thruster or into a sensor, it is turned round; between two operators it runs
+  the way it is drawn (D-026).
+- Turn left, Turn right: pressing the button, or L (left) and R (right), turns the selected
+  part by 60° at once and takes that tool; with it, click an eye or a thruster to turn it,
+  shift-click to turn it the other way (D-009, D-025).
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
 - Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
   button brings the central cell back to the middle.
+- Undo and Redo (D-027), also Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on a Mac): one step is one
+  gesture, from press to release, so a whole Move drag goes back at once. Save and Load are
+  there, inactive, until saving exists.
 
 Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
 with the hand, the arrows drag the view the way they point, as the mouse would.
 
-Clicking a menu title folds or unfolds its group. Right click or Escape cancels. Every refusal
-flashes the cell and puts the reason in the status line.
+The selected part is the last one placed, wired from, moved or turned: a click on a part with
+any tool but Delete selects it, and its cell is lit. Clicking a menu title folds or unfolds its
+group. Right click or Escape cancels, and drops the selection. Every refusal flashes the cell
+and puts the reason in the status line.
 """
 
 from __future__ import annotations
@@ -25,17 +34,22 @@ import math
 import pygame
 
 from nektoids.editor.geometry import nearest_wire
+from nektoids.editor.history import History
 from nektoids.editor.layout import (
     KEY_ALIASES,
     MENU_GROUPS,
     TOOL_KEYS,
+    TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
+    EditButton,
     Layout,
     Tool,
     ViewButton,
     cell_at,
     centred_view,
+    edit_button_at,
+    file_button_at,
     group_at,
     make_layout,
     menu_item_at,
@@ -89,8 +103,9 @@ class EditorScene:
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
         self.dragging = False  # Add: mouse held since picking from the menu
-        self.source: int | None = None  # Wire: node id of the chosen source
+        self.source: int | None = None  # Wire: node id chosen first, its source unless turned
         self.moving: int | None = None  # Move: node id being dragged
+        self.selected: int | None = None  # what the turn buttons and keys act on
         self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
         self.pressed: int | None = None  # Wire: node under the press, while the button is held
         self.fresh = False  # Wire: that press is what chose the source
@@ -107,6 +122,8 @@ class EditorScene:
         self.tip_frames = 0  # how long it has been there
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
+        self.history = History()
+        self._kept = board.snapshot()  # the board as of the last step undo can go back to
 
     def update(self) -> None:
         """Once per frame."""
@@ -138,12 +155,21 @@ class EditorScene:
             event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
         ):
             self._cancel()
+            self.selected = None
         elif event.type == pygame.KEYDOWN:
             self._key(event)
+        if self.moving is None and not self.carrying:  # between gestures
+            self._keep()
 
     # Keyboard
 
     def _key(self, event: pygame.event.Event) -> None:
+        if event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
+            if event.key == pygame.K_z:
+                self._edit(EditButton.REDO if event.mod & pygame.KMOD_SHIFT else EditButton.UNDO)
+            elif event.key == pygame.K_y:
+                self._edit(EditButton.REDO)
+            return  # no other shortcut with Ctrl or Cmd: they are the browser's
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         if arrow is not None:
             self._arrow(arrow)
@@ -209,8 +235,7 @@ class EditorScene:
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
         if key in KEY_TOOLS:
-            self._cancel()
-            self.tool = KEY_TOOLS[key]
+            self._choose(KEY_TOOLS[key])
         elif key in KEY_VIEWS:
             self._view_button(KEY_VIEWS[key])
 
@@ -237,8 +262,14 @@ class EditorScene:
     def _press(self, pos: tuple[int, int]) -> None:
         tool = tool_at(self.layout, pos)
         if tool is not None:
-            self._cancel()
-            self.tool = tool
+            self._choose(tool)
+            return
+        edit = edit_button_at(self.layout, pos)
+        if edit is not None:
+            self._edit(edit)
+            return
+        if file_button_at(self.layout, pos) is not None:
+            self._refuse("saving is not in the game yet", None)
             return
         button = view_button_at(self.layout, pos)
         if button is not None:
@@ -263,8 +294,9 @@ class EditorScene:
             return
         elif self.tool is Tool.WIRE:
             self._wire(self.hover)
-        elif self.tool is Tool.ROTATE:
-            self._rotate(self.hover, back=bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
+        elif self.tool in TURNS:
+            back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+            self._turn(self.hover, -TURNS[self.tool] if back else TURNS[self.tool])
         elif self.tool is Tool.MOVE:
             self._grab(self.hover)
         else:
@@ -300,7 +332,37 @@ class EditorScene:
         factor = ZOOM_STEP if button is ViewButton.ZOOM_IN else 1.0 / ZOOM_STEP
         self.view = zoom(self.view, factor, (x + w / 2, y + h / 2))
 
+    # Undo (D-027)
+
+    def _keep(self) -> None:
+        """Between gestures: if the board changed since the last step kept, keep this one."""
+        now = self.board.snapshot()
+        if now != self._kept:
+            self.history.record(self._kept)
+            self._kept = now
+
+    def _edit(self, button: EditButton) -> None:
+        """Undo or redo one step; a gesture under way ends first, and counts as a step."""
+        self._cancel()
+        self._keep()
+        step = self.history.undo if button is EditButton.UNDO else self.history.redo
+        state = step(self._kept)
+        if state is None:
+            self._refuse(f"nothing to {button.value}", None)
+            return
+        self.board.restore(state)
+        self._kept = state
+        if self.selected not in self.board.nodes:
+            self.selected = None
+
     # Tools
+
+    def _choose(self, tool: Tool) -> None:
+        """Take a tool, from its button or its key; a turn tool turns the selected part at once."""
+        self._cancel()
+        self.tool = tool
+        if tool in TURNS and self.selected is not None:
+            self._turn(self.board.nodes[self.selected].cell, TURNS[tool])
 
     def _pick(self, kind: Kind) -> None:
         self._cancel()
@@ -318,7 +380,7 @@ class EditorScene:
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
             return
-        self.message = ""
+        self.message, self.selected = "", result.id
         if self.board.remaining(self.picked) == 0:
             self.picked = None
 
@@ -328,21 +390,17 @@ class EditorScene:
         if node is None:
             self.source, self.ghost = None, None
             return
-        self.pressed, self.fresh = node.id, False
+        self.pressed, self.fresh, self.selected = node.id, False, node.id
         if self.source is None:
-            if not node.kind.emits:
-                self.pressed = None
-                self._refuse("thrusters have no output", cell)
-                return
             self.source, self.fresh = node.id, True
         self.message = ""
         self._update_ghost()
 
     def _end_wiring(self) -> None:
-        """Release in the Wire tool. Where the press was is a click: it picks the source,
-        connects the chosen source to it, or, on the chosen source again, drops it. Anywhere
-        else is a drag: it wires from where the press was to here, or gives up over an empty
-        cell."""
+        """Release in the Wire tool. Where the press was is a click: it picks the first part,
+        wires it to this one, or, on the first part again, drops it. Anywhere else is a drag: it
+        wires where the press was to here, or gives up over an empty cell. Which way a wire
+        runs is `Board.orient`'s to say (D-026)."""
         pressed, self.pressed = self.pressed, None
         target = self.board.node_at(self.hover) if self.hover is not None else None
         if target is not None and target.id == pressed:
@@ -352,35 +410,33 @@ class EditorScene:
                 self.source, self.ghost = None, None
         elif target is None:
             self.source, self.ghost = None, None
-        elif not self.board.nodes[pressed].kind.emits:
-            self._refuse("thrusters have no output", self.board.nodes[pressed].cell)
         else:
             self.source = pressed
             self._connect(pressed, target.id, self.hover)
         self._update_ghost()
 
-    def _connect(self, source_id: int, target_id: int, cell: Cell) -> None:
-        result = self.board.connect(source_id, target_id)
+    def _connect(self, first_id: int, second_id: int, cell: Cell) -> None:
+        result = self.board.connect(*self.board.orient(first_id, second_id))
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)  # keep the source: try another target
             return
         self.source, self.ghost, self.message = None, None, ""
 
     def _wire_start(self) -> int | None:
-        """The node a wire would start from now: while dragging away from a press, that
-        press; otherwise the chosen source."""
+        """The node a wire is drawn from now: while dragging away from a press, that press;
+        otherwise the part chosen first. Not always the wire's source (D-026)."""
         if self.pressed is not None and self.hover != self.board.nodes[self.pressed].cell:
-            start = self.board.nodes[self.pressed]
-            return start.id if start.kind.emits else None
+            return self.pressed
         return self.source
 
-    def _rotate(self, cell: Cell, back: bool) -> None:
+    def _turn(self, cell: Cell, steps: int) -> None:
+        """Turn the part on `cell` by `steps` x 60° (counter-clockwise if positive); select it."""
         node = self.board.node_at(cell)
         if node is None:
             self._refuse("click an eye or a thruster", cell)
             return
-        # Direction indices run counter-clockwise on screen, so clockwise is -1.
-        result = self.board.rotate(node.id, 1 if back else -1)
+        self.selected = node.id
+        result = self.board.rotate(node.id, steps)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
         else:
@@ -390,7 +446,9 @@ class EditorScene:
         node = self.board.node_at(cell)
         if node is None:
             self._refuse("drag a component", cell)
-        elif node.locked:
+            return
+        self.selected = node.id
+        if node.locked:
             self._refuse("placed by the level", cell)
         else:
             self.moving, self.message = node.id, ""
@@ -414,6 +472,8 @@ class EditorScene:
                 self._refuse(result.reason, cell)
             else:
                 self.message = ""
+                if self.selected == node.id:
+                    self.selected = None
         else:
             self._refuse("nothing to delete here", cell)
 
@@ -456,11 +516,13 @@ class EditorScene:
         start = self._wire_start() if self.tool is Tool.WIRE else None
         if start is None or self.hover is None:
             return
-        target = self.board.node_at(self.hover)
-        if target is None:
-            self.ghost = self.board.route(self.board.nodes[start].cell, self.hover)
+        target, begin = self.board.node_at(self.hover), self.board.nodes[start]
+        if target is None and begin.kind.emits:
+            self.ghost = self.board.route(begin.cell, self.hover)
+        elif target is None:  # a thruster: the way a wire into it would come
+            self.ghost = self.board.route(self.hover, begin.cell)
         elif target.id != start:
-            self.ghost = self.board.preview(start, target.id)
+            self.ghost = self.board.preview(*self.board.orient(start, target.id))
             self.ghost_connects = isinstance(self.ghost, tuple)
 
     def _refuse(self, reason: str, cell: Cell | None) -> None:

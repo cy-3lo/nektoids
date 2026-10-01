@@ -5,13 +5,15 @@ paths:
 ---
 # Simulation rules
 
-- State is numpy: `(N, 2)` float64 for position and velocity, `(N,)` for heading. The jam has
-  one agent, but write for N so flocking later is an addition, not a rewrite.
+- State is numpy: `(N, 2)` float64 for position, `(N,)` for heading and radius. Velocity is not
+  state: bodies are overdamped (D-022). The jam has one agent, but write for N so flocking later
+  is an addition, not a rewrite.
 - Pairwise interactions use full `(N, N)` matrices built by broadcasting. N ≈ 100 makes O(N²)
   cheap. No Python loop over agents.
-- `step(world, controls, dt)` advances one fixed step. Say in the docstring whether it mutates.
+- `world.step` advances one fixed tick and returns new arrays. Say in a docstring whether it mutates.
   No hidden module-level state.
-- Integrator: semi-implicit (symplectic) Euler at fixed `dt` unless a decision says otherwise.
+- Integrator: explicit Euler on position and heading at fixed `dt`, the velocity and spin that
+  balance thrust and Stokes drag held over the tick (D-022), unless a decision says otherwise.
 - State units in docstrings (u, s, u/s), u being the base body radius (D-019); pixels exist only
   in the view. Named constants at module top, no magic numbers.
 - Determinism holds per platform, not across platforms: numpy SIMD paths and libm transcendental

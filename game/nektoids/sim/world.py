@@ -1,57 +1,67 @@
-"""Simulation state and integrator.
+"""One tick of the swimmers: move, touch, see, think (D-022).
 
-PLACEHOLDER physics: point masses with linear drag, so the pipeline and the determinism test
-have something real to run. Heading, the two thrusters, body size and the opacity sensors are
-Day-1 work (docs/brief.md, section 3). Keep the shape: numpy arrays, fixed dt, no Python loop
-over agents.
+The state of N swimmers is four arrays that the caller keeps (the arena view, a test): pos (N, 2)
+[u], heading (N,) [rad], radius (N,) [u], and y (N, n), the rates of their nodes (D-017). A tick
+of dt [s]:
+
+1. move: with the thrust the nodes have now, against the Stokes drag of a sphere (`motion`);
+2. touch: back outside the obstacles and inside the walls (`contact`);
+3. see: the eyes read the light where the bodies now are (`optics`);
+4. think: the nodes follow, one lagged step (`graph.dynamics`).
+
+So after a tick, as after a restart or a drag, y's eye columns are what the eyes read where the
+bodies are. Nothing is changed in place. Pure numpy, no pygame.
 """
 
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
 
 import numpy as np
 
-DRAG_RATE = 0.5  # linear drag coefficient per unit mass [1/s]
-INITIAL_SPEED = 120.0  # [px/s]
+from nektoids.graph import dynamics
+from nektoids.graph.network import Network
+from nektoids.sim.arena import Arena
+from nektoids.sim.contact import confine
+from nektoids.sim.motion import advance, stokes, thrust
+from nektoids.sim.optics import eye_rates
 
 
-@dataclass
-class World:
-    pos: np.ndarray  # (N, 2) positions [px]
-    vel: np.ndarray  # (N, 2) velocities [px/s]
-    width: float  # [px]
-    height: float  # [px]
-    tick: int = 0  # integer step counter: no accumulated float time
+def parts(net: Network, indices: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Mounts (k, 2) in body radii and facings (k,) hex directions of the nodes `indices`, such
+    as `net.eyes` or `net.thrusters` (D-018)."""
+    facing = np.array([net.facing[i] for i in indices], dtype=np.int64)
+    return net.mount[indices], facing
 
 
-def make_world(seed: int, n_agents: int, width: float, height: float) -> World:
-    """Deterministic initial state: agents near the centre, random headings."""
-    rng = np.random.default_rng(seed)
-    low = (0.4 * width, 0.4 * height)
-    high = (0.6 * width, 0.6 * height)
-    pos = rng.uniform(low, high, size=(n_agents, 2))
-    angle = rng.uniform(0.0, 2.0 * np.pi, size=n_agents)
-    vel = INITIAL_SPEED * np.column_stack((np.cos(angle), np.sin(angle)))
-    return World(pos=pos, vel=vel, width=width, height=height)
+def step(
+    arena: Arena,
+    net: Network,
+    pos: np.ndarray,
+    heading: np.ndarray,
+    radius: np.ndarray,
+    y: np.ndarray,
+    dt: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(pos, heading, y) one tick later, as new arrays; the arguments are not changed.
 
-
-def step(world: World, force: np.ndarray, dt: float) -> None:
-    """Advance one fixed step, in place.
-
-    force: (N, 2) applied force per unit mass [px/s^2].
-    Semi-implicit Euler: update velocity first, then position with the new velocity.
+    pos (N, 2) [u], heading (N,) [rad], radius (N,) [u], y (N, n) the nodes' rates; dt [s], with
+    0 < dt <= TAU (`graph.dynamics.step` raises ValueError otherwise).
     """
-    world.vel += dt * (force - DRAG_RATE * world.vel)
-    world.pos += dt * world.vel
-    world.tick += 1
+    force, torque = thrust(dynamics.thrust_rates(net, y), radius, *parts(net, net.thrusters))
+    vel, spin = stokes(force, torque, radius)
+    pos, heading = advance(pos, heading, vel, spin, dt)
+    pos = confine(arena, pos, radius)
+    eyes = eye_rates(arena, pos, heading, radius, *parts(net, net.eyes))
+    return pos, heading, dynamics.step(net, y, eyes, dt)
 
 
-def state_hash(world: World) -> str:
-    """Fingerprint of the full state, for determinism tests."""
+def state_hash(
+    pos: np.ndarray, heading: np.ndarray, radius: np.ndarray, y: np.ndarray, tick: int
+) -> str:
+    """Fingerprint of the whole state of a run, for determinism tests."""
     digest = hashlib.sha256()
-    digest.update(world.pos.tobytes())
-    digest.update(world.vel.tobytes())
-    digest.update(world.tick.to_bytes(8, "little"))
+    for array in (pos, heading, radius, y):
+        digest.update(np.ascontiguousarray(array, dtype=np.float64).tobytes())
+    digest.update(tick.to_bytes(8, "little"))
     return digest.hexdigest()

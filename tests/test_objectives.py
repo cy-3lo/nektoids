@@ -1,37 +1,45 @@
 import numpy as np
-import pytest
 
-from nektoids.levels.objectives import ReachLight
+from nektoids.levels.arenas import Level
+from nektoids.levels.objectives import Outcome, VisitLights, outcome, touching
 from nektoids.sim.arena import LIGHT_RADIUS, Arena, Light
 
 ARENA = Arena(40.0, 38.0, lights=(Light(30.0, 20.0, 8.0), Light(5.0, 5.0, 4.0)))
-START = np.array([[10.0, 20.0]])  # 20 from the first light, 15.8 from the second
+LEVEL = Level("Two", ARENA, start=(10.0, 20.0, 0.0), time_limit=10.0, objectives=(VisitLights(),))
+DT = 1.0 / 120.0
 ONE = np.ones(1)
+TOUCH = LIGHT_RADIUS + 1.0  # centre to centre, for a body of radius 1
 
 
-def reach(pos) -> float:
-    return ReachLight().progress(ARENA, START, np.array(pos, dtype=float).reshape(-1, 2), ONE)
+def at(*points):
+    return np.array(points, dtype=float).reshape(-1, 2)
 
 
-def test_at_the_start_nothing_is_done_and_touching_the_nearest_light_is_all_of_it():
-    assert reach([10.0, 20.0]) == 0.0
-    touch = LIGHT_RADIUS + 1.0
-    assert reach([5.0 + touch, 5.0]) == 1.0
-    assert reach([30.0 - touch, 20.0]) == 1.0  # any light will do
+def test_a_swimmer_touches_a_light_when_their_discs_meet_and_not_before():
+    assert touching(ARENA, at([30.0 - TOUCH, 20.0]), ONE).tolist() == [[True, False]]
+    assert touching(ARENA, at([30.0 - TOUCH - 1e-9, 20.0]), ONE).tolist() == [[False, False]]
+    assert touching(ARENA, at([5.0, 5.0 + TOUCH]), 1.0 * ONE).tolist() == [[False, True]]
+    assert touching(ARENA, at([5.0, 5.0 + TOUCH]), 0.5 * ONE).tolist() == [[False, False]]
 
 
-def test_the_bar_fills_in_proportion_to_the_way_covered_and_never_goes_below_zero():
-    begun = np.hypot(5.0, 15.0) - LIGHT_RADIUS - 1.0  # to touching the nearest light
-    halfway = np.array([5.0, 5.0]) + (START[0] - [5.0, 5.0]) * (
-        (LIGHT_RADIUS + 1.0 + begun / 2) / np.hypot(5.0, 15.0)
-    )
-    assert reach(halfway) == pytest.approx(0.5)
-    assert reach([1.0, 37.0]) == 0.0  # further than at the start
+def test_every_light_counts_once_and_all_of_them_are_needed():
+    visits = VisitLights()
+    assert visits.count(np.array([[False, False]])) == (0, 2)
+    assert visits.count(np.array([[True, False]])) == (1, 2)
+    assert visits.count(np.array([[True, True]])) == (2, 2)
+    assert visits.count(np.array([[True, False], [True, True]])) == (3, 4)  # two swimmers
 
 
-def test_several_swimmers_average_and_an_arena_without_lights_gives_nothing():
-    two = ReachLight().progress(
-        ARENA, np.repeat(START, 2, axis=0), np.array([[10.0, 20.0], [7.0, 5.0]]), np.ones(2)
-    )
-    assert two == pytest.approx(0.5)
-    assert ReachLight().progress(Arena(40.0, 38.0), START, START, ONE) == 0.0
+def test_a_run_is_won_when_every_light_is_visited_and_over_when_its_time_is_up():
+    one, both = np.array([[True, False]]), np.array([[True, True]])
+    limit = round(LEVEL.time_limit / DT)
+    assert outcome(LEVEL, one, limit - 1, DT) is None
+    assert outcome(LEVEL, one, limit, DT) is Outcome.TIME_UP
+    assert outcome(LEVEL, both, 5, DT) is Outcome.WON
+    assert outcome(LEVEL, both, limit, DT) is Outcome.WON  # on the last tick, it still counts
+
+
+def test_a_level_without_objectives_is_never_won_only_timed_out():
+    bare = Level("Bare", ARENA, start=(10.0, 20.0, 0.0), time_limit=1.0)
+    assert outcome(bare, np.array([[True, True]]), 0, DT) is None
+    assert outcome(bare, np.array([[True, True]]), 120, DT) is Outcome.TIME_UP
