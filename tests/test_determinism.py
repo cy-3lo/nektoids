@@ -5,10 +5,11 @@ import numpy as np
 
 from nektoids.graph.board import Kind, Refused
 from nektoids.graph.dynamics import initial_state
+from nektoids.graph.hexgrid import NE, NW
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome, outcome, touching
-from nektoids.levels.sandbox import tutorial_board
+from nektoids.levels.sandbox import free_board, tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.optics import eye_rates
 from nektoids.sim.world import parts, state_hash, step
@@ -27,6 +28,28 @@ def wired(*wires):
 
 CROSSED = wired((0, 3), (1, 2))  # Braitenberg's aggression: charges the light
 UNCROSSED = wired((0, 2), (1, 3))  # ... and fear: turns away from it
+
+
+def one_eyed_circler():
+    """Found by a search of the free board: both thrusters push NW, the front one at half the
+    Source's rate and the back one as much as the single eye, looking NE, reads."""
+    board = free_board()
+    eye, source, half, back, front = (
+        board.place(kind, cell, facing=facing)
+        for kind, cell, facing in (
+            (Kind.EYE, (0, -2), NE),
+            (Kind.SOURCE, (0, 0), None),
+            (Kind.HALVE, (1, 0), None),
+            (Kind.THRUSTER, (-2, 2), NW),
+            (Kind.THRUSTER, (1, -1), NW),
+        )
+    )
+    for a, b in ((eye, back), (source, half), (half, front)):
+        assert not isinstance(board.connect(a.id, b.id), Refused)
+    return Network.from_board(board)
+
+
+CIRCLER = one_eyed_circler()  # visits both lights of "Two lights, four obstacles"
 
 
 def run(net, title, seconds, start=None):
@@ -100,6 +123,18 @@ def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
     assert nearest > 0.8 * begun  # never a fifth of the way to touching it
     _, _, y = states[-1]
     assert np.all(y[:, UNCROSSED.eyes] < 0.01)  # still fading: it slows as it darkens
+
+
+def test_two_lights_can_be_won_with_time_and_room_to_spare():
+    title = "Two lights, four obstacles"
+    ended, ticks, _ = play(CIRCLER, title)
+    assert ended is Outcome.WON and ticks * DT < LEVELS[title].time_limit / 1.5
+    assert play(CIRCLER, title)[1] == ticks  # the same tick, every run
+    lights = LEVELS[title].arena.light_xy
+    nearest = np.full(len(lights), np.inf)
+    for pos, _, _ in run(CIRCLER, title, ticks * DT + 2.0):  # it heads on past the last touch
+        nearest = np.minimum(nearest, np.hypot(*(lights - pos[0]).T))
+    assert np.all(nearest < 0.5 * (LIGHT_RADIUS + 1.0))  # deep in, not grazing (D-004)
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():

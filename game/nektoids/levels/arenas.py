@@ -47,7 +47,7 @@ def arenas() -> list[Level]:
                 ),
             ),
             start=(15.0, 19.0, 20.0),
-            time_limit=60.0,
+            time_limit=45.0,  # a one-eyed circler visits both in 23.1 s (test_determinism)
             objectives=(VisitLights(),),
         ),
     ]
