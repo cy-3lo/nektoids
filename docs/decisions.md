@@ -364,3 +364,8 @@ its wiring stays. F3 keeps the developer's run view of every level, with all of 
 and `main.py` turns that into scenes; a scene asks for a change through its `request`.
 Consequences: the arena's palette gains Edit; the banner has a fixed size, so its buttons can
 be hit-tested headless. The title card, the map and the end screen come next (D-028).
+
+**D-031 — 2026-10-01 — With a turn tool, a click on a part that is not selected only selects it; a click on the selected part turns it. Amends D-025.**
+The turn buttons and L and R still turn the selected part at once, the part just placed among
+them. A click with the tool used to turn whatever it landed on, so picking out the part to turn
+turned it by mistake.

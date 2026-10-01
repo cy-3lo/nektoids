@@ -7,8 +7,8 @@ Tools:
   drawn from a thruster or into a sensor, it is turned round; between two operators it runs
   the way it is drawn (D-026).
 - Turn left, Turn right: pressing the button, or L (left) and R (right), turns the selected
-  part by 60° at once and takes that tool; with it, click an eye or a thruster to turn it,
-  shift-click to turn it the other way (D-009, D-025).
+  part by 60° at once and takes that tool; with it, a click on another part only selects it, and
+  a click on the selected part turns it, shift-click the other way (D-009, D-025, D-031).
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
 - Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
@@ -308,8 +308,12 @@ class EditorScene:
         elif self.tool is Tool.WIRE:
             self._wire(self.hover)
         elif self.tool in TURNS:
-            back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
-            self._turn(self.hover, -TURNS[self.tool] if back else TURNS[self.tool])
+            node = self.board.node_at(self.hover)
+            if node is not None and node.id != self.selected:
+                self.selected, self.message = node.id, ""  # the first click picks it out
+            else:
+                back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+                self._turn(self.hover, -TURNS[self.tool] if back else TURNS[self.tool])
         elif self.tool is Tool.MOVE:
             self._grab(self.hover)
         else:

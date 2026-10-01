@@ -94,8 +94,8 @@ TIP = {
 HINT = {
     Tool.ADD: "Drag a component from the menu onto the grid (or its number, arrows, Enter).",
     Tool.WIRE: "Drag from one part to another, or click one then the other.",
-    Tool.TURN_LEFT: "Click an eye or a thruster to turn it left. L turns the selected one.",
-    Tool.TURN_RIGHT: "Click an eye or a thruster to turn it right. R turns the selected one.",
+    Tool.TURN_LEFT: "Click a part to select it, again to turn it left. L turns the selected one.",
+    Tool.TURN_RIGHT: "Click a part to select it, again to turn it right. R turns the selected one.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",
     Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
