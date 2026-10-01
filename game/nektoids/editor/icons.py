@@ -50,6 +50,7 @@ GLYPH = {
     "backward-step": 0xF048,
     "forward": 0xF04E,
     "lightbulb": 0xF0EB,
+    "check": 0xF00C,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.

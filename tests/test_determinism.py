@@ -7,8 +7,9 @@ from nektoids.graph.board import Kind, Refused
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
-from nektoids.levels.objectives import ReachLight
+from nektoids.levels.objectives import Outcome, outcome, touching
 from nektoids.levels.sandbox import tutorial_board
+from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.optics import eye_rates
 from nektoids.sim.world import parts, state_hash, step
 
@@ -46,10 +47,16 @@ def last(states):
     return deque(states, maxlen=1)[0]
 
 
-def progress(title, pos):
+def play(net, title):
+    """Run the level until it is over, as the arena view does: (outcome, ticks, visited)."""
     level = LEVELS[title]
-    x, y, _ = level.start
-    return ReachLight().progress(level.arena, np.array([[x, y]]), pos, np.ones(len(pos)))
+    visited = touching(level.arena, np.array([level.start[:2]]), np.ones(1))
+    for tick, (pos, _, _) in enumerate(run(net, title, level.time_limit), start=1):
+        visited |= touching(level.arena, pos, np.ones(1))
+        ended = outcome(level, visited, tick, DT)
+        if ended is not None:
+            return ended, tick, visited
+    raise AssertionError("the run outlived its time limit")
 
 
 # Determinism (invariant 1)
@@ -77,14 +84,20 @@ def test_other_starts_give_another_run():
 # Behaviour
 
 
-def test_crossed_wiring_charges_the_light_and_touches_it_within_twelve_seconds():
-    reached = [progress("One light", pos) for pos, _, _ in run(CROSSED, "One light", 12.0)]
-    assert max(reached) == 1.0
+def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
+    ended, ticks, _ = play(CROSSED, "One light")
+    assert ended is Outcome.WON and ticks * DT < 12.0
+    assert play(CROSSED, "One light")[1] == ticks  # the same tick, every run
 
 
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
+    ended, _, visited = play(UNCROSSED, "One light")
+    assert ended is Outcome.TIME_UP and not visited.any()
+    light, touch = LEVELS["One light"].arena.light_xy[0], LIGHT_RADIUS + 1.0
+    begun = np.hypot(*(np.array(LEVELS["One light"].start[:2]) - light)) - touch
     states = list(run(UNCROSSED, "One light", 12.0))
-    assert max(progress("One light", pos) for pos, _, _ in states) < 0.2
+    nearest = min(np.hypot(*(pos[0] - light)) - touch for pos, _, _ in states)
+    assert nearest > 0.8 * begun  # never a fifth of the way to touching it
     _, _, y = states[-1]
     assert np.all(y[:, UNCROSSED.eyes] < 0.01)  # still fading: it slows as it darkens
 

@@ -6,12 +6,14 @@ density is the light's 1/r, and a shadow is where no ray goes; L hides them. Wit
 the light is a map instead, grey, dark in shadow and white where an eye looking at a light
 saturates; the square root of the reading sets the grey (`tone`), and it is smoothed over a few
 cells (`smooth`). Obstacles are grey discs, lights white discs with a sun, as big as a swimmer
-(`LIGHT_RADIUS`), their rays leaving from the rim, and a swimmer its body's circle round a
-wedge, its tip forward, bright when selected.
+(`LIGHT_RADIUS`), their rays leaving from the rim, a ring round the ones visited, and a swimmer
+its body's circle round a wedge, its tip forward, bright when selected. When the run is over, a
+banner over the arena says how it ended.
 
 The column on the right (`arena_layout.py`): the palettes, with a tooltip naming each button and
-its key; the objectives, each with a bar; the selected swimmer's wiring on its body, plain: the
-parts shaded by their rate and the beads on the wires, no numbers. With P, an inset over the
+its key; the objectives, each counted (so many of so many) and with a bar; the selected
+swimmer's wiring on its body, plain: the parts shaded by their rate and the beads on the wires,
+no numbers. With P, an inset over the
 arena shows the light at its eyes as a polar plot in the arena's frame: E(phi) for each eye, a
 circle for the scale, and a tick along each eye's look as long as what it reads. The plot is
 exact; the map is smoothed.
@@ -58,6 +60,7 @@ from nektoids.editor.draw import (
 from nektoids.editor.schematic_draw import FULL, draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
+from nektoids.levels.objectives import Outcome
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.optics import discs
 
@@ -75,6 +78,8 @@ POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its cir
 EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot, in turn
 BAR_HEIGHT = 8  # an objective's bar [px]
 ROW_PITCH = 40  # one objective [px]
+VISITED_GAP = 4  # between a visited light and its ring [px]
+BANNER_TOP = 16  # [px] below the top of the arena
 ICON = {
     ArenaButton.RESTART: "rotate-left",
     ArenaButton.BACK: "backward-step",
@@ -108,6 +113,7 @@ def draw_arena(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     if scene.show_polar:
         _draw_polar(screen, scene, fonts)
     screen.set_clip(None)
+    _draw_banner(screen, scene, fonts)
     _draw_panel(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
 
@@ -143,6 +149,9 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
         pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
         pygame.draw.aacircle(screen, DARK, centre, LIGHT_RADIUS * view.scale + 1, 1)
         fonts.icons.draw(screen, "sun", centre, round(SUN * LIGHT_RADIUS * view.scale), DARK)
+    for light in np.flatnonzero(scene.visited.any(axis=0)):  # by any swimmer
+        centre = view.to_screen(*arena.light_xy[light])
+        pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale + VISITED_GAP, 2)
     pygame.draw.rect(screen, RULE, rect, 1)
 
 
@@ -237,18 +246,22 @@ def _draw_button_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) ->
 
 
 def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """Each objective: its name, how far along it is, and a bar."""
+    """Each objective: its name, so many met of so many, a tick once all are, and a bar."""
     x, y, w, _ = SCORE_AREA
     left, width = x + MARGIN, w - 2 * MARGIN
     screen.blit(fonts.small.render("Objectives", True, DIM_TEXT), (left, y + 4))
-    rows = scene.progress()
+    rows = scene.counts()
     if not rows:
         screen.blit(fonts.small.render("None in this arena yet.", True, DIM_TEXT), (left, y + 30))
-    for k, (name, fraction) in enumerate(rows):
+    for k, (name, met, needed) in enumerate(rows):
         top = y + 28 + k * ROW_PITCH
         screen.blit(fonts.text.render(name, True, TEXT), (left, top))
-        percent = fonts.text.render(f"{100 * fraction:.0f}%", True, TEXT)
-        screen.blit(percent, percent.get_rect(topright=(left + width, top)))
+        tally = fonts.text.render(f"{met} of {needed}", True, TEXT)
+        screen.blit(tally, tally.get_rect(topright=(left + width, top)))
+        if met >= needed:
+            tick_at = (left + width - tally.get_width() - 14, top + 7)
+            fonts.icons.draw(screen, "check", tick_at, 14, FULL)
+        fraction = met / needed if needed else 1.0
         bar = pygame.Rect(left, top + 20, width, BAR_HEIGHT)
         pygame.draw.rect(screen, RULE, bar, border_radius=3)
         filled = bar.copy()
@@ -314,13 +327,39 @@ def _draw_polar(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     screen.blit(legend, legend.get_rect(center=(cx, cy + big + 26)))
 
 
+def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """Over the arena's top, once the run is over: how it ended, and what each objective got."""
+    ended = scene.outcome
+    if ended is None:
+        return
+    if ended is Outcome.WON:
+        head = f"Done in {scene.clock.seconds:.2f} s"
+    else:
+        head = f"Time is up ({scene.level.time_limit:g} s)"
+    rows = [f"{name}: {met} of {needed}" for name, met, needed in scene.counts()]
+    lines = [fonts.text.render(head, True, TEXT)]
+    lines += [fonts.small.render(row, True, DIM_TEXT) for row in [*rows, "0: start again"]]
+    x, y, w, _ = ARENA_AREA
+    width = max(line.get_width() for line in lines) + 32
+    height = sum(line.get_height() + 4 for line in lines) + 16
+    box = pygame.Rect(0, 0, width, height)
+    box.midtop = (x + w // 2, y + BANNER_TOP)
+    pygame.draw.rect(screen, PANEL, box, border_radius=6)
+    pygame.draw.rect(screen, LIGHT if ended is Outcome.WON else RULE, box, 2, border_radius=6)
+    top = box.top + 10
+    for line in lines:
+        screen.blit(line, line.get_rect(midtop=(box.centerx, top)))
+        top += line.get_height() + 4
+
+
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     clock = scene.clock
-    state = "paused" if clock.paused else "running"
+    state = "over" if scene.outcome is not None else "paused" if clock.paused else "running"
     speed = f" x{clock.speed}" if clock.speed > 1 else ""
     cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
+    limit = f"{scene.level.time_limit:g}"
     text = (
-        f"t = {clock.seconds:5.2f} s, {state}{speed}.  I: map{cost}.  P: polar plot.  "
+        f"t = {clock.seconds:5.2f} / {limit} s, {state}{speed}.  I: map{cost}.  P: polar plot.  "
         "Wheel, Q, E: turn.  Tab: arena.  F3: editor."
     )
     screen.blit(fonts.small.render(text, True, DIM_TEXT), (16, screen.get_height() - 22))
