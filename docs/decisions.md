@@ -338,3 +338,14 @@ out of a level editor. The walls were a box for trying things, part of no spec.
 Consequences: `contact.confine` loses its clamp to the walls; the arenas of D-019 become levels.
 What is left to do is in `docs/todo.md`; ideas for after the jam are in `docs/ideas.md`, no
 longer logged here as "post-jam".
+
+**D-029 — 2026-10-01 — A light is reached a little short of touching: the centres within 1.2 times the sum of the radii. Amends D-023's "their discs touch".**
+`objectives.REACH = 1.2`: a swimmer of radius R reaches a light (radius `LIGHT_RADIUS`) when
+their centres are within 1.2 (R + `LIGHT_RADIUS`), 2.4 u for a base body, that is 1.2 diameters.
+`touching` is renamed `reaching`. As a body grows with its complexity, the slack stays a fifth
+of the touching distance.
+Touching exactly was stricter than it looked: a swimmer passing just beside a light, which the
+player reads as reaching it, did not count. The win needs no exact trajectory anyway (D-004).
+Consequences: the pinned wins come a little earlier, crossed wiring in "One light" at 8.59 s
+(8.66 s before), the one-eyed circler in "Two lights" at 22.81 s (23.06 s); the time limits stand.
+At 3.6 u/s a tick moves 0.03 u against a reach of 2.4 u, so still no visit falls between ticks.

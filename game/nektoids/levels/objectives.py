@@ -1,7 +1,8 @@
 """What a level asks of its swimmers, counted, and when a run is over (D-023).
 
-A run remembers which lights each swimmer has touched, `visited` of shape (N, L): a swimmer
-touches a light when their discs meet, and a visit counts once, whatever comes after. Each
+A run remembers which lights each swimmer has reached, `visited` of shape (N, L): a swimmer
+reaches a light when their centres come within REACH times the sum of their radii, a little
+short of touching (D-029), and a visit counts once, whatever comes after. Each
 objective counts what it asks from that, so many met out of so many needed (brief section 1:
 countable win conditions). A run ends when every objective is met, or when its time is up.
 In a level's data an objective is its `kind` and its settings (D-028). Pure numbers, no pygame.
@@ -17,6 +18,8 @@ from typing import TYPE_CHECKING, ClassVar, Protocol
 import numpy as np
 
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
+
+REACH = 1.2  # a light counts as reached this many times its touching distance away (D-029)
 
 if TYPE_CHECKING:
     from nektoids.levels.level import Level
@@ -36,11 +39,12 @@ class Outcome(Enum):
     TIME_UP = "time up"
 
 
-def touching(arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
-    """(N, L): whether each swimmer touches each light now; pos (N, 2) [u], radius (N,) [u]."""
+def reaching(arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
+    """(N, L): whether each swimmer reaches each light now: centres within REACH (R + r), 2.4 u
+    for a base body, 1.2 diameters. pos (N, 2) [u], radius (N,) [u]."""
     dx = arena.light_xy[None, :, 0] - pos[:, None, 0]
     dy = arena.light_xy[None, :, 1] - pos[:, None, 1]
-    reach = LIGHT_RADIUS + np.asarray(radius, dtype=np.float64)[:, None]
+    reach = REACH * (LIGHT_RADIUS + np.asarray(radius, dtype=np.float64)[:, None])
     return dx * dx + dy * dy <= reach * reach
 
 

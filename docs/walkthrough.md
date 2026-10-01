@@ -345,7 +345,7 @@ back, play or pause, one frame, fast forward) and the view (zoom in, zoom out, t
 the view, centre, which frames the swimmers and the lights, and the rays on or off). Every button
 has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
 centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
-"Visit every light", so many touched of so many (section 9).
+"Visit every light", so many reached of so many (section 9).
 At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
 beads on the wires, no numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
 the swimmer, turn it with the wheel or L and R, and watch which eye lights up and which thruster
@@ -493,21 +493,23 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 ## 9. A run ends; F4 prints your board (D-023, D-024)
 
 Read D-023 and D-024 first. In F3, wire the tutorial eyes crossed and press Space: after 8.7 s the
-swimmer touches the light, the run stops and a banner says "Done in 8.66 s". Uncrossed, it runs
+swimmer reaches the light, the run stops and a banner says "Done in 8.59 s". Uncrossed, it runs
 out of time at 20 s. In the editor, F4 prints your board as one line of JSON in the terminal (in the browser, in
 pygbag's terminal on the page).
 
 ### 9.1 What it computes
 
-A run remembers which lights each swimmer has touched: `visited`, a boolean array of shape
-(N, L), OR-ed with "touching now" after every tick, so a visit counts once whatever comes next.
+A run remembers which lights each swimmer has reached: `visited`, a boolean array of shape
+(N, L), OR-ed with "reaching now" after every tick, so a visit counts once whatever comes next.
+A light is reached a little before the two discs touch: when the centres are within `REACH`
+= 1.2 times the sum of the radii, 2.4 u for a base body (D-029).
 An objective turns that into a count, `(met, needed)`. `outcome` is a pure function of the level,
 `visited` and the tick: won when every objective is met, time up at the level's limit, otherwise
 `None`. Because the end is derived, never stored, going one frame back simply un-ends the run.
 
 ### 9.2 The code
 
-- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): `touching` (one numpy
+- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): `reaching` (one numpy
   broadcast, swimmers by lights), `VisitLights.count`, `outcome`. `Objective` is a `Protocol`:
   anything with a `kind`, a `name` and a `count` is one, and `OBJECTIVES` finds its class from
   the `kind` a level's JSON names.

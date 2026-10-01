@@ -9,7 +9,7 @@ from nektoids.graph.dynamics import TAU, initial_state
 from nektoids.graph.hexgrid import NE, NW
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
-from nektoids.levels.objectives import Outcome, outcome, touching
+from nektoids.levels.objectives import REACH, Outcome, outcome, reaching
 from nektoids.levels.sandbox import free_board, tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.motion import SPEED
@@ -75,9 +75,9 @@ def last(states):
 def play(net, title):
     """Run the level until it is over, as the arena view does: (outcome, ticks, visited)."""
     level = LEVELS[title]
-    visited = touching(level.arena, np.array([level.start[:2]]), np.ones(1))
+    visited = reaching(level.arena, np.array([level.start[:2]]), np.ones(1))
     for tick, (pos, _, _) in enumerate(run(net, title, level.time_limit), start=1):
-        visited |= touching(level.arena, pos, np.ones(1))
+        visited |= reaching(level.arena, pos, np.ones(1))
         ended = outcome(level, visited, tick, DT)
         if ended is not None:
             return ended, tick, visited
@@ -118,11 +118,11 @@ def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
     ended, _, visited = play(UNCROSSED, "One light")
     assert ended is Outcome.TIME_UP and not visited.any()
-    light, touch = LEVELS["One light"].arena.light_xy[0], LIGHT_RADIUS + 1.0
+    light, touch = LEVELS["One light"].arena.light_xy[0], REACH * (LIGHT_RADIUS + 1.0)
     begun = np.hypot(*(np.array(LEVELS["One light"].start[:2]) - light)) - touch
     states = list(run(UNCROSSED, "One light", 12.0))
     nearest = min(np.hypot(*(pos[0] - light)) - touch for pos, _, _ in states)
-    assert nearest > 0.8 * begun  # never a fifth of the way to touching it
+    assert nearest > 0.8 * begun  # never a fifth of the way to reaching it
     _, _, y = states[-1]
     assert np.all(y[:, UNCROSSED.eyes] < 0.01)  # still fading: it slows as it darkens
 

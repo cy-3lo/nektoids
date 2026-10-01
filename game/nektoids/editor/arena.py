@@ -63,7 +63,7 @@ from nektoids.graph.board import Board
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
-from nektoids.levels.objectives import Outcome, outcome, touching
+from nektoids.levels.objectives import Outcome, outcome, reaching
 from nektoids.sim import world
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 from nektoids.sim.contact import confine
@@ -156,7 +156,7 @@ class ArenaScene:
         self.heading = np.array([math.radians(heading)])  # (N,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (N,) [u], until complexity() sets it
         self.state = initial_state(self.net, len(self.pos))  # (N, n), from rest
-        self.visited = touching(self.arena, self.pos, self.radius)  # (N, L): lights touched
+        self.visited = reaching(self.arena, self.pos, self.radius)  # (N, L): lights reached
         self.clock.reset()
         self.circuit.beads.reset()
         self.history.clear()
@@ -246,7 +246,7 @@ class ArenaScene:
             self.arena, self.net, self.pos, self.heading, self.radius, self.state, DT
         )
         self.eyes = self.state[:, self.net.eyes]  # what they read where the swimmers now are
-        self.visited |= touching(self.arena, self.pos, self.radius)
+        self.visited |= reaching(self.arena, self.pos, self.radius)
         self.circuit.advance(self.y, DT)
 
     @property
