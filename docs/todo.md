@@ -30,8 +30,10 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 
 ## 2. The levels themselves
 
-- [ ] Tutorial 1, fear (uncrossed: flees the light). Its countable objective is to be chosen:
-      end in the dark, or never come within d of the light.
+- [x] Tutorial 1, fear (uncrossed: flees the light): leave the ring, with a guided tutorial
+      (D-038, D-039).
+- [ ] The level after Fear introduces Sum and Diff, with a challenge that needs them. Diff is
+      the new operation (thruster inputs already add); Diff(Source, eye) = 1 - e is inhibition.
 - [ ] Tutorial 2, aggression (crossed: charges the light). Visit the light.
 - [ ] Tutorial 3, ÷2 on one side (orbits). Its objective is to be chosen: stay within a ring
       round the light for T s, or circle it N times.

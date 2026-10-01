@@ -609,5 +609,26 @@ section beside Run (D-037), shows the map.
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What
 would a player see on the map if the mark were only set when Next level is pressed?
 
+## 12. Tutorials and hints (D-038, D-039)
+
+Read D-038 and D-039 first. `python game/main.py` now opens on Fear, whose tutorial walks the
+player through the board, placing, turning and wiring.
+
+- [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
+  a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
+  wait is over (`met`); `next` is the Next button. `target_rects` finds what a step shows on the
+  screen now open, `box_rect` the first spot beside a target clear of them all.
+- [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) dims everything but the
+  targets and draws the box; the ghosts are drawn by `draw.py`, from `EditorScene.ghosts`, which
+  `main.py` sets every frame.
+- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
+  own marks (`marks`, `latch`), which is what lets Leave the ring sit beside Visit every light.
+- Tests: [`test_tutorial.py`](../tests/test_tutorial.py) walks Fear's tutorial as a player
+  would; [`test_determinism.py`](../tests/test_determinism.py) pins Fear's winner and its two
+  failures, crossed and with the eyes looking forward.
+
+Questions: why does `follow` loop, rather than move one step? (Place an eye already turned.) Why
+does the tutorial live in `main.py` rather than in the editor's scene?
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
