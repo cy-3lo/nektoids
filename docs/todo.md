@@ -71,3 +71,24 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 - [ ] `draw.py` calls `scene._wire_start()`, a private method.
 - [ ] `eye_rates` timed natively only; measure it under WASM (D-019).
 - [ ] The names: itch.io search, Google and TMview (classes 9 and 41) to check by hand (D-006).
+
+
+
+
+Peut être Fusionner les outils add a component et move a component (quand on ajoute des modules on veut souvent en bouger)
+
+Faire en sorte de pouvoir poser des modules sur les fils (en fait si on rajoute le fil après il controune le module mais ça serait bien que ça le fasse automatiquement)
+
+Pour supprimer un module on doit pouvoir le glisser en dehors du robot ou dans la barre d'outils 
+
+
+
+
+
+
+
+
+
+
+
+
