@@ -208,3 +208,30 @@ Letters are matched on the character typed; digits, Space and the arrows on the 
 since unshifted 0 types "à" on AZERTY and Safari reports the arrows as keypad keys (PR #3).
 A new view or key checks `TOOL_KEYS` and `VIEW_KEYS` first; `test_arena_layout.py` pins the rule
 for the arena. F2's W (waveform) still clashes with the editor's Wire, to be moved.
+
+**D-022 — 2026-10-01 — Swimmers are overdamped: the thrust is balanced by the Stokes drag of a sphere of the body's radius. Supersedes D-016's "thrusters integrate is done by the body's momentum".**
+A thruster at rate y pushes with y `THRUST` along its facing (D-009), at its mount, R m from the
+centre (D-018). The body has no inertia: its velocity and spin balance the thrusters' total force
+F and torque T at once, V = F / (6πμR) and Ω = T / (8πμR³). `THRUST = 1` is the unit of force,
+and μ is set by `SPEED`: one thruster at `RATE_MAX` pushing a base body through its centre moves it
+at 3 u/s. The state is position, heading and radius; velocity is not state, so the simulation
+rule's symplectic Euler gives way to explicit Euler on x and θ, and the nodes' lag (D-017) is the
+only smoothing.
+One tick: the bodies move with the thrust the nodes have, contacts put them back outside the
+obstacles and inside the walls, the eyes read the light where the bodies now are, the nodes follow.
+After a tick, as after a restart or a drag, the eyes' rates in y are what they read where the body is.
+Contacts are hard and frictionless: a body overlapping an obstacle is moved radially out until it
+touches it, obstacles in arena order, then its centre is clamped to [R, W − R] × [R, H − R]; three
+passes a tick, for crevices. For an overdamped body this cancels the normal velocity and keeps the
+tangential one, so it slides. Contacts exert no torque, and walls have no hydrodynamic effect.
+Walls come last, so a body never leaves the arena. Lights are not solid; bodies do not touch each
+other yet (one swimmer).
+A sphere, because a disc in 2D has no Stokes drag (Stokes' paradox). One μ sets one scale and the
+sphere sets the other: a thruster with lever ℓ = m × f (body radii) turns its body on a circle of
+radius (4/3) R/ℓ, so Ω = (3/4) ℓ V/R. On the tutorial board (ℓ = √3/4), crossed wiring in "One
+light" touches the light in 8.7 s and uncrossed turns away and stops in the dark; speeds stay
+within 3.6 u/s and turning within 26°/s, 56°/s for one thruster at full rate.
+Consequences: V ∝ 1/R and Ω ∝ 1/R², so a body that complexity grows loses its turning first.
+Explicit Euler under a constant thrust draws a closed regular polygon, not a spiral. Without
+momentum, an eye crossing the edge of a shadow stops the body within a few ticks: it shows, and it
+is the eye's doing; smoothing it is a question for TAU.
