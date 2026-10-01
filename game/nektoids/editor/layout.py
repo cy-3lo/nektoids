@@ -2,14 +2,13 @@
 
 Three columns, with vertical separators:
 - left, the menu: component groups (sensors, operators, actuators) that fold under their title,
-  each part's row with an info disc after its name (D-036), and at its foot the Map button, then
-  the Run button;
+  each part's row with an info disc after its name (D-036);
 - centre, the hex grid, filling its column, the level's caption at its top, one status line at
   its foot;
 - right, the palette, in titled sections of two buttons a row (D-025, D-027): the view (zoom
   in, zoom out, hand, centre), the tools (add, wire, move, delete, turn left, turn right), a
-  colour picker, inactive until colours carry a meaning, and editing (undo, redo, then save and
-  load, inactive until saving exists).
+  colour picker, inactive until colours carry a meaning, editing (undo, redo, then save and
+  load, inactive until saving exists), and the level (the map, and Run, lit) (D-037).
 
 The screen regions are fixed; the View says how big a hex is and where the grid sits in its
 column, and zoom and pan change only the View (D-013). Plain numbers and tuples, no pygame, so
@@ -40,12 +39,8 @@ TITLE_HEIGHT = 28  # menu group title [px]
 PALETTE_TITLE = 24  # palette section title [px]
 SECTION_GAP = 8  # between palette sections [px]
 SWATCH_HEIGHT = 14  # colour picker swatch, as wide as a button [px]
-RUN_HEIGHT = 48  # the Run button, as wide as the menu's rows [px]
 INFO_AT = 128  # a menu row's info disc: its centre, this far from the row's left [px]
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
-RUN_KEY = "Space"  # as the arena's play (D-021), matched on the physical key
-MAP_HEIGHT = 40  # the Map button, over Run [px]
-MAP_KEY = "Tab"  # the levels, as Tab steps through them in F3; on the physical key
 SWATCHES = 6
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
@@ -75,6 +70,11 @@ TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-c
 class EditButton(Enum):
     UNDO = "undo"
     REDO = "redo"
+
+
+class LevelButton(Enum):
+    MAP = "map"  # the chapter's levels and the sandbox
+    RUN = "run"  # the board, swimming in its arena
 
 
 class FileButton(Enum):  # inactive: saving is not in the game yet
@@ -107,6 +107,8 @@ VIEW_KEYS = {
 }
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Shift+Z"}
+# On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F3.
+LEVEL_KEYS = {LevelButton.MAP: "Tab", LevelButton.RUN: "Space"}
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
 
@@ -123,9 +125,8 @@ class Layout:
     palette_titles: tuple[tuple[str, Rect], ...]  # one above each section shown
     edit_buttons: tuple[tuple[EditButton, Rect], ...]
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
+    level_buttons: tuple[tuple[LevelButton, Rect], ...]
     swatches: tuple[Rect, ...]  # colour picker, inactive for now
-    map_button: Rect  # over the Run button
-    run_button: Rect  # at the foot of the menu
     caption_at: tuple[int, int]  # top-left corner of the level's title and spec
     status_at: tuple[int, int]  # top-left corner of the status line
 
@@ -164,6 +165,7 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
     count = len(EditButton) + len(FileButton)  # undo and redo, then save and load
     edit, rects, y = _section(right, y, "Edit", count, BUTTON, BUTTON_STEP)
     edit_rects, file_rects = rects[: len(EditButton)], rects[len(EditButton) :]
+    level, level_rects, y = _section(right, y, "Level", len(LevelButton), BUTTON, BUTTON_STEP)
     return Layout(
         menu_area=menu,
         board_area=board,
@@ -178,15 +180,9 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
         tool_buttons=tuple(zip(PALETTE_TOOLS, tool_rects, strict=True)),
         edit_buttons=tuple(zip(EditButton, edit_rects, strict=True)),
         file_buttons=tuple(zip(FileButton, file_rects, strict=True)),
-        palette_titles=(view, tools, colours, edit),
+        level_buttons=tuple(zip(LevelButton, level_rects, strict=True)),
+        palette_titles=(view, tools, colours, edit, level),
         swatches=tuple(swatches),
-        map_button=(
-            MARGIN,
-            height - MARGIN - RUN_HEIGHT - 8 - MAP_HEIGHT,
-            MENU_WIDTH - 2 * MARGIN,
-            MAP_HEIGHT,
-        ),
-        run_button=(MARGIN, height - MARGIN - RUN_HEIGHT, MENU_WIDTH - 2 * MARGIN, RUN_HEIGHT),
         caption_at=(MENU_WIDTH + MARGIN, 10),
         status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
     )
@@ -208,13 +204,14 @@ def _section(
 
 def palette_target_at(
     layout: Layout, point: tuple[int, int]
-) -> Tool | ViewButton | EditButton | FileButton | str | None:
+) -> Tool | ViewButton | EditButton | FileButton | LevelButton | str | None:
     """What a tooltip would describe under `point`: a button, or "colours"."""
     target = (
         tool_at(layout, point)
         or view_button_at(layout, point)
         or edit_button_at(layout, point)
         or file_button_at(layout, point)
+        or level_button_at(layout, point)
     )
     if target is None and any(contains(rect, point) for rect in layout.swatches):
         return "colours"
@@ -253,6 +250,10 @@ def edit_button_at(layout: Layout, point: tuple[int, int]) -> EditButton | None:
 
 def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
     return next((b for b, rect in layout.file_buttons if contains(rect, point)), None)
+
+
+def level_button_at(layout: Layout, point: tuple[int, int]) -> LevelButton | None:
+    return next((b for b, rect in layout.level_buttons if contains(rect, point)), None)
 
 
 def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:

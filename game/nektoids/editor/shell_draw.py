@@ -19,7 +19,7 @@ from nektoids.editor.draw import (
     draw_title,
 )
 from nektoids.editor.layout import contains
-from nektoids.editor.router import ROUTE, ROUTE_NAME, Router, level_label
+from nektoids.editor.router import CHAPTER, CHAPTER_NAME, Router, level_label
 from nektoids.editor.shell import BACK_KEY, CARD, END_KEY, MAP_TOP, bottom_button, map_rows
 
 VEIL = (0, 0, 0, 150)  # over the first level, under the title card
@@ -53,11 +53,11 @@ def draw_title_card(screen: pygame.Surface, fonts: Fonts) -> None:
 def draw_map(
     screen: pygame.Surface, router: Router, fonts: Fonts, pointer: tuple[int, int]
 ) -> None:
-    """The route's levels, each won, open or locked, then the sandbox; the open one outlined."""
+    """The chapter's levels, each won, open or locked, then the sandbox; the open one outlined."""
     screen.fill(BACKGROUND)
     rows = map_rows(len(router.levels))
     left = rows[0][0]
-    draw_title(screen, fonts, f"Route {ROUTE}: {ROUTE_NAME}", (left, MAP_TOP - 36))
+    draw_title(screen, fonts, f"Chapter {CHAPTER}: {CHAPTER_NAME}", (left, MAP_TOP - 36))
     for k, rect in enumerate(rows):
         sandbox = k == router.sandbox_index
         level = router.sandbox if sandbox else router.levels[k]

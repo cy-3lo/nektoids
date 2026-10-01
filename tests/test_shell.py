@@ -9,7 +9,7 @@ def centre(rect):
     return (x + w // 2, y + h // 2)
 
 
-def test_the_map_lists_the_route_then_the_sandbox_apart_all_on_screen():
+def test_the_map_lists_the_chapter_then_the_sandbox_apart_all_on_screen():
     rows = map_rows(2)
     assert len(rows) == 3
     (_, y0, _, h0), (_, y1, _, h1), (_, ys, _, _) = rows

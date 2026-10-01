@@ -2,7 +2,7 @@
 
 The loop of the brief (§1): the spec and the board in the editor, Run, watch the run, back to the
 editor to change the mechanism, or on to the next level once won (D-030). Around it (D-035): the
-game opens on the first level under a title card; the map lists the route's levels and the
+game opens on the first level under a title card; the map lists the chapter's levels and the
 sandbox, each level opening once the one before it is won; after the last level comes the end.
 Each level keeps its board for the session, so going back finds it as it was left; nothing is
 kept after it. Pure Python, no pygame: `main.py` turns the state into scenes.
@@ -16,30 +16,30 @@ from enum import Enum
 from nektoids.graph.board import Board
 from nektoids.levels.level import Level
 
-ROUTE = 1  # the jam's one route, light (D-028): its levels are LEVEL 1.1, LEVEL 1.2...
-ROUTE_NAME = "light"
+CHAPTER = 1  # the jam's one chapter, light (D-028): its levels are LEVEL 1.1, LEVEL 1.2...
+CHAPTER_NAME = "light"
 
 
 def level_label(index: int) -> str:
-    """How the level at `index` in the route is named on screen, before its title (D-034)."""
-    return f"LEVEL {ROUTE}.{index + 1}"
+    """How the level at `index` in the chapter is named on screen, before its title (D-034)."""
+    return f"LEVEL {CHAPTER}.{index + 1}"
 
 
 class Screen(Enum):
     TITLE = "title"  # the card over the first level, gone at the first click
-    MAP = "map"  # the route's levels and the sandbox
+    MAP = "map"  # the chapter's levels and the sandbox
     EDIT = "edit"  # a level's board in the editor
     RUN = "run"  # the level's board swimming in its arena
-    END = "end"  # after the last level of the route
+    END = "end"  # after the last level of the chapter
 
 
 class Router:
     def __init__(self, levels: Sequence[Level], sandbox: Level | None = None) -> None:
-        self.levels = list(levels)  # the route, in order
+        self.levels = list(levels)  # the chapter, in order
         self.sandbox = sandbox  # no objective; always open
-        self.index = 0  # the open place: a level of the route, or `sandbox_index`
+        self.index = 0  # the open place: a level of the chapter, or `sandbox_index`
         self.screen = Screen.TITLE
-        self.won: set[int] = set()  # the route's levels won this session
+        self.won: set[int] = set()  # the chapter's levels won this session
         self._boards: dict[int, Board] = {}
 
     @property
@@ -67,12 +67,12 @@ class Router:
 
     @property
     def has_next(self) -> bool:
-        """A level of the route comes after the open one."""
+        """A level of the chapter comes after the open one."""
         return not self.in_sandbox and self.index + 1 < len(self.levels)
 
     @property
     def is_last(self) -> bool:
-        """The open level is the route's last: winning it leads to the end."""
+        """The open level is the chapter's last: winning it leads to the end."""
         return not self.in_sandbox and self.index + 1 == len(self.levels)
 
     def unlocked(self, index: int) -> bool:

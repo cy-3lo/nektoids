@@ -17,8 +17,8 @@ Tools:
   gesture, from press to release, so a whole Move drag goes back at once. Save and Load are
   there, inactive, until saving exists.
 
-Run (the button at the foot of the menu, or Space) asks `main.py` to run the board, Map (over
-it, or Tab) to show the map: the scene sets `request` and `main.py` acts on it.
+Run (its button in the palette's Level section, or Space) asks `main.py` to run the board, Map
+(beside it, or Tab) to show the map (D-037): the scene sets `request` and `main.py` acts on it.
 
 Keyboard: letters pick tools (see the tooltips), digits pick a component, the arrows move a cursor
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
@@ -52,11 +52,11 @@ from nektoids.editor.layout import (
     ViewButton,
     cell_at,
     centred_view,
-    contains,
     edit_button_at,
     file_button_at,
     group_at,
     info_at,
+    level_button_at,
     make_layout,
     menu_item_at,
     palette_target_at,
@@ -187,10 +187,10 @@ class EditorScene:
             self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
             self._enter()
-        elif event.scancode == pygame.KSCAN_SPACE:  # RUN_KEY, on the physical key
+        elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._cancel()
             self.request = "run"
-        elif event.scancode == pygame.KSCAN_TAB:  # MAP_KEY
+        elif event.scancode == pygame.KSCAN_TAB:  # LEVEL_KEYS[MAP]
             self._cancel()
             self.request = "map"
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
@@ -278,13 +278,10 @@ class EditorScene:
             self._drag_to(pointed)
 
     def _press(self, pos: tuple[int, int]) -> None:
-        if contains(self.layout.run_button, pos):
+        level = level_button_at(self.layout, pos)
+        if level is not None:
             self._cancel()
-            self.request = "run"
-            return
-        if contains(self.layout.map_button, pos):
-            self._cancel()
-            self.request = "map"
+            self.request = level.value  # "run" or "map"
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:

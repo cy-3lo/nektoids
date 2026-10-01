@@ -430,3 +430,10 @@ closes the box and does nothing else, so a click meant to close it never places 
 part. The texts live in `editor/parts.py`, with the names, where a test checks every part has
 both. Difference is shown as "Diff", to fit the row; the kind and the levels' data keep
 `difference`.
+
+**D-037 — 2026-10-01 — Run and Map move to the palette, under LEVEL, as icon buttons; levels come in chapters, not routes; the eye and rocket icons grow. Amends D-030 and D-035.**
+The palette ends with a LEVEL section: Map, then Run, lit, icons only, Tab and Space in their
+tooltips as before. The menu's foot is empty again. The map's title reads "CHAPTER 1: LIGHT";
+LEVEL 1.2 is the chapter's second level (D-034), and `router.CHAPTER` replaces `ROUTE`. Inside
+their shapes, the eye's icon goes from 0.55 to 0.68 of the hex size and the rocket's from 0.5 to
+0.62 (`draw.ICON_SCALE`), as large as they go and still clear of the shapes' edges.

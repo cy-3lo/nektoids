@@ -8,7 +8,7 @@
 Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
 It opens on the first level's board in the editor, under the title card. Run (Space) runs it in
 its arena; Edit (Esc) comes back to the board as it was left; once a level is won, Next level
-(Enter) opens the next one's board, and after the last, the end. Map (Tab) lists the route's
+(Enter) opens the next one's board, and after the last, the end. Map (Tab) lists the chapter's
 levels and the sandbox (`editor/router.py`, D-030, D-035).
 Developer tools, while DEV_VIEW is on:
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.

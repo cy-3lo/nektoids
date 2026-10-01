@@ -594,7 +594,8 @@ Esc to change the board, and after a win Enter for the next level.
 
 ## 11. Around the levels: title card, map, end (D-035)
 
-Read D-035 first. The game now opens under a title card; Tab (or Map, over Run) shows the map.
+Read D-035 first. The game now opens under a title card; Tab, or Map in the palette's LEVEL
+section beside Run (D-037), shows the map.
 
 - [`editor/router.py`](../game/nektoids/editor/router.py) holds the screen (`Screen`: title,
   map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the levels

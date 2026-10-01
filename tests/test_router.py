@@ -64,5 +64,5 @@ def test_the_sandbox_has_no_next_and_is_never_won():
     assert router.won == set()
 
 
-def test_levels_are_named_by_route_and_place():
+def test_levels_are_named_by_chapter_and_place():
     assert level_label(0) == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"

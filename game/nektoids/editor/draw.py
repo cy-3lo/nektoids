@@ -21,16 +21,24 @@ from dataclasses import dataclass
 import pygame
 
 from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
-from nektoids.editor.icons import EDIT_ICON, FILE_ICON, KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
+from nektoids.editor.icons import (
+    EDIT_ICON,
+    FILE_ICON,
+    KIND_ICON,
+    LEVEL_ICON,
+    TOOL_ICON,
+    VIEW_ICON,
+    Icons,
+)
 from nektoids.editor.layout import (
     EDIT_KEYS,
-    MAP_KEY,
+    LEVEL_KEYS,
     PALETTE_TITLE,
-    RUN_KEY,
     TOOL_KEYS,
     VIEW_KEYS,
     EditButton,
     FileButton,
+    LevelButton,
     Tool,
     View,
     ViewButton,
@@ -82,6 +90,8 @@ TIP = {
     EditButton.REDO: "Redo",
     FileButton.SAVE: "Save: not yet",
     FileButton.LOAD: "Load: not yet",
+    LevelButton.MAP: "Map",
+    LevelButton.RUN: "Run",
     "colours": "Colours: not yet",
 }
 HINT = {
@@ -103,7 +113,7 @@ INFO_ICON = 12  # a menu row's info disc [px]
 INFO_PAD = 12  # inside the info box [px]
 
 # Icon height as a fraction of the hex size.
-ICON_SCALE = {Kind.EYE: 0.55}
+ICON_SCALE = {Kind.EYE: 0.68, Kind.THRUSTER: 0.62}  # the rest: 0.5
 
 # Shapes in a local frame: unit = hex size, forward = +x. Each outline is scaled to the same
 # area, SHAPE_AREA, so that no part looks bigger than another: fitted to one circle, the disc
@@ -161,7 +171,6 @@ class Fonts:
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
     _draw_menu(screen, scene, fonts)
-    _draw_run_button(screen, scene, fonts)
     _draw_palette(screen, scene, fonts)
     _draw_board(screen, scene, fonts)
     _draw_caption(screen, scene, fonts)
@@ -382,6 +391,8 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         draw_button(screen, fonts, rect, EDIT_ICON[button], False, enabled=can[button])
     for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
         draw_button(screen, fonts, rect, FILE_ICON[button], False, enabled=False)
+    for button, rect in layout.level_buttons:  # Run lit: what the board is built for
+        draw_button(screen, fonts, rect, LEVEL_ICON[button], button is LevelButton.RUN)
     for title, (x, y, _, _) in layout.palette_titles:
         draw_title(screen, fonts, title, (x, y))
     # The colour picker keeps its place, inactive until colours carry a meaning.
@@ -423,9 +434,11 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         | dict(layout.view_buttons)
         | dict(layout.edit_buttons)
         | dict(layout.file_buttons)
+        | dict(layout.level_buttons)
     )
     x, y, _, h = rects[target] if target in rects else layout.swatches[0]
-    key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target) or EDIT_KEYS.get(target)
+    keys = (TOOL_KEYS, VIEW_KEYS, EDIT_KEYS, LEVEL_KEYS)
+    key = next((table[target] for table in keys if target in table), None)
     left = layout.palette_area[0] - 10
     draw_tip(screen, fonts, TIP[target] + (f" ({key})" if key else ""), midright=(left, y + h // 2))
 
@@ -452,22 +465,6 @@ def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     for row in rows:
         screen.blit(row, (box.left + INFO_PAD, y))
         y += row.get_height() + 4
-
-
-def _draw_run_button(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """At the foot of the menu: Map, then Run, lit, each with its icon, its name and its key."""
-    layout = scene.layout
-    for rect, icon, name, key, fill in (
-        (layout.map_button, "map", "Map", MAP_KEY, BUTTON),
-        (layout.run_button, "play", "Run", RUN_KEY, ACTIVE),
-    ):
-        x, y, w, h = rect
-        pygame.draw.rect(screen, fill, rect, border_radius=6)
-        fonts.icons.draw(screen, icon, (x + 22, y + h // 2), 18, TEXT)
-        label = fonts.text.render(name, True, TEXT)
-        screen.blit(label, (x + 46, y + (h - label.get_height()) // 2))
-        shown = fonts.small.render(key, True, DIM_TEXT)
-        screen.blit(shown, (x + w - 12 - shown.get_width(), y + (h - shown.get_height()) // 2))
 
 
 def _draw_caption(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
