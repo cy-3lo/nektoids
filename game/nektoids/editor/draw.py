@@ -7,9 +7,10 @@ Shapes carry the category, all inside one circle: eyes are discs cut flat in fro
 face being the photosensor, which looks where the eye faces (D-020); sources are whole discs;
 operators are diamonds; thrusters are squares whose front is cut to a 150° point, the way they
 push.
-Oriented shapes are drawn in the agent's frame, forward = E (D-008); the Rotate tool turns
-them in place (D-009). An icon inside each shape says its role (D-012). The board is the body
-(D-018): the swimmer's symbol lies faintly behind it, a circle round a wedge, tip forward.
+Oriented shapes are drawn in the agent's frame, forward = E (D-008); the turn tools turn
+them in place (D-009, D-025), and the selected part's cell is lit. An icon inside each shape
+says its role (D-012). The board is the body (D-018): the swimmer's symbol lies faintly behind
+it, a circle round a wedge, tip forward.
 """
 
 from __future__ import annotations
@@ -21,7 +22,15 @@ import pygame
 
 from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
 from nektoids.editor.icons import KIND_ICON, TOOL_ICON, VIEW_ICON, Icons
-from nektoids.editor.layout import TOOL_KEYS, VIEW_KEYS, Tool, View, ViewButton, visible_cells
+from nektoids.editor.layout import (
+    PALETTE_TITLE,
+    TOOL_KEYS,
+    VIEW_KEYS,
+    Tool,
+    View,
+    ViewButton,
+    visible_cells,
+)
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -64,7 +73,8 @@ NAME = {
 TIP = {
     Tool.ADD: "Add a component",
     Tool.WIRE: "Wire",
-    Tool.ROTATE: "Rotate",
+    Tool.TURN_LEFT: "Turn left",
+    Tool.TURN_RIGHT: "Turn right",
     Tool.MOVE: "Move a component",
     Tool.DELETE: "Delete",
     ViewButton.ZOOM_IN: "Zoom in",
@@ -76,7 +86,8 @@ TIP = {
 HINT = {
     Tool.ADD: "Drag a component from the menu onto the grid (or its number, arrows, Enter).",
     Tool.WIRE: "Drag from a source to a target, or click one then the other.",
-    Tool.ROTATE: "Click an eye or a thruster to turn it clockwise; shift-click turns it back.",
+    Tool.TURN_LEFT: "Click an eye or a thruster to turn it left. Shift+R turns the selected one.",
+    Tool.TURN_RIGHT: "Click an eye or a thruster to turn it right. R turns the selected one.",
     Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
     Tool.DELETE: "Click a component to delete it, or a wire.",
     Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
@@ -158,6 +169,7 @@ def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
 def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     view, board = scene.view, scene.board
     zone = set(board.cells)
+    selected = board.nodes[scene.selected].cell if scene.selected in board.nodes else None
     screen.set_clip(scene.layout.board_area)
     for cell in visible_cells(scene.layout, view):
         hexagon = _hexagon(view, cell)
@@ -165,6 +177,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             pygame.draw.polygon(screen, FLASH, hexagon)
         elif cell not in zone:
             pygame.draw.polygon(screen, OUTSIDE, hexagon)
+        elif cell == selected:
+            pygame.draw.polygon(screen, ACTIVE, hexagon)  # as lit as the tool in hand
         else:
             pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
         pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
@@ -345,9 +359,9 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         draw_button(screen, fonts, rect, VIEW_ICON[button], active)
     for tool, rect in layout.tool_buttons:
         draw_button(screen, fonts, rect, TOOL_ICON[tool], tool is scene.tool)
-    px, _, pw, _ = layout.palette_area
-    for y in layout.palette_rules:
-        pygame.draw.line(screen, RULE, (px + 20, y), (px + pw - 20, y), 1)
+    for title, (x, y, _, _) in layout.palette_titles:
+        text = fonts.text.render(title.upper(), True, DIM_TEXT)
+        screen.blit(text, (x, y + (PALETTE_TITLE - text.get_height()) // 2))
     # The colour picker keeps its place, inactive until colours carry a meaning.
     for rect in layout.swatches:
         pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
@@ -370,7 +384,7 @@ def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
 
 
 def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Name and shortcut of the palette button under the mouse, to its left."""
+    """Name and shortcut of the palette button under the mouse, left of the palette."""
     target = scene.tooltip
     if target is None:
         return
@@ -378,9 +392,8 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     rects = dict(layout.tool_buttons) | dict(layout.view_buttons)
     x, y, _, h = rects[target] if target in rects else layout.swatches[0]
     key = TOOL_KEYS.get(target) or VIEW_KEYS.get(target)
-    draw_tip(
-        screen, fonts, TIP[target] + (f" ({key})" if key else ""), midright=(x - 10, y + h // 2)
-    )
+    left = layout.palette_area[0] - 10
+    draw_tip(screen, fonts, TIP[target] + (f" ({key})" if key else ""), midright=(left, y + h // 2))
 
 
 def _draw_separators(screen: pygame.Surface, scene: EditorScene) -> None:

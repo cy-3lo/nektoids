@@ -3,8 +3,10 @@
 Three columns, with vertical separators:
 - left, the menu: component groups (sensors, operators, actuators) that fold under their title;
 - centre, the hex grid, filling its column, with one status line at its foot;
-- right, the palette: view buttons (zoom in, zoom out, hand, centre), then the editing tools,
-  then a colour picker, inactive until colours carry a meaning.
+- right, the palette, in titled sections of two buttons a row: the view (zoom in, zoom out,
+  hand, centre), the tools (add, wire, move, delete, turn left, turn right), room kept for
+  editing (undo, redo) and for files (save, load), then a colour picker, inactive until colours
+  carry a meaning (D-025).
 
 The screen regions are fixed; the View says how big a hex is and where the grid sits in its
 column, and zoom and pan change only the View (D-013). Plain numbers and tuples, no pygame, so
@@ -25,13 +27,15 @@ Rect = tuple[int, int, int, int]  # x, y, width, height [px]
 
 SCREEN = (960, 640)  # [px]
 MENU_WIDTH = 200  # left column [px]
-PALETTE_WIDTH = 72  # right column [px]
+PALETTE_WIDTH = 120  # right column: two buttons a row [px]
 STATUS_HEIGHT = 32  # [px]
 MARGIN = 16  # [px]
 BUTTON = 40  # palette button side [px]
 BUTTON_STEP = 48  # palette button pitch [px]
 ITEM_HEIGHT = 44  # menu row [px]
 TITLE_HEIGHT = 28  # menu group title [px]
+PALETTE_TITLE = 24  # palette section title [px]
+SECTION_GAP = 8  # between palette sections [px]
 SWATCH_HEIGHT = 14  # colour picker swatch, as wide as a button [px]
 SWATCHES = 6
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
@@ -48,13 +52,17 @@ MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
 class Tool(Enum):
     ADD = "add"
     WIRE = "wire"
-    ROTATE = "rotate"
     MOVE = "move"
     DELETE = "delete"
+    TURN_LEFT = "turn left"  # counter-clockwise, 60° a click
+    TURN_RIGHT = "turn right"  # clockwise
     PAN = "pan"  # moves the view, not a component; the hand among the view buttons
 
 
-PALETTE_TOOLS = (Tool.ADD, Tool.WIRE, Tool.ROTATE, Tool.MOVE, Tool.DELETE)
+PALETTE_TOOLS = (Tool.ADD, Tool.WIRE, Tool.MOVE, Tool.DELETE, Tool.TURN_LEFT, Tool.TURN_RIGHT)
+TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-clockwise
+# Sections kept free for what is to come, each one row: undo and redo, save and load.
+PALETTE_ROOM = ("Edit", "File")
 
 
 class ViewButton(Enum):
@@ -65,8 +73,15 @@ class ViewButton(Enum):
 
 
 # Shortcut keys, matched on the character typed (so they follow the keyboard layout) and shown
-# in the tooltips.
-TOOL_KEYS = {Tool.ADD: "A", Tool.WIRE: "W", Tool.ROTATE: "R", Tool.MOVE: "M", Tool.DELETE: "D"}
+# in the tooltips. R turns right and Shift+R left, the scene telling them apart by Shift.
+TOOL_KEYS = {
+    Tool.ADD: "A",
+    Tool.WIRE: "W",
+    Tool.MOVE: "M",
+    Tool.DELETE: "D",
+    Tool.TURN_LEFT: "Shift+R",
+    Tool.TURN_RIGHT: "R",
+}
 VIEW_KEYS = {
     ViewButton.ZOOM_IN: "+",
     ViewButton.ZOOM_OUT: "-",
@@ -85,7 +100,8 @@ class Layout:
     menu_items: tuple[tuple[Kind, Rect], ...]
     view_buttons: tuple[tuple[ViewButton, Rect], ...]
     tool_buttons: tuple[tuple[Tool, Rect], ...]
-    palette_rules: tuple[int, ...]  # y of the short separators between the palette's sets
+    palette_titles: tuple[tuple[str, Rect], ...]  # one above each section shown
+    palette_room: tuple[tuple[str, Rect], ...]  # sections kept free, nothing drawn yet
     swatches: tuple[Rect, ...]  # colour picker, inactive for now
     status_at: tuple[int, int]  # top-left corner of the status line
 
@@ -116,35 +132,42 @@ def make_layout(folded: frozenset[str] = frozenset()) -> Layout:
             y += ITEM_HEIGHT
         y += MARGIN
 
-    x = right + (PALETTE_WIDTH - BUTTON) // 2
     y = MARGIN
-    view_buttons = []
-    for button in ViewButton:
-        view_buttons.append((button, (x, y, BUTTON, BUTTON)))
-        y += BUTTON_STEP
-    rules = [y]
-    y += MARGIN
-    tool_buttons = []
-    for tool in PALETTE_TOOLS:
-        tool_buttons.append((tool, (x, y, BUTTON, BUTTON)))
-        y += BUTTON_STEP
-    rules.append(y)
-    y += MARGIN
-    swatches = tuple(
-        (x, y + i * (SWATCH_HEIGHT + 6), BUTTON, SWATCH_HEIGHT) for i in range(SWATCHES)
-    )
+    view, view_rects, y = _section(right, y, "View", len(ViewButton), BUTTON, BUTTON_STEP)
+    tools, tool_rects, y = _section(right, y, "Tools", len(PALETTE_TOOLS), BUTTON, BUTTON_STEP)
+    room = []
+    for title in PALETTE_ROOM:
+        area, _, y = _section(right, y, title, 2, BUTTON, BUTTON_STEP)
+        room.append(area)
+    pitch = SWATCH_HEIGHT + 6
+    colours, swatches, y = _section(right, y, "Colours", SWATCHES, SWATCH_HEIGHT, pitch)
     return Layout(
         menu_area=menu,
         board_area=board,
         palette_area=palette,
         group_titles=tuple(titles),
         menu_items=tuple(items),
-        view_buttons=tuple(view_buttons),
-        tool_buttons=tuple(tool_buttons),
-        palette_rules=tuple(rules),
-        swatches=swatches,
+        view_buttons=tuple(zip(ViewButton, view_rects, strict=True)),
+        tool_buttons=tuple(zip(PALETTE_TOOLS, tool_rects, strict=True)),
+        palette_titles=(view, tools, colours),
+        palette_room=tuple(room),
+        swatches=tuple(swatches),
         status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
     )
+
+
+def _section(
+    left: int, top: int, title: str, count: int, height: int, pitch: int
+) -> tuple[tuple[str, Rect], list[Rect], int]:
+    """A palette section from `top` in the column at `left`: its title and the area it covers,
+    the rects of its `count` items, two a row `pitch` apart, and the top of the next section."""
+    columns = (left + (PALETTE_WIDTH - BUTTON - BUTTON_STEP) // 2,)
+    columns += (columns[0] + BUTTON_STEP,)
+    rows = math.ceil(count / 2)
+    first = top + PALETTE_TITLE
+    items = [(columns[i % 2], first + (i // 2) * pitch, BUTTON, height) for i in range(count)]
+    area = (left + MARGIN, top, PALETTE_WIDTH - 2 * MARGIN, PALETTE_TITLE + rows * pitch)
+    return (title, area), items, first + rows * pitch + SECTION_GAP
 
 
 def palette_target_at(layout: Layout, point: tuple[int, int]) -> Tool | ViewButton | str | None:

@@ -3,9 +3,11 @@
 from nektoids.editor.layout import (
     MAX_HEX,
     MIN_HEX,
+    PALETTE_ROOM,
     PALETTE_TOOLS,
     SCREEN,
     TOOL_KEYS,
+    TURNS,
     VIEW_KEYS,
     Tool,
     ViewButton,
@@ -80,23 +82,39 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_palette_stacks_view_buttons_then_tools_then_the_colour_picker():
+def test_the_palette_runs_view_tools_room_to_edit_and_file_then_colours_two_a_row():
+    titles = [title for title, _ in LAYOUT.palette_titles]
+    room = [title for title, _ in LAYOUT.palette_room]
+    assert titles == ["View", "Tools", "Colours"] and room == list(PALETTE_ROOM)
+    areas = sorted([*LAYOUT.palette_titles, *LAYOUT.palette_room], key=lambda t: t[1][1])
+    assert [title for title, _ in areas] == ["View", "Tools", "Edit", "File", "Colours"]
+    for (_, (_, y, _, h)), (_, (_, below, _, _)) in zip(areas, areas[1:], strict=False):
+        assert y + h < below  # sections do not overlap
     assert [button for button, _ in LAYOUT.view_buttons] == list(ViewButton)
     assert [tool for tool, _ in LAYOUT.tool_buttons] == list(PALETTE_TOOLS)
     assert Tool.PAN not in PALETTE_TOOLS  # the hand, among the view buttons
-    rects = [r for _, r in LAYOUT.view_buttons] + [r for _, r in LAYOUT.tool_buttons]
-    rects += list(LAYOUT.swatches)
-    for rect in rects:
-        assert contains(LAYOUT.palette_area, rect[:2])
-        assert contains(LAYOUT.palette_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
-    tops = [r[1] for r in rects]
-    assert tops == sorted(tops)
-    first_tool, last_view = LAYOUT.tool_buttons[0][1], LAYOUT.view_buttons[-1][1]
-    assert last_view[1] + last_view[3] < LAYOUT.palette_rules[0] < first_tool[1]
+    sections = dict(LAYOUT.palette_titles)
+    for title, items in (
+        ("View", [r for _, r in LAYOUT.view_buttons]),
+        ("Tools", [r for _, r in LAYOUT.tool_buttons]),
+        ("Colours", list(LAYOUT.swatches)),
+    ):
+        x, y, w, h = sections[title]
+        for rect in items:
+            assert contains(LAYOUT.palette_area, rect[:2])
+            assert contains(LAYOUT.palette_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
+            assert y < rect[1] and rect[1] + rect[3] <= y + h  # under its title
+        assert len({rx for rx, _, _, _ in items}) == 2  # two columns
+        for left, right in zip(items[::2], items[1::2], strict=False):
+            assert left[1] == right[1] and left[0] + left[2] < right[0]  # side by side
+    turns = dict(LAYOUT.tool_buttons)
+    assert turns[Tool.TURN_LEFT][1] == turns[Tool.TURN_RIGHT][1]  # left and right, one row
     for button, rect in LAYOUT.view_buttons:
         assert view_button_at(LAYOUT, centre(rect)) == button
     for tool, rect in LAYOUT.tool_buttons:
         assert tool_at(LAYOUT, centre(rect)) == tool
+    for _, rect in LAYOUT.palette_room:
+        assert palette_target_at(LAYOUT, centre(rect)) is None  # room, nothing there yet
     assert tool_at(LAYOUT, centre(LAYOUT.board_area)) is None
 
 
@@ -141,7 +159,11 @@ def test_the_palette_fits_on_screen():
 
 def test_every_palette_button_has_its_own_key_and_tooltip_target():
     keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
-    assert len(set(keys)) == len(keys) and all(len(key) == 1 for key in keys)
+    assert len(set(keys)) == len(keys)
+    for key in keys:  # one character, or Shift and another tool's key
+        assert len(key) == 1 or key.removeprefix("Shift+") in TOOL_KEYS.values()
+    assert TOOL_KEYS[Tool.TURN_LEFT] == "Shift+" + TOOL_KEYS[Tool.TURN_RIGHT]
+    assert TURNS == {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # directions run counter-clockwise
     for target, rect in [*LAYOUT.tool_buttons, *LAYOUT.view_buttons]:
         assert palette_target_at(LAYOUT, centre(rect)) == target
     assert palette_target_at(LAYOUT, centre(LAYOUT.swatches[2])) == "colours"

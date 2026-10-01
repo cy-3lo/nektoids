@@ -67,7 +67,8 @@ KIND_ICON = {  # a source is a blank sensor: it senses nothing
 TOOL_ICON = {
     Tool.ADD: "plus",
     Tool.WIRE: "link",
-    Tool.ROTATE: "rotate-right",
+    Tool.TURN_LEFT: "rotate-left",
+    Tool.TURN_RIGHT: "rotate-right",
     Tool.MOVE: "up-down-left-right",
     Tool.DELETE: "trash-can",
 }

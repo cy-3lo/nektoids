@@ -4,7 +4,9 @@ Tools:
 - Add: drag a component from the menu onto a cell, or pick it and click cells.
 - Wire: drag from a source to a target, or click one then the other. The route shows first,
   bright when it may connect.
-- Rotate: click an eye or a thruster to turn it 60° clockwise, shift-click to turn it back (D-009).
+- Turn left, Turn right: pressing the button, or R (right) and Shift+R (left), turns the selected
+  part by 60° at once and takes that tool; with it, click an eye or a thruster to turn it,
+  shift-click to turn it the other way (D-009, D-025).
 - Move: drag a component; its wires follow while they find a path (D-011).
 - Delete: click a component's shape, or a wire.
 - Pan (the hand, next to the zoom buttons): drag the grid to move the view (D-013); the centre
@@ -14,8 +16,10 @@ Keyboard: letters pick tools (see the tooltips), digits pick a component, the ar
 over the zone, and Enter clicks there; in the Move tool a first Enter grabs, a second drops;
 with the hand, the arrows drag the view the way they point, as the mouse would.
 
-Clicking a menu title folds or unfolds its group. Right click or Escape cancels. Every refusal
-flashes the cell and puts the reason in the status line.
+The selected part is the last one placed, wired from, moved or turned: a click on a part with
+any tool but Delete selects it, and its cell is lit. Clicking a menu title folds or unfolds its
+group. Right click or Escape cancels, and drops the selection. Every refusal flashes the cell
+and puts the reason in the status line.
 """
 
 from __future__ import annotations
@@ -29,6 +33,7 @@ from nektoids.editor.layout import (
     KEY_ALIASES,
     MENU_GROUPS,
     TOOL_KEYS,
+    TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
     Layout,
@@ -91,6 +96,7 @@ class EditorScene:
         self.dragging = False  # Add: mouse held since picking from the menu
         self.source: int | None = None  # Wire: node id of the chosen source
         self.moving: int | None = None  # Move: node id being dragged
+        self.selected: int | None = None  # what the turn buttons and keys act on
         self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
         self.pressed: int | None = None  # Wire: node under the press, while the button is held
         self.fresh = False  # Wire: that press is what chose the source
@@ -138,6 +144,7 @@ class EditorScene:
             event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
         ):
             self._cancel()
+            self.selected = None
         elif event.type == pygame.KEYDOWN:
             self._key(event)
 
@@ -156,7 +163,7 @@ class EditorScene:
                 self._pick(kinds[digit])
                 self.dragging = False  # placed with Enter, not by releasing a button
         else:
-            self._shortcut(event.unicode)
+            self._shortcut(event.unicode, shift=bool(event.mod & pygame.KMOD_SHIFT))
 
     def _arrow(self, key: int) -> None:
         """Move the keyboard cursor one cell within the zone; with the hand, drag the view one
@@ -206,11 +213,12 @@ class EditorScene:
         x, y = to_pixel(self.cursor, self.view.size, self.view.origin)
         return (round(x), round(y))
 
-    def _shortcut(self, typed: str) -> None:
+    def _shortcut(self, typed: str, shift: bool) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
-        if key in KEY_TOOLS:
-            self._cancel()
-            self.tool = KEY_TOOLS[key]
+        if key == TOOL_KEYS[Tool.TURN_RIGHT]:
+            self._choose(Tool.TURN_LEFT if shift else Tool.TURN_RIGHT)
+        elif key in KEY_TOOLS:
+            self._choose(KEY_TOOLS[key])
         elif key in KEY_VIEWS:
             self._view_button(KEY_VIEWS[key])
 
@@ -237,8 +245,7 @@ class EditorScene:
     def _press(self, pos: tuple[int, int]) -> None:
         tool = tool_at(self.layout, pos)
         if tool is not None:
-            self._cancel()
-            self.tool = tool
+            self._choose(tool)
             return
         button = view_button_at(self.layout, pos)
         if button is not None:
@@ -263,8 +270,9 @@ class EditorScene:
             return
         elif self.tool is Tool.WIRE:
             self._wire(self.hover)
-        elif self.tool is Tool.ROTATE:
-            self._rotate(self.hover, back=bool(pygame.key.get_mods() & pygame.KMOD_SHIFT))
+        elif self.tool in TURNS:
+            back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+            self._turn(self.hover, -TURNS[self.tool] if back else TURNS[self.tool])
         elif self.tool is Tool.MOVE:
             self._grab(self.hover)
         else:
@@ -302,6 +310,13 @@ class EditorScene:
 
     # Tools
 
+    def _choose(self, tool: Tool) -> None:
+        """Take a tool, from its button or its key; a turn tool turns the selected part at once."""
+        self._cancel()
+        self.tool = tool
+        if tool in TURNS and self.selected is not None:
+            self._turn(self.board.nodes[self.selected].cell, TURNS[tool])
+
     def _pick(self, kind: Kind) -> None:
         self._cancel()
         self.tool = Tool.ADD
@@ -318,7 +333,7 @@ class EditorScene:
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
             return
-        self.message = ""
+        self.message, self.selected = "", result.id
         if self.board.remaining(self.picked) == 0:
             self.picked = None
 
@@ -328,7 +343,7 @@ class EditorScene:
         if node is None:
             self.source, self.ghost = None, None
             return
-        self.pressed, self.fresh = node.id, False
+        self.pressed, self.fresh, self.selected = node.id, False, node.id
         if self.source is None:
             if not node.kind.emits:
                 self.pressed = None
@@ -374,13 +389,14 @@ class EditorScene:
             return start.id if start.kind.emits else None
         return self.source
 
-    def _rotate(self, cell: Cell, back: bool) -> None:
+    def _turn(self, cell: Cell, steps: int) -> None:
+        """Turn the part on `cell` by `steps` x 60° (counter-clockwise if positive); select it."""
         node = self.board.node_at(cell)
         if node is None:
             self._refuse("click an eye or a thruster", cell)
             return
-        # Direction indices run counter-clockwise on screen, so clockwise is -1.
-        result = self.board.rotate(node.id, 1 if back else -1)
+        self.selected = node.id
+        result = self.board.rotate(node.id, steps)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
         else:
@@ -390,7 +406,9 @@ class EditorScene:
         node = self.board.node_at(cell)
         if node is None:
             self._refuse("drag a component", cell)
-        elif node.locked:
+            return
+        self.selected = node.id
+        if node.locked:
             self._refuse("placed by the level", cell)
         else:
             self.moving, self.message = node.id, ""
@@ -414,6 +432,8 @@ class EditorScene:
                 self._refuse(result.reason, cell)
             else:
                 self.message = ""
+                if self.selected == node.id:
+                    self.selected = None
         else:
             self._refuse("nothing to delete here", cell)
 
