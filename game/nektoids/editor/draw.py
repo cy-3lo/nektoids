@@ -212,12 +212,15 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 def _draw_wire(
     screen, view: View, path: tuple[Cell, ...], colour, width: int, reach: float = 0.3
 ) -> None:
-    """reach: how far the target's shape extends [hex sizes]; the last arrow sits just outside."""
+    """One arrow in each free cell crossed; between neighbours, which have none, one just outside
+    the target's shape instead. reach: how far that shape extends [hex sizes]."""
     points = wire_points(path, view.size, view.origin)  # arcs where it turns
     pygame.draw.lines(screen, colour, False, points, width)
-    for at, angle in wire_arrows(path, view.size, view.origin):
+    arrows = wire_arrows(path, view.size, view.origin)
+    for at, angle in arrows:
         _draw_arrow(screen, at, angle, ARROW_HALF * view.size, colour)
-    # And one more, the same size, just outside the target's circle, pointing into it.
+    if arrows:
+        return
     (x0, y0), (x1, y1) = points[-2], points[-1]
     angle = math.atan2(y1 - y0, x1 - x0)
     back = (reach + ARROW_HALF + 0.04) * view.size
