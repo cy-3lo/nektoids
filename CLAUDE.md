@@ -12,20 +12,19 @@ and watch a deterministic 2D simulation play out.
 
 ## Who works here
 
-Two contributors, father and son, building this together to learn and to have fun.
+Two contributors, father and son, building this together to learn and to have fun (D-041).
 
-- The physicist (professor of mechanical engineering) owns `game/nektoids/sim/`.
-- The CS student (first year, Télécom Paris) owns `game/nektoids/graph/` and `game/nektoids/editor/`.
-- Each reviews the other's pull requests.
+- The physicist (professor of mechanical engineering) directs and reviews the code in every
+  package; he reviews his own pull requests with `/pr-prep`.
+- The CS student, Camille (first year, Télécom Paris), does not program here: he plays the
+  builds and gives his views. His notes go into `docs/todo.md` or `docs/ideas.md`, in English,
+  with his name on them.
 - `CLAUDE.local.md` (not committed) says who is at the keyboard. If it is missing, ask once.
 
-This is a learning project. The humans write the interesting parts.
+Claude writes the code, whole features included, in any package.
 
 - Explain before writing. For anything non-trivial, propose a short plan and wait for a go.
 - Prefer small diffs a human can read in five minutes over large complete ones.
-- When the student is at the keyboard, do not write whole features in `graph/` or `editor/`:
-  scaffold, name the concept, point to where it goes, then review what he writes.
-- Tests, tooling, CI and boilerplate may be written in full.
 - The humans may write in French: answer in the language of the prompt.
   Code, comments, commit messages and docs stay in English.
 

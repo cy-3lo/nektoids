@@ -38,7 +38,7 @@ def test_a_level_opens_once_the_one_before_it_is_won_and_the_sandbox_always():
     assert router.unlocked(1)
     router.open_map()
     router.open(1)
-    assert (router.index, router.screen, router.label) == (1, Screen.EDIT, "LEVEL 1.2")
+    assert (router.index, router.screen, router.label) == (1, Screen.SPEC, "LEVEL 1.2")
 
 
 def test_next_goes_on_with_its_own_board_and_after_the_last_level_comes_the_end():
@@ -46,7 +46,7 @@ def test_next_goes_on_with_its_own_board_and_after_the_last_level_comes_the_end(
     first = router.board
     first.place(Kind.EYE, (0, 0))
     router.next()
-    assert (router.index, router.screen) == (1, Screen.EDIT) and 0 in router.won
+    assert (router.index, router.screen) == (1, Screen.SPEC) and 0 in router.won
     assert router.board is not first and router.board.nodes == {}
     while router.has_next:
         router.next()
@@ -55,6 +55,24 @@ def test_next_goes_on_with_its_own_board_and_after_the_last_level_comes_the_end(
         router.next()
     router.finish()
     assert router.screen is Screen.END and router.won == set(range(len(router.levels)))
+
+
+def test_a_level_opened_comes_up_under_its_card_and_one_returned_to_does_not():
+    router = a_router()
+    router.mark_won()
+    router.open(1)
+    assert router.screen is Screen.SPEC
+    router.begin()
+    assert router.screen is Screen.EDIT
+    router.run()
+    router.edit()  # Edit after a run
+    assert router.screen is Screen.EDIT
+    router.open_map()
+    router.edit()  # Back from the map
+    assert router.screen is Screen.EDIT and router.index == 1
+    router.open_map()
+    router.open(router.sandbox_index)
+    assert router.screen is Screen.SPEC
 
 
 def test_the_sandbox_has_no_next_and_is_never_won():

@@ -7,19 +7,19 @@ With I (developer) the light is a map instead, grey, dark in shadow and white wh
 looking at a light saturates; the square root of the reading sets the grey (`tone`), and it is
 smoothed over a few cells (`smooth`). Obstacles are grey discs, lights white discs with a sun,
 as big as a swimmer (`LIGHT_RADIUS`), their rays leaving from the rim, a ring round the ones
-visited, and a swimmer its body's circle round a wedge, its tip forward, bright when selected.
-When the run is over, a banner over the arena says how it ended.
+visited, a dashed one where an objective draws a ring to leave or to stay in, lit once done, and
+a swimmer its body's circle round a wedge, its tip forward, bright when selected. When the run
+is over, a banner over the arena says how it ended: done, lost and why, or out of time.
 
 The column on the right (`arena_layout.py`): the title and the time, the palettes, with a
-tooltip naming each button and its key; the timeline, the part of the time allowed already run in
-a lighter grey, the part played brighter, and a red mark where the run ended (D-033);
-the objectives, each counted (so many of so many) and with a bar, and the time left, its bar
-running down to zero, red if it runs out; the selected swimmer's wiring on its body, plain: the
-parts shaded by their rate and the beads on the wires, no numbers. The status line under the
-arena recalls the keys. With P, an inset over the
-arena shows the light at its eyes as a polar plot in the arena's frame: E(phi) for each eye, a
-circle for the scale, and a tick along each eye's look as long as what it reads. The plot is
-exact; the map is smoothed.
+tooltip naming each button and its key; the timeline, the part of the time allowed already run
+in a lighter grey, the part played brighter, and a red mark where the run ended (D-033); the
+objectives, each counted (so many of so many) and with a bar, red if it lost the run, and the
+time left, its bar running down to zero, red if it runs out; the selected swimmer's wiring on
+its body, plain: the parts shaded by their rate and the beads on the wires, no numbers. The
+status line under the arena recalls the keys. With P, an inset over the arena shows the light at
+its eyes as a polar plot in the arena's frame: E(phi) for each eye, a circle for the scale, and
+a tick along each eye's look as long as what it reads. The plot is exact; the map is smoothed.
 """
 
 from __future__ import annotations
@@ -192,10 +192,10 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
         pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
         pygame.draw.aacircle(screen, DARK, centre, LIGHT_RADIUS * view.scale + 1, 1)
         fonts.icons.draw(screen, "sun", centre, round(SUN * LIGHT_RADIUS * view.scale), DARK)
-    for radius, left in scene.rings:  # the ring to leave round each light, dashed (D-038)
+    for radius, done in scene.rings:  # to leave or to stay in, dashed (D-038, D-040)
         for x, y in arena.light_xy:
             _dashed_circle(
-                screen, view.to_screen(x, y), radius * view.scale, LIGHT if left else RING
+                screen, view.to_screen(x, y), radius * view.scale, LIGHT if done else RING
             )
     for light in np.flatnonzero(scene.lights_reached):  # by any swimmer
         centre = view.to_screen(*arena.light_xy[light])
@@ -346,16 +346,17 @@ def _draw_button_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) ->
 
 def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """Each objective: its name, so many met of so many, a tick once all are, and a bar filling
-    up; then the time left, its bar running down, all red once the time is up."""
+    up, all red if it lost the run; then the time left, its bar running down, red once up."""
     x, y, _, _ = SCORE_AREA
     draw_title(screen, fonts, "Objectives", (x + MARGIN, y))
     rows = scene.counts()
     if not rows:
         none = fonts.small.render("None in this arena yet.", True, DIM_TEXT)
         screen.blit(none, (x + MARGIN, y + 30))
-    for k, (name, met, needed) in enumerate(rows):
-        fraction = met / needed if needed else 1.0
-        _draw_row(screen, fonts, k, name, f"{met} of {needed}", fraction, met >= needed)
+    for k, row in enumerate(rows):
+        value, done = f"{row.met} of {row.needed}", row.met >= row.needed and not row.lost
+        progress = 0.0 if row.lost else row.progress
+        _draw_row(screen, fonts, k, row.name, value, progress, done, row.lost)
     left, limit = scene.time_left, scene.level.time_limit
     late = scene.outcome is Outcome.TIME_UP
     k = max(1, len(rows))
@@ -457,9 +458,11 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         return
     if ended is Outcome.WON:
         head = f"Done in {scene.clock.seconds:.2f} s"
+    elif ended is Outcome.LOST and scene.lost_by is not None:
+        head = f"{scene.lost_by.broken} at {scene.clock.seconds:.2f} s"
     else:
         head = f"Time is up ({scene.level.time_limit:g} s)"
-    rows = [f"{name}: {met} of {needed}" for name, met, needed in scene.counts()]
+    rows = [f"{row.name}: {row.met} of {row.needed}" for row in scene.counts()]
     lines = [fonts.text.render(head, True, TEXT)]
     lines += [fonts.small.render(row, True, DIM_TEXT) for row in [*rows, "0: start again"]]
     box = pygame.Rect(BANNER)

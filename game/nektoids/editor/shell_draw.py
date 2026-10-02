@@ -1,5 +1,5 @@
-"""Drawing the screens around the levels (D-035): the title card, the map, the end. Reads the
-router; never changes it. Where things sit is `shell.py`'s.
+"""Drawing the screens around the levels (D-035): the title card, a level's card, the map, the
+end. Reads the router; never changes it. Where things sit is `shell.py`'s.
 """
 
 from __future__ import annotations
@@ -22,9 +22,11 @@ from nektoids.editor.layout import contains
 from nektoids.editor.router import CHAPTER, CHAPTER_NAME, Router, level_label
 from nektoids.editor.shell import BACK_KEY, CARD, END_KEY, MAP_TOP, bottom_button, map_rows
 
-VEIL = (0, 0, 0, 150)  # over the first level, under the title card
+VEIL = (0, 0, 0, 150)  # over a level's board, under its card
 STUDIO = "Cy-3LO"  # always written so (CLAUDE.md)
 INVITE = "Wire the eyes to the thrusters, then Run."  # the card's one instruction (D-028)
+START = "Click, or press a key, to start."  # how either card goes
+CARD_MARGIN = 32  # a card's lines keep this far from its sides [px]
 THANKS = "Thank you for playing."
 REACH_OUT = (  # the brief's end screen, with the contact chosen for it (D-035)
     "If you liked this and want to support development, reach out:",
@@ -34,19 +36,46 @@ REACH_OUT = (  # the brief's end screen, with the contact chosen for it (D-035)
 
 def draw_title_card(screen: pygame.Surface, fonts: Fonts) -> None:
     """Over the first level, veiled: the name, the studio, what to do, how to start."""
+    _card(
+        screen,
+        [
+            (fonts.big.render("NEKTOIDS", True, TEXT), 56),
+            (fonts.small.render(f"a game by {STUDIO}", True, DIM_TEXT), 136),
+            (fonts.text.render(INVITE, True, TEXT), 190),
+            (fonts.small.render(START, True, DIM_TEXT), 250),
+        ],
+    )
+
+
+def draw_level_card(screen: pygame.Surface, router: Router, fonts: Fonts) -> None:
+    """Over a level just opened, veiled: its name, what it asks, its time, how to start."""
+    level = router.level
+    _card(
+        screen,
+        [
+            (fonts.small.render(router.label, True, DIM_TEXT), 40),
+            (fonts.big.render(level.title, True, TEXT), 70),
+            (fonts.text.render(level.spec, True, TEXT), 146),
+            (fonts.small.render(f"You have {level.time_limit:g} s.", True, DIM_TEXT), 182),
+            (fonts.small.render(START, True, DIM_TEXT), 250),
+        ],
+    )
+
+
+def _card(screen: pygame.Surface, lines: list[tuple[pygame.Surface, int]]) -> None:
+    """The screen veiled, the card over it, and its lines centred, each `dy` below its top; a
+    line too wide for the card is shrunk to fit."""
     veil = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
     veil.fill(VEIL)
     screen.blit(veil, (0, 0))
     card = pygame.Rect(CARD)
     pygame.draw.rect(screen, PANEL, card, border_radius=10)
     pygame.draw.rect(screen, RULE, card, 2, border_radius=10)
-    lines = [
-        (fonts.big.render("NEKTOIDS", True, TEXT), 56),
-        (fonts.small.render(f"a game by {STUDIO}", True, DIM_TEXT), 136),
-        (fonts.text.render(INVITE, True, TEXT), 190),
-        (fonts.small.render("Click, or press a key, to start.", True, DIM_TEXT), 250),
-    ]
+    room = card.width - 2 * CARD_MARGIN
     for shown, dy in lines:
+        if shown.get_width() > room:
+            height = round(shown.get_height() * room / shown.get_width())
+            shown = pygame.transform.smoothscale(shown, (room, height))
         screen.blit(shown, shown.get_rect(midtop=(card.centerx, card.top + dy)))
 
 

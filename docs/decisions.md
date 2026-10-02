@@ -464,3 +464,65 @@ so no operator appears yet. One light (1.2) and In the shadow (1.3) each carry t
 developer's key, goes to the editor from anywhere.
 `editor/tutorial.py` reads and follows a tutorial with no pygame, tested by walking Fear's;
 `tutorial_draw.py` draws the overlay; `main.py` keeps one per level for the session.
+
+**D-040 — 2026-10-01 — LEVEL 1.2 is Love: stay by the light without touching it, with two Sources, two Sums and two Diffs handed out. Objectives keep any state, not only latched marks; a run can be lost. Generalises D-038.**
+Love is Braitenberg's vehicle 3a: each eye inhibits the thruster on its own side, Diff(Source,
+eye) = 1 - e, so the swimmer swims to the light, slows as its eyes brighten, and stops where they
+saturate. The level: one light of power 8, the swimmer 15 u away facing it, 20 s; two
+objectives, Stay by the light (within 6 u of its centre for 5 s in a row) and Don't touch the
+light (no swimmer reaches it, D-029); two eyes, two Sources, two Sums, two Diffs, two thrusters;
+two hints. The Sums are handed out and not needed: thruster inputs already add. Love with the
+eyes turned NE and SE wins at 7.6 s and stops 3.7 u from the light, 1.3 u clear of touching;
+with the eyes straight ahead it stops 8.7 u out, outside the ring, and runs out of time (where
+it stops is roughly P cos of the eye's angle to the light). Aggression, fear head on and a bare
+Source drive touch the light within 5 s. All pinned in `test_determinism.py`. The chapter is now
+Fear (1.1), Love (1.2), One light (1.3), In the shadow (1.4).
+An objective now keeps what it needs: `start(now)` at t = 0, then `keep(kept, now, dt)` each
+tick, from what counts now (`marks`). Visit every light, Leave the ring and Don't touch keep
+latched marks, as before; Stay by the light keeps each swimmer's time in its ring, back to 0 when
+it leaves, kept once full. `count(kept)` says how many are met, `progress(kept)` fills its bar,
+and `lost(kept)` may lose the run: Outcome gains LOST, checked before WON and TIME_UP, so a
+touch ends the run at once. The banner says what lost it ("It touched the light at 4.72 s"),
+with Edit only, and the objective's row turns red. The ring to stay in is drawn dashed like the
+ring to leave, lit once met. What the objectives keep goes into the recording (D-033).
+
+**D-041 — 2026-10-02 — Who does what: the physicist directs and Claude writes the code, in every package; Camille plays the builds and gives his views. Supersedes D-005.**
+Camille has no Claude subscription and is not programming; what he brings is a player's view, as
+in his notes on the editor (`ebc4abb`, `todo.md` §7). The physicist directs and reviews his own
+pull requests with `/pr-prep`; Claude writes, whole features included, after a short plan and a
+go. Camille's notes go into `todo.md` or `ideas.md`, in English, with his name on them.
+D-005 split the code between two programmers who review each other, and one of them is not
+programming: a review that cannot happen only holds the work up.
+Consequences: `CLAUDE.md`, the README, `/pr-prep` and the walkthrough change with it. The
+walkthrough stays, for when Camille wants to read the code.
+
+**D-042 — 2026-10-02 — A level opened from the map or by Next level comes up under its card: its name, what it asks, its time. Amends D-035.**
+The spec was only in the editor's caption, above the board, where a player who has just pressed
+Next level starts wiring without reading it (brief §1: the player receives a spec first). The
+card is the title card's veil and panel, with LEVEL 1.n, the title, the spec and "You have 20 s.";
+any click or key takes it away and does nothing else. A level is opened from a map row or by Next
+level, the sandbox included; it is returned to by Back from the map, Edit after a run or F1, and
+those show no card. At startup LEVEL 1.1 keeps the title card alone. A line too wide for the card
+is shrunk to fit: the sandbox's title is. `router.py` gains `Screen.SPEC`, which `open` and `next`
+lead to and `begin` leaves; `shell_draw.py` draws the card.
+
+**D-043 — 2026-10-02 — A light is reached at 1.05 times the sum of the radii, 2.1 u for a base body. Amends D-029.**
+At 1.2 (2.4 u), a swimmer that lost Love for touching the light still stood 0.4 u from it, rim
+to rim, two fifths of its radius: the banner said it touched what the player saw it miss. At 1.05
+the gap is 0.1 u. Visits and touches keep one definition of reaching, so a level that asks to
+touch the light (One light) and one that forbids it (Love) agree on what touching is.
+Consequences: crossed wiring in One light wins at 8.64 s (8.59 s before), the drive in In the
+shadow at 3.76 s (3.70 s); Love's winner rests 1.6 u clear of reaching (1.3 u before). At 3.6 u/s
+a tick moves 0.03 u against a reach of 2.1 u: still no visit falls between ticks.
+
+**D-044 — 2026-10-02 — Love's light has power 3.5, not 8: the simplest love wins. Amends D-040.**
+At power 8 the eyes saturate about P u out, so a swimmer whose eyes look ahead came to rest 9 u
+from the light, outside the 6 u ring, and ran out of time. Only two eyes turned out (NE, SE) won,
+each reading half as much: a trick nothing on screen points to, on the first level after the
+tutorial. At 3.5 one eye looking ahead, a Diff of a Source and the eye, and one thruster, all on
+the axis, rests 4.5 u out and wins at 10.3 s; two such chains rest 4.2 u out and win at 7.6 s.
+Both bodies lie wholly inside the dashed ring, 1 u or more clear of touching. Turned out, the eyes
+now lose: closing in, the light falls behind their flat faces, the brake fades and the swimmer
+touches it. Wiring with no Diff still loses (aggression, fear, a bare drive). Powers 4 and 4.5 also
+win, but the swimmer's rim then rests on the ring's dashed line, so it looks half out. All pinned
+in `test_determinism.py`.

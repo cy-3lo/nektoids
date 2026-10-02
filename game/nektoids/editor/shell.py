@@ -1,15 +1,16 @@
 """Where the screens around the levels put things (D-035), and what is under a given pixel.
 
-The title card, centred over the first level's editor; the map, a list: one row for each level
-of the chapter, then the sandbox's apart, and a button back to the open level; the end screen,
-its text and a button to the map. Plain numbers, no pygame, so hit-testing is testable headless.
+The card, centred over a level's editor: the title card over the first, then each level's own as
+it opens; the map, a list: one row for each level of the chapter, then the sandbox's apart, and
+a button back to the open level; the end screen, its text and a button to the map. Plain
+numbers, no pygame, so hit-testing is testable headless.
 """
 
 from __future__ import annotations
 
 from nektoids.editor.layout import SCREEN, Rect, contains
 
-CARD: Rect = (SCREEN[0] // 2 - 260, 150, 520, 300)  # the title card, over the first level
+CARD: Rect = (SCREEN[0] // 2 - 260, 150, 520, 300)  # the title card, or a level's
 ROW_WIDTH, ROW_HEIGHT, ROW_PITCH = 600, 52, 60  # [px]
 MAP_TOP = 120  # the first row [px]; the chapter's name sits over it
 SANDBOX_GAP = 24  # between the chapter's last row and the sandbox's [px]

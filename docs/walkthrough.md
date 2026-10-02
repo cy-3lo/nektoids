@@ -1,8 +1,8 @@
 # Walkthrough: `graph/` and `editor/`
 
-For Camille. Under D-005 you own these two packages, but their first version was written before
-you joined. This page is the map: read it with the code open beside it. It takes about half an
-hour, and nothing here needs Claude.
+For Camille, for when you want to read the code behind what you play (D-041). This page is the
+map: read it with the code open beside it. It takes about half an hour, and nothing here needs
+Claude.
 
 Read the sections in order: run the editor, see what it does, follow the code in the order it
 runs, then check yourself with the questions in section 3. Section 4 lists what is weak or
@@ -243,8 +243,7 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 
 ## 6. The graph as dynamics, and the developer view (D-017)
 
-Your father wrote this part, and you review it (D-005): it is where your two packages meet the
-simulation. Read D-016 and D-017 in [`decisions.md`](decisions.md) first; D-017 replaces part of
+This part is where `graph/` and `editor/` meet the simulation. Read D-016 and D-017 in [`decisions.md`](decisions.md) first; D-017 replaces part of
 D-016.
 
 ### 6.1 What it computes
@@ -595,15 +594,16 @@ Esc to change the board, and after a win Enter for the next level.
 ## 11. Around the levels: title card, map, end (D-035)
 
 Read D-035 first. The game now opens under a title card; Tab, or Map in the palette's LEVEL
-section beside Run (D-037), shows the map.
+section beside Run (D-037), shows the map. A level opened from the map or by Next level comes up
+under its own card, which says what it asks (D-042).
 
 - [`editor/router.py`](../game/nektoids/editor/router.py) holds the screen (`Screen`: title,
-  map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the levels
-  won this session; `unlocked` says which places the map lets the player open.
+  spec, map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the
+  levels won this session; `unlocked` says which places the map lets the player open.
 - [`editor/shell.py`](../game/nektoids/editor/shell.py), pure: where the map's rows and the
   bottom button sit, and what is under a pixel; [`shell_draw.py`](../game/nektoids/editor/shell_draw.py)
-  draws the card, the map and the end from the router, changing nothing.
-- [`main.py`](../game/main.py): `shell_event` hands the title card, the map and the end their
+  draws the cards, the map and the end from the router, changing nothing.
+- [`main.py`](../game/main.py): `shell_event` hands the cards, the map and the end their
   events; a run that is won marks its level won, which opens the next one on the map.
 
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What
@@ -622,13 +622,35 @@ player through the board, placing, turning and wiring.
   targets and draws the box; the ghosts are drawn by `draw.py`, from `EditorScene.ghosts`, which
   `main.py` sets every frame.
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
-  own marks (`marks`, `latch`), which is what lets Leave the ring sit beside Visit every light.
+  own marks, which is what lets Leave the ring sit beside Visit every light (section 13 makes
+  that any state).
 - Tests: [`test_tutorial.py`](../tests/test_tutorial.py) walks Fear's tutorial as a player
   would; [`test_determinism.py`](../tests/test_determinism.py) pins Fear's winner and its two
   failures, crossed and with the eyes looking forward.
 
 Questions: why does `follow` loop, rather than move one step? (Place an eye already turned.) Why
 does the tutorial live in `main.py` rather than in the editor's scene?
+
+## 13. Love, and a run that can be lost (D-040)
+
+Read D-040 first. LEVEL 1.2 is Love: the swimmer must come to the light and stay by it without
+touching it, which needs a Diff on each side, Diff(Source, eye) = 1 - e.
+
+- [`levels/objectives.py`](../game/nektoids/levels/objectives.py): an objective keeps whatever
+  it needs, `start` then `keep` each tick (the module's `begin` and `follow` do it for a whole
+  level). `Latched` is what most keep: their marks, ORed. `StayNear` keeps a timer per swimmer;
+  `KeepOff` loses the run (`lost`), and `outcome` checks that first.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py): `kept` replaces `marked`, in the run
+  and in each `Snapshot`; `counts()` returns a `Count` per objective, with its bar and whether
+  it lost; `lost_by` says which one did, for the banner.
+- [`levels/data/love.json`](../game/nektoids/levels/data/love.json): the level, written by
+  `to_json`.
+- Tests: [`test_objectives.py`](../tests/test_objectives.py) for the timer and the touch;
+  [`test_determinism.py`](../tests/test_determinism.py) pins love's win and the three ways to
+  lose, and love with its eyes straight ahead, which stops outside the ring.
+
+Questions: why does `StayNear.keep` freeze the timer once full rather than let it run on? Why
+is LOST checked before WON in `outcome`? (Make a level with Visit every light and Don't touch.)
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

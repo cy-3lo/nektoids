@@ -12,7 +12,7 @@
 
 ## What to look at (for the reviewer)
 
-<!-- Written for the other contributor, in his vocabulary. /pr-prep drafts this. -->
+<!-- What to read in the diff, and what changes on screen for a playtest. /pr-prep drafts this. -->
 
 ## Checklist
 
