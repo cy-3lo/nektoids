@@ -56,6 +56,8 @@ from nektoids.editor.arena_layout import (
     timeline_time,
 )
 from nektoids.editor.arena_view import (
+    MAX_SCALE,
+    MIN_SCALE,
     ZOOM_STEP,
     ArenaView,
     Rays,
@@ -77,7 +79,10 @@ from nektoids.editor.layout import (
     Layout,
     contains,
     make_layout,
+    value_at,
     view_button_at,
+    zoom_bar_at,
+    zoom_button_at,
 )
 from nektoids.editor.probe import level_view
 from nektoids.editor.recording import Recording
@@ -177,6 +182,7 @@ class ArenaScene(Frame):
         self.hand = False  # dragging moves the view, not a swimmer
         self.panning: tuple[int, int] | None = None  # where the hand last was, while it drags
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
+        self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.seek_to: int | None = None  # the tick the run races ahead to, if it does
         self.scrubbing = False  # the timeline held down: the run follows the mouse along it
         self.pointer = (0, 0)  # where the mouse is [px]
@@ -441,6 +447,8 @@ class ArenaScene(Frame):
             self.frame_track(event.pos)
             if self.overviewing:
                 self._overview_to(event.pos)
+            elif self.zooming:
+                self._zoom_to(event.pos)
             elif self.scrubbing:
                 self.seek(timeline_time(self.layout, event.pos[0], self.level.time_limit))
             elif self.panning is not None:
@@ -451,7 +459,7 @@ class ArenaScene(Frame):
                 self._drag(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = self.panning = None
-            self.scrubbing = self.overviewing = False
+            self.scrubbing = self.overviewing = self.zooming = False
         elif event.type == pygame.MOUSEWHEEL and self.developer:
             self._turn(float(event.y))
         elif event.type == pygame.KEYDOWN:
@@ -465,6 +473,14 @@ class ArenaScene(Frame):
         if self.layout.overview is not None and contains(self.layout.overview, pos):
             self.overviewing = True
             self._overview_to(pos)
+            return
+        step = zoom_button_at(self.layout, pos)
+        if step is not None:
+            self.press(VIEW_BUTTON[step])
+            return
+        if zoom_bar_at(self.layout, pos) is not None:
+            self.zooming = True
+            self._zoom_to(pos)
             return
         view = view_button_at(self.layout, pos)
         button = (
@@ -579,6 +595,13 @@ class ArenaScene(Frame):
                 (x + w / 2 - self.view.scale * wx, y + h / 2 + self.view.scale * wy),
             )
         )
+
+    def _zoom_to(self, point: tuple[int, int]) -> None:
+        """The zoom where the mouse is along Navigator's zoom bar, about the arena's centre."""
+        x, _, w, _ = self.layout.zoom_bar
+        scale = value_at((point[0] - x) / w, MIN_SCALE, MAX_SCALE)
+        ax, ay, aw, ah = self.arena_area
+        self._look(zoom_view(self.view, scale / self.view.scale, (ax + aw / 2, ay + ah / 2)))
 
     def _drag(self, point: tuple[int, int]) -> None:
         """Move the dragged swimmer under the mouse, outside the obstacles."""

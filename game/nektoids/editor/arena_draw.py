@@ -47,6 +47,8 @@ from nektoids.editor.arena_layout import (
     timeline_x,
 )
 from nektoids.editor.arena_view import (
+    MAX_SCALE,
+    MIN_SCALE,
     edge_marker,
     polar_scale,
     ray_ends,
@@ -73,9 +75,10 @@ from nektoids.editor.draw import (
     draw_tabs,
     draw_tip,
     draw_tooltip,
+    draw_zoom,
 )
 from nektoids.editor.icons import VIEW_ICON
-from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, ViewButton
+from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, ViewButton, level_of
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -363,6 +366,7 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
         frame = pygame.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
         pose = (*scene.pos[0], float(scene.heading[0]))
         draw_level_map(screen, scene.level, area, pose, frame)
+        draw_zoom(screen, scene, fonts, level_of(scene.view.scale, MIN_SCALE, MAX_SCALE))
     for button, rect in scene.layout.view_buttons:
         active = (button is ViewButton.PAN and scene.hand) or (
             button is ViewButton.RAYS and scene.show_rays

@@ -46,6 +46,8 @@ from nektoids.editor.layout import (
     INFO_AT,
     LEVEL_KEYS,
     MARGIN,
+    MAX_HEX,
+    MIN_HEX,
     PALETTE_TITLE,
     SCREEN,
     SENSE_MAP,
@@ -64,6 +66,7 @@ from nektoids.editor.layout import (
     View,
     ViewButton,
     WinRow,
+    level_of,
     overview_view,
     shown_frame,
     visible_cells,
@@ -82,6 +85,7 @@ from nektoids.editor.palette import (
     EYE_FACE,
     FLASH,
     FOCUS_CELL,
+    FULL,
     GHOST,
     GHOST_FILL,
     GHOST_OK,
@@ -594,6 +598,27 @@ def draw_level_map(
     pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
 
 
+def draw_zoom(screen: pygame.Surface, scene: Frame, fonts: Fonts, level: float) -> None:
+    """Navigator's zoom (D-065): out and in either end of a bar filled to `level`, 0 the
+    farthest, 1 the nearest, a knob where it stands; the bar is pressed or dragged too."""
+    icons = {
+        ViewButton.ZOOM_OUT: "magnifying-glass-minus",
+        ViewButton.ZOOM_IN: "magnifying-glass-plus",
+    }
+    for button, rect in scene.layout.zoom_buttons:
+        draw_button(screen, fonts, rect, icons[button], False)
+    x, y, w, h = scene.layout.zoom_bar
+    track = pygame.Rect(x, y + h // 2 - 3, w, 6)
+    pygame.draw.rect(screen, RULE, track, border_radius=3)
+    filled = track.copy()
+    filled.width = round(w * level)
+    if filled.width > 0:
+        pygame.draw.rect(screen, FULL, filled, border_radius=3)
+    knob = (x + round(w * level), track.centery)
+    pygame.draw.circle(screen, FULL, knob, 6)
+    pygame.draw.circle(screen, DARK, knob, 6, 1)
+
+
 def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Navigator's overview (D-060): the whole board small, its parts as dots, and a frame round
     what the main screen shows; a press or a drag there moves the view."""
@@ -657,6 +682,7 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         _draw_files(screen, scene, fonts)
     if layout.overview is not None:
         _draw_overview(screen, scene, fonts)
+        draw_zoom(screen, scene, fonts, level_of(scene.view.size, MIN_HEX, MAX_HEX))
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")

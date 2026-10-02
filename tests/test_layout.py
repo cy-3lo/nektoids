@@ -1,5 +1,7 @@
 """Editor layout and hit-testing (D-051). layout.py imports no pygame, so this runs headless."""
 
+import pytest
+
 from nektoids.editor.layout import (
     CAPTION_HEIGHT,
     DRAWER_KEYS,
@@ -35,6 +37,7 @@ from nektoids.editor.layout import (
     group_at,
     info_at,
     level_button_at,
+    level_of,
     main_view_at,
     make_layout,
     menu_item_at,
@@ -47,10 +50,13 @@ from nektoids.editor.layout import (
     shown_frame,
     tab_at,
     tool_at,
+    value_at,
     view_button_at,
     visible_cells,
     win_row_at,
     zoom,
+    zoom_bar_at,
+    zoom_button_at,
 )
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
@@ -103,7 +109,10 @@ def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
     for layout, rows in (
         (LAYOUT, LAYOUT.menu_items),
         (TOOLS, tools_rows),
-        (NAVIGATOR, NAVIGATOR.view_buttons),
+        (
+            make_layout(Drawer.NAVIGATOR, env=Env.RUN),
+            make_layout(Drawer.NAVIGATOR, env=Env.RUN).view_buttons,
+        ),
     ):
         assert len(layout.info_buttons) == len(rows) > 0
         for _, rect in rows:
@@ -148,16 +157,15 @@ def test_tools_runs_its_tools_then_edit_then_file_and_the_navigator_holds_the_vi
     ):
         _, y, _, h = sections[title]
         assert all(y + h <= rect[1] for _, rect in rows)  # under its title
-    assert [title for title, _ in NAVIGATOR.section_titles] == ["View", "Overview"]
-    assert [button for button, _ in NAVIGATOR.view_buttons] == [
-        b
-        for b in ViewButton
-        if b is not ViewButton.RAYS  # the run's only
-    ]
+    assert [title for title, _ in NAVIGATOR.section_titles] == ["Overview"]  # no option yet
+    assert NAVIGATOR.view_buttons == ()  # the editor's view has no option yet (D-065)
+    run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
+    assert [title for title, _ in run.section_titles] == ["View", "Overview"]
+    assert [button for button, _ in run.view_buttons] == [ViewButton.RAYS]
     for tool, rect in TOOLS.tool_buttons:
         assert tool_at(TOOLS, (rect[0] + 20, rect[1] + rect[3] // 2)) == tool
-    for button, rect in NAVIGATOR.view_buttons:
-        assert view_button_at(NAVIGATOR, (rect[0] + 20, rect[1] + rect[3] // 2)) == button
+    for button, rect in run.view_buttons:
+        assert view_button_at(run, (rect[0] + 20, rect[1] + rect[3] // 2)) == button
     assert tool_at(TOOLS, centre(TOOLS.board_area)) is None
 
 
@@ -323,8 +331,18 @@ def test_navigators_overview_frames_what_the_main_screen_shows_and_a_press_moves
     for env in Env:
         layout = make_layout(Drawer.NAVIGATOR, env=env)
         x, y, w, h = layout.overview
-        last = layout.view_buttons[-1][1]
-        assert y > last[1] + last[3] and contains(layout.drawer_area, (x + w, y + h))
+        above = [rect[1] + rect[3] for _, rect in layout.view_buttons] or [0]
+        assert y > max(above) and contains(layout.drawer_area, (x + w, y + h))
+        (out, (ox, oy, ow, oh)), (inward, (ix, _, iw, _)) = layout.zoom_buttons
+        bx, by, bw, bh = layout.zoom_bar  # under the overview, between its buttons (D-065)
+        assert (out, inward) == (ViewButton.ZOOM_OUT, ViewButton.ZOOM_IN) and oy > y + h
+        assert ox + ow < bx and bx + bw < ix and contains(layout.drawer_area, (ix + iw, oy + oh))
+        assert zoom_button_at(layout, (ix + 3, oy + 3)) is ViewButton.ZOOM_IN
+        assert zoom_bar_at(layout, (bx, by + bh // 2)) == 0.0
+        assert zoom_bar_at(layout, (bx + bw, by + bh // 2)) == 1.0
+        assert zoom_bar_at(layout, (bx, oy + oh + 20)) is None
+    assert level_of(MIN_HEX, MIN_HEX, MAX_HEX) == 0.0 and level_of(MAX_HEX, MIN_HEX, MAX_HEX) == 1
+    assert value_at(level_of(34.0, MIN_HEX, MAX_HEX), MIN_HEX, MAX_HEX) == pytest.approx(34.0)
     small = overview_view(list(hex_disc(2)), NAVIGATOR.overview)
     frame = shown_frame(NAVIGATOR, VIEW, small)
     centre_cell = to_pixel((0, 0), small.size, small.origin)

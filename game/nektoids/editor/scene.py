@@ -43,7 +43,9 @@ from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.history import History
 from nektoids.editor.layout import (
     KEY_ALIASES,
+    MAX_HEX,
     MENU_GROUPS,
+    MIN_HEX,
     SENSE_MAP,
     TOOL_KEYS,
     TURNS,
@@ -69,9 +71,12 @@ from nektoids.editor.layout import (
     overview_view,
     pan,
     tool_at,
+    value_at,
     view_button_at,
     win_row_at,
     zoom,
+    zoom_bar_at,
+    zoom_button_at,
 )
 from nektoids.editor.probe import Probe, level_view
 from nektoids.editor.router import Won
@@ -134,6 +139,7 @@ class EditorScene(Frame):
         self.probing = False  # the probe held in Sense's map, following the mouse
         self.holding: int | None = None  # the eye whose meter's knob the mouse holds
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
+        self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.focus: frozenset[Cell] = frozenset()  # cells a tutorial's step acts on; main.py's
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
@@ -336,6 +342,8 @@ class EditorScene(Frame):
             self._probe_to(pos)
         if self.overviewing:
             self._overview_to(pos)
+        if self.zooming:
+            self._zoom_to(pos)
         self._hold(pos)
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
@@ -361,6 +369,14 @@ class EditorScene(Frame):
         if self.layout.overview is not None and contains(self.layout.overview, pos):
             self.overviewing = True
             self._overview_to(pos)
+            return
+        step = zoom_button_at(self.layout, pos)
+        if step is not None:
+            self._view_button(step)
+            return
+        if zoom_bar_at(self.layout, pos) is not None:
+            self.zooming = True
+            self._zoom_to(pos)
             return
         won = win_row_at(self.layout, pos)
         if won is not None:
@@ -430,13 +446,20 @@ class EditorScene(Frame):
         small = overview_view(sorted(self.board.cells), self.layout.overview)
         self.view = centred_on(self.layout, self.view, small, pos)
 
+    def _zoom_to(self, pos: tuple[int, int]) -> None:
+        """The zoom where the mouse is along Navigator's zoom bar, about the board's centre."""
+        x, _, w, _ = self.layout.zoom_bar
+        size = value_at((pos[0] - x) / w, MIN_HEX, MAX_HEX)
+        bx, by, bw, bh = self.layout.board_area
+        self.view = zoom(self.view, size / self.view.size, (bx + bw / 2, by + bh / 2))
+
     def _hold(self, pos: tuple[int, int]) -> None:
         """The eye whose knob is held reads what its meter says at the mouse: a test input."""
         if self.holding is not None and self.probe is not None:
             self.probe.hold(self.holding, self.probe.level_at(self.holding, pos[1]))
 
     def _release(self, pos: tuple[int, int]) -> None:
-        self.probing, self.holding, self.overviewing = False, None, False
+        self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
         self.moving, self.panning_from = None, None
         if self.pressed is not None:
             self._end_wiring()

@@ -38,6 +38,7 @@ DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
 OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
+ZOOM_BUTTON = 28  # zoom out and in, either end of the zoom bar, under the overview [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
@@ -217,6 +218,8 @@ class Layout:
     controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
     view_switch: tuple[tuple[MainView, Rect], ...]  # in the editor, over the main screen's corner
     overview: Rect | None  # Navigator's: the whole board, or level, small (D-060)
+    zoom_buttons: tuple[tuple[ViewButton, Rect], ...]  # under it, out and in (D-065)
+    zoom_bar: Rect | None  # between them: the zoom, from the farthest to the nearest
     caption_at: tuple[int, int]  # top-left corner of the level's title and spec, under the tabs
     status_at: tuple[int, int]  # top-left corner of the status line
 
@@ -312,6 +315,8 @@ def make_layout(
         board_area=(left, TOP, width - left, main - TOP),
         controls_area=(left, main, width - left, CONTROLS_HEIGHT) if env is Env.RUN else None,
         overview=rows.overview,
+        zoom_buttons=tuple(rows.zoom_buttons),
+        zoom_bar=rows.zoom_bar,
         view_switch=tuple(
             (view, (width - 8 - (2 - k) * (SWITCH + 6) + 6, TOP + 8, SWITCH, SWITCH))
             for k, view in enumerate(MainView)
@@ -332,6 +337,8 @@ class _Rows:
         self.sections: list[tuple[str, Rect]] = []
         self.groups: list[tuple[str, Rect]] = []
         self.overview: Rect | None = None
+        self.zoom_buttons: list[tuple[ViewButton, Rect]] = []
+        self.zoom_bar: Rect | None = None
 
     def of(self, kind: type) -> list:
         return [(what, rect) for what, rect in self.items if isinstance(what, kind)]
@@ -363,14 +370,22 @@ class _Rows:
             self.y += SECTION_GAP
 
     def view(self, env: Env) -> None:
-        self._title("View", self.sections)
-        for what in ViewButton:
-            if what is not ViewButton.RAYS or env is Env.RUN:
-                self._row(what)
-        self.y += SECTION_GAP
+        """The view's options as rows, the rays in the run; then the overview and, under it,
+        the zoom: a bar between its two buttons (D-065)."""
+        if env is Env.RUN:
+            self._title("View", self.sections)
+            self._row(ViewButton.RAYS)
+            self.y += SECTION_GAP
         self._title("Overview", self.sections)
-        width = DRAWER_WIDTH - 2 * MARGIN
-        self.overview = (BAR_WIDTH + MARGIN, self.y + 4, width, OVERVIEW_HEIGHT)
+        x, width = BAR_WIDTH + MARGIN, DRAWER_WIDTH - 2 * MARGIN
+        self.overview = (x, self.y + 4, width, OVERVIEW_HEIGHT)
+        top = self.y + 4 + OVERVIEW_HEIGHT + 10
+        self.zoom_buttons = [
+            (ViewButton.ZOOM_OUT, (x, top, ZOOM_BUTTON, ZOOM_BUTTON)),
+            (ViewButton.ZOOM_IN, (x + width - ZOOM_BUTTON, top, ZOOM_BUTTON, ZOOM_BUTTON)),
+        ]
+        bar = width - 2 * (ZOOM_BUTTON + 8)
+        self.zoom_bar = (x + ZOOM_BUTTON + 8, top + (ZOOM_BUTTON - 16) // 2, bar, 16)
 
     def label(self, title: str) -> None:
         self._title(title, self.sections)
@@ -493,6 +508,31 @@ def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
 
 def level_button_at(layout: Layout, point: tuple[int, int]) -> LevelButton | None:
     return next((b for b, rect in layout.level_buttons if contains(rect, point)), None)
+
+
+def zoom_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:
+    return next((b for b, rect in layout.zoom_buttons if contains(rect, point)), None)
+
+
+def zoom_bar_at(layout: Layout, point: tuple[int, int], grab: int = 6) -> float | None:
+    """How far along the zoom bar a press at `point` falls, 0 the farthest, 1 the nearest;
+    None off it."""
+    if layout.zoom_bar is None:
+        return None
+    x, y, w, h = layout.zoom_bar
+    if not (x - grab <= point[0] <= x + w + grab and y - grab <= point[1] <= y + h + grab):
+        return None
+    return min(1.0, max(0.0, (point[0] - x) / w))
+
+
+def level_of(value: float, low: float, high: float) -> float:
+    """Where `value` sits between `low` and `high`, on a log scale: a zoom as the bar shows it."""
+    return min(1.0, max(0.0, math.log(value / low) / math.log(high / low)))
+
+
+def value_at(level: float, low: float, high: float) -> float:
+    """The value at `level` between `low` and `high`, on a log scale: `level_of` undone."""
+    return low * (high / low) ** min(1.0, max(0.0, level))
 
 
 def overview_view(cells: Sequence[Cell], area: Rect) -> View:
