@@ -110,7 +110,7 @@ SEEK_TICKS = 40  # a frame's worth of ticks while the run races ahead to a time 
 
 @dataclass(frozen=True)
 class Snapshot:
-    """The run at one tick, as the timeline puts it back: the swimmers, their controllers, the
+    """The run at one tick, as the timeline puts it back: the swimmers, their controllers,
     what their objectives keep (D-038, D-040), the beads."""
 
     pos: np.ndarray
