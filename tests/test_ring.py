@@ -4,12 +4,13 @@ import math
 
 import pytest
 
-from nektoids.editor.layout import Drawer, Tool, make_layout
+from nektoids.editor.layout import ACTION_WIDTH, Drawer, Tool, make_layout
 from nektoids.editor.ring import (
     ACTIONS,
     ICON,
     IN_RING,
     KEY_OUT,
+    PILE,
     RADIUS,
     RING_HEX,
     angles,
@@ -88,17 +89,19 @@ def test_more_than_five_turn_on_a_wheel_the_others_piled_under_its_ends():
     ring = slots(seven, CENTRE, SIZE, frozenset(Kind))
     assert [s.depth for s in ring] == [0, 0, 0, 0, 0, 1, 2]  # piled under the last end
     last, first_pile, second = ring[4], ring[5], ring[6]
-    assert first_pile.at[0] == last.at[0] == second.at[0] and last.at[1] < first_pile.at[1]
-    assert first_pile.at[1] < second.at[1]  # the further, the lower
-    assert first_pile.key_at[0] > first_pile.at[0]  # its key outwards, beside the pile
+    step = PILE * ICON * SIZE  # a fifth of a radius, along the circle, towards the gap
+    for near, far in ((last, first_pile), (first_pile, second)):
+        assert math.dist(far.at, CENTRE) == pytest.approx(RADIUS * SIZE)
+        assert math.dist(near.at, far.at) == pytest.approx(step, rel=1e-3)
+        assert far.at[1] > near.at[1]  # the last end is low on the right: on towards the gap
     turned_two = slots(seven, CENTRE, SIZE, frozenset(Kind), turn=2)
     assert [s.depth for s in turned_two] == [2, 1, 0, 0, 0, 0, 0]  # under the first end now
-    assert turned_two[0].key_at[0] < turned_two[0].at[0]
-    # Where a pile's icons overlap, a press takes the nearer, drawn over the further.
-    x, y = first_pile.at
-    assert slot_at(ring, (x, y - 0.5 * ICON * SIZE), SIZE) is last
-    assert slot_at(ring, (x, y + 0.9 * ICON * SIZE), SIZE) is first_pile
-    assert slot_at(ring, second.at, SIZE) is second
+    # A pile lies under its end: a press there takes the icon on the ring.
+    assert slot_at(ring, first_pile.at, SIZE) is last and slot_at(ring, second.at, SIZE) is last
+
+
+def test_the_action_atop_the_main_screen_is_as_wide_as_a_ring_icon():
+    assert ACTION_WIDTH == round(2 * ICON * RING_HEX)
 
 
 def test_the_wheel_turns_just_enough_for_the_choice_to_be_on_the_ring():

@@ -350,12 +350,8 @@ def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
     key beside it while key hints are on, and a line under it saying what it is. A click on it
     opens Tools."""
     box = pygame.Rect(scene.layout.action_at)
-    pygame.draw.rect(screen, ACTIVE, box, border_radius=6)
     what, key = scene.action()
-    if isinstance(what, Kind):
-        draw_part(screen, fonts, what, MENU_ANGLE.get(what), box.center, 22, False)
-    else:
-        fonts.icons.draw(screen, _action_icon(what), box.center, 18, TEXT)
+    _draw_disc(screen, fonts, box.center, what, ACTIVE, LIT)  # as the ring draws its icons
     if scene.settings.key_hints:
         shown = fonts.text.render(key, True, DIM_TEXT)
         screen.blit(shown, shown.get_rect(midleft=(box.right + 8, box.centery)))
@@ -388,6 +384,18 @@ def _action_says(scene: EditorScene, what: Kind | Tool | Mode) -> str:
     return f"{NAME[what]}: Enter places one on the cell"
 
 
+def _draw_disc(screen, fonts: Fonts, at, what: Kind | Tool | Mode | None, fill, edge) -> None:
+    """One of the ring's icons, or the action atop the main screen, alike (D-068): a disc, the
+    part on it just smaller than Tools' cell's, or the action's glyph; empty for None."""
+    radius = ICON * RING_HEX
+    pygame.draw.circle(screen, fill, at, radius)
+    pygame.draw.circle(screen, edge, at, radius, 1)
+    if isinstance(what, Kind):
+        draw_part(screen, fonts, what, MENU_ANGLE.get(what), at, 1.4 * radius, False)
+    elif what is not None:
+        fonts.icons.draw(screen, _action_icon(what), at, round(1.05 * radius), TEXT)
+
+
 def _action_icon(what: Tool | Mode) -> str:
     if isinstance(what, Mode):
         return MODE_ICON[what]
@@ -418,15 +426,12 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     in_hand = scene.tool if scene.tool in (Tool.WIRE, Tool.MOVE) else None
     radius = ICON * RING_HEX
     for slot in sorted(ring, key=lambda s: -s.depth):  # down a pile, the further first, under
+        if slot.depth:  # piled: an empty disc, its edge showing past the one over it
+            _draw_disc(screen, fonts, slot.at, None, BUTTON, RULE)
+            continue
         lit = slot == chosen or slot.what is in_hand
         fill = ACTIVE if lit else HOVER if slot == scene.ring_hover else BUTTON
-        pygame.draw.circle(screen, fill, slot.at, radius)
-        pygame.draw.circle(screen, LIT if lit else RULE, slot.at, radius, 1)
-        if isinstance(slot.what, Kind):
-            size = 1.4 * radius  # the part just smaller than the cell's (D-068)
-            draw_part(screen, fonts, slot.what, MENU_ANGLE.get(slot.what), slot.at, size, False)
-        else:
-            fonts.icons.draw(screen, TOOL_ICON[slot.what], slot.at, round(1.05 * radius), TEXT)
+        _draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else RULE)
         if scene.settings.key_hints:
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
             screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))

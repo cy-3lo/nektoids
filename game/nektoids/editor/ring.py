@@ -6,9 +6,10 @@ move, wire, swap when another part of its group is left, turn right (eyes and th
 and delete; swapping, the ring offers those parts. Up to five icons sit beyond the cell's
 corners, the lowest left free, the gap at the foot: an odd number centred on the top corner, an
 even one as many each side of it. More turn on a wheel, as cards on a rotary
-file: five on the ring, the others piled below its two ends, each further one lower, those before
-the ring under its first end, those after it under its last. The keyboard going round turns the
-wheel. Each icon has its key just outside it. Pure numbers, no pygame.
+file: five on the ring, the others piled under its two ends, drawn empty, each set back a fifth
+of an icon's radius along the circle, those before the ring under its first end, those after it
+under its last. The keyboard going round, or the mouse wheel, turns the wheel. Each icon on the
+ring has its key just outside it. Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ KEY_OUT = 0.95  # its key, this far past the icon's centre, outwards [hex sizes]
 RING_HEX = 40  # the cell's size in Tools' picture [px]
 IN_RING = 5  # the most icons on the ring itself; more pile up below its ends
 CORNERS = (210.0, 150.0, 90.0, 30.0, -30.0)  # left to right over the top; the lowest is the gap
-PILE = 1.4  # from one icon of a pile to the next, further, below it [icon radii]
+PILE = 0.2  # from one icon of a pile to the next, further, along the circle [icon radii]
 ACTIONS = (  # the wire at the top, the turns either side of the gap, delete last
     Tool.TURN_LEFT,
     Tool.MOVE,
@@ -114,7 +115,8 @@ def slots(
     turn: int = 0,
 ) -> list[Slot]:
     """The icons round a cell drawn at `centre` with hexes of `size` [px], the wheel turned by
-    `turn`: the icons before it piled under the ring's first end, those after it under its last."""
+    `turn`: the icons before it piled under the ring's first end, those after it under its last,
+    each further one set back along the circle, towards the gap."""
     turn = turned(turn, None, len(items))
     ring = angles(min(len(items), IN_RING))
     cx, cy = centre
@@ -134,18 +136,15 @@ def slots(
             continue
         before = k < turn  # piled under the first end, or under the last
         depth = turn - k if before else k - turn - IN_RING + 1
-        (ex, ey), _ = on_ring(ring[0] if before else ring[-1])
-        at = (ex, ey + depth * PILE * ICON * size)
-        side = -1 if before else 1  # its key outwards, beside the pile
-        out.append(Slot(item, at, (at[0] + side * KEY_OUT * size, at[1]), key, depth))
+        back = math.degrees(depth * PILE * ICON / RADIUS)  # set back along the circle
+        at, _ = on_ring(ring[0] + back if before else ring[-1] - back)
+        out.append(Slot(item, at, at, key, depth))  # drawn empty, its key unwritten
     return out
 
 
 def slot_at(ring: Sequence[Slot], point: tuple[float, float], size: float) -> Slot | None:
-    """The icon a press at `point` falls on, if any: where they overlap, the nearer, drawn over
-    the further."""
-    near_first = sorted(ring, key=lambda s: s.depth)
-    return next((s for s in near_first if math.dist(s.at, point) <= ICON * size), None)
+    """The icon on the ring a press at `point` falls on, if any; a pile's lie under its end."""
+    return next((s for s in ring if not s.depth and math.dist(s.at, point) <= ICON * size), None)
 
 
 def cycled(ring: Sequence[Slot], chosen: int | None, step: int, blank: bool) -> int | None:
