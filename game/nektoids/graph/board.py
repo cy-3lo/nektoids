@@ -220,6 +220,32 @@ class Board:
             self._stock[node.kind] = left + 1
         return None
 
+    def replace(self, node_id: int, kind: Kind) -> tuple[Node, int] | Refused:
+        """A part of `kind` where node `node_id` is (D-068): on its cell, facing its way if both
+        turn, with each of its wires the new part can take, routed again in the order they were
+        drawn. Returns the new node and how many wires could not follow, which go."""
+        old = self.nodes[node_id]
+        if old.locked:
+            return Refused("placed by the level")
+        if self.remaining(kind) == 0:
+            return Refused("none left")
+        before = self.snapshot()
+        ends = [(w.source, w.target) for w in self.wires if node_id in (w.source, w.target)]
+        self.remove_node(node_id)
+        facing = old.facing if kind.default_facing is not None else None
+        node = self.place(kind, old.cell, facing=facing)
+        if isinstance(node, Refused):
+            self.restore(before)
+            return node
+        lost = 0
+        for source, target in ends:
+            ids = (
+                node.id if source == node_id else source,
+                node.id if target == node_id else target,
+            )
+            lost += isinstance(self.connect(*ids), Refused)
+        return node, lost
+
     def move_node(self, node_id: int, cell: Cell) -> Node | Refused:
         """Move a component to another cell, routing its wires again (D-011).
 

@@ -206,6 +206,38 @@ def test_sum_and_difference_take_two_inputs_and_give_one_output():
     assert not isinstance(board.connect(c.id, left.id), Refused)
 
 
+def test_a_part_swapped_keeps_its_cell_and_the_wires_it_can_take():
+    board, (a, b, c, double, left) = build(
+        [
+            ((0, 1), Kind.SOURCE),
+            ((0, 3), Kind.EYE),
+            ((0, 5), Kind.EYE),
+            ((3, 3), Kind.DOUBLE),
+            ((6, 3), Kind.THRUSTER),
+        ]
+    )
+    for part in (a, b, c):
+        board.connect(part.id, double.id)
+    board.connect(double.id, left.id)
+    node, lost = board.replace(double.id, Kind.SUM)  # D-068
+    assert node.cell == (3, 3) and node.kind is Kind.SUM and double.id not in board.nodes
+    assert lost == 1  # a sum takes two inputs: the third wire goes, the others follow
+    ends = sorted((w.source, w.target) for w in board.wires)
+    assert ends == sorted([(a.id, node.id), (b.id, node.id), (node.id, left.id)])
+    source, _ = board.replace(b.id, Kind.SOURCE)
+    assert source.facing is None  # an eye's facing goes to a part that has none
+
+
+def test_a_swap_needs_one_left_and_leaves_a_locked_part_alone():
+    board = Board(offset_rect(9, 7), {Kind.EYE: 1, Kind.SOURCE: 0})
+    eye = board.place(Kind.EYE, (0, 3))
+    before = board.snapshot()
+    assert board.replace(eye.id, Kind.SOURCE) == Refused("none left")
+    assert board.snapshot() == before
+    locked = board.place(Kind.THRUSTER, (4, 3), locked=True)
+    assert board.replace(locked.id, Kind.THRUSTER) == Refused("placed by the level")
+
+
 # Routing
 
 

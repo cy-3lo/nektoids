@@ -99,9 +99,9 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
 def choose_place(index: int) -> None:
     """A place picked in Chapters, under its card. A guided level starts afresh, its board, its
     undo history and its tutorial; the others keep their boards, and their hints start again
-    (D-048, D-050, D-054). The editor left goes back to Parts, as an editor opens."""
+    (D-048, D-050, D-054). The editor left goes back to Tools, as an editor opens (D-068)."""
     if router.index in editors:
-        editors[router.index].open_drawer(Drawer.PARTS)
+        editors[router.index].open_drawer(Drawer.TOOLS)
     for index_, level in enumerate(levels):
         if guided(level.tutorial):
             router.reset(index_)
@@ -130,7 +130,7 @@ def editor() -> EditorScene:
         caption = (f"{router.label}. {level.title}", level.spec)
         board = router.board
         handed_out = frozenset(kind for kind in Kind if board.total(kind) != 0)
-        layout = make_layout(kinds=handed_out, chapter=len(levels))
+        layout = make_layout(Drawer.TOOLS, kinds=handed_out, chapter=len(levels))
         editors[router.index] = EditorScene(board, layout, caption, settings, level)
     return editors[router.index]
 
@@ -286,7 +286,7 @@ async def main() -> None:
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         editor().gate = gate  # only what the step asks goes through (D-048)
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
-        editor().focus = focus_cells(guide)  # the cells a step acts on, lit (D-063)
+        editor().guide_cells = focus_cells(guide)  # the cells a step acts on, lit (D-063)
         if playing is not None:
             playing.gate = gate
             playing.lit = panels(guide)
