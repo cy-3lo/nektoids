@@ -93,7 +93,8 @@ column and the full-screen map.
       the probe; in the Run, the arena big and the circuit small, or the other way round.
 - [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as
       it would run there; nothing run, nothing scored. Two icon buttons over the editor switch
-      views: the Diagram view (a hex grid) and the Run preview (beads through a diamond).
+      views, as big as the Run button: the Diagram view (three hex cells) and the Run preview
+      (an operator, two wires in and one out, a bead on each, in the wires' colour).
 - [ ] In the Run preview, each eye's meter is a handle: dragged, it sets what the eye
       reads, and the circuit settles to show what follows; moving the probe gives the eyes back
       to the light. A test input, not a setting of the board: nothing kept, the run never sees

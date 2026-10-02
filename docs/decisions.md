@@ -648,7 +648,7 @@ numbers and a level meter by each eye and thruster in accent 1, the colour of th
 swap button exchanges the drawer and the main screen. In the editor it runs where a probe
 stands, the swimmer put anywhere on the level and turned, nothing run or scored; two icon
 buttons over the editor switch views at any time: the Diagram view, a hex grid, and this Run
-preview, beads through a diamond. There, each eye's meter is a handle the player drags to set what
+preview, an operator with two wires in and one out, a bead on each. There, each eye's meter is a handle the player drags to set what
 the eye reads, to see how the circuit answers: a test input, kept nowhere and never seen by the
 run, so the board itself still holds no continuous parameter (brief: "No sliders"). This amends
 D-016, whose sensor sliders were the developer's only. This session's winning boards are kept in memory; Files can
