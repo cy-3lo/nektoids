@@ -319,10 +319,9 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         colour = DOOMED if wire in doomed_wires else WIRE
         _draw_wire(screen, view, wire.path, colour, 3, extent(board.nodes[wire.target].kind))
 
-    for ghost in scene.ghosts:  # where a part goes, facing the way it should (D-039)
+    for ghost in scene.ghosts:  # where a part goes, facing the way it should (D-039, D-060)
         centre, angle = _centre(view, ghost.cell), placed_angle(ghost.kind, ghost.facing)
         pygame.draw.polygon(screen, GHOST_FILL, _shape(ghost.kind, angle, centre, view.size))
-        pygame.draw.polygon(screen, GHOST, _shape(ghost.kind, angle, centre, view.size), 2)
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
         angle = placed_angle(node.kind, node.facing)

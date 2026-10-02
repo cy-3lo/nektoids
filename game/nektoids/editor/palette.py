@@ -164,7 +164,7 @@ THRUSTER_BACK = P.accent1.mid  # the back a thruster pushes from
 WIRE = mix(P.dim, P.parts, 0.4)
 GHOST = P.muted  # where a wire would run
 GHOST_OK = P.bright  # ... and it may connect there
-GHOST_FILL = P.raised  # a tutorial's ghost part, under the real one
+GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part: a paler grey, no outline
 DOOMED = P.muted  # what a Delete click would remove
 
 # The circuit: rates and beads, in the developer view and the run's column

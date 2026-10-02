@@ -302,6 +302,10 @@ def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_o
     assert answer(tutorial, box, None) == "next"  # the board: any key
     assert answer(tutorial, box, (5, 5)) == "next"  # ... or a click anywhere
     assert answer(tutorial, box, centre(skip)) == "skip"
+    tutorial.index = R + 1  # Parts, after the Editor tab: only Next or Enter (D-060)
+    assert answer(tutorial, box, None) is None and answer(tutorial, box, (5, 5)) is None
+    assert answer(tutorial, box, None, enter=True) == "next"
+    assert answer(tutorial, box, centre(nxt)) == "next"
     tutorial.index = R + 3  # place an eye: the press is the editor's, but Skip
     assert answer(tutorial, box, None) is None and answer(tutorial, box, centre(nxt)) is None
     assert answer(tutorial, box, centre(skip)) == "skip"

@@ -128,6 +128,14 @@ class Tutorial:
         return self.leads and self.waits_for_next
 
     @property
+    def opening(self) -> bool:
+        """Whether this step comes before the first that asks for an action, or is the last:
+        such a step moves on at any key or click (D-048); a later one only by Next or Enter, so
+        that a click to look round, an info disc, a drawer, goes to the screen (D-060)."""
+        first = next((k for k, step in enumerate(self.steps) if step.until), len(self.steps))
+        return self.index < first or self.index == len(self.steps) - 1
+
+    @property
     def waits_for_next(self) -> bool:
         """Whether this step has a Next: it waits for nothing the player does."""
         return self.step is not None and not self.step.until
@@ -433,16 +441,20 @@ def next_rect(box: Rect) -> Rect:
     return (x + w - PAD - bw, y + h - PAD - bh, bw, bh)
 
 
-def answer(tutorial: Tutorial, box: Rect, click: tuple[int, int] | None) -> str | None:
-    """What a key (`click` None) or a click at `click` does to the tutorial, before the editor or
-    the run sees it: "skip" on Skip; on a step that waits for Next, "next" on Next, and, on a
-    step that also leads, at any key or any click; otherwise None, and the press goes on."""
+def answer(
+    tutorial: Tutorial, box: Rect, click: tuple[int, int] | None, enter: bool = False
+) -> str | None:
+    """What a key (`click` None; `enter` if it is Enter) or a click at `click` does to the
+    tutorial, before the editor or the run sees it: "skip" on Skip; on a step that waits for
+    Next, "next" on Next or at Enter, and, on an opening step that leads, at any key or any
+    click (`Tutorial.opening`); otherwise None, and the press goes on."""
     last = tutorial.index == len(tutorial.steps) - 1
     if click is not None and not last and _inside(skip_rect(box), click):
         return "skip"
     if not tutorial.waits_for_next:
         return None
-    if tutorial.leads or (click is not None and _inside(next_rect(box), click)):
+    on_next = click is not None and _inside(next_rect(box), click)
+    if (tutorial.leads and tutorial.opening) or on_next or (click is None and enter):
         return "next"
     return None
 

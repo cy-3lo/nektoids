@@ -790,3 +790,14 @@ is lost or the time is up; the time shows in the timeline's tooltip, and stays t
 sandbox, which has no objective. Under Navigator's rows, an overview: the whole board, its
 parts as dots, in the editor; the whole level and the swimmer in the run; a frame round what
 the main screen shows, and a press or a drag there centres the view.
+
+**D-061 — 2026-10-02 — Only the tutorial's opening steps, and its last, move on at any key or click; the others that explain wait for Next or Enter. Amends D-048. Ghost parts are a paler grey, with no outline.**
+Since Fear's tutorial opens in the run (D-060), steps that only explain also come later, in the
+editor and in the run (the board, Parts, the bar, the controls, Inside). There, a click to look
+round, an info disc or a drawer, moved the tutorial on unasked. Now the steps before the first
+that asks for an action, and the last, move on at any key or click, as D-048 had it for the
+first messages; the others move on only by Next or Enter, and other clicks go to the screen,
+where the step's gate still refuses what it does not ask for. Fear's step to the editor shows
+both ways there, the Editor tab, its name lit, and the switch. A tutorial's ghost part, where a
+part goes and which way it faces, is a paler grey shape with no outline. Fear's last step no
+longer names Braitenberg.

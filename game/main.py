@@ -115,7 +115,8 @@ def choose_place(index: int) -> None:
 def tutorial_press(guide: Tutorial, event: pygame.event.Event, scene) -> str | None:
     """ "next" or "skip" if this key or click is the tutorial's (`tutorial.answer`), else None."""
     if event.type == pygame.KEYDOWN:
-        return answer(guide, tutorial_box(guide, scene)[1], None)
+        enter = event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
+        return answer(guide, tutorial_box(guide, scene)[1], None, enter)
     if event.type == pygame.MOUSEBUTTONDOWN and 1 <= event.button <= 3:  # not the wheel
         return answer(guide, tutorial_box(guide, scene)[1], event.pos)
     return None
