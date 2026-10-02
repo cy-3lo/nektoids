@@ -2,7 +2,8 @@
 round a picture of the cell, large, where the icons have room.
 
 An empty cell of the zone offers the parts the level still hands out; a part offers turn left,
-turn right (eyes and thrusters only), wire, move and delete. Up to six icons sit beyond the
+turn right (eyes and thrusters only), wire, move, delete, and swap when another part of its
+group is left; swapping, the ring offers those parts. Up to six icons sit beyond the
 cell's six faces; more are spread along a 300° arc, its gap at the foot, at two radii in turn
 when they would touch, as the stations of an indexing table. Each icon has its key just outside
 it. Where the ring would leave its area it is slid in, whole. Pure numbers, no pygame.
@@ -24,13 +25,14 @@ RING_HEX = 36  # the cell's size in Tools' picture [px]
 FACES = (120.0, 60.0, 0.0, 300.0, 240.0, 180.0)  # the neighbours, from the top left, clockwise
 ARC = 300.0  # more than six icons spread over this much, the gap at the foot [degrees]
 STAGGER = 0.22  # in turn nearer and farther, when they would touch [hex sizes]
-ACTIONS = (Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.WIRE, Tool.MOVE, Tool.DELETE)
+ACTIONS = (Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.WIRE, Tool.MOVE, Tool.DELETE, Tool.SWAP)
 ACTION_FACE = {  # each action beyond its own face: the turns on top, as they turn
     Tool.TURN_LEFT: 120.0,
     Tool.TURN_RIGHT: 60.0,
     Tool.WIRE: 0.0,
     Tool.MOVE: 300.0,
     Tool.DELETE: 240.0,
+    Tool.SWAP: 180.0,
 }
 TURNING = (Kind.EYE, Kind.THRUSTER)  # the parts whose facing matters (D-009)
 
@@ -54,8 +56,26 @@ def offer(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind | Tool, ...]
         return tuple(k for k in ordered if board.remaining(k) != 0)
     if node.locked:  # placed by the level: it stays, it may still be wired
         return (Tool.WIRE,)
+    turns = node.kind in TURNING
+    swap = bool(swaps(board, cell, kinds))
     return tuple(
-        a for a in ACTIONS if node.kind in TURNING or a not in (Tool.TURN_LEFT, Tool.TURN_RIGHT)
+        a
+        for a in ACTIONS
+        if (turns or a not in (Tool.TURN_LEFT, Tool.TURN_RIGHT)) and (swap or a is not Tool.SWAP)
+    )
+
+
+def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
+    """What the part on `cell` may be swapped for: the other parts of its group in Parts that
+    the level still hands out, in Parts' order."""
+    node = board.node_at(cell)
+    if node is None or node.locked:
+        return ()
+    ordered = [k for _, group in MENU_GROUPS for k in group if k in kinds]
+    return tuple(
+        k
+        for k in ordered
+        if k.category is node.kind.category and k is not node.kind and board.remaining(k) != 0
     )
 
 

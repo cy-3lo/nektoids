@@ -14,6 +14,7 @@ from nektoids.editor.ring import (
     part_key,
     slot_at,
     slots,
+    swaps,
 )
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
@@ -44,7 +45,20 @@ def test_an_empty_cell_offers_the_parts_left_and_a_part_its_actions():
 def test_operators_do_not_turn():
     board = sandbox().new_board()
     board.place(Kind.SUM, (0, 0))
-    assert offer(board, (0, 0), frozenset(Kind)) == (Tool.WIRE, Tool.MOVE, Tool.DELETE)
+    assert offer(board, (0, 0), frozenset(Kind)) == (Tool.WIRE, Tool.MOVE, Tool.DELETE, Tool.SWAP)
+
+
+def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
+    board = sandbox().new_board()
+    total, eye, thruster = (
+        board.place(k, c)
+        for k, c in ((Kind.SUM, (0, 0)), (Kind.EYE, (1, 0)), (Kind.THRUSTER, (2, 0)))
+    )
+    assert swaps(board, total.cell, frozenset(Kind)) == (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE)
+    assert swaps(board, eye.cell, frozenset({Kind.EYE, Kind.THRUSTER})) == ()  # no source here
+    assert swaps(board, thruster.cell, frozenset(Kind)) == ()  # alone in its group
+    assert Tool.SWAP not in offer(board, thruster.cell, frozenset(Kind))
+    assert ACTION_FACE[Tool.SWAP] == 180.0  # the left face: six actions, six faces
 
 
 def test_up_to_six_icons_face_the_sides_and_more_spread_over_300_degrees():

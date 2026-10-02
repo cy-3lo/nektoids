@@ -35,6 +35,7 @@ SIZES = (10, 11, 12, 13, 14, 16, 18, 20, 22, 25, 28, 32, 36, 40, 44)
 GLYPH = {
     "eye": 0xF06E,
     "pencil": 0xF303,
+    "arrow-right-arrow-left": 0xF0EC,
     "eraser": 0xF12D,
     "angles-up": 0xF102,
     "angles-down": 0xF103,
@@ -110,6 +111,7 @@ TOOL_ICON = {
     Tool.TURN_RIGHT: "rotate-right",
     Tool.MOVE: "up-down-left-right",
     Tool.DELETE: "trash-can",
+    Tool.SWAP: "arrow-right-arrow-left",
 }
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}

@@ -78,9 +78,18 @@ class Tool(Enum):
     TURN_LEFT = "turn left"  # counter-clockwise, 60° a click
     TURN_RIGHT = "turn right"  # clockwise
     PAN = "pan"  # moves the view, not a component; the hand among the view buttons
+    SWAP = "swap"  # the focused part for another of its group in Parts (D-068)
 
 
-PALETTE_TOOLS = (Tool.ADD, Tool.WIRE, Tool.MOVE, Tool.DELETE, Tool.TURN_LEFT, Tool.TURN_RIGHT)
+PALETTE_TOOLS = (
+    Tool.ADD,
+    Tool.WIRE,
+    Tool.MOVE,
+    Tool.DELETE,
+    Tool.TURN_LEFT,
+    Tool.TURN_RIGHT,
+    Tool.SWAP,
+)
 TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-clockwise
 
 
@@ -183,6 +192,7 @@ TOOL_KEYS = {
     Tool.DELETE: "D",
     Tool.TURN_LEFT: "L",
     Tool.TURN_RIGHT: "R",
+    Tool.SWAP: "S",
 }
 VIEW_KEYS = {
     ViewButton.ZOOM_IN: "+",

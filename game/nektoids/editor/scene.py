@@ -88,7 +88,7 @@ from nektoids.editor.layout import (
     zoom_button_at,
 )
 from nektoids.editor.probe import Probe, level_view
-from nektoids.editor.ring import RING_HEX, Slot, cycled, offer, part_key, slot_at, slots
+from nektoids.editor.ring import RING_HEX, Slot, cycled, offer, part_key, slot_at, slots, swaps
 from nektoids.editor.router import Won
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
@@ -159,6 +159,7 @@ class EditorScene(Frame):
         self.ring_hover: Slot | None = None  # the ring's icon under the mouse, in Tools
         self.press_cell: Cell | None = None  # a part pressed: a click or a drag, told on release
         self.keyboard = False  # the keyboard drives, until the mouse moves
+        self.swapping = False  # Swap chosen: the ring offers the parts the focused one may become
         self.onward = False  # the focus came unclicked, placed or wired to: it wires only forward
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
@@ -370,7 +371,11 @@ class EditorScene(Frame):
         if k >= len(kinds):
             return
         cell = self.focused
-        if cell is not None and cell in self.board.cells and self.board.node_at(cell) is None:
+        if self.swapping and kinds[k] in self.offered():
+            self._swap(kinds[k])
+        elif self.swapping:
+            self._refuse("it may become only a part of its group, still left", cell)
+        elif cell is not None and cell in self.board.cells and self.board.node_at(cell) is None:
             self._place(kinds[k], cell)
         else:
             self._pick(kinds[k])
@@ -599,6 +604,7 @@ class EditorScene(Frame):
         self.picked, self.dragging = None, False
         self.source, self.ghost = None, None
         self.moving, self.carrying, self.press_cell = None, False, None
+        self.swapping = False
         if self.tool is not Tool.PAN:
             self.tool = Tool.ADD
 
@@ -779,6 +785,8 @@ class EditorScene(Frame):
         not: none in Delete, or while the Run preview shows."""
         if self.focused is None or self.mode is not Mode.WRITE or self.main is not MainView.DIAGRAM:
             return ()
+        if self.swapping:
+            return swaps(self.board, self.focused, self.layout.kinds)
         return offer(self.board, self.focused, self.layout.kinds)
 
     def going_round(self) -> bool:
@@ -805,6 +813,8 @@ class EditorScene(Frame):
             what = Mode.DELETE
         elif self.going_round() and self.choice is not None and self.choice < len(items):
             what = items[self.choice]
+        elif self.swapping:
+            what = Tool.SWAP
         elif self.carrying or self.tool is Tool.MOVE:
             what = Tool.MOVE
         elif self.tool is Tool.WIRE and self.source is not None:
@@ -824,8 +834,8 @@ class EditorScene(Frame):
 
     def _blank(self) -> bool:
         """Whether the keyboard's way round the ring stops at "nothing": round a part's actions,
-        not round the parts to place."""
-        return self._focused_node() is not None
+        not round the parts to place, or to swap it for."""
+        return self._focused_node() is not None and not self.swapping
 
     def _focus(self, cell: Cell | None, keys: bool = False) -> None:
         """Focus `cell` (None: nothing), its ring open: round a part, Wire chosen for the mouse,
@@ -859,7 +869,9 @@ class EditorScene(Frame):
 
     def _use(self, what: Kind | Tool) -> None:
         """An icon of the ring, clicked or chosen with Enter: a part placed, or an action."""
-        if isinstance(what, Kind):
+        if isinstance(what, Kind) and self.swapping:
+            self._swap(what)
+        elif isinstance(what, Kind):
             self._place(what, self.focused)
         else:
             self._act(what)
@@ -900,9 +912,36 @@ class EditorScene(Frame):
                     self.ring_open, self.carrying = False, True
         elif tool is Tool.DELETE:
             self._delete_part(node)
+        elif tool is Tool.SWAP:
+            if not self._allowed(Action("tool", tool=Tool.SWAP), node.cell):
+                return
+            if not swaps(self.board, node.cell, self.layout.kinds):
+                self._refuse("no other part of its group left", node.cell)
+                return
+            self.swapping = True  # the ring offers what it may become
+            self.choice = 0 if self.going_round() else None
+            return
         if self.ring_keys and self.ring_open:
             items = self.offered()
             self.choice = next((k for k, what in enumerate(items) if what is tool), self.choice)
+
+    def _swap(self, kind: Kind) -> None:
+        """The focused part swapped for one of `kind`, in its place (D-068); the wires it cannot
+        take are said in the status line."""
+        node = self._focused_node()
+        result = self.board.replace(node.id, kind)
+        if isinstance(result, Refused):
+            self._refuse(result.reason, node.cell)
+            return
+        _, lost = result
+        if self.keyboard:
+            self._focus(node.cell, keys=True)  # its actions, the keyboard on "nothing"
+        else:
+            self._focus(node.cell)
+        if lost:
+            self._refuse(f"{lost} wire{'s' if lost > 1 else ''} could not follow", node.cell)
+        else:
+            self.message = ""
 
     def _click_empty(self, cell: Cell) -> None:
         """A click on an empty cell of the zone: the focused part moved there, if Move is chosen;
@@ -1006,6 +1045,9 @@ class EditorScene(Frame):
         """Esc, or a right click: back one step, from a gesture, to the ring, to nothing."""
         if self.tool is Tool.PAN:
             self.tool = Tool.ADD
+        elif self.swapping:
+            self.swapping = False  # back to the part's actions
+            self.choice = None
         elif self.mode is Mode.DELETE:
             self.mode = Mode.WRITE
         elif self.carrying or (self.tool is Tool.WIRE and not self.ring_open and self.source):
@@ -1027,6 +1069,8 @@ class EditorScene(Frame):
             return "The arrows to the part to wire to, then Enter. Esc gives up."
         if self.mode is Mode.DELETE:
             return "Click a part to delete it with its wires, or a wire. E or Esc: back to Write."
+        if self.swapping:
+            return "Pick in Tools what the part becomes, or press its number. Esc: back."
         node = self._focused_node()
         if node is not None:
             return "Click another part to wire it, or drag it to move it. Tools has the rest."

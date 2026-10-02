@@ -126,6 +126,7 @@ TIP = {
     Tool.TURN_RIGHT: "Turn right",
     Tool.MOVE: "Move a part",
     Tool.DELETE: "Delete",
+    Tool.SWAP: "Swap for another part",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Move the view",
@@ -170,6 +171,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Tool.DELETE: "Delete",
     Tool.TURN_LEFT: "Turn left",
     Tool.TURN_RIGHT: "Turn right",
+    Tool.SWAP: "Swap",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
     Mode.WRITE: "Write",
@@ -444,6 +446,8 @@ def _cell_says(scene: EditorScene) -> str:
     node = scene.board.node_at(scene.focused)
     if node is None:
         return "An empty cell" if scene.offered() else "An empty cell: no part left"
+    if scene.swapping:
+        return f"Swap the {NAME[node.kind].lower()} for:"
     return NAME[node.kind] + (", placed by the level" if node.locked else "")
 
 
