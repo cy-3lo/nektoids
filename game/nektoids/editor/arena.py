@@ -160,6 +160,7 @@ class ArenaScene(Frame):
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.next_label = next_label  # what the banner's next button says after a win; None: none
         self.clock = Clock()
+        self.clock.paused = True  # a run waits for Play, to open the drawer it wants (D-060)
         self.circuit = Circuit(board, DRAWER_BODY, CIRCUIT_MARGIN, body=True)  # in Inside
         self.parts = complexity(board)  # what this board scores (D-045)
         self.scores: frozenset[Score] = frozenset()  # the level's wins this session: main.py's

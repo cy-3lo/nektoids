@@ -96,3 +96,14 @@ def test_an_icons_tooltip_shows_once_the_mouse_has_rested_on_it():
     assert scene.tooltip is Drawer.NAVIGATOR
     scene.frame_track(centre(scene.layout.board_area))
     assert scene.tooltip is None and scene.tip_frames == 0
+
+
+def test_the_other_tab_says_what_the_switch_says_and_this_one_nothing():
+    scene = Scene()
+    tabs = dict(scene.layout.tabs)
+    scene.frame_track(centre(tabs["run"]))
+    for _ in range(scene.settings.tooltip_frames):
+        scene.frame_update()
+    assert scene.tooltip == "run"  # drawn as the switch's: "Run (Space)" (D-060)
+    scene.frame_track(centre(tabs["editor"]))
+    assert scene.tip_target is None

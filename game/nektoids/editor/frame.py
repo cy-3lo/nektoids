@@ -16,7 +16,6 @@ from collections.abc import Callable
 from nektoids.editor.layout import (
     Drawer,
     Layout,
-    LevelButton,
     Setting,
     chapter_row_at,
     drawer_button_at,
@@ -44,15 +43,16 @@ class Frame:
         self.chosen: int | None = None  # a place picked in Chapters: main.py's to clear
         self.chapters: tuple[ChapterRow, ...] = ()  # what Chapters shows; main.py's
         self.info: object | None = None  # the row whose info box is open: a part, a tool...
-        self.tip_target: Drawer | LevelButton | None = None  # the bar's icon under the mouse
+        self.tip_target: object | None = None  # the bar's icon, or the other tab, under the mouse
         self.tip_frames = 0  # how long it has been there
         self.message = ""  # the last refusal, until something succeeds
         self.lit: frozenset[str] = frozenset()  # what a tutorial step explains (D-050); main.py's
         self.gate: Callable[[Action], bool] | None = None  # what it lets through; main.py's
 
     @property
-    def tooltip(self) -> Drawer | LevelButton | None:
-        """The bar's icon whose tooltip shows now, once the mouse has rested on it long enough."""
+    def tooltip(self) -> object | None:
+        """What a tooltip names now, once the mouse has rested on it long enough: an icon of the
+        bar, a main view's button, the other tab."""
         return self.tip_target if self.tip_frames >= self.settings.tooltip_frames else None
 
     def frame_update(self) -> None:

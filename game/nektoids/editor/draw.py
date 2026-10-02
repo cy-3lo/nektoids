@@ -49,6 +49,7 @@ from nektoids.editor.layout import (
     SCREEN,
     SENSE_MAP,
     STATUS_HEIGHT,
+    SWITCH_TO,
     TABS_HEIGHT,
     TOOL_KEYS,
     VIEW_KEYS,
@@ -838,6 +839,13 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     a main view's button's under it."""
     target = scene.tooltip
     if target is None:
+        return
+    if isinstance(target, str):  # the other tab: what the switch to it says
+        x, y, _, h = dict(scene.layout.tabs)[target]
+        button = SWITCH_TO[scene.layout.env]
+        key = LEVEL_KEYS[button] if scene.settings.key_hints else None
+        text = TIP[button] + (f" ({key})" if key else "")
+        draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
     if isinstance(target, MainView):
         x, y, w, h = dict(scene.layout.view_switch)[target]

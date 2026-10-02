@@ -412,12 +412,15 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
 
 def palette_target_at(
     layout: Layout, point: tuple[int, int]
-) -> Drawer | LevelButton | MainView | None:
-    """What a tooltip would name under `point`: an icon of the bar, or a main view's button."""
+) -> Drawer | LevelButton | MainView | str | None:
+    """What a tooltip would name under `point`: an icon of the bar, a main view's button, or the
+    other environment's tab, by its name, which says what the switch says (D-060)."""
+    tab = tab_at(layout, point)
     return (
         drawer_button_at(layout, point)
         or level_button_at(layout, point)
         or main_view_at(layout, point)
+        or (tab if tab is not None and tab != layout.env.value else None)
     )
 
 
