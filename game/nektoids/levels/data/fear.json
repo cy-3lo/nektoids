@@ -104,9 +104,9 @@
       },
       {
         "say": [
-          "The run waits for you. Controls: play or",
-          "pause, a step, fast forward; under them, the",
-          "timeline: click it to go to any time."
+          "The run waits for you. Under the arena: start",
+          "again, play or pause, a step, fast forward;",
+          "then the timeline: click it to go to any time."
         ],
         "show": {"run": "controls"}
       },
@@ -136,10 +136,11 @@
         "say": [
           "That is fear, Braitenberg's vehicle 2a. Each",
           "win is scored on its time and its parts: a",
-          "point here. Fewer of either is better; the", "line joins the wins no other beats.",
+          "point in Score. Fewer of either is better;",
+          "the line joins the wins no other beats.",
           "Close, then Next level when you are ready."
         ],
-        "show": {"run": "wins"}
+        "show": {"run": "score"}
       }
     ]
   }

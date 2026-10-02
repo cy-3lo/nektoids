@@ -108,13 +108,18 @@ TIP = {
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Move the view",
     ViewButton.CENTRE: "Centre the view",
+    ViewButton.RAYS: "Show or hide the light's rays",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
     FileButton.SAVE: "Save: not yet",
     FileButton.LOAD: "Load: not yet",
     LevelButton.RUN: "Run",
+    LevelButton.EDIT: "Back to the editor",
     Drawer.PARTS: "Parts",
     Drawer.TOOLS: "Tools",
+    Drawer.OBJECTIVES: "Objectives",
+    Drawer.INSIDE: "Inside",
+    Drawer.SCORE: "Score",
     Drawer.NAVIGATOR: "Navigator",
     Drawer.SETTINGS: "Settings",
     Drawer.CHAPTERS: "Chapters",
@@ -150,6 +155,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Hand",
     ViewButton.CENTRE: "Centre",
+    ViewButton.RAYS: "Rays",
 }
 TAB_NAME = {"editor": "Editor", "run": "Run"}
 HINT = {
@@ -604,10 +610,12 @@ def draw_row(
     icon: str | None = None,
     part: Kind | None = None,
     badge: str | None = None,
+    alarm: bool = False,
 ) -> None:
     """A drawer's row, as every drawer draws them (D-051): an icon (or the part itself, or a
     level's number), the name, an info disc, then a count, the infinity sign, a key, a tick or a
-    lock, right-aligned; nothing for "none". Keys show while the key hints are on (D-054)."""
+    lock, right-aligned; nothing for "none". Keys show while the key hints are on (D-054).
+    `alarm`: the name and the count in the refusals' colour, for an objective that lost."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, box, border_radius=6)
     ink = GREYED if greyed else TEXT
@@ -620,7 +628,7 @@ def draw_row(
         screen.blit(label, label.get_rect(center=slot))
     elif icon is not None:
         fonts.icons.draw(screen, icon, slot, 16, ink)
-    shown = fonts.name.render(name, True, DIM_TEXT if greyed else TEXT)
+    shown = fonts.name.render(name, True, REFUSED if alarm else DIM_TEXT if greyed else TEXT)
     screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
     disc = TEXT if what == scene.info else DIM_TEXT
     fonts.icons.draw(screen, "circle-info", (box.left + INFO_AT, box.centery), INFO_ICON, disc)
@@ -645,7 +653,7 @@ def draw_row(
         pygame.draw.rect(screen, RULE, cap_box, 1, border_radius=4)
         screen.blit(cap, cap.get_rect(center=cap_box.center))
     else:
-        count = fonts.small.render(text, True, DIM_TEXT if greyed else TEXT)
+        count = fonts.small.render(text, True, REFUSED if alarm else DIM_TEXT if greyed else TEXT)
         screen.blit(count, count.get_rect(midright=(right, box.centery)))
 
 

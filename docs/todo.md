@@ -35,6 +35,8 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 - [ ] `draw.py` calls `scene._wire_start()`, a private method.
 - [ ] `eye_rates` timed natively only; measure it under WASM (D-019).
 - [ ] The names: itch.io search, Google and TMview (classes 9 and 41) to check by hand (D-006).
+- [ ] In headless Chrome the first click after a key press is lost: on Fear's first drag step,
+      Skip takes two clicks there. Check it in a real browser (seen 2026-10-02).
 
 ## 7. The editor's hand: a ring of icons round a cell, for a finger as for a mouse
 
@@ -75,15 +77,10 @@ column and the full-screen map (gone, D-054).
 The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
 preview; in the Run it shows the level. Drawers never take the main screen.
 
-- [ ] The activity bar's other drawers (Parts, Tools, Navigator, Settings and Chapters are in,
-      D-053, D-054): Files (floppy-disk) and Sense (stethoscope) in the editor; Objectives
-      (list-check), Inside (magnifying-glass), Score (trophy) and Navigator in the Run, with
-      Settings and Chapters at its foot too. Sound and Music in Settings once there is sound.
+- [ ] The editor's two other drawers, Files (floppy-disk) and Sense (stethoscope); the run's are
+      in (D-057). Sound and Music in Settings once there is sound.
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
-- [ ] The Run's controls (play, a step, fast forward, the timeline) in a bar under the arena.
-- [ ] The Run as an environment with the same frame: its tabs, its bar, its switch back to the
-      editor (the editor's tabs and switch are in, D-053).
 - [ ] The Run preview, one drawing for Sense (Editor) and Inside (Run): beads on the wires,
       parts in their own colour, no numbers, a level meter by each eye and thruster (D-052). The
       two mirror each other: in the Editor, Sense puts the Run preview on the main screen (by
@@ -101,8 +98,8 @@ preview; in the Run it shows the level. Drawers never take the main screen.
       amends D-016's sensor sliders "behind DEV_VIEW only").
 - [ ] This session's winning boards kept in memory, one for each point of the score; a click
       puts one back on the board, the board left going to Undo. Files can wait: not needed yet.
-- [ ] Fear's tutorial for the Run's frame and the drawers to come (its editor steps light
-      the bar and the drawers already, D-053).
+- [ ] Fear's tutorial for the drawers to come (Sense); its editor and run steps follow the
+      frame already (D-053, D-057).
 
 ## 9. A board as text (its own PR)
 

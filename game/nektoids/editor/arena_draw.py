@@ -11,13 +11,15 @@ visited, a dashed one where an objective draws a ring to leave or to stay in, li
 a swimmer its body's circle round a wedge, its tip forward, bright when selected. When the run
 is over, a banner over the arena says how it ended: done, lost and why, or out of time.
 
-The column on the right (`arena_layout.py`): the title and the time, the palettes, with a
-tooltip naming each button and its key; the timeline, the part of the time allowed already run
-in a lighter grey, the part played brighter, and a red mark where the run ended (D-033); the
-objectives, each counted (so many of so many) and with a bar, red if it lost the run, and the
-time left, its bar running down to zero, red if it runs out; the selected swimmer's wiring on
-its body, plain: the beads on the wires and a level meter by each eye and thruster, no numbers. The
-status line under the arena recalls the keys. With P, an inset over the arena shows the light at
+Round the arena, the frame the editor has too (D-051, D-057, `draw.py`): the bar, the open
+drawer, the tabs with the level's line under them. Under the arena, the controls, each with a
+tooltip naming it and its key; the timeline, the part of the time allowed already run in a
+lighter grey, the part played brighter, and a red mark where the run ended (D-033); the time.
+The drawers: Objectives, each objective counted (so many of so many) with a bar, red if it lost
+the run, and the time left, its bar running down to zero, red if it runs out; Inside, the
+selected swimmer's wiring on its body, plain: the beads on the wires and a level meter by each
+eye and thruster, no numbers; Score, the level's wins; Navigator, the view's buttons. The
+status line under it all recalls the keys. With P, an inset over the arena shows the light at
 its eyes as a polar plot in the arena's frame: E(phi) for each eye, a circle for the scale, and
 a tick along each eye's look as long as what it reads. The plot is exact; the map is smoothed.
 """
@@ -31,26 +33,17 @@ import pygame
 
 from nektoids.editor.arena import POLAR_ANGLES, ArenaScene
 from nektoids.editor.arena_layout import (
-    ARENA_AREA,
-    BANNER,
     BUTTON_KEYS,
-    CAPTION_AT,
-    CIRCUIT_AREA,
-    INSIDE_AT,
-    MARGIN,
-    PANEL_LEFT,
-    PANEL_WIDTH,
-    POLAR_BOX,
-    POLAR_CENTRE,
+    DRAWER_BODY,
     POLAR_RADIUS,
-    RULES,
-    SCORE_AREA,
-    TIMELINE,
     TIMELINE_BAR,
-    TITLE_AT,
     ArenaButton,
+    banner_rect,
     banner_rects,
-    button_rects,
+    control_rects,
+    polar_box,
+    time_at,
+    timeline_rect,
     timeline_x,
 )
 from nektoids.editor.arena_view import (
@@ -63,24 +56,36 @@ from nektoids.editor.arena_view import (
 )
 from nektoids.editor.devdrive import DT
 from nektoids.editor.draw import (
+    INFO_ICON,
+    ROW_NAME,
+    TIP,
     Fonts,
+    draw_bar,
     draw_body,
     draw_button,
+    draw_drawer,
+    draw_info,
+    draw_row,
+    draw_status_line,
     draw_symbol,
+    draw_tabs,
     draw_tip,
-    draw_title,
+    draw_tooltip,
 )
-from nektoids.editor.layout import PALETTE_TITLE
+from nektoids.editor.icons import VIEW_ICON
+from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, ViewButton
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
     BODY,
     BODY_UNSELECTED,
+    BUTTON,
     DARK,
     DIM_TEXT,
     EYE_SHADES,
     FULL,
     LIGHT,
+    LIT,
     OBSTACLE,
     PANEL,
     RAY,
@@ -107,31 +112,25 @@ PLAYHEAD = 6  # [px]
 END_MARK = 3  # the red mark across the timeline where the run ended [px]
 PART_DOT = 4  # an eye's reading in the polar plot [px]
 POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its circle
-BAR_HEIGHT = 8  # an objective's bar [px]
-ROW_PITCH = 40  # one objective [px]
+GOAL_BAR = 3  # an objective's bar, along its row's foot [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 RING_DASHES = 72  # half of them drawn
 ICON = {
-    ArenaButton.EDIT: "pen",
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
     ArenaButton.STEP: "forward-step",
     ArenaButton.FAST: "forward",
-    ArenaButton.ZOOM_IN: "magnifying-glass-plus",
-    ArenaButton.ZOOM_OUT: "magnifying-glass-minus",
-    ArenaButton.HAND: "hand",
-    ArenaButton.CENTRE: "location-crosshairs",
-    ArenaButton.LIGHT: "lightbulb",
 }
-TIP = {
-    ArenaButton.EDIT: "Back to the editor",
+CONTROL_TIP = {
     ArenaButton.RESTART: "Start again",
     ArenaButton.STEP: "A step (0.1 s)",
     ArenaButton.FAST: "Fast forward",
-    ArenaButton.ZOOM_IN: "Zoom in",
-    ArenaButton.ZOOM_OUT: "Zoom out",
-    ArenaButton.HAND: "Move the view",
-    ArenaButton.CENTRE: "Centre on the swimmers and lights",
+}
+GOAL = {  # an objective's row, by its kind: its icon, and what its info box says
+    "visit lights": ("location-dot", "Reach every light, in any order."),
+    "leave ring": ("right-from-bracket", "Get out of the dashed ring round the light."),
+    "stay near": ("bullseye", "Stay inside the dashed ring for {seconds:g} s in a row."),
+    "keep off": ("circle-xmark", "Touching a light loses the run at once."),
 }
 
 _map_cache: dict[str, object] = {"key": None, "surface": None}
@@ -139,25 +138,21 @@ _map_cache: dict[str, object] = {"key": None, "surface": None}
 
 def draw_arena(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
-    screen.set_clip(ARENA_AREA)
+    screen.set_clip(scene.arena_area)
     _draw_field(screen, scene, fonts)
     _draw_swimmers(screen, scene)
     if scene.show_polar:
         _draw_polar(screen, scene, fonts)
-    _draw_caption(screen, scene, fonts)
     screen.set_clip(None)
     _draw_banner(screen, scene, fonts)
-    _draw_panel(screen, scene, fonts)
+    draw_tabs(screen, scene, fonts)
+    _draw_controls(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
-
-
-def _draw_caption(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """The level's number and title over the arena's top left, on a backdrop so that it reads
-    over the rays and the light map alike."""
-    shown = fonts.text.render(scene.caption, True, TEXT)
-    box = shown.get_rect(topleft=CAPTION_AT).inflate(12, 8)
-    pygame.draw.rect(screen, PANEL, box, border_radius=5)
-    screen.blit(shown, CAPTION_AT)
+    draw_bar(screen, scene, fonts)
+    draw_drawer(screen, scene, fonts, _draw_rows)
+    draw_tooltip(screen, scene, fonts)
+    _draw_control_tip(screen, scene, fonts)
+    draw_info(screen, scene, fonts, _about)
 
 
 def _map_rect(scene: ArenaScene) -> pygame.Rect:
@@ -182,7 +177,7 @@ def _map_surface(scene: ArenaScene, size: tuple[int, int]) -> pygame.Surface:
 
 def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     view, arena = scene.view, scene.arena
-    pygame.draw.rect(screen, SHADOW, ARENA_AREA)  # the open plane, as far as it shows
+    pygame.draw.rect(screen, SHADOW, scene.arena_area)  # the open plane, as far as it shows
     if scene.show_map:
         rect = _map_rect(scene)
         screen.blit(_map_surface(scene, rect.size), rect.topleft)
@@ -219,7 +214,7 @@ def _dashed_circle(screen: pygame.Surface, centre, radius: float, colour) -> Non
 def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:
     view, arena = scene.view, scene.arena
     centres, radii = discs(arena, scene.pos, scene.radius)
-    left, bottom, right, top = shown(view, ARENA_AREA)
+    left, bottom, right, top = shown(view, scene.arena_area)
     t = scene.clock.seconds
     for light, (x, y) in enumerate(arena.light_xy):
         angles = scene.rays.angles(light, t)
@@ -243,7 +238,7 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
         radius, heading = float(scene.radius[k]) * view.scale, float(scene.heading[k])
         draw_symbol(screen, DARK, centre, radius + 1, heading, SYMBOL_WIDTH + 2)  # on a light map
         draw_symbol(screen, colour, centre, radius, heading, SYMBOL_WIDTH)
-        marker = edge_marker(view, ARENA_AREA, tuple(scene.pos[k]))
+        marker = edge_marker(view, scene.arena_area, tuple(scene.pos[k]))
         if marker is not None:
             _draw_marker(screen, *marker, colour)
 
@@ -264,50 +259,39 @@ def _dot(screen: pygame.Surface, at: tuple[float, float], fill: tuple[int, int, 
     pygame.draw.circle(screen, DARK, at, PART_DOT, 1)
 
 
-# The column on the right
+# Under the arena: the controls
 
 
-def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    height = screen.get_height()
-    pygame.draw.rect(screen, PANEL, (PANEL_LEFT, 0, PANEL_WIDTH, height))
-    pygame.draw.line(screen, RULE, (PANEL_LEFT, 0), (PANEL_LEFT, height), 2)
-    draw_title(screen, fonts, "Controls", TITLE_AT, lit="controls" in scene.lit)
-    elapsed = f"{scene.clock.seconds:.1f} / {scene.level.time_limit:g} s"
-    shown = fonts.text.render(elapsed, True, DIM_TEXT)
-    right = PANEL_LEFT + PANEL_WIDTH - MARGIN
-    screen.blit(shown, shown.get_rect(midright=(right, TITLE_AT[1] + PALETTE_TITLE // 2)))
-    lower = "Your wins" if _shows_wins(scene) else "Inside"
-    draw_title(screen, fonts, lower, INSIDE_AT, lit=bool({"inside", "wins"} & scene.lit))
-    for y in RULES:
-        pygame.draw.line(
-            screen, RULE, (PANEL_LEFT + MARGIN, y), (PANEL_LEFT + PANEL_WIDTH - MARGIN, y)
-        )
-    _draw_palettes(screen, scene, fonts)
+def _draw_controls(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """Start again, play or pause, a step, fast forward; the timeline; the time."""
+    strip = pygame.Rect(scene.layout.controls_area)
+    pygame.draw.rect(screen, PANEL, strip)
+    pygame.draw.line(screen, RULE, strip.topleft, strip.topright)
+    for button, rect in control_rects(scene.layout):
+        draw_button(screen, fonts, rect, _icon(scene, button), _on(scene, button))
     _draw_timeline(screen, scene, fonts)
-    _draw_score(screen, scene, fonts)
-    if _shows_wins(scene):
-        _draw_wins(screen, scene, fonts)
-    else:
-        _draw_wiring(screen, scene, fonts)
-    _draw_button_tip(screen, scene, fonts)
+    elapsed = f"{scene.clock.seconds:.1f} / {scene.level.time_limit:g} s"
+    shown = fonts.small.render(elapsed, True, DIM_TEXT)
+    screen.blit(shown, shown.get_rect(midright=time_at(scene.layout)))
 
 
 def _draw_timeline(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """The time allowed as a bar: run so far lighter, played brighter, the playhead, and a red
     mark where the run ended, won or out of time."""
-    x, y, w, h = TIMELINE
+    layout = scene.layout
+    x, y, w, h = timeline_rect(layout)
     limit, run = scene.level.time_limit, scene.recording
     bar = pygame.Rect(x, y + (h - TIMELINE_BAR) // 2, w, TIMELINE_BAR)
     pygame.draw.rect(screen, RULE, bar, border_radius=3)
     for seconds, colour in ((run.frontier * DT, RUN_SO_FAR), (scene.clock.seconds, FULL)):
         part = bar.copy()
-        part.width = round(timeline_x(seconds, limit) - x)
+        part.width = round(timeline_x(layout, seconds, limit) - x)
         if part.width > 0:
             pygame.draw.rect(screen, colour, part, border_radius=3)
     if scene.ended_at is not None:
-        end = round(timeline_x(scene.ended_at * DT, limit))
+        end = round(timeline_x(layout, scene.ended_at * DT, limit))
         pygame.draw.rect(screen, REFUSED, (end - END_MARK // 2, y + 1, END_MARK, h - 2))
-    head = (round(timeline_x(scene.clock.seconds, limit)), bar.centery)
+    head = (round(timeline_x(layout, scene.clock.seconds, limit)), bar.centery)
     pygame.draw.circle(screen, FULL, head, PLAYHEAD)
     pygame.draw.circle(screen, DARK, head, PLAYHEAD, 1)
 
@@ -321,89 +305,128 @@ def _icon(scene: ArenaScene, button: ArenaButton) -> str:
 def _tip(scene: ArenaScene, button: ArenaButton) -> str:
     if button is ArenaButton.PLAY:
         return "Play" if scene.clock.paused else "Pause"
-    if button is ArenaButton.LIGHT:
-        return "Hide the rays" if scene.show_rays else "Show the rays"
-    return TIP[button]
+    return CONTROL_TIP[button]
 
 
 def _on(scene: ArenaScene, button: ArenaButton) -> bool:
-    """Whether a button that stays pressed is: fast forward, the hand, the rays."""
-    return (
-        (button is ArenaButton.FAST and scene.clock.speed > 1)
-        or (button is ArenaButton.HAND and scene.hand)
-        or (button is ArenaButton.LIGHT and scene.show_rays)
-    )
+    """Whether a control that stays pressed is: fast forward."""
+    return button is ArenaButton.FAST and scene.clock.speed > 1
 
 
-def _draw_palettes(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    for button, rect in button_rects():
-        draw_button(screen, fonts, rect, _icon(scene, button), _on(scene, button))
-
-
-def _draw_button_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """Name and key of the button under the mouse, below it and kept on screen."""
-    button = scene.tooltip
+def _draw_control_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """Name and key of the control under the mouse, over it."""
+    button = scene.control_tip
     if button is None:
         return
-    x, y, w, h = dict(button_rects())[button]
-    text = f"{_tip(scene, button)} ({BUTTON_KEYS[button]})"
-    width = fonts.text.size(text)[0] + 16
-    right = min(x + w // 2 + width // 2, screen.get_width() - 4) - 8
-    draw_tip(screen, fonts, text, topright=(right, y + h + 12))
+    x, y, w, _ = dict(control_rects(scene.layout))[button]
+    key = f" ({BUTTON_KEYS[button]})" if scene.settings.key_hints else ""
+    draw_tip(screen, fonts, _tip(scene, button) + key, midbottom=(x + w // 2, y - 10))
 
 
-def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """Each objective: its name, so many met of so many, a tick once all are, and a bar filling
-    up, all red if it lost the run; then the time left, its bar running down, red once up."""
-    x, y, _, _ = SCORE_AREA
-    draw_title(screen, fonts, "Objectives", (x + MARGIN, y), lit="objectives" in scene.lit)
-    rows = scene.counts()
-    if not rows:
-        none = fonts.small.render("None in this arena yet.", True, DIM_TEXT)
-        screen.blit(none, (x + MARGIN, y + 30))
-    for k, row in enumerate(rows):
-        value, done = f"{row.met} of {row.needed}", row.met >= row.needed and not row.lost
-        progress = 0.0 if row.lost else row.progress
-        _draw_row(screen, fonts, k, row.name, value, progress, done, row.lost)
-    left, limit = scene.time_left, scene.level.time_limit
-    late = scene.outcome is Outcome.TIME_UP
-    k = max(1, len(rows))
-    fraction = left / limit if limit > 0 else 0.0
-    _draw_row(screen, fonts, k, "Time left", f"{left:.1f} s", fraction, False, late)
+# The drawers
 
 
-def _draw_row(
+def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """The run's own drawers: Objectives, Inside, Score, Navigator."""
+    drawer = scene.layout.drawer
+    if drawer is Drawer.OBJECTIVES:
+        _draw_goals(screen, scene, fonts)
+    elif drawer is Drawer.INSIDE:
+        _draw_wiring(screen, scene, fonts)
+    elif drawer is Drawer.SCORE:
+        _draw_wins(screen, scene, fonts)
+    for button, rect in scene.layout.view_buttons:
+        active = (button is ViewButton.PAN and scene.hand) or (
+            button is ViewButton.RAYS and scene.show_rays
+        )
+        key = ("key", VIEW_KEYS[button])
+        draw_row(
+            screen,
+            scene,
+            fonts,
+            rect,
+            button,
+            ROW_NAME[button],
+            key,
+            active,
+            icon=VIEW_ICON[button],
+        )
+
+
+def _about(scene: ArenaScene, what: object) -> tuple[str, tuple[str, ...]]:
+    """What the run's info boxes say: an objective, the time left, a view's button."""
+    if isinstance(what, Goal) and what.index is None:
+        return "Time left", (f"The run ends after {scene.level.time_limit:g} s.",)
+    if isinstance(what, Goal):
+        objective = scene.level.objectives[what.index]
+        _, text = GOAL[objective.kind]
+        return objective.name, (text.format(**vars(objective)),)
+    return ROW_NAME[what], (TIP[what],)
+
+
+def _draw_goals(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """Each objective: its name; under it a bar filling up and so many met of so many, a tick
+    once all are, all red if it lost the run; then the time left, its bar running down, red once
+    up."""
+    counts = scene.counts()
+    for goal, rect in scene.layout.goal_rows:
+        if goal.index is None:
+            left, limit = scene.time_left, scene.level.time_limit
+            fraction = left / limit if limit > 0 else 0.0
+            late = scene.outcome is Outcome.TIME_UP
+            row = ("Time left", f"{left:.1f} s", "clock", fraction, False, late)
+        else:
+            count, objective = counts[goal.index], scene.level.objectives[goal.index]
+            done = count.met >= count.needed and not count.lost
+            fraction = 0.0 if count.lost else count.progress
+            value = f"{count.met} of {count.needed}"
+            row = (count.name, value, GOAL[objective.kind][0], fraction, done, count.lost)
+        _draw_goal(screen, scene, fonts, goal, rect, *row)
+
+
+def _draw_goal(
     screen: pygame.Surface,
+    scene: ArenaScene,
     fonts: Fonts,
-    k: int,
+    goal: Goal,
+    rect,
     name: str,
     value: str,
+    icon: str,
     fraction: float,
     done: bool,
-    failed: bool = False,
+    failed: bool,
 ) -> None:
-    """Row k of the objectives: its name, its value at the right with a tick if `done`, and a
-    bar `fraction` full; the text and the bar's track red if `failed`."""
-    x, y, w, _ = SCORE_AREA
-    left, width, top = x + MARGIN, w - 2 * MARGIN, y + 28 + k * ROW_PITCH
-    colour = REFUSED if failed else TEXT
-    screen.blit(fonts.name.render(name, True, colour), (left, top))
-    shown = fonts.text.render(value, True, colour)
-    screen.blit(shown, shown.get_rect(topright=(left + width, top)))
+    """An objective's row, on two lines: its icon, name and info disc; its bar and count."""
+    box = pygame.Rect(rect)
+    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
+    ink = REFUSED if failed else TEXT
+    first, second = box.top + 14, box.bottom - 12
+    fonts.icons.draw(screen, icon, (box.left + 20, first), 16, ink)
+    shown = fonts.name.render(name, True, ink)
+    screen.blit(shown, (box.left + 42, first - shown.get_height() // 2))
+    disc = pygame.Rect(dict(scene.layout.info_buttons)[goal]).center
+    fonts.icons.draw(
+        screen, "circle-info", disc, INFO_ICON, TEXT if goal == scene.info else DIM_TEXT
+    )
+    right = box.right - 10
+    count = fonts.small.render(value, True, ink)
+    screen.blit(count, count.get_rect(midright=(right, second)))
+    end = right - count.get_width() - 10
     if done:
-        tick_at = (left + width - shown.get_width() - 14, top + 7)
-        fonts.icons.draw(screen, "check", tick_at, 14, FULL)
-    bar = pygame.Rect(left, top + 20, width, BAR_HEIGHT)
-    pygame.draw.rect(screen, REFUSED if failed else RULE, bar, border_radius=3)
+        fonts.icons.draw(screen, "check", (end - 6, second), 12, LIT)
+        end -= 18
+    bar = pygame.Rect(box.left + 42, second - GOAL_BAR // 2, end - box.left - 42, GOAL_BAR)
+    pygame.draw.rect(screen, REFUSED if failed else RULE, bar)
     filled = bar.copy()
-    filled.width = round(width * min(1.0, max(0.0, fraction)))
+    filled.width = round(bar.width * min(1.0, max(0.0, fraction)))
     if filled.width > 0:
-        pygame.draw.rect(screen, FULL, filled, border_radius=3)
+        pygame.draw.rect(screen, FULL, filled)
 
 
 def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """The selected swimmer's wiring on its body: beads, a meter by each eye and thruster."""
-    x, y, w, h = CIRCUIT_AREA
+    x, y, w, h = DRAWER_BODY
     if scene.selected is None:
         note = "Click the swimmer to see its wiring"
     elif not scene.circuit.cells:
@@ -411,13 +434,26 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         note = f"Your board is empty: build one in the editor ({back})"
     else:
         circuit = scene.circuit
-        screen.set_clip(CIRCUIT_AREA)
+        screen.set_clip(DRAWER_BODY)
         draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
         draw_circuit(screen, circuit, scene.y, fonts, plain=True)
         screen.set_clip(None)
         return
-    text = fonts.small.render(note, True, DIM_TEXT)
-    screen.blit(text, text.get_rect(center=(x + w // 2, y + h // 2)))
+    _note(screen, fonts, note, (x + MARGIN, y + 8))
+
+
+def _note(screen: pygame.Surface, fonts: Fonts, text: str, at: tuple[int, int]) -> None:
+    """A dim note in a drawer, broken into lines that fit it."""
+    width, line, lines = DRAWER_BODY[2] - 2 * MARGIN, "", []
+    for word in text.split():
+        trial = f"{line} {word}".strip()
+        if line and fonts.small.size(trial)[0] > width:
+            lines.append(line)
+            line = word
+        else:
+            line = trial
+    for k, part in enumerate([*lines, line]):
+        screen.blit(fonts.small.render(part, True, DIM_TEXT), (at[0], at[1] + 20 * k))
 
 
 # Developer tools
@@ -428,9 +464,10 @@ def _draw_polar(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     curves = scene.eye_polar()
     if len(curves) == 0:
         return
-    pygame.draw.rect(screen, PANEL, POLAR_BOX, border_radius=6)
-    pygame.draw.rect(screen, RULE, POLAR_BOX, 1, border_radius=6)
-    (cx, cy), big = POLAR_CENTRE, POLAR_RADIUS
+    box = pygame.Rect(polar_box(scene.layout))
+    pygame.draw.rect(screen, PANEL, box, border_radius=6)
+    pygame.draw.rect(screen, RULE, box, 1, border_radius=6)
+    (cx, cy), big = (box.centerx, box.top + 128), POLAR_RADIUS
     title = fonts.small.render("E(phi) = integral of I cos theta", True, DIM_TEXT)
     screen.blit(title, title.get_rect(center=(cx, cy - big - 26)))
     pygame.draw.line(screen, RULE, (cx - big, cy), (cx + big, cy), 1)
@@ -472,33 +509,41 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         head = f"Time is up ({scene.level.time_limit:g} s)"
     rows = [f"{row.name}: {row.met} of {row.needed}" for row in scene.counts()]
     lines = [fonts.text.render(head, True, TEXT)]
-    lines += [fonts.small.render(row, True, DIM_TEXT) for row in [*rows, "0: start again"]]
-    box = pygame.Rect(BANNER)
+    lines += [fonts.small.render(row, True, DIM_TEXT) for row in rows]  # 0 starts again
+    box = pygame.Rect(banner_rect(scene.layout))
     pygame.draw.rect(screen, PANEL, box, border_radius=6)
     pygame.draw.rect(screen, LIGHT if ended is Outcome.WON else RULE, box, 2, border_radius=6)
     top = box.top + 10
     for line in lines:
         screen.blit(line, line.get_rect(midtop=(box.centerx, top)))
         top += line.get_height() + 4
-    for button, rect in banner_rects(scene.banner_buttons):
+    for button, rect in banner_rects(scene.layout, scene.banner_buttons):
         label = (scene.next_label or "Next level") if button is ArenaButton.NEXT else "Edit"
         pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
         shown = fonts.name.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
         screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))
 
 
-def _shows_wins(scene: ArenaScene) -> bool:
-    """The player's run stands won, at its end: the column shows the level's wins."""
+def _won(scene: ArenaScene) -> bool:
+    """The player's run stands won, at its end: Score rings its point."""
     return not scene.developer and scene.outcome is Outcome.WON and scene.ended_at is not None
 
 
 def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """The level's wins this session (D-028, D-046): time against parts, the Pareto front a
-    staircase through the points no other beats, the others dimmed, this run ringed."""
-    this = Score(scene.parts, scene.ended_at)
-    scores = scene.scores | {this}
-    x, y, w, h = CIRCUIT_AREA
-    note = fonts.small.render("Time to win against parts.", True, DIM_TEXT)
+    staircase through the points no other beats, the others dimmed, this run ringed if won."""
+    this = Score(scene.parts, scene.ended_at) if _won(scene) else None
+    scores = scene.scores | ({this} if this is not None else set())
+    x, y, w, h = DRAWER_BODY
+    if not scores:
+        _note(
+            screen,
+            fonts,
+            "No win yet. Each win is a point here: its time and its parts.",
+            (x + MARGIN, y + 8),
+        )
+        return
+    note = fonts.small.render("Time against parts.", True, DIM_TEXT)
     screen.blit(note, (x + MARGIN, y + 4))
     plot = pygame.Rect(x + MARGIN + 40, y + 36, w - 2 * MARGIN - 52, h - 96)
     low = min(s.parts for s in scores) - 1
@@ -531,7 +576,8 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     for score in sorted(scores):
         colour = LIGHT if score in best else DIM_TEXT
         pygame.draw.circle(screen, colour, at(score.parts, score.ticks), 3)
-    pygame.draw.circle(screen, TEXT, at(this.parts, this.ticks), 7, 1)
+    if this is not None:
+        pygame.draw.circle(screen, TEXT, at(this.parts, this.ticks), 7, 1)
 
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
@@ -543,4 +589,4 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     else:
         text = f"{keys}  Esc: editor."
     text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
-    screen.blit(fonts.small.render(text, True, colour), (16, screen.get_height() - 22))
+    draw_status_line(screen, scene, fonts, text, colour)

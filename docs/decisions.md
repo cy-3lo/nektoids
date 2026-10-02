@@ -727,3 +727,22 @@ level's label and title in FreeSans (18 px), then its spec in Plex Mono (15 px),
 baseline, a rule under them. The strip has the open tab's colour, so it reads as inside the tab.
 The board starts under it (`layout.TOP`). The longest, In the shadow's, takes 620 of the 632 px
 it has with a drawer open. The Run gets the same line with its frame (D-051, step C).
+
+**D-057 — 2026-10-02 — Step C of D-051: the run has the editor's frame. Its column on the right goes; its controls go under the arena.**
+The run shows the level on the main screen, the arena, inside the frame the editor has. Down the
+left edge, the bar: Objectives (list-check), Inside (magnifying-glass), Score (trophy) and
+Navigator (compass) at the top; Settings and Chapters at its foot, over the switch back to the
+editor (diagram-project; Esc). One drawer at a time: Objectives at the first run, then the one
+last open. The tabs, Run lit, with the level's line under them (D-056); the status line at the
+foot. Objectives: a row per objective on two lines, its name and info disc, then its bar and so
+many of so many, a tick once met, red if it lost the run; then the time left. Inside: the
+swimmer's wiring, live. Score: the level's wins this session, this run ringed once won, a note
+while there is none. Navigator: zoom in and out, the hand, centre, and the rays (X). Under the
+arena, a 48 px strip: start again (0), play or pause (Space), a step (.), fast forward (F), the
+timeline, the time. The banner at the arena's top keeps Next level and Edit. Chapters and
+Settings work from the run as from the editor: a place picked there, or the tutorial again,
+leaves the run. One class holds the frame's logic for both screens (`frame.Frame`, pure, tested
+headless); one set of functions draws it (`draw.py`). Fear's run steps light the controls, then
+open and outline Objectives, Inside and Score; their box keeps clear of the controls, wide but
+low, as it does of any target that is not an area. The developer's arena view (F3) has the same
+frame.

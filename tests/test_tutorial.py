@@ -1,6 +1,6 @@
 """Tutorials and hints (D-039). tutorial.py imports no pygame."""
 
-from nektoids.editor.layout import SCREEN, Drawer, Tool, centred_view, contains, make_layout
+from nektoids.editor.layout import SCREEN, Drawer, Env, Tool, centred_view, contains, make_layout
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     GAP,
@@ -13,6 +13,7 @@ from nektoids.editor.tutorial import (
     box_rect,
     drawer_for,
     guided,
+    is_area,
     met,
     next_rect,
     panels,
@@ -27,6 +28,16 @@ from nektoids.levels.objectives import Outcome
 
 LAYOUT = make_layout()
 VIEW = centred_view(LAYOUT)
+RUN_LAYOUT = make_layout(Drawer.OBJECTIVES, env=Env.RUN, goals=1)  # the run's frame (D-057)
+
+
+def layout_on(screen: Screen, step=None):
+    """The editor's layout, or the run's with the drawer `step` opens."""
+    if screen is not Screen.RUN:
+        return LAYOUT
+    return make_layout(drawer_for(step) or Drawer.OBJECTIVES, env=Env.RUN, goals=1)
+
+
 LEVELS = {level.title: level for level in arenas()}
 
 
@@ -45,7 +56,8 @@ def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for
             if step.until:
                 met(step.until, context)  # a condition it knows
             for screen in (Screen.EDIT, Screen.RUN):
-                assert all(on_screen(r) for r in target_rects(step.show, screen, LAYOUT, VIEW))
+                layout = layout_on(screen, step)
+                assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
 
 
 def test_only_the_first_level_leads_the_later_ones_only_hint():
@@ -87,7 +99,7 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
         tutorial.next()
     assert tutorial.step.until == {"outcome": "won"} and not tutorial.explains  # Play
     tutorial.follow(context(screen=Screen.RUN, outcome=Outcome.WON))
-    assert tutorial.step.show == {"run": "wins"} and tutorial.explains  # the score, last
+    assert tutorial.step.show == {"run": "score"} and tutorial.explains  # the score, last
     tutorial.next()
     assert tutorial.step is None and not tutorial.leads
     assert [g.facing for g in tutorial.ghosts][:2] == [NW, SW]
@@ -107,10 +119,11 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     assert contains(box, (nx, ny)) and contains(box, (nx + nw - 1, ny + nh - 1))
     for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:  # never over what it shows
         for screen in (Screen.EDIT, Screen.RUN):
-            targets = target_rects(step.show, screen, LAYOUT, VIEW)
-            narrow = [t for t in targets if t[2] < 400]  # an area may lie under the box
+            layout = layout_on(screen, step)
+            targets = target_rects(step.show, screen, layout, VIEW)
+            narrow = [t for t in targets if not is_area(t)]  # an area may lie under the box
             if narrow:
-                box = box_rect(targets, len(step.say), LAYOUT.board_area)
+                box = box_rect(targets, len(step.say), layout.board_area)
                 assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
 
 
@@ -204,7 +217,7 @@ def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
     panel = target_spots({"area": "bar"}, Screen.EDIT, layout, centred_view(layout))
-    run = target_spots([{"run": "play"}, {"run": "inside"}], Screen.RUN, layout, None)
+    run = target_spots([{"run": "play"}, {"run": "inside"}], Screen.RUN, RUN_LAYOUT, None)
     assert [shape for _, shape in panel + run] == ["panel", "spot", "panel"]
 
 
@@ -224,14 +237,15 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
         tutorial.index = index
         step, done = tutorial.step, tutorial.before
         for screen in (Screen.EDIT, Screen.RUN):
-            targets = target_rects(step.show, screen, layout, view)
-            before = [] if done is None else target_rects(done.show, screen, layout, view)
-            narrow = [t for t in targets if t[2] < 400]  # an area (board, arena) may lie under it
+            frame = layout if screen is Screen.EDIT else layout_on(screen, step)
+            targets = target_rects(step.show, screen, frame, view)
+            before = [] if done is None else target_rects(done.show, screen, frame, view)
+            narrow = [t for t in targets if not is_area(t)]  # an area (board, arena) may lie under
             if not narrow:
                 continue
-            box = box_rect(targets, len(step.say), layout.board_area, before)
+            box = box_rect(targets, len(step.say), frame.board_area, before)
             assert on_screen(box), step.say
-            for rects in (narrow, [t for t in before if t[2] < 400]):
+            for rects in (narrow, [t for t in before if not is_area(t)]):
                 assert not any(overlap(box, grown(t, GAP)) for t in rects), step.say
                 assert not any(
                     _crosses(box, a, b) for a, b in zip(rects, rects[1:], strict=False)
@@ -286,7 +300,7 @@ def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_n
         tutorial.index = index
         assert panels(tutorial) == names, index
     tutorial.index = len(tutorial.steps) - 1
-    assert panels(tutorial) == {"wins"} and panels(None) == frozenset()
+    assert panels(tutorial) == {"score"} and panels(None) == frozenset()
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
@@ -297,6 +311,8 @@ def test_a_step_opens_the_drawer_its_targets_are_in():
     assert (
         drawer_for(steps[0]) is None and drawer_for(steps[11]) is None and drawer_for(None) is None
     )
+    shown = {drawer_for(step) for step in steps if step.show and "run" in str(step.show)}
+    assert shown == {None, Drawer.OBJECTIVES, Drawer.INSIDE, Drawer.SCORE}  # the run's (D-057)
 
 
 def test_a_tool_shown_while_tools_is_closed_lights_the_drawers_icon():

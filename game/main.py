@@ -28,10 +28,9 @@ import pygame
 
 from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
-from nektoids.editor.arena_layout import ARENA_AREA
 from nektoids.editor.devdrive import SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
-from nektoids.editor.layout import SCREEN, Drawer, contains, make_layout
+from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, contains, make_layout
 from nektoids.editor.router import Router, Screen
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.schematic import SchematicScene
@@ -84,15 +83,14 @@ def tutorial() -> Tutorial | None:
     return guide if guide is not None and guide.step is not None else None
 
 
-def tutorial_box(guide: Tutorial) -> tuple:
-    """Where the step's target and its box are, on the screen now open."""
-    scene = editor()
+def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
+    """Where the step's target and its box are, on the screen now open: `scene`'s."""
     spots = target_spots(guide.step.show, router.screen, scene.layout, scene.view)
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = (
         [] if done is None else target_rects(done.show, router.screen, scene.layout, scene.view)
     )
-    beside = ARENA_AREA if router.screen is Screen.RUN else scene.layout.board_area
+    beside = scene.layout.board_area  # the board, or the arena
     return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
 
 
@@ -113,12 +111,12 @@ def choose_place(index: int) -> None:
     router.open(index)
 
 
-def tutorial_press(guide: Tutorial, event: pygame.event.Event) -> str | None:
+def tutorial_press(guide: Tutorial, event: pygame.event.Event, scene) -> str | None:
     """ "next" or "skip" if this key or click is the tutorial's (`tutorial.answer`), else None."""
     if event.type == pygame.KEYDOWN:
-        return answer(guide, tutorial_box(guide)[1], None)
+        return answer(guide, tutorial_box(guide, scene)[1], None)
     if event.type == pygame.MOUSEBUTTONDOWN and 1 <= event.button <= 3:  # not the wheel
-        return answer(guide, tutorial_box(guide)[1], event.pos)
+        return answer(guide, tutorial_box(guide, scene)[1], event.pos)
     return None
 
 
@@ -134,8 +132,8 @@ def editor() -> EditorScene:
     return editors[router.index]
 
 
-def play() -> ArenaScene:
-    """The player's run of the open level, on its board as it stands."""
+def play(drawer: Drawer | None) -> ArenaScene:
+    """The player's run of the open level, on its board as it stands, `drawer` open."""
     after = "Next level" if router.has_next else "The end" if router.is_last else None
     return ArenaScene(
         router.board,
@@ -143,7 +141,9 @@ def play() -> ArenaScene:
         developer=False,
         next_label=after,
         label=router.label,
-        fast=settings.fast,
+        settings=settings,
+        drawer=drawer,
+        chapter=len(levels),
     )
 
 
@@ -170,13 +170,21 @@ def toggle(
     """F2 opens or closes the developer view, F3 the arena view; either replaces the other."""
     if key == pygame.K_F2:
         return None if isinstance(open_view, SchematicScene) else open_developer_view()
-    return None if isinstance(open_view, ArenaScene) else ArenaScene(router.board, levels)
+    if isinstance(open_view, ArenaScene):
+        return None
+    return ArenaScene(router.board, levels, settings=settings, chapter=len(levels))
 
 
 async def main() -> None:
     running = True
     developer: SchematicScene | ArenaScene | None = None  # the F2 or F3 view, while open
     playing: ArenaScene | None = None  # the player's run, while it shows
+    run_drawer: Drawer | None = Drawer.OBJECTIVES  # the run's open drawer, from one run to the next
+
+    def on_screen() -> EditorScene | ArenaScene:
+        """The scene the player sees: the run, or the open level's editor."""
+        return playing if playing is not None else editor()
+
     pointer = (0, 0)  # where the mouse is, for the end's button [px]
     while running:
         for event in pygame.event.get():
@@ -200,7 +208,7 @@ async def main() -> None:
             elif (
                 (guide := tutorial()) is not None
                 and router.screen in (Screen.EDIT, Screen.RUN)
-                and (button := tutorial_press(guide, event)) is not None
+                and (button := tutorial_press(guide, event, on_screen())) is not None
             ):
                 if button == "next":
                     guide.next()  # and nothing else
@@ -228,13 +236,17 @@ async def main() -> None:
                 router.finish()
             elif playing.request == "edit":
                 router.edit()
-            if playing.request is not None:
-                playing = None
+            elif playing.request == "tutorial":  # Settings: Fear's tutorial again
+                choose_place(0)
+            if playing.chosen is not None:  # a place picked in Chapters
+                choose_place(playing.chosen)
+            if playing.request is not None or playing.chosen is not None:
+                run_drawer, playing = playing.layout.drawer, None
         if router.screen is Screen.EDIT:
             asked, editor().request = editor().request, None
             if asked == "run":
                 router.run()
-                playing = play()
+                playing = play(run_drawer)
             elif asked == "tutorial":  # Settings: Fear's tutorial again
                 choose_place(0)
             chosen, editor().chosen = editor().chosen, None
@@ -248,11 +260,15 @@ async def main() -> None:
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
         editor().chapters = router.rows()  # what Chapters shows
+        if playing is not None:
+            playing.chapters = router.rows()
+        scene = on_screen()
         wanted = drawer_for(guide.step) if guide is not None else None
-        if wanted is not None and opened_for.get(router.index) != guide.index:
+        here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on
+        if wanted in here and opened_for.get(router.index) != guide.index:
             opened_for[router.index] = guide.index  # once a step: then the player's to change
-            if editor().layout.drawer is not wanted:
-                editor().open_drawer(wanted)
+            if scene.layout.drawer is not wanted:
+                scene.open_drawer(wanted)
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         editor().gate = gate  # only what the step asks goes through (D-048)
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
@@ -281,7 +297,7 @@ async def main() -> None:
             elif router.screen is Screen.SPEC:
                 draw_level_card(screen, router, fonts)
         if developer is None and guide is not None and router.screen in (Screen.EDIT, Screen.RUN):
-            draw_tutorial(screen, fonts, guide, *tutorial_box(guide), pointer)
+            draw_tutorial(screen, fonts, guide, *tutorial_box(guide, on_screen()), pointer)
         pygame.display.flip()
         clock.tick(FPS)
 

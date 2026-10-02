@@ -4,17 +4,18 @@ the player has done what they ask, or presses Next (D-039).
 A level's data may carry one: its ghosts, the parts the tutorial builds drawn faintly in their
 cells, facing the way they should, and its steps. A step says a few short lines; shows a target,
 or a list of them, which the overlay leaves lit while it dims the rest: an area ("board",
-"menu", "palette"), a menu row, a tool, a Level button, a cell, or a part of the run view
-("arena", "timeline", "objectives", "inside"); and waits, until a part is placed in a cell, a
-part faces a way, a tool is taken, a wire runs from one cell to another, the run starts, or the
-run is won. A step with no target is a hint: nothing is dimmed. A step with nothing to wait for
-waits for Next, and only such a step has a Next: one that waits for an action moves on when it
-is done, never before (D-048). The first level's tutorial leads; later levels only hint (D-039).
-Skip ends a tutorial; going to the map starts every tutorial again from its beginning (D-048).
-On a step that leads and waits for Next, any key or click moves on, but a click on Skip. While a
-step leads, only the means to what it waits for go through (`allows`); the editor and the run
-ask before they act. Pure Python, no pygame: what the step waits for is read from a `Context`,
-the screen's geometry from the layouts.
+"parts", "bar"), a part's row, a tool, the switch, a cell, or a part of the run ("arena",
+"controls", "play", "timeline", and the drawers "objectives", "inside", "score"); and waits,
+until a part is placed in a cell, a part faces a way, a tool is taken, a wire runs from one cell
+to another, the run starts, or the run is won. A step with no target is a hint: nothing is
+dimmed. A step with nothing to wait for waits for Next, and only such a step has a Next: one
+that waits for an action moves on when it is done, never before (D-048). The first level's
+tutorial leads; later levels only hint (D-039). Skip ends a tutorial; a place chosen in Chapters
+starts every tutorial again from its beginning (D-048). On a step that leads and waits for Next,
+any key or click moves on, but a click on Skip. While a step leads, only the means to what it
+waits for go through (`allows`); the editor and the run ask before they act. Pure Python, no
+pygame: what the step waits for is read from a `Context`, the screen's geometry from the
+layouts.
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from nektoids.editor import arena_layout
-from nektoids.editor.layout import SCREEN, TURNS, Drawer, Layout, LevelButton, Rect, Tool, View
+from nektoids.editor.layout import SCREEN, TURNS, Drawer, Env, Layout, LevelButton, Rect, Tool, View
 from nektoids.editor.router import Screen
 from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
@@ -38,21 +39,11 @@ BUTTON = (84, 28)  # Next, and Skip left of it, at the box's foot [px]
 BUTTON_GAP = 8  # between Skip and Next [px]
 GAP = 14  # between the target and the box [px]
 PATH_MARGIN = 20  # the hand's way from one target to the next, this wide on either side [px]
-AREA = 400  # a target this wide is an area, lit whole: the box may lie over part of it [px]
+AREA = 400  # a target this wide, and half as tall, is an area: the box may lie over it [px]
 GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
-_COLUMN = (arena_layout.PANEL_LEFT, arena_layout.PANEL_WIDTH)
-_LOWER = (*_COLUMN[:1], arena_layout.RULES[1], _COLUMN[1], SCREEN[1] - arena_layout.RULES[1])
-RUN_PANELS = {"arena", "controls", "objectives", "inside", "wins"}  # the rest are controls
-RUN_TARGETS = {  # the run view's parts, each with its title (D-050)
-    "arena": arena_layout.ARENA_AREA,
-    "controls": (_COLUMN[0], 0, _COLUMN[1], arena_layout.RULES[0]),  # buttons and timeline
-    "play": dict(arena_layout.button_rects())[arena_layout.ArenaButton.PLAY],
-    "timeline": arena_layout.TIMELINE,
-    "objectives": arena_layout.SCORE_AREA,
-    "inside": _LOWER,  # the wiring, until a won run puts its wins there
-    "wins": _LOWER,
-}
+RUN_PANELS = {"arena", "controls", "objectives", "inside", "score"}  # the rest are buttons
+RUN_DRAWERS = {"objectives": Drawer.OBJECTIVES, "inside": Drawer.INSIDE, "score": Drawer.SCORE}
 
 
 @dataclass(frozen=True)
@@ -172,14 +163,14 @@ def panels(tutorial: Tutorial | None) -> frozenset[str]:
 
 def drawer_for(step: Step | None) -> Drawer | None:
     """The drawer a step's targets are in, which it opens as it shows: Parts for a part's row,
-    Tools for a tool; None if it needs none (D-051)."""
+    Tools for a tool, the run's drawer it explains; None if it needs none (D-051, D-057)."""
     shows = [] if step is None or step.show is None else step.show
     shows = shows if isinstance(shows, list) else [shows]
     if any("menu" in one or one.get("area") == "parts" for one in shows):
         return Drawer.PARTS
     if any("tool" in one for one in shows):
         return Drawer.TOOLS
-    return None
+    return next((RUN_DRAWERS[one["run"]] for one in shows if one.get("run") in RUN_DRAWERS), None)
 
 
 def guided(data: Mapping | None) -> bool:
@@ -277,7 +268,7 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
     if show is None:
         return None
     if "run" in show:
-        return RUN_TARGETS[show["run"]] if screen is Screen.RUN else None
+        return _run_target(show["run"], layout) if screen is Screen.RUN else None
     if screen is not Screen.EDIT:
         return None
     if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)
@@ -298,6 +289,22 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         half_w, half_h = SQRT3 / 2 * view.size, view.size
         return (round(x - half_w), round(y - half_h), round(2 * half_w), round(2 * half_h))
     raise ValueError(f"a step cannot show {dict(show)!r}")
+
+
+def _run_target(name: str, layout: Layout) -> Rect | None:
+    """A part of the run in its frame (D-057): a drawer, or its icon while it is closed."""
+    if layout.env is not Env.RUN:
+        return None
+    if name in RUN_DRAWERS:
+        drawer = RUN_DRAWERS[name]
+        return (
+            layout.drawer_area if layout.drawer is drawer else dict(layout.drawer_buttons)[drawer]
+        )
+    if name == "play":
+        return dict(arena_layout.control_rects(layout))[arena_layout.ArenaButton.PLAY]
+    if name == "timeline":
+        return arena_layout.timeline_rect(layout)
+    return {"arena": layout.board_area, "controls": layout.controls_area}[name]
 
 
 def box_rect(targets: list, lines: int, hint_at: Rect, before: list = ()) -> Rect:
@@ -342,8 +349,14 @@ def _placed(targets: tuple, before: tuple, height: int) -> Rect:
     return min(free, key=lambda s: (math.dist(_centre(s), goal), s[1], s[0]))
 
 
+def is_area(rect: Rect) -> bool:
+    """A target too big to keep clear of, the board or the arena; the run's controls, wide but
+    low, are not one (D-057)."""
+    return rect[2] >= AREA and rect[3] >= AREA // 2
+
+
 def _narrow(rects: tuple) -> tuple:
-    return tuple(rect for rect in rects if rect[2] < AREA)
+    return tuple(rect for rect in rects if not is_area(rect))
 
 
 def _paths(targets: tuple) -> list:

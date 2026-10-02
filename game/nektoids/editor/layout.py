@@ -37,6 +37,7 @@ SWITCH = 36  # the accented switch at its foot, square [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
+GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
@@ -238,6 +239,10 @@ def make_layout(
         rows.view(env)
     elif drawer is Drawer.OBJECTIVES:
         rows.goals(goals)
+    elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
+        rows.label("The swimmer's wiring")
+    elif drawer is Drawer.SCORE:
+        rows.label("Your wins")
     elif drawer is Drawer.SETTINGS:
         rows.settings()
     elif drawer is Drawer.CHAPTERS:
@@ -269,10 +274,7 @@ def make_layout(
         goal_rows=tuple(rows.of(Goal)),
         setting_rows=tuple(rows.of(Setting)),
         chapter_rows=tuple(rows.of(int)),
-        info_buttons=tuple(
-            (what, (x + INFO_AT - INFO_HIT // 2, y + (h - INFO_HIT) // 2, INFO_HIT, INFO_HIT))
-            for what, (x, y, _, h) in rows.items
-        ),
+        info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
         controls_area=(left, main, width - left, CONTROLS_HEIGHT) if env is Env.RUN else None,
@@ -297,10 +299,10 @@ class _Rows:
         into.append((title, (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, TITLE_HEIGHT)))
         self.y += TITLE_HEIGHT
 
-    def _row(self, what: object) -> None:
+    def _row(self, what: object, height: int = ROW_HEIGHT) -> None:
         width = DRAWER_WIDTH - 2 * ROW_INSET
-        self.items.append((what, (BAR_WIDTH + ROW_INSET, self.y, width, ROW_HEIGHT)))
-        self.y += ROW_PITCH
+        self.items.append((what, (BAR_WIDTH + ROW_INSET, self.y, width, height)))
+        self.y += height + ROW_PITCH - ROW_HEIGHT
 
     def parts(self, folded: frozenset[str], kinds: frozenset[Kind]) -> None:
         for title, group in MENU_GROUPS:
@@ -325,9 +327,12 @@ class _Rows:
             if what is not ViewButton.RAYS or env is Env.RUN:
                 self._row(what)
 
+    def label(self, title: str) -> None:
+        self._title(title, self.sections)
+
     def goals(self, n: int) -> None:
         for k in [*range(n), None]:
-            self._row(Goal(k))
+            self._row(Goal(k), GOAL_HEIGHT)
 
     def settings(self) -> None:
         sections = (
@@ -349,6 +354,14 @@ class _Rows:
         self.y += SECTION_GAP
         self._title("Free play", self.sections)
         self._row(levels)  # the sandbox
+
+
+def _info_disc(what: object, row: Rect) -> Rect:
+    """Where a row's info disc catches a click: INFO_AT into the row, on its middle; an
+    objective's, whose count and bar run along its second line, at its first line's end."""
+    x, y, w, h = row
+    cx, cy = (x + w - 16, y + 14) if isinstance(what, Goal) else (x + INFO_AT, y + h // 2)
+    return (cx - INFO_HIT // 2, cy - INFO_HIT // 2, INFO_HIT, INFO_HIT)
 
 
 def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:

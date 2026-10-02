@@ -343,17 +343,14 @@ it meets, so their density falls as 1/r, like the light, and a shadow is where n
 fans turn slowly, at random but the same at every run; X hides them or shows them again. I, a
 developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
 
-Over the arena's top left, the level's number and title, "LEVEL 1.2. In the shadow" (D-034).
-Right, one column in three titled parts, as the editor's palette writes its titles. CONTROLS, with
-the time at its right: two palettes of five, one row each, the view (zoom in, zoom out, the hand
-to move the view, centre, which frames the swimmers and the lights, and the rays on or off), then
-the player (back to the editor, start again, play or pause, a step of 0.1 s, fast forward), and
-right under it the timeline (D-033). Then OBJECTIVES, and INSIDE, the swimmer's wiring. Every button
-has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
-centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
-"Visit every light", so many reached of so many (section 9).
-At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
-beads on the wires, no numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
+Round the arena, since D-057, the editor's frame (section 15): the bar with Objectives, Inside,
+Score and Navigator, the tabs with the level's line under them, and under the arena the
+controls (start again, play or pause, a step of 0.1 s, fast forward) and the timeline (D-033).
+Every button has a key, which its tooltip names; a key means the same here as in the editor
+(zoom, hand and centre are the editor's own keys, and with the hand the arrows drag the view, in
+both). Objectives counts each objective, with a bar (section 9); Inside shows the selected
+swimmer's wiring on its body, plain: beads on the wires, a meter by each eye and thruster, no
+numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
 the swimmer, turn it with the wheel or L and R, and watch which eye lights up and which thruster
 fires.
 
@@ -375,7 +372,8 @@ makes a circle through the centre, pointing at it.
   `schematic_draw.draw_circuit` draws one, `plain` for the panel. The F2 view is pixel for pixel
   what it was.
 - [`editor/arena_layout.py`](../game/nektoids/editor/arena_layout.py), pure, like `layout.py`: where
-  the arena, the palettes, the objectives and the wiring sit, and `button_at` for the mouse.
+  the run's own things sit in its frame, the controls, the timeline, the banner, and
+  `control_at` and `timeline_at` for the mouse.
 - [`editor/arena_view.py`](../game/nektoids/editor/arena_view.py), pure: from u (y up) to pixels
   (y down) and back, `zoom_view` and `frame` for the view buttons, `Rays` and `ray_ends` for the
   rays, the grid of the light map, `smooth` and `tone` for its greys, `polar_scale`, and
@@ -666,9 +664,9 @@ is LOST checked before WON in `outcome`? (Make a level with Visit every light an
 
 ## 14. The score: time against parts (D-045, D-046)
 
-Read D-045 and D-046 first. Win a level, then win it again with another board: the column's
-last block shows your wins as points, time against parts, and the front of those no other
-beats.
+Read D-045 and D-046 first. Win a level, then win it again with another board: Score, a
+drawer of the run (D-057), shows your wins as points, time against parts, and the front of
+those no other beats.
 
 - [`graph/board.py`](../game/nektoids/graph/board.py): `complexity(board)`, the number of
   parts. Nothing in `sim/` reads it: every body is a sphere of radius 1 u.
@@ -678,7 +676,7 @@ beats.
   scores for the session, in a set; `scores` gives the open level's.
 - [`main.py`](../game/main.py) records a run while it stands won and hands the level's scores
   to the run; [`arena_draw.py`](../game/nektoids/editor/arena_draw.py) `_draw_wins` draws
-  them where the wiring was.
+  them in Score.
 - Tests: [`test_score.py`](../tests/test_score.py) for `beats` and `front`;
   [`test_router.py`](../tests/test_router.py) for a score kept once, per level.
 
@@ -718,6 +716,23 @@ Chapters (Tab) and a locked level.
 
 Questions: why does the scene leave the chosen place for `main.py` rather than open it itself?
 Why is a row's best time in its info box rather than on the row?
+
+The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc.
+
+- [`editor/frame.py`](../game/nektoids/editor/frame.py), pure: `Frame`, what both screens
+  inherit: the bar, one drawer at a time, the tabs and the switch, info discs, Chapters and
+  Settings, tooltips. Each screen gives `_relayout` and `_slid`. Tested headless in
+  [`test_frame.py`](../tests/test_frame.py).
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `make_layout(env=Env.RUN)`, the run's
+  drawers (`DRAWERS`), its switch (`SWITCH_TO`), `Goal` rows, the controls strip.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py): `ArenaScene(Frame)`, `_press`, which
+  asks the frame first; [`arena_draw.py`](../game/nektoids/editor/arena_draw.py): `_draw_rows`
+  and `_draw_controls`.
+- [`main.py`](../game/main.py): `on_screen()`, the scene the tutorial's box and drawers follow;
+  `run_drawer`, kept from one run to the next.
+
+Questions: what does `_slid` do in the editor, and in the run? Why is the controls strip not an
+"area" for the tutorial's box (`tutorial.is_area`)?
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
