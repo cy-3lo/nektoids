@@ -1,5 +1,5 @@
-"""A level's tutorial: steps that show part of the screen, say something about it, and move on
-when the player has done what they ask, or presses Next (D-039).
+"""A level's tutorial: steps that show part of the screen, say something about it, and move on when
+the player has done what they ask, or presses Next (D-039).
 
 A level's data may carry one: its ghosts, the parts the tutorial builds drawn faintly in their
 cells, facing the way they should, and its steps. A step says a few short lines; shows a target,
@@ -8,11 +8,12 @@ or a list of them, which the overlay leaves lit while it dims the rest: an area 
 ("arena", "timeline", "objectives", "inside"); and waits, until a part is placed in a cell, a
 part faces a way, a tool is taken, a wire runs from one cell to another, the run starts, or the
 run is won. A step with no target is a hint: nothing is dimmed. A step with nothing to wait for
-waits for Next. The first level's tutorial leads; later levels only hint (D-039). Skip ends a
-tutorial; reopening its level from the map starts it again (D-048). While a step leads, only the
-means to what it waits for go through (`allows`); the editor and the run ask before they act.
-Pure Python, no pygame: what the step waits for is read from a `Context`, the screen's
-geometry from the layouts.
+waits for Next, and only such a step has a Next: one that waits for an action moves on when it
+is done, never before (D-048). The first level's tutorial leads; later levels only hint (D-039).
+Skip ends a tutorial; reopening its level from the map starts it again (D-048). While a step
+leads, only the means to what it waits for go through (`allows`); the editor and the run ask
+before they act. Pure Python, no pygame: what the step waits for is read from a `Context`, the
+screen's geometry from the layouts.
 """
 
 from __future__ import annotations
@@ -119,9 +120,16 @@ class Tutorial:
         """Whether this step shows a target, dimming the rest, rather than only hinting."""
         return self.step is not None and self.step.show is not None
 
+    @property
+    def waits_for_next(self) -> bool:
+        """Whether this step has a Next: it waits for nothing the player does."""
+        return self.step is not None and not self.step.until
+
     def next(self) -> None:
-        """Next pressed: on to the following step."""
-        if self.step is not None:
+        """Next pressed: on to the following step, if this one waits for it. A step that waits
+        for an action stays until it is done, so no action is left behind that a later step
+        needs."""
+        if self.waits_for_next:
             self.index += 1
 
     def skip(self) -> None:

@@ -208,7 +208,8 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
     layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
     view = centred_view(layout)
     tutorial = Tutorial.from_dict(level.tutorial)
-    while tutorial.step is not None:
+    for index in range(len(tutorial.steps)):  # each step, as it shows once the one before is done
+        tutorial.index = index
         step, done = tutorial.step, tutorial.before
         targets = target_rects(step.show, Screen.EDIT, layout, view)
         before = [] if done is None else target_rects(done.show, Screen.EDIT, layout, view)
@@ -220,9 +221,20 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
                 assert not any(
                     _crosses(box, a, b) for a, b in zip(rects, rects[1:], strict=False)
                 ), step.say
-        tutorial.next()
 
 
 def grown(rect, by):
     x, y, w, h = rect
     return (x - by, y - by, w + 2 * by, h + 2 * by)
+
+
+def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_left_undone():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    for _ in range(3):  # the board, the menu, the palette
+        assert tutorial.waits_for_next
+        tutorial.next()
+    assert not tutorial.waits_for_next  # place an eye: there is no Next
+    tutorial.next()
+    assert tutorial.index == 3 and tutorial.step.until == {
+        "placed": {"kind": "eye", "cell": [2, -1]}
+    }

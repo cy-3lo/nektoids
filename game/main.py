@@ -91,9 +91,10 @@ def tutorial_box(guide: Tutorial) -> tuple:
 
 
 def tutorial_button(guide: Tutorial, pos: tuple[int, int]) -> str | None:
-    """ "next" or "skip" if `pos` is on one of the box's buttons; Skip is not on the last step."""
+    """Which of the box's buttons is under `pos`, "next" or "skip", if one is. Next is only on a
+    step that waits for it, Skip on every step but the last."""
     box = tutorial_box(guide)[1]
-    if contains(next_rect(box), pos):
+    if guide.waits_for_next and contains(next_rect(box), pos):
         return "next"
     last = guide.index == len(guide.steps) - 1
     return "skip" if not last and contains(skip_rect(box), pos) else None

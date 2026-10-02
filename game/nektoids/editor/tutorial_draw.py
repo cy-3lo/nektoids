@@ -60,7 +60,8 @@ def draw_tutorial(
     button = next_rect(box)
     screen.blit(count, count.get_rect(midleft=(frame.left + PAD, pygame.Rect(button).centery)))
     last = tutorial.index == len(tutorial.steps) - 1
-    _button(screen, fonts, button, "Close" if last else "Next", pointer)
+    if tutorial.waits_for_next:  # a step that waits for an action has no Next
+        _button(screen, fonts, button, "Close" if last else "Next", pointer)
     if not last:  # on the last step, Close does what Skip would
         _button(screen, fonts, skip_rect(box), "Skip", pointer)
 
