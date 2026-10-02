@@ -42,7 +42,7 @@ from nektoids.editor.arena_layout import (
     banner_rects,
     control_rects,
     polar_box,
-    time_at,
+    summary_at,
     timeline_rect,
     timeline_x,
 )
@@ -264,16 +264,29 @@ def _dot(screen: pygame.Surface, at: tuple[float, float], fill: tuple[int, int, 
 
 
 def _draw_controls(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """Start again, play or pause, a step, fast forward; the timeline; the time."""
+    """Start again, play or pause, a step, fast forward; the timeline; how many objectives are
+    met, lit once all are, red once one is lost or the time is up (D-060). A level with none, the
+    sandbox, shows its time there instead."""
     strip = pygame.Rect(scene.layout.controls_area)
     pygame.draw.rect(screen, PANEL, strip)
     pygame.draw.line(screen, RULE, strip.topleft, strip.topright)
     for button, rect in control_rects(scene.layout):
         draw_button(screen, fonts, rect, _icon(scene, button), _on(scene, button))
     _draw_timeline(screen, scene, fonts)
-    elapsed = f"{scene.clock.seconds:.1f} / {scene.level.time_limit:g} s"
-    shown = fonts.small.render(elapsed, True, DIM_TEXT)
-    screen.blit(shown, shown.get_rect(midright=time_at(scene.layout)))
+    counts = scene.counts()
+    met = sum(c.met >= c.needed and not c.lost for c in counts)
+    if not counts:
+        text, colour = _elapsed(scene), DIM_TEXT
+    else:
+        text = f"{met}/{len(counts)} objective" + ("s" if len(counts) > 1 else "")
+        lost = any(c.lost for c in counts) or scene.outcome is Outcome.TIME_UP
+        colour = REFUSED if lost else LIT if met == len(counts) else DIM_TEXT
+    shown = fonts.small.render(text, True, colour)
+    screen.blit(shown, shown.get_rect(midright=summary_at(scene.layout)))
+
+
+def _elapsed(scene: ArenaScene) -> str:
+    return f"{scene.clock.seconds:.1f} / {scene.level.time_limit:g} s"
 
 
 def _draw_timeline(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
@@ -318,6 +331,10 @@ def _draw_control_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -
     """Name and key of the control under the mouse, over it."""
     button = scene.control_tip
     if button is None:
+        return
+    if button == "timeline":  # the time, at the mouse
+        _, y, _, _ = timeline_rect(scene.layout)
+        draw_tip(screen, fonts, _elapsed(scene), midbottom=(scene.pointer[0], y - 8))
         return
     x, y, w, _ = dict(control_rects(scene.layout))[button]
     key = f" ({BUTTON_KEYS[button]})" if scene.settings.key_hints else ""

@@ -18,7 +18,7 @@ from nektoids.editor.arena_layout import (
     control_at,
     control_rects,
     polar_box,
-    time_at,
+    summary_at,
     timeline_at,
     timeline_rect,
     timeline_x,
@@ -52,8 +52,8 @@ def test_the_controls_sit_side_by_side_in_the_strip_then_the_timeline_then_the_t
             assert x + w < x2 and contains(strip, (x, y)) and contains(strip, (x + w, y + h))
         line = timeline_rect(layout)
         last = rects[-1][1]
-        assert last[0] + last[2] < line[0] and line[0] + line[2] < time_at(layout)[0]
-        assert contains(strip, line[:2]) and time_at(layout)[0] <= strip[0] + strip[2]
+        assert last[0] + last[2] < line[0] and line[0] + line[2] < summary_at(layout)[0]
+        assert contains(strip, line[:2]) and summary_at(layout)[0] <= strip[0] + strip[2]
         for button, rect in rects:
             assert control_at(layout, centre(rect)) is button
         assert control_at(layout, centre(layout.board_area)) is None  # the arena

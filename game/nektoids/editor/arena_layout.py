@@ -4,10 +4,10 @@ what is under a given pixel.
 The frame (`layout.make_layout(env=Env.RUN)`) gives the bar, the drawers, the tabs, the level's
 line under them, the arena as the main screen and a strip under it for the controls. In that
 strip, from the left: start again, play or pause, a step of 0.1 s, fast forward; the timeline;
-the time, so much of so much. Once a run is over, a banner at the arena's top offers Next level
-and Edit. Inside and Score draw in the drawer's body, under its title. The polar plot of the
-light at the eyes, a developer's tool, is an inset over the arena's top left corner. Plain
-numbers, no pygame, so hit-testing is testable headless.
+how many of the objectives are met (D-060). Once a run is over, a banner at the arena's top
+offers Next level and Edit. Inside and Score draw in the drawer's body, under its title. The
+polar plot of the light at the eyes, a developer's tool, is an inset over the arena's top left
+corner. Plain numbers, no pygame, so hit-testing is testable headless.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from nektoids.editor.layout import (
 
 CONTROL = 32  # a control's square button [px]
 CONTROL_PITCH = 38  # from one to the next [px]
-TIME_WIDTH = 96  # the time, right of the timeline [px]
+SUMMARY_WIDTH = 132  # right of the timeline: so many objectives met of so many [px]
 TIMELINE_HEIGHT = 20  # what a press on it catches [px]
 TIMELINE_BAR = 8  # the bar's height, centred in it [px]
 DRAWER_BODY: Rect = (BAR_WIDTH, DRAWER_TOP + TITLE_HEIGHT, DRAWER_WIDTH, 300)  # Inside, Score
@@ -98,12 +98,12 @@ def timeline_rect(layout: Layout) -> Rect:
     """The timeline: after the controls, before the time."""
     x, y, w, h = layout.controls_area
     left = x + MARGIN + len(CONTROLS) * CONTROL_PITCH + MARGIN
-    right = x + w - MARGIN - TIME_WIDTH
+    right = x + w - MARGIN - SUMMARY_WIDTH
     return (left, y + (h - TIMELINE_HEIGHT) // 2, right - left, TIMELINE_HEIGHT)
 
 
-def time_at(layout: Layout) -> tuple[int, int]:
-    """The right end of the time, so much of so much, centred on the strip's height."""
+def summary_at(layout: Layout) -> tuple[int, int]:
+    """The right end of the objectives' summary, centred on the strip's height (D-060)."""
     x, y, w, h = layout.controls_area
     return (x + w - MARGIN, y + h // 2)
 

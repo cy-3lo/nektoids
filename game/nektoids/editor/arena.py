@@ -52,6 +52,7 @@ from nektoids.editor.arena_layout import (
     banner_button_at,
     control_at,
     timeline_at,
+    timeline_rect,
     timeline_time,
 )
 from nektoids.editor.arena_view import (
@@ -177,7 +178,7 @@ class ArenaScene(Frame):
         self.seek_to: int | None = None  # the tick the run races ahead to, if it does
         self.scrubbing = False  # the timeline held down: the run follows the mouse along it
         self.pointer = (0, 0)  # where the mouse is [px]
-        self.control_target: ArenaButton | None = None  # the control under the mouse
+        self.control_target: ArenaButton | str | None = None  # a control, or "timeline"
         self.control_frames = 0  # ... for this many frames
         self.map_version = 0  # goes up each time the light map changes
         self.map_ms = 0.0  # what computing it took, for the status line [ms]
@@ -202,7 +203,7 @@ class ArenaScene(Frame):
         return f"{self.label or level_label(self.index)}. {self.level.title}", self.level.spec
 
     @property
-    def control_tip(self) -> ArenaButton | None:
+    def control_tip(self) -> ArenaButton | str | None:
         """The control whose tooltip shows now, if any."""
         rested = self.control_frames >= self.settings.tooltip_frames
         return self.control_target if rested else None
@@ -291,7 +292,8 @@ class ArenaScene(Frame):
 
     def update(self) -> None:
         self.frame_update()
-        target = control_at(self.layout, self.pointer)
+        on_line = contains(timeline_rect(self.layout), self.pointer)
+        target = control_at(self.layout, self.pointer) or ("timeline" if on_line else None)
         self.control_frames = self.control_frames + 1 if target is self.control_target else 0
         self.control_target = target
         if self.outcome is not None:
