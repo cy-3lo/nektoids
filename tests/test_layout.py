@@ -8,6 +8,7 @@ from nektoids.editor.layout import (
     DRAWERS,
     EDIT_KEYS,
     FOOT,
+    HEX_SIZE,
     LEVEL_KEYS,
     MAX_HEX,
     MIN_HEX,
@@ -26,7 +27,10 @@ from nektoids.editor.layout import (
     MainView,
     Setting,
     Tool,
+    View,
     ViewButton,
+    board_extent,
+    board_view_of,
     cell_at,
     centred_on,
     centred_view,
@@ -36,6 +40,7 @@ from nektoids.editor.layout import (
     goal_row_at,
     group_at,
     info_at,
+    kept_on_board,
     level_button_at,
     level_of,
     main_view_at,
@@ -354,10 +359,30 @@ def test_navigators_overview_frames_what_the_main_screen_shows_and_a_press_moves
         assert zoom_bar_at(layout, (bx, oy + oh + 20)) is None
     assert level_of(MIN_HEX, MIN_HEX, MAX_HEX) == 0.0 and level_of(MAX_HEX, MIN_HEX, MAX_HEX) == 1
     assert value_at(level_of(34.0, MIN_HEX, MAX_HEX), MIN_HEX, MAX_HEX) == pytest.approx(34.0)
-    small = overview_view(list(hex_disc(2)), NAVIGATOR.overview)
+    small = overview_view(NAVIGATOR, list(hex_disc(2)))
     frame = shown_frame(NAVIGATOR, VIEW, small)
     centre_cell = to_pixel((0, 0), small.size, small.origin)
     assert contains(frame, (round(centre_cell[0]), round(centre_cell[1])))  # the view shows it
     moved = centred_on(NAVIGATOR, VIEW, small, (round(centre_cell[0]) + 10, round(centre_cell[1])))
     assert moved.size == VIEW.size and moved.origin[0] < VIEW.origin[0]  # the board slides left
     assert make_layout(Drawer.PARTS).overview is None
+
+
+def test_the_overview_shows_the_zone_half_as_much_again_and_the_view_never_shows_more():
+    big = list(hex_disc(5))  # a zone bigger than what HEX_SIZE shows
+    bounds = board_extent(NAVIGATOR, big)
+    x0, y0, x1, y1 = bounds
+    reach = max(abs(to_pixel(c, 1.0, (0.0, 0.0))[0]) for c in big) + 1.0
+    assert x1 >= 1.5 * reach and x0 == -x1 and y0 == -y1  # 150 % of the zone, or more (D-066)
+    _, _, w, h = NAVIGATOR.board_area
+    assert (x1 - x0) / (y1 - y0) == pytest.approx(w / h)  # the main screen's shape
+    far = View(MIN_HEX, VIEW.origin)
+    kept = kept_on_board(NAVIGATOR, far, bounds)
+    assert kept.size == pytest.approx(board_view_of(NAVIGATOR.board_area, bounds).size)
+    off = kept_on_board(NAVIGATOR, View(60.0, (VIEW.origin[0] + 5000, VIEW.origin[1])), bounds)
+    small = overview_view(NAVIGATOR, big)
+    frame = shown_frame(NAVIGATOR, off, small)
+    ox, oy, ow, oh = NAVIGATOR.overview
+    assert ox - 1 <= frame[0] and frame[0] + frame[2] <= ox + ow + 1  # its frame inside
+    small_zone = board_extent(NAVIGATOR, list(hex_disc(1)))
+    assert small_zone[2] == pytest.approx(w / HEX_SIZE / 2)  # at least what HEX_SIZE shows

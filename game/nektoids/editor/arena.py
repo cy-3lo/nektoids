@@ -57,16 +57,18 @@ from nektoids.editor.arena_layout import (
 )
 from nektoids.editor.arena_view import (
     MAX_SCALE,
-    MIN_SCALE,
     ZOOM_STEP,
     ArenaView,
     Rays,
     body_at,
+    extent,
     frame,
+    kept_in,
     map_grid,
     map_points,
     pan_view,
     shown,
+    view_of,
     zoom_view,
 )
 from nektoids.editor.circuit import Circuit
@@ -84,7 +86,6 @@ from nektoids.editor.layout import (
     zoom_bar_at,
     zoom_button_at,
 )
-from nektoids.editor.probe import level_view
 from nektoids.editor.recording import Recording
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS
@@ -300,6 +301,9 @@ class ArenaScene(Frame):
 
     def update(self) -> None:
         self.frame_update()
+        kept = kept_in(self.view, self.arena_area, self.extent())  # D-066
+        if kept != self.view:
+            self._look(kept)
         on_line = contains(timeline_rect(self.layout), self.pointer)
         target = control_at(self.layout, self.pointer) or ("timeline" if on_line else None)
         self.control_frames = self.control_frames + 1 if target is self.control_target else 0
@@ -585,21 +589,35 @@ class ArenaScene(Frame):
         dx, dy = {left: (-step, 0.0), right: (step, 0.0), up: (0.0, -step)}.get(key, (0.0, step))
         self._look(pan_view(self.view, dx, dy))
 
+    def extent(self) -> tuple[float, float, float, float]:
+        """What Navigator's overview shows, and the most the arena may (D-066): the lights and
+        their rings, the obstacles and the swimmer where it is now, with room to spare."""
+        arena = self.arena
+        rims = [
+            arena.light_xy + d for r, _ in self.rings for d in ((r, 0), (-r, 0), (0, r), (0, -r))
+        ]
+        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *rims))
+        reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
+        _, _, w, h = self.arena_area
+        return extent(points, reach, w / h)
+
+    def least_zoom(self) -> float:
+        """The farthest the zoom goes: the arena shows the overview's extent [px/u]."""
+        return view_of(self.arena_area, self.extent()).scale
+
     def _overview_to(self, point: tuple[int, int]) -> None:
         """The view, at its zoom, centred where the mouse is on Navigator's overview (D-060)."""
-        wx, wy = level_view(self.level, self.layout.overview).to_world(*point)
+        bounds = self.extent()
+        wx, wy = view_of(self.layout.overview, bounds).to_world(*point)
         x, y, w, h = self.arena_area
-        self._look(
-            ArenaView(
-                self.view.scale,
-                (x + w / 2 - self.view.scale * wx, y + h / 2 + self.view.scale * wy),
-            )
-        )
+        s = self.view.scale
+        moved = ArenaView(s, (x + w / 2 - s * wx, y + h / 2 + s * wy))
+        self._look(kept_in(moved, self.arena_area, bounds))
 
     def _zoom_to(self, point: tuple[int, int]) -> None:
         """The zoom where the mouse is along Navigator's zoom bar, about the arena's centre."""
         x, _, w, _ = self.layout.zoom_bar
-        scale = value_at((point[0] - x) / w, MIN_SCALE, MAX_SCALE)
+        scale = value_at((point[0] - x) / w, self.least_zoom(), MAX_SCALE)
         ax, ay, aw, ah = self.arena_area
         self._look(zoom_view(self.view, scale / self.view.scale, (ax + aw / 2, ay + ah / 2)))
 

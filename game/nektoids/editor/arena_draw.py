@@ -48,13 +48,13 @@ from nektoids.editor.arena_layout import (
 )
 from nektoids.editor.arena_view import (
     MAX_SCALE,
-    MIN_SCALE,
     edge_marker,
     polar_scale,
     ray_ends,
     shown,
     smooth,
     tone,
+    view_of,
 )
 from nektoids.editor.devdrive import DT
 from nektoids.editor.draw import (
@@ -101,7 +101,6 @@ from nektoids.editor.palette import (
     SHADOW,
     TEXT,
 )
-from nektoids.editor.probe import level_view
 from nektoids.editor.schematic_draw import draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
@@ -362,13 +361,13 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
         _draw_wins(screen, scene, fonts)
     if scene.layout.overview is not None:
         area = pygame.Rect(scene.layout.overview)
-        small = level_view(scene.level, scene.layout.overview)
+        small = view_of(scene.layout.overview, scene.extent())  # D-066
         left, bottom, right, top = shown(scene.view, scene.arena_area)
         (x0, y0), (x1, y1) = small.to_screen(left, top), small.to_screen(right, bottom)
         frame = pygame.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
         pose = (*scene.pos[0], float(scene.heading[0]))
-        draw_level_map(screen, scene.level, area, pose, frame)
-        draw_zoom(screen, scene, fonts, level_of(scene.view.scale, MIN_SCALE, MAX_SCALE))
+        draw_level_map(screen, scene.level, area, pose, frame, small)
+        draw_zoom(screen, scene, fonts, level_of(scene.view.scale, scene.least_zoom(), MAX_SCALE))
     for button, rect in scene.layout.view_buttons:
         active = (button is ViewButton.PAN and scene.hand) or (
             button is ViewButton.RAYS and scene.show_rays

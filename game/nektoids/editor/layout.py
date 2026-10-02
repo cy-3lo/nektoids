@@ -545,9 +545,51 @@ def value_at(level: float, low: float, high: float) -> float:
     return low * (high / low) ** min(1.0, max(0.0, level))
 
 
-def overview_view(cells: Sequence[Cell], area: Rect) -> View:
-    """The whole board, its cells, seen small in Navigator's overview (D-060)."""
-    return fitted_view(area, [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells], 1.0)
+Bounds = tuple[float, float, float, float]  # x0, y0, x1, y1 [hex sizes], cell (0, 0) at 0
+ROOM = 1.5  # the overview shows this many times the zone, each way (D-066)
+
+
+def board_extent(layout: Layout, cells: Sequence[Cell]) -> Bounds:
+    """What the overview shows of the board, and the most the main screen may (D-066): the zone,
+    its hexes whole, ROOM times over, and at least what the main screen shows at HEX_SIZE,
+    centred on cell (0, 0) and widened to the main screen's aspect."""
+    _, _, w, h = layout.board_area
+    points = [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells] or [(0.0, 0.0)]
+    reach = 1.0  # a hex's own half, and a little [hex sizes]
+    half_w = max(ROOM * (max(abs(x) for x, _ in points) + reach), w / HEX_SIZE / 2)
+    half_h = max(ROOM * (max(abs(y) for _, y in points) + reach), h / HEX_SIZE / 2)
+    half_w, half_h = max(half_w, half_h * w / h), max(half_h, half_w * h / w)
+    return (-half_w, -half_h, half_w, half_h)
+
+
+def board_view_of(area: Rect, bounds: Bounds) -> View:
+    """The view that shows `bounds` whole in `area`, centred."""
+    x, y, w, h = area
+    x0, y0, x1, y1 = bounds
+    size = min(w / (x1 - x0), h / (y1 - y0))
+    return View(size, (x + w / 2 - size * (x0 + x1) / 2, y + h / 2 - size * (y0 + y1) / 2))
+
+
+def kept_on_board(layout: Layout, view: View, bounds: Bounds) -> View:
+    """The view, zoomed in if it showed more than `bounds`, slid so that it shows nothing
+    outside them: what the overview frames stays inside it (D-066)."""
+    least = board_view_of(layout.board_area, bounds).size
+    x, y, w, h = layout.board_area
+    if view.size < least:
+        k = least / view.size
+        cx, cy = x + w / 2, y + h / 2
+        view = View(least, (cx + k * (view.origin[0] - cx), cy + k * (view.origin[1] - cy)))
+    x0, y0, x1, y1 = bounds
+    s, (ox, oy) = view.size, view.origin
+    left, right, top, bottom = (x - ox) / s, (x + w - ox) / s, (y - oy) / s, (y + h - oy) / s
+    dx = (x0 - left) if left < x0 else (x1 - right) if right > x1 else 0.0
+    dy = (y0 - top) if top < y0 else (y1 - bottom) if bottom > y1 else 0.0
+    return View(s, (ox - dx * s, oy - dy * s))
+
+
+def overview_view(layout: Layout, cells: Sequence[Cell]) -> View:
+    """The board's extent seen small in Navigator's overview (D-060, D-066)."""
+    return board_view_of(layout.overview, board_extent(layout, cells))
 
 
 def shown_frame(layout: Layout, view: View, small: View) -> Rect:

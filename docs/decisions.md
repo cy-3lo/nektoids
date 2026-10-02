@@ -832,3 +832,14 @@ as a bar between its out and in buttons, pressed or dragged, on a log scale. Han
 leave the drawer: dragging the overview does what the hand did; their keys still work. In every
 circuit view, Inside, the Run preview and F2, wires and beads keep one colour whatever they
 carry: the beads' spacing and the meters show the rates.
+
+**D-066 — 2026-10-02 — The overview shows half as much again as what matters, the zoom goes no farther out, and the view stays inside it.**
+The overview showed the zone or the level just as they are, so the main screen could show more,
+and the frame round what it shows then lay outside the overview, unseen. Now the overview shows
+an extent: what matters, 1.5 times over each way about its middle, widened to the main screen's
+shape. In the editor what matters is the zone, its hexes whole, and the extent is at least what
+the main screen shows at the default zoom; in the run it is the lights and their rings, the
+obstacles and the swimmer where it is now, so the extent grows as the swimmer leaves, every
+frame. The farthest zoom shows the extent exactly, and the zoom bar runs from there to the
+nearest; the view is kept inside the extent, whatever moves it (`layout.kept_on_board`,
+`arena_view.kept_in`), so the frame is always inside the overview.

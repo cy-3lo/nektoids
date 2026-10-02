@@ -47,7 +47,6 @@ from nektoids.editor.layout import (
     LEVEL_KEYS,
     MARGIN,
     MAX_HEX,
-    MIN_HEX,
     PALETTE_TITLE,
     SCREEN,
     SENSE_MAP,
@@ -571,11 +570,13 @@ def draw_level_map(
     area: pygame.Rect,
     pose: tuple[float, float, float],
     frame: pygame.Rect | None = None,
+    view=None,
 ) -> None:
     """The level seen whole and small in `area`: its obstacles, its lights and their rings, and
     the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the main screen shows of it,
-    outlined (Sense's map, the run's overview, D-058, D-060)."""
-    view, arena = level_view(level, tuple(area)), level.arena
+    outlined (Sense's map, the run's overview, D-058, D-060); `view`, how it is seen, else the
+    level seen whole."""
+    view, arena = view or level_view(level, tuple(area)), level.arena
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     screen.set_clip(area)
     for disc in arena.obstacles:
@@ -623,7 +624,7 @@ def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> 
     what the main screen shows; a press or a drag there moves the view."""
     area = pygame.Rect(scene.layout.overview)
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
-    small = overview_view(sorted(scene.board.cells), scene.layout.overview)
+    small = overview_view(scene.layout, sorted(scene.board.cells))
     screen.set_clip(area)
     for cell in scene.board.cells:
         pygame.draw.polygon(screen, ZONE, _hexagon(small, cell))
@@ -681,7 +682,7 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         _draw_files(screen, scene, fonts)
     if layout.overview is not None:
         _draw_overview(screen, scene, fonts)
-        draw_zoom(screen, scene, fonts, level_of(scene.view.size, MIN_HEX, MAX_HEX))
+        draw_zoom(screen, scene, fonts, level_of(scene.view.size, scene.least_zoom(), MAX_HEX))
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")

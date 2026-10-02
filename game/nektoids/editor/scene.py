@@ -45,18 +45,20 @@ from nektoids.editor.layout import (
     KEY_ALIASES,
     MAX_HEX,
     MENU_GROUPS,
-    MIN_HEX,
     SENSE_MAP,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
+    Bounds,
     Drawer,
     EditButton,
     Layout,
     MainView,
     Tool,
     ViewButton,
+    board_extent,
+    board_view_of,
     cell_at,
     centred_on,
     centred_view,
@@ -64,6 +66,7 @@ from nektoids.editor.layout import (
     edit_button_at,
     file_button_at,
     group_at,
+    kept_on_board,
     main_view_at,
     make_layout,
     menu_item_at,
@@ -172,6 +175,7 @@ class EditorScene(Frame):
         if self.flash_frames > 0:
             self.flash_frames -= 1
         self.frame_update()
+        self.view = kept_on_board(self.layout, self.view, self.extent())  # D-066
         if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.SENSE:
             self._probe_now()
         if self.probe is not None:
@@ -441,15 +445,24 @@ class EditorScene(Frame):
         shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.SENSE
         return turns and shown and self.probe is not None
 
+    def extent(self) -> Bounds:
+        """What Navigator's overview shows of the board, and the most the main screen may."""
+        return board_extent(self.layout, sorted(self.board.cells))
+
+    def least_zoom(self) -> float:
+        """The farthest the zoom goes: the main screen shows the overview's extent [px]."""
+        return board_view_of(self.layout.board_area, self.extent()).size
+
     def _overview_to(self, pos: tuple[int, int]) -> None:
         """The view, at its zoom, centred where the mouse is on Navigator's overview (D-060)."""
-        small = overview_view(sorted(self.board.cells), self.layout.overview)
-        self.view = centred_on(self.layout, self.view, small, pos)
+        small = overview_view(self.layout, sorted(self.board.cells))
+        moved = centred_on(self.layout, self.view, small, pos)
+        self.view = kept_on_board(self.layout, moved, self.extent())
 
     def _zoom_to(self, pos: tuple[int, int]) -> None:
         """The zoom where the mouse is along Navigator's zoom bar, about the board's centre."""
         x, _, w, _ = self.layout.zoom_bar
-        size = value_at((pos[0] - x) / w, MIN_HEX, MAX_HEX)
+        size = value_at((pos[0] - x) / w, self.least_zoom(), MAX_HEX)
         bx, by, bw, bh = self.layout.board_area
         self.view = zoom(self.view, size / self.view.size, (bx + bw / 2, by + bh / 2))
 
