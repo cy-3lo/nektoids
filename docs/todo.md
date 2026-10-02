@@ -65,3 +65,32 @@ From Camille's notes (`ebc4abb`), then a design for touch screens.
 - [ ] Put a part on a cell a wire crosses, and have the wire route round it, as a wire drawn
       after the part already does. Today `Board.place` refuses ("a wire runs here"). This
       reopens D-007 and D-011 (routes never change on their own), so it needs a decision first.
+
+## 8. An activity bar, drawers and environments (from `ideas.md`)
+
+Mockups of every drawer, drawn with the game's own palette and renders, are in this session's
+artifacts ("Nektoids Activity Bar"). It replaces the menu and the palette (D-025, D-037) and the
+run view's column: a decision first.
+
+- [ ] An activity bar down the left edge, one icon per drawer, named when the mouse rests on it;
+      the open one lighter, an accent bar on its edge. One drawer open at a time, pushing the
+      board aside; folded by its icon again or the arrow on its edge.
+      - Editor: Parts (the menu as it is); Tools (the tools with their keys, Undo, Redo; Save
+        and Load greyed); Diagrams (this session's winning boards, one per point of the score;
+        saved ones after the jam); Sense (a probe: the swimmer put anywhere on a small map of the
+        level, what its eyes would read and its thrusters do, nothing run or scored); Navigate
+        (zoom, hand, centre, an overview of the board); Map (the levels, your best on each).
+      - Sim: Objectives, Inside, Score, Navigate, Map. Play, a step, fast forward and the
+        timeline in a bar under the arena.
+- [ ] Environments as tabs over the content: Editor, Sim, Builder (later). Switched by a tab, or
+      by the accented button at the foot of the bar: Run in the editor, Edit in the sim.
+- To settle first:
+  - With Parts open the tools are out of sight, their keys still live: fine, or a slim strip of
+    tools over the board?
+  - This session's winning boards kept in memory, as the scores are (D-046): in the jam?
+  - Sense reopens D-023 and D-030 (the player never moves a programmed swimmer): a ghost on a
+    preview, nothing run, nothing scored?
+  - Does the Map drawer replace the full-screen map (D-035)?
+  - Builder: a locked tab now, or none until it exists?
+  - Parts and the ring of icons (§7) both hand out parts: keep both?
+  - The tutorial lights the menu and the palette (D-039): Fear's steps change with the bar.

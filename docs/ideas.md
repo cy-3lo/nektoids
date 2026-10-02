@@ -73,23 +73,7 @@ puts it in scope. Until D-028 these were logged in the decision log as "post-jam
 
 ## Interface
 
-- **An activity bar**, as in VS Code: a column of icons on the left or the right of both
-  screens, the editor and the run view; a click on one opens a drawer with its tools. Items:
-  the parts, a library of diagrams, getting around (the map, a small map of the level, zoom,
-  hand), a helper (the tutorial, hints, the parts' info), save and load, settings; and two
-  tools of their own: a preview of the level from the editor, and a probe, the swimmer put
-  down by the player anywhere on the level to see what the diagram does there. It would
-  replace the palette (D-025, D-037).
-  - Left or right? In 960 × 640 px, does a drawer cover the board or push it aside?
-  - One bar with the same items on both screens, or each screen its own?
-  - The library of diagrams: the player's saved boards (needs saving), or circuits to start
-    from? Braitenberg's vehicles there would give the tutorials away.
-  - The parts drawer and the ring round a cell (todo §7) both hand out parts: keep both?
-  - The probe reopens D-023 and D-030: the player never touches a programmed swimmer. It
-    would not be scored; does it run the clock and the objectives, or only show the eyes'
-    readings and the beads where the swimmer stands?
-  - The preview: the level's items and objectives while editing, or the run in an inset?
-  - Settings: what is there to set, with sound out? The run's speed?
+- **An activity bar**: promoted to the todo, §8, with mockups of its drawers.
 
 ## Presentation
 
