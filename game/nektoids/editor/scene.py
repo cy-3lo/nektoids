@@ -1062,21 +1062,21 @@ class EditorScene(Frame):
     def hint(self) -> str:
         """What the status line says the player can do now."""
         if self.tool is Tool.PAN:
-            return "Drag the grid to move the view. H again, or Esc, puts the hand down."
+            return "Drag the board to move the view. H or Esc puts the hand down."
         if self.carrying:
             return "The arrows carry the part; Enter puts it down."
         if self.tool is Tool.WIRE and not self.ring_open and self.source is not None:
             return "The arrows to the part to wire to, then Enter. Esc gives up."
         if self.mode is Mode.DELETE:
-            return "Click a part to delete it with its wires, or a wire. E or Esc: back to Write."
+            return "Click a part or a wire to delete it. E or Esc: back to Write."
         if self.swapping:
-            return "Pick in Tools what the part becomes, or press its number. Esc: back."
+            return "Pick what it becomes in Tools, or press its number. Esc: back."
         node = self._focused_node()
         if node is not None:
-            return "Click another part to wire it, or drag it to move it. Tools has the rest."
+            return "Click another part to wire it, or drag it to move it."
         if self.focused is not None:
             return "Pick a part in Tools, or press its number."
-        return "Click a cell: Tools shows what can be done there. Or drag a part from Parts."
+        return "Click a cell, or drag a part from Parts onto the board."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason

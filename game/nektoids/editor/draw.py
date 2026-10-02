@@ -63,7 +63,6 @@ from nektoids.editor.layout import (
     MainView,
     Mode,
     Setting,
-    Shown,
     Tool,
     View,
     ViewButton,
@@ -347,31 +346,52 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 
 
 def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Atop the main screen while Tools is folded: what the next click or Enter does, its icon
-    and its key (D-068); a click on it opens Tools."""
+    """Atop the main screen: what the next click or Enter does (D-068), as a lit button with its
+    key beside it while key hints are on, and a line under it saying what it is. A click on it
+    opens Tools."""
     box = pygame.Rect(scene.layout.action_at)
     pygame.draw.rect(screen, ACTIVE, box, border_radius=6)
     what, key = scene.action()
-    at = (box.left + box.height // 2, box.centery)
     if isinstance(what, Kind):
-        draw_part(screen, fonts, what, MENU_ANGLE.get(what), at, 22, False)
+        draw_part(screen, fonts, what, MENU_ANGLE.get(what), box.center, 22, False)
     else:
-        fonts.icons.draw(screen, _action_icon(what), at, 18, TEXT)
+        fonts.icons.draw(screen, _action_icon(what), box.center, 18, TEXT)
     if scene.settings.key_hints:
-        shown = fonts.text.render(key, True, TEXT)
-        screen.blit(shown, shown.get_rect(center=(box.right - box.height // 2, box.centery)))
+        shown = fonts.text.render(key, True, DIM_TEXT)
+        screen.blit(shown, shown.get_rect(midleft=(box.right + 8, box.centery)))
+    says = fonts.small.render(_action_says(scene, what), True, TEXT)
+    at = says.get_rect(midtop=(box.centerx, box.bottom + 6))
+    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
+    screen.blit(says, at)
+
+
+ACTION_SAYS = {  # under the action atop the main screen: what it is (D-068)
+    Mode.WRITE: "Write: a click on a cell shows what can be done there",
+    Mode.DELETE: "Delete: a click removes the part or the wire under it",
+    Tool.WIRE: "Wire: the next part clicked is wired to this one",
+    Tool.MOVE: "Move: the part goes to the next empty cell clicked, or with the arrows",
+    Tool.TURN_LEFT: "Turn left: the part turns 60° counter-clockwise",
+    Tool.TURN_RIGHT: "Turn right: the part turns 60° clockwise",
+    Tool.DELETE: "Delete: the part goes, and its wires with it",
+    Tool.SWAP: "Swap: the part becomes another of its group",
+    Tool.PAN: "Hand: a drag on the board moves the view",
+}
+
+
+def _action_says(scene: EditorScene, what: Kind | Tool | Mode) -> str:
+    if not isinstance(what, Kind):
+        return ACTION_SAYS[what]
+    if scene.swapping:
+        return f"{NAME[what]}: Enter swaps the part for one"
+    if scene.picked is what:
+        return f"{NAME[what]}: a click on a cell places one there"
+    return f"{NAME[what]}: Enter places one on the cell"
 
 
 def _action_icon(what: Tool | Mode) -> str:
     if isinstance(what, Mode):
         return MODE_ICON[what]
     return VIEW_ICON[ViewButton.PAN] if what is Tool.PAN else TOOL_ICON[what]
-
-
-def _action_name(what: Kind | Tool | Mode) -> str:
-    if isinstance(what, Kind):
-        return NAME[what]
-    return ROW_NAME[ViewButton.PAN] if what is Tool.PAN else ROW_NAME[what]
 
 
 def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
@@ -409,7 +429,7 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         if scene.settings.key_hints:
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
             screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
-    line = fonts.small.render(_cell_says(scene), True, DIM_TEXT)
+    line = fonts.small.render(_fitted(fonts.small, _cell_says(scene), w), True, DIM_TEXT)
     screen.blit(line, line.get_rect(center=(round(centre[0]), y + h - CAPTION // 2)))
     for mode, rect in layout.mode_buttons:
         status = ("key", MODE_KEY)
@@ -438,17 +458,17 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 def _cell_says(scene: EditorScene) -> str:
     """The line under Tools' picture of the cell."""
     if scene.main is not MainView.DIAGRAM:
-        return "Back to the Diagram view to edit."
+        return "Diagram view to edit"
     if scene.mode is Mode.DELETE:
-        return "Delete: click a part or a wire."
+        return "Click what goes"
     if scene.focused is None:
-        return "Click a cell on the board."
+        return "Click a cell"
     node = scene.board.node_at(scene.focused)
     if node is None:
-        return "An empty cell" if scene.offered() else "An empty cell: no part left"
+        return "An empty cell" if scene.offered() else "Empty: no part left"
     if scene.swapping:
         return f"Swap the {NAME[node.kind].lower()} for:"
-    return NAME[node.kind] + (", placed by the level" if node.locked else "")
+    return NAME[node.kind] + (", the level's" if node.locked else "")
 
 
 def _draw_wire(
@@ -1002,14 +1022,9 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         text = TIP[button] + (f" ({key})" if key else "")
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
-    if isinstance(target, MainView | Shown):  # under it, at the main screen's top
-        if target is Shown.ACTION:  # the editor's: what a click does now (D-068)
-            x, y, w, h = scene.layout.action_at
-            what, key = scene.action()
-            text = _action_name(what) + (f" ({key})" if scene.settings.key_hints else "")
-        else:
-            x, y, w, h = dict(scene.layout.view_switch)[target]
-            text = TIP[target]
+    if isinstance(target, MainView):  # under it, at the main screen's top
+        x, y, w, h = dict(scene.layout.view_switch)[target]
+        text = TIP[target]
         width = fonts.text.size(text)[0] + 16
         right = min(x + w // 2 + width // 2, SCREEN[0] - 4) - 8
         draw_tip(screen, fonts, text, topright=(right, y + h + 10))
@@ -1081,4 +1096,7 @@ def draw_status_line(screen: pygame.Surface, scene: Frame, fonts: Fonts, text: s
     left = scene.layout.board_area[0]
     strip = (left, SCREEN[1] - STATUS_HEIGHT, SCREEN[0] - left, STATUS_HEIGHT)
     pygame.draw.rect(screen, BAR, strip)
-    screen.blit(fonts.small.render(text, True, colour), scene.layout.status_at)
+    room = SCREEN[0] - scene.layout.status_at[0] - 8
+    screen.blit(
+        fonts.small.render(_fitted(fonts.small, text, room), True, colour), scene.layout.status_at
+    )

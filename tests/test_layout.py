@@ -32,6 +32,7 @@ from nektoids.editor.layout import (
     Tool,
     View,
     ViewButton,
+    action_at,
     board_extent,
     board_view_of,
     cell_at,
@@ -150,27 +151,25 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_tools_shows_the_cell_then_write_delete_undo_redo_and_folded_the_action_atop():
+def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_atop():
     tools = make_layout(Drawer.TOOLS)  # D-068: first in the bar
     assert DRAWERS[Env.EDITOR][0] is Drawer.TOOLS
-    assert [title for title, _ in tools.section_titles] == ["The cell", "Mode", "Edit"]
+    assert [title for title, _ in tools.section_titles] == ["Mode", "Edit", "The cell"]
     rows = [*tools.mode_buttons, *tools.edit_buttons]
     assert [b for b, _ in rows] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
     cx, cy, cw, ch = tools.cell_view
-    assert contains(tools.drawer_area, (cx, cy)) and cy + ch < rows[0][1][1]
-    assert rows[-1][1][1] + rows[-1][1][3] <= SCREEN[1]
+    assert rows[-1][1][1] + rows[-1][1][3] < cy and cy + ch <= SCREEN[1]
+    assert contains(tools.drawer_area, (cx, cy)) and cw >= 200 and ch >= 240  # room for the ring
     for button, rect in rows:
-        assert (
-            mode_button_at(tools, centre(rect)) or edit_button_at(tools, centre(rect))
-        ) is button
-    assert tools.action_at is None  # Tools shows it all
-    for layout in (LAYOUT, make_layout(None)):  # folded: the action, centred atop the main screen
+        found = mode_button_at(tools, centre(rect)) or edit_button_at(tools, centre(rect))
+        assert found is button
+    for layout in (tools, LAYOUT, make_layout(None)):  # the action, centred atop the main screen
         x, y, w, _ = layout.action_at
         bx, _, bw, _ = layout.board_area
         (_, (vx, vy, _, _)), _ = layout.view_switch
         assert abs(x + w / 2 - (bx + bw / 2)) <= 1 and y == vy and x + w < vx
-        assert palette_target_at(layout, (x + 5, y + 5)) is Shown.ACTION  # its tooltip
-        assert layout.mode_buttons == layout.edit_buttons == ()
+        assert action_at(layout, (x + 5, y + 5)) is Shown.ACTION
+    assert LAYOUT.mode_buttons == LAYOUT.edit_buttons == ()  # Parts open: Tools' rows are not
     assert make_layout(env=Env.RUN).action_at is None
     assert [title for title, _ in FILES.section_titles] == ["Wins this session", "File"]
     assert [button for button, _ in FILES.file_buttons] == list(FileButton)

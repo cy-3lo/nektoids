@@ -4,8 +4,9 @@ round a picture of the cell, large, where the icons have room.
 An empty cell of the zone offers the parts the level still hands out; a part offers turn left,
 turn right (eyes and thrusters only), wire, move, delete, and swap when another part of its
 group is left; swapping, the ring offers those parts. Up to six icons sit beyond the
-cell's six faces; more are spread along a 300° arc, its gap at the foot, at two radii in turn
-when they would touch, as the stations of an indexing table. Each icon has its key just outside
+cell's six faces; more are spread along a 300° arc, its gap at the foot, as the stations of a
+dial, and the ring opens until they are as far apart as on six faces, as far as its area allows;
+only if they would still touch, at two radii in turn. Each icon has its key just outside
 it. Where the ring would leave its area it is slid in, whole. Pure numbers, no pygame.
 """
 
@@ -18,10 +19,10 @@ from dataclasses import dataclass
 from nektoids.editor.layout import MENU_GROUPS, TOOL_KEYS, Rect, Tool
 from nektoids.graph.board import Board, Kind
 
-RADIUS = 1.75  # from the cell's centre to an icon's, beyond a face [hex sizes]
+RADIUS = 1.7  # from the cell's centre to an icon's, beyond a face [hex sizes]
 ICON = 0.55  # an icon's disc, its radius [hex sizes]
-KEY_OUT = 0.8  # its key, this far past the icon's centre, outwards [hex sizes]
-RING_HEX = 36  # the cell's size in Tools' picture [px]
+KEY_OUT = 0.72  # its key, this far past the icon's centre, outwards [hex sizes]
+RING_HEX = 40  # the cell's size in Tools' picture [px]
 FACES = (120.0, 60.0, 0.0, 300.0, 240.0, 180.0)  # the neighbours, from the top left, clockwise
 ARC = 300.0  # more than six icons spread over this much, the gap at the foot [degrees]
 STAGGER = 0.22  # in turn nearer and farther, when they would touch [hex sizes]
@@ -106,10 +107,16 @@ def slots(
     into `area` if it would leave it."""
     turns = angles(items)
     gaps = [abs((b - a + 180.0) % 360.0 - 180.0) for a, b in zip(turns, turns[1:], strict=False)]
-    chord = 2 * RADIUS * math.sin(math.radians(min(gaps, default=360.0)) / 2)
-    crowded = chord < 2.2 * ICON  # neighbouring icons would touch
+    gap = math.radians(min(gaps, default=60.0))
+    x, y, w, h = area
+    reach = (KEY_OUT + ICON) * size  # an icon and its key
+    radius = RADIUS
+    if gap < math.radians(60.0):  # more than six: the ring opens, as far as its area allows
+        room = (min(w, h) / 2 - reach) / size
+        radius = min(max(RADIUS, room), RADIUS * 0.5 / math.sin(gap / 2))  # six faces' spacing
+    crowded = 2 * radius * math.sin(gap / 2) < 2.2 * ICON  # neighbouring icons would touch
     radii = [
-        RADIUS + (STAGGER if crowded and k % 2 else -STAGGER if crowded else 0.0)
+        radius + (STAGGER if crowded and k % 2 else -STAGGER if crowded else 0.0)
         for k in range(len(items))
     ]
     cx, cy = centre
@@ -117,10 +124,8 @@ def slots(
     for a, r in zip(turns, radii, strict=True):
         c, s = math.cos(math.radians(a)), math.sin(math.radians(a))
         points.append(((cx + r * size * c, cy - r * size * s), (c, s), r))
-    reach = (KEY_OUT + ICON) * size  # an icon and its key
     xs = [p[0][0] for p in points] or [cx]
     ys = [p[0][1] for p in points] or [cy]
-    x, y, w, h = area
     dx = max(0.0, x + reach - min(xs)) - max(0.0, max(xs) + reach - (x + w))
     dy = max(0.0, y + reach - min(ys)) - max(0.0, max(ys) + reach - (y + h))
     out = []

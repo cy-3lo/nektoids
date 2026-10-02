@@ -2,12 +2,13 @@
 
 import math
 
-from nektoids.editor.layout import Tool
+from nektoids.editor.layout import Drawer, Tool, make_layout
 from nektoids.editor.ring import (
     ACTION_FACE,
     ACTIONS,
     FACES,
     ICON,
+    RING_HEX,
     angles,
     cycled,
     offer,
@@ -94,3 +95,17 @@ def test_the_arrows_go_round_the_ring_and_through_nothing_when_it_is_a_stop():
     assert cycled(ring, 1, 1, blank=True) is None  # nothing, then round again
     assert cycled(ring, 1, 1, blank=False) == 0
     assert cycled(ring, 0, -1, blank=True) is None
+
+
+def test_seven_parts_open_the_ring_in_tools_rather_than_crowd_it():
+    x, y, w, h = make_layout(Drawer.TOOLS).cell_view
+    area, centre = (x, y, w, h - 24), (x + w / 2, y + (h - 24) / 2)
+    ring = slots(list(Kind), centre, RING_HEX, frozenset(Kind), area)
+    assert (
+        len(ring) == 7 and len({round(math.dist(s.at, centre), 3) for s in ring}) == 1
+    )  # one radius
+    apart = [math.dist(a.at, b.at) for a, b in zip(ring, ring[1:], strict=False)]
+    assert min(apart) > 2.2 * ICON * RING_HEX  # no two icons touch
+    for slot in ring:  # each icon, and its key, inside the drawer's picture
+        for px, py in (slot.at, slot.key_at):
+            assert x <= px <= x + w and y <= py <= y + h - 24

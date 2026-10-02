@@ -34,8 +34,7 @@ BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]; the main view's buttons too
-ACTION_WIDTH = 64  # atop the editor's main screen, what a click does now and its key [px]
-CELL_VIEW_HEIGHT = 250  # Tools' picture of the focused cell, its ring round it, a line under [px]
+ACTION_WIDTH = SWITCH  # atop the editor's main screen, what a click does now, square [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
@@ -98,7 +97,7 @@ class EditButton(Enum):
     REDO = "redo"
 
 
-class Shown(Enum):  # atop the editor's main screen while Tools is folded (D-068)
+class Shown(Enum):  # atop the editor's main screen (D-068)
     ACTION = "action"  # what the next click or Enter does, and its key; a click opens Tools
 
 
@@ -228,7 +227,7 @@ class Layout:
     cell_view: Rect | None  # Tools: the focused cell, drawn large, its ring round it (D-068)
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo
-    action_at: Rect | None  # while Tools is folded: the action, atop the main screen
+    action_at: Rect | None  # the editor's: what a click does now, atop the main screen
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # at Files' foot, inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
@@ -285,7 +284,7 @@ def make_layout(
     left = BAR_WIDTH + (DRAWER_WIDTH if drawer is not None else 0)  # the board's left edge
     rows = _Rows()
     if drawer is Drawer.TOOLS:
-        rows.tools()
+        rows.tools(height)
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds)
     elif drawer is Drawer.NAVIGATOR:
@@ -343,7 +342,7 @@ def make_layout(
         mode_buttons=tuple(rows.of(Mode)),
         edit_buttons=tuple(rows.of(EditButton)),
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, SWITCH)
-        if env is Env.EDITOR and drawer is not Drawer.TOOLS
+        if env is Env.EDITOR
         else None,
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
@@ -405,17 +404,17 @@ class _Rows:
                 self._row(kind)
             self.y += SECTION_GAP
 
-    def tools(self) -> None:
-        """The focused cell, drawn large with its ring; then Write and Delete, then undo and
-        redo, as rows (D-068)."""
-        self._title("The cell", self.sections)
-        self.cell_view = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, CELL_VIEW_HEIGHT)
-        self.y += CELL_VIEW_HEIGHT + SECTION_GAP
+    def tools(self, height: int) -> None:
+        """Write and Delete, then undo and redo, as rows; under them, down to the drawer's foot,
+        the focused cell drawn large with its ring (D-068)."""
         for title, rows in (("Mode", Mode), ("Edit", EditButton)):
             self._title(title, self.sections)
             for what in rows:
                 self._row(what)
             self.y += SECTION_GAP
+        self._title("The cell", self.sections)
+        foot = height - FOOT_MARGIN
+        self.cell_view = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, foot - self.y)
 
     def view(self, env: Env) -> None:
         """The view's options as rows, the rays in the run; then the overview and, under it,
@@ -475,16 +474,14 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
 
 def palette_target_at(
     layout: Layout, point: tuple[int, int]
-) -> Drawer | LevelButton | MainView | Shown | str | None:
-    """What a tooltip would name under `point`: an icon of the bar, a main view's button, the
-    action atop the main screen, or the other environment's tab, by its name, which says what
-    the switch says (D-060)."""
+) -> Drawer | LevelButton | MainView | str | None:
+    """What a tooltip would name under `point`: an icon of the bar, a main view's button, or the
+    other environment's tab, by its name, which says what the switch says (D-060)."""
     tab = tab_at(layout, point)
     return (
         drawer_button_at(layout, point)
         or level_button_at(layout, point)
         or main_view_at(layout, point)
-        or action_at(layout, point)
         or (tab if tab is not None and tab != layout.env.value else None)
     )
 
@@ -541,7 +538,7 @@ def edit_button_at(layout: Layout, point: tuple[int, int]) -> EditButton | None:
 
 
 def action_at(layout: Layout, point: tuple[int, int]) -> Shown | None:
-    """The action shown atop the main screen, under `point`, while Tools is folded."""
+    """The action shown atop the main screen, under `point`: a click on it opens Tools."""
     shown = layout.action_at is not None and contains(layout.action_at, point)
     return Shown.ACTION if shown else None
 
