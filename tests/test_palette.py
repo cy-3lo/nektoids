@@ -6,7 +6,7 @@ import math
 import pytest
 
 from nektoids.editor import palette
-from nektoids.editor.palette import PALETTE, make_palette, oklch
+from nektoids.editor.palette import NEUTRAL_L, PALETTE, make_palette, oklch, tint
 
 
 def oklab(rgb):
@@ -64,21 +64,32 @@ def test_a_colour_outside_the_gamut_keeps_its_hue_and_loses_chroma():
 def test_the_ten_neutrals_rise_in_lightness_and_each_accent_from_dark_to_bright():
     neutrals = [getattr(PALETTE, name) for name in palette.NEUTRALS]
     assert all(luminance(a) < luminance(b) for a, b in zip(neutrals, neutrals[1:], strict=False))
-    for accent in (PALETTE.sense, PALETTE.act):
+    for accent in (PALETTE.accent1, PALETTE.accent2):
         assert luminance(accent.dark) < luminance(accent.mid) < luminance(accent.bright)
 
 
 def test_the_two_accents_differ_in_hue():
-    gap = abs(hue(PALETTE.sense.mid) - hue(PALETTE.act.mid)) % 360
+    gap = abs(hue(PALETTE.accent1.mid) - hue(PALETTE.accent2.mid)) % 360
     assert min(gap, 360 - gap) >= 45.0
 
 
-@pytest.mark.parametrize("tint", [(150.0, 0.028), (255.0, 0.03), (65.0, 0.025), (205.0, 0.04)])
-def test_text_and_marks_stay_legible_whatever_the_tint(tint):
-    p = make_palette(*tint, sense_hue=315.0, act_hue=235.0)
+@pytest.mark.parametrize("ramp", [(150.0, 0.028), (255.0, 0.03), (65.0, 0.025), (273.0, 0.022)])
+def test_text_and_marks_stay_legible_whatever_the_tint(ramp):
+    p = make_palette(*ramp, accent1_hue=187.0, accent2_hue=25.0)
     assert contrast(p.text, p.base) >= 7.0  # WCAG AAA
     assert contrast(p.dim, p.surface) >= 4.5  # WCAG AA: secondary text on panels
     assert contrast(p.parts, p.surface) >= 4.5  # a part on its cell
-    assert contrast(p.text, p.sense.dark) >= 4.5  # an icon on the tool in hand
-    assert contrast(p.sense.mid, p.surface) >= 3.0  # an eye's face against the board
-    assert contrast(p.act.mid, p.surface) >= 3.0  # a thruster's back against the board
+    assert contrast(p.text, p.accent1.dark) >= 4.5  # an icon on the tool in hand
+    assert contrast(p.accent1.mid, p.surface) >= 3.0  # a part's face against the board
+    assert contrast(p.accent2.bright, p.base) >= 4.5  # a refusal, read as text
+
+
+def test_the_tint_turns_to_the_light_hue_the_shorter_way_and_only_in_the_lights():
+    darks, lights = NEUTRAL_L[:4], NEUTRAL_L[-3:]
+    assert all(tint(L, 273.0, 0.022, 85.0)[1] == pytest.approx(273.0) for L in darks)
+    assert all(tint(L, 273.0, 0.022, 85.0)[1] == pytest.approx(85.0) for L in lights)
+    midway = tint(0.525, 273.0, 0.022, 85.0)[1]  # halfway through the turn
+    assert midway == pytest.approx((273.0 + 86.0) % 360, abs=1.0)  # through 359, not through 179
+    assert tint(0.6, 150.0, 0.028)[1] == 150.0  # no light hue: one hue all along
+    chromas = [tint(L, 273.0, 0.022)[0] for L in NEUTRAL_L]
+    assert chromas[0] == pytest.approx(0.022) and chromas[-1] == pytest.approx(0.022 / 3)

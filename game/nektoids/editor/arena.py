@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import math
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -71,6 +71,7 @@ from nektoids.editor.layout import KEY_ALIASES
 from nektoids.editor.recording import Recording
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS, TOOLTIP_FRAMES
+from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Board, complexity
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
@@ -145,6 +146,9 @@ class ArenaScene:
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.next_label = next_label  # what the banner's next button says after a win; None: none
         self.request: str | None = None  # "edit" or "next": for main.py, which clears it
+        self.gate: Callable[[Action], bool] | None = None  # what the tutorial lets through
+        self.message = ""  # why the last press did nothing, until the next one
+        self.lit: frozenset[str] = frozenset()  # panels a tutorial step explains: main.py's
         self.index = 0
         self.clock = Clock()
         self.circuit = Circuit(board, CIRCUIT_AREA, CIRCUIT_MARGIN, body=True)
@@ -391,6 +395,8 @@ class ArenaScene:
         return (ArenaButton.EDIT,)
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
+            self.message = ""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             button = banner_button_at(self.banner_buttons, event.pos) or button_at(event.pos)
             asked = timeline_at(event.pos, self.level.time_limit)
@@ -422,9 +428,16 @@ class ArenaScene:
         elif event.type == pygame.KEYDOWN:
             self._key(event)
 
+    def _ask(self, request: str) -> None:
+        """Back to the editor or on to the next level, for main.py, if the tutorial lets it."""
+        if self.gate is None or self.gate(Action(request)):
+            self.request = request
+        else:
+            self.message = REFUSAL
+
     def press(self, button: ArenaButton) -> None:
         if button is ArenaButton.EDIT:
-            self.request = "edit"
+            self._ask("edit")
         elif button is ArenaButton.NEXT:
             if ArenaButton.NEXT not in self.banner_buttons:
                 return
@@ -432,7 +445,7 @@ class ArenaScene:
                 self.index = (self.index + 1) % len(self.levels)
                 self._load()
             else:
-                self.request = "next"
+                self._ask("next")
         elif button is ArenaButton.RESTART:
             self.seek_to = None
             self._restore(self.recording.at(0))  # the same run, from its start

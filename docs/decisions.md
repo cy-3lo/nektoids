@@ -572,3 +572,60 @@ step (the page is in this session's artifacts). Changing those four numbers chan
 Tests pin the conversion, the order of the levels, the accents 45° apart or more, and contrasts
 for any tint: text on the background 7 or more, dim text and parts on panels 4.5 or more, the
 accents' marks on the board 3 or more (WCAG).
+
+**D-048 — 2026-10-02 — A tutorial can be skipped; while a step leads, only what it asks goes through; its targets are lit by holes in the veil, with no outline; its box keeps clear of the targets, the way between them and the step just done. Amends D-039.**
+Skip, beside Next on every step but the last (where Close does the same), ends the level's
+tutorial and its ghosts; later levels keep their hints, which block nothing. Going to the map
+starts every tutorial again from its first step, finished or skipped, `follow` passing over what
+the board already holds. Only a step that waits for Next has a Next; a step that waits for an
+action stays until it is done, since a later step needs it (Next past "place an eye" left no eye
+to turn). On a step that leads and waits for Next (the introductions, the last), any key or
+click moves on, but a click on Skip; a hint takes only its buttons (`tutorial.answer`).
+While a step that shows a target is up, `tutorial.allows(step, action)` lets through only the
+means to what it waits for: picking that part and placing it on that cell; a turn tool, or L and
+R, on that part; that tool; the Wire tool and that wire, either way round (D-026); Run. While it
+waits for a win, Run and Edit. A step that waits for Next lets nothing through. The editor asks
+before every action that changes the board, the tool in hand or the screen (pick, place, tool,
+turn, wire, move, delete, undo, redo, Run, Map, Space and Tab included), the run view before
+Edit and Next; a refusal changes nothing, flashes a wrong cell and says "do what the box says,
+or press Skip". Zoom, centring, info boxes and folding the menu are not asked; hints let all
+through. Before this, a dimmed control still worked: Space mid-step jumped to the run.
+Fear's placing steps also light the menu row their part comes from, so what is lit is what is
+live; its last step says "Close, then Next level when you are ready."
+The veil has holes and no frames: a disc round a cell, a rounded rectangle round an area or a
+button. The box keeps clear of the step's targets, of the straight way from each to the next
+(the hand's path, 20 px either side) and of the targets and way of the step just done, when the
+player did something for it, so it covers neither the drag about to happen nor the part just
+placed. It tries beside each target, the last first, then the clear spot of a 16 px grid nearest
+the last target. A step that lights a whole area cannot clear it, and the box sits over its
+corner as before. Pinned for every step of Fear's tutorial in `test_tutorial.py`.
+
+**D-049 — 2026-10-02 — The palette is Slate and evergreen with a red: accent 1 (teal) marks what the player works with, the swimmer included, accent 2 (red) what goes wrong; no colour outside the palette. Amends D-047.**
+`make_palette(tint_hue=273, tint_chroma=0.022, accent1_hue=187, accent2_hue=25, light_hue=85)`.
+The fifth number is new: the tint's hue turns from `tint_hue` in the darks to `light_hue` in the
+lights, the shorter way round and smoothly, between L = 0.30 and 0.75. That is what Slate and
+evergreen does: slate darks, taupe in the middle, warm greys in the lights, which one hue cannot
+give. Accent 1, teal, is the faces of eyes and thrusters alike, the tool in hand, Run and the
+tutorial's highlight, and the swimmer in the run. Accent 2 was sand; it is red now, and it is
+every refusal, lost run, run out of time and developer warning, whose red and amber used to sit
+outside the palette (D-047 kept them as fixed signals). `sense` and `act` are renamed `accent1` and `accent2`.
+The contrasts stay those of D-047: the lightness steps do not change.
+
+**D-050 — 2026-10-02 — Fear's tutorial explains the run view with the run held still, and ends on the score; a step that explains a panel outlines it and lights its titles; the guided level starts afresh at every visit to the map. Amends D-030 and D-048.**
+After Run, the run waits while three steps show Controls (the buttons and the timeline),
+Objectives and Inside (the wiring, live), each with Next; a fourth lights Play and the arena and
+waits for the win; the last shows Your wins (D-046) and how a win is scored, time and parts,
+the line through the wins no other beats. Inside comes before the win because a won run puts
+Your wins in its place. A step that leads and waits for Next explains (`Tutorial.explains`): it
+holds the run's clock still, and, as dimming suits an action but not a panel, it outlines what
+it shows in accent 1 and draws that panel's titles in accent 1 (`tutorial.panels`; the menu's
+groups, the palette's sections, Controls, Objectives, Inside or Your wins). A panel's hole and
+outline follow its own edges, square, the outline inside them: rounded and grown by a margin,
+they ran off the screen at its edges. Cells keep their disc, buttons and rows a rounded hole. The box may lie over
+an area 400 px wide or more (the board, the arena), never over a narrower target: it had
+covered Play.
+Opening the map now resets the guided level, 1.1, whose tutorial leads (`tutorial.guided`): a
+fresh board, a fresh undo history, its tutorial at step 1. Restarting the tutorial alone kept the
+board, and `follow` passed straight over every step already built, so it never really started
+again. The other levels keep their boards for the session (D-030); their hints start again.
+Fear's tutorial has 17 steps.

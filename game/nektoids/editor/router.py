@@ -111,6 +111,10 @@ class Router:
     def edit(self) -> None:
         self.screen = Screen.EDIT
 
+    def reset(self, index: int) -> None:
+        """The level at `index` back to its fresh board, the next time it opens (D-050)."""
+        self._boards.pop(index, None)
+
     def mark_won(self) -> None:
         """The open level was won: the next one opens."""
         if not self.in_sandbox:

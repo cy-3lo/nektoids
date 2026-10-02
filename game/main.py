@@ -37,7 +37,17 @@ from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
 from nektoids.editor.shell import bottom_button, map_row_at
 from nektoids.editor.shell_draw import draw_end, draw_level_card, draw_map, draw_title_card
-from nektoids.editor.tutorial import Context, Tutorial, box_rect, next_rect, target_rects
+from nektoids.editor.tutorial import (
+    Context,
+    Tutorial,
+    allows,
+    answer,
+    box_rect,
+    guided,
+    panels,
+    target_rects,
+    target_spots,
+)
 from nektoids.editor.tutorial_draw import draw_tutorial
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
@@ -72,9 +82,35 @@ def tutorial() -> Tutorial | None:
 def tutorial_box(guide: Tutorial) -> tuple:
     """Where the step's target and its box are, on the screen now open."""
     scene = editor()
-    targets = target_rects(guide.step.show, router.screen, scene.layout, scene.view)
+    spots = target_spots(guide.step.show, router.screen, scene.layout, scene.view)
+    done = guide.before  # the work just done, which the box keeps clear of too (D-048)
+    before = (
+        [] if done is None else target_rects(done.show, router.screen, scene.layout, scene.view)
+    )
     beside = ARENA_AREA if router.screen is Screen.RUN else scene.layout.board_area
-    return targets, box_rect(targets, len(guide.step.say), beside)
+    return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
+
+
+def open_map() -> None:
+    """To the map. A guided level starts afresh, its board, its undo history and its tutorial;
+    the others keep their boards, and their hints start again (D-048, D-050)."""
+    router.open_map()
+    for index, level in enumerate(levels):
+        if guided(level.tutorial):
+            router.reset(index)
+            editors.pop(index, None)
+            tutorials.pop(index, None)
+    for guide in tutorials.values():
+        guide.restart()
+
+
+def tutorial_press(guide: Tutorial, event: pygame.event.Event) -> str | None:
+    """ "next" or "skip" if this key or click is the tutorial's (`tutorial.answer`), else None."""
+    if event.type == pygame.KEYDOWN:
+        return answer(guide, tutorial_box(guide)[1], None)
+    if event.type == pygame.MOUSEBUTTONDOWN and 1 <= event.button <= 3:  # not the wheel
+        return answer(guide, tutorial_box(guide)[1], event.pos)
+    return None
 
 
 def editor() -> EditorScene:
@@ -110,7 +146,7 @@ def shell_event(event: pygame.event.Event) -> None:
         elif escape or (clicked and contains(bottom_button(), event.pos)):
             router.edit()
     elif escape or (clicked and contains(bottom_button(), event.pos)):  # the end
-        router.open_map()
+        open_map()
 
 
 def open_developer_view() -> SchematicScene:
@@ -154,11 +190,13 @@ async def main() -> None:
             elif (
                 (guide := tutorial()) is not None
                 and router.screen in (Screen.EDIT, Screen.RUN)
-                and event.type == pygame.MOUSEBUTTONDOWN
-                and event.button == 1
-                and contains(next_rect(tutorial_box(guide)[1]), event.pos)
+                and (button := tutorial_press(guide, event)) is not None
             ):
-                guide.next()  # Next, and nothing else
+                if button == "next":
+                    guide.next()  # and nothing else
+                else:
+                    guide.skip()
+                editor().message = ""  # a refusal from the step before no longer holds
             elif router.screen in (Screen.TITLE, Screen.SPEC, Screen.MAP, Screen.END):
                 shell_event(event)
             elif playing is not None:
@@ -188,7 +226,7 @@ async def main() -> None:
                 router.run()
                 playing = play()
             elif asked == "map":
-                router.open_map()
+                open_map()
 
         guide = tutorial()
         if guide is not None:  # on past what the player has done
@@ -196,6 +234,14 @@ async def main() -> None:
             guide.follow(Context(router.board, editor().tool, router.screen, ended))
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
+        gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
+        editor().gate = gate  # only what the step asks goes through (D-048)
+        editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
+        if playing is not None:
+            playing.gate = gate
+            playing.lit = panels(guide)
+            if guide is not None and guide.explains:
+                playing.clock.paused = True  # an explaining step holds the run still (D-050)
 
         if isinstance(developer, SchematicScene):
             developer.update()

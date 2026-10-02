@@ -3,12 +3,21 @@
 from nektoids.editor.layout import SCREEN, Tool, centred_view, contains, make_layout
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
+    GAP,
+    Action,
     Context,
     Tutorial,
+    _crosses,
+    allows,
+    answer,
     box_rect,
+    guided,
     met,
     next_rect,
+    panels,
+    skip_rect,
     target_rects,
+    target_spots,
 )
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NW, SW
@@ -72,9 +81,12 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     tutorial.follow(context(Tool.WIRE))
     assert tutorial.step.until == {"screen": "run"}
     tutorial.follow(context(screen=Screen.RUN))
-    assert tutorial.step.until == {"outcome": "won"}
+    for shown in ("controls", "objectives", "inside"):  # the run held still: Next
+        assert tutorial.step.show == {"run": shown} and tutorial.explains
+        tutorial.next()
+    assert tutorial.step.until == {"outcome": "won"} and not tutorial.explains  # Play
     tutorial.follow(context(screen=Screen.RUN, outcome=Outcome.WON))
-    assert tutorial.step.until is None and tutorial.leads
+    assert tutorial.step.show == {"run": "wins"} and tutorial.explains  # the score, last
     tutorial.next()
     assert tutorial.step is None and not tutorial.leads
     assert [g.facing for g in tutorial.ghosts][:2] == [NW, SW]
@@ -94,12 +106,182 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:  # never over what it shows
         for screen in (Screen.EDIT, Screen.RUN):
             targets = target_rects(step.show, screen, LAYOUT, VIEW)
-            if len(targets) > 1 or (targets and targets[0][2] < 400):
+            narrow = [t for t in targets if t[2] < 400]  # an area may lie under the box
+            if narrow:
                 box = box_rect(targets, len(step.say), LAYOUT.board_area)
-                assert on_screen(box) and not any(overlap(box, t) for t in targets), step.say
+                assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
 
 
 def overlap(a, b):
     ax, ay, aw, ah = a
     bx, by, bw, bh = b
     return ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah
+
+
+def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds():
+    level = LEVELS["Fear"]
+    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    tutorial.skip()
+    assert tutorial.step is None
+    board.place(Kind.EYE, (2, -1))  # built while the tutorial was off
+    tutorial.restart()  # the map opened
+    assert tutorial.index == 0
+    context = Context(board, Tool.ADD, Screen.EDIT)
+    for _ in range(3):  # the board, the menu, the palette: Next
+        tutorial.follow(context)
+        tutorial.next()
+    tutorial.follow(context)
+    assert "facing" in tutorial.step.until  # the eye is there already: on to turning it
+
+
+def test_skip_sits_left_of_next_both_inside_the_box():
+    box = (100, 100, 360, 120)
+    skip, nxt = skip_rect(box), next_rect(box)
+    assert skip[0] + skip[2] < nxt[0] and skip[1] == nxt[1]
+    for x, y, w, h in (skip, nxt):
+        assert 100 <= x and x + w <= 460 and 100 <= y and y + h <= 220
+
+
+ANYTHING = [
+    Action("pick", kind=Kind.EYE),
+    Action("place", kind=Kind.EYE, cell=(2, -1)),
+    Action("tool", tool=Tool.WIRE),
+    Action("turn", cell=(2, -1)),
+    Action("wire", cell=(2, -1), other=(1, -2)),
+    Action("move", cell=(2, -1)),
+    Action("delete", cell=(2, -1)),
+    *(Action(verb) for verb in ("undo", "redo", "run", "map", "edit", "next")),
+]
+
+
+def test_a_leading_step_lets_through_only_the_means_to_what_it_waits_for():
+    steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
+    place = steps[3]  # an eye on (2, -1)
+    assert allows(place, Action("pick", kind=Kind.EYE))
+    assert allows(place, Action("place", kind=Kind.EYE, cell=(2, -1)))
+    assert not allows(place, Action("place", kind=Kind.EYE, cell=(1, 1)))  # another cell
+    assert not allows(place, Action("pick", kind=Kind.THRUSTER))
+    assert not any(allows(place, Action(verb)) for verb in ("run", "map", "undo", "redo"))
+    assert not allows(place, Action("tool", tool=Tool.WIRE))
+    turn = steps[4]  # the eye on (2, -1) to face NW
+    assert allows(turn, Action("tool", tool=Tool.TURN_LEFT))
+    assert allows(turn, Action("tool", tool=Tool.TURN_RIGHT))  # four turns right get there too
+    assert allows(turn, Action("turn", cell=(2, -1)))
+    assert not allows(turn, Action("turn", cell=(1, 1)))
+    wire = steps[9]  # the upper eye to the upper thruster
+    assert allows(wire, Action("tool", tool=Tool.WIRE))
+    assert allows(wire, Action("wire", cell=(1, -2), other=(2, -1)))  # either way round (D-026)
+    assert not allows(wire, Action("wire", cell=(2, -1), other=(-1, 2)))
+    run, watch = steps[11], steps[15]
+    assert allows(run, Action("run")) and not allows(run, Action("map"))
+    assert allows(watch, Action("run")) and allows(watch, Action("edit"))
+    assert not allows(watch, Action("next"))
+
+
+def test_a_step_that_waits_for_next_lets_nothing_through_and_a_hint_lets_all():
+    steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
+    for waits_for_next in (steps[0], steps[1], steps[2], steps[13]):
+        assert not any(allows(waits_for_next, action) for action in ANYTHING)
+    hint = Tutorial.from_dict(LEVELS["Love"].tutorial).steps[0]
+    assert all(allows(hint, action) for action in ANYTHING)
+    assert all(allows(None, action) for action in ANYTHING)  # no tutorial, or over
+
+
+def test_a_placing_step_lights_the_menu_row_its_part_comes_from():
+    for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:
+        if step.until and "placed" in step.until:
+            assert {"menu": step.until["placed"]["kind"]} in step.show
+
+
+def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
+    step = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps[3]  # the Eye's row, then its cell
+    layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
+    spots = target_spots(step.show, Screen.EDIT, layout, centred_view(layout))
+    assert [shape for _, shape in spots] == ["spot", "disc"]  # the Eye's row, its cell
+    assert [rect for rect, _ in spots] == target_rects(
+        step.show, Screen.EDIT, layout, centred_view(layout)
+    )
+    panel = target_spots({"area": "palette"}, Screen.EDIT, layout, centred_view(layout))
+    run = target_spots([{"run": "play"}, {"run": "inside"}], Screen.RUN, layout, None)
+    assert [shape for _, shape in panel + run] == ["panel", "spot", "panel"]
+
+
+def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_beside_it():
+    menu, cell = (16, 44, 168, 40), (600, 200, 70, 80)  # centres (100, 64) and (635, 240)
+    assert _crosses((300, 100, 100, 60), menu, cell)  # the line passes through it
+    assert not _crosses((300, 300, 100, 60), menu, cell)  # well under it
+    assert not _crosses((700, 20, 100, 60), menu, cell)  # beyond the end
+
+
+def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_just_done():
+    level = LEVELS["Fear"]
+    layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
+    view = centred_view(layout)
+    tutorial = Tutorial.from_dict(level.tutorial)
+    for index in range(len(tutorial.steps)):  # each step, as it shows once the one before is done
+        tutorial.index = index
+        step, done = tutorial.step, tutorial.before
+        for screen in (Screen.EDIT, Screen.RUN):
+            targets = target_rects(step.show, screen, layout, view)
+            before = [] if done is None else target_rects(done.show, screen, layout, view)
+            narrow = [t for t in targets if t[2] < 400]  # an area (board, arena) may lie under it
+            if not narrow:
+                continue
+            box = box_rect(targets, len(step.say), layout.board_area, before)
+            assert on_screen(box), step.say
+            for rects in (narrow, [t for t in before if t[2] < 400]):
+                assert not any(overlap(box, grown(t, GAP)) for t in rects), step.say
+                assert not any(
+                    _crosses(box, a, b) for a, b in zip(rects, rects[1:], strict=False)
+                ), step.say
+
+
+def grown(rect, by):
+    x, y, w, h = rect
+    return (x - by, y - by, w + 2 * by, h + 2 * by)
+
+
+def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_left_undone():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    for _ in range(3):  # the board, the menu, the palette
+        assert tutorial.waits_for_next
+        tutorial.next()
+    assert not tutorial.waits_for_next  # place an eye: there is no Next
+    tutorial.next()
+    assert tutorial.index == 3 and tutorial.step.until == {
+        "placed": {"kind": "eye", "cell": [2, -1]}
+    }
+
+
+def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    box = (300, 300, 360, 100)
+    skip, nxt = skip_rect(box), next_rect(box)
+    centre = lambda r: (r[0] + r[2] // 2, r[1] + r[3] // 2)  # noqa: E731
+    assert answer(tutorial, box, None) == "next"  # the board: any key
+    assert answer(tutorial, box, (5, 5)) == "next"  # ... or a click anywhere
+    assert answer(tutorial, box, centre(skip)) == "skip"
+    tutorial.index = 3  # place an eye: the press is the editor's, but Skip
+    assert answer(tutorial, box, None) is None and answer(tutorial, box, centre(nxt)) is None
+    assert answer(tutorial, box, centre(skip)) == "skip"
+    tutorial.index = len(tutorial.steps) - 1  # the last: Close, any key or click; no Skip
+    assert answer(tutorial, box, centre(skip)) == "next"
+    hint = Tutorial.from_dict(LEVELS["Love"].tutorial)  # a hint takes only its own buttons
+    assert answer(hint, box, None) is None and answer(hint, box, (5, 5)) is None
+    assert answer(hint, box, centre(nxt)) == "next"
+
+
+def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
+    first, *later = arenas()
+    assert guided(first.tutorial) and not any(guided(level.tutorial) for level in later)
+    assert not guided(None)
+
+
+def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    expected = {1: {"menu"}, 2: {"palette"}, 3: set(), 11: set(), 12: {"controls"}, 15: set()}
+    for index, names in expected.items():
+        tutorial.index = index
+        assert panels(tutorial) == names, index
+    tutorial.index = len(tutorial.steps) - 1
+    assert panels(tutorial) == {"wins"} and panels(None) == frozenset()

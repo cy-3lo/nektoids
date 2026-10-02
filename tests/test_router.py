@@ -100,5 +100,21 @@ def test_each_level_keeps_the_scores_of_its_wins_once_each_and_the_sandbox_none(
     assert router.scores == frozenset()
 
 
+def test_a_level_reset_opens_on_a_fresh_board_and_the_others_keep_theirs():
+    router = a_router()
+    router.begin()
+    first = router.board
+    first.place(Kind.EYE, (0, 0))
+    router.mark_won()
+    router.open(1)
+    second = router.board
+    second.place(Kind.EYE, (0, 0))
+    router.reset(0)
+    router.open(0)
+    assert router.board is not first and router.board.nodes == {}
+    router.open(1)
+    assert router.board is second and second.nodes
+
+
 def test_levels_are_named_by_chapter_and_place():
     assert level_label(0) == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"
