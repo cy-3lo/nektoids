@@ -62,15 +62,13 @@ def test_the_icons_sit_round_the_cell_slide_in_at_the_edge_and_are_found_under_a
     kinds = frozenset({Kind.EYE, Kind.THRUSTER})
     ring = slots([Kind.EYE, Kind.THRUSTER], (628.0, 335.0), SIZE, kinds, AREA)
     for slot in ring:
-        assert math.dist(slot.at, (628.0, 335.0)) > math.sqrt(3) / 2 * SIZE  # past a face
+        assert math.dist(slot.at, (628.0, 335.0)) > SIZE  # beyond the cell
         assert slot_at(ring, slot.at, SIZE) is slot
         assert math.dist(slot.key_at, (628.0, 335.0)) > math.dist(slot.at, (628.0, 335.0))
     assert [s.key for s in ring] == ["1", "2"]
     assert slot_at(ring, (628.0, 335.0), SIZE) is None  # the cell itself
-    for a in FACES:  # a neighbour's centre: a click there reaches the part on it, to wire it
-        c, s = math.cos(math.radians(a)), math.sin(math.radians(a))
-        centre = (628.0 + math.sqrt(3) * SIZE * c, 335.0 - math.sqrt(3) * SIZE * s)
-        assert slot_at(slots(ACTIONS, (628.0, 335.0), SIZE, kinds, AREA), centre, SIZE) is None
+    for slot in slots(ACTIONS, (628.0, 335.0), SIZE, kinds, AREA):  # clear of the cell's picture
+        assert math.dist(slot.at, (628.0, 335.0)) - ICON * SIZE > SIZE
     edge = slots(ACTIONS, (300.0, 70.0), SIZE, kinds, AREA)
     x, y, w, h = AREA
     assert all(x <= s.at[0] - ICON * SIZE and y <= s.at[1] - ICON * SIZE for s in edge)

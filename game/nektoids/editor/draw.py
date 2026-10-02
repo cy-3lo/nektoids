@@ -63,6 +63,7 @@ from nektoids.editor.layout import (
     MainView,
     Mode,
     Setting,
+    Shown,
     Tool,
     View,
     ViewButton,
@@ -112,8 +113,8 @@ from nektoids.editor.palette import (
 )
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.probe import level_view, ring_radii
-from nektoids.editor.ring import ICON
-from nektoids.editor.scene import EditorScene
+from nektoids.editor.ring import ICON, RING_HEX
+from nektoids.editor.scene import CAPTION, EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
@@ -132,13 +133,15 @@ TIP = {
     ViewButton.RAYS: "Show or hide the light's rays",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    Mode.WRITE: "Write: place, turn, wire, move",
-    Mode.DELETE: "Delete: click what goes",
+    Mode.WRITE: "Click a cell: Tools shows its ring. Click two parts to wire them; drag one to move"
+    " it.",
+    Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
     FileButton.SAVE: "Save: not yet",
     FileButton.LOAD: "Load: not yet",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     MainView.DIAGRAM: "Diagram view",
+    Drawer.TOOLS: "Tools",
     MainView.PREVIEW: "Run preview",
     Drawer.PARTS: "Parts",
     Drawer.FILES: "Files",
@@ -169,6 +172,8 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Tool.TURN_RIGHT: "Turn right",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
+    Mode.WRITE: "Write",
+    Mode.DELETE: "Delete",
     FileButton.SAVE: "Save",
     FileButton.LOAD: "Load",
     ViewButton.ZOOM_IN: "Zoom in",
@@ -269,11 +274,8 @@ def draw(
     screen.fill(BACKGROUND)
     (main or _draw_board)(screen, scene, fonts)
     _draw_view_switch(screen, scene, fonts)
-    for mode, rect in scene.layout.mode_buttons:  # Write, Delete: the one in use lit (D-068)
-        draw_button(screen, fonts, rect, MODE_ICON[mode], mode is scene.mode)
-    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
-    for button, rect in scene.layout.edit_buttons:  # undo, redo: beside them
-        draw_button(screen, fonts, rect, EDIT_ICON[button], False, can[button])
+    if scene.layout.action_at is not None:  # while Tools is folded (D-068)
+        _draw_action(screen, scene, fonts)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
@@ -304,8 +306,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         elif cell in scene.guide_cells:  # a cell a tutorial's step acts on (D-063)
             pygame.draw.polygon(screen, FOCUS_CELL, hexagon)
         else:
-            hovered = cell == scene.hover and scene.ring_hover is None  # not under an icon
-            pygame.draw.polygon(screen, HOVER if hovered else ZONE, hexagon)
+            pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
         pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
     if board.cells:
         draw_body(screen, board.cells, view.size, view.origin)
@@ -338,38 +339,112 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             pygame.draw.polygon(screen, GHOST_OK, outline, 2)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
         pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
-    _draw_ring(screen, scene, fonts)
+    if scene.focused is not None:  # the cell Tools shows (D-068)
+        pygame.draw.polygon(screen, LIT, _hexagon(view, scene.focused), 2)
     screen.set_clip(None)
 
 
-def _draw_ring(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The ring round the focus (D-068): a disc per icon, a part as Parts shows it or an action,
-    its key just outside; lit, the keyboard's choice and the action in hand; paler, the one under
-    the mouse."""
-    ring, size = scene.ring(), scene.view.size
-    if not ring:
-        return
-    if scene.focused is not None:
-        pygame.draw.polygon(screen, LIT, _hexagon(scene.view, scene.focused), 2)
-    chosen = ring[scene.choice] if scene.ring_keys and scene.choice is not None else None
+def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Atop the main screen while Tools is folded: what the next click or Enter does, its icon
+    and its key (D-068); a click on it opens Tools."""
+    box = pygame.Rect(scene.layout.action_at)
+    pygame.draw.rect(screen, ACTIVE, box, border_radius=6)
+    what, key = scene.action()
+    at = (box.left + box.height // 2, box.centery)
+    if isinstance(what, Kind):
+        draw_part(screen, fonts, what, MENU_ANGLE.get(what), at, 22, False)
+    else:
+        fonts.icons.draw(screen, _action_icon(what), at, 18, TEXT)
+    if scene.settings.key_hints:
+        shown = fonts.text.render(key, True, TEXT)
+        screen.blit(shown, shown.get_rect(center=(box.right - box.height // 2, box.centery)))
+
+
+def _action_icon(what: Tool | Mode) -> str:
+    if isinstance(what, Mode):
+        return MODE_ICON[what]
+    return VIEW_ICON[ViewButton.PAN] if what is Tool.PAN else TOOL_ICON[what]
+
+
+def _action_name(what: Kind | Tool | Mode) -> str:
+    if isinstance(what, Kind):
+        return NAME[what]
+    return ROW_NAME[ViewButton.PAN] if what is Tool.PAN else ROW_NAME[what]
+
+
+def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Tools (D-068): the focused cell, large, as the board has it, its ring round it, a line
+    under it saying what it holds; then Write and Delete, undo and redo, as rows."""
+    layout = scene.layout
+    x, y, w, h = layout.cell_view
+    centre = (x + w / 2, y + (h - CAPTION) / 2)
+    corners = _small_hexagon(centre, RING_HEX)
+    focused = scene.focused is not None and scene.main is MainView.DIAGRAM
+    if focused:
+        pygame.draw.polygon(screen, ACTIVE, corners)
+        pygame.draw.polygon(screen, LIT, corners, 2)
+        node = scene.board.node_at(scene.focused)
+        if node is not None:
+            fill = DOOMED if node.id == scene.doomed()[0] else None
+            angle = placed_angle(node.kind, node.facing)
+            draw_part(screen, fonts, node.kind, angle, centre, RING_HEX, node.locked, fill)
+    else:
+        pygame.draw.polygon(screen, RULE, corners, 1)
+    ring = scene.ring()
+    k = scene.choice if scene.going_round() and scene.choice is not None else len(ring)
+    chosen = ring[k] if k < len(ring) else None
     in_hand = scene.tool if scene.tool in (Tool.WIRE, Tool.MOVE) else None
-    radius = ICON * size
+    radius = ICON * RING_HEX
     for slot in ring:
         lit = slot == chosen or slot.what is in_hand
         fill = ACTIVE if lit else HOVER if slot == scene.ring_hover else BUTTON
         pygame.draw.circle(screen, fill, slot.at, radius)
         pygame.draw.circle(screen, LIT if lit else RULE, slot.at, radius, 1)
         if isinstance(slot.what, Kind):
-            angle = MENU_ANGLE.get(slot.what)
-            draw_part(screen, fonts, slot.what, angle, slot.at, radius, False)
+            draw_part(screen, fonts, slot.what, MENU_ANGLE.get(slot.what), slot.at, radius, False)
         else:
-            glyph = max(10, round(0.9 * radius))
-            fonts.icons.draw(screen, TOOL_ICON[slot.what], slot.at, glyph, TEXT)
-        if scene.settings.key_hints:  # on a dark patch: it may fall on a neighbouring part
+            fonts.icons.draw(screen, TOOL_ICON[slot.what], slot.at, round(0.9 * radius), TEXT)
+        if scene.settings.key_hints:
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
-            at = key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1])))
-            pygame.draw.rect(screen, BAR, at.inflate(4, 0), border_radius=3)
-            screen.blit(key, at)
+            screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
+    line = fonts.small.render(_cell_says(scene), True, DIM_TEXT)
+    screen.blit(line, line.get_rect(center=(round(centre[0]), y + h - CAPTION // 2)))
+    for mode, rect in layout.mode_buttons:
+        status = ("key", MODE_KEY)
+        icon = MODE_ICON[mode]
+        draw_row(
+            screen, scene, fonts, rect, mode, ROW_NAME[mode], status, mode is scene.mode, icon=icon
+        )
+    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
+    for button, rect in layout.edit_buttons:
+        status = ("key", EDIT_KEYS[button].replace("+", " "))
+        icon = EDIT_ICON[button]
+        draw_row(
+            screen,
+            scene,
+            fonts,
+            rect,
+            button,
+            ROW_NAME[button],
+            status,
+            False,
+            not can[button],
+            icon=icon,
+        )
+
+
+def _cell_says(scene: EditorScene) -> str:
+    """The line under Tools' picture of the cell."""
+    if scene.main is not MainView.DIAGRAM:
+        return "Back to the Diagram view to edit."
+    if scene.mode is Mode.DELETE:
+        return "Delete: click a part or a wire."
+    if scene.focused is None:
+        return "Click a cell on the board."
+    node = scene.board.node_at(scene.focused)
+    if node is None:
+        return "An empty cell" if scene.offered() else "An empty cell: no part left"
+    return NAME[node.kind] + (", placed by the level" if node.locked else "")
 
 
 def _draw_wire(
@@ -698,8 +773,10 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
 
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The editor's own drawers' rows: Parts, Files, Navigator; Sense's map."""
+    """The editor's own drawers' rows: Tools, Parts, Files, Navigator; Sense's map."""
     layout, board = scene.layout, scene.board
+    if layout.drawer is Drawer.TOOLS:
+        _draw_tools(screen, scene, fonts)
     if layout.drawer is Drawer.SENSE:
         _draw_sense(screen, scene, fonts)
     if layout.drawer is Drawer.FILES:
@@ -921,13 +998,14 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         text = TIP[button] + (f" ({key})" if key else "")
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
-    if isinstance(target, MainView | Mode | EditButton):  # under it, at the main screen's top
-        layout = scene.layout
-        rects = dict(layout.view_switch) | dict(layout.mode_buttons) | dict(layout.edit_buttons)
-        x, y, w, h = rects[target]
-        keys = EDIT_KEYS | {mode: MODE_KEY for mode in Mode}
-        key = keys.get(target) if scene.settings.key_hints else None
-        text = TIP[target] + (f" ({key})" if key else "")
+    if isinstance(target, MainView | Shown):  # under it, at the main screen's top
+        if target is Shown.ACTION:  # the editor's: what a click does now (D-068)
+            x, y, w, h = scene.layout.action_at
+            what, key = scene.action()
+            text = _action_name(what) + (f" ({key})" if scene.settings.key_hints else "")
+        else:
+            x, y, w, h = dict(scene.layout.view_switch)[target]
+            text = TIP[target]
         width = fonts.text.size(text)[0] + 16
         right = min(x + w // 2 + width // 2, SCREEN[0] - 4) - 8
         draw_tip(screen, fonts, text, topright=(right, y + h + 10))

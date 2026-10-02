@@ -34,8 +34,8 @@ BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]; the main view's buttons too
-PAIR_GAP = 2  # between Write and Delete, a pair [px]
-GROUP_GAP = 18  # between that pair and Undo, Redo [px]
+ACTION_WIDTH = 64  # atop the editor's main screen, what a click does now and its key [px]
+CELL_VIEW_HEIGHT = 250  # Tools' picture of the focused cell, its ring round it, a line under [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
@@ -89,6 +89,10 @@ class EditButton(Enum):
     REDO = "redo"
 
 
+class Shown(Enum):  # atop the editor's main screen while Tools is folded (D-068)
+    ACTION = "action"  # what the next click or Enter does, and its key; a click opens Tools
+
+
 class Mode(Enum):  # what a click on the board does (D-068)
     WRITE = "write"  # a cell focused, its ring: place, turn, wire, move
     DELETE = "delete"  # the part clicked removed with its wires, or the wire clicked
@@ -113,6 +117,7 @@ class ViewButton(Enum):
 
 
 class Drawer(Enum):  # D-051
+    TOOLS = "tools"  # the focused cell and its ring; Write and Delete; undo and redo (D-068)
     PARTS = "parts"  # the parts the level hands out, and what each does
     FILES = "files"  # this session's winning boards, to put one back (D-059)
     SENSE = "sense"  # the level, small, with the probe the Run preview runs at (D-058)
@@ -140,7 +145,7 @@ SENSE_MAP: Rect = (  # the level, small, in Sense, under its label: a square [px
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.EDITOR: (Drawer.PARTS, Drawer.FILES, Drawer.SENSE, Drawer.NAVIGATOR),  # tools in the ring
+    Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.SENSE, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
 }
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
@@ -210,8 +215,10 @@ class Layout:
     section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
     group_titles: tuple[tuple[str, Rect], ...]  # Parts: click one to fold or unfold its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
-    mode_buttons: tuple[tuple[Mode, Rect], ...]  # Write, Delete: centred atop the main screen
-    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # undo, redo: beside them
+    cell_view: Rect | None  # Tools: the focused cell, drawn large, its ring round it (D-068)
+    mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
+    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo
+    action_at: Rect | None  # while Tools is folded: the action, atop the main screen
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # at Files' foot, inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
@@ -267,7 +274,9 @@ def make_layout(
     )
     left = BAR_WIDTH + (DRAWER_WIDTH if drawer is not None else 0)  # the board's left edge
     rows = _Rows()
-    if drawer is Drawer.PARTS:
+    if drawer is Drawer.TOOLS:
+        rows.tools()
+    elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds)
     elif drawer is Drawer.NAVIGATOR:
         rows.view(env)
@@ -304,7 +313,7 @@ def make_layout(
         tabs.append((name, (x, 0, w, TABS_HEIGHT)))
         x += w
     open_ = drawer is not None
-    hand = _hand_buttons(left + (width - left) // 2)
+    centre = left + (width - left) // 2  # the main screen's
     main = height - STATUS_HEIGHT - (CONTROLS_HEIGHT if env is Env.RUN else 0)  # its foot
     return Layout(
         env=env,
@@ -320,8 +329,12 @@ def make_layout(
         section_titles=tuple(rows.sections),
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
-        mode_buttons=hand[0] if env is Env.EDITOR else (),
-        edit_buttons=hand[1] if env is Env.EDITOR else (),
+        cell_view=rows.cell_view,
+        mode_buttons=tuple(rows.of(Mode)),
+        edit_buttons=tuple(rows.of(EditButton)),
+        action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, SWITCH)
+        if env is Env.EDITOR and drawer is not Drawer.TOOLS
+        else None,
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
@@ -347,22 +360,12 @@ def make_layout(
     )
 
 
-def _hand_buttons(centre: int) -> tuple[tuple, tuple]:
-    """Write and Delete, a pair, then Undo and Redo, centred on the main screen's top edge at
-    `centre` [px] (D-068)."""
-    span = 4 * SWITCH + PAIR_GAP + GROUP_GAP + 6
-    x, y = centre - span // 2, TOP + 8
-    modes = tuple((m, (x + k * (SWITCH + PAIR_GAP), y, SWITCH, SWITCH)) for k, m in enumerate(Mode))
-    x += 2 * SWITCH + PAIR_GAP + GROUP_GAP
-    edits = tuple((b, (x + k * (SWITCH + 6), y, SWITCH, SWITCH)) for k, b in enumerate(EditButton))
-    return modes, edits
-
-
 class _Rows:
     """A drawer's rows and titles, laid out from the top down."""
 
     def __init__(self) -> None:
         self.y = DRAWER_TOP
+        self.cell_view: Rect | None = None
         self.items: list[tuple[object, Rect]] = []
         self.sections: list[tuple[str, Rect]] = []
         self.groups: list[tuple[str, Rect]] = []
@@ -390,6 +393,18 @@ class _Rows:
             self._title(title, self.groups)
             for kind in () if title in folded else shown:
                 self._row(kind)
+            self.y += SECTION_GAP
+
+    def tools(self) -> None:
+        """The focused cell, drawn large with its ring; then Write and Delete, then undo and
+        redo, as rows (D-068)."""
+        self._title("The cell", self.sections)
+        self.cell_view = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, CELL_VIEW_HEIGHT)
+        self.y += CELL_VIEW_HEIGHT + SECTION_GAP
+        for title, rows in (("Mode", Mode), ("Edit", EditButton)):
+            self._title(title, self.sections)
+            for what in rows:
+                self._row(what)
             self.y += SECTION_GAP
 
     def view(self, env: Env) -> None:
@@ -450,17 +465,16 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
 
 def palette_target_at(
     layout: Layout, point: tuple[int, int]
-) -> Drawer | LevelButton | MainView | Mode | EditButton | str | None:
-    """What a tooltip would name under `point`: an icon of the bar, a main view's button, Write
-    or Delete, undo or redo, or the other environment's tab, by its name, which says what the
-    switch says (D-060)."""
+) -> Drawer | LevelButton | MainView | Shown | str | None:
+    """What a tooltip would name under `point`: an icon of the bar, a main view's button, the
+    action atop the main screen, or the other environment's tab, by its name, which says what
+    the switch says (D-060)."""
     tab = tab_at(layout, point)
     return (
         drawer_button_at(layout, point)
         or level_button_at(layout, point)
         or main_view_at(layout, point)
-        or mode_button_at(layout, point)
-        or edit_button_at(layout, point)
+        or action_at(layout, point)
         or (tab if tab is not None and tab != layout.env.value else None)
     )
 
@@ -514,6 +528,12 @@ def view_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:
 
 def edit_button_at(layout: Layout, point: tuple[int, int]) -> EditButton | None:
     return next((b for b, rect in layout.edit_buttons if contains(rect, point)), None)
+
+
+def action_at(layout: Layout, point: tuple[int, int]) -> Shown | None:
+    """The action shown atop the main screen, under `point`, while Tools is folded."""
+    shown = layout.action_at is not None and contains(layout.action_at, point)
+    return Shown.ACTION if shown else None
 
 
 def mode_button_at(layout: Layout, point: tuple[int, int]) -> Mode | None:

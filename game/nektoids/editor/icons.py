@@ -117,6 +117,7 @@ MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser"}  # D-068
 FILE_ICON = {FileButton.SAVE: "floppy-disk", FileButton.LOAD: "folder-open"}
 LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.EDIT: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)
+    Drawer.TOOLS: "screwdriver-wrench",
     Drawer.PARTS: "puzzle-piece",
     Drawer.FILES: "floppy-disk",
     Drawer.SENSE: "stethoscope",

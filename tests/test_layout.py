@@ -28,6 +28,7 @@ from nektoids.editor.layout import (
     MainView,
     Mode,
     Setting,
+    Shown,
     Tool,
     View,
     ViewButton,
@@ -149,23 +150,28 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_write_delete_undo_redo_sit_centred_atop_the_main_screen_save_and_load_in_files():
-    for layout in (LAYOUT, make_layout(None)):  # D-068: centred, a drawer open or not
-        group = [*layout.mode_buttons, *layout.edit_buttons]
-        assert [b for b, _ in group] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
-        rects = [r for _, r in group]
-        for (x, y, w, _), (x2, y2, _, _) in zip(rects, rects[1:], strict=False):
-            assert x + w < x2 and y == y2
+def test_tools_shows_the_cell_then_write_delete_undo_redo_and_folded_the_action_atop():
+    tools = make_layout(Drawer.TOOLS)  # D-068: first in the bar
+    assert DRAWERS[Env.EDITOR][0] is Drawer.TOOLS
+    assert [title for title, _ in tools.section_titles] == ["The cell", "Mode", "Edit"]
+    rows = [*tools.mode_buttons, *tools.edit_buttons]
+    assert [b for b, _ in rows] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
+    cx, cy, cw, ch = tools.cell_view
+    assert contains(tools.drawer_area, (cx, cy)) and cy + ch < rows[0][1][1]
+    assert rows[-1][1][1] + rows[-1][1][3] <= SCREEN[1]
+    for button, rect in rows:
+        assert (
+            mode_button_at(tools, centre(rect)) or edit_button_at(tools, centre(rect))
+        ) is button
+    assert tools.action_at is None  # Tools shows it all
+    for layout in (LAYOUT, make_layout(None)):  # folded: the action, centred atop the main screen
+        x, y, w, _ = layout.action_at
         bx, _, bw, _ = layout.board_area
-        left, right = rects[0][0], rects[-1][0] + rects[-1][2]
-        assert abs((left + right) / 2 - (bx + bw / 2)) <= 1
         (_, (vx, vy, _, _)), _ = layout.view_switch
-        assert right < vx and rects[0][1] == vy
-    (_, (dx, dy, _, _)), (_, (rx, _, _, _)) = LAYOUT.mode_buttons[1], LAYOUT.edit_buttons[1]
-    assert mode_button_at(LAYOUT, (dx + 5, dy + 5)) is Mode.DELETE
-    assert edit_button_at(LAYOUT, (rx + 5, dy + 5)) is EditButton.REDO
-    assert palette_target_at(LAYOUT, (dx + 5, dy + 5)) is Mode.DELETE  # its tooltip
-    assert make_layout(env=Env.RUN).edit_buttons == make_layout(env=Env.RUN).mode_buttons == ()
+        assert abs(x + w / 2 - (bx + bw / 2)) <= 1 and y == vy and x + w < vx
+        assert palette_target_at(layout, (x + 5, y + 5)) is Shown.ACTION  # its tooltip
+        assert layout.mode_buttons == layout.edit_buttons == ()
+    assert make_layout(env=Env.RUN).action_at is None
     assert [title for title, _ in FILES.section_titles] == ["Wins this session", "File"]
     assert [button for button, _ in FILES.file_buttons] == list(FileButton)
     assert FILES.file_buttons[-1][1][1] + FILES.file_buttons[-1][1][3] <= SCREEN[1]  # its foot
