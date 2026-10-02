@@ -600,13 +600,13 @@ placed. It tries beside each target, the last first, then the clear spot of a 16
 the last target. A step that lights a whole area cannot clear it, and the box sits over its
 corner as before. Pinned for every step of Fear's tutorial in `test_tutorial.py`.
 
-**D-049 — 2026-10-02 — The palette is Slate and evergreen with a red: accent 1 (teal) marks what the player works with, accent 2 (red) what happens, refusals included; no colour outside the palette. Amends D-047.**
+**D-049 — 2026-10-02 — The palette is Slate and evergreen with a red: accent 1 (teal) marks what the player works with, the swimmer included, accent 2 (red) what goes wrong; no colour outside the palette. Amends D-047.**
 `make_palette(tint_hue=273, tint_chroma=0.022, accent1_hue=187, accent2_hue=25, light_hue=85)`.
 The fifth number is new: the tint's hue turns from `tint_hue` in the darks to `light_hue` in the
 lights, the shorter way round and smoothly, between L = 0.30 and 0.75. That is what Slate and
 evergreen does: slate darks, taupe in the middle, warm greys in the lights, which one hue cannot
 give. Accent 1, teal, is the faces of eyes and thrusters alike, the tool in hand, Run and the
-tutorial's highlight. Accent 2 was sand; it is red now, and it is the swimmer, and every refusal,
-lost run, run out of time and developer warning, whose red and amber used to sit outside the
-palette (D-047 kept them as fixed signals). `sense` and `act` are renamed `accent1` and `accent2`.
+tutorial's highlight, and the swimmer in the run. Accent 2 was sand; it is red now, and it is
+every refusal, lost run, run out of time and developer warning, whose red and amber used to sit
+outside the palette (D-047 kept them as fixed signals). `sense` and `act` are renamed `accent1` and `accent2`.
 The contrasts stay those of D-047: the lightness steps do not change.

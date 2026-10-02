@@ -7,8 +7,8 @@ are separate. The neutrals sit at fixed lightness steps, deep to bright. Their t
 shorter way round, between LIGHT_TURN's two lightnesses. Each accent comes in three levels: dark
 for fills under light text, mid for marks on parts, bright for outlines and highlights over dark
 ground. `accent1` marks what the player works with: the faces of eyes and thrusters, the tool in
-hand, the tutorial's highlight. `accent2` marks what happens: the swimmer, and what goes wrong (a
-refusal, a lost run, a warning). Change `PALETTE` and the whole game follows: no other module
+hand, the tutorial's highlight, the swimmer in the run. `accent2` marks what goes wrong: a
+refusal, a lost run, a warning. Change `PALETTE` and the whole game follows: no other module
 holds a colour. Pure Python, no pygame.
 """
 
@@ -48,8 +48,10 @@ class Palette:
     parts: Colour  # every part's fill
     text: Colour
     bright: Colour  # the light, beads at full rate
-    accent1: Accent  # what the player works with: faces, the tool in hand, the tutorial
-    accent2: Accent  # what happens: the swimmer, a refusal, a lost run, a warning
+    accent1: (
+        Accent  # what the player works with: faces, the tool in hand, the tutorial, the swimmer
+    )
+    accent2: Accent  # what goes wrong: a refusal, a lost run, a warning
 
 
 def oklch(lightness: float, chroma: float, hue: float) -> Colour:
@@ -178,7 +180,7 @@ SHADOW = P.deep  # the open plane, and a reading of 0 on the light map
 LIGHT = P.bright  # a light, and a reading of RATE_MAX
 RAY = mix(P.deep, P.line, 0.45)  # every ray, whatever its light
 OBSTACLE = mix(P.line, P.muted, 0.5)
-BODY = P.accent2.bright  # the selected swimmer
+BODY = P.accent1.bright  # the selected swimmer
 BODY_UNSELECTED = P.dim
 RING = P.dim  # a ring to leave or to stay in, until that is done
 RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead of the playhead
