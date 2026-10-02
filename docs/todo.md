@@ -87,10 +87,12 @@ column and the full-screen map.
       - The Run's controls (play, a step, fast forward, the timeline) in a bar under the arena.
 - [ ] Environments as tabs over the content: Editor and Run (a Builder later, no tab until then).
       Switched by a tab, or by the accented switch.
-- [ ] The Run preview, one drawing for Sense (Editor) and Inside (Run): parts shaded by their rate,
-      beads on the wires, no numbers, a level meter by each eye and thruster (D-052). A swap button on the drawer exchanges the drawer's content and the
-      main screen: in the editor, circuit big and the probe's map small, or the level big with
-      the probe; in the Run, the arena big and the circuit small, or the other way round.
+- [ ] The Run preview, one drawing for Sense (Editor) and Inside (Run): beads on the wires,
+      parts in their own colour, no numbers, a level meter by each eye and thruster (D-052). The
+      two mirror each other: in the Editor, Sense puts the Run preview on the main screen (by
+      default; the Diagram view through its icon) and the level, with the probe, in the drawer;
+      in the Run, Inside keeps the arena on the main screen and the preview, small, in the
+      drawer.
 - [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as
       it would run there; nothing run, nothing scored. Two icon buttons over the editor switch
       views, as big as the Run button: the Diagram view (three hex cells) and the Run preview
