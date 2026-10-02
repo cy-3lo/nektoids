@@ -816,3 +816,8 @@ step shows is filled in the accent, under its ghost or its part, which stay as t
 (`tutorial.focus_cells`); a row, a tool, a tab or a button it shows is outlined in the accent.
 Steps that explain keep the veil and the outline of D-050. The gate is unchanged: only what the
 step asks for goes through.
+
+**D-064 — 2026-10-02 — The level's title under the tabs is FreeSans at 22 px, not 18. Amends D-055, D-056.**
+At 18 px it looked smaller than the Plex Mono beside it; at 22 px its capitals stand 11 px to
+Plex's 10, the same x-height. What the level asks, after it, ends in an ellipsis where it does
+not fit: In the shadow's, with a drawer open. The level card and Objectives give it whole.

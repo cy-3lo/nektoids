@@ -318,7 +318,7 @@ def make_layout(
         )
         if env is Env.EDITOR
         else (),
-        caption_at=(left + MARGIN, TABS_HEIGHT + 6),
+        caption_at=(left + MARGIN, TABS_HEIGHT + 5),
         status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
     )
 

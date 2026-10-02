@@ -45,6 +45,7 @@ from nektoids.editor.layout import (
     EDIT_KEYS,
     INFO_AT,
     LEVEL_KEYS,
+    MARGIN,
     PALETTE_TITLE,
     SCREEN,
     SENSE_MAP,
@@ -843,10 +844,22 @@ def draw_tabs(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     title, spec = scene.caption
     if title:
         x, y = layout.caption_at
-        shown = fonts.label.render(title, True, TEXT)
+        shown = fonts.name.render(title, True, TEXT)  # as big as the Plex beside it looks
         screen.blit(shown, (x, y))
-        base = y + fonts.label.get_ascent() - fonts.small.get_ascent()  # on one baseline
-        screen.blit(fonts.small.render(spec, True, DIM_TEXT), (x + shown.get_width() + 10, base))
+        base = y + fonts.name.get_ascent() - fonts.small.get_ascent()  # on one baseline
+        left = x + shown.get_width() + 10
+        spec = _fitted(fonts.small, spec, SCREEN[0] - MARGIN - left)
+        screen.blit(fonts.small.render(spec, True, DIM_TEXT), (left, base))
+
+
+def _fitted(font: pygame.font.Font, text: str, width: int) -> str:
+    """`text`, or as many of its words as fit in `width` [px] with an ellipsis after them."""
+    if font.size(text)[0] <= width:
+        return text
+    words = text.split()
+    while words and font.size(" ".join(words) + "…")[0] > width:
+        words.pop()
+    return " ".join(words) + "…"
 
 
 def draw_title(
