@@ -610,3 +610,20 @@ tutorial's highlight, and the swimmer in the run. Accent 2 was sand; it is red n
 every refusal, lost run, run out of time and developer warning, whose red and amber used to sit
 outside the palette (D-047 kept them as fixed signals). `sense` and `act` are renamed `accent1` and `accent2`.
 The contrasts stay those of D-047: the lightness steps do not change.
+
+**D-050 — 2026-10-02 — Fear's tutorial explains the run view with the run held still, and ends on the score; a step that explains a panel outlines it and lights its titles; the guided level starts afresh at every visit to the map. Amends D-030 and D-048.**
+After Run, the run waits while three steps show Controls (the buttons and the timeline),
+Objectives and Inside (the wiring, live), each with Next; a fourth lights Play and the arena and
+waits for the win; the last shows Your wins (D-046) and how a win is scored, time and parts,
+the line through the wins no other beats. Inside comes before the win because a won run puts
+Your wins in its place. A step that leads and waits for Next explains (`Tutorial.explains`): it
+holds the run's clock still, and, as dimming suits an action but not a panel, it outlines what
+it shows in accent 1 and draws that panel's titles in accent 1 (`tutorial.panels`; the menu's
+groups, the palette's sections, Controls, Objectives, Inside or Your wins). The box may lie over
+an area 400 px wide or more (the board, the arena), never over a narrower target: it had
+covered Play.
+Opening the map now resets the guided level, 1.1, whose tutorial leads (`tutorial.guided`): a
+fresh board, a fresh undo history, its tutorial at step 1. Restarting the tutorial alone kept the
+board, and `follow` passed straight over every step already built, so it never really started
+again. The other levels keep their boards for the session (D-030); their hints start again.
+Fear's tutorial has 17 steps.

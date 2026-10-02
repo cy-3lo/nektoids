@@ -609,7 +609,7 @@ under its own card, which says what it asks (D-042).
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What
 would a player see on the map if the mark were only set when Next level is pressed?
 
-## 12. Tutorials and hints (D-038, D-039, D-048)
+## 12. Tutorials and hints (D-038, D-039, D-048, D-050)
 
 Read D-038, D-039 and D-048 first. `python game/main.py` now opens on Fear, whose tutorial walks
 the player through the board, placing, turning and wiring; only what each step asks works, and
@@ -619,7 +619,9 @@ Skip ends it.
   a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
   wait is over (`met`); `next` and `skip` are the box's buttons, `answer` what a key or click
   does to the tutorial, `restart` what opening the map does.
-  `allows(step, Action)` says what a leading step lets through. `target_spots` finds what a step
+  `allows(step, Action)` says what a leading step lets through; `explains` whether it holds the
+  run and outlines its `panels`; `guided` whether a level starts afresh at the map.
+  `target_spots` finds what a step
   shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
   (`_crosses`) and the step `before`.
 - [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) dims everything but the
