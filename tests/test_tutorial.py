@@ -324,7 +324,7 @@ def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
 
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    expected = {0: {"arena"}, 1: {"objectives"}, 2: {"tab:editor"}, R + 1: {"parts"}}
+    expected = {0: {"arena"}, 1: {"objectives"}, 2: set(), R + 1: {"parts"}}
     expected |= {R + 2: {"bar"}}
     expected |= {R + 3: set(), R + 11: set(), R + 12: {"controls"}, R + 14: set()}
     for index, names in expected.items():

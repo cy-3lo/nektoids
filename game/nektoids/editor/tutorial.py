@@ -164,16 +164,13 @@ class Tutorial:
 
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
     """The panels a step explains, outlined and their titles lit (D-050): the areas and run parts
-    it shows, if it leads and waits for Next. A step that asks for an action only dims, but a
-    tab it shows has its name lit, "tab:editor", as a tab is too dark to see through the veil."""
-    if tutorial is None or not tutorial.leads:
+    it shows, if it leads and waits for Next. A step that asks for an action outlines what it
+    shows instead, nothing dimmed (D-063)."""
+    if tutorial is None or not tutorial.explains:
         return frozenset()
     show = tutorial.step.show
     shows = show if isinstance(show, list) else [show]
-    tabs = {f"tab:{one['tab']}" for one in shows if "tab" in one}  # its name lit, dark as it is
-    if not tutorial.explains:
-        return frozenset(tabs)
-    return frozenset(one.get("area") or one.get("run") for one in shows) - {None} | tabs
+    return frozenset(one.get("area") or one.get("run") for one in shows) - {None}
 
 
 def focus_cells(tutorial: Tutorial | None) -> frozenset[Cell]:
