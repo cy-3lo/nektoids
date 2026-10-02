@@ -37,7 +37,14 @@ from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
 from nektoids.editor.shell import bottom_button, map_row_at
 from nektoids.editor.shell_draw import draw_end, draw_level_card, draw_map, draw_title_card
-from nektoids.editor.tutorial import Context, Tutorial, box_rect, next_rect, target_rects
+from nektoids.editor.tutorial import (
+    Context,
+    Tutorial,
+    box_rect,
+    next_rect,
+    skip_rect,
+    target_rects,
+)
 from nektoids.editor.tutorial_draw import draw_tutorial
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
@@ -77,6 +84,15 @@ def tutorial_box(guide: Tutorial) -> tuple:
     return targets, box_rect(targets, len(guide.step.say), beside)
 
 
+def tutorial_button(guide: Tutorial, pos: tuple[int, int]) -> str | None:
+    """ "next" or "skip" if `pos` is on one of the box's buttons; Skip is not on the last step."""
+    box = tutorial_box(guide)[1]
+    if contains(next_rect(box), pos):
+        return "next"
+    last = guide.index == len(guide.steps) - 1
+    return "skip" if not last and contains(skip_rect(box), pos) else None
+
+
 def editor() -> EditorScene:
     """The open level's editor, made the first time the level opens."""
     if router.index not in editors:
@@ -107,6 +123,9 @@ def shell_event(event: pygame.event.Event) -> None:
         place = map_row_at(len(levels), event.pos) if clicked else None
         if place is not None and router.unlocked(place):
             router.open(place)
+            skipped = tutorials.get(place)
+            if skipped is not None and skipped.skipped:
+                skipped.restart()  # reopened from the map, a skipped tutorial starts again
         elif escape or (clicked and contains(bottom_button(), event.pos)):
             router.edit()
     elif escape or (clicked and contains(bottom_button(), event.pos)):  # the end
@@ -156,9 +175,12 @@ async def main() -> None:
                 and router.screen in (Screen.EDIT, Screen.RUN)
                 and event.type == pygame.MOUSEBUTTONDOWN
                 and event.button == 1
-                and contains(next_rect(tutorial_box(guide)[1]), event.pos)
+                and (button := tutorial_button(guide, event.pos)) is not None
             ):
-                guide.next()  # Next, and nothing else
+                if button == "next":
+                    guide.next()  # and nothing else
+                else:
+                    guide.skip()
             elif router.screen in (Screen.TITLE, Screen.SPEC, Screen.MAP, Screen.END):
                 shell_event(event)
             elif playing is not None:

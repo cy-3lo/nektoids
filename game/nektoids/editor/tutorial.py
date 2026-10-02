@@ -8,7 +8,8 @@ or a list of them, which the overlay leaves lit while it dims the rest: an area 
 ("arena", "timeline", "objectives", "inside"); and waits, until a part is placed in a cell, a
 part faces a way, a tool is taken, a wire runs from one cell to another, the run starts, or the
 run is won. A step with no target is a hint: nothing is dimmed. A step with nothing to wait for
-waits for Next. The first level's tutorial leads; later levels only hint (D-039).
+waits for Next. The first level's tutorial leads; later levels only hint (D-039). Skip ends a
+tutorial; reopening its level from the map starts it again (D-048).
 Pure Python, no pygame: what the step waits for is read from a `Context`, the screen's
 geometry from the layouts.
 """
@@ -28,7 +29,8 @@ from nektoids.levels.objectives import Outcome
 BOX_WIDTH = 360  # [px]
 LINE = 19  # a line of the box [px]
 PAD = 14  # inside the box [px]
-BUTTON = (84, 28)  # Next, at the box's foot [px]
+BUTTON = (84, 28)  # Next, and Skip left of it, at the box's foot [px]
+BUTTON_GAP = 8  # between Skip and Next [px]
 GAP = 14  # between the target and the box [px]
 RUN_TARGETS = {
     "arena": arena_layout.ARENA_AREA,
@@ -68,6 +70,7 @@ class Tutorial:
     def __init__(self, ghosts: tuple[Ghost, ...], steps: tuple[Step, ...]) -> None:
         self.ghosts, self.steps = ghosts, steps
         self.index = 0
+        self.skipped = False
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
@@ -96,6 +99,15 @@ class Tutorial:
         """Next pressed: on to the following step."""
         if self.step is not None:
             self.index += 1
+
+    def skip(self) -> None:
+        """Skip pressed: the tutorial ends here, its ghosts with it."""
+        self.index, self.skipped = len(self.steps), True
+
+    def restart(self) -> None:
+        """Its level reopened from the map after a skip: from the first step, `follow` passing
+        over what the board already holds."""
+        self.index, self.skipped = 0, False
 
     def follow(self, context: Context) -> None:
         """On past every step whose wait is over: the player did what it asked."""
@@ -206,6 +218,12 @@ def next_rect(box: Rect) -> Rect:
     x, y, w, h = box
     bw, bh = BUTTON
     return (x + w - PAD - bw, y + h - PAD - bh, bw, bh)
+
+
+def skip_rect(box: Rect) -> Rect:
+    """Skip, left of Next."""
+    x, y, w, h = next_rect(box)
+    return (x - BUTTON_GAP - w, y, w, h)
 
 
 def _cell(data) -> Cell:

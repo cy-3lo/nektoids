@@ -20,7 +20,7 @@ from nektoids.editor.palette import (
     TOOLTIP_BG,
     VEIL,
 )
-from nektoids.editor.tutorial import LINE, PAD, Tutorial, next_rect
+from nektoids.editor.tutorial import LINE, PAD, Tutorial, next_rect, skip_rect
 
 HALO = 6  # the lit margin round the target [px]
 
@@ -56,8 +56,12 @@ def draw_tutorial(
     button = next_rect(box)
     screen.blit(count, count.get_rect(midleft=(frame.left + PAD, pygame.Rect(button).centery)))
     last = tutorial.index == len(tutorial.steps) - 1
-    pygame.draw.rect(
-        screen, ACTIVE if contains(button, pointer) else BUTTON, button, border_radius=6
-    )
-    label = fonts.small.render("Close" if last else "Next", True, TEXT)
-    screen.blit(label, label.get_rect(center=pygame.Rect(button).center))
+    _button(screen, fonts, button, "Close" if last else "Next", pointer)
+    if not last:  # on the last step, Close does what Skip would
+        _button(screen, fonts, skip_rect(box), "Skip", pointer)
+
+
+def _button(screen: pygame.Surface, fonts: Fonts, rect: Rect, text: str, pointer) -> None:
+    pygame.draw.rect(screen, ACTIVE if contains(rect, pointer) else BUTTON, rect, border_radius=6)
+    label = fonts.small.render(text, True, TEXT)
+    screen.blit(label, label.get_rect(center=pygame.Rect(rect).center))

@@ -8,6 +8,7 @@ from nektoids.editor.tutorial import (
     box_rect,
     met,
     next_rect,
+    skip_rect,
     target_rects,
 )
 from nektoids.graph.board import Kind
@@ -103,3 +104,27 @@ def overlap(a, b):
     ax, ay, aw, ah = a
     bx, by, bw, bh = b
     return ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah
+
+
+def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds():
+    level = LEVELS["Fear"]
+    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    tutorial.skip()
+    assert tutorial.step is None and tutorial.skipped
+    board.place(Kind.EYE, (2, -1))  # built while the tutorial was off
+    tutorial.restart()
+    assert tutorial.index == 0 and not tutorial.skipped
+    context = Context(board, Tool.ADD, Screen.EDIT)
+    for _ in range(3):  # the board, the menu, the palette: Next
+        tutorial.follow(context)
+        tutorial.next()
+    tutorial.follow(context)
+    assert "facing" in tutorial.step.until  # the eye is there already: on to turning it
+
+
+def test_skip_sits_left_of_next_both_inside_the_box():
+    box = (100, 100, 360, 120)
+    skip, nxt = skip_rect(box), next_rect(box)
+    assert skip[0] + skip[2] < nxt[0] and skip[1] == nxt[1]
+    for x, y, w, h in (skip, nxt):
+        assert 100 <= x and x + w <= 460 and 100 <= y and y + h <= 220

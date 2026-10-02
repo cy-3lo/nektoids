@@ -20,9 +20,6 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
       target, the keys that do the same, and Next. Today the rest is dimmed but still live.
 - [ ] The tutorial: light each target with a soft spot of light, one per target, instead of
       the rectangle cut in the veil and its outline (`tutorial_draw.py`).
-- [ ] The tutorial: a Skip button beside Next ends it, for a player who replays the level.
-      - Does Skip end the hints of the later levels too, or only the tutorial?
-      - Can a skipped tutorial come back, from the map or a ? button?
 - [ ] Tutorial 2, aggression (crossed: charges the light). Visit the light.
 - [ ] Tutorial 3, ÷2 on one side (orbits). Its objective is to be chosen: stay within a ring
       round the light for T s, or circle it N times.
