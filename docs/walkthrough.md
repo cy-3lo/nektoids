@@ -617,7 +617,8 @@ Skip ends it.
 
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
   a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
-  wait is over (`met`); `next` and `skip` are the box's buttons, `restart` the map's way back.
+  wait is over (`met`); `next` and `skip` are the box's buttons, `answer` what a key or click
+  does to the tutorial, `restart` what opening the map does.
   `allows(step, Action)` says what a leading step lets through. `target_spots` finds what a step
   shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
   (`_crosses`) and the step `before`.

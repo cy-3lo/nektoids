@@ -575,9 +575,12 @@ accents' marks on the board 3 or more (WCAG).
 
 **D-048 — 2026-10-02 — A tutorial can be skipped; while a step leads, only what it asks goes through; its targets are lit by holes in the veil, with no outline; its box keeps clear of the targets, the way between them and the step just done. Amends D-039.**
 Skip, beside Next on every step but the last (where Close does the same), ends the level's
-tutorial and its ghosts; later levels keep their hints, which block nothing. Reopening the level
-from the map starts a skipped tutorial again from its first step, `follow` passing over what the
-board already holds; a finished one stays finished.
+tutorial and its ghosts; later levels keep their hints, which block nothing. Going to the map
+starts every tutorial again from its first step, finished or skipped, `follow` passing over what
+the board already holds. Only a step that waits for Next has a Next; a step that waits for an
+action stays until it is done, since a later step needs it (Next past "place an eye" left no eye
+to turn). On a step that leads and waits for Next (the introductions, the last), any key or
+click moves on, but a click on Skip; a hint takes only its buttons (`tutorial.answer`).
 While a step that shows a target is up, `tutorial.allows(step, action)` lets through only the
 means to what it waits for: picking that part and placing it on that cell; a turn tool, or L and
 R, on that part; that tool; the Wire tool and that wire, either way round (D-026); Run. While it

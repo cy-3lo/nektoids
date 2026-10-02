@@ -10,10 +10,11 @@ part faces a way, a tool is taken, a wire runs from one cell to another, the run
 run is won. A step with no target is a hint: nothing is dimmed. A step with nothing to wait for
 waits for Next, and only such a step has a Next: one that waits for an action moves on when it
 is done, never before (D-048). The first level's tutorial leads; later levels only hint (D-039).
-Skip ends a tutorial; reopening its level from the map starts it again (D-048). While a step
-leads, only the means to what it waits for go through (`allows`); the editor and the run ask
-before they act. Pure Python, no pygame: what the step waits for is read from a `Context`, the
-screen's geometry from the layouts.
+Skip ends a tutorial; going to the map starts every tutorial again from its beginning (D-048).
+On a step that leads and waits for Next, any key or click moves on, but a click on Skip. While a
+step leads, only the means to what it waits for go through (`allows`); the editor and the run
+ask before they act. Pure Python, no pygame: what the step waits for is read from a `Context`,
+the screen's geometry from the layouts.
 """
 
 from __future__ import annotations
@@ -89,7 +90,6 @@ class Tutorial:
     def __init__(self, ghosts: tuple[Ghost, ...], steps: tuple[Step, ...]) -> None:
         self.ghosts, self.steps = ghosts, steps
         self.index = 0
-        self.skipped = False
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
@@ -134,12 +134,12 @@ class Tutorial:
 
     def skip(self) -> None:
         """Skip pressed: the tutorial ends here, its ghosts with it."""
-        self.index, self.skipped = len(self.steps), True
+        self.index = len(self.steps)
 
     def restart(self) -> None:
-        """Its level reopened from the map after a skip: from the first step, `follow` passing
-        over what the board already holds."""
-        self.index, self.skipped = 0, False
+        """The map opened: from the first step again, finished or skipped, `follow` passing over
+        what the board already holds."""
+        self.index = 0
 
     def follow(self, context: Context) -> None:
         """On past every step whose wait is over: the player did what it asked."""
@@ -350,6 +350,25 @@ def next_rect(box: Rect) -> Rect:
     x, y, w, h = box
     bw, bh = BUTTON
     return (x + w - PAD - bw, y + h - PAD - bh, bw, bh)
+
+
+def answer(tutorial: Tutorial, box: Rect, click: tuple[int, int] | None) -> str | None:
+    """What a key (`click` None) or a click at `click` does to the tutorial, before the editor or
+    the run sees it: "skip" on Skip; on a step that waits for Next, "next" on Next, and, on a
+    step that also leads, at any key or any click; otherwise None, and the press goes on."""
+    last = tutorial.index == len(tutorial.steps) - 1
+    if click is not None and not last and _inside(skip_rect(box), click):
+        return "skip"
+    if not tutorial.waits_for_next:
+        return None
+    if tutorial.leads or (click is not None and _inside(next_rect(box), click)):
+        return "next"
+    return None
+
+
+def _inside(rect: Rect, point: tuple[int, int]) -> bool:
+    x, y, w, h = rect
+    return x <= point[0] < x + w and y <= point[1] < y + h
 
 
 def skip_rect(box: Rect) -> Rect:

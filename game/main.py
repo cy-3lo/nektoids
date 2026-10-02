@@ -41,9 +41,8 @@ from nektoids.editor.tutorial import (
     Context,
     Tutorial,
     allows,
+    answer,
     box_rect,
-    next_rect,
-    skip_rect,
     target_rects,
     target_spots,
 )
@@ -90,14 +89,20 @@ def tutorial_box(guide: Tutorial) -> tuple:
     return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
 
 
-def tutorial_button(guide: Tutorial, pos: tuple[int, int]) -> str | None:
-    """Which of the box's buttons is under `pos`, "next" or "skip", if one is. Next is only on a
-    step that waits for it, Skip on every step but the last."""
-    box = tutorial_box(guide)[1]
-    if guide.waits_for_next and contains(next_rect(box), pos):
-        return "next"
-    last = guide.index == len(guide.steps) - 1
-    return "skip" if not last and contains(skip_rect(box), pos) else None
+def open_map() -> None:
+    """To the map; every tutorial starts again from its beginning (D-048)."""
+    router.open_map()
+    for guide in tutorials.values():
+        guide.restart()
+
+
+def tutorial_press(guide: Tutorial, event: pygame.event.Event) -> str | None:
+    """ "next" or "skip" if this key or click is the tutorial's (`tutorial.answer`), else None."""
+    if event.type == pygame.KEYDOWN:
+        return answer(guide, tutorial_box(guide)[1], None)
+    if event.type == pygame.MOUSEBUTTONDOWN and 1 <= event.button <= 3:  # not the wheel
+        return answer(guide, tutorial_box(guide)[1], event.pos)
+    return None
 
 
 def editor() -> EditorScene:
@@ -130,13 +135,10 @@ def shell_event(event: pygame.event.Event) -> None:
         place = map_row_at(len(levels), event.pos) if clicked else None
         if place is not None and router.unlocked(place):
             router.open(place)
-            skipped = tutorials.get(place)
-            if skipped is not None and skipped.skipped:
-                skipped.restart()  # reopened from the map, a skipped tutorial starts again
         elif escape or (clicked and contains(bottom_button(), event.pos)):
             router.edit()
     elif escape or (clicked and contains(bottom_button(), event.pos)):  # the end
-        router.open_map()
+        open_map()
 
 
 def open_developer_view() -> SchematicScene:
@@ -180,9 +182,7 @@ async def main() -> None:
             elif (
                 (guide := tutorial()) is not None
                 and router.screen in (Screen.EDIT, Screen.RUN)
-                and event.type == pygame.MOUSEBUTTONDOWN
-                and event.button == 1
-                and (button := tutorial_button(guide, event.pos)) is not None
+                and (button := tutorial_press(guide, event)) is not None
             ):
                 if button == "next":
                     guide.next()  # and nothing else
@@ -218,7 +218,7 @@ async def main() -> None:
                 router.run()
                 playing = play()
             elif asked == "map":
-                router.open_map()
+                open_map()
 
         guide = tutorial()
         if guide is not None:  # on past what the player has done

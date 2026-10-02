@@ -9,6 +9,7 @@ from nektoids.editor.tutorial import (
     Tutorial,
     _crosses,
     allows,
+    answer,
     box_rect,
     met,
     next_rect,
@@ -115,10 +116,10 @@ def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds()
     level = LEVELS["Fear"]
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
     tutorial.skip()
-    assert tutorial.step is None and tutorial.skipped
+    assert tutorial.step is None
     board.place(Kind.EYE, (2, -1))  # built while the tutorial was off
-    tutorial.restart()
-    assert tutorial.index == 0 and not tutorial.skipped
+    tutorial.restart()  # the map opened
+    assert tutorial.index == 0
     context = Context(board, Tool.ADD, Screen.EDIT)
     for _ in range(3):  # the board, the menu, the palette: Next
         tutorial.follow(context)
@@ -238,3 +239,21 @@ def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_l
     assert tutorial.index == 3 and tutorial.step.until == {
         "placed": {"kind": "eye", "cell": [2, -1]}
     }
+
+
+def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    box = (300, 300, 360, 100)
+    skip, nxt = skip_rect(box), next_rect(box)
+    centre = lambda r: (r[0] + r[2] // 2, r[1] + r[3] // 2)  # noqa: E731
+    assert answer(tutorial, box, None) == "next"  # the board: any key
+    assert answer(tutorial, box, (5, 5)) == "next"  # ... or a click anywhere
+    assert answer(tutorial, box, centre(skip)) == "skip"
+    tutorial.index = 3  # place an eye: the press is the editor's, but Skip
+    assert answer(tutorial, box, None) is None and answer(tutorial, box, centre(nxt)) is None
+    assert answer(tutorial, box, centre(skip)) == "skip"
+    tutorial.index = len(tutorial.steps) - 1  # the last: Close, any key or click; no Skip
+    assert answer(tutorial, box, centre(skip)) == "next"
+    hint = Tutorial.from_dict(LEVELS["Love"].tutorial)  # a hint takes only its own buttons
+    assert answer(hint, box, None) is None and answer(hint, box, (5, 5)) is None
+    assert answer(hint, box, centre(nxt)) == "next"
