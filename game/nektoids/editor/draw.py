@@ -93,6 +93,7 @@ from nektoids.editor.palette import (
     GREYED,
     GRID_LINE,
     HOVER,
+    ICON_EDGE,
     LIGHT,
     LIT,
     LOCK_RING,
@@ -389,9 +390,9 @@ def _draw_disc(screen, fonts: Fonts, at, what: Kind | Tool | Mode | None, fill, 
     part on it just smaller than Tools' cell's, or the action's glyph; empty for None."""
     radius = ICON * RING_HEX
     pygame.draw.circle(screen, fill, at, radius)
-    pygame.draw.circle(screen, edge, at, radius, 1)
-    if isinstance(what, Kind):
-        draw_part(screen, fonts, what, MENU_ANGLE.get(what), at, 1.4 * radius, False)
+    pygame.draw.circle(screen, edge, at, radius, 2)
+    if isinstance(what, Kind):  # its tips well inside the disc, a diamond's too
+        draw_part(screen, fonts, what, MENU_ANGLE.get(what), at, 1.15 * radius, False)
     elif what is not None:
         fonts.icons.draw(screen, _action_icon(what), at, round(1.05 * radius), TEXT)
 
@@ -427,11 +428,12 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     radius = ICON * RING_HEX
     for slot in sorted(ring, key=lambda s: -s.depth):  # down a pile, the further first, under
         if slot.depth:  # piled: an empty disc, its edge showing past the one over it
-            _draw_disc(screen, fonts, slot.at, None, BUTTON, RULE)
+            turning = (slot.at[0] > centre[0]) == (scene.piling > 0) and scene.piling != 0
+            _draw_disc(screen, fonts, slot.at, None, BUTTON, LIT if turning else ICON_EDGE)
             continue
         lit = slot == chosen or slot.what is in_hand
         fill = ACTIVE if lit else HOVER if slot == scene.ring_hover else BUTTON
-        _draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else RULE)
+        _draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE)
         if scene.settings.key_hints:
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
             screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))

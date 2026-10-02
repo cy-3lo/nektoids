@@ -17,6 +17,7 @@ from nektoids.editor.ring import (
     cycled,
     offer,
     part_key,
+    pile_at,
     slot_at,
     slots,
     swaps,
@@ -98,6 +99,21 @@ def test_more_than_five_turn_on_a_wheel_the_others_piled_under_its_ends():
     assert [s.depth for s in turned_two] == [2, 1, 0, 0, 0, 0, 0]  # under the first end now
     # A pile lies under its end: a press there takes the icon on the ring.
     assert slot_at(ring, first_pile.at, SIZE) is last and slot_at(ring, second.at, SIZE) is last
+
+
+def test_the_mouse_resting_past_an_end_on_its_pile_turns_the_wheel_that_way():
+    def at(angle, r=RADIUS * SIZE):
+        a = math.radians(angle)
+        return CENTRE[0] + r * math.cos(a), CENTRE[1] - r * math.sin(a)
+
+    past = math.degrees(1.5 * ICON / RADIUS)  # half a radius past the end icon, along the circle
+    first, last = angles(IN_RING)[0], angles(IN_RING)[-1]
+    assert pile_at(7, 0, CENTRE, SIZE, at(last - past)) == 1  # the pile under the last end
+    assert pile_at(7, 0, CENTRE, SIZE, at(last)) == 0  # the end icon: a click takes it
+    assert pile_at(7, 0, CENTRE, SIZE, at(first + past)) == 0  # nothing piled there yet
+    assert pile_at(7, 2, CENTRE, SIZE, at(first + past)) == -1  # turned: piled under the first
+    assert pile_at(7, 2, CENTRE, SIZE, at(last - past)) == 0  # and none left under the last
+    assert pile_at(5, 0, CENTRE, SIZE, at(last - past)) == 0  # five: no pile at all
 
 
 def test_the_action_atop_the_main_screen_is_as_wide_as_a_ring_icon():

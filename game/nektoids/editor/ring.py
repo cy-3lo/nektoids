@@ -6,9 +6,10 @@ move, wire, swap when another part of its group is left, turn right (eyes and th
 and delete; swapping, the ring offers those parts. Up to five icons sit beyond the cell's
 corners, the lowest left free, the gap at the foot: an odd number centred on the top corner, an
 even one as many each side of it. More turn on a wheel, as cards on a rotary
-file: five on the ring, the others piled under its two ends, drawn empty, each set back a fifth
+file: five on the ring, the others piled under its two ends, drawn empty, each set back a third
 of an icon's radius along the circle, those before the ring under its first end, those after it
-under its last. The keyboard going round, or the mouse wheel, turns the wheel. Each icon on the
+under its last. The keyboard going round turns the wheel; so does the mouse wheel, or the mouse
+resting on a pile, past its end icon. Each icon on the
 ring has its key just outside it. Pure numbers, no pygame.
 """
 
@@ -27,7 +28,7 @@ KEY_OUT = 0.95  # its key, this far past the icon's centre, outwards [hex sizes]
 RING_HEX = 40  # the cell's size in Tools' picture [px]
 IN_RING = 5  # the most icons on the ring itself; more pile up below its ends
 CORNERS = (210.0, 150.0, 90.0, 30.0, -30.0)  # left to right over the top; the lowest is the gap
-PILE = 0.2  # from one icon of a pile to the next, further, along the circle [icon radii]
+PILE = 0.35  # from one icon of a pile to the next, further, along the circle [icon radii]
 ACTIONS = (  # the wire at the top, the turns either side of the gap, delete last
     Tool.TURN_LEFT,
     Tool.MOVE,
@@ -140,6 +141,33 @@ def slots(
         at, _ = on_ring(ring[0] + back if before else ring[-1] - back)
         out.append(Slot(item, at, at, key, depth))  # drawn empty, its key unwritten
     return out
+
+
+def pile_at(
+    n: int, turn: int, centre: tuple[float, float], size: float, point: tuple[float, float]
+) -> int:
+    """Which way the mouse resting at `point` turns the wheel of `n` icons: -1 on the pile under
+    the ring's first end, 1 on the one under its last, 0 elsewhere. A pile's area runs one icon
+    radius on past its end icon, along the circle; the end icon itself is not in it."""
+    turn = turned(turn, None, n)
+    ring = angles(min(n, IN_RING))
+    r = ICON * size
+
+    def on_circle(angle: float) -> tuple[float, float]:
+        a = math.radians(angle)
+        return centre[0] + RADIUS * size * math.cos(a), centre[1] - RADIUS * size * math.sin(a)
+
+    halfway = math.degrees(1.5 * ICON / RADIUS)  # past the end icon, half a radius on
+    piles = (
+        (-1, turn > 0, ring[0] if ring else 0.0),
+        (1, n > turn + IN_RING, ring[-1] if ring else 0.0),
+    )
+    for way, piled, end in piles:
+        if not piled or math.dist(point, on_circle(end)) <= r:
+            continue  # no pile there, or on the end icon: a click takes it
+        if math.dist(point, on_circle(end - way * halfway)) <= r:
+            return way
+    return 0
 
 
 def slot_at(ring: Sequence[Slot], point: tuple[float, float], size: float) -> Slot | None:

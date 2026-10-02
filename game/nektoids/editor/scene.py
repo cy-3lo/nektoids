@@ -96,6 +96,7 @@ from nektoids.editor.ring import (
     cycled,
     offer,
     part_key,
+    pile_at,
     slot_at,
     slots,
     swaps,
@@ -118,6 +119,7 @@ from nektoids.graph.hexgrid import (
 from nektoids.levels.level import Level
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
+PILE_FRAMES = 24  # the mouse resting on a pile turns the ring's wheel one icon this often [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
 KEY_VIEWS = {key: button for button, key in VIEW_KEYS.items()}
@@ -174,6 +176,8 @@ class EditorScene(Frame):
         self.swapping = False  # Swap chosen: the ring offers the parts the focused one may become
         self.turn = 0  # the ring's wheel: its first icon on the ring, the others piled
         self.wire_chosen = False  # Wire chosen by its key or in the ring, not only at hand
+        self.piling = 0  # the mouse on a pile in Tools: the way it turns the wheel, -1 or 1
+        self.pile_frames = 0  # how long it has rested there
         self.onward = False  # the focus came unclicked, placed or wired to: it wires only forward
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
@@ -204,6 +208,10 @@ class EditorScene(Frame):
         if self.flash_frames > 0:
             self.flash_frames -= 1
         self.frame_update()
+        if self.piling:  # the wheel turns slowly while the mouse rests on a pile (D-068)
+            self.pile_frames += 1
+            if self.pile_frames % PILE_FRAMES == PILE_FRAMES // 2:
+                self.turn = turned(self.turn + self.piling, None, len(self.offered()))
         self.view = kept_on_board(self.layout, self.view, self.extent())  # D-066
         if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.SENSE:
             self._probe_now()
@@ -432,6 +440,11 @@ class EditorScene(Frame):
             self._zoom_to(pos)
         self._hold(pos)
         self.ring_hover = slot_at(self.ring(), pos, RING_HEX)
+        piling = 0
+        if self.layout.cell_view is not None:
+            piling = pile_at(len(self.offered()), self.turn, self.cell_centre(), RING_HEX, pos)
+        if piling != self.piling:
+            self.piling, self.pile_frames = piling, 0
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
         self.pointed = pointed
