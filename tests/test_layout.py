@@ -3,6 +3,7 @@
 from nektoids.editor.layout import (
     CAPTION_HEIGHT,
     DRAWER_KEYS,
+    DRAWERS,
     EDIT_KEYS,
     FOOT,
     LEVEL_KEYS,
@@ -16,7 +17,9 @@ from nektoids.editor.layout import (
     VIEW_KEYS,
     Drawer,
     EditButton,
+    Env,
     FileButton,
+    Goal,
     LevelButton,
     Setting,
     Tool,
@@ -26,6 +29,7 @@ from nektoids.editor.layout import (
     chapter_row_at,
     contains,
     drawer_button_at,
+    goal_row_at,
     group_at,
     info_at,
     level_button_at,
@@ -139,7 +143,11 @@ def test_tools_runs_its_tools_then_edit_then_file_and_the_navigator_holds_the_vi
         _, y, _, h = sections[title]
         assert all(y + h <= rect[1] for _, rect in rows)  # under its title
     assert [title for title, _ in NAVIGATOR.section_titles] == ["View"]
-    assert [button for button, _ in NAVIGATOR.view_buttons] == list(ViewButton)
+    assert [button for button, _ in NAVIGATOR.view_buttons] == [
+        b
+        for b in ViewButton
+        if b is not ViewButton.RAYS  # the run's only
+    ]
     for tool, rect in TOOLS.tool_buttons:
         assert tool_at(TOOLS, (rect[0] + 20, rect[1] + rect[3] // 2)) == tool
     for button, rect in NAVIGATOR.view_buttons:
@@ -187,7 +195,7 @@ def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
     assert EDIT_KEYS == {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
     assert (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT]) == ("L", "R")
     assert TURNS == {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # directions run counter-clockwise
-    assert [drawer for drawer, _ in LAYOUT.drawer_buttons] == list(Drawer)
+    assert [drawer for drawer, _ in LAYOUT.drawer_buttons] == [*DRAWERS[Env.EDITOR], *FOOT]
     for drawer, rect in LAYOUT.drawer_buttons:
         assert drawer_button_at(LAYOUT, centre(rect)) is drawer
         assert palette_target_at(LAYOUT, centre(rect)) is drawer
@@ -201,12 +209,13 @@ def test_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_ke
     icons = dict(LAYOUT.drawer_buttons)
     settings, chapters = icons[Drawer.SETTINGS], icons[Drawer.CHAPTERS]
     assert settings[1] + settings[3] <= chapters[1] and chapters[1] + chapters[3] <= switch[1]
-    lowest_top = max(icons[d][1] + icons[d][3] for d in Drawer if d not in FOOT)
+    lowest_top = max(icons[d][1] + icons[d][3] for d in DRAWERS[Env.EDITOR])
     assert lowest_top < settings[1]  # at the foot, apart from the drawers above
     assert level_button_at(LAYOUT, centre(switch)) is run
     assert palette_target_at(LAYOUT, centre(switch)) is run
     assert contains(LAYOUT.bar_area, switch[:2])
-    assert LEVEL_KEYS == {LevelButton.RUN: "Space"} and DRAWER_KEYS == {Drawer.CHAPTERS: "Tab"}
+    assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
+    assert DRAWER_KEYS == {Drawer.CHAPTERS: "Tab"}
     assert [name for name, _ in LAYOUT.tabs] == ["editor", "run"]
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name
@@ -259,3 +268,22 @@ def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_sec
             assert row_at(LAYOUT, centre(rect)) is None  # rows only in the open drawer
             assert info_at(layout, centre(dict(layout.info_buttons)[what])) == what
     assert chapters.setting_rows == () and settings.chapter_rows == ()
+
+
+def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_arena():
+    run = make_layout(Drawer.OBJECTIVES, env=Env.RUN, goals=2)
+    assert [drawer for drawer, _ in run.drawer_buttons] == [*DRAWERS[Env.RUN], *FOOT]
+    ((back, switch),) = run.level_buttons
+    assert back is LevelButton.EDIT and level_button_at(run, centre(switch)) is back
+    arena, controls = run.board_area, run.controls_area
+    assert controls[1] == arena[1] + arena[3] and controls[0] == arena[0]
+    assert controls[1] + controls[3] < run.status_at[1]  # the status line under both
+    assert LAYOUT.controls_area is None  # the editor has none
+    assert [goal for goal, _ in run.goal_rows] == [Goal(0), Goal(1), Goal(None)]  # time last
+    for goal, rect in run.goal_rows:
+        assert goal_row_at(run, centre(rect)) == goal and contains(run.drawer_area, rect[:2])
+    navigator = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
+    assert [b for b, _ in navigator.view_buttons][-1] is ViewButton.RAYS
+    assert [name for name, _ in run.tabs] == ["editor", "run"] and run.caption_at[1] < arena[1]
+    folded = make_layout(None, env=Env.RUN)
+    assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]

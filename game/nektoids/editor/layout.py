@@ -1,15 +1,17 @@
-"""Where everything sits on the 960 x 640 editor screen, and what is under a given pixel (D-051).
+"""Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
 
-- Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top,
-  Settings and Chapters at its foot, over the accented switch to the Run.
+- Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
+  editor, Objectives, Inside, Score and Navigator in the run; Settings and Chapters at its foot,
+  over the accented switch to the other environment (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, operators, actuators) that fold
   under their title, only the parts the level hands out; Tools: the tools, Edit (undo, redo),
   File (save and load, inactive until saving exists); Navigator: the view's buttons; Settings:
   what the player sets (D-054); Chapters: the levels, then the sandbox, which replaces the
   full-screen map. An arrow on the drawer's edge folds it.
-- The rest is the board: the tabs over it (Editor, Run) with the level's caption after them,
-  the hex grid, one status line at its foot. A drawer opening pushes the board aside.
+- The rest is the main screen: the tabs over it (Editor, Run), the level's caption under them,
+  then the board's hex grid, or in the run the arena with its controls under it; one status
+  line at its foot. A drawer opening pushes the main screen aside.
 
 The View says how big a hex is and where the grid sits in the board's area; zoom and pan change
 only the View (D-013). Plain numbers and tuples, no pygame, so hit-testing is testable headless.
@@ -47,6 +49,7 @@ CAPTION_HEIGHT = 26  # under the tabs, inside the Editor's: the level's title an
 TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
 TAB_WIDTHS = (84, 64)  # Editor, Run [px]
 STATUS_HEIGHT = 28  # [px]
+CONTROLS_HEIGHT = 48  # the run's controls, a strip under the arena [px]
 MARGIN = 16  # [px]
 BUTTON = 40  # a palette button's side, in the run view [px]
 PALETTE_TITLE = 24  # a section's title, in the run view and the drawers [px]
@@ -80,8 +83,9 @@ class EditButton(Enum):
     REDO = "redo"
 
 
-class LevelButton(Enum):
-    RUN = "run"  # the board, swimming in its arena: the accented switch
+class LevelButton(Enum):  # the accented switch at the bar's foot, to the other environment
+    RUN = "run"  # in the editor: the board, swimming in its arena
+    EDIT = "edit"  # in the run: back to the board as it was left
 
 
 class FileButton(Enum):  # inactive: saving is not in the game yet
@@ -94,12 +98,16 @@ class ViewButton(Enum):
     ZOOM_OUT = "zoom out"
     PAN = "pan"
     CENTRE = "centre"  # bring cell (0, 0) back to the middle, at the same zoom
+    RAYS = "rays"  # the run's only: the light's rays, shown or not
 
 
-class Drawer(Enum):  # in the activity bar's order (D-051)
+class Drawer(Enum):  # D-051
     PARTS = "parts"  # the parts the level hands out, and what each does
     TOOLS = "tools"  # the tools, undo and redo, save and load
-    NAVIGATOR = "navigator"  # zoom, hand, centre
+    OBJECTIVES = "objectives"  # the run's: what the level asks, each with its bar; the time
+    INSIDE = "inside"  # the run's: the swimmer's wiring, live
+    SCORE = "score"  # the run's: the level's wins this session
+    NAVIGATOR = "navigator"  # zoom, hand, centre; the rays in the run
     SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
 
@@ -109,7 +117,19 @@ class Env(Enum):  # the environments, each a tab over the main screen (D-051)
     RUN = "run"
 
 
+DRAWERS = {  # each environment's drawers, in the bar's order from the top
+    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.NAVIGATOR),
+    Env.RUN: (Drawer.OBJECTIVES, Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),
+}
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
+SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT}
+
+
+@dataclass(frozen=True)
+class Goal:
+    """A row of Objectives: the level's objective `index`, or, for None, the time left."""
+
+    index: int | None
 
 
 class Setting(Enum):  # the Settings drawer's rows (D-054)
@@ -136,11 +156,12 @@ VIEW_KEYS = {
     ViewButton.ZOOM_OUT: "-",
     ViewButton.PAN: "H",
     ViewButton.CENTRE: "C",
+    ViewButton.RAYS: "X",  # as in x-rays: L turns left (D-025)
 }
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 # On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F3.
-LEVEL_KEYS = {LevelButton.RUN: "Space"}
+LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
 DRAWER_KEYS = {Drawer.CHAPTERS: "Tab"}  # Tab opens the levels, as it opened the map
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
@@ -164,11 +185,13 @@ class Layout:
     edit_buttons: tuple[tuple[EditButton, Rect], ...]
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
+    goal_rows: tuple[tuple[Goal, Rect], ...]  # Objectives' rows: each objective, the time left
     setting_rows: tuple[tuple[Setting, Rect], ...]  # Settings' rows
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "editor", "run"
-    board_area: Rect
+    board_area: Rect  # the main screen: the board, or in the run the arena
+    controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
     caption_at: tuple[int, int]  # top-left corner of the level's title and spec, under the tabs
     status_at: tuple[int, int]  # top-left corner of the status line
 
@@ -187,14 +210,16 @@ def make_layout(
     kinds: frozenset[Kind] = frozenset(Kind),
     chapter: int = 0,
     env: Env = Env.EDITOR,
+    goals: int = 0,
 ) -> Layout:
-    """The bar, the open drawer's rows and the board. folded: Parts' groups shown closed;
-    kinds: the parts the level hands out, the only ones Parts shows (D-039); chapter: how many
-    levels Chapters lists, before the sandbox."""
+    """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
+    Parts' groups shown closed; kinds: the parts the level hands out, the only ones Parts shows
+    (D-039); chapter: how many levels Chapters lists, before the sandbox; goals: how many
+    objectives the level has, Objectives' rows before the time left."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
-    top = [d for d in Drawer if d not in FOOT]
+    top = DRAWERS[env]
     switch = ((BAR_WIDTH - SWITCH) // 2, height - SWITCH - 12, SWITCH, SWITCH)
     drawer_buttons = tuple(
         (d, (side, BAR_PITCH // 2 + 6 + k * BAR_PITCH - BAR_BUTTON // 2, BAR_BUTTON, BAR_BUTTON))
@@ -210,7 +235,9 @@ def make_layout(
     elif drawer is Drawer.TOOLS:
         rows.tools()
     elif drawer is Drawer.NAVIGATOR:
-        rows.view()
+        rows.view(env)
+    elif drawer is Drawer.OBJECTIVES:
+        rows.goals(goals)
     elif drawer is Drawer.SETTINGS:
         rows.settings()
     elif drawer is Drawer.CHAPTERS:
@@ -220,6 +247,7 @@ def make_layout(
         tabs.append((name, (x, 0, w, TABS_HEIGHT)))
         x += w
     open_ = drawer is not None
+    main = height - STATUS_HEIGHT - (CONTROLS_HEIGHT if env is Env.RUN else 0)  # its foot
     return Layout(
         env=env,
         kinds=kinds,
@@ -227,7 +255,7 @@ def make_layout(
         chapter=chapter,
         bar_area=bar,
         drawer_buttons=drawer_buttons,
-        level_buttons=((LevelButton.RUN, switch),),
+        level_buttons=((SWITCH_TO[env], switch),),
         drawer_area=(BAR_WIDTH, 0, DRAWER_WIDTH, height) if open_ else None,
         fold_handle=(left - 1, height // 2 - HANDLE[1] // 2, *HANDLE) if open_ else None,
         drawer_title_at=(BAR_WIDTH + MARGIN, 9),
@@ -238,6 +266,7 @@ def make_layout(
         edit_buttons=tuple(rows.of(EditButton)),
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
+        goal_rows=tuple(rows.of(Goal)),
         setting_rows=tuple(rows.of(Setting)),
         chapter_rows=tuple(rows.of(int)),
         info_buttons=tuple(
@@ -245,7 +274,8 @@ def make_layout(
             for what, (x, y, _, h) in rows.items
         ),
         tabs=tuple(tabs),
-        board_area=(left, TOP, width - left, height - TOP - STATUS_HEIGHT),
+        board_area=(left, TOP, width - left, main - TOP),
+        controls_area=(left, main, width - left, CONTROLS_HEIGHT) if env is Env.RUN else None,
         caption_at=(left + MARGIN, TABS_HEIGHT + 6),
         status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
     )
@@ -289,10 +319,15 @@ class _Rows:
                 self._row(what)
             self.y += SECTION_GAP
 
-    def view(self) -> None:
+    def view(self, env: Env) -> None:
         self._title("View", self.sections)
         for what in ViewButton:
-            self._row(what)
+            if what is not ViewButton.RAYS or env is Env.RUN:
+                self._row(what)
+
+    def goals(self, n: int) -> None:
+        for k in [*range(n), None]:
+            self._row(Goal(k))
 
     def settings(self) -> None:
         sections = (
@@ -314,6 +349,10 @@ class _Rows:
         self.y += SECTION_GAP
         self._title("Free play", self.sections)
         self._row(levels)  # the sandbox
+
+
+def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
+    return next((g for g, rect in layout.goal_rows if contains(rect, point)), None)
 
 
 def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelButton | None:
