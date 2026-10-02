@@ -81,5 +81,5 @@ def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -
 
 def _button(screen: pygame.Surface, fonts: Fonts, rect: Rect, text: str, pointer) -> None:
     pygame.draw.rect(screen, ACTIVE if contains(rect, pointer) else BUTTON, rect, border_radius=6)
-    label = fonts.small.render(text, True, TEXT)
+    label = fonts.label.render(text, True, TEXT)
     screen.blit(label, label.get_rect(center=pygame.Rect(rect).center))

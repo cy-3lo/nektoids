@@ -92,5 +92,5 @@ def draw_end(screen: pygame.Surface, fonts: Fonts, pointer: tuple[int, int]) -> 
 def _button(screen: pygame.Surface, fonts: Fonts, text: str, pointer: tuple[int, int]) -> None:
     rect = bottom_button()
     pygame.draw.rect(screen, ACTIVE if contains(rect, pointer) else BUTTON, rect, border_radius=6)
-    shown = fonts.text.render(text, True, TEXT)
+    shown = fonts.name.render(text, True, TEXT)
     screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))

@@ -387,7 +387,7 @@ def _draw_row(
     x, y, w, _ = SCORE_AREA
     left, width, top = x + MARGIN, w - 2 * MARGIN, y + 28 + k * ROW_PITCH
     colour = REFUSED if failed else TEXT
-    screen.blit(fonts.text.render(name, True, colour), (left, top))
+    screen.blit(fonts.name.render(name, True, colour), (left, top))
     shown = fonts.text.render(value, True, colour)
     screen.blit(shown, shown.get_rect(topright=(left + width, top)))
     if done:
@@ -483,7 +483,7 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     for button, rect in banner_rects(scene.banner_buttons):
         label = (scene.next_label or "Next level") if button is ArenaButton.NEXT else "Edit"
         pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
-        shown = fonts.text.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
+        shown = fonts.name.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
         screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))
 
 
@@ -498,7 +498,7 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     this = Score(scene.parts, scene.ended_at)
     scores = scene.scores | {this}
     x, y, w, h = CIRCUIT_AREA
-    note = fonts.small.render("Time to win against parts, this session.", True, DIM_TEXT)
+    note = fonts.small.render("Time to win against parts.", True, DIM_TEXT)
     screen.blit(note, (x + MARGIN, y + 4))
     plot = pygame.Rect(x + MARGIN + 40, y + 36, w - 2 * MARGIN - 52, h - 96)
     low = min(s.parts for s in scores) - 1
@@ -536,11 +536,11 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """Only the keys: the time is on the timeline and over it."""
-    keys = "Space: play or pause.  .: a step.  0: start again.  F: fast."
+    keys = "Space: play or pause.  .: a step.  0: again.  F: fast."
     if scene.developer:
         cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
         text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F3: editor."
     else:
-        text = f"{keys}  Esc: back to the editor."
+        text = f"{keys}  Esc: editor."
     text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
     screen.blit(fonts.small.render(text, True, colour), (16, screen.get_height() - 22))

@@ -31,8 +31,8 @@ from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
 from nektoids.levels.objectives import Outcome
 
-BOX_WIDTH = 360  # [px]
-LINE = 19  # a line of the box [px]
+BOX_WIDTH = 464  # 48 characters of Plex Mono and the padding (D-055) [px]
+LINE = 22  # a line of the box [px]
 PAD = 14  # inside the box [px]
 BUTTON = (84, 28)  # Next, and Skip left of it, at the box's foot [px]
 BUTTON_GAP = 8  # between Skip and Next [px]

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from pathlib import Path
 
 import pygame
 
@@ -208,19 +209,33 @@ SQUARE_POINT = _to_area([(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S
 ICON_AHEAD = {Kind.EYE: -0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
 
 
+# IBM Plex Mono, Medium (SIL OFL 1.1, with its licence beside it): every letter as wide as the
+# next, so the gaps within a word are even at any size (D-055). Opened by path: pygbag cannot
+# open a font from memory.
+ASSETS = Path(__file__).resolve().parent.parent / "assets"
+TEXT_FONT_FILE = ASSETS / "plexmono" / "IBMPlexMono-Medium.ttf"
+
+
 @dataclass(frozen=True)
 class Fonts:
-    text: pygame.font.Font
-    small: pygame.font.Font  # the developer view's panel
-    big: pygame.font.Font  # the title card's name, the end's thanks
+    """The fonts by their job (D-055): FreeSans Bold, pygame's own, names things; Plex Mono
+    explains them."""
+
+    text: pygame.font.Font  # what explains: info lines, counts, values, tooltips, card lines
+    small: pygame.font.Font  # the same, smaller: the tutorial, the status line, the panels
+    name: pygame.font.Font  # what names: titles, rows, objectives, info headings, buttons
+    label: pygame.font.Font  # the same, smaller: section labels, tabs, keys, the box's buttons
+    big: pygame.font.Font  # the cards' titles, the end's thanks
     icons: Icons
 
     @classmethod
     def load(cls) -> Fonts:
         """Call once at startup, after pygame.init() (web.md: every asset at startup)."""
         return cls(
-            text=pygame.font.Font(None, 22),
-            small=pygame.font.Font(None, 18),
+            text=pygame.font.Font(TEXT_FONT_FILE, 17),
+            small=pygame.font.Font(TEXT_FONT_FILE, 15),
+            name=pygame.font.Font(None, 22),
+            label=pygame.font.Font(None, 18),
             big=pygame.font.Font(None, 64),
             icons=Icons(),
         )
@@ -449,12 +464,12 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
     ink = LIT if lit else DIM_TEXT
     draw_title(screen, fonts, TIP[layout.drawer], layout.drawer_title_at, lit=lit)
     for title, (x, y, _, h) in layout.section_titles:
-        shown = fonts.small.render(title.upper(), True, ink)
+        shown = fonts.label.render(title.upper(), True, ink)
         screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
     for title, (x, y, _, h) in layout.group_titles:
         caret = "caret-right" if title in scene.folded else "caret-down"
         fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
-        shown = fonts.small.render(title.upper(), True, ink)
+        shown = fonts.label.render(title.upper(), True, ink)
         screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
     board = scene.board
     for kind, rect in layout.menu_items:
@@ -592,7 +607,7 @@ def _draw_row(
         screen.blit(label, label.get_rect(center=slot))
     elif icon is not None:
         fonts.icons.draw(screen, icon, slot, 16, ink)
-    shown = fonts.text.render(name, True, DIM_TEXT if greyed else TEXT)
+    shown = fonts.name.render(name, True, DIM_TEXT if greyed else TEXT)
     screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
     disc = TEXT if what == scene.info else DIM_TEXT
     fonts.icons.draw(screen, "circle-info", (box.left + INFO_AT, box.centery), INFO_ICON, disc)
@@ -612,12 +627,12 @@ def _draw_row(
     elif kind == "key":
         if not scene.settings.key_hints:
             return
-        cap = fonts.small.render(text, True, GREYED if greyed else DIM_TEXT)
+        cap = fonts.label.render(text, True, GREYED if greyed else DIM_TEXT)
         cap_box = cap.get_rect(midright=(right, box.centery)).inflate(10, 4)
         pygame.draw.rect(screen, RULE, cap_box, 1, border_radius=4)
         screen.blit(cap, cap.get_rect(center=cap_box.center))
     else:
-        count = fonts.text.render(text, True, DIM_TEXT if greyed else TEXT)
+        count = fonts.small.render(text, True, DIM_TEXT if greyed else TEXT)
         screen.blit(count, count.get_rect(midright=(right, box.centery)))
 
 
@@ -632,15 +647,16 @@ def _draw_tabs(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         if on:
             pygame.draw.rect(screen, BACKGROUND, box)
             pygame.draw.rect(screen, LIT, (box.left, 0, box.width, 2))
-        label = fonts.small.render(TAB_NAME[name], True, TEXT if on else DIM_TEXT)
+        label = fonts.label.render(TAB_NAME[name], True, TEXT if on else DIM_TEXT)
         screen.blit(label, label.get_rect(center=box.center))
         pygame.draw.line(screen, RULE, (box.right, 6), (box.right, TABS_HEIGHT - 6))
     title, spec = scene.caption
     if title:
         x, y = layout.caption_at
-        shown = fonts.small.render(title, True, TEXT)
+        shown = fonts.label.render(title, True, TEXT)
         screen.blit(shown, (x, y))
-        screen.blit(fonts.small.render(spec, True, DIM_TEXT), (x + shown.get_width() + 10, y))
+        base = y + fonts.label.get_ascent() - fonts.small.get_ascent()  # on one baseline
+        screen.blit(fonts.small.render(spec, True, DIM_TEXT), (x + shown.get_width() + 10, base))
 
 
 def draw_title(
@@ -648,7 +664,7 @@ def draw_title(
 ) -> None:
     """A section's title, as every view writes them: upper case, dimmed, centred in `height`;
     `lit`, in the accent, while a tutorial step explains its panel (D-050)."""
-    text = fonts.text.render(title.upper(), True, LIT if lit else DIM_TEXT)
+    text = fonts.name.render(title.upper(), True, LIT if lit else DIM_TEXT)
     screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 
@@ -699,7 +715,7 @@ def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
             lines += (f"Fastest win: {place.best.ticks * DT:.2f} s, {place.best.parts} parts.",)
     else:
         name, lines = ROW_NAME[what], (HINT.get(what) or TIP[what],)
-    rows = [fonts.text.render(name, True, TEXT)]
+    rows = [fonts.name.render(name, True, TEXT)]
     rows += [fonts.small.render(line, True, TEXT) for line in lines]
     width = max(row.get_width() for row in rows) + 2 * INFO_PAD
     height = sum(row.get_height() + 4 for row in rows) + 2 * INFO_PAD

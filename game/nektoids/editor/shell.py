@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from nektoids.editor.layout import SCREEN, Rect
 
-CARD: Rect = (SCREEN[0] // 2 - 260, 150, 520, 300)  # the title card, or a level's
+CARD: Rect = (SCREEN[0] // 2 - 300, 150, 600, 300)  # the title card, or a level's
 BUTTON_SIZE = (200, 40)  # the end screen's Chapters [px]
 END_KEY = "Esc"  # leave the end for the editor, Chapters open
 

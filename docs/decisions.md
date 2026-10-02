@@ -704,3 +704,18 @@ Music, locked until there is sound. A click on a row steps to its next choice. T
 the session (`editor/settings.py`), shared by every level's editor and the run. The info disc
 moves to 156 px into a row, 6 px on from D-053, so that "In the shadow" fits before it; the
 sandbox's row reads "Sandbox", its title in its info box.
+
+**D-055 — 2026-10-02 — Two fonts, by their job: FreeSans Bold names things, IBM Plex Mono explains them.**
+pygame's own font, FreeSans Bold, rounds each letter's advance to a whole pixel at 15 to 18 px,
+so the gaps within a word vary ("le ft", "i ts") and paragraphs read badly. In IBM Plex Mono
+every advance is the same, so the gaps are even. Chosen from seven monospaced fonts, then from
+three ways to use it, each drawn by the game. FreeSans Bold keeps what names something: titles,
+the names of rows and objectives, info boxes' headings and buttons (22 px); section labels,
+tabs, keys, the level's title and the tutorial's buttons (18 px); the cards' titles (64 px).
+Plex Mono, Medium, takes what explains: the tutorial, info lines, the status lines, counts and
+values (15 px); tooltips and the cards' lines (17 px). `Fonts` names the roles: `name` and
+`label` in FreeSans, `text` and `small` in Plex Mono, and `big`. The font ships as a file with
+its licence (SIL OFL 1.1, 137 KB), opened by path. The wider text moves three things: the
+tutorial box is 464 px wide, for 48 characters, with 22 px lines; the cards are 600 px wide; the
+Run's key line and the note over its wins are shorter. The developer view's labels crowd its
+parts a little more; it is behind DEV_VIEW.
