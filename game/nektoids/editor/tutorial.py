@@ -17,8 +17,10 @@ geometry from the layouts.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import lru_cache
 
 from nektoids.editor import arena_layout
 from nektoids.editor.layout import SCREEN, TURNS, Layout, LevelButton, Rect, Tool, View
@@ -33,6 +35,8 @@ PAD = 14  # inside the box [px]
 BUTTON = (84, 28)  # Next, and Skip left of it, at the box's foot [px]
 BUTTON_GAP = 8  # between Skip and Next [px]
 GAP = 14  # between the target and the box [px]
+PATH_MARGIN = 20  # the hand's way from one target to the next, this wide on either side [px]
+GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 RUN_TARGETS = {
     "arena": arena_layout.ARENA_AREA,
@@ -103,6 +107,12 @@ class Tutorial:
     def step(self) -> Step | None:
         """The step showing now; None once the tutorial is over."""
         return self.steps[self.index] if self.index < len(self.steps) else None
+
+    @property
+    def before(self) -> Step | None:
+        """The step just done, if the player did something for it: the box keeps clear of it."""
+        done = self.steps[self.index - 1] if 0 < self.index <= len(self.steps) else None
+        return done if done is not None and done.until else None
 
     @property
     def leads(self) -> bool:
@@ -230,17 +240,78 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
     raise ValueError(f"a step cannot show {dict(show)!r}")
 
 
-def box_rect(targets: list, lines: int, hint_at: Rect) -> Rect:
-    """The step's box: beside one of its targets, the first spot clear of them all, each spot
-    brought onto the screen, trying the right of each target, then its left, under it, over it;
-    a hint's, with no target, at the foot of `hint_at` (the board or the arena)."""
-    width, height = BOX_WIDTH, 2 * PAD + lines * LINE + 8 + BUTTON[1]
+def box_rect(targets: list, lines: int, hint_at: Rect, before: list = ()) -> Rect:
+    """The step's box. A hint's, with no target, at the foot of `hint_at` (the board or the
+    arena). A leading step's keeps clear of its targets, of the hand's way from each to the
+    next, and of the same for the step `before`, the work just done (D-048): beside a target,
+    the last first, trying its right, its left, under it, over it; else the clear spot of a
+    grid over the screen nearest the last target. Each spot is brought onto the screen."""
+    height = 2 * PAD + lines * LINE + 8 + BUTTON[1]
     if not targets:
         x, y, w, h = hint_at
-        return (x + 16, y + h - height - 16, width, height)
-    spots = [_kept_on_screen(spot) for target in targets for spot in _beside(target, width, height)]
-    clear = [spot for spot in spots if not any(_meet(spot, t) for t in targets)]
-    return clear[0] if clear else spots[0]
+        return (x + 16, y + h - height - 16, BOX_WIDTH, height)
+    return _placed(tuple(map(tuple, targets)), tuple(map(tuple, before)), height)
+
+
+@lru_cache(maxsize=32)  # drawn every frame; the grid is slow to search
+def _placed(targets: tuple, before: tuple, height: int) -> Rect:
+    rects, paths = (*targets, *before), (*_paths(targets), *_paths(before))
+
+    def clear(spot: Rect) -> bool:
+        return not any(_meet(spot, r) for r in rects) and not any(_crosses(spot, *p) for p in paths)
+
+    beside = [
+        _kept_on_screen(spot)
+        for target in reversed(targets)
+        for spot in _beside(target, BOX_WIDTH, height)
+    ]
+    for spot in beside:
+        if clear(spot):
+            return spot
+    goal = _centre(targets[-1])
+    grid = [
+        (x, y, BOX_WIDTH, height)
+        for y in range(8, SCREEN[1] - 8 - height + 1, GRID)
+        for x in range(8, SCREEN[0] - 8 - BOX_WIDTH + 1, GRID)
+    ]
+    free = [spot for spot in grid if clear(spot)]
+    if not free:
+        return beside[0]
+    return min(free, key=lambda s: (math.dist(_centre(s), goal), s[1], s[0]))
+
+
+def _paths(targets: tuple) -> list:
+    """The hand's way through a step's targets, in the step's order: from each to the next."""
+    return list(zip(targets, targets[1:], strict=False))
+
+
+def _centre(rect: Rect) -> tuple[float, float]:
+    x, y, w, h = rect
+    return (x + w / 2, y + h / 2)
+
+
+def _crosses(box: Rect, a: Rect, b: Rect) -> bool:
+    """Whether the straight way from the centre of `a` to that of `b` comes within PATH_MARGIN of
+    `box` (Liang-Barsky: the segment clipped by the box grown by the margin)."""
+    (x0, y0), (x1, y1) = _centre(a), _centre(b)
+    bx, by, bw, bh = box
+    left, top = bx - PATH_MARGIN, by - PATH_MARGIN
+    right, bottom = bx + bw + PATH_MARGIN, by + bh + PATH_MARGIN
+    dx, dy = x1 - x0, y1 - y0
+    enter, leave = 0.0, 1.0
+    for p, q in ((-dx, x0 - left), (dx, right - x0), (-dy, y0 - top), (dy, bottom - y0)):
+        if p == 0:
+            if q < 0:
+                return False  # parallel to this side, and outside it
+            continue
+        t = q / p
+        if p < 0:
+            enter = max(enter, t)
+        else:
+            leave = min(leave, t)
+        if enter > leave:
+            return False
+    return True
 
 
 def _beside(target: Rect, width: int, height: int) -> list:

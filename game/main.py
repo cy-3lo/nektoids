@@ -44,6 +44,7 @@ from nektoids.editor.tutorial import (
     box_rect,
     next_rect,
     skip_rect,
+    target_rects,
     target_spots,
 )
 from nektoids.editor.tutorial_draw import draw_tutorial
@@ -81,8 +82,12 @@ def tutorial_box(guide: Tutorial) -> tuple:
     """Where the step's target and its box are, on the screen now open."""
     scene = editor()
     spots = target_spots(guide.step.show, router.screen, scene.layout, scene.view)
+    done = guide.before  # the work just done, which the box keeps clear of too (D-048)
+    before = (
+        [] if done is None else target_rects(done.show, router.screen, scene.layout, scene.view)
+    )
     beside = ARENA_AREA if router.screen is Screen.RUN else scene.layout.board_area
-    return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside)
+    return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
 
 
 def tutorial_button(guide: Tutorial, pos: tuple[int, int]) -> str | None:

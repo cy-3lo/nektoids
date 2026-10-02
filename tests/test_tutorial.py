@@ -3,9 +3,11 @@
 from nektoids.editor.layout import SCREEN, Tool, centred_view, contains, make_layout
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
+    GAP,
     Action,
     Context,
     Tutorial,
+    _crosses,
     allows,
     box_rect,
     met,
@@ -192,3 +194,35 @@ def test_the_overlay_knows_a_cell_from_an_area_to_light_it_as_a_disc():
     assert [rect for rect, _ in spots] == target_rects(
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
+
+
+def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_beside_it():
+    menu, cell = (16, 44, 168, 40), (600, 200, 70, 80)  # centres (100, 64) and (635, 240)
+    assert _crosses((300, 100, 100, 60), menu, cell)  # the line passes through it
+    assert not _crosses((300, 300, 100, 60), menu, cell)  # well under it
+    assert not _crosses((700, 20, 100, 60), menu, cell)  # beyond the end
+
+
+def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_just_done():
+    level = LEVELS["Fear"]
+    layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
+    view = centred_view(layout)
+    tutorial = Tutorial.from_dict(level.tutorial)
+    while tutorial.step is not None:
+        step, done = tutorial.step, tutorial.before
+        targets = target_rects(step.show, Screen.EDIT, layout, view)
+        before = [] if done is None else target_rects(done.show, Screen.EDIT, layout, view)
+        if targets and not any(w > 400 for _, _, w, _ in targets):  # an area is too big to clear
+            box = box_rect(targets, len(step.say), layout.board_area, before)
+            assert on_screen(box), step.say
+            for rects in (targets, before):
+                assert not any(overlap(box, grown(t, GAP)) for t in rects), step.say
+                assert not any(
+                    _crosses(box, a, b) for a, b in zip(rects, rects[1:], strict=False)
+                ), step.say
+        tutorial.next()
+
+
+def grown(rect, by):
+    x, y, w, h = rect
+    return (x - by, y - by, w + 2 * by, h + 2 * by)
