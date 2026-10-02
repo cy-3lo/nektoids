@@ -173,6 +173,7 @@ class EditorScene(Frame):
         self.keyboard = False  # the keyboard drives, until the mouse moves
         self.swapping = False  # Swap chosen: the ring offers the parts the focused one may become
         self.turn = 0  # the ring's wheel: its first icon on the ring, the others piled
+        self.wire_chosen = False  # Wire chosen by its key or in the ring, not only at hand
         self.onward = False  # the focus came unclicked, placed or wired to: it wires only forward
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
@@ -361,9 +362,14 @@ class EditorScene(Frame):
         node = self._focused_node()
         if self.tool is Tool.WIRE and not self.ring_open and self.source is not None:
             source = self.board.nodes.get(self.source)
-            if node is not None and source is not None and node.id != source.id:
-                if self._try_wire(source, node, node.cell):
-                    self._focus_key(node.cell)
+            if node is None or source is None:
+                self._refuse("a wire runs from a part to a part", self.focused)
+            elif node.id == source.id:
+                self._refuse("a part is not wired to itself", self.focused)
+            elif self._try_wire(source, node, node.cell):
+                self._focus_key(node.cell)  # on to the part wired to
+                return
+            self._focus_key(self.focused)  # the attempt ends: Wire goes, the cursor stays
             return
         items = self.offered()
         if not self.ring_open or not self.ring_keys:
@@ -865,6 +871,7 @@ class EditorScene(Frame):
         nothing for the keyboard; round an empty cell, its parts, the first chosen."""
         self._drop_gesture()
         self.focused, self.onward = cell, True  # unless a click on the part brought it
+        self.wire_chosen = False
         self.turn = 0  # the wheel at its start
         self.ring_open, self.ring_keys = cell is not None, keys
         node = self._focused_node()
@@ -926,7 +933,7 @@ class EditorScene(Frame):
             self._turn(node.cell, -TURNS[tool] if back else TURNS[tool])
         elif tool is Tool.WIRE:
             if self._allowed(Action("tool", tool=Tool.WIRE)):
-                self.tool, self.source = Tool.WIRE, node.id
+                self.tool, self.source, self.wire_chosen = Tool.WIRE, node.id, True
                 if self.ring_keys:  # the keyboard: the arrows go to the part to wire to
                     self.ring_open = False
         elif tool is Tool.MOVE:
@@ -970,11 +977,15 @@ class EditorScene(Frame):
 
     def _click_empty(self, cell: Cell) -> None:
         """A click on an empty cell of the zone: the focused part moved there, if Move is chosen;
-        else the focus there, or dropped if it was there already."""
+        nothing focused, if Wire was chosen: a wire cannot end there; else the focus there, or
+        dropped if it was there already."""
         node = self._focused_node()
         if self.tool is Tool.MOVE and node is not None:
             if self._move_to(node, cell):
                 self._focus(cell)
+        elif self.tool is Tool.WIRE and self.wire_chosen:  # a failed wire: the attempt ends
+            self._refuse("a wire runs from a part to a part", cell)
+            self._focus(None)
         elif cell == self.focused:
             self._focus(None)
         else:
@@ -982,7 +993,8 @@ class EditorScene(Frame):
 
     def _click_part(self, cell: Cell) -> None:
         """A click on a part: the focused part wired to it, if Wire is chosen, and the focus
-        then goes to it; the focus dropped if it was there already; else the focus there.
+        then goes to it; if they cannot be wired, the attempt ends, nothing focused, the reason
+        in the status line; the focus dropped if it was there already; else the focus there.
 
         Only a part clicked wires either way round (D-026). A part focused otherwise, placed,
         moved or just wired to, wires on only forward, along the signal: an eye just placed
@@ -994,10 +1006,12 @@ class EditorScene(Frame):
             self._focus(None)
             return
         wiring = source is not None and self.tool is Tool.WIRE and node.id != source.id
-        if wiring and (not self.onward or self._forward(source, node)):
-            wired = self._try_wire(source, node, cell)  # wired or not, the focus follows
-            self._focus(cell)
-            self.onward = wired
+        fresh = self.onward and not self.wire_chosen and not self._forward(source or node, node)
+        if wiring and not fresh:
+            if self._try_wire(source, node, cell):
+                self._focus(cell)  # on to the part wired to
+            else:
+                self._focus(None)  # the attempt ends, the reason in the status line
             return
         self._focus(cell)
         self.onward = False  # clicked: it wires either way round
