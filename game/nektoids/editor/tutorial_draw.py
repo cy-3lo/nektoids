@@ -39,14 +39,17 @@ def draw_tutorial(
     step = tutorial.step
     if step is None:
         return
-    if spots:  # pygame.draw writes CLEAR as it is, alpha and all: holes in the veil
+    if spots and tutorial.explains:  # it explains: the rest dimmed, its panels outlined (D-050)
         veil = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         veil.fill(VEIL)
-        for rect, shape in spots:
+        for rect, shape in spots:  # pygame.draw writes CLEAR as it is, alpha and all: holes
             _hole(veil, CLEAR, rect, shape, 0)
         screen.blit(veil, (0, 0))
-        if tutorial.explains:  # it explains a panel: outlined, besides dimming the rest
-            for rect, shape in spots:
+        for rect, shape in spots:
+            _hole(screen, LIT, rect, shape, OUTLINE)
+    elif spots:  # it asks for an action: nothing dimmed; its cells lit by the board (D-063),
+        for rect, shape in spots:  # a row, a tool, a button outlined in the accent
+            if shape == "spot":
                 _hole(screen, LIT, rect, shape, OUTLINE)
     frame = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, frame, border_radius=8)

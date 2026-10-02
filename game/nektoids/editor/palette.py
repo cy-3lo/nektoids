@@ -164,6 +164,7 @@ THRUSTER_BACK = P.accent1.mid  # the back a thruster pushes from
 WIRE = mix(P.dim, P.parts, 0.4)
 GHOST = P.muted  # where a wire would run
 GHOST_OK = P.bright  # ... and it may connect there
+FOCUS_CELL = mix(P.surface, P.accent1.mid, 0.55)  # a cell a tutorial's step acts on (D-063)
 GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part: a paler grey, no outline
 DOOMED = P.muted  # what a Delete click would remove
 

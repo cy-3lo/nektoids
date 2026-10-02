@@ -46,6 +46,7 @@ from nektoids.editor.tutorial import (
     answer,
     box_rect,
     drawer_for,
+    focus_cells,
     guided,
     panels,
     target_rects,
@@ -285,6 +286,7 @@ async def main() -> None:
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         editor().gate = gate  # only what the step asks goes through (D-048)
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
+        editor().focus = focus_cells(guide)  # the cells a step acts on, lit (D-063)
         if playing is not None:
             playing.gate = gate
             playing.lit = panels(guide)

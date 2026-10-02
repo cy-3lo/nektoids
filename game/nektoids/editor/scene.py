@@ -134,6 +134,7 @@ class EditorScene(Frame):
         self.probing = False  # the probe held in Sense's map, following the mouse
         self.holding: int | None = None  # the eye whose meter's knob the mouse holds
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
+        self.focus: frozenset[Cell] = frozenset()  # cells a tutorial's step acts on; main.py's
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)

@@ -390,3 +390,15 @@ def test_the_runs_page_is_outlined_with_its_tab_and_the_box_keeps_under_its_head
     assert page == (arena[0], 0, arena[2], arena[1] + arena[3]) and header[3] == arena[1]
     box = box_rect([page, header], 3, arena)
     assert box[1] >= header[3] + GAP and contains(page, box[:2])  # inside, under the title
+
+
+def test_a_step_that_asks_for_an_action_lights_its_cells_and_one_that_explains_none():
+    from nektoids.editor.tutorial import focus_cells
+
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial.index = R + 3  # an Eye onto (2, -1)
+    assert focus_cells(tutorial) == {(2, -1)}  # filled in the accent, nothing dimmed (D-063)
+    tutorial.index = R + 9  # the upper eye to the upper thruster
+    assert focus_cells(tutorial) == {(2, -1), (1, -2)}
+    tutorial.index = R  # the board, explained: dimmed round it instead
+    assert focus_cells(tutorial) == frozenset() and focus_cells(None) == frozenset()

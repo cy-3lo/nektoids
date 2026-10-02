@@ -808,3 +808,11 @@ outlines the run's page as a folder: the Run tab on top, then the level's line a
 under it (`tutorial.Page`). Its header, the tabs and the level's line, counts as a target the
 box keeps clear of, so the box lies inside the page, under the level's title, with room round
 it.
+
+**D-063 — 2026-10-02 — A step that asks for an action no longer dims the screen: its cells turn to the accent, its rows and buttons are outlined. Amends D-048.**
+Dimming everything but the target made the steps that ask for an action (place a part, turn it,
+wire two parts, Run, Play) feel constrained. Now the screen keeps its light: each cell such a
+step shows is filled in the accent, under its ghost or its part, which stay as they are
+(`tutorial.focus_cells`); a row, a tool, a tab or a button it shows is outlined in the accent.
+Steps that explain keep the veil and the outline of D-050. The gate is unchanged: only what the
+step asks for goes through.

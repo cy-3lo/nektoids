@@ -176,6 +176,16 @@ def panels(tutorial: Tutorial | None) -> frozenset[str]:
     return frozenset(one.get("area") or one.get("run") for one in shows) - {None} | tabs
 
 
+def focus_cells(tutorial: Tutorial | None) -> frozenset[Cell]:
+    """The cells a step that asks for an action shows: the board fills them in the accent, and
+    nothing is dimmed (D-063). A step that explains dims the rest instead (D-050)."""
+    if tutorial is None or not tutorial.leads or tutorial.explains:
+        return frozenset()
+    show = tutorial.step.show
+    shows = show if isinstance(show, list) else [show]
+    return frozenset(_cell(one["cell"]) for one in shows if "cell" in one)
+
+
 def drawer_for(step: Step | None) -> Drawer | None:
     """The drawer a step's targets are in, which it opens as it shows: Parts for a part's row,
     Tools for a tool, the run's drawer it explains; None if it needs none (D-051, D-057)."""

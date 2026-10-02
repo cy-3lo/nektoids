@@ -80,6 +80,7 @@ from nektoids.editor.palette import (
     DOOMED,
     EYE_FACE,
     FLASH,
+    FOCUS_CELL,
     GHOST,
     GHOST_FILL,
     GHOST_OK,
@@ -301,6 +302,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             pygame.draw.polygon(screen, FLASH, hexagon)
         elif cell not in zone:
             pygame.draw.polygon(screen, OUTSIDE, hexagon)
+        elif cell in scene.focus:  # a cell a tutorial's step acts on (D-063)
+            pygame.draw.polygon(screen, FOCUS_CELL, hexagon)
         elif cell == selected:
             pygame.draw.polygon(screen, ACTIVE, hexagon)  # as lit as the tool in hand
         else:
