@@ -34,10 +34,10 @@ selection. Every refusal flashes the cell and puts the reason in the status line
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
 
 import pygame
 
+from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.history import History
 from nektoids.editor.layout import (
@@ -50,32 +50,21 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     Layout,
-    LevelButton,
-    Setting,
     Tool,
     ViewButton,
     cell_at,
     centred_view,
-    chapter_row_at,
-    drawer_button_at,
     edit_button_at,
     file_button_at,
     group_at,
-    info_at,
-    level_button_at,
     make_layout,
     menu_item_at,
     moved_view,
-    on_fold_handle,
-    palette_target_at,
     pan,
-    setting_row_at,
-    tab_at,
     tool_at,
     view_button_at,
     zoom,
 )
-from nektoids.editor.router import ChapterRow
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Board, Kind, Node, Refused, Wire
@@ -114,7 +103,7 @@ NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [he
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
 
-class EditorScene:
+class EditorScene(Frame):
     def __init__(
         self,
         board: Board,
@@ -122,13 +111,9 @@ class EditorScene:
         caption: tuple[str, str] = ("", ""),
         settings: Settings | None = None,
     ):
+        self._start_frame(layout, settings)
         self.board = board
-        self.layout = layout
-        self.caption = caption  # the level's title and spec, shown over the board
-        self.request: str | None = None  # "run" or "tutorial": for main.py, which clears it
-        self.chosen: int | None = None  # a place picked in Chapters: for main.py, which clears it
-        self.chapters: tuple[ChapterRow, ...] = ()  # what Chapters shows; main.py's
-        self.settings = settings if settings is not None else Settings()  # shared, the session's
+        self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
@@ -145,35 +130,19 @@ class EditorScene:
         self.mouse = (0, 0)
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
         self.hover: Cell | None = None  # the same, if it is in the zone
-        self.message = ""  # last refusal, empty once something succeeds
         self.cursor: Cell | None = None  # keyboard cursor, while the keyboard drives
         self.carrying = False  # Move by keyboard: grabbed with Enter, not yet dropped
-        self.tip_target: Drawer | LevelButton | None = None  # the bar's icon under the mouse
-        self.tip_frames = 0  # how long it has been there
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
-        self.info: object | None = None  # the row whose info box is open: a part, a tool...
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
-        self.lit: frozenset[str] = (
-            frozenset()
-        )  # panels a tutorial step explains: "menu"... main.py's
-        self.gate: Callable[[Action], bool] | None = (
-            None  # what the tutorial lets through; main.py's
-        )
 
     def update(self) -> None:
         """Once per frame."""
         if self.flash_frames > 0:
             self.flash_frames -= 1
-        if self.tip_target is not None:
-            self.tip_frames += 1
-
-    @property
-    def tooltip(self) -> Tool | ViewButton | str | None:
-        """The palette button whose tooltip shows now, if any."""
-        return self.tip_target if self.tip_frames >= self.settings.tooltip_frames else None
+        self.frame_update()
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION and self.cursor is not None and event.rel == (0, 0):
@@ -219,8 +188,7 @@ class EditorScene:
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS]
-            chapters = self.layout.drawer is Drawer.CHAPTERS
-            self.open_drawer(None if chapters else Drawer.CHAPTERS)
+            self.toggle_chapters()
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
             kinds = [k for _, group in MENU_GROUPS for k in group if k in self.layout.kinds]
@@ -292,9 +260,7 @@ class EditorScene:
             dx, dy = pos[0] - self.panning_from[0], pos[1] - self.panning_from[1]
             self.view, self.panning_from = pan(self.view, dx, dy), pos
         self.mouse = pos
-        target = palette_target_at(self.layout, pos)
-        if target != self.tip_target:
-            self.tip_target, self.tip_frames = target, 0
+        self.frame_track(pos)
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
         self.pointed = pointed
@@ -306,31 +272,7 @@ class EditorScene:
             self._drag_to(pointed)
 
     def _press(self, pos: tuple[int, int]) -> None:
-        if on_fold_handle(self.layout, pos):
-            self.open_drawer(None)
-            return
-        drawer = drawer_button_at(self.layout, pos)
-        if drawer is not None:  # the open drawer's icon folds it (D-051)
-            self.open_drawer(None if drawer is self.layout.drawer else drawer)
-            return
-        if tab_at(self.layout, pos) == "run":
-            self._ask("run")
-            return
-        level = level_button_at(self.layout, pos)
-        if level is not None:
-            self._ask(level.value)  # "run"
-            return
-        what = info_at(self.layout, pos)  # inside its row: before the row's own action
-        if what is not None:
-            self.info = what
-            return
-        place = chapter_row_at(self.layout, pos)
-        if place is not None:
-            self._choose_place(place)
-            return
-        setting = setting_row_at(self.layout, pos)
-        if setting is not None:
-            self._set(setting)
+        if self.frame_press(pos):
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:
@@ -388,45 +330,14 @@ class EditorScene:
         if self.pointed is not None:
             self._add(self.pointed)
 
-    def open_drawer(self, drawer: Drawer | None) -> None:
-        """Open a drawer, or fold the open one (None): the board's view slides with its centre."""
-        before = self.layout
-        self.layout = self._relayout(drawer)
-        self.view = moved_view(self.view, before, self.layout)
-        self.info = None
+    def _slid(self, before: Layout, after: Layout) -> None:
+        """The board moved: the view slides with its centre, so nothing jumps."""
+        self.view = moved_view(self.view, before, after)
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         """The layout with `drawer` open, the same parts handed out and the same chapter."""
         kinds, chapter = self.layout.kinds, self.layout.chapter
         return make_layout(drawer, frozenset(self.folded), kinds, chapter)
-
-    def _choose_place(self, index: int) -> None:
-        """A level or the sandbox, picked in Chapters, if it is open and the tutorial lets it."""
-        state = next((row.state for row in self.chapters if row.index == index), "open")
-        if state == "locked":
-            self._refuse("it opens once the level before it is won", None)
-        elif self._allowed(Action("map")):
-            self._cancel()
-            self.chosen = index
-
-    def _set(self, setting: Setting) -> None:
-        """A row of Settings: each choice in turn, or Fear's tutorial again (D-054)."""
-        if setting is Setting.FAST:
-            self.settings.next_fast()
-        elif setting is Setting.HINTS:
-            self.settings.toggle_hints()
-        elif setting is Setting.TOOLTIPS:
-            self.settings.next_tooltip()
-        elif setting is Setting.TUTORIAL:
-            self._ask("tutorial")
-        else:
-            self._refuse("there is no sound yet", None)
-
-    def _ask(self, request: str) -> None:
-        """Run or Fear's tutorial again, for main.py, if the tutorial lets it through."""
-        if self._allowed(Action(request)):
-            self._cancel()
-            self.request = request
 
     def _allowed(self, action: Action, cell: Cell | None = None) -> bool:
         """Whether the tutorial's step lets `action` through (D-048); if not, say so."""
@@ -667,6 +578,6 @@ class EditorScene:
             self.ghost = self.board.preview(*self.board.orient(start, target.id))
             self.ghost_connects = isinstance(self.ghost, tuple)
 
-    def _refuse(self, reason: str, cell: Cell | None) -> None:
+    def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason
         self.flash_cell, self.flash_frames = cell, FLASH_FRAMES

@@ -104,6 +104,11 @@ class Drawer(Enum):  # in the activity bar's order (D-051)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
 
 
+class Env(Enum):  # the environments, each a tab over the main screen (D-051)
+    EDITOR = "editor"
+    RUN = "run"
+
+
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
 
 
@@ -142,6 +147,7 @@ KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layou
 
 @dataclass(frozen=True)
 class Layout:
+    env: Env  # the editor's frame, or the run's
     kinds: frozenset[Kind]  # the parts the level hands out: the only ones Parts shows
     drawer: Drawer | None  # the drawer open, if one is
     chapter: int  # how many levels the chapter has: Chapters' rows, then the sandbox's
@@ -180,6 +186,7 @@ def make_layout(
     folded: frozenset[str] = frozenset(),
     kinds: frozenset[Kind] = frozenset(Kind),
     chapter: int = 0,
+    env: Env = Env.EDITOR,
 ) -> Layout:
     """The bar, the open drawer's rows and the board. folded: Parts' groups shown closed;
     kinds: the parts the level hands out, the only ones Parts shows (D-039); chapter: how many
@@ -214,6 +221,7 @@ def make_layout(
         x += w
     open_ = drawer is not None
     return Layout(
+        env=env,
         kinds=kinds,
         drawer=drawer,
         chapter=chapter,

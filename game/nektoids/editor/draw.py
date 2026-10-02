@@ -19,12 +19,14 @@ it, a circle round a wedge, tip forward.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 import pygame
 
 from nektoids.editor.devdrive import DT
+from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
 from nektoids.editor.icons import (
     DRAWER_ICON,
@@ -245,12 +247,12 @@ class Fonts:
 def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
     _draw_board(screen, scene, fonts)
-    _draw_tabs(screen, scene, fonts)
+    draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
-    _draw_bar(screen, scene, fonts)
-    _draw_drawer(screen, scene, fonts)
-    _draw_tooltip(screen, scene, fonts)
-    _draw_info(screen, scene, fonts)
+    draw_bar(screen, scene, fonts)
+    draw_drawer(screen, scene, fonts, _draw_rows)
+    draw_tooltip(screen, scene, fonts)
+    draw_info(screen, scene, fonts, _about)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
         angle = placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
@@ -430,12 +432,12 @@ def _centre(view: View, cell: Cell) -> tuple[float, float]:
     return to_pixel(cell, view.size, view.origin)
 
 
-# Menu, palette, status
+# The frame, the editor's and the run's (D-051): `scene` is a `frame.Frame`
 
 
-def _draw_bar(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     """The activity bar: the drawers' icons, the open one lit, an accent bar on its edge; at the
-    foot, Chapters and the accented switch to the Run."""
+    foot, Settings, Chapters and the accented switch to the other environment."""
     layout = scene.layout
     pygame.draw.rect(screen, BAR, layout.bar_area)
     for drawer, rect in layout.drawer_buttons:
@@ -444,17 +446,16 @@ def _draw_bar(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
         if on:
             pygame.draw.rect(screen, LIT, (0, box.top + 2, 3, box.height - 4))
         fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, TEXT if on else DIM_TEXT)
-    for button, rect in layout.level_buttons:
+    for button, rect in layout.level_buttons:  # the switch
         box = pygame.Rect(rect)
-        if button is LevelButton.RUN:
-            pygame.draw.rect(screen, ACTIVE, box, border_radius=8)
-            fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 18, TEXT)
-        else:
-            fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 22, DIM_TEXT)
+        pygame.draw.rect(screen, ACTIVE, box, border_radius=8)
+        fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 18, TEXT)
 
 
-def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The open drawer: its title, its sections or groups, its rows, the arrow that folds it."""
+def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callable) -> None:
+    """The open drawer: its title, its sections or groups, its rows, the arrow that folds it.
+    `rows(screen, scene, fonts)` draws the environment's own rows; Settings' and Chapters' are
+    drawn here."""
     layout = scene.layout
     if layout.drawer is None:
         return
@@ -472,17 +473,27 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
         fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
         shown = fonts.label.render(title.upper(), True, ink)
         screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
-    board = scene.board
+    rows(screen, scene, fonts)
+    _draw_settings(screen, scene, fonts)
+    _draw_chapters(screen, scene, fonts)
+    handle = pygame.Rect(layout.fold_handle)
+    corners = {"border_top_right_radius": 6, "border_bottom_right_radius": 6}
+    pygame.draw.rect(screen, PANEL, handle, **corners)
+    pygame.draw.rect(screen, RULE, handle, 1, **corners)
+    fonts.icons.draw(screen, "chevron-left", handle.center, 11, DIM_TEXT)
+
+
+def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The editor's own drawers' rows: Parts, Tools, Navigator."""
+    layout, board = scene.layout, scene.board
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
         picked = kind == scene.picked
-        _draw_row(
-            screen, scene, fonts, rect, kind, NAME[kind], status, picked, left == 0, part=kind
-        )
+        draw_row(screen, scene, fonts, rect, kind, NAME[kind], status, picked, left == 0, part=kind)
     for tool, rect in layout.tool_buttons:
         key = ("key", TOOL_KEYS[tool])
-        _draw_row(
+        draw_row(
             screen,
             scene,
             fonts,
@@ -496,7 +507,7 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
     can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
     for button, rect in layout.edit_buttons:
         key = ("key", EDIT_KEYS[button].replace("+", " "))
-        _draw_row(
+        draw_row(
             screen,
             scene,
             fonts,
@@ -509,7 +520,7 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
             icon=EDIT_ICON[button],
         )
     for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
-        _draw_row(
+        draw_row(
             screen,
             scene,
             fonts,
@@ -524,7 +535,7 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
     for button, rect in layout.view_buttons:
         active = button is ViewButton.PAN and scene.tool is Tool.PAN
         key = ("key", VIEW_KEYS[button])
-        _draw_row(
+        draw_row(
             screen,
             scene,
             fonts,
@@ -535,6 +546,9 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
             active,
             icon=VIEW_ICON[button],
         )
+
+
+def _draw_settings(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     settings = scene.settings
     shown = {
         Setting.FAST: ("count", f"{settings.fast}x"),
@@ -542,13 +556,16 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
         Setting.TOOLTIPS: ("count", f"{settings.tooltip_seconds:.1f} s"),
         Setting.TUTORIAL: ("none", ""),
     }
-    for setting, rect in layout.setting_rows:
+    for setting, rect in scene.layout.setting_rows:
         name, icon, _ = SETTING[setting]
         status = shown.get(setting, ("lock", ""))
         greyed = setting not in shown  # Sound and Music: no sound yet
-        _draw_row(screen, scene, fonts, rect, setting, name, status, False, greyed, icon=icon)
+        draw_row(screen, scene, fonts, rect, setting, name, status, False, greyed, icon=icon)
+
+
+def _draw_chapters(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     places = {row.index: row for row in scene.chapters}
-    for index, rect in layout.chapter_rows:
+    for index, rect in scene.layout.chapter_rows:
         row = places.get(index)
         if row is None:
             continue
@@ -559,7 +576,7 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
         badge = row.label or None
         icon = None if badge else "border-all"  # the sandbox
         locked = row.state == "locked"
-        _draw_row(
+        draw_row(
             screen,
             scene,
             fonts,
@@ -572,16 +589,11 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
             icon=icon,
             badge=badge,
         )
-    handle = pygame.Rect(layout.fold_handle)
-    corners = {"border_top_right_radius": 6, "border_bottom_right_radius": 6}
-    pygame.draw.rect(screen, PANEL, handle, **corners)
-    pygame.draw.rect(screen, RULE, handle, 1, **corners)
-    fonts.icons.draw(screen, "chevron-left", handle.center, 11, DIM_TEXT)
 
 
-def _draw_row(
+def draw_row(
     screen: pygame.Surface,
-    scene: EditorScene,
+    scene: Frame,
     fonts: Fonts,
     rect,
     what: object,
@@ -637,15 +649,15 @@ def _draw_row(
         screen.blit(count, count.get_rect(midright=(right, box.centery)))
 
 
-def _draw_tabs(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The tabs over the board, Editor lit; under them, inside the Editor's tab, the level's
-    title and what it asks, on one baseline, a rule under them (D-056)."""
+def draw_tabs(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
+    """The tabs over the main screen, the open one lit; under them, inside it, the level's title
+    and what it asks, on one baseline, a rule under them (D-056)."""
     layout = scene.layout
     left = layout.board_area[0]
     pygame.draw.rect(screen, BAR, (left, 0, SCREEN[0] - left, TABS_HEIGHT))
     for name, rect in layout.tabs:
         box = pygame.Rect(rect)
-        on = name == "editor"
+        on = name == layout.env.value
         if on:
             pygame.draw.rect(screen, BACKGROUND, box)
             pygame.draw.rect(screen, LIT, (box.left, 0, box.width, 2))
@@ -690,7 +702,7 @@ def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
     screen.blit(shown, shown.get_rect(center=box.center))
 
 
-def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     """The name of the bar's icon under the mouse, and its key if it has one, beside the bar."""
     target = scene.tooltip
     if target is None:
@@ -702,15 +714,15 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     draw_tip(screen, fonts, text, midleft=(BAR_WIDTH + 10, y + h // 2))
 
 
-def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The open info box, beside the drawer at its row: the name, then what it does."""
+def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callable) -> None:
+    """The open info box, beside the drawer at its row: the name, then what it does. A setting's
+    and a place's are told here; `about(scene, what)` tells the environment's own, as a name
+    and its lines."""
     if scene.info is None:
         return
     what = scene.info
     places = {row.index: row for row in scene.chapters}
-    if isinstance(what, Kind):
-        name, lines = NAME[what], info(what)
-    elif isinstance(what, Setting):
+    if isinstance(what, Setting):
         name, _, line = SETTING[what]
         lines = (line,)
     elif isinstance(what, int) and what in places:
@@ -719,7 +731,7 @@ def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         if place.best is not None:
             lines += (f"Fastest win: {place.best.ticks * DT:.2f} s, {place.best.parts} parts.",)
     else:
-        name, lines = ROW_NAME[what], (HINT.get(what) or TIP[what],)
+        name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]
     rows += [fonts.small.render(line, True, TEXT) for line in lines]
     width = max(row.get_width() for row in rows) + 2 * INFO_PAD
@@ -736,6 +748,13 @@ def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         y += row.get_height() + 4
 
 
+def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
+    """What the editor's info boxes say: a part's entry, or what a row does."""
+    if isinstance(what, Kind):
+        return NAME[what], tuple(info(what))
+    return ROW_NAME[what], (HINT.get(what) or TIP[what],)
+
+
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     if scene.message:
         text, colour = scene.message, REFUSED
@@ -743,6 +762,11 @@ def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
         text, colour = scene.ghost.reason, REFUSED
     else:
         text, colour = HINT[scene.tool], DIM_TEXT
+    draw_status_line(screen, scene, fonts, text, colour)
+
+
+def draw_status_line(screen: pygame.Surface, scene: Frame, fonts: Fonts, text: str, colour) -> None:
+    """The status line under the main screen: a hint, the keys, or why something was refused."""
     left = scene.layout.board_area[0]
     strip = (left, SCREEN[1] - STATUS_HEIGHT, SCREEN[0] - left, STATUS_HEIGHT)
     pygame.draw.rect(screen, BAR, strip)
