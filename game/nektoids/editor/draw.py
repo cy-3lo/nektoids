@@ -53,6 +53,7 @@ from nektoids.editor.palette import (
     DARK,
     DIM_TEXT,
     DOOMED,
+    EYE_FACE,
     FLASH,
     GHOST,
     GHOST_FILL,
@@ -68,6 +69,7 @@ from nektoids.editor.palette import (
     RULE,
     SWATCH_OFF,
     TEXT,
+    THRUSTER_BACK,
     TOOLTIP_BG,
     WIRE,
     ZONE,
@@ -111,6 +113,8 @@ HINT = {
 MENU_ANGLE = {Kind.EYE: 90.0, Kind.THRUSTER: 90.0}
 
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
+FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
+FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 12  # a menu row's info disc [px]
 INFO_PAD = 12  # inside the info box [px]
 
@@ -138,6 +142,8 @@ def _arc(start: int, stop: int) -> list[tuple[float, float]]:
 
 _S = 1.0 / math.sqrt(2.0)  # half-side of the square inscribed in the unit circle
 _SHOULDER = _S * (1.0 - math.tan(math.radians(15.0)))
+# The eye's and the thruster's outlines end where their face begins: the edge from the last
+# point back to the first is the face, drawn in its accent (D-047).
 # Eye: a disc with its front cut off by a chord at half the radius. The flat face is the
 # photosensor, and it looks forward (D-019, D-020).
 EYE_DISC = _to_area(_arc(60, 301))
@@ -145,7 +151,7 @@ EYE_DISC = _to_area(_arc(60, 301))
 DISC = _to_area(_arc(0, 360))
 DIAMOND = _to_area([(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)])
 # Thruster: a square, its front corners cut so the front is a point of 150° that ends on the
-# square's front edge: the outline stays square, 1:1.
+# square's front edge: the outline stays square, 1:1. Its face is its back, where it pushes from.
 SQUARE_POINT = _to_area([(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)])
 # Icon shift along the facing [hex sizes]: the eye's shape runs from its rim, a radius R behind
 # the centre, to its flat face, half a radius ahead, so its middle lies R/4 behind the centre.
@@ -300,6 +306,9 @@ def draw_part(
     fill = fill or COMPONENT
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
+    if kind in FACE:  # the closing edge, astride the outline
+        width = max(2, round(FACE_WIDTH * size))
+        pygame.draw.line(screen, FACE[kind], outline[-1], outline[0], width)
     if locked:
         pygame.draw.polygon(screen, LOCK_RING, _shape(kind, angle, centre, 1.25 * size), 2)
     icon_size = max(10, round(ICON_SCALE.get(kind, 0.5) * size))

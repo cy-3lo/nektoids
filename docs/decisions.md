@@ -563,7 +563,9 @@ for marks on parts, bright for highlights over dark ground. `sense` is the eyes'
 tutorial's (the tool in hand, the eye's face, a target's outline), `act` the thrusters' and the
 swimmer's. The signals keep their hues: red for refusals and lost runs, amber for the developer
 view. Below the palette, each colour the drawing code uses is defined from a role, under the
-names it had: `BACKGROUND = P.base`, `ACTIVE = P.sense.dark`, `BODY = P.act.bright`.
+names it had: `BACKGROUND = P.base`, `ACTIVE = P.sense.dark`, `BODY = P.act.bright`. The eye's
+flat face and the thruster's back are drawn in their accent's mid level, a band astride the
+edge, wherever a part is drawn: the board, the menu, the tutorial's ghosts, the run's column.
 `PALETTE = make_palette(tint_hue=150, tint_chroma=0.028, sense_hue=315, act_hue=235)`: green-grey,
 violet and sky blue, chosen among ten candidates rendered into the editor, a run and a tutorial
 step (the page is in this session's artifacts). Changing those four numbers changes every colour.

@@ -18,8 +18,8 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
       menu, a click on its row that does not pick it up; on the board, the Add tool, or a ?).
 - [x] Each level says what it asks when it opens: its objective in a line or two, before any
       wiring (D-042).
-- [ ] Make it plain that an eye senses through its flat face (D-020). The info box says so
-      (`parts.py`), but the drawing does not single that face out.
+- [x] Make it plain that an eye senses through its flat face (D-020): drawn in its accent,
+      and a thruster's back in the other (D-047).
 - [ ] A passkey for each level: a word typed on the map opens that level at once, so a player
       who comes back does not win the ones before it again. Words of our own, not song titles
       (French law protects an original title, CPI L112-4). Nothing is stored, so this is not
