@@ -18,6 +18,10 @@ from nektoids.graph.dynamics import RATE_MAX, wire_flux
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import Network
 
+BEAD_RADIUS = 0.12  # a bead on a wire, and a handle's knob [hex sizes]
+METER_HEIGHT = 1.0  # every part's level meter, eye or thruster alike (D-052) [hex sizes]
+METER_AT = 0.86  # its centre right of the part's, past every part's reach [hex sizes]
+
 
 class Circuit:
     def __init__(self, board: Board, area: Rect, margin: float, body: bool = False):

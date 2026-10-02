@@ -21,6 +21,7 @@ from nektoids.editor.layout import (
     FileButton,
     Goal,
     LevelButton,
+    MainView,
     Setting,
     Tool,
     ViewButton,
@@ -33,6 +34,7 @@ from nektoids.editor.layout import (
     group_at,
     info_at,
     level_button_at,
+    main_view_at,
     make_layout,
     menu_item_at,
     moved_view,
@@ -287,3 +289,15 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert [name for name, _ in run.tabs] == ["editor", "run"] and run.caption_at[1] < arena[1]
     folded = make_layout(None, env=Env.RUN)
     assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]
+
+
+def test_the_editor_has_two_main_views_in_its_main_screens_corner_and_the_run_none():
+    rects = dict(LAYOUT.view_switch)  # the Diagram view and the Run preview (D-058)
+    assert list(rects) == list(MainView)
+    (x1, y1, w1, _), (x2, y2, _, _) = rects.values()
+    assert y1 == y2 and x1 + w1 < x2
+    for view, (x, y, w, h) in rects.items():
+        assert contains(LAYOUT.board_area, (x, y)) and contains(LAYOUT.board_area, (x + w, y + h))
+        assert main_view_at(LAYOUT, (x + w // 2, y + h // 2)) is view
+        assert palette_target_at(LAYOUT, (x + w // 2, y + h // 2)) is view  # its tooltip
+    assert make_layout(env=Env.RUN).view_switch == ()

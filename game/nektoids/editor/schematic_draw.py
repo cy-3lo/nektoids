@@ -13,7 +13,7 @@ import numpy as np
 import pygame
 
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
-from nektoids.editor.circuit import Circuit
+from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import knob_y, track_for
 from nektoids.editor.draw import (
     Fonts,
@@ -42,10 +42,7 @@ from nektoids.graph.board import Kind
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 
-BEAD_RADIUS = 0.12  # hex sizes
 BAR_WIDTH = 6  # [px]
-METER_HEIGHT = 1.0  # every part's level meter, eye or thruster alike [hex sizes]
-METER_AT = 0.86  # its centre right of the part's, past every part's reach [hex sizes]
 METER_WIDTH = 10  # [px]
 HEADINGS = {"head": DIM_TEXT, "eq": TEXT, "warn": WARN}
 LINE_HEIGHT = 17  # [px]

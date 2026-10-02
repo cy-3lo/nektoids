@@ -30,7 +30,8 @@ from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
 from nektoids.editor.devdrive import SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
-from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, contains, make_layout
+from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
+from nektoids.editor.preview_draw import draw_preview
 from nektoids.editor.router import Router, Screen
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.schematic import SchematicScene
@@ -128,7 +129,7 @@ def editor() -> EditorScene:
         board = router.board
         handed_out = frozenset(kind for kind in Kind if board.total(kind) != 0)
         layout = make_layout(kinds=handed_out, chapter=len(levels))
-        editors[router.index] = EditorScene(board, layout, caption, settings)
+        editors[router.index] = EditorScene(board, layout, caption, settings, level)
     return editors[router.index]
 
 
@@ -291,7 +292,8 @@ async def main() -> None:
             draw_arena(screen, playing, fonts)
         else:
             editor().update()
-            draw(screen, editor(), fonts)
+            preview = editor().main is MainView.PREVIEW  # the Run preview, not the board (D-058)
+            draw(screen, editor(), fonts, draw_preview if preview else None)
             if router.screen is Screen.TITLE:
                 draw_title_card(screen, fonts)
             elif router.screen is Screen.SPEC:

@@ -37,6 +37,7 @@ import math
 
 import pygame
 
+from nektoids.editor.devdrive import TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.history import History
@@ -50,6 +51,7 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     Layout,
+    MainView,
     Tool,
     ViewButton,
     cell_at,
@@ -57,6 +59,7 @@ from nektoids.editor.layout import (
     edit_button_at,
     file_button_at,
     group_at,
+    main_view_at,
     make_layout,
     menu_item_at,
     moved_view,
@@ -65,6 +68,7 @@ from nektoids.editor.layout import (
     view_button_at,
     zoom,
 )
+from nektoids.editor.probe import Probe
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Board, Kind, Node, Refused, Wire
@@ -78,6 +82,7 @@ from nektoids.graph.hexgrid import (
     to_pixel,
     vertical_step,
 )
+from nektoids.levels.level import Level
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
@@ -110,9 +115,14 @@ class EditorScene(Frame):
         layout: Layout,
         caption: tuple[str, str] = ("", ""),
         settings: Settings | None = None,
+        level: Level | None = None,
     ):
         self._start_frame(layout, settings)
         self.board = board
+        self.level = level  # where the Run preview's probe stands; None: no preview
+        self.main = MainView.DIAGRAM  # what the main screen shows (D-058)
+        self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
+        self._probed = None  # the board as the probe was made for it
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
         self.tool = Tool.ADD
@@ -143,6 +153,26 @@ class EditorScene(Frame):
         if self.flash_frames > 0:
             self.flash_frames -= 1
         self.frame_update()
+        if self.main is MainView.PREVIEW:
+            self._probe_now()
+            for _ in range(TICKS_PER_FRAME):
+                self.probe.tick()
+
+    def _probe_now(self) -> None:
+        """The probe, made again if the board changed since; it stays where it stood."""
+        now = self.board.snapshot()
+        if self.probe is None or now != self._probed:
+            pose = self.probe.pose if self.probe is not None else None
+            self.probe = Probe(self.board, self.level, self.layout.board_area, pose)
+            self._probed = now
+
+    def show(self, view: MainView) -> None:
+        """The main screen shows the Diagram view or the Run preview (D-058)."""
+        if view is MainView.PREVIEW and self.level is None:
+            self._refuse("there is no level to run the board in")
+        elif view is not self.main and self._allowed(Action("view")):
+            self._cancel()
+            self.main = view
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION and self.cursor is not None and event.rel == (0, 0):
@@ -181,10 +211,13 @@ class EditorScene(Frame):
                 self._edit(EditButton.REDO)
             return  # no other shortcut with Ctrl or Cmd: they are the browser's
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
+        on_board = self.main is MainView.DIAGRAM  # the cursor and Enter work on the board
         if arrow is not None:
-            self._arrow(arrow)
+            if on_board:
+                self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
-            self._enter()
+            if on_board:
+                self._enter()
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS]
@@ -274,6 +307,10 @@ class EditorScene(Frame):
     def _press(self, pos: tuple[int, int]) -> None:
         if self.frame_press(pos):
             return
+        view = main_view_at(self.layout, pos)
+        if view is not None:
+            self.show(view)
+            return
         tool = tool_at(self.layout, pos)
         if tool is not None:
             self._choose(tool)
@@ -297,6 +334,8 @@ class EditorScene(Frame):
         kind = menu_item_at(self.layout, pos)
         if kind is not None:
             self._pick(kind)
+            return
+        if self.main is MainView.PREVIEW:  # the board is not on screen to edit
             return
         if self.pointed is None:
             return
@@ -331,8 +370,11 @@ class EditorScene(Frame):
             self._add(self.pointed)
 
     def _slid(self, before: Layout, after: Layout) -> None:
-        """The board moved: the view slides with its centre, so nothing jumps."""
+        """The board moved: the view slides with its centre, so nothing jumps; the Run preview
+        fits its new room."""
         self.view = moved_view(self.view, before, after)
+        if self.probe is not None:
+            self.probe.fit(after.board_area)
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         """The layout with `drawer` open, the same parts handed out and the same chapter."""
@@ -400,6 +442,7 @@ class EditorScene(Frame):
         if not self._allowed(Action("tool", tool=tool)):
             return
         self._cancel()
+        self.main = MainView.DIAGRAM  # a tool is for the board
         self.tool = tool
         if tool in TURNS and self.selected is not None:
             self._turn(self.board.nodes[self.selected].cell, TURNS[tool])
@@ -408,6 +451,7 @@ class EditorScene(Frame):
         if not self._allowed(Action("pick", kind=kind)):
             return
         self._cancel()
+        self.main = MainView.DIAGRAM  # a part is for the board
         self.tool = Tool.ADD
         if self.board.remaining(kind) == 0:
             self._refuse("none left", None)

@@ -322,3 +322,10 @@ def test_a_tool_shown_while_tools_is_closed_lights_the_drawers_icon():
         dict(parts.drawer_buttons)[Drawer.TOOLS]
     ]
     assert target_rects(show, Screen.EDIT, tools, VIEW) == [dict(tools.tool_buttons)[Tool.WIRE]]
+
+
+def test_a_leading_step_keeps_the_board_on_screen():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial.index = 3  # an Eye to drag onto its cell
+    assert not allows(tutorial.step, Action("view"))  # no Run preview while it leads (D-058)
+    assert allows(None, Action("view"))

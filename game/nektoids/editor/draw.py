@@ -55,6 +55,7 @@ from nektoids.editor.layout import (
     EditButton,
     FileButton,
     LevelButton,
+    MainView,
     Setting,
     Tool,
     View,
@@ -115,6 +116,8 @@ TIP = {
     FileButton.LOAD: "Load: not yet",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
+    MainView.DIAGRAM: "Diagram view",
+    MainView.PREVIEW: "Run preview",
     Drawer.PARTS: "Parts",
     Drawer.TOOLS: "Tools",
     Drawer.OBJECTIVES: "Objectives",
@@ -250,9 +253,14 @@ class Fonts:
         )
 
 
-def draw(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+def draw(
+    screen: pygame.Surface, scene: EditorScene, fonts: Fonts, main: Callable | None = None
+) -> None:
+    """The editor: its main screen, the board on its grid, or what `main(screen, scene, fonts)`
+    draws there instead (the Run preview, D-058); then the frame round it."""
     screen.fill(BACKGROUND)
-    _draw_board(screen, scene, fonts)
+    (main or _draw_board)(screen, scene, fonts)
+    _draw_view_switch(screen, scene, fonts)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
@@ -489,6 +497,36 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
     fonts.icons.draw(screen, "chevron-left", handle.center, 11, DIM_TEXT)
 
 
+def _draw_view_switch(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The main view's two buttons, as big as the switch: the Diagram view, three hex cells; the
+    Run preview, an operator with two wires in at 45 degrees and one out, a bead on each."""
+    for view, rect in scene.layout.view_switch:
+        box = pygame.Rect(rect)
+        on = view is scene.main
+        pygame.draw.rect(screen, ACTIVE if on else BUTTON, box, border_radius=8)
+        ink = TEXT if on else DIM_TEXT
+        cx, cy = box.center
+        if view is MainView.DIAGRAM:
+            for dx, dy in ((-5, 4), (5, 4), (0, -5)):
+                pygame.draw.polygon(screen, ink, _small_hexagon((cx + dx, cy + dy), 5.6), 2)
+            continue
+        diamond = [(cx - 5, cy), (cx + 2, cy - 7), (cx + 9, cy), (cx + 2, cy + 7)]
+        pygame.draw.polygon(screen, ink, diamond)
+        for dy in (-1, 1):  # into the middle of its two left edges, square to them
+            end = (cx - 1.5, cy + dy * 3.5)
+            start = (end[0] - 9, end[1] + dy * 9)
+            pygame.draw.line(screen, ink, start, end, 2)
+            pygame.draw.circle(screen, ink, (start[0] + 3.5, start[1] - dy * 3.5), 2.5)
+        pygame.draw.line(screen, ink, (cx + 9, cy), (cx + 16, cy), 2)
+        pygame.draw.circle(screen, ink, (cx + 14, cy), 2.5)
+
+
+def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[float, float]]:
+    """A hex cell's corners for an icon, pointy side up, as the board draws them."""
+    angles = (math.radians(30 + 60 * k) for k in range(6))
+    return [(centre[0] + radius * math.cos(a), centre[1] + radius * math.sin(a)) for a in angles]
+
+
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """The editor's own drawers' rows: Parts, Tools, Navigator."""
     layout, board = scene.layout, scene.board
@@ -711,9 +749,16 @@ def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
 
 
 def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
-    """The name of the bar's icon under the mouse, and its key if it has one, beside the bar."""
+    """The name of the bar's icon under the mouse, and its key if it has one, beside the bar;
+    a main view's button's under it."""
     target = scene.tooltip
     if target is None:
+        return
+    if isinstance(target, MainView):
+        x, y, w, h = dict(scene.layout.view_switch)[target]
+        width = fonts.text.size(TIP[target])[0] + 16
+        right = min(x + w // 2 + width // 2, SCREEN[0] - 4) - 8
+        draw_tip(screen, fonts, TIP[target], topright=(right, y + h + 10))
         return
     rects = dict(scene.layout.drawer_buttons) | dict(scene.layout.level_buttons)
     _, y, _, h = rects[target]

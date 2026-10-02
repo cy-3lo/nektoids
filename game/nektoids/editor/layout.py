@@ -33,7 +33,7 @@ SCREEN = (960, 640)  # [px]
 BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
-SWITCH = 36  # the accented switch at its foot, square [px]
+SWITCH = 36  # the accented switch at its foot, square [px]; the main view's buttons too
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
@@ -111,6 +111,11 @@ class Drawer(Enum):  # D-051
     NAVIGATOR = "navigator"  # zoom, hand, centre; the rays in the run
     SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
+
+
+class MainView(Enum):  # what the editor's main screen shows (D-051, D-058)
+    DIAGRAM = "diagram"  # the board on its hex grid, to edit
+    PREVIEW = "preview"  # the Run preview: the board as it runs, where the probe stands
 
 
 class Env(Enum):  # the environments, each a tab over the main screen (D-051)
@@ -193,6 +198,7 @@ class Layout:
     tabs: tuple[tuple[str, Rect], ...]  # "editor", "run"
     board_area: Rect  # the main screen: the board, or in the run the arena
     controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
+    view_switch: tuple[tuple[MainView, Rect], ...]  # in the editor, over the main screen's corner
     caption_at: tuple[int, int]  # top-left corner of the level's title and spec, under the tabs
     status_at: tuple[int, int]  # top-left corner of the status line
 
@@ -278,6 +284,12 @@ def make_layout(
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
         controls_area=(left, main, width - left, CONTROLS_HEIGHT) if env is Env.RUN else None,
+        view_switch=tuple(
+            (view, (width - 8 - (2 - k) * (SWITCH + 6) + 6, TOP + 8, SWITCH, SWITCH))
+            for k, view in enumerate(MainView)
+        )
+        if env is Env.EDITOR
+        else (),
         caption_at=(left + MARGIN, TABS_HEIGHT + 6),
         status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
     )
@@ -368,9 +380,19 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
     return next((g for g, rect in layout.goal_rows if contains(rect, point)), None)
 
 
-def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelButton | None:
-    """What a tooltip would name under `point`: an icon of the activity bar."""
-    return drawer_button_at(layout, point) or level_button_at(layout, point)
+def palette_target_at(
+    layout: Layout, point: tuple[int, int]
+) -> Drawer | LevelButton | MainView | None:
+    """What a tooltip would name under `point`: an icon of the bar, or a main view's button."""
+    return (
+        drawer_button_at(layout, point)
+        or level_button_at(layout, point)
+        or main_view_at(layout, point)
+    )
+
+
+def main_view_at(layout: Layout, point: tuple[int, int]) -> MainView | None:
+    return next((v for v, rect in layout.view_switch if contains(rect, point)), None)
 
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
