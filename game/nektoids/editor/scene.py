@@ -5,7 +5,9 @@ what can be done there (`ring.py`). Round an empty cell, the parts still handed 
 one places it there, facing its default way. Round a part, its actions: turn left and turn right
 (eyes and thrusters, 60° at once, D-009), wire, move, delete. Wire is chosen as a part is
 clicked, so the next click on another part wires the two, either way round (D-026), and the
-focus goes to that part; a drag from a part moves it, its wires following while they find a
+focus goes to that part. A part focused without a click, placed or just wired to, wires on only
+forward, along the signal: a chain goes on, eye to sum to thruster, but from a thruster a click
+on an eye only focuses it. A drag from a part moves it, its wires following while they find a
 path (D-011). A click on the focused cell, or off the zone, drops the focus. While the mouse is
 on Delete, what it would remove is darkened. A part dragged from Parts still lands where it is
 dropped.
@@ -154,6 +156,7 @@ class EditorScene(Frame):
         self.ring_hover: Slot | None = None  # the ring's icon under the mouse
         self.press_cell: Cell | None = None  # a part pressed: a click or a drag, told on release
         self.keyboard = False  # the keyboard drives, until the mouse moves
+        self.onward = False  # the focus came unclicked, placed or wired to: it wires only forward
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
@@ -747,17 +750,19 @@ class EditorScene(Frame):
 
     def _update_ghost(self) -> None:
         """Where a wire from the focused part would run to the hovered cell, and whether it may
-        end there: over an empty cell it only shows the way; over a part it is the real preview."""
+        end there: over an empty cell it only shows the way; over a part it is the real preview.
+        None where a click would not wire, as from a part that wires on only forward (D-068)."""
         self.ghost, self.ghost_connects = None, False
         start = self.source if self.tool is Tool.WIRE else None
         if start is None or self.hover is None or start not in self.board.nodes:
             return
         target, begin = self.board.node_at(self.hover), self.board.nodes[start]
-        if target is None and begin.kind.emits:
-            self.ghost = self.board.route(begin.cell, self.hover)
-        elif target is None:  # a thruster: the way a wire into it would come
-            self.ghost = self.board.route(self.hover, begin.cell)
-        elif target.id != start:
+        if target is None:
+            if begin.kind.emits:
+                self.ghost = self.board.route(begin.cell, self.hover)
+            elif not self.onward:  # a thruster: the way a wire into it would come
+                self.ghost = self.board.route(self.hover, begin.cell)
+        elif target.id != start and (not self.onward or self._forward(begin, target)):
             self.ghost = self.board.preview(*self.board.orient(start, target.id))
             self.ghost_connects = isinstance(self.ghost, tuple)
 
@@ -786,7 +791,7 @@ class EditorScene(Frame):
         """Focus `cell` (None: nothing), its ring open: round a part, Wire chosen for the mouse,
         nothing for the keyboard; round an empty cell, its parts, the first chosen."""
         self._drop_gesture()
-        self.focused = cell
+        self.focused, self.onward = cell, True  # unless a click on the part brought it
         self.ring_open, self.ring_keys = cell is not None, keys
         node = self._focused_node()
         self.selected = None if node is None else node.id
@@ -873,14 +878,30 @@ class EditorScene(Frame):
 
     def _click_part(self, cell: Cell) -> None:
         """A click on a part: the focused part wired to it, if Wire is chosen, and the focus
-        then goes to it; the focus dropped if it was there already; else the focus there."""
+        then goes to it; the focus dropped if it was there already; else the focus there.
+
+        Only a part clicked wires either way round (D-026). A part focused otherwise, placed,
+        moved or just wired to, wires on only forward, along the signal: an eye just placed
+        wires to the thruster clicked next; from an eye wired to a sum, a click on a thruster
+        wires the sum to it; but from a thruster, a click on the other eye only focuses that
+        eye, to start the next wire there."""
         node, source = self.board.node_at(cell), self._focused_node()
         if cell == self.focused:
             self._focus(None)
             return
-        if source is not None and self.tool is Tool.WIRE and node.id != source.id:
-            self._try_wire(source, node, cell)  # wired or not, the focus follows the click
+        wiring = source is not None and self.tool is Tool.WIRE and node.id != source.id
+        if wiring and (not self.onward or self._forward(source, node)):
+            wired = self._try_wire(source, node, cell)  # wired or not, the focus follows
+            self._focus(cell)
+            self.onward = wired
+            return
         self._focus(cell)
+        self.onward = False  # clicked: it wires either way round
+
+    @staticmethod
+    def _forward(source: Node, target: Node) -> bool:
+        """Whether a wire may run out of `source` into `target`, as their kinds allow."""
+        return source.kind.emits and target.kind.receives
 
     def _try_wire(self, source: Node, target: Node, cell: Cell) -> bool:
         """A wire between two parts, either way round (D-026), if the tutorial and the board
