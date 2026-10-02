@@ -619,7 +619,9 @@ the line through the wins no other beats. Inside comes before the win because a 
 Your wins in its place. A step that leads and waits for Next explains (`Tutorial.explains`): it
 holds the run's clock still, and, as dimming suits an action but not a panel, it outlines what
 it shows in accent 1 and draws that panel's titles in accent 1 (`tutorial.panels`; the menu's
-groups, the palette's sections, Controls, Objectives, Inside or Your wins). The box may lie over
+groups, the palette's sections, Controls, Objectives, Inside or Your wins). A panel's hole and
+outline follow its own edges, square, the outline inside them: rounded and grown by a margin,
+they ran off the screen at its edges. Cells keep their disc, buttons and rows a rounded hole. The box may lie over
 an area 400 px wide or more (the board, the arena), never over a narrower target: it had
 covered Play.
 Opening the map now resets the guided level, 1.1, whose tutorial leads (`tutorial.guided`): a

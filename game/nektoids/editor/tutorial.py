@@ -43,6 +43,7 @@ GRID = 16  # the pitch of the spots tried over the screen when none beside a tar
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 _COLUMN = (arena_layout.PANEL_LEFT, arena_layout.PANEL_WIDTH)
 _LOWER = (*_COLUMN[:1], arena_layout.RULES[1], _COLUMN[1], SCREEN[1] - arena_layout.RULES[1])
+RUN_PANELS = {"arena", "controls", "objectives", "inside", "wins"}  # the rest are controls
 RUN_TARGETS = {  # the run view's parts, each with its title (D-050)
     "arena": arena_layout.ARENA_AREA,
     "controls": (_COLUMN[0], 0, _COLUMN[1], arena_layout.RULES[0]),  # buttons and timeline
@@ -243,10 +244,20 @@ def target_rects(show: Mapping | list | None, screen: Screen, layout: Layout, vi
 
 
 def target_spots(show: Mapping | list | None, screen: Screen, layout: Layout, view: View) -> list:
-    """The same, each with whether it is a cell, which the overlay lights as a disc (D-048)."""
+    """The same, each with the shape the overlay gives it: "disc" round a cell, "panel" for an
+    area or a part of the run view, cut and outlined on its own edges, "spot" round anything
+    else, a button or a menu row (D-048, D-050)."""
     shows = [] if show is None else show if isinstance(show, list) else [show]
-    spots = [(target_rect(one, screen, layout, view), "cell" in one) for one in shows]
-    return [(rect, cell) for rect, cell in spots if rect is not None]
+    spots = [(target_rect(one, screen, layout, view), _shape(one)) for one in shows]
+    return [(rect, shape) for rect, shape in spots if rect is not None]
+
+
+def _shape(show: Mapping) -> str:
+    if "cell" in show:
+        return "disc"
+    if "area" in show or show.get("run") in RUN_PANELS:
+        return "panel"
+    return "spot"
 
 
 def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View) -> Rect | None:

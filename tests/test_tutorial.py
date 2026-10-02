@@ -193,14 +193,17 @@ def test_a_placing_step_lights_the_menu_row_its_part_comes_from():
             assert {"menu": step.until["placed"]["kind"]} in step.show
 
 
-def test_the_overlay_knows_a_cell_from_an_area_to_light_it_as_a_disc():
+def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
     step = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps[3]  # the Eye's row, then its cell
     layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
     spots = target_spots(step.show, Screen.EDIT, layout, centred_view(layout))
-    assert [cell for _, cell in spots] == [False, True]
+    assert [shape for _, shape in spots] == ["spot", "disc"]  # the Eye's row, its cell
     assert [rect for rect, _ in spots] == target_rects(
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
+    panel = target_spots({"area": "palette"}, Screen.EDIT, layout, centred_view(layout))
+    run = target_spots([{"run": "play"}, {"run": "inside"}], Screen.RUN, layout, None)
+    assert [shape for _, shape in panel + run] == ["panel", "spot", "panel"]
 
 
 def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_beside_it():

@@ -32,7 +32,7 @@ def draw_tutorial(
     screen: pygame.Surface,
     fonts: Fonts,
     tutorial: Tutorial,
-    spots: list[tuple[Rect, bool]],
+    spots: list[tuple[Rect, str]],
     box: Rect,
     pointer: tuple[int, int],
 ) -> None:
@@ -42,12 +42,12 @@ def draw_tutorial(
     if spots:  # pygame.draw writes CLEAR as it is, alpha and all: holes in the veil
         veil = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         veil.fill(VEIL)
-        for rect, cell in spots:
-            _hole(veil, CLEAR, rect, cell, 0)
+        for rect, shape in spots:
+            _hole(veil, CLEAR, rect, shape, 0)
         screen.blit(veil, (0, 0))
         if tutorial.explains:  # it explains a panel: outlined, besides dimming the rest
-            for rect, cell in spots:
-                _hole(screen, LIT, rect, cell, OUTLINE)
+            for rect, shape in spots:
+                _hole(screen, LIT, rect, shape, OUTLINE)
     frame = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, frame, border_radius=8)
     pygame.draw.rect(screen, LIT if spots else RULE, frame, 2, border_radius=8)
@@ -65,12 +65,15 @@ def draw_tutorial(
         _button(screen, fonts, skip_rect(box), "Skip", pointer)
 
 
-def _hole(surface: pygame.Surface, colour, rect: Rect, cell: bool, width: int) -> None:
+def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -> None:
     """A target's shape, filled (`width` 0) or outlined: a disc round a cell, round its corners and
-    the margin; a rounded rectangle round anything else."""
+    the margin; a panel on its own edges, square, the outline inside them, so that one at the
+    screen's edge stays on it; a rounded rectangle round anything else."""
     hole = pygame.Rect(rect)
-    if cell:
+    if shape == "disc":
         pygame.draw.circle(surface, colour, hole.center, hole.height // 2 + HALO, width)
+    elif shape == "panel":
+        pygame.draw.rect(surface, colour, hole, width)
     else:
         lit = hole.inflate(2 * HALO, 2 * HALO)
         pygame.draw.rect(surface, colour, lit, width, border_radius=HOLE_RADIUS)
