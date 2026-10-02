@@ -16,8 +16,6 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 ## 2. The levels themselves
 
-- [ ] The tutorial: light each target with a soft spot of light, one per target, instead of
-      the rectangle cut in the veil and its outline (`tutorial_draw.py`).
 - [ ] Tutorial 2, aggression (crossed: charges the light). Visit the light.
 - [ ] Tutorial 3, ÷2 on one side (orbits). Its objective is to be chosen: stay within a ring
       round the light for T s, or circle it N times.

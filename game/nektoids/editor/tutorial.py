@@ -192,9 +192,15 @@ def met(until: Mapping, context: Context) -> bool:
 
 
 def target_rects(show: Mapping | list | None, screen: Screen, layout: Layout, view: View) -> list:
-    """Every target a step shows that is on the screen now open; the box goes by the first."""
+    """Every target a step shows that is on the screen now open, in the step's order."""
+    return [rect for rect, _ in target_spots(show, screen, layout, view)]
+
+
+def target_spots(show: Mapping | list | None, screen: Screen, layout: Layout, view: View) -> list:
+    """The same, each with whether it is a cell, which the overlay lights as a disc (D-048)."""
     shows = [] if show is None else show if isinstance(show, list) else [show]
-    return [r for r in (target_rect(one, screen, layout, view) for one in shows) if r is not None]
+    spots = [(target_rect(one, screen, layout, view), "cell" in one) for one in shows]
+    return [(rect, cell) for rect, cell in spots if rect is not None]
 
 
 def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View) -> Rect | None:

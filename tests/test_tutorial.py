@@ -12,6 +12,7 @@ from nektoids.editor.tutorial import (
     next_rect,
     skip_rect,
     target_rects,
+    target_spots,
 )
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NW, SW
@@ -181,3 +182,13 @@ def test_a_placing_step_lights_the_menu_row_its_part_comes_from():
     for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:
         if step.until and "placed" in step.until:
             assert {"menu": step.until["placed"]["kind"]} in step.show
+
+
+def test_the_overlay_knows_a_cell_from_an_area_to_light_it_as_a_disc():
+    step = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps[3]  # the Eye's row, then its cell
+    layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
+    spots = target_spots(step.show, Screen.EDIT, layout, centred_view(layout))
+    assert [cell for _, cell in spots] == [False, True]
+    assert [rect for rect, _ in spots] == target_rects(
+        step.show, Screen.EDIT, layout, centred_view(layout)
+    )
