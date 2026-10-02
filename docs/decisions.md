@@ -646,8 +646,9 @@ round a selected cell (todo §7) brings them to the hand; Parts and the ring bot
 and complement each other. Sense and Inside show one circuit, the board as it runs, with no
 numbers and a level meter by each eye and thruster in accent 1, the colour of their faces; a
 swap button exchanges the drawer and the main screen. In the editor it runs where a probe
-stands, the swimmer put anywhere on the level and turned, nothing run or scored; a Board /
-Circuit switch shows it at any time. There, each eye's meter is a handle the player drags to set what
+stands, the swimmer put anywhere on the level and turned, nothing run or scored; two icon
+buttons over the editor switch views at any time: the Diagram view, a hex grid, and this Run
+preview, beads through a diamond. There, each eye's meter is a handle the player drags to set what
 the eye reads, to see how the circuit answers: a test input, kept nowhere and never seen by the
 run, so the board itself still holds no continuous parameter (brief: "No sliders"). This amends
 D-016, whose sensor sliders were the developer's only. This session's winning boards are kept in memory; Files can
