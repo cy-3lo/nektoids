@@ -24,9 +24,12 @@ METER_AT = 0.86  # its centre right of the part's, past every part's reach [hex 
 
 
 class Circuit:
-    def __init__(self, board: Board, area: Rect, margin: float, body: bool = False):
+    def __init__(
+        self, board: Board, area: Rect, margin: float, body: bool = False, view: View | None = None
+    ):
         """area: where to draw it [px]; margin: room kept round it [hex sizes]. body: fit the
-        swimmer's whole body too, not only the parts and the wires."""
+        swimmer's whole body too, not only the parts and the wires. view: drawn through this
+        view instead, as the editor shows the board (the Run preview, D-060)."""
         self.board = board
         self.net = net = Network.from_board(board)
         self.cells: list[Cell] = [board.nodes[i].cell for i in net.ids]
@@ -34,7 +37,9 @@ class Circuit:
         unit = [wire_points(path, 1.0, (0.0, 0.0)) for path in self.paths]
         bx, by, bw, bh = area
         self.view: View = View(HEX_SIZE, (bx + bw / 2, by + bh / 2))  # an empty board
-        if self.cells:
+        if view is not None:
+            self.view = view
+        elif self.cells:
             shown = [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in self.cells]
             shown += [point for points in unit for point in points]
             if body:

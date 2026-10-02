@@ -5,14 +5,16 @@ import math
 import numpy as np
 import pytest
 
+from nektoids.editor.layout import View
 from nektoids.editor.probe import Probe, ring_radii
 from nektoids.graph.board import Kind
 from nektoids.graph.dynamics import RATE_MAX
+from nektoids.graph.hexgrid import to_pixel
 from nektoids.levels.arenas import arenas
 from nektoids.sim.arena import BASE_RADIUS
 
 LEVELS = {level.title: level for level in arenas()}
-AREA = (296, 58, 664, 554)
+VIEW = View(34.0, (628.0, 335.0))  # as the editor shows the board
 
 
 def wired(level):
@@ -26,7 +28,7 @@ def wired(level):
 
 def seeing(level):
     """A probe on the level, turned until its eye sees the light."""
-    probe = Probe(wired(level), level, AREA)
+    probe = Probe(wired(level), level, VIEW)
     for _ in range(12):
         if probe.eyes()[0] > 0.0:
             return probe
@@ -35,7 +37,7 @@ def seeing(level):
 
 
 def test_the_eyes_read_the_light_where_the_probe_stands_and_the_circuit_follows():
-    assert Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], AREA).pose[:2] == LEVELS["Fear"].start[:2]
+    assert Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], VIEW).pose[:2] == LEVELS["Fear"].start[:2]
     probe = seeing(LEVELS["Fear"])
     (sent,) = probe.eyes()
     assert 0.0 < sent <= RATE_MAX
@@ -62,7 +64,7 @@ def test_an_eye_held_at_a_level_sends_it_until_the_probe_moves_or_turns():
 
 def test_the_probe_stays_out_of_the_obstacles():
     level = LEVELS["In the shadow"]
-    probe = Probe(level.new_board(), level, AREA)
+    probe = Probe(level.new_board(), level, VIEW)
     disc = level.arena.obstacles[0]
     probe.place(disc.x, disc.y)
     gap = math.hypot(probe.pose.x - disc.x, probe.pose.y - disc.y)
@@ -70,7 +72,7 @@ def test_the_probe_stays_out_of_the_obstacles():
 
 
 def test_an_eyes_meter_is_a_handle_from_nothing_at_its_foot_to_full_at_its_top():
-    probe = Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], AREA)
+    probe = Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], VIEW)
     (eye,) = probe.net.eyes
     track = probe.track(int(eye))
     assert probe.handle_at((track.x, (track.top + track.bottom) / 2)) == int(eye)
@@ -79,12 +81,18 @@ def test_an_eyes_meter_is_a_handle_from_nothing_at_its_foot_to_full_at_its_top()
     assert probe.level_at(int(eye), track.bottom + 50) == 0.0
 
 
-def test_fitting_another_area_keeps_the_rates_and_the_rings_come_from_the_objectives():
-    probe = Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], AREA)
+def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view():
+    board = wired(LEVELS["Fear"])
+    probe = Probe(board, LEVELS["Fear"], VIEW)
+    (eye,) = probe.net.eyes
+    cell = board.nodes[probe.net.ids[int(eye)]].cell
+    assert probe.circuit.centre(int(eye)) == to_pixel(cell, VIEW.size, VIEW.origin)  # D-060
     for _ in range(50):
         probe.tick()
     before = probe.y.copy()
-    probe.fit((48, 58, 912, 554))
+    zoomed = View(51.0, (400.0, 300.0))
+    probe.see(zoomed)
+    assert probe.circuit.centre(int(eye)) == to_pixel(cell, zoomed.size, zoomed.origin)
     assert np.array_equal(probe.y, before)
     assert ring_radii(LEVELS["Fear"]) == [12.0] and ring_radii(LEVELS["Love"]) == [6.0]
 

@@ -164,6 +164,8 @@ class EditorScene(Frame):
         self.frame_update()
         if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.SENSE:
             self._probe_now()
+        if self.probe is not None:
+            self.probe.see(self.view)  # the board's own scale and place, zoomed or panned
         if self.main is MainView.PREVIEW:
             for _ in range(TICKS_PER_FRAME):
                 self.probe.tick()
@@ -175,7 +177,7 @@ class EditorScene(Frame):
         now = self.board.snapshot()
         if self.probe is None or now != self._probed:
             pose = self.probe.pose if self.probe is not None else None
-            self.probe = Probe(self.board, self.level, self.layout.board_area, pose)
+            self.probe = Probe(self.board, self.level, self.view, pose)
             self._probed = now
 
     def show(self, view: MainView) -> None:
@@ -379,6 +381,9 @@ class EditorScene(Frame):
             self._pick(kind)
             return
         if self.main is MainView.PREVIEW:  # the board is not on screen to edit, but the eyes are
+            if self.tool is Tool.PAN:  # the hand moves the view, the preview's as the board's
+                self.panning_from = pos
+                return
             self.holding = self.probe.handle_at(pos) if self.probe is not None else None
             self._hold(pos)
             return
@@ -431,7 +436,7 @@ class EditorScene(Frame):
         fits its new room."""
         self.view = moved_view(self.view, before, after)
         if self.probe is not None:
-            self.probe.fit(after.board_area)
+            self.probe.see(self.view)
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         """The layout with `drawer` open, the same parts handed out and the same chapter."""

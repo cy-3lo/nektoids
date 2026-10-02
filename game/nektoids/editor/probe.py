@@ -19,7 +19,7 @@ import numpy as np
 from nektoids.editor.arena_view import ArenaView, frame
 from nektoids.editor.circuit import METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT
-from nektoids.editor.layout import Rect
+from nektoids.editor.layout import Rect, View
 from nektoids.graph.board import Board
 from nektoids.graph.dynamics import RATE_MAX, initial_state, step
 from nektoids.graph.network import Network
@@ -30,7 +30,7 @@ from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 from nektoids.sim.contact import confine
 from nektoids.sim.optics import eye_rates
 
-PREVIEW_MARGIN = 1.6  # room round the body's circle on the main screen [hex sizes]
+NO_AREA: Rect = (0, 0, 0, 0)  # the circuit is drawn through a given view: nothing to fit
 MAP_MARGIN = 2.0  # room round what Sense's map shows of the level [u]
 HANDLE_GRAB = 10  # a press this close to an eye's meter takes it [px]
 
@@ -50,11 +50,11 @@ class Track(NamedTuple):
 
 
 class Probe:
-    def __init__(self, board: Board, level: Level, area: Rect, pose: Pose | None = None):
-        """area: where the circuit is drawn [px]; pose: where the probe stands, else the
-        level's start."""
+    def __init__(self, board: Board, level: Level, view: View, pose: Pose | None = None):
+        """view: how the circuit is drawn, the editor's own, so that the board keeps its scale
+        and its place (D-060); pose: where the probe stands, else the level's start."""
         self.board, self.level = board, level
-        self.circuit = Circuit(board, area, PREVIEW_MARGIN, body=True)
+        self.circuit = Circuit(board, NO_AREA, 0.0, view=view)
         x, y, heading = level.start
         start = pose or Pose(x, y, math.radians(heading))
         self.pos = np.array([[start.x, start.y]], dtype=np.float64)  # (1, 2) [u]
@@ -113,12 +113,9 @@ class Probe:
         """Hold eye `i` (its network index) at `level`, clamped to [0, RATE_MAX]."""
         self.held[i] = min(RATE_MAX, max(0.0, level))
 
-    def fit(self, area: Rect) -> None:
-        """Draw the circuit in another area; the rates and the beads go on as they were."""
-        beads = self.circuit.beads
-        self.circuit = Circuit(self.board, area, PREVIEW_MARGIN, body=True)
-        self.circuit.beads = beads
-        self.circuit.show(self.y)
+    def see(self, view: View) -> None:
+        """Draw the circuit through another view, zoomed or panned; nothing else changes."""
+        self.circuit.view = view
 
     # The eyes' meters as handles
 
