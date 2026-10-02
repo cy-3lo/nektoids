@@ -48,16 +48,7 @@ puts it in scope. Until D-028 these were logged in the decision log as "post-jam
 
 - **Saving and loading**: the format of D-024, with a version number, keeping wire paths
   exactly. Save and Load wait, greyed, in the palette (D-027).
-- **A board as words**: a save is a short code of ASCII letters or words that the player
-  copies, keeps or sends, instead of a file: the board of D-024 packed into bits and spelled
-  out. Nothing is stored in the browser.
-  - Letters (base 32, like a licence key) or words from a list (2048 words, 11 bits each)?
-  - Length, roughly: six parts and six wires with their paths kept exactly come to under 200
-    bits, about 35 letters or 17 words. Less if the paths are drawn again in wire order, which
-    gives the same routes unless Move or Delete was used (D-024).
-  - A few check bits, so a mistyped code is refused rather than loading another board.
-  - Copy and paste between the canvas and the page: does pygbag reach the clipboard?
-  - Same mechanism as the level passkeys (todo §0): a word that brings a state back.
+- **A board as words**: now todo §9, a board as text, its own PR.
 - **A level editor**, Super Mario Maker-like: levels are data already (D-028).
 - **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
   2,603 random wirings, the fastest a one-eyed circler. Its file is in the history

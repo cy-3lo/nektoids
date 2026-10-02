@@ -633,13 +633,21 @@ Fear's tutorial has 17 steps.
 **D-051 — 2026-10-02 — The editor and the run will be rebuilt round an activity bar, drawers and environment tabs. Amends D-025, D-035, D-037; the work is todo §8.**
 An activity bar down the left edge, one icon per drawer; one drawer open at a time, pushing the
 board aside, folded by its icon or an arrow on its edge; every drawer's rows alike (icon, name,
-(i), then a count, a key, a lock or a tick). Settings at the foot of the bar, over an accented
-button that switches environments: Editor and Sim, as tabs over the content (no Builder tab
-until there is a builder). Editor drawers: Parts, which is also the parts' encyclopedia; Tools,
-which stay there while the ring round a selected cell (todo §7) brings them to the hand; Files,
-for this session's winning boards, kept in memory, and a board as a line of ASCII to save in a
-text file; Sense, a probe whose circuit the board shows, with a general Board / Circuit switch;
-Navigate; Map, which replaces the full-screen map. Sim drawers: Objectives, Inside, Score,
-Navigate, Map; the run's controls go to a bar under the arena. Parts and the ring both hand
-out parts: they complement each other. Fear's tutorial is rewritten with the bar. Decided from
-two rounds of mockups drawn with the game's own palette and renders.
+(i), then a count, a key, a lock or a tick). At the top, what the player works with: in the
+editor Parts (puzzle-piece), which is also the parts' encyclopedia, Tools (screwdriver-wrench),
+Files (floppy-disk), Sense (stethoscope), Navigate (compass); in the sim Objectives
+(list-check), Inside (magnifying-glass), Score (trophy), Navigate. At the foot, in both:
+Settings (gear), Chapters (map), then an accented switch between the environments, Editor and
+Sim, which are also tabs over the content (no Builder tab until there is a builder): Run (play)
+in the editor, back (diagram-project) in the sim. Chapters, not "Map", replaces the full-screen
+map. Settings holds fast forward's speed, key hints, tooltips' delay, Fear's tutorial again, and
+Sound and Music once there is sound; not the palette. Tools stay in their drawer while the ring
+round a selected cell (todo §7) brings them to the hand; Parts and the ring both hand out parts,
+and complement each other. Sense and Inside show one circuit, the board as it runs, with no
+numbers and a level meter by each eye and thruster in accent 1, the colour of their faces; a
+swap button exchanges the drawer and the main screen. In the editor it runs where a probe
+stands, the swimmer put anywhere on the level and turned, nothing run or scored; a Board /
+Circuit switch shows it at any time. This session's winning boards are kept in memory; Files can
+wait, and a board as text is its own PR (todo §9). The run's controls go to a bar under the
+arena. Fear's tutorial is rewritten with the bar. Decided from three rounds of mockups drawn with
+the game's own palette and renders.

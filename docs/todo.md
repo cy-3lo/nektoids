@@ -69,35 +69,46 @@ From Camille's notes (`ebc4abb`), then a design for touch screens.
 ## 8. An activity bar, drawers and environments (D-051)
 
 Mockups of every drawer, drawn with the game's own palette and renders, are in this session's
-artifacts ("Nektoids Activity Bar", round 2). It replaces the menu, the palette, the run view's
+artifacts ("Nektoids Activity Bar", round 3). It replaces the menu, the palette, the run view's
 column and the full-screen map.
 
 - [ ] One row style for every drawer: icon, name, (i), then a count, a key, a lock or a tick.
 - [ ] An activity bar down the left edge, one icon per drawer, named when the mouse rests on it;
       the open one lighter, an accent bar on its edge. One drawer open at a time, pushing the
-      board aside; folded by its icon again or the arrow on its edge. Settings at the foot,
-      over the environment switch.
-      - Editor: Parts (the menu, and the parts' encyclopedia: a row opens into its entry);
-        Tools (the tools with their keys, Undo, Redo, Save and Load); Files (this session's
-        winning boards, a board as text); Sense (the probe); Navigate (zoom, hand, centre, an
-        overview); Map (the levels, your best on each: it replaces the full-screen map).
-      - Sim: Objectives, Inside, Score, Navigate, Map. Play, a step, fast forward and the
-        timeline in a bar under the arena.
-      - Settings: fast forward's speed, key hints, how soon tooltips show, Fear's tutorial again.
+      board aside; folded by its icon again or the arrow on its edge.
+      - Top, editor: Parts (puzzle-piece; also the parts' encyclopedia, a row opening into its
+        entry), Tools (screwdriver-wrench), Files (floppy-disk), Sense (stethoscope), Navigate
+        (compass). Top, sim: Objectives (list-check), Inside (magnifying-glass), Score (trophy),
+        Navigate.
+      - Foot, both: Settings (gear), Chapters (map; not "Map"), then the accented switch: Run
+        (play) in the editor, back to the editor (diagram-project) in the sim.
+      - Chapters replaces the full-screen map. Settings: fast forward's speed, key hints,
+        tooltips' delay, Fear's tutorial again; Sound and Music once there is sound. No palette.
+      - The sim's controls (play, a step, fast forward, the timeline) in a bar under the arena.
 - [ ] Environments as tabs over the content: Editor and Sim (a Builder later, no tab until then).
-      Switched by a tab, or by the accented button at the foot of the bar: Run, Edit.
-- [ ] A Board / Circuit switch over the editor: the circuit is the board as it would run where
-      the probe stands (wires, beads, rates); Sense turns it on. The probe: the swimmer put
-      anywhere on a small map of the level and turned, nothing run, nothing scored.
+      Switched by a tab, or by the accented switch.
+- [ ] The circuit, one drawing for Sense (editor) and Inside (sim): parts shaded by their rate,
+      beads on the wires, no numbers, a level meter by each eye and thruster in accent 1, the
+      colour of their faces. A swap button on the drawer exchanges the drawer's content and the
+      main screen: in the editor, circuit big and the probe's map small, or the level big with
+      the probe; in the sim, the arena big and the circuit small, or the other way round.
+- [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as
+      it would run there; nothing run, nothing scored. A Board / Circuit switch over the editor.
 - [ ] This session's winning boards kept in memory, one for each point of the score; a click
-      puts one back on the board, the board left going to Undo.
-- [ ] A board as text, a line of ASCII to copy, paste, save in a file and open: its language is
-      a decision of its own (a version mark, a check against typing mistakes; ideas: "A board
-      as words"). Does pygbag reach the browser's clipboard?
+      puts one back on the board, the board left going to Undo. Files can wait: not needed yet.
 - [ ] Fear's tutorial rewritten for the bar: it lights drawers and icons, no more the menu and
       the palette (D-039).
-- Still open:
-  - The palette in Settings: colours change while the game runs, or a palette chosen before it
-    starts? They are fixed at start today (D-047).
-  - Inside and Circuit draw the same thing: one drawing for both?
-  - Which icons: the mockups' first choices, or alternatives from the sheet.
+
+## 9. A board as text (its own PR)
+
+- [ ] A board as a short line of ASCII to copy, paste, keep in a text file and open again: the
+      board of D-024 packed into bits and spelled out. Its language is a decision first.
+      - Letters (base 32, like a licence key) or words from a list (2048 words, 11 bits each)?
+      - Length, roughly: six parts and six wires with their paths kept exactly come to under
+        200 bits, about 35 letters or 17 words; less if the paths are drawn again in wire order,
+        which gives the same routes unless Move or Delete was used (D-024).
+      - A check against typing mistakes, Shannon-like: redundant check symbols, so a mistyped
+        line is refused (or even corrected) rather than loading another board. A version mark.
+      - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Wait
+        and see on the web build.
+      - The same mechanism as the level passkeys (§0): a word that brings a state back.
