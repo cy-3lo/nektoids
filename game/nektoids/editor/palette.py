@@ -1,12 +1,15 @@
-"""Every colour the game draws, named by its job, and the palette they all come from (D-047).
+"""Every colour the game draws, named by its job, and the palette they all come from (D-047, D-049).
 
 A palette is ten neutrals and two accents, built in OKLCH, where lightness L, chroma C and hue h
-are separate. The neutrals sit at fixed lightness steps, deep to bright, all of one hue; the tint
-is `tint_chroma` at the dark end and fades to a third of it at the bright end. Each accent comes
-in three levels: dark for fills under light text, mid for marks on parts, bright for outlines and
-highlights over dark ground. `sense` is the eyes' and the tutorial's, `act` the thrusters' and
-the swimmer's. Change `PALETTE` and the whole game follows: no other module holds a colour.
-Pure Python, no pygame.
+are separate. The neutrals sit at fixed lightness steps, deep to bright. Their tint is
+`tint_chroma` at the dark end and fades to a third of it at the bright end; its hue is
+`tint_hue` in the darks and, if `light_hue` is given, turns to it in the lights, along the
+shorter way round, between LIGHT_TURN's two lightnesses. Each accent comes in three levels: dark
+for fills under light text, mid for marks on parts, bright for outlines and highlights over dark
+ground. `accent1` marks what the player works with: the faces of eyes and thrusters, the tool in
+hand, the tutorial's highlight. `accent2` marks what happens: the swimmer, and what goes wrong (a
+refusal, a lost run, a warning). Change `PALETTE` and the whole game follows: no other module
+holds a colour. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -21,9 +24,9 @@ NEUTRALS = ("deep", "base", "surface", "raised", "line", "muted", "dim", "parts"
 # every contrast between them stays as it was.
 NEUTRAL_L = (0.156, 0.193, 0.233, 0.295, 0.343, 0.447, 0.622, 0.777, 0.901, 0.949)
 BRIGHT_END_TINT = 1 / 3  # the bright end keeps this much of the tint's chroma
+LIGHT_TURN = (0.30, 0.75)  # the tint's hue turns from `tint_hue` to `light_hue` between these L
 ACCENT_L = (0.43, 0.68, 0.85)  # dark, mid, bright
 ACCENT_C = (0.085, 0.14, 0.11)  # their chroma, before the gamut trims it
-RED_HUE, AMBER_HUE = 22.0, 77.0  # the signals' hues [degrees], as before D-047
 
 
 @dataclass(frozen=True)
@@ -45,11 +48,8 @@ class Palette:
     parts: Colour  # every part's fill
     text: Colour
     bright: Colour  # the light, beads at full rate
-    sense: Accent  # the eyes' faces, the tool in hand, the tutorial's highlight
-    act: Accent  # the thrusters' backs, the swimmer
-    refused: Colour  # a refusal, a lost run
-    refused_dark: Colour  # the flash on a refused move
-    warn: Colour  # the developer view's warnings
+    accent1: Accent  # what the player works with: faces, the tool in hand, the tutorial
+    accent2: Accent  # what happens: the swimmer, a refusal, a lost run, a warning
 
 
 def oklch(lightness: float, chroma: float, hue: float) -> Colour:
@@ -73,24 +73,37 @@ def accent(hue: float) -> Accent:
     return Accent(*(oklch(L, C, hue) for L, C in zip(ACCENT_L, ACCENT_C, strict=True)))
 
 
-def make_palette(tint_hue: float, tint_chroma: float, sense_hue: float, act_hue: float) -> Palette:
-    """Ten neutrals of hue `tint_hue` [degrees], tinted `tint_chroma` at the dark end, and the
-    accents `sense` and `act` of hues `sense_hue` and `act_hue` [degrees]."""
+def tint(
+    lightness: float, tint_hue: float, tint_chroma: float, light_hue: float | None = None
+) -> tuple[float, float]:
+    """The chroma and hue [degrees] of the neutral at `lightness`: the chroma fading from the dark
+    end to the bright, the hue turning from `tint_hue` to `light_hue` the shorter way round."""
     span = NEUTRAL_L[-1] - NEUTRAL_L[0]
+    chroma = tint_chroma * (1 - (1 - BRIGHT_END_TINT) * (lightness - NEUTRAL_L[0]) / span)
+    if light_hue is None:
+        return chroma, tint_hue % 360
+    low, high = LIGHT_TURN
+    t = min(1.0, max(0.0, (lightness - low) / (high - low)))
+    turn = t * t * (3 - 2 * t)  # smoothstep: no kink where the turn starts or ends
+    way = (light_hue - tint_hue + 180) % 360 - 180  # the shorter way, signed [degrees]
+    return chroma, (tint_hue + turn * way) % 360
+
+
+def make_palette(
+    tint_hue: float,
+    tint_chroma: float,
+    accent1_hue: float,
+    accent2_hue: float,
+    light_hue: float | None = None,
+) -> Palette:
+    """Ten neutrals tinted `tint_hue` [degrees], `tint_chroma` at the dark end, turning to
+    `light_hue` in the lights if given; and the two accents, of hues `accent1_hue` and
+    `accent2_hue` [degrees]."""
     neutrals = {
-        name: oklch(
-            L, tint_chroma * (1 - (1 - BRIGHT_END_TINT) * (L - NEUTRAL_L[0]) / span), tint_hue
-        )
+        name: oklch(L, *tint(L, tint_hue, tint_chroma, light_hue))
         for name, L in zip(NEUTRALS, NEUTRAL_L, strict=True)
     }
-    return Palette(
-        **neutrals,
-        sense=accent(sense_hue),
-        act=accent(act_hue),
-        refused=oklch(0.70, 0.16, RED_HUE),
-        refused_dark=oklch(0.47, 0.13, RED_HUE),
-        warn=oklch(0.82, 0.12, AMBER_HUE),
-    )
+    return Palette(**neutrals, accent1=accent(accent1_hue), accent2=accent(accent2_hue))
 
 
 def _oklab_to_linear(lightness: float, a: float, b: float) -> tuple[float, float, float]:
@@ -110,8 +123,10 @@ def _encode(v: float) -> float:
     return 12.92 * v if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055
 
 
-# The game's palette: Forest, violet and sky. This line alone changes every colour.
-PALETTE = make_palette(tint_hue=150.0, tint_chroma=0.028, sense_hue=315.0, act_hue=235.0)
+# The game's palette: Slate and evergreen, with a red. This line alone changes every colour.
+PALETTE = make_palette(
+    tint_hue=273.0, tint_chroma=0.022, accent1_hue=187.0, accent2_hue=25.0, light_hue=85.0
+)
 P = PALETTE
 
 # Every view
@@ -121,17 +136,17 @@ PANEL = P.surface
 TOOLTIP_BG = mix(P.surface, P.raised, 0.5)
 BUTTON = P.raised
 HOVER = mix(P.raised, P.line, 0.5)
-ACTIVE = P.sense.dark  # the tool in hand, the menu row picked, a toggle that is on
+ACTIVE = P.accent1.dark  # the tool in hand, the menu row picked, a toggle that is on
 RULE = P.line  # separators between columns and between sets of buttons
 SWATCH_OFF = P.raised  # colour picker, not active yet
 TEXT = P.text
 DIM_TEXT = P.dim
 GREYED = P.muted
-REFUSED = P.refused
-FLASH = P.refused_dark
+REFUSED = P.accent2.bright  # a refusal, a lost run, a run out of time
+FLASH = P.accent2.dark  # the flash on a refused move
 VEIL = (0, 0, 0, 150)  # over a level's board under its card; over all but a tutorial's targets
 CLEAR = (0, 0, 0, 0)  # a hole in a veil
-LIT = P.sense.bright  # a tutorial's target outlined, and its box while it leads
+LIT = P.accent1.bright  # a tutorial's target outlined, and its box while it leads
 
 # The board
 ZONE = P.surface  # cells of the level's zone
@@ -141,8 +156,8 @@ GRID_LINE = P.line
 BODY_OUTLINE = P.line  # the swimmer's symbol behind the board: which way is forward
 COMPONENT = P.parts
 LOCK_RING = mix(P.parts, P.bright, 0.4)
-EYE_FACE = P.sense.mid  # the flat face an eye reads the light through (D-020)
-THRUSTER_BACK = P.act.mid  # the back a thruster pushes from
+EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)
+THRUSTER_BACK = P.accent1.mid  # the back a thruster pushes from
 WIRE = mix(P.dim, P.parts, 0.4)
 GHOST = P.muted  # where a wire would run
 GHOST_OK = P.bright  # ... and it may connect there
@@ -156,14 +171,14 @@ WIRE_OFF = P.line  # a wire that carries nothing
 BEAD = P.bright  # a bead on a wire at RATE_MAX
 BEAD_OFF = P.muted  # ... and on a wire that barely carries anything
 VALUE = P.text  # the live numbers in the developer view's panel
-WARN = P.warn
+WARN = P.accent2.mid  # the developer view's warnings
 
 # The arena
 SHADOW = P.deep  # the open plane, and a reading of 0 on the light map
 LIGHT = P.bright  # a light, and a reading of RATE_MAX
 RAY = mix(P.deep, P.line, 0.45)  # every ray, whatever its light
 OBSTACLE = mix(P.line, P.muted, 0.5)
-BODY = P.act.bright  # the selected swimmer
+BODY = P.accent2.bright  # the selected swimmer
 BODY_UNSELECTED = P.dim
 RING = P.dim  # a ring to leave or to stay in, until that is done
 RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead of the playhead
