@@ -39,6 +39,7 @@ def layout_on(screen: Screen, step=None):
 
 
 LEVELS = {level.title: level for level in arenas()}
+R = 3  # Fear's steps in the run, before the editor's (D-060): the swimmer, Objectives, the tab
 
 
 def on_screen(rect):
@@ -73,6 +74,11 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     context = lambda tool=Tool.ADD, screen=Screen.EDIT, outcome=None: Context(  # noqa: E731
         board, tool, screen, outcome
     )
+    for _ in range(2):  # in the run: the swimmer, Objectives: Next
+        tutorial.follow(context(screen=Screen.RUN))
+        tutorial.next()
+    tutorial.follow(context(screen=Screen.RUN))
+    assert tutorial.step.until == {"screen": "edit"}  # the Editor tab
     for _ in range(3):  # the board, the menu, the palette: Next
         tutorial.follow(context())
         tutorial.next()
@@ -94,7 +100,7 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     tutorial.follow(context(Tool.WIRE))
     assert tutorial.step.until == {"screen": "run"}
     tutorial.follow(context(screen=Screen.RUN))
-    for shown in ("controls", "objectives", "inside"):  # the run held still: Next
+    for shown in ("controls", "inside"):  # the run held still: Next
         assert tutorial.step.show == {"run": shown} and tutorial.explains
         tutorial.next()
     assert tutorial.step.until == {"outcome": "won"} and not tutorial.explains  # Play
@@ -142,6 +148,8 @@ def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds()
     tutorial.restart()  # the map opened
     assert tutorial.index == 0
     context = Context(board, Tool.ADD, Screen.EDIT)
+    for _ in range(2):  # the swimmer, Objectives: Next; the tab, met in the editor
+        tutorial.next()
     for _ in range(3):  # the board, the menu, the palette: Next
         tutorial.follow(context)
         tutorial.next()
@@ -165,37 +173,40 @@ ANYTHING = [
     Action("wire", cell=(2, -1), other=(1, -2)),
     Action("move", cell=(2, -1)),
     Action("delete", cell=(2, -1)),
-    *(Action(verb) for verb in ("undo", "redo", "run", "map", "edit", "next")),
+    *(Action(verb) for verb in ("undo", "redo", "run", "map", "edit", "next", "play", "view")),
 ]
 
 
 def test_a_leading_step_lets_through_only_the_means_to_what_it_waits_for():
     steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
-    place = steps[3]  # an eye on (2, -1)
+    place = steps[R + 3]  # an eye on (2, -1)
     assert allows(place, Action("pick", kind=Kind.EYE))
     assert allows(place, Action("place", kind=Kind.EYE, cell=(2, -1)))
     assert not allows(place, Action("place", kind=Kind.EYE, cell=(1, 1)))  # another cell
     assert not allows(place, Action("pick", kind=Kind.THRUSTER))
     assert not any(allows(place, Action(verb)) for verb in ("run", "map", "undo", "redo"))
     assert not allows(place, Action("tool", tool=Tool.WIRE))
-    turn = steps[4]  # the eye on (2, -1) to face NW
+    turn = steps[R + 4]  # the eye on (2, -1) to face NW
     assert allows(turn, Action("tool", tool=Tool.TURN_LEFT))
     assert allows(turn, Action("tool", tool=Tool.TURN_RIGHT))  # four turns right get there too
     assert allows(turn, Action("turn", cell=(2, -1)))
     assert not allows(turn, Action("turn", cell=(1, 1)))
-    wire = steps[9]  # the upper eye to the upper thruster
+    wire = steps[R + 9]  # the upper eye to the upper thruster
     assert allows(wire, Action("tool", tool=Tool.WIRE))
     assert allows(wire, Action("wire", cell=(1, -2), other=(2, -1)))  # either way round (D-026)
     assert not allows(wire, Action("wire", cell=(2, -1), other=(-1, 2)))
-    run, watch = steps[11], steps[15]
+    run, watch = steps[R + 11], steps[R + 14]
     assert allows(run, Action("run")) and not allows(run, Action("map"))
     assert allows(watch, Action("run")) and allows(watch, Action("edit"))
+    assert allows(watch, Action("play")) and not allows(steps[R - 1], Action("play"))
     assert not allows(watch, Action("next"))
+    tab = steps[R - 1]  # to the editor, from the run: the tab, Esc or the switch (D-060)
+    assert allows(tab, Action("edit")) and not allows(tab, Action("run"))
 
 
 def test_a_step_that_waits_for_next_lets_nothing_through_and_a_hint_lets_all():
     steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
-    for waits_for_next in (steps[0], steps[1], steps[2], steps[13]):
+    for waits_for_next in (steps[0], steps[1], steps[R], steps[R + 1], steps[R + 12]):
         assert not any(allows(waits_for_next, action) for action in ANYTHING)
     hint = Tutorial.from_dict(LEVELS["Love"].tutorial).steps[0]
     assert all(allows(hint, action) for action in ANYTHING)
@@ -209,7 +220,7 @@ def test_a_placing_step_lights_the_menu_row_its_part_comes_from():
 
 
 def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
-    step = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps[3]  # the Eye's row, then its cell
+    step = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps[R + 3]  # the Eye's row, its cell
     layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
     spots = target_spots(step.show, Screen.EDIT, layout, centred_view(layout))
     assert [shape for _, shape in spots] == ["spot", "disc"]  # the Eye's row, its cell
@@ -259,12 +270,17 @@ def grown(rect, by):
 
 def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_left_undone():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    for _ in range(2):  # the swimmer, Objectives
+        assert tutorial.waits_for_next
+        tutorial.next()
+    assert not tutorial.waits_for_next  # the Editor tab: there is no Next
+    tutorial.index = R
     for _ in range(3):  # the board, the menu, the palette
         assert tutorial.waits_for_next
         tutorial.next()
     assert not tutorial.waits_for_next  # place an eye: there is no Next
     tutorial.next()
-    assert tutorial.index == 3 and tutorial.step.until == {
+    assert tutorial.index == R + 3 and tutorial.step.until == {
         "placed": {"kind": "eye", "cell": [2, -1]}
     }
 
@@ -277,7 +293,7 @@ def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_o
     assert answer(tutorial, box, None) == "next"  # the board: any key
     assert answer(tutorial, box, (5, 5)) == "next"  # ... or a click anywhere
     assert answer(tutorial, box, centre(skip)) == "skip"
-    tutorial.index = 3  # place an eye: the press is the editor's, but Skip
+    tutorial.index = R + 3  # place an eye: the press is the editor's, but Skip
     assert answer(tutorial, box, None) is None and answer(tutorial, box, centre(nxt)) is None
     assert answer(tutorial, box, centre(skip)) == "skip"
     tutorial.index = len(tutorial.steps) - 1  # the last: Close, any key or click; no Skip
@@ -295,7 +311,8 @@ def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
 
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    expected = {1: {"parts"}, 2: {"bar"}, 3: set(), 11: set(), 12: {"controls"}, 15: set()}
+    expected = {0: {"arena"}, 1: {"objectives"}, 2: set(), R + 1: {"parts"}, R + 2: {"bar"}}
+    expected |= {R + 3: set(), R + 11: set(), R + 12: {"controls"}, R + 14: set()}
     for index, names in expected.items():
         tutorial.index = index
         assert panels(tutorial) == names, index
@@ -305,11 +322,14 @@ def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_n
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
     steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
-    assert drawer_for(steps[1]) is Drawer.PARTS  # Parts, the drawer
-    assert drawer_for(steps[3]) is Drawer.PARTS  # an Eye's row, then its cell
-    assert drawer_for(steps[4]) is Drawer.TOOLS  # Turn left
+    assert drawer_for(steps[R + 1]) is Drawer.PARTS  # Parts, the drawer
+    assert drawer_for(steps[R + 3]) is Drawer.PARTS  # an Eye's row, then its cell
+    assert drawer_for(steps[R + 4]) is Drawer.TOOLS  # Turn left
+    assert drawer_for(steps[1]) is Drawer.OBJECTIVES  # the run's first drawer (D-060)
     assert (
-        drawer_for(steps[0]) is None and drawer_for(steps[11]) is None and drawer_for(None) is None
+        drawer_for(steps[R]) is None
+        and drawer_for(steps[R + 11]) is None
+        and drawer_for(None) is None
     )
     shown = {drawer_for(step) for step in steps if step.show and "run" in str(step.show)}
     assert shown == {None, Drawer.OBJECTIVES, Drawer.INSIDE, Drawer.SCORE}  # the run's (D-057)
@@ -326,6 +346,17 @@ def test_a_tool_shown_while_tools_is_closed_lights_the_drawers_icon():
 
 def test_a_leading_step_keeps_the_board_on_screen():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    tutorial.index = 3  # an Eye to drag onto its cell
+    tutorial.index = R + 3  # an Eye to drag onto its cell
     assert not allows(tutorial.step, Action("view"))  # no Run preview while it leads (D-058)
     assert allows(None, Action("view"))
+
+
+def test_fear_starts_in_the_run_and_sends_the_player_to_the_editor_by_its_tab():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    assert (
+        tutorial.start is Screen.RUN
+        and Tutorial.from_dict(LEVELS["Love"].tutorial).start is Screen.EDIT
+    )
+    tab = tutorial.steps[R - 1].show
+    for screen, layout in ((Screen.RUN, RUN_LAYOUT), (Screen.EDIT, LAYOUT)):
+        assert target_rects(tab, screen, layout, VIEW) == [dict(layout.tabs)["editor"]]

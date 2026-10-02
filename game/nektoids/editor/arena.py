@@ -41,6 +41,7 @@ import numpy as np
 import pygame
 
 from nektoids.editor.arena_layout import (
+    CONTROLS,
     DRAWER_BODY,
     KEY_BUTTONS,
     MAP_KEY,
@@ -81,6 +82,7 @@ from nektoids.editor.recording import Recording
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS
 from nektoids.editor.settings import Settings
+from nektoids.editor.tutorial import Action
 from nektoids.graph.board import Board, complexity
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
@@ -464,8 +466,9 @@ class ArenaScene(Frame):
         if button is not None:
             self.press(button)
         elif asked is not None:
-            self.scrubbing = True
-            self.seek(asked)
+            if self._allowed(Action("play")):
+                self.scrubbing = True
+                self.seek(asked)
         elif not contains(self.arena_area, pos):
             return
         elif self.hand:
@@ -475,6 +478,8 @@ class ArenaScene(Frame):
             self.dragging = self.selected if self.developer else None
 
     def press(self, button: ArenaButton) -> None:
+        if button in CONTROLS and not self._allowed(Action("play")):
+            return  # a step that leads holds the run, unless it asks for Play (D-060)
         if button is ArenaButton.EDIT:
             self._ask("edit")
         elif button is ArenaButton.NEXT:

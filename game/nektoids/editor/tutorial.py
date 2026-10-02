@@ -85,8 +85,11 @@ class Context:
 
 
 class Tutorial:
-    def __init__(self, ghosts: tuple[Ghost, ...], steps: tuple[Step, ...]) -> None:
+    def __init__(
+        self, ghosts: tuple[Ghost, ...], steps: tuple[Step, ...], start: Screen = Screen.EDIT
+    ) -> None:
         self.ghosts, self.steps = ghosts, steps
+        self.start = start  # the screen its level opens on while it has not begun (D-060)
         self.index = 0
 
     @classmethod
@@ -100,7 +103,7 @@ class Tutorial:
             for g in data.get("ghosts", ())
         )
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
-        return cls(ghosts, steps)
+        return cls(ghosts, steps, Screen(data.get("start", Screen.EDIT.value)))
 
     @property
     def step(self) -> Step | None:
@@ -205,10 +208,10 @@ def allows(step: Step | None, action: Action) -> bool:
         ends = {_cell(until["wired"]["from"]), _cell(until["wired"]["to"])}
         wire = verb == "wire" and {action.cell, action.other} == ends
         return wire or (verb == "tool" and action.tool is Tool.WIRE)
-    if "screen" in until:
-        return verb == "run" and Screen(until["screen"]) is Screen.RUN
-    if "outcome" in until:
-        return verb in ("run", "edit")
+    if "screen" in until:  # the way there: Run, or back to the editor (D-060)
+        return verb == {Screen.RUN: "run", Screen.EDIT: "edit"}.get(Screen(until["screen"]))
+    if "outcome" in until:  # the run and its controls, and back to the editor
+        return verb in ("run", "edit", "play")
     return False
 
 
@@ -269,6 +272,8 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         return None
     if "run" in show:
         return _run_target(show["run"], layout) if screen is Screen.RUN else None
+    if "tab" in show:  # over the main screen, in the editor and in the run alike
+        return dict(layout.tabs)[show["tab"]] if screen in (Screen.EDIT, Screen.RUN) else None
     if screen is not Screen.EDIT:
         return None
     if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)

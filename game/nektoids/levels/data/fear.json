@@ -15,6 +15,7 @@
   "time_limit": 10.0,
   "objectives": [{"kind": "leave ring", "radius": 12.0}],
   "tutorial": {
+    "start": "run",
     "ghosts": [
       {"kind": "eye", "cell": [2, -1], "facing": "NW"},
       {"kind": "eye", "cell": [1, 1], "facing": "SW"},
@@ -23,10 +24,33 @@
     ],
     "steps": [
       {
-        "show": {"area": "board"},
+        "show": {"run": "arena"},
         "say": [
           "This is your swimmer, seen from above: the",
-          "board is its body, its front to the right.", "Where you put a part is where it sits."
+          "tip of its triangle is the way it heads. On",
+          "its right, a light, with a dashed ring round it."
+        ]
+      },
+      {
+        "show": {"run": "objectives"},
+        "say": [
+          "Objectives: what the level asks, each with",
+          "its bar. Here, get out of the ring round the", "light before the time runs out."
+        ]
+      },
+      {
+        "show": {"tab": "editor"},
+        "until": {"screen": "edit"},
+        "say": [
+          "It has no eyes and no thrusters yet: it cannot",
+          "move. Click the Editor tab to build them."
+        ]
+      },
+      {
+        "show": {"area": "board"},
+        "say": [
+          "The board is your swimmer's body, its front to",
+          "the right. Where you put a part is where it", "sits."
         ]
       },
       {
@@ -109,13 +133,6 @@
           "then the timeline: click it to go to any time."
         ],
         "show": {"run": "controls"}
-      },
-      {
-        "say": [
-          "Objectives: what the level asks, each with",
-          "its bar. Here, get out of the ring round the", "light before the time runs out."
-        ],
-        "show": {"run": "objectives"}
       },
       {
         "say": [
