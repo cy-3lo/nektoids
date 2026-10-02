@@ -759,5 +759,17 @@ Files (D-059): win a level twice with two boards, then open Files and click the 
 
 Question: why does `_put_back` not call `history.record` itself?
 
+The run opens paused, and Fear's tutorial opens in it (D-060).
+
+- [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `Tutorial.start`, the screen a
+  tutorial opens on; `{"tab": "editor"}`, a target; `allows` lets the way to the screen a step
+  waits for through, and "play" while it waits for a win.
+- [`main.py`](../game/main.py): `begun`, a card gone this frame, which opens Fear's run.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `overview_view`, `shown_frame`,
+  `centred_on`, Navigator's overview; [`probe.py`](../game/nektoids/editor/probe.py): `see`,
+  the preview through the editor's view.
+
+Question: why must the run's controls ask the tutorial's gate, now that Fear starts in the run?
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

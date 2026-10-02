@@ -775,3 +775,18 @@ first; each row reads its time and its parts, lit while its board is the one on 
 click puts that board back and shows the Diagram view; the board left goes to Undo, as any
 change does. While a tutorial step leads, Files refuses. A board as text, to keep or to send,
 is its own PR (todo §9).
+
+**D-060 — 2026-10-02 — The run opens paused, and Fear's tutorial opens in it; the Run preview keeps the board's scale and place; the objectives show by the timeline; Navigator has an overview.**
+Every run opens paused, so the player opens the drawer they want before Play. Fear's tutorial
+starts in the run (a tutorial's data says the screen it starts on): the swimmer in its arena,
+then Objectives, then "Click the Editor tab", which only the tab, Esc or the switch get past;
+then the editor's steps, then the run's: the controls, Inside, Play, Score. While a step leads,
+the run's controls and its timeline go through its gate too, open only while it waits for a
+win. Resting the mouse on the other environment's tab shows what the switch says: Run (Space),
+Back to the editor (Esc). The Run preview draws the board through the editor's own view, so
+switching views moves nothing, and zoom, the hand and centre act on both. At the right of the
+timeline, where the time was, so many objectives met of so many, lit once all are, red once one
+is lost or the time is up; the time shows in the timeline's tooltip, and stays there for the
+sandbox, which has no objective. Under Navigator's rows, an overview: the whole board, its
+parts as dots, in the editor; the whole level and the swimmer in the run; a frame round what
+the main screen shows, and a press or a drag there centres the view.
