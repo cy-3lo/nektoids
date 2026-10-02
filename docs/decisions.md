@@ -514,3 +514,15 @@ touch the light (One light) and one that forbids it (Love) agree on what touchin
 Consequences: crossed wiring in One light wins at 8.64 s (8.59 s before), the drive in In the
 shadow at 3.76 s (3.70 s); Love's winner rests 1.6 u clear of reaching (1.3 u before). At 3.6 u/s
 a tick moves 0.03 u against a reach of 2.1 u: still no visit falls between ticks.
+
+**D-044 — 2026-10-02 — Love's light has power 3.5, not 8: the simplest love wins. Amends D-040.**
+At power 8 the eyes saturate about P u out, so a swimmer whose eyes look ahead came to rest 9 u
+from the light, outside the 6 u ring, and ran out of time. Only two eyes turned out (NE, SE) won,
+each reading half as much: a trick nothing on screen points to, on the first level after the
+tutorial. At 3.5 one eye looking ahead, a Diff of a Source and the eye, and one thruster, all on
+the axis, rests 4.5 u out and wins at 10.3 s; two such chains rest 4.2 u out and win at 7.6 s.
+Both bodies lie wholly inside the dashed ring, 1 u or more clear of touching. Turned out, the eyes
+now lose: closing in, the light falls behind their flat faces, the brake fades and the swimmer
+touches it. Wiring with no Diff still loses (aggression, fear, a bare drive). Powers 4 and 4.5 also
+win, but the swimmer's rim then rests on the ring's dashed line, so it looks half out. All pinned
+in `test_determinism.py`.

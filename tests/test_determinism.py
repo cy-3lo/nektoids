@@ -188,24 +188,58 @@ def love(upper, lower, wiring="love"):
     return Network.from_board(board)
 
 
-def test_love_comes_to_the_light_stops_short_of_it_and_stays_with_time_and_room_to_spare():
-    ended, ticks, _ = play(love(NE, SE), "Love")
-    assert ended is Outcome.WON and ticks * DT < LEVELS["Love"].time_limit / 2
-    assert play(love(NE, SE), "Love")[1] == ticks  # the same tick, every run
+def love_on_the_axis():
+    """The smallest love (D-044): one eye at the front looking ahead, a Diff of a Source and the
+    eye, one thruster at the back, all on the body's axis."""
+    board = LEVELS["Love"].new_board()
+    eye = board.place(Kind.EYE, (2, 0), facing=E)
+    source = board.place(Kind.SOURCE, (0, -1))
+    diff = board.place(Kind.DIFFERENCE, (1, 0))
+    thruster = board.place(Kind.THRUSTER, (-2, 0))
+    for a, b in ((source, diff), (eye, diff), (diff, thruster)):
+        assert not isinstance(board.connect(a.id, b.id), Refused)
+    return Network.from_board(board)
+
+
+def nearest_and_last(net):
+    """How near Love's light the swimmer comes, and where it rests when the time is up [u]."""
     light = LEVELS["Love"].arena.light_xy[0]
-    nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(love(NE, SE), "Love", 20.0))
-    assert nearest > REACH * (LIGHT_RADIUS + 1.0) + 1.0  # a unit clear of touching (D-004)
+    far = [np.hypot(*(pos[0] - light)) for pos, _, _ in run(net, "Love", 20.0)]
+    return min(far), far[-1]
 
 
-def test_love_with_its_eyes_straight_ahead_stops_too_far_out_to_stay_by_the_light():
-    ended, _, (stayed, _) = play(love(E, E), "Love")
-    assert ended is Outcome.TIME_UP and not stayed.any()  # the eyes saturate 8.7 u out
+LOVE_RING = LEVELS["Love"].objectives[0].radius  # the swimmer's centre stays within it [u]
+TOUCH = REACH * (LIGHT_RADIUS + 1.0)  # a base body reaches the light this near [u]
 
 
-def test_without_a_diff_the_swimmer_touches_the_light_and_loses_at_once():
-    for wiring, upper, lower in (("aggression", NE, SE), ("fear", E, E), ("drive", E, E)):
-        ended, ticks, _ = play(love(upper, lower, wiring), "Love")
-        assert ended is Outcome.LOST and ticks * DT < 5.0, wiring
+def test_love_comes_to_the_light_stops_short_of_it_and_stays_with_time_and_room_to_spare():
+    ended, ticks, _ = play(love(E, E), "Love")
+    assert ended is Outcome.WON and ticks * DT < LEVELS["Love"].time_limit / 2
+    assert play(love(E, E), "Love")[1] == ticks  # the same tick, every run
+    nearest, last = nearest_and_last(love(E, E))
+    assert nearest > TOUCH + 1.0  # a unit clear of touching (D-004)
+    assert last + 1.0 < LOVE_RING  # its whole body inside the dashed ring
+
+
+def test_love_with_one_eye_one_diff_and_one_thruster_on_the_axis_wins_too():
+    ended, ticks, _ = play(love_on_the_axis(), "Love")
+    assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Love"].time_limit
+    nearest, last = nearest_and_last(love_on_the_axis())
+    assert nearest > TOUCH + 1.0 and last + 1.0 < LOVE_RING  # it rests 4.5 u out
+
+
+def test_love_with_its_eyes_turned_out_loses_sight_of_the_light_and_touches_it():
+    assert play(love(NE, SE), "Love")[0] is Outcome.LOST  # the light ends behind their faces
+
+
+def test_without_a_diff_the_swimmer_touches_the_light_and_loses():
+    for wiring, upper, lower in (
+        ("aggression", E, E),
+        ("aggression", NE, SE),
+        ("fear", E, E),
+        ("drive", E, E),
+    ):
+        assert play(love(upper, lower, wiring), "Love")[0] is Outcome.LOST, wiring
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
