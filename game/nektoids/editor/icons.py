@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pygame
 
-from nektoids.editor.layout import EditButton, FileButton, LevelButton, Tool, ViewButton
+from nektoids.editor.layout import Drawer, EditButton, FileButton, LevelButton, Tool, ViewButton
 from nektoids.graph.board import Kind
 
 FONT_FILE = Path(__file__).resolve().parent.parent / "assets" / "fontawesome" / "fa-solid-900.ttf"
@@ -60,6 +60,26 @@ GLYPH = {
     "map": 0xF279,
     "lock": 0xF023,
     "circle-info": 0xF05A,
+    "puzzle-piece": 0xF12E,
+    "screwdriver-wrench": 0xF7D9,
+    "compass": 0xF14E,
+    "chevron-left": 0xF053,
+    "gear": 0xF013,
+    "keyboard": 0xF11C,
+    "clock": 0xF017,
+    "graduation-cap": 0xF19D,
+    "volume-high": 0xF028,
+    "music": 0xF001,
+    "border-all": 0xF84C,
+    "list-check": 0xF0AE,
+    "magnifying-glass": 0xF002,
+    "trophy": 0xF091,
+    "diagram-project": 0xF542,
+    "bullseye": 0xF140,
+    "circle-xmark": 0xF057,
+    "right-from-bracket": 0xF2F5,
+    "location-dot": 0xF3C5,
+    "stethoscope": 0xF0F1,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.
@@ -84,12 +104,24 @@ TOOL_ICON = {
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
 FILE_ICON = {FileButton.SAVE: "floppy-disk", FileButton.LOAD: "folder-open"}
-LEVEL_ICON = {LevelButton.MAP: "map", LevelButton.RUN: "play"}
+LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.EDIT: "diagram-project"}
+DRAWER_ICON = {  # the activity bar's (D-051)
+    Drawer.PARTS: "puzzle-piece",
+    Drawer.TOOLS: "screwdriver-wrench",
+    Drawer.FILES: "floppy-disk",
+    Drawer.SENSE: "stethoscope",
+    Drawer.INSIDE: "magnifying-glass",
+    Drawer.SCORE: "trophy",
+    Drawer.NAVIGATOR: "compass",
+    Drawer.SETTINGS: "gear",
+    Drawer.CHAPTERS: "map",
+}
 VIEW_ICON = {
     ViewButton.ZOOM_IN: "magnifying-glass-plus",
     ViewButton.ZOOM_OUT: "magnifying-glass-minus",
     ViewButton.PAN: "hand",
     ViewButton.CENTRE: "location-crosshairs",
+    ViewButton.RAYS: "lightbulb",
 }
 
 

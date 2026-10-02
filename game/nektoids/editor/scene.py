@@ -34,38 +34,56 @@ selection. Every refusal flashes the cell and puts the reason in the status line
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
 
 import pygame
 
+from nektoids.editor.devdrive import TICKS_PER_FRAME
+from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.history import History
 from nektoids.editor.layout import (
     KEY_ALIASES,
+    MAX_HEX,
     MENU_GROUPS,
+    SENSE_MAP,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
+    Bounds,
+    Drawer,
     EditButton,
     Layout,
+    MainView,
     Tool,
     ViewButton,
+    board_extent,
+    board_view_of,
     cell_at,
+    centred_on,
     centred_view,
+    contains,
     edit_button_at,
     file_button_at,
     group_at,
-    info_at,
-    level_button_at,
+    kept_on_board,
+    main_view_at,
     make_layout,
     menu_item_at,
-    palette_target_at,
+    moved_view,
+    overview_view,
     pan,
     tool_at,
+    value_at,
     view_button_at,
+    win_row_at,
     zoom,
+    zoom_bar_at,
+    zoom_button_at,
 )
+from nektoids.editor.probe import Probe, level_view
+from nektoids.editor.router import Won
+from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Board, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
@@ -78,6 +96,7 @@ from nektoids.graph.hexgrid import (
     to_pixel,
     vertical_step,
 )
+from nektoids.levels.level import Level
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
@@ -99,16 +118,34 @@ ENTER_SCANCODES = (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
 # 1-9 on the top row or on the keypad: the menu's parts in order.
 DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
 KEYPAD_SCANCODES = tuple(getattr(pygame, f"KSCAN_KP_{n}") for n in range(1, 10))
+MAX_WINS = 10  # the wins Files lists, the best first
+PROBE_TURN = math.radians(15.0)  # the wheel, L or R, on the probe in Sense
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
 
-class EditorScene:
-    def __init__(self, board: Board, layout: Layout, caption: tuple[str, str] = ("", "")):
+class EditorScene(Frame):
+    def __init__(
+        self,
+        board: Board,
+        layout: Layout,
+        caption: tuple[str, str] = ("", ""),
+        settings: Settings | None = None,
+        level: Level | None = None,
+    ):
+        self._start_frame(layout, settings)
         self.board = board
-        self.layout = layout
-        self.caption = caption  # the level's title and spec, shown over the board
-        self.request: str | None = None  # "run" or "map": for main.py, which clears it
+        self.level = level  # where the Run preview's probe stands; None: no preview
+        self.main = MainView.DIAGRAM  # what the main screen shows (D-058)
+        self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
+        self._probed = None  # the board as the probe was made for it
+        self.probing = False  # the probe held in Sense's map, following the mouse
+        self.holding: int | None = None  # the eye whose meter's knob the mouse holds
+        self.overviewing = False  # Navigator's overview held: the view follows the mouse
+        self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
+        self.focus: frozenset[Cell] = frozenset()  # cells a tutorial's step acts on; main.py's
+        self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
+        self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
@@ -125,35 +162,60 @@ class EditorScene:
         self.mouse = (0, 0)
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
         self.hover: Cell | None = None  # the same, if it is in the zone
-        self.message = ""  # last refusal, empty once something succeeds
         self.cursor: Cell | None = None  # keyboard cursor, while the keyboard drives
         self.carrying = False  # Move by keyboard: grabbed with Enter, not yet dropped
-        self.tip_target: Tool | ViewButton | str | None = None  # palette button under the mouse
-        self.tip_frames = 0  # how long it has been there
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
-        self.info: Kind | None = None  # the part whose info box is open
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
-        self.lit: frozenset[str] = (
-            frozenset()
-        )  # panels a tutorial step explains: "menu"... main.py's
-        self.gate: Callable[[Action], bool] | None = (
-            None  # what the tutorial lets through; main.py's
-        )
 
     def update(self) -> None:
         """Once per frame."""
         if self.flash_frames > 0:
             self.flash_frames -= 1
-        if self.tip_target is not None:
-            self.tip_frames += 1
+        self.frame_update()
+        self.view = kept_on_board(self.layout, self.view, self.extent())  # D-066
+        if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.SENSE:
+            self._probe_now()
+        if self.probe is not None:
+            self.probe.see(self.view)  # the board's own scale and place, zoomed or panned
+        if self.main is MainView.PREVIEW:
+            for _ in range(TICKS_PER_FRAME):
+                self.probe.tick()
 
-    @property
-    def tooltip(self) -> Tool | ViewButton | str | None:
-        """The palette button whose tooltip shows now, if any."""
-        return self.tip_target if self.tip_frames >= TOOLTIP_FRAMES else None
+    def _probe_now(self) -> None:
+        """The probe, made again if the board changed since; it stays where it stood."""
+        if self.level is None:
+            return
+        now = self.board.snapshot()
+        if self.probe is None or now != self._probed:
+            pose = self.probe.pose if self.probe is not None else None
+            self.probe = Probe(self.board, self.level, self.view, pose)
+            self._probed = now
+
+    def show(self, view: MainView) -> None:
+        """The main screen shows the Diagram view or the Run preview (D-058)."""
+        if view is MainView.PREVIEW and self.level is None:
+            self._refuse("there is no level to run the board in")
+        elif view is not self.main and self._allowed(Action("view")):
+            self._cancel()
+            self.main = view
+
+    def open_drawer(self, drawer: Drawer | None) -> None:
+        """As the frame opens it; Sense puts the Run preview on the main screen (D-058)."""
+        super().open_drawer(drawer)
+        if drawer is Drawer.SENSE and self.main is not MainView.PREVIEW:
+            self.show(MainView.PREVIEW)
+
+    def _on_map(self, pos: tuple[int, int]) -> bool:
+        """Whether `pos` is on Sense's map of the level, with a probe to move."""
+        sense = self.layout.drawer is Drawer.SENSE and self.probe is not None
+        return sense and contains(SENSE_MAP, pos)
+
+    def _probe_to(self, pos: tuple[int, int]) -> None:
+        """The probe where the mouse is on Sense's map, outside the obstacles."""
+        self.probe.place(*level_view(self.level, SENSE_MAP).to_world(*pos))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION and self.cursor is not None and event.rel == (0, 0):
@@ -172,6 +234,8 @@ class EditorScene:
             self._press(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._release(event.pos)
+        elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
+            self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
             event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
         ):
@@ -192,20 +256,26 @@ class EditorScene:
                 self._edit(EditButton.REDO)
             return  # no other shortcut with Ctrl or Cmd: they are the browser's
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
+        on_board = self.main is MainView.DIAGRAM  # the cursor and Enter work on the board
         if arrow is not None:
-            self._arrow(arrow)
+            if on_board:
+                self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
-            self._enter()
+            if on_board:
+                self._enter()
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
-        elif event.scancode == pygame.KSCAN_TAB:  # LEVEL_KEYS[MAP]
-            self._ask("map")
+        elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS]
+            self.toggle_chapters()
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
             kinds = [k for _, group in MENU_GROUPS for k in group if k in self.layout.kinds]
             if digit < len(kinds):
                 self._pick(kinds[digit])
                 self.dragging = False  # placed with Enter, not by releasing a button
+        elif self._turns_probe(event.unicode):
+            sign = 1.0 if event.unicode.upper() == TOOL_KEYS[Tool.TURN_LEFT] else -1.0
+            self.probe.turn(sign * PROBE_TURN)
         else:
             self._shortcut(event.unicode)
 
@@ -271,9 +341,14 @@ class EditorScene:
             dx, dy = pos[0] - self.panning_from[0], pos[1] - self.panning_from[1]
             self.view, self.panning_from = pan(self.view, dx, dy), pos
         self.mouse = pos
-        target = palette_target_at(self.layout, pos)
-        if target != self.tip_target:
-            self.tip_target, self.tip_frames = target, 0
+        self.frame_track(pos)
+        if self.probing and self.probe is not None:
+            self._probe_to(pos)
+        if self.overviewing:
+            self._overview_to(pos)
+        if self.zooming:
+            self._zoom_to(pos)
+        self._hold(pos)
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
         self.pointed = pointed
@@ -285,9 +360,31 @@ class EditorScene:
             self._drag_to(pointed)
 
     def _press(self, pos: tuple[int, int]) -> None:
-        level = level_button_at(self.layout, pos)
-        if level is not None:
-            self._ask(level.value)  # "run" or "map"
+        if self.frame_press(pos):
+            return
+        view = main_view_at(self.layout, pos)
+        if view is not None:
+            self.show(view)
+            return
+        if self._on_map(pos):
+            self.probing = True
+            self._probe_to(pos)
+            return
+        if self.layout.overview is not None and contains(self.layout.overview, pos):
+            self.overviewing = True
+            self._overview_to(pos)
+            return
+        step = zoom_button_at(self.layout, pos)
+        if step is not None:
+            self._view_button(step)
+            return
+        if zoom_bar_at(self.layout, pos) is not None:
+            self.zooming = True
+            self._zoom_to(pos)
+            return
+        won = win_row_at(self.layout, pos)
+        if won is not None:
+            self._put_back(won)
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:
@@ -307,15 +404,18 @@ class EditorScene:
         title = group_at(self.layout, pos)
         if title is not None:
             self.folded ^= {title}
-            self.layout = make_layout(frozenset(self.folded), self.layout.kinds)
-            return
-        kind = info_at(self.layout, pos)
-        if kind is not None:
-            self.info = kind
+            self.layout = self._relayout(self.layout.drawer)
             return
         kind = menu_item_at(self.layout, pos)
         if kind is not None:
             self._pick(kind)
+            return
+        if self.main is MainView.PREVIEW:  # the board is not on screen to edit, but the eyes are
+            if self.tool is Tool.PAN:  # the hand moves the view, the preview's as the board's
+                self.panning_from = pos
+                return
+            self.holding = self.probe.handle_at(pos) if self.probe is not None else None
+            self._hold(pos)
             return
         if self.pointed is None:
             return
@@ -339,7 +439,40 @@ class EditorScene:
         else:
             self._delete(self.hover, pos)
 
+    def _turns_probe(self, typed: str) -> bool:
+        """L and R turn the probe while Sense shows it with the Run preview; else the parts."""
+        turns = typed.upper() in (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
+        shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.SENSE
+        return turns and shown and self.probe is not None
+
+    def extent(self) -> Bounds:
+        """What Navigator's overview shows of the board, and the most the main screen may."""
+        return board_extent(self.layout, sorted(self.board.cells))
+
+    def least_zoom(self) -> float:
+        """The farthest the zoom goes: the main screen shows the overview's extent [px]."""
+        return board_view_of(self.layout.board_area, self.extent()).size
+
+    def _overview_to(self, pos: tuple[int, int]) -> None:
+        """The view, at its zoom, centred where the mouse is on Navigator's overview (D-060)."""
+        small = overview_view(self.layout, sorted(self.board.cells))
+        moved = centred_on(self.layout, self.view, small, pos)
+        self.view = kept_on_board(self.layout, moved, self.extent())
+
+    def _zoom_to(self, pos: tuple[int, int]) -> None:
+        """The zoom where the mouse is along Navigator's zoom bar, about the board's centre."""
+        x, _, w, _ = self.layout.zoom_bar
+        size = value_at((pos[0] - x) / w, self.least_zoom(), MAX_HEX)
+        bx, by, bw, bh = self.layout.board_area
+        self.view = zoom(self.view, size / self.view.size, (bx + bw / 2, by + bh / 2))
+
+    def _hold(self, pos: tuple[int, int]) -> None:
+        """The eye whose knob is held reads what its meter says at the mouse: a test input."""
+        if self.holding is not None and self.probe is not None:
+            self.probe.hold(self.holding, self.probe.level_at(self.holding, pos[1]))
+
     def _release(self, pos: tuple[int, int]) -> None:
+        self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
         self.moving, self.panning_from = None, None
         if self.pressed is not None:
             self._end_wiring()
@@ -349,11 +482,32 @@ class EditorScene:
         if self.pointed is not None:
             self._add(self.pointed)
 
-    def _ask(self, request: str) -> None:
-        """Run or the map, for main.py, if the tutorial lets it through."""
-        if self._allowed(Action(request)):
+    def _slid(self, before: Layout, after: Layout) -> None:
+        """The board moved: the view slides with its centre, so nothing jumps; the Run preview
+        fits its new room."""
+        self.view = moved_view(self.view, before, after)
+        if self.probe is not None:
+            self.probe.see(self.view)
+
+    def _relayout(self, drawer: Drawer | None) -> Layout:
+        """The layout with `drawer` open, the same parts handed out and the same chapter."""
+        kinds, chapter = self.layout.kinds, self.layout.chapter
+        return make_layout(drawer, frozenset(self.folded), kinds, chapter, wins=len(self.wins))
+
+    def set_wins(self, wins: tuple[Won, ...]) -> None:
+        """The level's wins this session, as Files lists them: at most MAX_WINS (D-059)."""
+        wins = wins[:MAX_WINS]
+        if wins != self.wins:
+            self.wins = wins
+            self.layout = self._relayout(self.layout.drawer)
+
+    def _put_back(self, index: int) -> None:
+        """A win's board back on the board; the one left goes to Undo (D-059)."""
+        if self._allowed(Action("load")):
             self._cancel()
-            self.request = request
+            self.board.restore(self.wins[index].board)
+            self.main = MainView.DIAGRAM
+            self.selected = None
 
     def _allowed(self, action: Action, cell: Cell | None = None) -> bool:
         """Whether the tutorial's step lets `action` through (D-048); if not, say so."""
@@ -416,6 +570,7 @@ class EditorScene:
         if not self._allowed(Action("tool", tool=tool)):
             return
         self._cancel()
+        self.main = MainView.DIAGRAM  # a tool is for the board
         self.tool = tool
         if tool in TURNS and self.selected is not None:
             self._turn(self.board.nodes[self.selected].cell, TURNS[tool])
@@ -424,6 +579,7 @@ class EditorScene:
         if not self._allowed(Action("pick", kind=kind)):
             return
         self._cancel()
+        self.main = MainView.DIAGRAM  # a part is for the board
         self.tool = Tool.ADD
         if self.board.remaining(kind) == 0:
             self._refuse("none left", None)
@@ -432,7 +588,7 @@ class EditorScene:
 
     def _add(self, cell: Cell) -> None:
         if self.picked is None:
-            self._refuse("pick a component in the menu first", None)
+            self._refuse("pick a part in Parts first", None)
             return
         if not self._allowed(Action("place", kind=self.picked, cell=cell), cell):
             return
@@ -512,7 +668,7 @@ class EditorScene:
             return
         node = self.board.node_at(cell)
         if node is None:
-            self._refuse("drag a component", cell)
+            self._refuse("drag a part", cell)
             return
         self.selected = node.id
         if node.locked:
@@ -594,6 +750,6 @@ class EditorScene:
             self.ghost = self.board.preview(*self.board.orient(start, target.id))
             self.ghost_connects = isinstance(self.ghost, tuple)
 
-    def _refuse(self, reason: str, cell: Cell | None) -> None:
+    def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason
         self.flash_cell, self.flash_frames = cell, FLASH_FRAMES

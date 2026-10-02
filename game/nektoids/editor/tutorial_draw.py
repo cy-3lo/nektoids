@@ -21,7 +21,7 @@ from nektoids.editor.palette import (
     TOOLTIP_BG,
     VEIL,
 )
-from nektoids.editor.tutorial import LINE, PAD, Tutorial, next_rect, skip_rect
+from nektoids.editor.tutorial import LINE, PAD, Page, Tutorial, next_rect, skip_rect
 
 HALO = 6  # the lit margin round the target [px]
 HOLE_RADIUS = 10  # the corners of a hole round an area or a button [px]
@@ -39,14 +39,17 @@ def draw_tutorial(
     step = tutorial.step
     if step is None:
         return
-    if spots:  # pygame.draw writes CLEAR as it is, alpha and all: holes in the veil
+    if spots and tutorial.explains:  # it explains: the rest dimmed, its panels outlined (D-050)
         veil = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         veil.fill(VEIL)
-        for rect, shape in spots:
+        for rect, shape in spots:  # pygame.draw writes CLEAR as it is, alpha and all: holes
             _hole(veil, CLEAR, rect, shape, 0)
         screen.blit(veil, (0, 0))
-        if tutorial.explains:  # it explains a panel: outlined, besides dimming the rest
-            for rect, shape in spots:
+        for rect, shape in spots:
+            _hole(screen, LIT, rect, shape, OUTLINE)
+    elif spots:  # it asks for an action: nothing dimmed; its cells lit by the board (D-063),
+        for rect, shape in spots:  # a row, a tool, a button outlined in the accent
+            if shape == "spot":
                 _hole(screen, LIT, rect, shape, OUTLINE)
     frame = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, frame, border_radius=8)
@@ -70,7 +73,19 @@ def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -
     the margin; a panel on its own edges, square, the outline inside them, so that one at the
     screen's edge stays on it; a rounded rectangle round anything else."""
     hole = pygame.Rect(rect)
-    if shape == "disc":
+    if shape == "none":  # inside another's hole
+        return
+    if isinstance(shape, Page):  # the Run tab on top, the page under it, the outline inside
+        inset = width // 2
+        tx, _, tw, th = shape.tab
+        left, right, top, bottom = hole.left + inset, hole.right - 1 - inset, inset, hole.bottom - 1
+        points = [(tx, top), (tx + tw, top), (tx + tw, th), (right, th), (right, bottom)]
+        points += [(left, bottom), (left, th), (tx, th)]
+        if width:
+            pygame.draw.lines(surface, colour, True, points, width)
+        else:
+            pygame.draw.polygon(surface, colour, points)
+    elif shape == "disc":
         pygame.draw.circle(surface, colour, hole.center, hole.height // 2 + HALO, width)
     elif shape == "panel":
         pygame.draw.rect(surface, colour, hole, width)
@@ -81,5 +96,5 @@ def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -
 
 def _button(screen: pygame.Surface, fonts: Fonts, rect: Rect, text: str, pointer) -> None:
     pygame.draw.rect(screen, ACTIVE if contains(rect, pointer) else BUTTON, rect, border_radius=6)
-    label = fonts.small.render(text, True, TEXT)
+    label = fonts.label.render(text, True, TEXT)
     screen.blit(label, label.get_rect(center=pygame.Rect(rect).center))

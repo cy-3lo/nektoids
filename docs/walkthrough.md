@@ -207,7 +207,7 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 | `tests/test_board.py` | placement and stock, wire validity, the edge rule (a stress layout with its own checker), one pinned route, moves that fail leave everything unchanged |
 | `tests/test_geometry.py` | arc radii and tangency, arrows, wire hit-testing |
 | `tests/test_layout.py` | three columns, hit-testing, folding, zoom and pan, shortcut keys |
-| `tests/test_assets.py` | the icon font ships with its licence, under 500 KB |
+| `tests/test_assets.py` | the icon and text fonts ship with their licences, and are small |
 | `tests/test_architecture.py` | no pygame in `sim/` or `graph/` |
 | `tests/test_network.py` | the board compiled to arrays: numbering, input order, impossible wires, topological order, loops |
 | `tests/test_dynamics.py` | the lag step by step, bounds for every graph, determinism, rates against an independent evaluator, loops that settle, hold, latch or oscillate |
@@ -343,17 +343,14 @@ it meets, so their density falls as 1/r, like the light, and a shadow is where n
 fans turn slowly, at random but the same at every run; X hides them or shows them again. I, a
 developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
 
-Over the arena's top left, the level's number and title, "LEVEL 1.2. In the shadow" (D-034).
-Right, one column in three titled parts, as the editor's palette writes its titles. CONTROLS, with
-the time at its right: two palettes of five, one row each, the view (zoom in, zoom out, the hand
-to move the view, centre, which frames the swimmers and the lights, and the rays on or off), then
-the player (back to the editor, start again, play or pause, a step of 0.1 s, fast forward), and
-right under it the timeline (D-033). Then OBJECTIVES, and INSIDE, the swimmer's wiring. Every button
-has a key, which its tooltip names; a key means the same here as in the editor (zoom, hand and
-centre are the editor's own keys, and with the hand the arrows drag the view, in both). In the middle, the level's objectives, each counted and with a bar: for now
-"Visit every light", so many reached of so many (section 9).
-At the bottom, the selected swimmer's wiring on its body, plain: parts shaded by their rate,
-beads on the wires, no numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
+Round the arena, since D-057, the editor's frame (section 15): the bar with Objectives, Inside,
+Score and Navigator, the tabs with the level's line under them, and under the arena the
+controls (start again, play or pause, a step of 0.1 s, fast forward) and the timeline (D-033).
+Every button has a key, which its tooltip names; a key means the same here as in the editor
+(zoom, hand and centre are the editor's own keys, and with the hand the arrows drag the view, in
+both). Objectives counts each objective, with a bar (section 9); Inside shows the selected
+swimmer's wiring on its body, plain: beads on the wires, a meter by each eye and thruster, no
+numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
 the swimmer, turn it with the wheel or L and R, and watch which eye lights up and which thruster
 fires.
 
@@ -375,7 +372,8 @@ makes a circle through the centre, pointing at it.
   `schematic_draw.draw_circuit` draws one, `plain` for the panel. The F2 view is pixel for pixel
   what it was.
 - [`editor/arena_layout.py`](../game/nektoids/editor/arena_layout.py), pure, like `layout.py`: where
-  the arena, the palettes, the objectives and the wiring sit, and `button_at` for the mouse.
+  the run's own things sit in its frame, the controls, the timeline, the banner, and
+  `control_at` and `timeline_at` for the mouse.
 - [`editor/arena_view.py`](../game/nektoids/editor/arena_view.py), pure: from u (y up) to pixels
   (y down) and back, `zoom_view` and `frame` for the view buttons, `Rays` and `ray_ends` for the
   rays, the grid of the light map, `smooth` and `tone` for its greys, `polar_scale`, and
@@ -591,23 +589,25 @@ Esc to change the board, and after a win Enter for the next level.
 - **`main.py`'s loop has no automated test.** A scratch script drove it through edit, run, a
   win, next level, run and Esc before the PR; `Router` itself is tested.
 
-## 11. Around the levels: title card, map, end (D-035)
+## 11. Around the levels: title card, Chapters, end (D-035, D-054)
 
-Read D-035 first. The game now opens under a title card; Tab, or Map in the palette's LEVEL
-section beside Run (D-037), shows the map. A level opened from the map or by Next level comes up
-under its own card, which says what it asks (D-042).
+Read D-035 and D-054 first. The game opens under a title card; Chapters (Tab, or its icon at
+the bar's foot) lists the levels and the sandbox in a drawer. A level opened from it or by Next
+level comes up under its own card, which says what it asks (D-042).
 
 - [`editor/router.py`](../game/nektoids/editor/router.py) holds the screen (`Screen`: title,
-  spec, map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the
-  levels won this session; `unlocked` says which places the map lets the player open.
-- [`editor/shell.py`](../game/nektoids/editor/shell.py), pure: where the map's rows and the
-  bottom button sit, and what is under a pixel; [`shell_draw.py`](../game/nektoids/editor/shell_draw.py)
-  draws the cards, the map and the end from the router, changing nothing.
-- [`main.py`](../game/main.py): `shell_event` hands the cards, the map and the end their
-  events; a run that is won marks its level won, which opens the next one on the map.
+  spec, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the
+  levels won this session; `unlocked` says which places the player may open, `rows` what
+  Chapters shows of each.
+- [`editor/shell.py`](../game/nektoids/editor/shell.py), pure: where the card and the end's
+  button sit; [`shell_draw.py`](../game/nektoids/editor/shell_draw.py) draws the cards and the
+  end from the router, changing nothing.
+- [`main.py`](../game/main.py): `shell_event` hands the cards and the end their events;
+  `choose_place` opens a place picked in Chapters; a run that is won marks its level won, which
+  opens the next one in Chapters.
 
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What
-would a player see on the map if the mark were only set when Next level is pressed?
+would a player see in Chapters if the mark were only set when Next level is pressed?
 
 ## 12. Tutorials and hints (D-038, D-039, D-048, D-050)
 
@@ -618,9 +618,9 @@ Skip ends it.
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
   a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
   wait is over (`met`); `next` and `skip` are the box's buttons, `answer` what a key or click
-  does to the tutorial, `restart` what opening the map does.
+  does to the tutorial, `restart` what choosing a place in Chapters does.
   `allows(step, Action)` says what a leading step lets through; `explains` whether it holds the
-  run and outlines its `panels`; `guided` whether a level starts afresh at the map.
+  run and outlines its `panels`; `guided` whether a level starts afresh when a place is chosen.
   `target_spots` finds what a step
   shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
   (`_crosses`) and the step `before`.
@@ -664,9 +664,9 @@ is LOST checked before WON in `outcome`? (Make a level with Visit every light an
 
 ## 14. The score: time against parts (D-045, D-046)
 
-Read D-045 and D-046 first. Win a level, then win it again with another board: the column's
-last block shows your wins as points, time against parts, and the front of those no other
-beats.
+Read D-045 and D-046 first. Win a level, then win it again with another board: Score, a
+drawer of the run (D-057), shows your wins as points, time against parts, and the front of
+those no other beats.
 
 - [`graph/board.py`](../game/nektoids/graph/board.py): `complexity(board)`, the number of
   parts. Nothing in `sim/` reads it: every body is a sphere of radius 1 u.
@@ -676,12 +676,105 @@ beats.
   scores for the session, in a set; `scores` gives the open level's.
 - [`main.py`](../game/main.py) records a run while it stands won and hands the level's scores
   to the run; [`arena_draw.py`](../game/nektoids/editor/arena_draw.py) `_draw_wins` draws
-  them where the wiring was.
+  them in Score.
 - Tests: [`test_score.py`](../tests/test_score.py) for `beats` and `front`;
   [`test_router.py`](../tests/test_router.py) for a score kept once, per level.
 
 Questions: `main.py` records the score on every frame the run stands won; why is that one
 point and not hundreds? Why are scores kept in ticks rather than seconds?
+
+## 15. The editor's frame: the activity bar and its drawers (D-051, D-053)
+
+Read D-051 and D-053 first, and look at the mockups. `python game/main.py`: the bar on the left,
+Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
+
+- [`editor/layout.py`](../game/nektoids/editor/layout.py), pure: `make_layout(drawer, folded,
+  kinds)` places the bar's icons, the open drawer's rows (`_Rows`), the tabs and the board;
+  `moved_view` slides the view when the board moves; the `*_at` functions say what is under a
+  pixel.
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `open_drawer`, and `_press`, which asks
+  the fold handle, the bar, the tabs and the info discs before the rows and the board.
+- [`editor/draw.py`](../game/nektoids/editor/draw.py): `_draw_bar`, `_draw_drawer` and
+  `_draw_row`, the one row style every drawer uses; `_draw_tabs`, with the level's line under
+  the tabs (D-056); `Fonts`, the fonts by their job (D-055).
+- [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `drawer_for`, the drawer a step
+  opens.
+
+Questions: why is an info disc asked before its row, in `_press`? What would the player see if
+`open_drawer` did not slide the view?
+
+Settings and Chapters (D-054) sit at the bar's foot. Open Settings and click Fast forward, then
+Chapters (Tab) and a locked level.
+
+- [`editor/settings.py`](../game/nektoids/editor/settings.py), pure: the session's `Settings`,
+  each one stepping through its choices.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `FOOT`, and `_Rows.settings` and
+  `_Rows.chapters`; `chapter_row_at`, `setting_row_at`.
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `_choose_place` and `_set`, which leave
+  `chosen` or `request` for `main.py`; `_relayout` keeps the parts and the chapter when the
+  drawer changes.
+
+Questions: why does the scene leave the chosen place for `main.py` rather than open it itself?
+Why is a row's best time in its info box rather than on the row?
+
+The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc.
+
+- [`editor/frame.py`](../game/nektoids/editor/frame.py), pure: `Frame`, what both screens
+  inherit: the bar, one drawer at a time, the tabs and the switch, info discs, Chapters and
+  Settings, tooltips. Each screen gives `_relayout` and `_slid`. Tested headless in
+  [`test_frame.py`](../tests/test_frame.py).
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `make_layout(env=Env.RUN)`, the run's
+  drawers (`DRAWERS`), its switch (`SWITCH_TO`), `Goal` rows, the controls strip.
+- [`editor/arena.py`](../game/nektoids/editor/arena.py): `ArenaScene(Frame)`, `_press`, which
+  asks the frame first; [`arena_draw.py`](../game/nektoids/editor/arena_draw.py): `_draw_rows`
+  and `_draw_controls`.
+- [`main.py`](../game/main.py): `on_screen()`, the scene the tutorial's box and drawers follow;
+  `run_drawer`, kept from one run to the next.
+
+Questions: what does `_slid` do in the editor, and in the run? Why is the controls strip not an
+"area" for the tutorial's box (`tutorial.is_area`)?
+
+The Run preview and Sense (D-058). Open Sense: the main screen runs your board where the probe
+stands; drag the probe on the map, then drag an eye's knob.
+
+- [`editor/probe.py`](../game/nektoids/editor/probe.py), pure: `Probe`, the board as it would
+  run at a pose, its eyes reading the light once (nothing moves), `hold` for an eye's knob;
+  `level_view`, the level seen whole in Sense's map. Tested in
+  [`test_probe.py`](../tests/test_probe.py).
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `main` (a `MainView`), `show`,
+  `open_drawer` (Sense shows the preview), `_probe_now`, `_hold`.
+- [`editor/preview_draw.py`](../game/nektoids/editor/preview_draw.py): the preview and its
+  knobs; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_view_switch`, `_draw_sense`.
+
+Questions: why does the probe read the light once, and not every tick? What would a held eye
+do to a run, and why can it not?
+
+Files (D-059): win a level twice with two boards, then open Files and click the other win.
+
+- [`editor/router.py`](../game/nektoids/editor/router.py): `record` keeps the board with its
+  score; `wins` lists them, the unbeaten first (`Won`). Tested in
+  [`test_router.py`](../tests/test_router.py).
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `set_wins`, `_put_back`, which only
+  restores the board: `_keep`, after the click, puts the board left into the history.
+
+Question: why does `_put_back` not call `history.record` itself?
+
+The run opens paused, and Fear's tutorial opens in it (D-060).
+
+- [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `Tutorial.start`, the screen a
+  tutorial opens on; `{"tab": "editor"}`, a target; `allows` lets the way to the screen a step
+  waits for through, and "play" while it waits for a win.
+- [`main.py`](../game/main.py): `begun`, a card gone this frame, which opens Fear's run.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `overview_view`, `shown_frame`,
+  `centred_on`, Navigator's overview; [`probe.py`](../game/nektoids/editor/probe.py): `see`,
+  the preview through the editor's view.
+
+Question: why must the run's controls ask the tutorial's gate, now that Fear starts in the run?
+
+The objectives at the foot of every run drawer, and Navigator's zoom bar (D-065):
+[`layout.py`](../game/nektoids/editor/layout.py)'s `goal_area` and `zoom_bar`, `level_of` and
+`value_at`, the zoom on a log scale; `arena_draw._draw_rows` draws the objectives under any
+drawer.
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

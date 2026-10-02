@@ -13,7 +13,7 @@ import numpy as np
 import pygame
 
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
-from nektoids.editor.circuit import Circuit
+from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import knob_y, track_for
 from nektoids.editor.draw import (
     Fonts,
@@ -24,7 +24,6 @@ from nektoids.editor.geometry import cumulative_lengths, point_at, wire_points
 from nektoids.editor.palette import (
     BACKGROUND,
     BEAD,
-    BEAD_OFF,
     DARK,
     DIM_TEXT,
     FULL,
@@ -35,17 +34,13 @@ from nektoids.editor.palette import (
     VALUE,
     WARN,
     WIRE,
-    WIRE_OFF,
 )
 from nektoids.editor.schematic import BOARD_AREA, PANEL_WIDTH, STATUS_HEIGHT, SchematicScene
 from nektoids.graph.board import Kind
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 
-BEAD_RADIUS = 0.12  # hex sizes
 BAR_WIDTH = 6  # [px]
-METER_HEIGHT = 1.0  # every part's level meter, eye or thruster alike [hex sizes]
-METER_AT = 0.86  # its centre right of the part's, past every part's reach [hex sizes]
 METER_WIDTH = 10  # [px]
 HEADINGS = {"head": DIM_TEXT, "eq": TEXT, "warn": WARN}
 LINE_HEIGHT = 17  # [px]
@@ -67,15 +62,6 @@ def _text(font: pygame.font.Font, text: str, colour: tuple[int, int, int]) -> py
             _TEXT_CACHE.clear()
         _TEXT_CACHE[key] = font.render(text, True, colour)
     return _TEXT_CACHE[key]
-
-
-def mix(low: tuple[int, int, int], high: tuple[int, int, int], t: float) -> tuple[int, int, int]:
-    t = min(1.0, max(0.0, t))
-    return (
-        round(low[0] + t * (high[0] - low[0])),
-        round(low[1] + t * (high[1] - low[1])),
-        round(low[2] + t * (high[2] - low[2])),
-    )
 
 
 def draw_schematic(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) -> None:
@@ -114,13 +100,11 @@ def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
     for k, path in enumerate(circuit.paths):
         points = wire_points(path, view.size, view.origin)
         flux = float(circuit.flux[k])
-        colour = mix(WIRE_OFF, WIRE, flux / (RATE_MAX / 2))
-        pygame.draw.lines(screen, colour, False, points, 2)
+        pygame.draw.lines(screen, WIRE, False, points, 2)  # one colour: the beads show the rate
         along = cumulative_lengths(points)
-        bead = mix(BEAD_OFF, BEAD, flux / RATE_MAX)
         for s in circuit.beads.positions(k, BEAD_RATE_AT_FULL / RATE_MAX * flux, belt=belt):
             x, y = point_at(points, along, s * view.size)
-            pygame.draw.circle(screen, bead, (round(x), round(y)), radius)
+            pygame.draw.circle(screen, BEAD, (round(x), round(y)), radius)
 
 
 def _draw_parts(

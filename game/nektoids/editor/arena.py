@@ -7,33 +7,33 @@ The developer's (F3): every level, Tab between them, and the tools below.
 
 Left, the arena: the light as rays (or, with I, as a map), the obstacles and the lights, and the
 swimmer as a circle round a wedge; its eyes and thrusters sit where the board puts them on it.
-Right, from the top (`arena_layout.py`): the player's and the view's palettes, the objectives and
-how many of each are met, and the selected swimmer's wiring, live: its eyes read the light every
-tick and every node follows with its lag (D-017), as it will in the game. The thrusters push
-against Stokes drag (D-022): the swimmer swims, sliding round the obstacles, in an open plane.
-A run stops when every objective is met, one loses it, or the level's time is up (D-023, D-040);
-0 starts it again.
-P shows, over the arena, the light at its eyes as a polar
-plot: what a flat eye there would read facing each way, E(phi), with a tick where each eye looks.
+Round it, the frame the editor has (`frame.Frame`, D-057): Objectives, how many of each are met;
+Inside, the selected swimmer's wiring, live: its eyes read the light every tick and every node
+follows with its lag (D-017); Score; Navigator; under the arena the controls and the timeline.
+The thrusters push against Stokes drag (D-022): the swimmer swims, sliding round the obstacles,
+in an open plane. A run stops when every objective is met, one loses it, or the level's time is
+up (D-023, D-040); 0 starts it again. P shows, over the arena, the light at its eyes as a polar
+plot: what a flat eye there would read facing each way, E(phi), with a tick where each eye
+looks.
 
-Mouse: the palettes' buttons; click the swimmer to show its wiring (it is shown to begin with),
-click beside it to hide it, drag it to move it (with the hand, drag the view); the wheel turns
-it by 15°, as do L (left, counter-clockwise) and R, the editor's turn keys. Keys
-(`arena_layout.BUTTON_KEYS`, named in the tooltips), the same as the editor's wherever they do
-the same: 0 starts again, Space plays or pauses, `.` runs a step of 0.1 s, F fast forwards, + and -
-zoom, H takes the hand (then the arrows drag the view), C centres, X shows or hides the rays;
-and I (light map), P (polar plot), Tab and Shift-Tab (arena). The timeline under the buttons
-puts the run at any time, clicked or dragged (D-033): every tick run is recorded, so going back
-restores it as it was, and going ahead of the furthest tick run races there; a red mark across
-it is where the run ended. Moving or turning the swimmer by hand, for trying things out, cuts the
-recording there. Mutates nothing in the board.
+Mouse: the frame, Navigator's rows, the controls; click the swimmer to show its wiring (it is
+shown to begin with), click beside it to hide it, drag it to move it (with the hand, drag the
+view); the wheel turns it by 15°, as do L (left, counter-clockwise) and R, the editor's turn
+keys. Keys (`arena_layout.BUTTON_KEYS`, named in the tooltips), the same as the editor's
+wherever they do the same: 0 starts again, Space plays or pauses, `.` runs a step of 0.1 s, F
+fast forwards, + and - zoom, H takes the hand (then the arrows drag the view), C centres, X
+shows or hides the rays; and I (light map), P (polar plot), Tab and Shift-Tab (arena). The
+timeline under the buttons puts the run at any time, clicked or dragged (D-033): every tick run
+is recorded, so going back restores it as it was, and going ahead of the furthest tick run races
+there; a red mark across it is where the run ended. Moving or turning the swimmer by hand, for
+trying things out, cuts the recording there. Mutates nothing in the board.
 """
 
 from __future__ import annotations
 
 import math
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -41,37 +41,56 @@ import numpy as np
 import pygame
 
 from nektoids.editor.arena_layout import (
-    ARENA_AREA,
-    CIRCUIT_AREA,
+    CONTROLS,
+    DRAWER_BODY,
     KEY_BUTTONS,
     MAP_KEY,
     POLAR_KEY,
     TURN_KEYS,
+    VIEW_BUTTON,
     ArenaButton,
     banner_button_at,
-    button_at,
+    control_at,
     timeline_at,
+    timeline_rect,
     timeline_time,
 )
 from nektoids.editor.arena_view import (
+    MAX_SCALE,
     ZOOM_STEP,
     ArenaView,
     Rays,
     body_at,
+    extent,
     frame,
+    kept_in,
     map_grid,
     map_points,
     pan_view,
     shown,
+    view_of,
     zoom_view,
 )
 from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT, Clock
-from nektoids.editor.layout import KEY_ALIASES
+from nektoids.editor.frame import Frame
+from nektoids.editor.layout import (
+    KEY_ALIASES,
+    Drawer,
+    Env,
+    Layout,
+    contains,
+    make_layout,
+    value_at,
+    view_button_at,
+    zoom_bar_at,
+    zoom_button_at,
+)
 from nektoids.editor.recording import Recording
 from nektoids.editor.router import level_label
-from nektoids.editor.scene import ARROW_SCANCODES, ARROWS, TOOLTIP_FRAMES
-from nektoids.editor.tutorial import REFUSAL, Action
+from nektoids.editor.scene import ARROW_SCANCODES, ARROWS
+from nektoids.editor.settings import Settings
+from nektoids.editor.tutorial import Action
 from nektoids.graph.board import Board, complexity
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
@@ -105,7 +124,6 @@ CIRCUIT_MARGIN = 1.0  # room round the body's circle [hex sizes]
 LIGHT_CELL = 0.25  # side of a light-map cell [u]
 FRAME_MARGIN = 3.0  # room round the swimmers, lights and obstacles when framing [u]
 TURN = math.radians(15.0)
-FAST = 4  # fast forward runs this many frames' worth of ticks a frame
 ARROW_PAN = 2.0  # with the hand, an arrow drags the view this far [u]
 SEEK_TICKS = 40  # a frame's worth of ticks while the run races ahead to a time asked for
 
@@ -132,7 +150,7 @@ class Count(NamedTuple):
     lost: bool
 
 
-class ArenaScene:
+class ArenaScene(Frame):
     def __init__(
         self,
         board: Board,
@@ -140,18 +158,20 @@ class ArenaScene:
         developer: bool = True,
         next_label: str | None = None,
         label: str | None = None,
+        settings: Settings | None = None,
+        drawer: Drawer | None = Drawer.INSIDE,
+        chapter: int = 0,
     ):
         self.levels = list(levels)
+        self.index = 0
+        layout = make_layout(drawer, env=Env.RUN, goals=len(self.level.objectives), chapter=chapter)
+        self._start_frame(layout, settings)  # also `request`: "edit", "next"... for main.py
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.next_label = next_label  # what the banner's next button says after a win; None: none
-        self.request: str | None = None  # "edit" or "next": for main.py, which clears it
-        self.gate: Callable[[Action], bool] | None = None  # what the tutorial lets through
-        self.message = ""  # why the last press did nothing, until the next one
-        self.lit: frozenset[str] = frozenset()  # panels a tutorial step explains: main.py's
-        self.index = 0
         self.clock = Clock()
-        self.circuit = Circuit(board, CIRCUIT_AREA, CIRCUIT_MARGIN, body=True)
+        self.clock.paused = True  # a run waits for Play, to open the drawer it wants (D-060)
+        self.circuit = Circuit(board, DRAWER_BODY, CIRCUIT_MARGIN, body=True)  # in Inside
         self.parts = complexity(board)  # what this board scores (D-045)
         self.scores: frozenset[Score] = frozenset()  # the level's wins this session: main.py's
         self.eye_mount, self.eye_facing = world.parts(self.net, self.net.eyes)
@@ -162,11 +182,13 @@ class ArenaScene:
         self.show_polar = False  # the polar plot of the light at the eyes (developer)
         self.hand = False  # dragging moves the view, not a swimmer
         self.panning: tuple[int, int] | None = None  # where the hand last was, while it drags
+        self.overviewing = False  # Navigator's overview held: the view follows the mouse
+        self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.seek_to: int | None = None  # the tick the run races ahead to, if it does
         self.scrubbing = False  # the timeline held down: the run follows the mouse along it
         self.pointer = (0, 0)  # where the mouse is [px]
-        self.tip_target: ArenaButton | None = None  # the button under the mouse
-        self.tip_frames = 0  # ... for this many frames
+        self.control_target: ArenaButton | str | None = None  # a control, or "timeline"
+        self.control_frames = 0  # ... for this many frames
         self.map_version = 0  # goes up each time the light map changes
         self.map_ms = 0.0  # what computing it took, for the status line [ms]
         self._load()
@@ -185,18 +207,35 @@ class ArenaScene:
         return self.levels[self.index]
 
     @property
-    def caption(self) -> str:
-        """The level's number and title, over the arena (D-034)."""
-        return f"{self.label or level_label(self.index)}. {self.level.title}"
+    def caption(self) -> tuple[str, str]:
+        """The level's number and title, and what it asks: under the tabs (D-034, D-056)."""
+        return f"{self.label or level_label(self.index)}. {self.level.title}", self.level.spec
 
     @property
-    def tooltip(self) -> ArenaButton | None:
-        """The button whose tooltip shows now, if any."""
-        return self.tip_target if self.tip_frames >= TOOLTIP_FRAMES else None
+    def control_tip(self) -> ArenaButton | str | None:
+        """The control whose tooltip shows now, if any."""
+        rested = self.control_frames >= self.settings.tooltip_frames
+        return self.control_target if rested else None
+
+    @property
+    def arena_area(self):
+        """The main screen: the arena, beside the drawer, between the tabs and the controls."""
+        return self.layout.board_area
+
+    def _relayout(self, drawer: Drawer | None) -> Layout:
+        goals, chapter = len(self.level.objectives), self.layout.chapter
+        return make_layout(drawer, env=Env.RUN, goals=goals, chapter=chapter)
+
+    def _slid(self, before: Layout, after: Layout) -> None:
+        """The arena moved: the view slides with its centre, so nothing jumps."""
+        (x0, y0, w0, h0), (x1, y1, w1, h1) = before.board_area, after.board_area
+        dx, dy = (x1 + w1 / 2) - (x0 + w0 / 2), (y1 + h1 / 2) - (y0 + h0 / 2)
+        self._look(pan_view(self.view, dx, dy))
 
     # Loading an arena, starting again
 
     def _load(self) -> None:
+        self.layout = self._relayout(self.layout.drawer)  # as many rows as objectives
         self.title, self.arena = self.level.title, self.level.arena
         self.map_key: tuple | None = None  # the light map's grid: corner, cell, shape
         self.rays = Rays(self.arena.light_power)
@@ -209,7 +248,7 @@ class ArenaScene:
         ]
         points = np.concatenate(([[x, y]], self.arena.light_xy, self.arena.disc_xy, *rims))
         reach = float(np.concatenate(([LIGHT_RADIUS], self.arena.disc_radius, self.radius)).max())
-        self._look(frame(ARENA_AREA, points, FRAME_MARGIN + reach))
+        self._look(frame(self.arena_area, points, FRAME_MARGIN + reach))
 
     def _restart(self) -> None:
         x, y, heading = self.level.start
@@ -242,7 +281,7 @@ class ArenaScene:
         """The light map over the part of the plane in view, its grid built again only when that
         part changes; the obstacles' shadows on it with it, once."""
         start = time.perf_counter()
-        key = map_grid(shown(self.view, ARENA_AREA), LIGHT_CELL)
+        key = map_grid(shown(self.view, self.arena_area), LIGHT_CELL)
         if key != self.map_key:
             self.map_key = key
             self.grid = map_points(*key)
@@ -261,9 +300,14 @@ class ArenaScene:
     # Per frame
 
     def update(self) -> None:
-        target = button_at(self.pointer)
-        self.tip_frames = self.tip_frames + 1 if target is self.tip_target else 0
-        self.tip_target = target
+        self.frame_update()
+        kept = kept_in(self.view, self.arena_area, self.extent())  # D-066
+        if kept != self.view:
+            self._look(kept)
+        on_line = contains(timeline_rect(self.layout), self.pointer)
+        target = control_at(self.layout, self.pointer) or ("timeline" if on_line else None)
+        self.control_frames = self.control_frames + 1 if target is self.control_target else 0
+        self.control_target = target
         if self.outcome is not None:
             return  # over: 0 starts it again, the timeline goes back into it
         if self.seek_to is not None:  # racing ahead to a time asked for
@@ -395,25 +439,22 @@ class ArenaScene:
         return (ArenaButton.EDIT,)
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if self.info is not None and event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
+            self.info = None  # the next click or key closes the box, and only that
+            return
         if event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
             self.message = ""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            button = banner_button_at(self.banner_buttons, event.pos) or button_at(event.pos)
-            asked = timeline_at(event.pos, self.level.time_limit)
-            if button is not None:
-                self.press(button)
-            elif asked is not None:
-                self.scrubbing = True
-                self.seek(asked)
-            elif self.hand:
-                self.panning = event.pos
-            else:  # click to inspect; only a developer drags the swimmer about
-                self.selected = body_at(self.view, self.pos, self.radius, event.pos)
-                self.dragging = self.selected if self.developer else None
+            self._press(event.pos)
         elif event.type == pygame.MOUSEMOTION:
             self.pointer = event.pos
-            if self.scrubbing:
-                self.seek(timeline_time(event.pos[0], self.level.time_limit))
+            self.frame_track(event.pos)
+            if self.overviewing:
+                self._overview_to(event.pos)
+            elif self.zooming:
+                self._zoom_to(event.pos)
+            elif self.scrubbing:
+                self.seek(timeline_time(self.layout, event.pos[0], self.level.time_limit))
             elif self.panning is not None:
                 dx, dy = event.pos[0] - self.panning[0], event.pos[1] - self.panning[1]
                 self._look(pan_view(self.view, dx, dy))
@@ -422,20 +463,53 @@ class ArenaScene:
                 self._drag(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = self.panning = None
-            self.scrubbing = False
+            self.scrubbing = self.overviewing = self.zooming = False
         elif event.type == pygame.MOUSEWHEEL and self.developer:
             self._turn(float(event.y))
         elif event.type == pygame.KEYDOWN:
             self._key(event)
 
-    def _ask(self, request: str) -> None:
-        """Back to the editor or on to the next level, for main.py, if the tutorial lets it."""
-        if self.gate is None or self.gate(Action(request)):
-            self.request = request
+    def _press(self, pos: tuple[int, int]) -> None:
+        """A click: the frame's, Navigator's rows, the banner, the controls, the timeline, then
+        the arena: to inspect, or, for a developer, to drag the swimmer about."""
+        if self.frame_press(pos):
+            return
+        if self.layout.overview is not None and contains(self.layout.overview, pos):
+            self.overviewing = True
+            self._overview_to(pos)
+            return
+        step = zoom_button_at(self.layout, pos)
+        if step is not None:
+            self.press(VIEW_BUTTON[step])
+            return
+        if zoom_bar_at(self.layout, pos) is not None:
+            self.zooming = True
+            self._zoom_to(pos)
+            return
+        view = view_button_at(self.layout, pos)
+        button = (
+            (VIEW_BUTTON[view] if view is not None else None)
+            or banner_button_at(self.layout, self.banner_buttons, pos)
+            or control_at(self.layout, pos)
+        )
+        asked = timeline_at(self.layout, pos, self.level.time_limit)
+        if button is not None:
+            self.press(button)
+        elif asked is not None:
+            if self._allowed(Action("play")):
+                self.scrubbing = True
+                self.seek(asked)
+        elif not contains(self.arena_area, pos):
+            return
+        elif self.hand:
+            self.panning = pos
         else:
-            self.message = REFUSAL
+            self.selected = body_at(self.view, self.pos, self.radius, pos)
+            self.dragging = self.selected if self.developer else None
 
     def press(self, button: ArenaButton) -> None:
+        if button in CONTROLS and not self._allowed(Action("play")):
+            return  # a step that leads holds the run, unless it asks for Play (D-060)
         if button is ArenaButton.EDIT:
             self._ask("edit")
         elif button is ArenaButton.NEXT:
@@ -451,7 +525,7 @@ class ArenaScene:
             self._restore(self.recording.at(0))  # the same run, from its start
             self.clock.tick = 0
         elif button is ArenaButton.FAST:
-            self.clock.speed = 1 if self.clock.speed > 1 else FAST
+            self.clock.speed = 1 if self.clock.speed > 1 else self.settings.fast
         elif button is ArenaButton.HAND:
             self.hand = not self.hand
         elif button is ArenaButton.LIGHT:
@@ -467,12 +541,12 @@ class ArenaScene:
             self.clock.step()
         elif button in (ArenaButton.ZOOM_IN, ArenaButton.ZOOM_OUT):
             factor = ZOOM_STEP if button is ArenaButton.ZOOM_IN else 1.0 / ZOOM_STEP
-            x, y, w, h = ARENA_AREA
+            x, y, w, h = self.arena_area
             self._look(zoom_view(self.view, factor, (x + w / 2, y + h / 2)))
         elif button is ArenaButton.CENTRE:
             points = np.concatenate((self.pos, self.arena.light_xy))
             margin = FRAME_MARGIN + max(float(self.radius.max()), LIGHT_RADIUS)
-            self._look(frame(ARENA_AREA, points, margin))
+            self._look(frame(self.arena_area, points, margin))
 
     def _key(self, event: pygame.event.Event) -> None:
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
@@ -488,7 +562,9 @@ class ArenaScene:
         elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
             self.press(ArenaButton.NEXT)
         elif not self.developer:
-            if typed in KEY_BUTTONS:
+            if event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS], as in the editor
+                self.toggle_chapters()
+            elif typed in KEY_BUTTONS:
                 self.press(KEY_BUTTONS[typed])
         elif event.scancode == pygame.KSCAN_TAB:
             back = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
@@ -512,6 +588,38 @@ class ArenaScene:
         step = ARROW_PAN * self.view.scale
         dx, dy = {left: (-step, 0.0), right: (step, 0.0), up: (0.0, -step)}.get(key, (0.0, step))
         self._look(pan_view(self.view, dx, dy))
+
+    def extent(self) -> tuple[float, float, float, float]:
+        """What Navigator's overview shows, and the most the arena may (D-066): the lights and
+        their rings, the obstacles and the swimmer where it is now, with room to spare."""
+        arena = self.arena
+        rims = [
+            arena.light_xy + d for r, _ in self.rings for d in ((r, 0), (-r, 0), (0, r), (0, -r))
+        ]
+        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *rims))
+        reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
+        _, _, w, h = self.arena_area
+        return extent(points, reach, w / h)
+
+    def least_zoom(self) -> float:
+        """The farthest the zoom goes: the arena shows the overview's extent [px/u]."""
+        return view_of(self.arena_area, self.extent()).scale
+
+    def _overview_to(self, point: tuple[int, int]) -> None:
+        """The view, at its zoom, centred where the mouse is on Navigator's overview (D-060)."""
+        bounds = self.extent()
+        wx, wy = view_of(self.layout.overview, bounds).to_world(*point)
+        x, y, w, h = self.arena_area
+        s = self.view.scale
+        moved = ArenaView(s, (x + w / 2 - s * wx, y + h / 2 + s * wy))
+        self._look(kept_in(moved, self.arena_area, bounds))
+
+    def _zoom_to(self, point: tuple[int, int]) -> None:
+        """The zoom where the mouse is along Navigator's zoom bar, about the arena's centre."""
+        x, _, w, _ = self.layout.zoom_bar
+        scale = value_at((point[0] - x) / w, self.least_zoom(), MAX_SCALE)
+        ax, ay, aw, ah = self.arena_area
+        self._look(zoom_view(self.view, scale / self.view.scale, (ax + aw / 2, ay + ah / 2)))
 
     def _drag(self, point: tuple[int, int]) -> None:
         """Move the dragged swimmer under the mouse, outside the obstacles."""

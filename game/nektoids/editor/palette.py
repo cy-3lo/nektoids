@@ -133,6 +133,7 @@ P = PALETTE
 
 # Every view
 BACKGROUND = P.base
+BAR = P.deep  # the activity bar, the strip of tabs, the status line (D-051)
 DARK = P.base  # icons on parts, text on bright buttons
 PANEL = P.surface
 TOOLTIP_BG = mix(P.surface, P.raised, 0.5)
@@ -163,15 +164,14 @@ THRUSTER_BACK = P.accent1.mid  # the back a thruster pushes from
 WIRE = mix(P.dim, P.parts, 0.4)
 GHOST = P.muted  # where a wire would run
 GHOST_OK = P.bright  # ... and it may connect there
-GHOST_FILL = P.raised  # a tutorial's ghost part, under the real one
+FOCUS_CELL = mix(P.surface, P.accent1.mid, 0.55)  # a cell a tutorial's step acts on (D-063)
+GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part: a paler grey, no outline
 DOOMED = P.muted  # what a Delete click would remove
 
 # The circuit: rates and beads, in the developer view and the run's column
 FULL = P.bright  # a rate at RATE_MAX: the developer's sliders, the timeline
 METER = P.accent1.mid  # a part's level meter in a circuit: the colour of its face (D-052)
-WIRE_OFF = P.line  # a wire that carries nothing
-BEAD = P.bright  # a bead on a wire at RATE_MAX
-BEAD_OFF = P.muted  # ... and on a wire that barely carries anything
+BEAD = P.bright  # a bead on a wire, whatever it carries: its spacing shows the rate
 VALUE = P.text  # the live numbers in the developer view's panel
 WARN = P.accent2.mid  # the developer view's warnings
 

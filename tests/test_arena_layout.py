@@ -1,69 +1,94 @@
+"""The run's own places in the frame (D-057). arena_layout.py imports no pygame."""
+
 import pytest
 
 from nektoids.editor.arena_layout import (
-    ARENA_AREA,
-    BANNER,
     BUTTON_KEYS,
-    CIRCUIT_AREA,
+    CONTROLS,
+    DRAWER_BODY,
     KEY_BUTTONS,
     MAP_KEY,
-    PANEL_LEFT,
-    PLAYER,
     POLAR_KEY,
-    RULES,
-    SCORE_AREA,
-    TIMELINE,
     TURN_KEYS,
-    VIEW,
+    VIEW_BUTTON,
     ArenaButton,
     banner_button_at,
+    banner_rect,
     banner_rects,
-    button_at,
-    button_rects,
+    control_at,
+    control_rects,
+    polar_box,
+    summary_at,
     timeline_at,
+    timeline_rect,
     timeline_x,
 )
-from nektoids.editor.layout import SCREEN, TOOL_KEYS, VIEW_KEYS, Tool, ViewButton
+from nektoids.editor.layout import (
+    SCREEN,
+    TOOL_KEYS,
+    VIEW_KEYS,
+    Drawer,
+    Env,
+    Tool,
+    ViewButton,
+    contains,
+    make_layout,
+)
+
+RUN = make_layout(Drawer.INSIDE, env=Env.RUN, goals=2)
+FOLDED = make_layout(None, env=Env.RUN, goals=2)
 
 
-def test_the_palettes_sit_on_two_rows_the_players_over_the_timeline():
-    rects = dict(button_rects())
-    assert list(rects) == [*VIEW, *PLAYER] and len(PLAYER) == len(VIEW) == 5  # equal rows
-    for palette in (PLAYER, VIEW):
-        row = [rects[b] for b in palette]
-        assert len({y for _, y, _, _ in row}) == 1
-        for (x, _, w, _), (x2, _, _, _) in zip(row, row[1:], strict=False):
-            assert x + w < x2
-    view_y, player_y = rects[VIEW[0]][1], rects[PLAYER[0]][1]
-    assert view_y + rects[VIEW[0]][3] < player_y  # the view's row first
-    assert 0 < TIMELINE[1] - (player_y + rects[PLAYER[0]][3]) <= 8  # the timeline right under
-    assert RULES[1] < CIRCUIT_AREA[1] and CIRCUIT_AREA[1] + CIRCUIT_AREA[3] == SCREEN[1]
-    assert ARENA_AREA[0] + ARENA_AREA[2] == PANEL_LEFT
+def centre(rect):
+    x, y, w, h = rect
+    return (x + w // 2, y + h // 2)
 
 
-def test_a_press_finds_the_button_under_it_and_nothing_between_them():
-    for button, (x, y, w, h) in button_rects():
-        assert button_at((x + w // 2, y + h // 2)) is button
-    x, y, w, h = dict(button_rects())[ArenaButton.STEP]
-    assert button_at((x + w + 2, y + h // 2)) is None
-    assert button_at((10, 10)) is None  # the arena
+def test_the_controls_sit_side_by_side_in_the_strip_then_the_timeline_then_the_time():
+    for layout in (RUN, FOLDED):
+        strip, rects = layout.controls_area, control_rects(layout)
+        assert [b for b, _ in rects] == list(CONTROLS)
+        for (_, (x, y, w, h)), (_, (x2, _, _, _)) in zip(rects, rects[1:], strict=False):
+            assert x + w < x2 and contains(strip, (x, y)) and contains(strip, (x + w, y + h))
+        line = timeline_rect(layout)
+        last = rects[-1][1]
+        assert last[0] + last[2] < line[0] and line[0] + line[2] < summary_at(layout)[0]
+        assert contains(strip, line[:2]) and summary_at(layout)[0] <= strip[0] + strip[2]
+        for button, rect in rects:
+            assert control_at(layout, centre(rect)) is button
+        assert control_at(layout, centre(layout.board_area)) is None  # the arena
 
 
-def test_the_column_runs_palettes_then_objectives_then_wiring_and_the_arena_fills_the_left():
-    assert RULES[0] < SCORE_AREA[1] and SCORE_AREA[1] + SCORE_AREA[3] <= RULES[1]
-    assert RULES[1] < CIRCUIT_AREA[1] and CIRCUIT_AREA[1] + CIRCUIT_AREA[3] == SCREEN[1]
-    assert ARENA_AREA[0] + ARENA_AREA[2] == PANEL_LEFT
+def test_the_timeline_runs_from_zero_to_the_limit_and_finds_a_time():
+    x, y, w, h = timeline_rect(RUN)
+    assert timeline_x(RUN, 0.0, 20.0) == x and timeline_x(RUN, 20.0, 20.0) == x + w
+    assert timeline_x(RUN, 30.0, 20.0) == x + w  # past the limit: at the end
+    assert timeline_at(RUN, (x + w // 2, y + h // 2), 20.0) == pytest.approx(10.0, abs=0.1)
+    assert timeline_at(RUN, (x + w // 2, y - 1), 20.0) is None
+
+
+def test_the_banner_holds_its_buttons_side_by_side_at_the_arenas_top_and_finds_them():
+    both = (ArenaButton.NEXT, ArenaButton.EDIT)
+    (_, (x1, y1, w1, h1)), (_, (x2, y2, _, _)) = banner_rects(RUN, both)
+    bx, by, bw, bh = banner_rect(RUN)
+    assert y1 == y2 and x1 + w1 < x2 and bx < x1 and x2 + w1 < bx + bw and y1 + h1 < by + bh
+    assert banner_button_at(RUN, both, (x1 + 5, y1 + 5)) is ArenaButton.NEXT
+    assert banner_button_at(RUN, (ArenaButton.EDIT,), (x1 + 5, y1 + 5)) is None  # centred
+    arena = RUN.board_area
+    assert contains(arena, (bx, by)) and contains(arena, (bx + bw, by + bh))
+    assert contains(arena, polar_box(RUN)[:2])
+
+
+def test_inside_and_score_draw_in_the_drawer_under_its_title():
+    x, y, w, h = DRAWER_BODY
+    dx, dy, dw, dh = RUN.drawer_area
+    assert (x, w) == (dx, dw) and y > dy and y + h <= SCREEN[1]
 
 
 def test_a_key_means_the_same_here_as_in_the_editor():
-    same = {
-        ArenaButton.ZOOM_IN: ViewButton.ZOOM_IN,
-        ArenaButton.ZOOM_OUT: ViewButton.ZOOM_OUT,
-        ArenaButton.HAND: ViewButton.PAN,
-        ArenaButton.CENTRE: ViewButton.CENTRE,
-    }
-    for here, there in same.items():
-        assert BUTTON_KEYS[here] == VIEW_KEYS[there]
+    for view, button in VIEW_BUTTON.items():  # Navigator's rows press the run's buttons
+        assert BUTTON_KEYS[button] == VIEW_KEYS[view]
+    assert set(VIEW_BUTTON) == set(ViewButton)
     # Turning the swimmer left and right, as the editor turns a part (D-025).
     assert TURN_KEYS == (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
     others = {*BUTTON_KEYS.values(), MAP_KEY, POLAR_KEY}
@@ -76,23 +101,3 @@ def test_every_button_has_a_key_and_typed_ones_find_their_button():
     assert set(BUTTON_KEYS) == set(ArenaButton)
     for key, button in KEY_BUTTONS.items():
         assert BUTTON_KEYS[button] == key and len(key) == 1
-
-
-def test_the_banner_holds_its_buttons_side_by_side_and_finds_them():
-    both = (ArenaButton.NEXT, ArenaButton.EDIT)
-    (_, (x1, y1, w1, h1)), (_, (x2, y2, _, _)) = banner_rects(both)
-    bx, by, bw, bh = BANNER
-    assert y1 == y2 and x1 + w1 < x2 and bx < x1 and x2 + w1 < bx + bw and y1 + h1 < by + bh
-    assert banner_button_at(both, (x1 + 5, y1 + 5)) is ArenaButton.NEXT
-    assert banner_button_at((ArenaButton.EDIT,), (x1 + 5, y1 + 5)) is None  # one button: centred
-    assert ARENA_AREA[0] <= bx and bx + bw <= ARENA_AREA[0] + ARENA_AREA[2]
-
-
-def test_the_timeline_runs_from_zero_to_the_limit_under_the_buttons_and_finds_a_time():
-    x, y, w, h = TIMELINE
-    lowest = max(by + bh for _, (_, by, _, bh) in button_rects())
-    assert lowest < y and y + h <= RULES[0] and PANEL_LEFT < x and x + w < PANEL_LEFT + 320
-    assert timeline_x(0.0, 20.0) == x and timeline_x(20.0, 20.0) == x + w
-    assert timeline_x(30.0, 20.0) == x + w  # past the limit: at the end
-    assert timeline_at((x + w // 2, y + h // 2), 20.0) == pytest.approx(10.0, abs=0.1)
-    assert timeline_at((x + w // 2, y - 1), 20.0) is None

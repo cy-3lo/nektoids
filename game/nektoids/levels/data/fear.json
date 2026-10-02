@@ -15,6 +15,7 @@
   "time_limit": 10.0,
   "objectives": [{"kind": "leave ring", "radius": 12.0}],
   "tutorial": {
+    "start": "run",
     "ghosts": [
       {"kind": "eye", "cell": [2, -1], "facing": "NW"},
       {"kind": "eye", "cell": [1, 1], "facing": "SW"},
@@ -23,29 +24,58 @@
     ],
     "steps": [
       {
-        "show": {"area": "board"},
+        "show": {"run": "arena"},
         "say": [
           "This is your swimmer, seen from above: the",
-          "board is its body, its front to the right.", "Where you put a part is where it sits."
+          "tip of its triangle is the way it heads. On",
+          "its right, a light, with a dashed ring round it."
         ]
       },
       {
-        "show": {"area": "menu"},
+        "show": {"run": "objectives"},
         "say": [
-          "The menu holds the parts: eyes read the", "light, thrusters push. The (i) by a name",
-          "says what the part does."
+          "At the foot of the drawer, Objectives: what",
+          "the level asks, each with its bar. Here, get",
+          "out of the ring round the light in time."
         ]
       },
       {
-        "show": {"area": "palette"},
-        "say": ["The palette holds the tools, and at its", "foot Run, which sets the swimmer going."]
+        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "until": {"screen": "edit"},
+        "say": [
+          "It has no eyes and no thrusters yet: it cannot",
+          "move. Click the Editor tab, or the Editor",
+          "button at the bottom left, to build them."
+        ]
+      },
+      {
+        "show": {"area": "board"},
+        "say": [
+          "The board is your swimmer's body, its front to",
+          "the right. Where you put a part is where it", "sits."
+        ]
+      },
+      {
+        "show": {"area": "parts"},
+        "say": [
+          "Parts holds what you build with: eyes read",
+          "the light, thrusters push. The (i) on a row", "says what the part does."
+        ]
+      },
+      {
+        "show": {"area": "bar"},
+        "say": [
+          "The bar on the left opens the drawers: Parts,",
+          "Tools, Files, Sense, Navigator. At its foot:",
+          "Settings, Chapters, and Run, which sets the", "swimmer going."
+        ]
       },
       {
         "show": [{"menu": "eye"}, {"cell": [2, -1]}],
         "until": {"placed": {"kind": "eye", "cell": [2, -1]}},
         "say": [
           "The faint shapes show where each part goes",
-          "and which way it points. Drag an Eye from", "the menu onto this cell."
+          "and which way it points. Drag an Eye from", "Parts onto this cell."
         ]
       },
       {
@@ -62,7 +92,7 @@
         "until": {"placed": {"kind": "eye", "cell": [1, 1]}},
         "say": [
           "Now the second eye, on this cell: pick the",
-          "Eye in the menu, or press 1, and click here."
+          "Eye in Parts, or press 1, and click here."
         ]
       },
       {
@@ -100,18 +130,11 @@
       },
       {
         "say": [
-          "The run waits for you. Controls: play or",
-          "pause, a step, fast forward; under them, the",
-          "timeline: click it to go to any time."
+          "The run waits for you. Under the arena: start",
+          "again, play or pause, a step, fast forward;",
+          "then the timeline: click it to go to any time."
         ],
         "show": {"run": "controls"}
-      },
-      {
-        "say": [
-          "Objectives: what the level asks, each with",
-          "its bar. Here, get out of the ring round the", "light before the time runs out."
-        ],
-        "show": {"run": "objectives"}
       },
       {
         "say": [
@@ -130,12 +153,13 @@
       },
       {
         "say": [
-          "That is fear, Braitenberg's vehicle 2a. Each",
-          "win is scored on its time and its parts: a",
-          "point here. Fewer of either is better; the", "line joins the wins no other beats.",
+          "That is fear: it turns away from the light.",
+          "Each win is scored on its time and its parts:",
+          "a point in Score. Fewer of either is better;",
+          "the line joins the wins no other beats.",
           "Close, then Next level when you are ready."
         ],
-        "show": {"run": "wins"}
+        "show": {"run": "score"}
       }
     ]
   }

@@ -2,7 +2,7 @@
 
 import pytest
 
-from nektoids.editor.router import Router, Screen, level_label
+from nektoids.editor.router import ChapterRow, Router, Screen, level_label
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.score import Score
@@ -37,7 +37,6 @@ def test_a_level_opens_once_the_one_before_it_is_won_and_the_sandbox_always():
         router.open(1)
     router.mark_won()
     assert router.unlocked(1)
-    router.open_map()
     router.open(1)
     assert (router.index, router.screen, router.label) == (1, Screen.SPEC, "LEVEL 1.2")
 
@@ -68,10 +67,6 @@ def test_a_level_opened_comes_up_under_its_card_and_one_returned_to_does_not():
     router.run()
     router.edit()  # Edit after a run
     assert router.screen is Screen.EDIT
-    router.open_map()
-    router.edit()  # Back from the map
-    assert router.screen is Screen.EDIT and router.index == 1
-    router.open_map()
     router.open(router.sandbox_index)
     assert router.screen is Screen.SPEC
 
@@ -118,3 +113,38 @@ def test_a_level_reset_opens_on_a_fresh_board_and_the_others_keep_theirs():
 
 def test_levels_are_named_by_chapter_and_place():
     assert level_label(0) == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"
+
+
+def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
+    router = a_router()
+    rows = router.rows()
+    assert len(rows) == len(router.levels) + 1 and rows[-1].index == router.sandbox_index
+    assert [row.state for row in rows[:3]] == ["open", "locked", "locked"]
+    assert (rows[0].label, rows[0].current, rows[-1].label, rows[-1].state) == (
+        "1.1",
+        True,
+        "",
+        "sandbox",
+    )
+    router.record(Score(ticks=900, parts=5))
+    router.record(Score(ticks=600, parts=7))
+    router.mark_won()
+    first, second = router.rows()[:2]
+    assert (first.state, first.best, second.state) == ("won", Score(ticks=600, parts=7), "open")
+    assert isinstance(first, ChapterRow) and first.title == router.levels[0].title
+
+
+def test_files_lists_the_wins_with_their_boards_the_unbeaten_first_each_score_once():
+    router = a_router()
+    router.begin()
+    first = router.board.snapshot()
+    router.record(Score(ticks=900, parts=4), first)
+    router.board.place(Kind.EYE, (0, 0))
+    later = router.board.snapshot()
+    router.record(Score(ticks=600, parts=5), later)
+    router.record(Score(ticks=700, parts=6), later)  # beaten by the 600-tick win
+    router.record(Score(ticks=900, parts=4), later)  # the same score: its first board stays
+    wins = router.wins(0)
+    assert [(w.score.ticks, w.best) for w in wins] == [(600, True), (900, True), (700, False)]
+    assert wins[1].board == first and wins[0].board == later
+    assert router.wins(1) == ()

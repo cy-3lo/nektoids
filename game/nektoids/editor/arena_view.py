@@ -67,6 +67,50 @@ def pan_view(view: ArenaView, dx: float, dy: float) -> ArenaView:
     return ArenaView(view.scale, (view.origin[0] + dx, view.origin[1] + dy))
 
 
+ROOM = 1.5  # the overview shows this many times what matters, each way, about its middle
+
+
+def extent(points: np.ndarray, reach: float, aspect: float) -> tuple[float, float, float, float]:
+    """(left, bottom, right, top) [u]: what matters, `points` (K, 2) each with `reach` [u] round
+    it, ROOM times over about its middle, then widened or heightened to `aspect`, width over
+    height: what the overview shows, and the most the main screen may (D-066)."""
+    low, high = points.min(axis=0) - reach, points.max(axis=0) + reach
+    middle, half = (low + high) / 2, ROOM * (high - low) / 2
+    (left, bottom), (right, top) = middle - half, middle + half
+    width, height = right - left, top - bottom
+    if width < aspect * height:
+        grow = (aspect * height - width) / 2
+        left, right = left - grow, right + grow
+    else:
+        grow = (width / aspect - height) / 2
+        bottom, top = bottom - grow, top + grow
+    return (float(left), float(bottom), float(right), float(top))
+
+
+def view_of(area: Rect, bounds: tuple[float, float, float, float]) -> ArenaView:
+    """The view that shows `bounds` (left, bottom, right, top) [u] whole in `area`, centred."""
+    x, y, w, h = area
+    left, bottom, right, top = bounds
+    scale = min(w / (right - left), h / (top - bottom))
+    cx, cy = (left + right) / 2, (bottom + top) / 2
+    return ArenaView(scale, (x + w / 2 - scale * cx, y + h / 2 + scale * cy))
+
+
+def kept_in(view: ArenaView, area: Rect, bounds: tuple[float, float, float, float]) -> ArenaView:
+    """The view, zoomed in if it showed more than `bounds`, slid so that it shows nothing
+    outside them: what the overview frames stays inside it (D-066)."""
+    least = view_of(area, bounds).scale
+    if view.scale < least:  # about the area's centre, past MIN_SCALE if need be
+        x, y, w, h = area
+        cx, cy, k = x + w / 2, y + h / 2, least / view.scale
+        view = ArenaView(least, (cx + k * (view.origin[0] - cx), cy + k * (view.origin[1] - cy)))
+    left, bottom, right, top = shown(view, area)
+    b_left, b_bottom, b_right, b_top = bounds
+    dx = (b_left - left) if left < b_left else (b_right - right) if right > b_right else 0.0
+    dy = (b_bottom - bottom) if bottom < b_bottom else (b_top - top) if top > b_top else 0.0
+    return pan_view(view, -dx * view.scale, dy * view.scale)
+
+
 def frame(area: Rect, points: np.ndarray, margin: float) -> ArenaView:
     """The view centred on the mean of `points` (K, 2) [u], as close as it can while showing them
     all with `margin` [u] to spare, within MIN_SCALE and MAX_SCALE."""

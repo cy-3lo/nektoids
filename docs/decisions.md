@@ -668,3 +668,184 @@ size tall, 10 px wide, its centre 0.86 hex size to the right of the part's, past
 whichever way it turns, filled from the foot up to its rate in accent 1 (`METER`), the colour of
 the part's face. The developer view's thruster bars become these meters, on the eyes too, opposite
 its sliders; it keeps its names and numbers.
+
+**D-053 — 2026-10-02 — The editor's frame, step A of D-051: the activity bar with Parts, Tools and Navigator, one drawer at a time, the tabs and the switch. The menu and the palette go.**
+The bar is 48 px wide down the left edge: the drawers' icons (Parts, Tools, Navigator) at the
+top, the open one lit with an accent bar on its edge; at its foot Chapters, which opens the
+full-screen map until it is a drawer, and the accented switch to the Run. A drawer is 248 px
+wide; it pushes the board aside, and the view slides with the board's centre, so nothing jumps;
+its own icon again, or the arrow on its edge, folds it. Every row is alike: an icon (a part
+itself in Parts), the name, an info disc, then a count, the infinity sign, a key or a lock. Parts
+holds the groups that fold, Tools the tools, Edit (Undo, Redo shown as Ctrl Y) and File (Save
+and Load, locked), Navigator the view's buttons. A row's info disc opens a box beside the drawer:
+a part's entry (parts.py), a tool's hint, a button's tip; opening the entry in the drawer itself
+is to come. The tabs over the board read Editor and Run, the level's caption after them; the Run
+tab runs, like the switch and Space. Parts is open when a level opens. The tutorial now lights
+"parts" (the drawer) and "bar" (the activity bar) where it lit the menu and the palette; a tool it
+shows is its row, or the Tools icon while that drawer is closed; a step opens the drawer its
+targets are in (`tutorial.drawer_for`), once, when it comes up. Fear's first steps say so.
+`layout.make_layout(drawer, folded, kinds)` builds it all; `scene.open_drawer` changes it.
+
+**D-054 — 2026-10-02 — Step B of D-051: Chapters and Settings are drawers at the bar's foot. The full-screen map goes; choosing a place in Chapters does what opening the map did. Amends D-035 and D-050.**
+Settings (gear) and Chapters (map) sit at the bar's foot, in that order, over the switch to the
+Run. Chapters lists the chapter's levels, then the sandbox, in the common rows: the level's
+number where the icon goes, its title, an info disc (the title, what the level asks, and the
+fastest win this session), then a tick once won or a lock until the level before it is won; the
+open place is lit. Tab opens Chapters, or folds it. A click on an open row opens that place under
+its card (D-042); a locked row refuses and says why; during a leading tutorial step the rows
+refuse like the rest. The full-screen map and its screen go; the end's button reads "Chapters
+(Esc)" and comes back to the last level with Chapters open. Choosing a place does what opening
+the map did (D-050): the guided level, Fear, starts afresh, the others keep their boards and
+their hints start again; the editor left goes back to Parts. Settings, by section: Run, fast
+forward's speed (2, 4 or 8 frames' worth of ticks a frame, 4 at first); Display, key hints on or
+off (the keys on the rows and in the bar's tooltips) and the tooltips' delay (0.5, 1 or 1.5 s);
+Help, the tutorial, which reopens Fear from its first step on a fresh board; Sound, Sound and
+Music, locked until there is sound. A click on a row steps to its next choice. The settings last
+the session (`editor/settings.py`), shared by every level's editor and the run. The info disc
+moves to 156 px into a row, 6 px on from D-053, so that "In the shadow" fits before it; the
+sandbox's row reads "Sandbox", its title in its info box.
+
+**D-055 — 2026-10-02 — Two fonts, by their job: FreeSans Bold names things, IBM Plex Mono explains them.**
+pygame's own font, FreeSans Bold, rounds each letter's advance to a whole pixel at 15 to 18 px,
+so the gaps within a word vary ("le ft", "i ts") and paragraphs read badly. In IBM Plex Mono
+every advance is the same, so the gaps are even. Chosen from seven monospaced fonts, then from
+three ways to use it, each drawn by the game. FreeSans Bold keeps what names something: titles,
+the names of rows and objectives, info boxes' headings and buttons (22 px); section labels,
+tabs, keys, the level's title and the tutorial's buttons (18 px); the cards' titles (64 px).
+Plex Mono, Medium, takes what explains: the tutorial, info lines, the status lines, counts and
+values (15 px); tooltips and the cards' lines (17 px). `Fonts` names the roles: `name` and
+`label` in FreeSans, `text` and `small` in Plex Mono, and `big`. The font ships as a file with
+its licence (SIL OFL 1.1, 137 KB), opened by path. The wider text moves three things: the
+tutorial box is 464 px wide, for 48 characters, with 22 px lines; the cards are 600 px wide; the
+Run's key line and the note over its wins are shorter. The developer view's labels crowd its
+parts a little more; it is behind DEV_VIEW.
+
+**D-056 — 2026-10-02 — The level's title and what it asks sit on their own line under the tabs, inside the Editor's tab.**
+After the tabs, on their line, the caption ran off the screen once its spec was in Plex Mono
+(D-055). It now has a strip of its own, 26 px high, under the tabs and over the board: the
+level's label and title in FreeSans (18 px), then its spec in Plex Mono (15 px), on one
+baseline, a rule under them. The strip has the open tab's colour, so it reads as inside the tab.
+The board starts under it (`layout.TOP`). The longest, In the shadow's, takes 620 of the 632 px
+it has with a drawer open. The Run gets the same line with its frame (D-051, step C).
+
+**D-057 — 2026-10-02 — Step C of D-051: the run has the editor's frame. Its column on the right goes; its controls go under the arena.**
+The run shows the level on the main screen, the arena, inside the frame the editor has. Down the
+left edge, the bar: Objectives (list-check), Inside (magnifying-glass), Score (trophy) and
+Navigator (compass) at the top; Settings and Chapters at its foot, over the switch back to the
+editor (diagram-project; Esc). One drawer at a time: Objectives at the first run, then the one
+last open. The tabs, Run lit, with the level's line under them (D-056); the status line at the
+foot. Objectives: a row per objective on two lines, its name and info disc, then its bar and so
+many of so many, a tick once met, red if it lost the run; then the time left. Inside: the
+swimmer's wiring, live. Score: the level's wins this session, this run ringed once won, a note
+while there is none. Navigator: zoom in and out, the hand, centre, and the rays (X). Under the
+arena, a 48 px strip: start again (0), play or pause (Space), a step (.), fast forward (F), the
+timeline, the time. The banner at the arena's top keeps Next level and Edit. Chapters and
+Settings work from the run as from the editor: a place picked there, or the tutorial again,
+leaves the run. One class holds the frame's logic for both screens (`frame.Frame`, pure, tested
+headless); one set of functions draws it (`draw.py`). Fear's run steps light the controls, then
+open and outline Objectives, Inside and Score; their box keeps clear of the controls, wide but
+low, as it does of any target that is not an area. The developer's arena view (F3) has the same
+frame.
+
+**D-058 — 2026-10-02 — Step D of D-051: the Run preview, Sense and its probe, the eyes' meters as handles. Amends D-016.**
+Two buttons in the top right corner of the editor's main screen, as big as the switch, show the
+Diagram view (three hex cells: the board on its grid, to edit) or the Run preview (an operator,
+two wires in at 45 degrees and one out, a bead on each): the board as it would run where a probe
+stands, on its body, drawn plain as Inside draws it in the run, beads on the wires and a meter
+by each eye and thruster. The probe is the swimmer put anywhere on the level and turned; nothing
+moves and nothing is scored; its eyes read the light there and the circuit settles tick by tick
+(`probe.Probe`, pure). It starts at the level's start, at rest, and is made again where it stood
+when the board changes. Sense (stethoscope), an editor drawer between Tools and Navigator, shows
+the level small, its obstacles, lights and rings, and the probe: a press or a drag puts it
+anywhere outside the obstacles; the wheel over the map, or L and R while the preview shows,
+turns it by 15 degrees. Opening Sense shows the Run preview; taking a tool or a part shows the
+board again. In the preview each eye's meter is a handle, its knob as big as a bead, at what the
+eye sends: dragged, it holds the eye at that level, the knob lit, and the circuit shows what
+follows; moving or turning the probe gives every eye back to the light. A test input, kept
+nowhere and never seen by a run: the board still holds no continuous parameter (brief: "No
+sliders"); this amends D-016, whose sensor sliders were the developer's only. While a tutorial
+step leads, the preview is refused and the board stays on screen.
+
+**D-059 — 2026-10-02 — Step E of D-051: Files keeps this session's winning boards; a click puts one back, and Undo brings back the board left.**
+Each win of a level keeps the board that won it, the first one for each score, in memory for
+the session (`Router.record`, `Router.wins`); nothing is written anywhere (saving stays out of
+scope). Files (floppy-disk), an editor drawer between Tools and Sense, lists the open level's
+wins, at most ten: those no other beats first, each with a tick, then the rest, the fastest
+first; each row reads its time and its parts, lit while its board is the one on the grid. A
+click puts that board back and shows the Diagram view; the board left goes to Undo, as any
+change does. While a tutorial step leads, Files refuses. A board as text, to keep or to send,
+is its own PR (todo §9).
+
+**D-060 — 2026-10-02 — The run opens paused, and Fear's tutorial opens in it; the Run preview keeps the board's scale and place; the objectives show by the timeline; Navigator has an overview.**
+Every run opens paused, so the player opens the drawer they want before Play. Fear's tutorial
+starts in the run (a tutorial's data says the screen it starts on): the swimmer in its arena,
+then Objectives, then "Click the Editor tab", which only the tab, Esc or the switch get past;
+then the editor's steps, then the run's: the controls, Inside, Play, Score. While a step leads,
+the run's controls and its timeline go through its gate too, open only while it waits for a
+win. Resting the mouse on the other environment's tab shows what the switch says: Run (Space),
+Back to the editor (Esc). The Run preview draws the board through the editor's own view, so
+switching views moves nothing, and zoom, the hand and centre act on both. At the right of the
+timeline, where the time was, so many objectives met of so many, lit once all are, red once one
+is lost or the time is up; the time shows in the timeline's tooltip, and stays there for the
+sandbox, which has no objective. Under Navigator's rows, an overview: the whole board, its
+parts as dots, in the editor; the whole level and the swimmer in the run; a frame round what
+the main screen shows, and a press or a drag there centres the view.
+
+**D-061 — 2026-10-02 — Only the tutorial's opening steps, and its last, move on at any key or click; the others that explain wait for Next or Enter. Amends D-048. Ghost parts are a paler grey, with no outline.**
+Since Fear's tutorial opens in the run (D-060), steps that only explain also come later, in the
+editor and in the run (the board, Parts, the bar, the controls, Inside). There, a click to look
+round, an info disc or a drawer, moved the tutorial on unasked. Now the steps before the first
+that asks for an action, and the last, move on at any key or click, as D-048 had it for the
+first messages; the others move on only by Next or Enter, and other clicks go to the screen,
+where the step's gate still refuses what it does not ask for. Fear's step to the editor shows
+both ways there, the Editor tab, its name lit, and the switch. A tutorial's ghost part, where a
+part goes and which way it faces, is a paler grey shape with no outline. Fear's last step no
+longer names Braitenberg.
+
+**D-062 — 2026-10-02 — When a step explains the run's arena, it outlines the whole Run page: the Run tab, the level's line and the arena.**
+The arena alone, outlined, put the tutorial's box against the outline's top edge. The step now
+outlines the run's page as a folder: the Run tab on top, then the level's line and the arena
+under it (`tutorial.Page`). Its header, the tabs and the level's line, counts as a target the
+box keeps clear of, so the box lies inside the page, under the level's title, with room round
+it.
+
+**D-063 — 2026-10-02 — A step that asks for an action no longer dims the screen: its cells turn to the accent, its rows and buttons are outlined. Amends D-048.**
+Dimming everything but the target made the steps that ask for an action (place a part, turn it,
+wire two parts, Run, Play) feel constrained. Now the screen keeps its light: each cell such a
+step shows is filled in the accent, under its ghost or its part, which stay as they are
+(`tutorial.focus_cells`); a row, a tool, a tab or a button it shows is outlined in the accent.
+Steps that explain keep the veil and the outline of D-050. The gate is unchanged: only what the
+step asks for goes through.
+
+**D-064 — 2026-10-02 — The level's title under the tabs is FreeSans at 22 px, not 18. Amends D-055, D-056.**
+At 18 px it looked smaller than the Plex Mono beside it; at 22 px its capitals stand 11 px to
+Plex's 10, the same x-height. What the level asks, after it, ends in an ellipsis where it does
+not fit: In the shadow's, with a drawer open. The level card and Objectives give it whole.
+
+**D-065 — 2026-10-02 — The run's objectives sit at the foot of every drawer, and the Objectives drawer goes; Navigator keeps only the view's options, the overview and a zoom bar; wires keep one colour. Amends D-052, D-057.**
+The objectives were seen only with their own drawer open. Now they sit at the foot of whichever
+drawer the run has open, Inside, Score, Navigator, Settings or Chapters, under a rule and their
+label, each row as before; with the drawer folded, the timeline's summary shows them (D-060).
+The bar's Objectives icon goes, and the run opens on Inside. To make room, Navigator shrinks:
+the view's options as rows, so far only the rays, in the run; the overview; under it, the zoom
+as a bar between its out and in buttons, pressed or dragged, on a log scale. Hand and centre
+leave the drawer: dragging the overview does what the hand did; their keys still work. In every
+circuit view, Inside, the Run preview and F2, wires and beads keep one colour whatever they
+carry: the beads' spacing and the meters show the rates.
+
+**D-066 — 2026-10-02 — The overview shows half as much again as what matters, the zoom goes no farther out, and the view stays inside it.**
+The overview showed the zone or the level just as they are, so the main screen could show more,
+and the frame round what it shows then lay outside the overview, unseen. Now the overview shows
+an extent: what matters, 1.5 times over each way about its middle, widened to the main screen's
+shape. In the editor what matters is the zone, its hexes whole, and the extent is at least what
+the main screen shows at the default zoom; in the run it is the lights and their rings, the
+obstacles and the swimmer where it is now, so the extent grows as the swimmer leaves, every
+frame. The farthest zoom shows the extent exactly, and the zoom bar runs from there to the
+nearest; the view is kept inside the extent, whatever moves it (`layout.kept_on_board`,
+`arena_view.kept_in`), so the frame is always inside the overview.
+
+**D-067 — 2026-10-02 — Settings drops the tooltips' delay and its titles. Amends D-054.**
+Settings is its rows one under the other, with no section titles: fast forward's speed, key
+hints, the tutorial again, Sound and Music (locked). The tooltips' delay is no longer set: a
+tooltip shows after 1 s. Shorter, Settings leaves room in the run for the objectives under it
+(D-065).

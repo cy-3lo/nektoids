@@ -192,3 +192,22 @@ def test_a_ray_that_meets_no_disc_goes_as_far_as_it_is_drawn():
 def test_a_light_inside_a_body_shows_no_rays():
     ends = ray_ends((10.0, 10.0), np.array([0.0, 2.0]), np.array([[10.5, 10.0]]), np.ones(1), 30.0)
     np.testing.assert_allclose(ends, [[10.0, 10.0], [10.0, 10.0]])
+
+
+def test_the_runs_extent_is_half_as_much_again_as_what_matters_and_the_view_stays_in_it():
+    import numpy as np
+
+    from nektoids.editor.arena_view import extent, kept_in, shown, view_of
+
+    points = np.array([[0.0, 0.0], [20.0, 10.0]])
+    left, bottom, right, top = extent(points, 1.0, 2.0)
+    assert right - left >= 1.5 * 22.0 and top - bottom >= 1.5 * 12.0  # D-066
+    assert (right - left) / (top - bottom) == pytest.approx(2.0)
+    area = (0, 0, 400, 200)
+    whole = view_of(area, (left, bottom, right, top))
+    assert shown(whole, area) == pytest.approx((left, bottom, right, top))
+    far = ArenaView(whole.scale / 3, whole.origin)
+    assert kept_in(far, area, (left, bottom, right, top)).scale == pytest.approx(whole.scale)
+    near = ArenaView(whole.scale * 4, (whole.origin[0] + 9000, whole.origin[1]))
+    sl, sb, sr, st = shown(kept_in(near, area, (left, bottom, right, top)), area)
+    assert sl >= left - 1e-9 and sr <= right + 1e-9 and sb >= bottom - 1e-9 and st <= top + 1e-9
