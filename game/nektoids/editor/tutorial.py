@@ -147,6 +147,12 @@ class Tutorial:
             self.index += 1
 
 
+def guided(data: Mapping | None) -> bool:
+    """Whether a level's tutorial data leads somewhere, rather than only hinting: such a level
+    starts afresh, board and all, each time the map opens (D-050)."""
+    return data is not None and any(step.get("show") for step in data["steps"])
+
+
 def allows(step: Step | None, action: Action) -> bool:
     """Whether `step` lets `action` through (D-048). No step, or a hint, lets all through. A step
     that leads lets through only the means to what it waits for: picking that part (from the

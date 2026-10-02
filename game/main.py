@@ -43,6 +43,7 @@ from nektoids.editor.tutorial import (
     allows,
     answer,
     box_rect,
+    guided,
     target_rects,
     target_spots,
 )
@@ -90,8 +91,14 @@ def tutorial_box(guide: Tutorial) -> tuple:
 
 
 def open_map() -> None:
-    """To the map; every tutorial starts again from its beginning (D-048)."""
+    """To the map. A guided level starts afresh, its board, its undo history and its tutorial;
+    the others keep their boards, and their hints start again (D-048, D-050)."""
     router.open_map()
+    for index, level in enumerate(levels):
+        if guided(level.tutorial):
+            router.reset(index)
+            editors.pop(index, None)
+            tutorials.pop(index, None)
     for guide in tutorials.values():
         guide.restart()
 

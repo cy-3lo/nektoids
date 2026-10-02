@@ -11,6 +11,7 @@ from nektoids.editor.tutorial import (
     allows,
     answer,
     box_rect,
+    guided,
     met,
     next_rect,
     skip_rect,
@@ -257,3 +258,9 @@ def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_o
     hint = Tutorial.from_dict(LEVELS["Love"].tutorial)  # a hint takes only its own buttons
     assert answer(hint, box, None) is None and answer(hint, box, (5, 5)) is None
     assert answer(hint, box, centre(nxt)) == "next"
+
+
+def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
+    first, *later = arenas()
+    assert guided(first.tutorial) and not any(guided(level.tutorial) for level in later)
+    assert not guided(None)
