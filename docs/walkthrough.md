@@ -207,7 +207,7 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 | `tests/test_board.py` | placement and stock, wire validity, the edge rule (a stress layout with its own checker), one pinned route, moves that fail leave everything unchanged |
 | `tests/test_geometry.py` | arc radii and tangency, arrows, wire hit-testing |
 | `tests/test_layout.py` | three columns, hit-testing, folding, zoom and pan, shortcut keys |
-| `tests/test_assets.py` | the icon font ships with its licence, under 500 KB |
+| `tests/test_assets.py` | the icon and text fonts ship with their licences, and are small |
 | `tests/test_architecture.py` | no pygame in `sim/` or `graph/` |
 | `tests/test_network.py` | the board compiled to arrays: numbering, input order, impossible wires, topological order, loops |
 | `tests/test_dynamics.py` | the lag step by step, bounds for every graph, determinism, rates against an independent evaluator, loops that settle, hold, latch or oscillate |
@@ -697,7 +697,8 @@ Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
 - [`editor/scene.py`](../game/nektoids/editor/scene.py): `open_drawer`, and `_press`, which asks
   the fold handle, the bar, the tabs and the info discs before the rows and the board.
 - [`editor/draw.py`](../game/nektoids/editor/draw.py): `_draw_bar`, `_draw_drawer` and
-  `_draw_row`, the one row style every drawer uses; `_draw_tabs`.
+  `_draw_row`, the one row style every drawer uses; `_draw_tabs`, with the level's line under
+  the tabs (D-056); `Fonts`, the fonts by their job (D-055).
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `drawer_for`, the drawer a step
   opens.
 

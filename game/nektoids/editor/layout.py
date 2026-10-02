@@ -43,6 +43,8 @@ INFO_AT = 156  # a row's info disc: its centre, this far from the row's left [px
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
 HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
 TABS_HEIGHT = 32  # the strip of tabs over the board [px]
+CAPTION_HEIGHT = 26  # under the tabs, inside the Editor's: the level's title and spec [px]
+TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
 TAB_WIDTHS = (84, 64)  # Editor, Run [px]
 STATUS_HEIGHT = 28  # [px]
 MARGIN = 16  # [px]
@@ -161,7 +163,7 @@ class Layout:
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "editor", "run"
     board_area: Rect
-    caption_at: tuple[int, int]  # top-left corner of the level's title and spec, after the tabs
+    caption_at: tuple[int, int]  # top-left corner of the level's title and spec, under the tabs
     status_at: tuple[int, int]  # top-left corner of the status line
 
 
@@ -235,8 +237,8 @@ def make_layout(
             for what, (x, y, _, h) in rows.items
         ),
         tabs=tuple(tabs),
-        board_area=(left, TABS_HEIGHT, width - left, height - TABS_HEIGHT - STATUS_HEIGHT),
-        caption_at=(x + MARGIN, 8),
+        board_area=(left, TOP, width - left, height - TOP - STATUS_HEIGHT),
+        caption_at=(left + MARGIN, TABS_HEIGHT + 6),
         status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
     )
 

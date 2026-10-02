@@ -1,6 +1,7 @@
 """Editor layout and hit-testing (D-051). layout.py imports no pygame, so this runs headless."""
 
 from nektoids.editor.layout import (
+    CAPTION_HEIGHT,
     DRAWER_KEYS,
     EDIT_KEYS,
     FOOT,
@@ -9,6 +10,7 @@ from nektoids.editor.layout import (
     MIN_HEX,
     PALETTE_TOOLS,
     SCREEN,
+    TABS_HEIGHT,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
@@ -78,7 +80,7 @@ def test_the_bar_the_drawer_and_the_board_side_by_side_the_tabs_over_the_board()
     assert bar[0] == 0 and bar[0] + bar[2] == drawer[0] and drawer[0] + drawer[2] == board[0]
     assert board[0] + board[2] == SCREEN[0] and board[2] > drawer[2] > bar[2]
     for _, (x, y, _, h) in LAYOUT.tabs:
-        assert y == 0 and y + h == board[1] and board[0] <= x  # over the board
+        assert y == 0 and y + h + CAPTION_HEIGHT == board[1] and board[0] <= x  # over the board
     assert (
         contains(board, LAYOUT.status_at) is False and LAYOUT.status_at[1] > board[1] + board[3] - 1
     )
@@ -208,8 +210,9 @@ def test_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_ke
     assert [name for name, _ in LAYOUT.tabs] == ["editor", "run"]
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name
-    last_tab = LAYOUT.tabs[-1][1]
-    assert LAYOUT.caption_at[0] > last_tab[0] + last_tab[2] and LAYOUT.caption_at[1] < last_tab[3]
+    x, y = LAYOUT.caption_at  # under the tabs, inside the Editor's, over the board (D-056)
+    assert x > LAYOUT.board_area[0] and TABS_HEIGHT < y < LAYOUT.board_area[1]
+    assert LAYOUT.board_area[1] == TABS_HEIGHT + CAPTION_HEIGHT
 
 
 def test_the_fold_handle_sits_on_the_drawers_edge_and_the_view_keeps_its_centre():

@@ -719,3 +719,11 @@ its licence (SIL OFL 1.1, 137 KB), opened by path. The wider text moves three th
 tutorial box is 464 px wide, for 48 characters, with 22 px lines; the cards are 600 px wide; the
 Run's key line and the note over its wins are shorter. The developer view's labels crowd its
 parts a little more; it is behind DEV_VIEW.
+
+**D-056 — 2026-10-02 — The level's title and what it asks sit on their own line under the tabs, inside the Editor's tab.**
+After the tabs, on their line, the caption ran off the screen once its spec was in Plex Mono
+(D-055). It now has a strip of its own, 26 px high, under the tabs and over the board: the
+level's label and title in FreeSans (18 px), then its spec in Plex Mono (15 px), on one
+baseline, a rule under them. The strip has the open tab's colour, so it reads as inside the tab.
+The board starts under it (`layout.TOP`). The longest, In the shadow's, takes 620 of the 632 px
+it has with a drawer open. The Run gets the same line with its frame (D-051, step C).

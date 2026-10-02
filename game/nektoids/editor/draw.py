@@ -3,7 +3,7 @@
 The frame (D-051): the activity bar down the left edge, its open drawer's icon lit with an
 accent bar, Chapters and the accented switch to the Run at its foot; the open drawer, its rows
 all alike (icon, name, info disc, then a count, a key or a lock), an arrow on its edge to fold
-it; the tabs over the board, the level's caption after them; the status line at the board's
+it; the tabs over the board, the level's caption under them; the status line at the board's
 foot. Colours come from the palette (D-047); the accent marks what the player works with.
 
 Shapes carry the category, all inside one circle: eyes are discs cut flat in front, the flat
@@ -38,6 +38,7 @@ from nektoids.editor.icons import (
 )
 from nektoids.editor.layout import (
     BAR_WIDTH,
+    CAPTION_HEIGHT,
     DRAWER_KEYS,
     EDIT_KEYS,
     INFO_AT,
@@ -637,7 +638,8 @@ def _draw_row(
 
 
 def _draw_tabs(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The tabs over the board, Editor lit, then the level's title and what it asks."""
+    """The tabs over the board, Editor lit; under them, inside the Editor's tab, the level's
+    title and what it asks, on one baseline, a rule under them (D-056)."""
     layout = scene.layout
     left = layout.board_area[0]
     pygame.draw.rect(screen, BAR, (left, 0, SCREEN[0] - left, TABS_HEIGHT))
@@ -650,6 +652,9 @@ def _draw_tabs(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         label = fonts.label.render(TAB_NAME[name], True, TEXT if on else DIM_TEXT)
         screen.blit(label, label.get_rect(center=box.center))
         pygame.draw.line(screen, RULE, (box.right, 6), (box.right, TABS_HEIGHT - 6))
+    strip = pygame.Rect(left, TABS_HEIGHT, SCREEN[0] - left, CAPTION_HEIGHT)
+    pygame.draw.rect(screen, BACKGROUND, strip)
+    pygame.draw.line(screen, RULE, (left, strip.bottom - 1), (SCREEN[0], strip.bottom - 1))
     title, spec = scene.caption
     if title:
         x, y = layout.caption_at
