@@ -71,7 +71,7 @@ from nektoids.editor.layout import KEY_ALIASES
 from nektoids.editor.recording import Recording
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS, TOOLTIP_FRAMES
-from nektoids.graph.board import Board
+from nektoids.graph.board import Board, complexity
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
@@ -87,6 +87,7 @@ from nektoids.levels.objectives import (
     met,
     outcome,
 )
+from nektoids.levels.score import Score
 from nektoids.sim import world
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 from nektoids.sim.contact import confine
@@ -147,6 +148,8 @@ class ArenaScene:
         self.index = 0
         self.clock = Clock()
         self.circuit = Circuit(board, CIRCUIT_AREA, CIRCUIT_MARGIN, body=True)
+        self.parts = complexity(board)  # what this board scores (D-045)
+        self.scores: frozenset[Score] = frozenset()  # the level's wins this session: main.py's
         self.eye_mount, self.eye_facing = world.parts(self.net, self.net.eyes)
         self.selected: int | None = 0  # the swimmer whose wiring the panel shows
         self.dragging: int | None = None

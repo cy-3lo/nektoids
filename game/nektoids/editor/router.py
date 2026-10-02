@@ -5,8 +5,9 @@ editor to change the mechanism, or on to the next level once won (D-030). Around
 game opens on the first level under a title card; the map lists the chapter's levels and the
 sandbox, each level opening once the one before it is won; after the last level comes the end.
 A level opened from the map or by Next level comes up under its card, which says what it asks.
-Each level keeps its board for the session, so going back finds it as it was left; nothing is
-kept after it. Pure Python, no pygame: `main.py` turns the state into scenes.
+Each level keeps its board for the session, so going back finds it as it was left, and the
+scores of its wins (D-028); nothing is kept after it. Pure Python, no pygame: `main.py` turns
+the state into scenes.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from enum import Enum
 
 from nektoids.graph.board import Board
 from nektoids.levels.level import Level
+from nektoids.levels.score import Score
 
 CHAPTER = 1  # the jam's one chapter, light (D-028): its levels are LEVEL 1.1, LEVEL 1.2...
 CHAPTER_NAME = "light"
@@ -43,6 +45,7 @@ class Router:
         self.screen = Screen.TITLE
         self.won: set[int] = set()  # the chapter's levels won this session
         self._boards: dict[int, Board] = {}
+        self._scores: dict[int, set[Score]] = {}
 
     @property
     def sandbox_index(self) -> int:
@@ -77,6 +80,11 @@ class Router:
         """The open level is the chapter's last: winning it leads to the end."""
         return not self.in_sandbox and self.index + 1 == len(self.levels)
 
+    @property
+    def scores(self) -> frozenset[Score]:
+        """The open level's wins this session, each score once; none for the sandbox."""
+        return frozenset(self._scores.get(self.index, ()))
+
     def unlocked(self, index: int) -> bool:
         """The first level, any level after one won, and the sandbox are open."""
         return index == 0 or index == self.sandbox_index or index - 1 in self.won
@@ -107,6 +115,11 @@ class Router:
         """The open level was won: the next one opens."""
         if not self.in_sandbox:
             self.won.add(self.index)
+
+    def record(self, score: Score) -> None:
+        """A win of the open level, scored; the sandbox, with no objective, keeps none."""
+        if not self.in_sandbox:
+            self._scores.setdefault(self.index, set()).add(score)
 
     def next(self) -> None:
         """On to the next level, under its card; ValueError after the last one."""

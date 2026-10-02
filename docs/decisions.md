@@ -539,3 +539,16 @@ Pareto front unchanged, and the count is what the player sees on the board.
 Consequences: `BASE_RADIUS` stays the radius of every body; V ∝ 1/R and Ω ∝ 1/R² (D-022) stay in
 the model but R never moves; the pinned winners stand. `CLAUDE.md`'s scope lock and the graph
 rules change with it. Obstacles keep their own radii for now.
+
+**D-046 — 2026-10-02 — A won run is scored by its time and its parts; the level's wins this session show in the run view's column, in place of the wiring, with their Pareto front.**
+`Score(parts, ticks)`: `complexity(board)` (D-045) and the tick the run was won at, exact where
+seconds would not be. One score beats another if it is no worse on either axis and not the same;
+the front is the scores no other beats. The router keeps each level's scores for the session in
+a set: `main.py` records a run on every frame it stands won, and the same board always wins at the
+same tick, so a win counts once. Lost runs, runs out of time and the sandbox score nothing.
+The banner says "Done in 7.56 s with 8 parts". While the run stands won at its end, the column's
+last block, titled Your wins, plots time (0 to the level's time allowed) against parts: the front
+bright and joined by a staircase, the other wins dimmed, this run ringed. Scrub back on the
+timeline and the wiring returns. Under the banner, where it was first placed, the plot hid the
+light and the swimmer resting by it in Love; the levels' items reach most of the arena's height
+(Fear's ring 76 to 532 px), so no place over the arena stays clear, and the column always does.

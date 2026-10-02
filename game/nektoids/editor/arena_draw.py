@@ -84,6 +84,7 @@ from nektoids.editor.schematic_draw import FULL, draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 from nektoids.levels.objectives import Outcome
+from nektoids.levels.score import Score, front
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.optics import discs
 
@@ -106,6 +107,7 @@ EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot
 BAR_HEIGHT = 8  # an objective's bar [px]
 ROW_PITCH = 40  # one objective [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
+PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 RING = (150, 154, 166)  # the ring to leave round a light, until it is left
 RING_DASHES = 72  # half of them drawn
 ICON = {
@@ -272,7 +274,7 @@ def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     shown = fonts.text.render(elapsed, True, DIM_TEXT)
     right = PANEL_LEFT + PANEL_WIDTH - MARGIN
     screen.blit(shown, shown.get_rect(midright=(right, TITLE_AT[1] + PALETTE_TITLE // 2)))
-    draw_title(screen, fonts, "Inside", INSIDE_AT)
+    draw_title(screen, fonts, "Your wins" if _shows_wins(scene) else "Inside", INSIDE_AT)
     for y in RULES:
         pygame.draw.line(
             screen, RULE, (PANEL_LEFT + MARGIN, y), (PANEL_LEFT + PANEL_WIDTH - MARGIN, y)
@@ -280,7 +282,10 @@ def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     _draw_palettes(screen, scene, fonts)
     _draw_timeline(screen, scene, fonts)
     _draw_score(screen, scene, fonts)
-    _draw_wiring(screen, scene, fonts)
+    if _shows_wins(scene):
+        _draw_wins(screen, scene, fonts)
+    else:
+        _draw_wiring(screen, scene, fonts)
     _draw_button_tip(screen, scene, fonts)
 
 
@@ -457,7 +462,7 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     if ended is None:
         return
     if ended is Outcome.WON:
-        head = f"Done in {scene.clock.seconds:.2f} s"
+        head = f"Done in {scene.clock.seconds:.2f} s with {scene.parts} parts"
     elif ended is Outcome.LOST and scene.lost_by is not None:
         head = f"{scene.lost_by.broken} at {scene.clock.seconds:.2f} s"
     else:
@@ -477,6 +482,53 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
         shown = fonts.text.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
         screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))
+
+
+def _shows_wins(scene: ArenaScene) -> bool:
+    """The player's run stands won, at its end: the column shows the level's wins."""
+    return not scene.developer and scene.outcome is Outcome.WON and scene.ended_at is not None
+
+
+def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
+    """The level's wins this session (D-028, D-046): time against parts, the Pareto front a
+    staircase through the points no other beats, the others dimmed, this run ringed."""
+    this = Score(scene.parts, scene.ended_at)
+    scores = scene.scores | {this}
+    x, y, w, h = CIRCUIT_AREA
+    note = fonts.small.render("Time to win against parts, this session.", True, DIM_TEXT)
+    screen.blit(note, (x + MARGIN, y + 4))
+    plot = pygame.Rect(x + MARGIN + 40, y + 36, w - 2 * MARGIN - 52, h - 96)
+    low = min(s.parts for s in scores) - 1
+    high = max(max(s.parts for s in scores) + 1, low + PLOT_PARTS)
+    limit = round(scene.level.time_limit / DT)  # the time axis runs to the time allowed
+
+    def at(parts: int, ticks: int) -> tuple[float, float]:
+        return (
+            plot.left + (parts - low) / (high - low) * plot.width,
+            plot.bottom - ticks / limit * plot.height,
+        )
+
+    pygame.draw.line(screen, RULE, plot.topleft, plot.bottomleft)
+    pygame.draw.line(screen, RULE, plot.bottomleft, plot.bottomright)
+    for parts in range(low, high + 1):
+        label = fonts.small.render(str(parts), True, DIM_TEXT)
+        screen.blit(label, label.get_rect(midtop=(at(parts, 0)[0], plot.bottom + 4)))
+    unit = fonts.small.render("parts", True, DIM_TEXT)
+    screen.blit(unit, unit.get_rect(midtop=(plot.centerx, plot.bottom + 20)))
+    for ticks, text in ((0, "0 s"), (limit, f"{scene.level.time_limit:g} s")):
+        label = fonts.small.render(text, True, DIM_TEXT)
+        screen.blit(label, label.get_rect(midright=(plot.left - 6, at(low, ticks)[1])))
+    best = front(scores)
+    stairs = [(at(best[0].parts, 0)[0], plot.top)]
+    for score in best:
+        x, y = at(score.parts, score.ticks)
+        stairs += [(x, stairs[-1][1]), (x, y)]
+    stairs.append((plot.right, stairs[-1][1]))
+    pygame.draw.lines(screen, LIGHT, False, stairs[1:])
+    for score in sorted(scores):
+        colour = LIGHT if score in best else DIM_TEXT
+        pygame.draw.circle(screen, colour, at(score.parts, score.ticks), 3)
+    pygame.draw.circle(screen, TEXT, at(this.parts, this.ticks), 7, 1)
 
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:

@@ -68,8 +68,8 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
 
 ## 4. The score (D-028)
 
-- [ ] Each level scored on the time to win and the number of parts. The session's runs drawn as
-      points in that plane, with their Pareto front. Nothing kept between sessions.
+- [x] Each level scored on the time to win and the number of parts. The session's runs drawn as
+      points in that plane, with their Pareto front. Nothing kept between sessions (D-046).
 
 ## 5. Ship
 

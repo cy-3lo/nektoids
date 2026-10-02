@@ -646,11 +646,33 @@ touching it, which needs a Diff on each side, Diff(Source, eye) = 1 - e.
 - [`levels/data/love.json`](../game/nektoids/levels/data/love.json): the level, written by
   `to_json`.
 - Tests: [`test_objectives.py`](../tests/test_objectives.py) for the timer and the touch;
-  [`test_determinism.py`](../tests/test_determinism.py) pins love's win and the three ways to
-  lose, and love with its eyes straight ahead, which stops outside the ring.
+  [`test_determinism.py`](../tests/test_determinism.py) pins love's two winners (two eyes
+  looking ahead, and one eye, one Diff and one thruster on the axis, D-044) and the ways to
+  lose: the eyes turned out, or no Diff.
 
 Questions: why does `StayNear.keep` freeze the timer once full rather than let it run on? Why
 is LOST checked before WON in `outcome`? (Make a level with Visit every light and Don't touch.)
+
+## 14. The score: time against parts (D-045, D-046)
+
+Read D-045 and D-046 first. Win a level, then win it again with another board: the column's
+last block shows your wins as points, time against parts, and the front of those no other
+beats.
+
+- [`graph/board.py`](../game/nektoids/graph/board.py): `complexity(board)`, the number of
+  parts. Nothing in `sim/` reads it: every body is a sphere of radius 1 u.
+- [`levels/score.py`](../game/nektoids/levels/score.py), pure: `Score(parts, ticks)` and
+  `front`, the scores no other beats.
+- [`editor/router.py`](../game/nektoids/editor/router.py): `record` keeps each level's
+  scores for the session, in a set; `scores` gives the open level's.
+- [`main.py`](../game/main.py) records a run while it stands won and hands the level's scores
+  to the run; [`arena_draw.py`](../game/nektoids/editor/arena_draw.py) `_draw_wins` draws
+  them where the wiring was.
+- Tests: [`test_score.py`](../tests/test_score.py) for `beats` and `front`;
+  [`test_router.py`](../tests/test_router.py) for a score kept once, per level.
+
+Questions: `main.py` records the score on every frame the run stands won; why is that one
+point and not hundreds? Why are scores kept in ticks rather than seconds?
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
