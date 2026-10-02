@@ -156,12 +156,16 @@ class Tutorial:
 
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
     """The panels a step explains, outlined and their titles lit (D-050): the areas and run parts
-    it shows, if it leads and waits for Next. A step that asks for an action only dims."""
-    if tutorial is None or not tutorial.explains:
+    it shows, if it leads and waits for Next. A step that asks for an action only dims, but a
+    tab it shows has its name lit, "tab:editor", as a tab is too dark to see through the veil."""
+    if tutorial is None or not tutorial.leads:
         return frozenset()
     show = tutorial.step.show
     shows = show if isinstance(show, list) else [show]
-    return frozenset(one.get("area") or one.get("run") for one in shows) - {None}
+    tabs = {f"tab:{one['tab']}" for one in shows if "tab" in one}  # its name lit, dark as it is
+    if not tutorial.explains:
+        return frozenset(tabs)
+    return frozenset(one.get("area") or one.get("run") for one in shows) - {None} | tabs
 
 
 def drawer_for(step: Step | None) -> Drawer | None:
@@ -274,6 +278,9 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         return _run_target(show["run"], layout) if screen is Screen.RUN else None
     if "tab" in show:  # over the main screen, in the editor and in the run alike
         return dict(layout.tabs)[show["tab"]] if screen in (Screen.EDIT, Screen.RUN) else None
+    if "level" in show:  # the switch, Run in the editor, Editor in the run
+        on = screen in (Screen.EDIT, Screen.RUN)
+        return dict(layout.level_buttons).get(LevelButton(show["level"])) if on else None
     if screen is not Screen.EDIT:
         return None
     if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)
@@ -287,8 +294,6 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
     if "tool" in show:  # its row in the Tools drawer, or the drawer's icon while it is closed
         rows, icons = dict(layout.tool_buttons), dict(layout.drawer_buttons)
         return rows.get(Tool(show["tool"])) or icons[Drawer.TOOLS]
-    if "level" in show:
-        return dict(layout.level_buttons)[LevelButton(show["level"])]
     if "cell" in show:
         x, y = to_pixel(_cell(show["cell"]), view.size, view.origin)
         half_w, half_h = SQRT3 / 2 * view.size, view.size

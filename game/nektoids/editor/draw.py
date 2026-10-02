@@ -831,7 +831,8 @@ def draw_tabs(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         if on:
             pygame.draw.rect(screen, BACKGROUND, box)
             pygame.draw.rect(screen, LIT, (box.left, 0, box.width, 2))
-        label = fonts.label.render(TAB_NAME[name], True, TEXT if on else DIM_TEXT)
+        ink = LIT if f"tab:{name}" in scene.lit else TEXT if on else DIM_TEXT  # D-060
+        label = fonts.label.render(TAB_NAME[name], True, ink)
         screen.blit(label, label.get_rect(center=box.center))
         pygame.draw.line(screen, RULE, (box.right, 6), (box.right, TABS_HEIGHT - 6))
     strip = pygame.Rect(left, TABS_HEIGHT, SCREEN[0] - left, CAPTION_HEIGHT)

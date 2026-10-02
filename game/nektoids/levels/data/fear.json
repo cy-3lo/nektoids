@@ -39,11 +39,12 @@
         ]
       },
       {
-        "show": {"tab": "editor"},
+        "show": [{"tab": "editor"}, {"level": "edit"}],
         "until": {"screen": "edit"},
         "say": [
           "It has no eyes and no thrusters yet: it cannot",
-          "move. Click the Editor tab to build them."
+          "move. Click the Editor tab, or the Editor",
+          "button at the bottom left, to build them."
         ]
       },
       {

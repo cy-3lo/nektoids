@@ -1,6 +1,15 @@
 """Tutorials and hints (D-039). tutorial.py imports no pygame."""
 
-from nektoids.editor.layout import SCREEN, Drawer, Env, Tool, centred_view, contains, make_layout
+from nektoids.editor.layout import (
+    SCREEN,
+    Drawer,
+    Env,
+    LevelButton,
+    Tool,
+    centred_view,
+    contains,
+    make_layout,
+)
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     GAP,
@@ -311,7 +320,8 @@ def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
 
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    expected = {0: {"arena"}, 1: {"objectives"}, 2: set(), R + 1: {"parts"}, R + 2: {"bar"}}
+    expected = {0: {"arena"}, 1: {"objectives"}, 2: {"tab:editor"}, R + 1: {"parts"}}
+    expected |= {R + 2: {"bar"}}
     expected |= {R + 3: set(), R + 11: set(), R + 12: {"controls"}, R + 14: set()}
     for index, names in expected.items():
         tutorial.index = index
@@ -357,6 +367,10 @@ def test_fear_starts_in_the_run_and_sends_the_player_to_the_editor_by_its_tab():
         tutorial.start is Screen.RUN
         and Tutorial.from_dict(LEVELS["Love"].tutorial).start is Screen.EDIT
     )
-    tab = tutorial.steps[R - 1].show
-    for screen, layout in ((Screen.RUN, RUN_LAYOUT), (Screen.EDIT, LAYOUT)):
-        assert target_rects(tab, screen, layout, VIEW) == [dict(layout.tabs)["editor"]]
+    ways = tutorial.steps[R - 1].show  # the Editor tab and the switch at the bar's foot
+    switch = dict(RUN_LAYOUT.level_buttons)[LevelButton.EDIT]
+    assert target_rects(ways, Screen.RUN, RUN_LAYOUT, VIEW) == [
+        dict(RUN_LAYOUT.tabs)["editor"],
+        switch,
+    ]
+    assert target_rects(ways, Screen.EDIT, LAYOUT, VIEW) == [dict(LAYOUT.tabs)["editor"]]
