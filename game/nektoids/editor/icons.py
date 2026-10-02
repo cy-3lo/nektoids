@@ -64,6 +64,13 @@ GLYPH = {
     "screwdriver-wrench": 0xF7D9,
     "compass": 0xF14E,
     "chevron-left": 0xF053,
+    "gear": 0xF013,
+    "keyboard": 0xF11C,
+    "clock": 0xF017,
+    "graduation-cap": 0xF19D,
+    "volume-high": 0xF028,
+    "music": 0xF001,
+    "border-all": 0xF84C,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.
@@ -88,11 +95,13 @@ TOOL_ICON = {
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
 FILE_ICON = {FileButton.SAVE: "floppy-disk", FileButton.LOAD: "folder-open"}
-LEVEL_ICON = {LevelButton.MAP: "map", LevelButton.RUN: "play"}
+LEVEL_ICON = {LevelButton.RUN: "play"}
 DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.PARTS: "puzzle-piece",
     Drawer.TOOLS: "screwdriver-wrench",
     Drawer.NAVIGATOR: "compass",
+    Drawer.SETTINGS: "gear",
+    Drawer.CHAPTERS: "map",
 }
 VIEW_ICON = {
     ViewButton.ZOOM_IN: "magnifying-glass-plus",

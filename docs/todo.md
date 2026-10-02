@@ -70,17 +70,15 @@ From Camille's notes (`ebc4abb`), then a design for touch screens.
 
 Mockups of every drawer, drawn with the game's own palette and renders, are in this session's
 artifacts ("Nektoids Activity Bar", round 3). It replaces the menu, the palette, the run view's
-column and the full-screen map.
+column and the full-screen map (gone, D-054).
 
 The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
 preview; in the Run it shows the level. Drawers never take the main screen.
 
-- [ ] The activity bar's other drawers (the bar, Parts, Tools and Navigator are in, D-053):
-      Files (floppy-disk) and Sense (stethoscope) in the editor; Objectives (list-check), Inside
-      (magnifying-glass), Score (trophy) and Navigator in the Run; Settings (gear) at the foot
-      of both, over Chapters. Settings: fast forward's speed, key hints, tooltips' delay, Fear's
-      tutorial again; Sound and Music once there is sound. No palette.
-- [ ] Chapters as a drawer, replacing the full-screen map, which its icon opens for now.
+- [ ] The activity bar's other drawers (Parts, Tools, Navigator, Settings and Chapters are in,
+      D-053, D-054): Files (floppy-disk) and Sense (stethoscope) in the editor; Objectives
+      (list-check), Inside (magnifying-glass), Score (trophy) and Navigator in the Run, with
+      Settings and Chapters at its foot too. Sound and Music in Settings once there is sound.
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
 - [ ] The Run's controls (play, a step, fast forward, the timeline) in a bar under the arena.

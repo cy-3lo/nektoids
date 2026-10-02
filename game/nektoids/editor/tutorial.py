@@ -150,8 +150,8 @@ class Tutorial:
         self.index = len(self.steps)
 
     def restart(self) -> None:
-        """The map opened: from the first step again, finished or skipped, `follow` passing over
-        what the board already holds."""
+        """A place chosen in Chapters: from the first step again, finished or skipped, `follow`
+        passing over what the board already holds."""
         self.index = 0
 
     def follow(self, context: Context) -> None:
@@ -184,7 +184,7 @@ def drawer_for(step: Step | None) -> Drawer | None:
 
 def guided(data: Mapping | None) -> bool:
     """Whether a level's tutorial data leads somewhere, rather than only hinting: such a level
-    starts afresh, board and all, each time the map opens (D-050)."""
+    starts afresh, board and all, each time a place is chosen in Chapters (D-050, D-054)."""
     return data is not None and any(step.get("show") for step in data["steps"])
 
 

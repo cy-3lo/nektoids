@@ -140,11 +140,13 @@ class ArenaScene:
         developer: bool = True,
         next_label: str | None = None,
         label: str | None = None,
+        fast: int = FAST,
     ):
         self.levels = list(levels)
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.next_label = next_label  # what the banner's next button says after a win; None: none
+        self.fast = fast  # fast forward's speed: frames' worth of ticks a frame (Settings, D-054)
         self.request: str | None = None  # "edit" or "next": for main.py, which clears it
         self.gate: Callable[[Action], bool] | None = None  # what the tutorial lets through
         self.message = ""  # why the last press did nothing, until the next one
@@ -451,7 +453,7 @@ class ArenaScene:
             self._restore(self.recording.at(0))  # the same run, from its start
             self.clock.tick = 0
         elif button is ArenaButton.FAST:
-            self.clock.speed = 1 if self.clock.speed > 1 else FAST
+            self.clock.speed = 1 if self.clock.speed > 1 else self.fast
         elif button is ArenaButton.HAND:
             self.hand = not self.hand
         elif button is ArenaButton.LIGHT:

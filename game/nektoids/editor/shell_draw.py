@@ -1,4 +1,4 @@
-"""Drawing the screens around the levels (D-035): the title card, a level's card, the map, the
+"""Drawing the screens around the levels (D-035): the title card, a level's card, the
 end. Reads the router; never changes it. Where things sit is `shell.py`'s.
 """
 
@@ -6,21 +6,20 @@ from __future__ import annotations
 
 import pygame
 
-from nektoids.editor.draw import Fonts, draw_title
+from nektoids.editor.draw import Fonts
 from nektoids.editor.layout import contains
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
     BUTTON,
     DIM_TEXT,
-    GREYED,
     PANEL,
     RULE,
     TEXT,
     VEIL,
 )
-from nektoids.editor.router import CHAPTER, CHAPTER_NAME, Router, level_label
-from nektoids.editor.shell import BACK_KEY, CARD, END_KEY, MAP_TOP, bottom_button, map_rows
+from nektoids.editor.router import Router
+from nektoids.editor.shell import CARD, END_KEY, bottom_button
 
 STUDIO = "Cy-3LO"  # always written so (CLAUDE.md)
 INVITE = "Wire the eyes to the thrusters, then Run."  # the card's one instruction (D-028)
@@ -78,44 +77,6 @@ def _card(screen: pygame.Surface, lines: list[tuple[pygame.Surface, int]]) -> No
         screen.blit(shown, shown.get_rect(midtop=(card.centerx, card.top + dy)))
 
 
-def draw_map(
-    screen: pygame.Surface, router: Router, fonts: Fonts, pointer: tuple[int, int]
-) -> None:
-    """The chapter's levels, each won, open or locked, then the sandbox; the open one outlined."""
-    screen.fill(BACKGROUND)
-    rows = map_rows(len(router.levels))
-    left = rows[0][0]
-    draw_title(screen, fonts, f"Chapter {CHAPTER}: {CHAPTER_NAME}", (left, MAP_TOP - 36))
-    for k, rect in enumerate(rows):
-        sandbox = k == router.sandbox_index
-        level = router.sandbox if sandbox else router.levels[k]
-        open_ = router.unlocked(k)
-        fill = ACTIVE if open_ and contains(rect, pointer) else BUTTON if open_ else PANEL
-        pygame.draw.rect(screen, fill, rect, border_radius=6)
-        if k == router.index:
-            pygame.draw.rect(screen, DIM_TEXT, rect, 2, border_radius=6)
-        x, y, w, h = rect
-        ink = TEXT if open_ else GREYED
-        name = fonts.text.render("SANDBOX" if sandbox else level_label(k), True, DIM_TEXT)
-        screen.blit(name, (x + 16, y + (h - name.get_height()) // 2))
-        title = fonts.text.render(level.title, True, ink)
-        screen.blit(title, (x + 132, y + (h - title.get_height()) // 2))
-        if sandbox:
-            state, icon = "no goal", None
-        elif k in router.won:
-            state, icon = "won", "check"
-        elif open_:
-            state, icon = "open", None
-        else:
-            state, icon = "locked", "lock"
-        shown = fonts.small.render(state, True, ink)
-        right = x + w - 16
-        screen.blit(shown, shown.get_rect(midright=(right, y + h // 2)))
-        if icon is not None:
-            fonts.icons.draw(screen, icon, (right - shown.get_width() - 14, y + h // 2), 14, ink)
-    _button(screen, fonts, f"Back to {router.label} ({BACK_KEY})", pointer)
-
-
 def draw_end(screen: pygame.Surface, fonts: Fonts, pointer: tuple[int, int]) -> None:
     """After the last level: thanks, and where to say so."""
     screen.fill(BACKGROUND)
@@ -125,7 +86,7 @@ def draw_end(screen: pygame.Surface, fonts: Fonts, pointer: tuple[int, int]) -> 
     for k, line in enumerate(REACH_OUT):
         shown = fonts.text.render(line, True, DIM_TEXT)
         screen.blit(shown, shown.get_rect(midtop=(middle, 300 + 30 * k)))
-    _button(screen, fonts, f"Map ({END_KEY})", pointer)
+    _button(screen, fonts, f"Chapters ({END_KEY})", pointer)
 
 
 def _button(screen: pygame.Surface, fonts: Fonts, text: str, pointer: tuple[int, int]) -> None:

@@ -591,23 +591,25 @@ Esc to change the board, and after a win Enter for the next level.
 - **`main.py`'s loop has no automated test.** A scratch script drove it through edit, run, a
   win, next level, run and Esc before the PR; `Router` itself is tested.
 
-## 11. Around the levels: title card, map, end (D-035)
+## 11. Around the levels: title card, Chapters, end (D-035, D-054)
 
-Read D-035 first. The game now opens under a title card; Tab, or Map in the palette's LEVEL
-section beside Run (D-037), shows the map. A level opened from the map or by Next level comes up
-under its own card, which says what it asks (D-042).
+Read D-035 and D-054 first. The game opens under a title card; Chapters (Tab, or its icon at
+the bar's foot) lists the levels and the sandbox in a drawer. A level opened from it or by Next
+level comes up under its own card, which says what it asks (D-042).
 
 - [`editor/router.py`](../game/nektoids/editor/router.py) holds the screen (`Screen`: title,
-  spec, map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the
-  levels won this session; `unlocked` says which places the map lets the player open.
-- [`editor/shell.py`](../game/nektoids/editor/shell.py), pure: where the map's rows and the
-  bottom button sit, and what is under a pixel; [`shell_draw.py`](../game/nektoids/editor/shell_draw.py)
-  draws the cards, the map and the end from the router, changing nothing.
-- [`main.py`](../game/main.py): `shell_event` hands the cards, the map and the end their
-  events; a run that is won marks its level won, which opens the next one on the map.
+  spec, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the
+  levels won this session; `unlocked` says which places the player may open, `rows` what
+  Chapters shows of each.
+- [`editor/shell.py`](../game/nektoids/editor/shell.py), pure: where the card and the end's
+  button sit; [`shell_draw.py`](../game/nektoids/editor/shell_draw.py) draws the cards and the
+  end from the router, changing nothing.
+- [`main.py`](../game/main.py): `shell_event` hands the cards and the end their events;
+  `choose_place` opens a place picked in Chapters; a run that is won marks its level won, which
+  opens the next one in Chapters.
 
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What
-would a player see on the map if the mark were only set when Next level is pressed?
+would a player see in Chapters if the mark were only set when Next level is pressed?
 
 ## 12. Tutorials and hints (D-038, D-039, D-048, D-050)
 
@@ -618,9 +620,9 @@ Skip ends it.
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
   a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
   wait is over (`met`); `next` and `skip` are the box's buttons, `answer` what a key or click
-  does to the tutorial, `restart` what opening the map does.
+  does to the tutorial, `restart` what choosing a place in Chapters does.
   `allows(step, Action)` says what a leading step lets through; `explains` whether it holds the
-  run and outlines its `panels`; `guided` whether a level starts afresh at the map.
+  run and outlines its `panels`; `guided` whether a level starts afresh when a place is chosen.
   `target_spots` finds what a step
   shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
   (`_crosses`) and the step `before`.
@@ -701,6 +703,20 @@ Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
 
 Questions: why is an info disc asked before its row, in `_press`? What would the player see if
 `open_drawer` did not slide the view?
+
+Settings and Chapters (D-054) sit at the bar's foot. Open Settings and click Fast forward, then
+Chapters (Tab) and a locked level.
+
+- [`editor/settings.py`](../game/nektoids/editor/settings.py), pure: the session's `Settings`,
+  each one stepping through its choices.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `FOOT`, and `_Rows.settings` and
+  `_Rows.chapters`; `chapter_row_at`, `setting_row_at`.
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `_choose_place` and `_set`, which leave
+  `chosen` or `request` for `main.py`; `_relayout` keeps the parts and the chapter when the
+  drawer changes.
+
+Questions: why does the scene leave the chosen place for `main.py` rather than open it itself?
+Why is a row's best time in its info box rather than on the row?
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

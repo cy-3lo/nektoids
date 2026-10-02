@@ -1,7 +1,9 @@
 """Editor layout and hit-testing (D-051). layout.py imports no pygame, so this runs headless."""
 
 from nektoids.editor.layout import (
+    DRAWER_KEYS,
     EDIT_KEYS,
+    FOOT,
     LEVEL_KEYS,
     MAX_HEX,
     MIN_HEX,
@@ -14,10 +16,12 @@ from nektoids.editor.layout import (
     EditButton,
     FileButton,
     LevelButton,
+    Setting,
     Tool,
     ViewButton,
     cell_at,
     centred_view,
+    chapter_row_at,
     contains,
     drawer_button_at,
     group_at,
@@ -29,6 +33,7 @@ from nektoids.editor.layout import (
     on_fold_handle,
     palette_target_at,
     pan,
+    setting_row_at,
     tab_at,
     tool_at,
     view_button_at,
@@ -188,17 +193,18 @@ def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
     assert palette_target_at(LAYOUT, centre(LAYOUT.board_area)) is None
 
 
-def test_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_keys():
-    (chapters, top), (run, switch) = LAYOUT.level_buttons
-    assert (chapters, run) == (LevelButton.MAP, LevelButton.RUN)
-    assert top[1] + top[3] <= switch[1] and switch[1] + switch[3] <= SCREEN[1] - 8
-    lowest_drawer = max(rect[1] + rect[3] for _, rect in LAYOUT.drawer_buttons)
-    assert lowest_drawer < top[1]  # at the foot, apart from the drawers' icons
-    for button, rect in LAYOUT.level_buttons:
-        assert level_button_at(LAYOUT, centre(rect)) is button
-        assert palette_target_at(LAYOUT, centre(rect)) is button
-        assert contains(LAYOUT.bar_area, rect[:2])
-    assert LEVEL_KEYS == {LevelButton.MAP: "Tab", LevelButton.RUN: "Space"}
+def test_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_keys():
+    ((run, switch),) = LAYOUT.level_buttons
+    assert run is LevelButton.RUN and switch[1] + switch[3] <= SCREEN[1] - 8
+    icons = dict(LAYOUT.drawer_buttons)
+    settings, chapters = icons[Drawer.SETTINGS], icons[Drawer.CHAPTERS]
+    assert settings[1] + settings[3] <= chapters[1] and chapters[1] + chapters[3] <= switch[1]
+    lowest_top = max(icons[d][1] + icons[d][3] for d in Drawer if d not in FOOT)
+    assert lowest_top < settings[1]  # at the foot, apart from the drawers above
+    assert level_button_at(LAYOUT, centre(switch)) is run
+    assert palette_target_at(LAYOUT, centre(switch)) is run
+    assert contains(LAYOUT.bar_area, switch[:2])
+    assert LEVEL_KEYS == {LevelButton.RUN: "Space"} and DRAWER_KEYS == {Drawer.CHAPTERS: "Tab"}
     assert [name for name, _ in LAYOUT.tabs] == ["editor", "run"]
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name
@@ -232,3 +238,21 @@ def test_the_menu_shows_only_the_parts_the_level_hands_out_and_no_empty_group():
     assert [kind for kind, _ in first.menu_items] == [Kind.EYE, Kind.THRUSTER]
     assert [title for title, _ in first.group_titles] == ["Sensors", "Actuators"]
     assert [kind for kind, _ in first.info_buttons] == [Kind.EYE, Kind.THRUSTER]
+
+
+def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_section():
+    chapters = make_layout(Drawer.CHAPTERS, chapter=3)
+    assert [k for k, _ in chapters.chapter_rows] == [0, 1, 2, 3]  # the sandbox last
+    settings = make_layout(Drawer.SETTINGS)
+    assert [what for what, _ in settings.setting_rows] == list(Setting)
+    assert [title for title, _ in settings.section_titles] == ["Run", "Display", "Help", "Sound"]
+    for layout, rows, row_at in (
+        (chapters, chapters.chapter_rows, chapter_row_at),
+        (settings, settings.setting_rows, setting_row_at),
+    ):
+        for what, rect in rows:
+            assert row_at(layout, centre(rect)) == what
+            assert contains(layout.drawer_area, rect[:2]) and rect[1] + rect[3] <= SCREEN[1]
+            assert row_at(LAYOUT, centre(rect)) is None  # rows only in the open drawer
+            assert info_at(layout, centre(dict(layout.info_buttons)[what])) == what
+    assert chapters.setting_rows == () and settings.chapter_rows == ()

@@ -1,12 +1,13 @@
 """Where everything sits on the 960 x 640 editor screen, and what is under a given pixel (D-051).
 
-- Left, the activity bar: an icon for each drawer (Parts, Tools, Navigator), and at its foot
-  the Chapters (the map, until it is a drawer) and the accented switch to the Run.
+- Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top,
+  Settings and Chapters at its foot, over the accented switch to the Run.
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, operators, actuators) that fold
   under their title, only the parts the level hands out; Tools: the tools, Edit (undo, redo),
-  File (save and load, inactive until saving exists); Navigator: the view's buttons. An arrow on
-  the drawer's edge folds it.
+  File (save and load, inactive until saving exists); Navigator: the view's buttons; Settings:
+  what the player sets (D-054); Chapters: the levels, then the sandbox, which replaces the
+  full-screen map. An arrow on the drawer's edge folds it.
 - The rest is the board: the tabs over it (Editor, Run) with the level's caption after them,
   the hex grid, one status line at its foot. A drawer opening pushes the board aside.
 
@@ -38,7 +39,7 @@ ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
 SECTION_GAP = 6  # before a section title or a group [px]
-INFO_AT = 150  # a row's info disc: its centre, this far from the row's left [px]
+INFO_AT = 156  # a row's info disc: its centre, this far from the row's left [px]
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
 HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
 TABS_HEIGHT = 32  # the strip of tabs over the board [px]
@@ -78,8 +79,7 @@ class EditButton(Enum):
 
 
 class LevelButton(Enum):
-    MAP = "map"  # the chapter's levels and the sandbox
-    RUN = "run"  # the board, swimming in its arena
+    RUN = "run"  # the board, swimming in its arena: the accented switch
 
 
 class FileButton(Enum):  # inactive: saving is not in the game yet
@@ -98,6 +98,20 @@ class Drawer(Enum):  # in the activity bar's order (D-051)
     PARTS = "parts"  # the parts the level hands out, and what each does
     TOOLS = "tools"  # the tools, undo and redo, save and load
     NAVIGATOR = "navigator"  # zoom, hand, centre
+    SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
+    CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
+
+
+FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
+
+
+class Setting(Enum):  # the Settings drawer's rows (D-054)
+    FAST = "fast"  # fast forward's speed
+    HINTS = "hints"  # keys on the rows and in the tooltips
+    TOOLTIPS = "tooltips"  # how soon a tooltip shows
+    TUTORIAL = "tutorial"  # Fear's tutorial again
+    SOUND = "sound"  # locked: there is no sound yet
+    MUSIC = "music"
 
 
 # Shortcut keys, matched on the character typed (so they follow the keyboard layout) and shown
@@ -119,7 +133,8 @@ VIEW_KEYS = {
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 # On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F3.
-LEVEL_KEYS = {LevelButton.MAP: "Tab", LevelButton.RUN: "Space"}
+LEVEL_KEYS = {LevelButton.RUN: "Space"}
+DRAWER_KEYS = {Drawer.CHAPTERS: "Tab"}  # Tab opens the levels, as it opened the map
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
 
@@ -127,6 +142,7 @@ KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layou
 class Layout:
     kinds: frozenset[Kind]  # the parts the level hands out: the only ones Parts shows
     drawer: Drawer | None  # the drawer open, if one is
+    chapter: int  # how many levels the chapter has: Chapters' rows, then the sandbox's
     bar_area: Rect
     drawer_buttons: tuple[tuple[Drawer, Rect], ...]  # the bar's icons, top down
     level_buttons: tuple[tuple[LevelButton, Rect], ...]  # at the bar's foot: Chapters, the switch
@@ -140,6 +156,8 @@ class Layout:
     edit_buttons: tuple[tuple[EditButton, Rect], ...]
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
+    setting_rows: tuple[tuple[Setting, Rect], ...]  # Settings' rows
+    chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "editor", "run"
     board_area: Rect
@@ -159,18 +177,23 @@ def make_layout(
     drawer: Drawer | None = Drawer.PARTS,
     folded: frozenset[str] = frozenset(),
     kinds: frozenset[Kind] = frozenset(Kind),
+    chapter: int = 0,
 ) -> Layout:
     """The bar, the open drawer's rows and the board. folded: Parts' groups shown closed;
-    kinds: the parts the level hands out, the only ones Parts shows (D-039)."""
+    kinds: the parts the level hands out, the only ones Parts shows (D-039); chapter: how many
+    levels Chapters lists, before the sandbox."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
+    top = [d for d in Drawer if d not in FOOT]
+    switch = ((BAR_WIDTH - SWITCH) // 2, height - SWITCH - 12, SWITCH, SWITCH)
     drawer_buttons = tuple(
         (d, (side, BAR_PITCH // 2 + 6 + k * BAR_PITCH - BAR_BUTTON // 2, BAR_BUTTON, BAR_BUTTON))
-        for k, d in enumerate(Drawer)
+        for k, d in enumerate(top)
+    ) + tuple(  # at the foot, over the switch, from the bottom up: Chapters, then Settings
+        (d, (side, switch[1] - (len(FOOT) - k) * BAR_PITCH, BAR_BUTTON, BAR_BUTTON))
+        for k, d in enumerate(FOOT)
     )
-    switch = ((BAR_WIDTH - SWITCH) // 2, height - SWITCH - 12, SWITCH, SWITCH)
-    chapters = (side, switch[1] - 8 - BAR_BUTTON, BAR_BUTTON, BAR_BUTTON)
     left = BAR_WIDTH + (DRAWER_WIDTH if drawer is not None else 0)  # the board's left edge
     rows = _Rows()
     if drawer is Drawer.PARTS:
@@ -179,6 +202,10 @@ def make_layout(
         rows.tools()
     elif drawer is Drawer.NAVIGATOR:
         rows.view()
+    elif drawer is Drawer.SETTINGS:
+        rows.settings()
+    elif drawer is Drawer.CHAPTERS:
+        rows.chapters(chapter)
     tabs, x = [], left
     for name, w in zip(("editor", "run"), TAB_WIDTHS, strict=True):
         tabs.append((name, (x, 0, w, TABS_HEIGHT)))
@@ -187,9 +214,10 @@ def make_layout(
     return Layout(
         kinds=kinds,
         drawer=drawer,
+        chapter=chapter,
         bar_area=bar,
         drawer_buttons=drawer_buttons,
-        level_buttons=((LevelButton.MAP, chapters), (LevelButton.RUN, switch)),
+        level_buttons=((LevelButton.RUN, switch),),
         drawer_area=(BAR_WIDTH, 0, DRAWER_WIDTH, height) if open_ else None,
         fold_handle=(left - 1, height // 2 - HANDLE[1] // 2, *HANDLE) if open_ else None,
         drawer_title_at=(BAR_WIDTH + MARGIN, 9),
@@ -200,6 +228,8 @@ def make_layout(
         edit_buttons=tuple(rows.of(EditButton)),
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
+        setting_rows=tuple(rows.of(Setting)),
+        chapter_rows=tuple(rows.of(int)),
         info_buttons=tuple(
             (what, (x + INFO_AT - INFO_HIT // 2, y + (h - INFO_HIT) // 2, INFO_HIT, INFO_HIT))
             for what, (x, y, _, h) in rows.items
@@ -254,6 +284,27 @@ class _Rows:
         for what in ViewButton:
             self._row(what)
 
+    def settings(self) -> None:
+        sections = (
+            ("Run", (Setting.FAST,)),
+            ("Display", (Setting.HINTS, Setting.TOOLTIPS)),
+            ("Help", (Setting.TUTORIAL,)),
+            ("Sound", (Setting.SOUND, Setting.MUSIC)),
+        )
+        for title, rows in sections:
+            self._title(title, self.sections)
+            for what in rows:
+                self._row(what)
+            self.y += SECTION_GAP
+
+    def chapters(self, levels: int) -> None:
+        self._title("Chapter 1: light", self.sections)
+        for k in range(levels):
+            self._row(k)
+        self.y += SECTION_GAP
+        self._title("Free play", self.sections)
+        self._row(levels)  # the sandbox
+
 
 def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelButton | None:
     """What a tooltip would name under `point`: an icon of the activity bar."""
@@ -262,6 +313,15 @@ def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelB
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
     return next((d for d, rect in layout.drawer_buttons if contains(rect, point)), None)
+
+
+def chapter_row_at(layout: Layout, point: tuple[int, int]) -> int | None:
+    """The place whose row in Chapters is under `point`: a level's index, or the sandbox's."""
+    return next((k for k, rect in layout.chapter_rows if contains(rect, point)), None)
+
+
+def setting_row_at(layout: Layout, point: tuple[int, int]) -> Setting | None:
+    return next((s for s, rect in layout.setting_rows if contains(rect, point)), None)
 
 
 def tab_at(layout: Layout, point: tuple[int, int]) -> str | None:

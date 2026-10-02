@@ -23,6 +23,7 @@ from dataclasses import dataclass
 
 import pygame
 
+from nektoids.editor.devdrive import DT
 from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
 from nektoids.editor.icons import (
     DRAWER_ICON,
@@ -36,6 +37,7 @@ from nektoids.editor.icons import (
 )
 from nektoids.editor.layout import (
     BAR_WIDTH,
+    DRAWER_KEYS,
     EDIT_KEYS,
     INFO_AT,
     LEVEL_KEYS,
@@ -49,6 +51,7 @@ from nektoids.editor.layout import (
     EditButton,
     FileButton,
     LevelButton,
+    Setting,
     Tool,
     View,
     ViewButton,
@@ -91,11 +94,11 @@ from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
 
 TIP = {
-    Tool.ADD: "Add a component",
+    Tool.ADD: "Add a part",
     Tool.WIRE: "Wire",
     Tool.TURN_LEFT: "Turn left",
     Tool.TURN_RIGHT: "Turn right",
-    Tool.MOVE: "Move a component",
+    Tool.MOVE: "Move a part",
     Tool.DELETE: "Delete",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
@@ -105,11 +108,28 @@ TIP = {
     EditButton.REDO: "Redo",
     FileButton.SAVE: "Save: not yet",
     FileButton.LOAD: "Load: not yet",
-    LevelButton.MAP: "Chapters",
     LevelButton.RUN: "Run",
     Drawer.PARTS: "Parts",
     Drawer.TOOLS: "Tools",
     Drawer.NAVIGATOR: "Navigator",
+    Drawer.SETTINGS: "Settings",
+    Drawer.CHAPTERS: "Chapters",
+}
+SETTING = {  # Settings' rows: their name, icon and what their info box says (D-054)
+    Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
+    Setting.HINTS: ("Key hints", "keyboard", "Show each row's key, and the bar's in its tooltip."),
+    Setting.TOOLTIPS: (
+        "Tooltips",
+        "clock",
+        "How long the mouse rests on an icon before its name shows.",
+    ),
+    Setting.TUTORIAL: (
+        "Tutorial",
+        "graduation-cap",
+        "Fear again, from its first step, on a fresh board.",
+    ),
+    Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
+    Setting.MUSIC: ("Music", "music", "There is no music yet."),
 }
 ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's name
     Tool.ADD: "Add",
@@ -133,8 +153,8 @@ HINT = {
     Tool.WIRE: "Drag from one part to another, or click one then the other.",
     Tool.TURN_LEFT: "Click a part to select it, again to turn it left. L turns the selected one.",
     Tool.TURN_RIGHT: "Click a part to select it, again to turn it right. R turns the selected one.",
-    Tool.MOVE: "Drag a component. Its wires follow as long as they find a path.",
-    Tool.DELETE: "Click a component to delete it, or a wire.",
+    Tool.MOVE: "Drag a part. Its wires follow as long as they find a path.",
+    Tool.DELETE: "Click a part to delete it, or a wire.",
     Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
 }
 
@@ -499,6 +519,43 @@ def _draw_drawer(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
             active,
             icon=VIEW_ICON[button],
         )
+    settings = scene.settings
+    shown = {
+        Setting.FAST: ("count", f"{settings.fast}x"),
+        Setting.HINTS: ("tick", "on") if settings.key_hints else ("count", "off"),
+        Setting.TOOLTIPS: ("count", f"{settings.tooltip_seconds:.1f} s"),
+        Setting.TUTORIAL: ("none", ""),
+    }
+    for setting, rect in layout.setting_rows:
+        name, icon, _ = SETTING[setting]
+        status = shown.get(setting, ("lock", ""))
+        greyed = setting not in shown  # Sound and Music: no sound yet
+        _draw_row(screen, scene, fonts, rect, setting, name, status, False, greyed, icon=icon)
+    places = {row.index: row for row in scene.chapters}
+    for index, rect in layout.chapter_rows:
+        row = places.get(index)
+        if row is None:
+            continue
+        if row.state == "won":
+            status = ("tick", "")  # the fastest win is in the row's info box
+        else:
+            status = ("lock", "") if row.state == "locked" else ("none", "")
+        badge = row.label or None
+        icon = None if badge else "border-all"  # the sandbox
+        locked = row.state == "locked"
+        _draw_row(
+            screen,
+            scene,
+            fonts,
+            rect,
+            index,
+            "Sandbox" if row.state == "sandbox" else row.title,
+            status,
+            row.current,
+            locked,
+            icon=icon,
+            badge=badge,
+        )
     handle = pygame.Rect(layout.fold_handle)
     corners = {"border_top_right_radius": 6, "border_bottom_right_radius": 6}
     pygame.draw.rect(screen, PANEL, handle, **corners)
@@ -518,9 +575,11 @@ def _draw_row(
     greyed: bool = False,
     icon: str | None = None,
     part: Kind | None = None,
+    badge: str | None = None,
 ) -> None:
-    """A drawer's row, as every drawer draws them (D-051): an icon (or the part itself), the
-    name, an info disc, then a count, the infinity sign, a key or a lock, right-aligned."""
+    """A drawer's row, as every drawer draws them (D-051): an icon (or the part itself, or a
+    level's number), the name, an info disc, then a count, the infinity sign, a key, a tick or a
+    lock, right-aligned; nothing for "none". Keys show while the key hints are on (D-054)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, box, border_radius=6)
     ink = GREYED if greyed else TEXT
@@ -528,6 +587,9 @@ def _draw_row(
     if part is not None:
         fill = GREYED if greyed else None
         draw_part(screen, fonts, part, MENU_ANGLE.get(part), slot, 24, False, fill)
+    elif badge is not None:
+        label = fonts.small.render(badge, True, DIM_TEXT if greyed else TEXT)
+        screen.blit(label, label.get_rect(center=slot))
     elif icon is not None:
         fonts.icons.draw(screen, icon, slot, 16, ink)
     shown = fonts.text.render(name, True, DIM_TEXT if greyed else TEXT)
@@ -540,7 +602,16 @@ def _draw_row(
         fonts.icons.draw(screen, "infinity", (right - 8, box.centery), 14, ink)
     elif kind == "lock":
         fonts.icons.draw(screen, "lock", (right - 6, box.centery), 12, GREYED)
+    elif kind == "tick":
+        shown = fonts.small.render(text, True, DIM_TEXT)
+        screen.blit(shown, shown.get_rect(midright=(right, box.centery)))
+        x = right - shown.get_width() - 12 if text else right - 6
+        fonts.icons.draw(screen, "check", (x, box.centery), 12, LIT)
+    elif kind == "none":
+        pass
     elif kind == "key":
+        if not scene.settings.key_hints:
+            return
         cap = fonts.small.render(text, True, GREYED if greyed else DIM_TEXT)
         cap_box = cap.get_rect(midright=(right, box.centery)).inflate(10, 4)
         pygame.draw.rect(screen, RULE, cap_box, 1, border_radius=4)
@@ -605,7 +676,7 @@ def _draw_tooltip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         return
     rects = dict(scene.layout.drawer_buttons) | dict(scene.layout.level_buttons)
     _, y, _, h = rects[target]
-    key = LEVEL_KEYS.get(target)
+    key = (LEVEL_KEYS | DRAWER_KEYS).get(target) if scene.settings.key_hints else None
     text = TIP[target] + (f" ({key})" if key else "")
     draw_tip(screen, fonts, text, midleft=(BAR_WIDTH + 10, y + h // 2))
 
@@ -615,8 +686,19 @@ def _draw_info(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     if scene.info is None:
         return
     what = scene.info
-    name = NAME[what] if isinstance(what, Kind) else ROW_NAME[what]
-    lines = info(what) if isinstance(what, Kind) else (HINT.get(what) or TIP[what],)
+    places = {row.index: row for row in scene.chapters}
+    if isinstance(what, Kind):
+        name, lines = NAME[what], info(what)
+    elif isinstance(what, Setting):
+        name, _, line = SETTING[what]
+        lines = (line,)
+    elif isinstance(what, int) and what in places:
+        place = places[what]
+        name, lines = place.title, (place.spec,)
+        if place.best is not None:
+            lines += (f"Fastest win: {place.best.ticks * DT:.2f} s, {place.best.parts} parts.",)
+    else:
+        name, lines = ROW_NAME[what], (HINT.get(what) or TIP[what],)
     rows = [fonts.text.render(name, True, TEXT)]
     rows += [fonts.small.render(line, True, TEXT) for line in lines]
     width = max(row.get_width() for row in rows) + 2 * INFO_PAD

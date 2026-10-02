@@ -685,3 +685,22 @@ tab runs, like the switch and Space. Parts is open when a level opens. The tutor
 shows is its row, or the Tools icon while that drawer is closed; a step opens the drawer its
 targets are in (`tutorial.drawer_for`), once, when it comes up. Fear's first steps say so.
 `layout.make_layout(drawer, folded, kinds)` builds it all; `scene.open_drawer` changes it.
+
+**D-054 — 2026-10-02 — Step B of D-051: Chapters and Settings are drawers at the bar's foot. The full-screen map goes; choosing a place in Chapters does what opening the map did. Amends D-035 and D-050.**
+Settings (gear) and Chapters (map) sit at the bar's foot, in that order, over the switch to the
+Run. Chapters lists the chapter's levels, then the sandbox, in the common rows: the level's
+number where the icon goes, its title, an info disc (the title, what the level asks, and the
+fastest win this session), then a tick once won or a lock until the level before it is won; the
+open place is lit. Tab opens Chapters, or folds it. A click on an open row opens that place under
+its card (D-042); a locked row refuses and says why; during a leading tutorial step the rows
+refuse like the rest. The full-screen map and its screen go; the end's button reads "Chapters
+(Esc)" and comes back to the last level with Chapters open. Choosing a place does what opening
+the map did (D-050): the guided level, Fear, starts afresh, the others keep their boards and
+their hints start again; the editor left goes back to Parts. Settings, by section: Run, fast
+forward's speed (2, 4 or 8 frames' worth of ticks a frame, 4 at first); Display, key hints on or
+off (the keys on the rows and in the bar's tooltips) and the tooltips' delay (0.5, 1 or 1.5 s);
+Help, the tutorial, which reopens Fear from its first step on a fresh board; Sound, Sound and
+Music, locked until there is sound. A click on a row steps to its next choice. The settings last
+the session (`editor/settings.py`), shared by every level's editor and the run. The info disc
+moves to 156 px into a row, 6 px on from D-053, so that "In the shadow" fits before it; the
+sandbox's row reads "Sandbox", its title in its info box.
