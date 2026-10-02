@@ -594,15 +594,16 @@ Esc to change the board, and after a win Enter for the next level.
 ## 11. Around the levels: title card, map, end (D-035)
 
 Read D-035 first. The game now opens under a title card; Tab, or Map in the palette's LEVEL
-section beside Run (D-037), shows the map.
+section beside Run (D-037), shows the map. A level opened from the map or by Next level comes up
+under its own card, which says what it asks (D-042).
 
 - [`editor/router.py`](../game/nektoids/editor/router.py) holds the screen (`Screen`: title,
-  map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the levels
-  won this session; `unlocked` says which places the map lets the player open.
+  spec, map, edit, run, end), the open place (a level of the route, or `sandbox_index`) and the
+  levels won this session; `unlocked` says which places the map lets the player open.
 - [`editor/shell.py`](../game/nektoids/editor/shell.py), pure: where the map's rows and the
   bottom button sit, and what is under a pixel; [`shell_draw.py`](../game/nektoids/editor/shell_draw.py)
-  draws the card, the map and the end from the router, changing nothing.
-- [`main.py`](../game/main.py): `shell_event` hands the title card, the map and the end their
+  draws the cards, the map and the end from the router, changing nothing.
+- [`main.py`](../game/main.py): `shell_event` hands the cards, the map and the end their
   events; a run that is won marks its level won, which opens the next one on the map.
 
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What

@@ -4,6 +4,7 @@ The loop of the brief (§1): the spec and the board in the editor, Run, watch th
 editor to change the mechanism, or on to the next level once won (D-030). Around it (D-035): the
 game opens on the first level under a title card; the map lists the chapter's levels and the
 sandbox, each level opening once the one before it is won; after the last level comes the end.
+A level opened from the map or by Next level comes up under its card, which says what it asks.
 Each level keeps its board for the session, so going back finds it as it was left; nothing is
 kept after it. Pure Python, no pygame: `main.py` turns the state into scenes.
 """
@@ -27,6 +28,7 @@ def level_label(index: int) -> str:
 
 class Screen(Enum):
     TITLE = "title"  # the card over the first level, gone at the first click
+    SPEC = "spec"  # a level's card: its name and what it asks, gone at the first click
     MAP = "map"  # the chapter's levels and the sandbox
     EDIT = "edit"  # a level's board in the editor
     RUN = "run"  # the level's board swimming in its arena
@@ -82,18 +84,18 @@ class Router:
     # Moving about
 
     def begin(self) -> None:
-        """The title card goes; the first level stays."""
+        """The card goes, the title card or a level's; the level stays."""
         self.screen = Screen.EDIT
 
     def open_map(self) -> None:
         self.screen = Screen.MAP
 
     def open(self, index: int) -> None:
-        """A place from the map, in the editor; ValueError if it is still locked."""
+        """A place from the map, under its card; ValueError if it is still locked."""
         if not self.unlocked(index):
             raise ValueError(f"{level_label(index)} opens once the level before it is won")
         self.index = index
-        self.screen = Screen.EDIT
+        self.screen = Screen.SPEC
 
     def run(self) -> None:
         self.screen = Screen.RUN
@@ -107,12 +109,12 @@ class Router:
             self.won.add(self.index)
 
     def next(self) -> None:
-        """On to the next level's editor; ValueError after the last one."""
+        """On to the next level, under its card; ValueError after the last one."""
         if not self.has_next:
             raise ValueError("that was the last level")
         self.mark_won()
         self.index += 1
-        self.screen = Screen.EDIT
+        self.screen = Screen.SPEC
 
     def finish(self) -> None:
         """After the last level: the end."""

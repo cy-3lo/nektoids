@@ -16,8 +16,8 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
       next to it that says what it does; another click or any key closes it. To settle: which
       click opens it, since a click on a part already wires, moves, turns or deletes it (in the
       menu, a click on its row that does not pick it up; on the board, the Add tool, or a ?).
-- [ ] Each level says what it asks when it opens: its objective in a line or two, before any
-      wiring. Today only the first level has a title card (D-035).
+- [x] Each level says what it asks when it opens: its objective in a line or two, before any
+      wiring (D-042).
 - [ ] Make it plain that an eye senses through its flat face (D-020). The info box says so
       (`parts.py`), but the drawing does not single that face out.
 - [ ] A passkey for each level: a word typed on the map opens that level at once, so a player

@@ -495,3 +495,13 @@ D-005 split the code between two programmers who review each other, and one of t
 programming: a review that cannot happen only holds the work up.
 Consequences: `CLAUDE.md`, the README, `/pr-prep` and the walkthrough change with it. The
 walkthrough stays, for when Camille wants to read the code.
+
+**D-042 — 2026-10-02 — A level opened from the map or by Next level comes up under its card: its name, what it asks, its time. Amends D-035.**
+The spec was only in the editor's caption, above the board, where a player who has just pressed
+Next level starts wiring without reading it (brief §1: the player receives a spec first). The
+card is the title card's veil and panel, with LEVEL 1.n, the title, the spec and "You have 20 s.";
+any click or key takes it away and does nothing else. A level is opened from a map row or by Next
+level, the sandbox included; it is returned to by Back from the map, Edit after a run or F1, and
+those show no card. At startup LEVEL 1.1 keeps the title card alone. A line too wide for the card
+is shrunk to fit: the sandbox's title is. `router.py` gains `Screen.SPEC`, which `open` and `next`
+lead to and `begin` leaves; `shell_draw.py` draws the card.
