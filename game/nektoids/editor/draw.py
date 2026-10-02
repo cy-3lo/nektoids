@@ -113,7 +113,7 @@ from nektoids.editor.palette import (
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.probe import level_view, ring_radii
 from nektoids.editor.ring import ICON, RING_HEX
-from nektoids.editor.scene import CAPTION, EditorScene
+from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
@@ -399,7 +399,7 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     under it saying what it holds; then Write and Delete, undo and redo, as rows."""
     layout = scene.layout
     x, y, w, h = layout.cell_view
-    centre = (x + w / 2, y + (h - CAPTION) / 2)
+    centre = scene.cell_centre()
     corners = _small_hexagon(centre, RING_HEX)
     focused = scene.focused is not None and scene.main is MainView.DIAGRAM
     if focused:
@@ -417,20 +417,22 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     chosen = ring[k] if k < len(ring) else None
     in_hand = scene.tool if scene.tool in (Tool.WIRE, Tool.MOVE) else None
     radius = ICON * RING_HEX
-    for slot in ring:
+    for slot in sorted(ring, key=lambda s: -s.depth):  # down a pile, the further first, under
         lit = slot == chosen or slot.what is in_hand
         fill = ACTIVE if lit else HOVER if slot == scene.ring_hover else BUTTON
         pygame.draw.circle(screen, fill, slot.at, radius)
         pygame.draw.circle(screen, LIT if lit else RULE, slot.at, radius, 1)
         if isinstance(slot.what, Kind):
-            draw_part(screen, fonts, slot.what, MENU_ANGLE.get(slot.what), slot.at, radius, False)
+            size = 1.4 * radius  # the part just smaller than the cell's (D-068)
+            draw_part(screen, fonts, slot.what, MENU_ANGLE.get(slot.what), slot.at, size, False)
         else:
-            fonts.icons.draw(screen, TOOL_ICON[slot.what], slot.at, round(0.9 * radius), TEXT)
+            fonts.icons.draw(screen, TOOL_ICON[slot.what], slot.at, round(1.05 * radius), TEXT)
         if scene.settings.key_hints:
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
             screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
+    lowest = max([centre[1] + RING_HEX] + [slot.at[1] + radius for slot in ring])
     line = fonts.small.render(_fitted(fonts.small, _cell_says(scene), w), True, DIM_TEXT)
-    screen.blit(line, line.get_rect(center=(round(centre[0]), y + h - CAPTION // 2)))
+    screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + 12)))
     for mode, rect in layout.mode_buttons:
         status = ("key", MODE_KEY)
         icon = MODE_ICON[mode]

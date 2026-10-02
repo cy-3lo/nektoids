@@ -2,12 +2,13 @@
 round a picture of the cell, large, where the icons have room.
 
 An empty cell of the zone offers the parts the level still hands out; a part offers turn left,
-turn right (eyes and thrusters only), wire, move, delete, and swap when another part of its
-group is left; swapping, the ring offers those parts. Up to six icons sit beyond the
-cell's six faces; more are spread along a 300° arc, its gap at the foot, as the stations of a
-dial, and the ring opens until they are as far apart as on six faces, as far as its area allows;
-only if they would still touch, at two radii in turn. Each icon has its key just outside
-it. Where the ring would leave its area it is slid in, whole. Pure numbers, no pygame.
+move, wire, swap when another part of its group is left, turn right (eyes and thrusters only)
+and delete; swapping, the ring offers those parts. Up to five icons sit beyond the cell's
+corners, the lowest left free, the gap at the foot: an odd number centred on the top corner, an
+even one as many each side of it. More turn on a wheel, as cards on a rotary
+file: five on the ring, the others piled below its two ends, each further one lower, those before
+the ring under its first end, those after it under its last. The keyboard going round turns the
+wheel. Each icon has its key just outside it. Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -16,25 +17,24 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from nektoids.editor.layout import MENU_GROUPS, TOOL_KEYS, Rect, Tool
+from nektoids.editor.layout import MENU_GROUPS, TOOL_KEYS, Tool
 from nektoids.graph.board import Board, Kind
 
-RADIUS = 1.7  # from the cell's centre to an icon's, beyond a face [hex sizes]
-ICON = 0.55  # an icon's disc, its radius [hex sizes]
-KEY_OUT = 0.72  # its key, this far past the icon's centre, outwards [hex sizes]
+RADIUS = 1.8  # from the cell's centre to an icon's, beyond a corner [hex sizes]
+ICON = 0.62  # an icon's disc, its radius: the part on it just smaller than the cell's [hex sizes]
+KEY_OUT = 0.95  # its key, this far past the icon's centre, outwards [hex sizes]
 RING_HEX = 40  # the cell's size in Tools' picture [px]
-FACES = (120.0, 60.0, 0.0, 300.0, 240.0, 180.0)  # the neighbours, from the top left, clockwise
-ARC = 300.0  # more than six icons spread over this much, the gap at the foot [degrees]
-STAGGER = 0.22  # in turn nearer and farther, when they would touch [hex sizes]
-ACTIONS = (Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.WIRE, Tool.MOVE, Tool.DELETE, Tool.SWAP)
-ACTION_FACE = {  # each action beyond its own face: the turns on top, as they turn
-    Tool.TURN_LEFT: 120.0,
-    Tool.TURN_RIGHT: 60.0,
-    Tool.WIRE: 0.0,
-    Tool.MOVE: 300.0,
-    Tool.DELETE: 240.0,
-    Tool.SWAP: 180.0,
-}
+IN_RING = 5  # the most icons on the ring itself; more pile up below its ends
+CORNERS = (210.0, 150.0, 90.0, 30.0, -30.0)  # left to right over the top; the lowest is the gap
+PILE = 1.4  # from one icon of a pile to the next, further, below it [icon radii]
+ACTIONS = (  # the wire at the top, the turns either side of the gap, delete last
+    Tool.TURN_LEFT,
+    Tool.MOVE,
+    Tool.WIRE,
+    Tool.SWAP,
+    Tool.TURN_RIGHT,
+    Tool.DELETE,
+)
 TURNING = (Kind.EYE, Kind.THRUSTER)  # the parts whose facing matters (D-009)
 
 
@@ -44,6 +44,7 @@ class Slot:
     at: tuple[float, float]  # the icon's centre [px]
     key_at: tuple[float, float]  # where its key is written [px]
     key: str
+    depth: int = 0  # 0 on the ring; 1, 2... down a pile, the further the lower
 
 
 def offer(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind | Tool, ...]:
@@ -86,14 +87,23 @@ def part_key(kind: Kind, kinds: frozenset[Kind]) -> str:
     return str(ordered.index(kind) + 1)
 
 
-def angles(items: Sequence[Kind | Tool]) -> list[float]:
-    """Where each icon sits round the cell [degrees, counter-clockwise from the right]."""
-    if items and all(isinstance(i, Tool) for i in items):
-        return [ACTION_FACE[i] for i in items]
-    if len(items) <= len(FACES):
-        return list(FACES[: len(items)])
-    start, step = 270.0 - (360.0 - ARC) / 2, ARC / (len(items) - 1)  # from the gap's left edge
-    return [(start - k * step) % 360.0 for k in range(len(items))]
+def angles(n: int) -> list[float]:
+    """Where n <= IN_RING icons sit round the cell, from the left clockwise, each beyond a
+    corner: an odd number centred on the top one, an even one as many each side of it
+    [degrees, counter-clockwise from the right]."""
+    if n % 2:
+        first = (IN_RING - n) // 2
+        return list(CORNERS[first : first + n])
+    side = n // 2
+    return list(CORNERS[2 - side : 2] + CORNERS[3 : 3 + side])
+
+
+def turned(turn: int, chosen: int | None, n: int) -> int:
+    """The wheel's turn, the first of `n` icons on the ring, moved just enough for icon `chosen`
+    to be on it."""
+    if chosen is not None:
+        turn = min(max(turn, chosen - IN_RING + 1), chosen)
+    return min(max(turn, 0), max(0, n - IN_RING))
 
 
 def slots(
@@ -101,44 +111,41 @@ def slots(
     centre: tuple[float, float],
     size: float,
     kinds: frozenset[Kind],
-    area: Rect,
+    turn: int = 0,
 ) -> list[Slot]:
-    """The ring's icons round a cell drawn at `centre` with hexes of `size` [px], slid whole
-    into `area` if it would leave it."""
-    turns = angles(items)
-    gaps = [abs((b - a + 180.0) % 360.0 - 180.0) for a, b in zip(turns, turns[1:], strict=False)]
-    gap = math.radians(min(gaps, default=60.0))
-    x, y, w, h = area
-    reach = (KEY_OUT + ICON) * size  # an icon and its key
-    radius = RADIUS
-    if gap < math.radians(60.0):  # more than six: the ring opens, as far as its area allows
-        room = (min(w, h) / 2 - reach) / size
-        radius = min(max(RADIUS, room), RADIUS * 0.5 / math.sin(gap / 2))  # six faces' spacing
-    crowded = 2 * radius * math.sin(gap / 2) < 2.2 * ICON  # neighbouring icons would touch
-    radii = [
-        radius + (STAGGER if crowded and k % 2 else -STAGGER if crowded else 0.0)
-        for k in range(len(items))
-    ]
+    """The icons round a cell drawn at `centre` with hexes of `size` [px], the wheel turned by
+    `turn`: the icons before it piled under the ring's first end, those after it under its last."""
+    turn = turned(turn, None, len(items))
+    ring = angles(min(len(items), IN_RING))
     cx, cy = centre
-    points = []
-    for a, r in zip(turns, radii, strict=True):
-        c, s = math.cos(math.radians(a)), math.sin(math.radians(a))
-        points.append(((cx + r * size * c, cy - r * size * s), (c, s), r))
-    xs = [p[0][0] for p in points] or [cx]
-    ys = [p[0][1] for p in points] or [cy]
-    dx = max(0.0, x + reach - min(xs)) - max(0.0, max(xs) + reach - (x + w))
-    dy = max(0.0, y + reach - min(ys)) - max(0.0, max(ys) + reach - (y + h))
+
+    def on_ring(angle: float) -> tuple[tuple[float, float], tuple[float, float]]:
+        c, s = math.cos(math.radians(angle)), math.sin(math.radians(angle))
+        return (cx + RADIUS * size * c, cy - RADIUS * size * s), (c, s)
+
     out = []
-    for item, ((px, py), (c, s), _) in zip(items, points, strict=True):
-        at = (px + dx, py + dy)
+    for k, item in enumerate(items):
         key = TOOL_KEYS[item] if isinstance(item, Tool) else part_key(item, kinds)
-        out.append(Slot(item, at, (at[0] + KEY_OUT * size * c, at[1] - KEY_OUT * size * s), key))
+        if turn <= k < turn + IN_RING:
+            at, (c, s) = on_ring(ring[k - turn])
+            out.append(
+                Slot(item, at, (at[0] + KEY_OUT * size * c, at[1] - KEY_OUT * size * s), key)
+            )
+            continue
+        before = k < turn  # piled under the first end, or under the last
+        depth = turn - k if before else k - turn - IN_RING + 1
+        (ex, ey), _ = on_ring(ring[0] if before else ring[-1])
+        at = (ex, ey + depth * PILE * ICON * size)
+        side = -1 if before else 1  # its key outwards, beside the pile
+        out.append(Slot(item, at, (at[0] + side * KEY_OUT * size, at[1]), key, depth))
     return out
 
 
 def slot_at(ring: Sequence[Slot], point: tuple[float, float], size: float) -> Slot | None:
-    """The icon a press at `point` falls on, if any."""
-    return next((s for s in ring if math.dist(s.at, point) <= ICON * size), None)
+    """The icon a press at `point` falls on, if any: where they overlap, the nearer, drawn over
+    the further."""
+    near_first = sorted(ring, key=lambda s: s.depth)
+    return next((s for s in near_first if math.dist(s.at, point) <= ICON * size), None)
 
 
 def cycled(ring: Sequence[Slot], chosen: int | None, step: int, blank: bool) -> int | None:

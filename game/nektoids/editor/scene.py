@@ -88,7 +88,19 @@ from nektoids.editor.layout import (
     zoom_button_at,
 )
 from nektoids.editor.probe import Probe, level_view
-from nektoids.editor.ring import RING_HEX, Slot, cycled, offer, part_key, slot_at, slots, swaps
+from nektoids.editor.ring import (
+    KEY_OUT,
+    RADIUS,
+    RING_HEX,
+    Slot,
+    cycled,
+    offer,
+    part_key,
+    slot_at,
+    slots,
+    swaps,
+    turned,
+)
 from nektoids.editor.router import Won
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
@@ -129,7 +141,7 @@ MAX_WINS = 10  # the wins Files lists, the best first
 PROBE_TURN = math.radians(15.0)  # the wheel, L or R, on the probe in Sense
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
-CAPTION = 24  # under Tools' picture of the cell: what it holds [px]
+HEADROOM = 14  # over the ring's top key, in Tools' picture of the cell [px]
 
 
 class EditorScene(Frame):
@@ -160,6 +172,7 @@ class EditorScene(Frame):
         self.press_cell: Cell | None = None  # a part pressed: a click or a drag, told on release
         self.keyboard = False  # the keyboard drives, until the mouse moves
         self.swapping = False  # Swap chosen: the ring offers the parts the focused one may become
+        self.turn = 0  # the ring's wheel: its first icon on the ring, the others piled
         self.onward = False  # the focus came unclicked, placed or wired to: it wires only forward
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
@@ -223,6 +236,10 @@ class EditorScene(Frame):
         if drawer is Drawer.SENSE and self.main is not MainView.PREVIEW:
             self.show(MainView.PREVIEW)
 
+    def _on_cell_view(self, pos: tuple[int, int]) -> bool:
+        """Whether `pos` is on Tools' picture of the focused cell, its ring round it."""
+        return self.layout.cell_view is not None and contains(self.layout.cell_view, pos)
+
     def _on_map(self, pos: tuple[int, int]) -> bool:
         """Whether `pos` is on Sense's map of the level, with a probe to move."""
         sense = self.layout.drawer is Drawer.SENSE and self.probe is not None
@@ -249,6 +266,8 @@ class EditorScene(Frame):
             self._press(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._release(event.pos)
+        elif event.type == pygame.MOUSEWHEEL and self._on_cell_view(self.mouse):
+            self.turn = turned(self.turn - event.y, None, len(self.offered()))  # the wheel turns
         elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
@@ -303,6 +322,7 @@ class EditorScene(Frame):
         if self.going_round() and items:
             step = 1 if key in (right, ARROWS[3]) else -1
             self.choice = cycled(items, self.choice, step, blank=self._blank())
+            self.turn = turned(self.turn, self.choice, len(items))  # the wheel brings it round
             return
         if self.focused is None:
             self._focus_key(self._start_cell())
@@ -798,10 +818,13 @@ class EditorScene(Frame):
         Tools is folded."""
         if self.layout.cell_view is None:
             return []
-        x, y, w, h = self.layout.cell_view
-        area = (x, y, w, h - CAPTION)
-        centre = (x + w / 2, y + (h - CAPTION) / 2)
-        return slots(self.offered(), centre, RING_HEX, self.layout.kinds, area)
+        return slots(self.offered(), self.cell_centre(), RING_HEX, self.layout.kinds, self.turn)
+
+    def cell_centre(self) -> tuple[float, float]:
+        """Where Tools draws the focused cell: across the middle, its ring's top key under the
+        title."""
+        x, y, w, _ = self.layout.cell_view
+        return (x + w / 2, y + HEADROOM + (RADIUS + KEY_OUT) * RING_HEX)
 
     def action(self) -> tuple[Kind | Tool | Mode, str]:
         """What the next click on the board, or Enter, does, and its key: shown atop the main
@@ -842,6 +865,7 @@ class EditorScene(Frame):
         nothing for the keyboard; round an empty cell, its parts, the first chosen."""
         self._drop_gesture()
         self.focused, self.onward = cell, True  # unless a click on the part brought it
+        self.turn = 0  # the wheel at its start
         self.ring_open, self.ring_keys = cell is not None, keys
         node = self._focused_node()
         self.selected = None if node is None else node.id
@@ -918,12 +942,13 @@ class EditorScene(Frame):
             if not swaps(self.board, node.cell, self.layout.kinds):
                 self._refuse("no other part of its group left", node.cell)
                 return
-            self.swapping = True  # the ring offers what it may become
+            self.swapping, self.turn = True, 0  # the ring offers what it may become
             self.choice = 0 if self.going_round() else None
             return
         if self.ring_keys and self.ring_open:
             items = self.offered()
             self.choice = next((k for k, what in enumerate(items) if what is tool), self.choice)
+            self.turn = turned(self.turn, self.choice, len(items))
 
     def _swap(self, kind: Kind) -> None:
         """The focused part swapped for one of `kind`, in its place (D-068); the wires it cannot
@@ -1046,7 +1071,7 @@ class EditorScene(Frame):
         if self.tool is Tool.PAN:
             self.tool = Tool.ADD
         elif self.swapping:
-            self.swapping = False  # back to the part's actions
+            self.swapping, self.turn = False, 0  # back to the part's actions
             self.choice = None
         elif self.mode is Mode.DELETE:
             self.mode = Mode.WRITE

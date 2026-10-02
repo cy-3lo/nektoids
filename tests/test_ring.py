@@ -2,12 +2,15 @@
 
 import math
 
+import pytest
+
 from nektoids.editor.layout import Drawer, Tool, make_layout
 from nektoids.editor.ring import (
-    ACTION_FACE,
     ACTIONS,
-    FACES,
     ICON,
+    IN_RING,
+    KEY_OUT,
+    RADIUS,
     RING_HEX,
     angles,
     cycled,
@@ -16,12 +19,13 @@ from nektoids.editor.ring import (
     slot_at,
     slots,
     swaps,
+    turned,
 )
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
 
-AREA = (296, 58, 664, 554)
 SIZE = 40.0
+CENTRE = (628.0, 335.0)
 FEAR = arenas()[0]
 
 
@@ -30,11 +34,11 @@ def test_an_empty_cell_offers_the_parts_left_and_a_part_its_actions():
     kinds = frozenset({Kind.EYE, Kind.THRUSTER})
     assert offer(board, (0, 0), kinds) == (Kind.EYE, Kind.THRUSTER)
     eye = board.place(Kind.EYE, (0, 0))
-    assert offer(board, (0, 0), kinds) == (
+    assert offer(board, (0, 0), kinds) == (  # no swap: no source in Fear
         Tool.TURN_LEFT,
-        Tool.TURN_RIGHT,
-        Tool.WIRE,
         Tool.MOVE,
+        Tool.WIRE,
+        Tool.TURN_RIGHT,
         Tool.DELETE,
     )
     board.place(Kind.EYE, (1, 0))
@@ -46,7 +50,7 @@ def test_an_empty_cell_offers_the_parts_left_and_a_part_its_actions():
 def test_operators_do_not_turn():
     board = sandbox().new_board()
     board.place(Kind.SUM, (0, 0))
-    assert offer(board, (0, 0), frozenset(Kind)) == (Tool.WIRE, Tool.MOVE, Tool.DELETE, Tool.SWAP)
+    assert offer(board, (0, 0), frozenset(Kind)) == (Tool.MOVE, Tool.WIRE, Tool.SWAP, Tool.DELETE)
 
 
 def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
@@ -59,53 +63,64 @@ def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
     assert swaps(board, eye.cell, frozenset({Kind.EYE, Kind.THRUSTER})) == ()  # no source here
     assert swaps(board, thruster.cell, frozenset(Kind)) == ()  # alone in its group
     assert Tool.SWAP not in offer(board, thruster.cell, frozenset(Kind))
-    assert ACTION_FACE[Tool.SWAP] == 180.0  # the left face: six actions, six faces
 
 
-def test_up_to_six_icons_face_the_sides_and_more_spread_over_300_degrees():
-    assert angles([Kind.EYE, Kind.THRUSTER]) == list(FACES[:2])
-    assert angles([Tool.WIRE, Tool.TURN_LEFT]) == [
-        ACTION_FACE[Tool.WIRE],
-        ACTION_FACE[Tool.TURN_LEFT],
-    ]
-    seven = angles(list(Kind)[:7]) if len(Kind) >= 7 else angles([Kind.EYE] * 7)
-    assert len(seven) == 7 and 240.0 in seven and 300.0 in seven  # the gap at the foot
-    assert not any(240.0 < a < 300.0 for a in seven)
-
-
-def test_the_icons_sit_round_the_cell_slide_in_at_the_edge_and_are_found_under_a_press():
-    kinds = frozenset({Kind.EYE, Kind.THRUSTER})
-    ring = slots([Kind.EYE, Kind.THRUSTER], (628.0, 335.0), SIZE, kinds, AREA)
+def test_up_to_five_icons_sit_beyond_the_cells_corners_the_gap_at_the_foot():
+    assert angles(1) == [90.0] and angles(2) == [150.0, 30.0]  # the top, or each side of it
+    assert angles(4) == [210.0, 150.0, 30.0, -30.0]
+    assert angles(IN_RING) == [210.0, 150.0, 90.0, 30.0, -30.0]  # the corners but the lowest
+    for n in range(IN_RING + 1):
+        assert len(angles(n)) == n and all(a % 60.0 == 30.0 for a in angles(n))  # corners
+        assert all(a % 360.0 != 270.0 for a in angles(n))  # the foot stays clear
+    ring = slots([Kind.EYE, Kind.THRUSTER], CENTRE, SIZE, frozenset({Kind.EYE, Kind.THRUSTER}))
     for slot in ring:
-        assert math.dist(slot.at, (628.0, 335.0)) > SIZE  # beyond the cell
+        assert math.dist(slot.at, CENTRE) == pytest.approx(RADIUS * SIZE) and slot.depth == 0
         assert slot_at(ring, slot.at, SIZE) is slot
-        assert math.dist(slot.key_at, (628.0, 335.0)) > math.dist(slot.at, (628.0, 335.0))
+        assert math.dist(slot.key_at, CENTRE) > math.dist(slot.at, CENTRE)  # outside it
     assert [s.key for s in ring] == ["1", "2"]
-    assert slot_at(ring, (628.0, 335.0), SIZE) is None  # the cell itself
-    for slot in slots(ACTIONS, (628.0, 335.0), SIZE, kinds, AREA):  # clear of the cell's picture
-        assert math.dist(slot.at, (628.0, 335.0)) - ICON * SIZE > SIZE
-    edge = slots(ACTIONS, (300.0, 70.0), SIZE, kinds, AREA)
-    x, y, w, h = AREA
-    assert all(x <= s.at[0] - ICON * SIZE and y <= s.at[1] - ICON * SIZE for s in edge)
+    assert slot_at(ring, CENTRE, SIZE) is None  # the cell itself
+    for slot in slots(ACTIONS, CENTRE, SIZE, frozenset(Kind)):  # clear of the cell's picture
+        assert slot.depth or math.dist(slot.at, CENTRE) - ICON * SIZE > SIZE
+
+
+def test_more_than_five_turn_on_a_wheel_the_others_piled_under_its_ends():
+    seven = list(Kind)  # the sandbox's seven parts
+    ring = slots(seven, CENTRE, SIZE, frozenset(Kind))
+    assert [s.depth for s in ring] == [0, 0, 0, 0, 0, 1, 2]  # piled under the last end
+    last, first_pile, second = ring[4], ring[5], ring[6]
+    assert first_pile.at[0] == last.at[0] == second.at[0] and last.at[1] < first_pile.at[1]
+    assert first_pile.at[1] < second.at[1]  # the further, the lower
+    assert first_pile.key_at[0] > first_pile.at[0]  # its key outwards, beside the pile
+    turned_two = slots(seven, CENTRE, SIZE, frozenset(Kind), turn=2)
+    assert [s.depth for s in turned_two] == [2, 1, 0, 0, 0, 0, 0]  # under the first end now
+    assert turned_two[0].key_at[0] < turned_two[0].at[0]
+    # Where a pile's icons overlap, a press takes the nearer, drawn over the further.
+    x, y = first_pile.at
+    assert slot_at(ring, (x, y - 0.5 * ICON * SIZE), SIZE) is last
+    assert slot_at(ring, (x, y + 0.9 * ICON * SIZE), SIZE) is first_pile
+    assert slot_at(ring, second.at, SIZE) is second
+
+
+def test_the_wheel_turns_just_enough_for_the_choice_to_be_on_the_ring():
+    assert turned(0, 4, 7) == 0 and turned(0, 5, 7) == 1 and turned(0, 6, 7) == 2
+    assert turned(2, 0, 7) == 0 and turned(2, 3, 7) == 2  # back, or already there
+    assert turned(9, None, 7) == 2 and turned(3, None, 4) == 0  # never past the last
 
 
 def test_the_arrows_go_round_the_ring_and_through_nothing_when_it_is_a_stop():
-    ring = slots([Kind.EYE, Kind.THRUSTER], (628.0, 335.0), SIZE, frozenset(Kind), AREA)
+    ring = slots([Kind.EYE, Kind.THRUSTER], CENTRE, SIZE, frozenset(Kind))
     assert cycled(ring, None, 1, blank=True) == 0
     assert cycled(ring, 1, 1, blank=True) is None  # nothing, then round again
     assert cycled(ring, 1, 1, blank=False) == 0
     assert cycled(ring, 0, -1, blank=True) is None
 
 
-def test_seven_parts_open_the_ring_in_tools_rather_than_crowd_it():
+def test_the_sandboxs_seven_parts_fit_in_tools_wheel_and_piles_included():
     x, y, w, h = make_layout(Drawer.TOOLS).cell_view
-    area, centre = (x, y, w, h - 24), (x + w / 2, y + (h - 24) / 2)
-    ring = slots(list(Kind), centre, RING_HEX, frozenset(Kind), area)
-    assert (
-        len(ring) == 7 and len({round(math.dist(s.at, centre), 3) for s in ring}) == 1
-    )  # one radius
-    apart = [math.dist(a.at, b.at) for a, b in zip(ring, ring[1:], strict=False)]
-    assert min(apart) > 2.2 * ICON * RING_HEX  # no two icons touch
-    for slot in ring:  # each icon, and its key, inside the drawer's picture
-        for px, py in (slot.at, slot.key_at):
-            assert x <= px <= x + w and y <= py <= y + h - 24
+    centre = (x + w / 2, y + 14 + (RADIUS + KEY_OUT) * RING_HEX)  # as the scene puts it
+    for turn in (0, 2):
+        for slot in slots(list(Kind), centre, RING_HEX, frozenset(Kind), turn):
+            sx, sy = slot.at
+            r = ICON * RING_HEX
+            assert x <= sx - r and sx + r <= x + w and y <= sy - r and sy + r <= y + h - 24
+            assert x <= slot.key_at[0] <= x + w and y <= slot.key_at[1] <= y + h
