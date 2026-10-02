@@ -61,12 +61,10 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
       `test_determinism.py`.
 - [ ] The real level: to design, with a winner pinned with margin (D-004).
 
-## 3. Body size grows with complexity (brief §1: thrust budget, not node budget)
+## 3. Complexity is scored, not felt (D-045)
 
-- [ ] `complexity(graph) -> int` in `graph/`: what counts (parts, wires, crossings) is a
-      decision to write.
-- [ ] The radius from the complexity in `sim/`. V ∝ 1/R and Ω ∝ 1/R² are already there
-      (D-022): a bigger body loses its turning first.
+- [x] `complexity(board) -> int` in `graph/board.py`: the number of parts, wires free.
+      Every body stays a sphere of radius 1 u, for Stokesian dynamics later.
 
 ## 4. The score (D-028)
 

@@ -526,3 +526,16 @@ now lose: closing in, the light falls behind their flat faces, the brake fades a
 touches it. Wiring with no Diff still loses (aggression, fear, a bare drive). Powers 4 and 4.5 also
 win, but the swimmer's rim then rests on the ring's dashed line, so it looks half out. All pinned
 in `test_determinism.py`.
+
+**D-045 — 2026-10-02 — Complexity is the number of parts, and it is scored, not felt: every body stays a sphere of radius 1 u. Supersedes the scope lock's "body size grows with graph complexity" and brief §1's "thrust budget, not node budget".**
+`complexity(board)` counts the parts on the board, the locked ones included, and not the wires.
+The score reads it, as one of D-028's two axes (time to win, number of parts); the body does not.
+Two reasons. Flow comes later, and Stokesian dynamics is much simpler and faster when every
+object is a sphere of the same radius 1. And D-028 already scores the number of parts, so a
+body that grew with them would charge for the same parts twice. The cost is now read off the
+score rather than felt in the run: that is the trade against the brief. Locked parts count
+because every solution of a level pays them alike: they shift every score equally, leave the
+Pareto front unchanged, and the count is what the player sees on the board.
+Consequences: `BASE_RADIUS` stays the radius of every body; V ∝ 1/R and Ω ∝ 1/R² (D-022) stay in
+the model but R never moves; the pinned winners stand. `CLAUDE.md`'s scope lock and the graph
+rules change with it. Obstacles keep their own radii for now.

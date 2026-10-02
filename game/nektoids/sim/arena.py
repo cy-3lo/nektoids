@@ -11,7 +11,7 @@ from functools import cached_property
 
 import numpy as np
 
-BASE_RADIUS = 1.0  # [u] a body's radius before complexity grows it: the unit of length
+BASE_RADIUS = 1.0  # [u] every body's radius, whatever its board (D-045): the unit of length
 LIGHT_RADIUS = BASE_RADIUS  # [u] a light is a disc as big as a swimmer; it shadows nothing
 OBSTACLE_RADIUS = 1.0  # [u]
 

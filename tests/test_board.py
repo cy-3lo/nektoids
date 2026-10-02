@@ -2,7 +2,16 @@ import json
 
 import pytest
 
-from nektoids.graph.board import FACING_NAMES, Board, Category, Kind, Refused, Wire, can_pass
+from nektoids.graph.board import (
+    FACING_NAMES,
+    Board,
+    Category,
+    Kind,
+    Refused,
+    Wire,
+    can_pass,
+    complexity,
+)
 from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, offset_rect
 
 RECT = offset_rect(9, 7)  # a 9 x 7 zone for most tests
@@ -31,6 +40,18 @@ def test_sensors_only_emit_and_thrusters_only_receive():
     assert Kind.EYE.emits and not Kind.EYE.receives
     assert Kind.DOUBLE.emits and Kind.DOUBLE.receives
     assert Kind.THRUSTER.receives and not Kind.THRUSTER.emits
+
+
+# Complexity
+
+
+def test_complexity_counts_the_parts_locked_or_not_and_not_the_wires():
+    board, (eye, thruster) = build([((0, 0), Kind.EYE), ((4, 0), Kind.THRUSTER)])
+    assert complexity(board) == 2
+    board.place(Kind.SOURCE, (2, 2), locked=True)
+    assert complexity(board) == 3
+    assert not isinstance(board.connect(eye.id, thruster.id), Refused)
+    assert complexity(board) == 3  # a wire costs nothing, however long (D-045)
 
 
 # Placement

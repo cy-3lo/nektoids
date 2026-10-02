@@ -208,7 +208,7 @@ class ArenaScene:
         x, y, heading = self.level.start
         self.pos = np.array([[x, y]])  # (N, 2) [u]
         self.heading = np.array([math.radians(heading)])  # (N,) [rad]
-        self.radius = np.full(1, BASE_RADIUS)  # (N,) [u], until complexity() sets it
+        self.radius = np.full(1, BASE_RADIUS)  # (N,) [u], every body alike (D-045)
         self.state = initial_state(self.net, len(self.pos))  # (N, n), from rest
         self.kept = begin(self.level, self.pos, self.radius)  # each objective's
         self.clock.reset()

@@ -15,7 +15,8 @@ paths:
   step per fixed sim tick, dt/tau in (0, 1]. The state `y` (N, n) belongs to the agent and goes
   into the hash. Inputs are gathered in a fixed order, never with `@`. The editor rejects cycles
   for now; the dynamics accept them (a loop is feedback that the state remembers).
-- Complexity cost is one function, `complexity(graph) -> int`, which the simulation turns into
-  body radius. Do not add a separate node-count score.
+- Complexity is one function, `complexity(board) -> int`: the number of parts, locked ones
+  included, wires free. The score reads it (D-028); it never changes the body, which stays a
+  sphere of radius 1 u (D-045). Do not add a second count.
 - Dataclasses, and numpy for the dynamics (D-017); no pygame import. Everything here is testable
   headless.
