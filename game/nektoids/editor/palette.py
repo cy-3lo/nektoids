@@ -171,9 +171,7 @@ DOOMED = P.muted  # what a Delete click would remove
 # The circuit: rates and beads, in the developer view and the run's column
 FULL = P.bright  # a rate at RATE_MAX: the developer's sliders, the timeline
 METER = P.accent1.mid  # a part's level meter in a circuit: the colour of its face (D-052)
-WIRE_OFF = P.line  # a wire that carries nothing
-BEAD = P.bright  # a bead on a wire at RATE_MAX
-BEAD_OFF = P.muted  # ... and on a wire that barely carries anything
+BEAD = P.bright  # a bead on a wire, whatever it carries: its spacing shows the rate
 VALUE = P.text  # the live numbers in the developer view's panel
 WARN = P.accent2.mid  # the developer view's warnings
 
