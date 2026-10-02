@@ -1,4 +1,4 @@
-"""Editor layout and hit-testing. layout.py imports no pygame, so this runs headless."""
+"""Editor layout and hit-testing (D-051). layout.py imports no pygame, so this runs headless."""
 
 from nektoids.editor.layout import (
     EDIT_KEYS,
@@ -10,6 +10,7 @@ from nektoids.editor.layout import (
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
+    Drawer,
     EditButton,
     FileButton,
     LevelButton,
@@ -18,13 +19,17 @@ from nektoids.editor.layout import (
     cell_at,
     centred_view,
     contains,
+    drawer_button_at,
     group_at,
     info_at,
     level_button_at,
     make_layout,
     menu_item_at,
+    moved_view,
+    on_fold_handle,
     palette_target_at,
     pan,
+    tab_at,
     tool_at,
     view_button_at,
     visible_cells,
@@ -34,8 +39,11 @@ from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
 from nektoids.levels.sandbox import free_board, tutorial_board
 
-LAYOUT = make_layout()
+LAYOUT = make_layout()  # Parts open, as the editor opens
 VIEW = centred_view(LAYOUT)
+TOOLS = make_layout(Drawer.TOOLS)
+NAVIGATOR = make_layout(Drawer.NAVIGATOR)
+FOLDED = make_layout(None)
 
 
 def centre(rect):
@@ -60,24 +68,45 @@ def test_the_grid_fills_the_board_area():
     assert set(hex_disc(2)) <= shown
 
 
-def test_three_columns_side_by_side():
-    menu, board, palette = LAYOUT.menu_area, LAYOUT.board_area, LAYOUT.palette_area
-    assert menu[0] == 0 and menu[0] + menu[2] == board[0]
-    assert board[0] + board[2] == palette[0] and palette[0] + palette[2] == SCREEN[0]
-    assert board[2] > menu[2] > palette[2]  # the grid gets the most room
+def test_the_bar_the_drawer_and_the_board_side_by_side_the_tabs_over_the_board():
+    bar, drawer, board = LAYOUT.bar_area, LAYOUT.drawer_area, LAYOUT.board_area
+    assert bar[0] == 0 and bar[0] + bar[2] == drawer[0] and drawer[0] + drawer[2] == board[0]
+    assert board[0] + board[2] == SCREEN[0] and board[2] > drawer[2] > bar[2]
+    for _, (x, y, _, h) in LAYOUT.tabs:
+        assert y == 0 and y + h == board[1] and board[0] <= x  # over the board
+    assert (
+        contains(board, LAYOUT.status_at) is False and LAYOUT.status_at[1] > board[1] + board[3] - 1
+    )
+    assert FOLDED.drawer_area is None and FOLDED.fold_handle is None
+    assert FOLDED.board_area[0] == bar[2] and FOLDED.board_area[2] > board[2]  # the room it frees
 
 
-def test_menu_has_every_kind_once_inside_its_column():
+def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
+    tools_rows = [*TOOLS.tool_buttons, *TOOLS.edit_buttons, *TOOLS.file_buttons]
+    for layout, rows in (
+        (LAYOUT, LAYOUT.menu_items),
+        (TOOLS, tools_rows),
+        (NAVIGATOR, NAVIGATOR.view_buttons),
+    ):
+        assert len(layout.info_buttons) == len(rows) > 0
+        for _, rect in rows:
+            assert contains(layout.drawer_area, rect[:2])
+            assert contains(layout.drawer_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
+            assert rect[1] + rect[3] <= SCREEN[1] - 8
+        tops = [rect[1] for _, rect in rows]
+        assert tops == sorted(tops) and len(set(tops)) == len(tops)  # one under the other
+    assert LAYOUT.tool_buttons == () and TOOLS.menu_items == () and FOLDED.info_buttons == ()
+
+
+def test_parts_has_every_kind_once_and_a_click_on_a_row_picks_it():
     kinds = [kind for kind, _ in LAYOUT.menu_items]
     assert sorted(kinds, key=lambda k: k.value) == sorted(Kind, key=lambda k: k.value)
     for kind, rect in LAYOUT.menu_items:
-        assert contains(LAYOUT.menu_area, rect[:2])
-        assert contains(LAYOUT.menu_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
-        assert menu_item_at(LAYOUT, centre(rect)) == kind
+        assert menu_item_at(LAYOUT, (rect[0] + 20, rect[1] + rect[3] // 2)) == kind
 
 
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
-    folded = make_layout(frozenset({"Operators"}))
+    folded = make_layout(folded=frozenset({"Operators"}))
     kinds = [kind for kind, _ in folded.menu_items]
     assert Kind.DOUBLE not in kinds and Kind.HALVE not in kinds and Kind.EYE in kinds
     titles_open, titles_folded = dict(LAYOUT.group_titles), dict(folded.group_titles)
@@ -88,46 +117,27 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_the_palette_runs_view_tools_colours_edit_then_level_two_a_row():
-    titles = [title for title, _ in LAYOUT.palette_titles]
-    assert titles == ["View", "Tools", "Colours", "Edit", "Level"]
-    for (_, (_, y, _, h)), (_, (_, below, _, _)) in zip(
-        LAYOUT.palette_titles, LAYOUT.palette_titles[1:], strict=False
+def test_tools_runs_its_tools_then_edit_then_file_and_the_navigator_holds_the_view():
+    assert [title for title, _ in TOOLS.section_titles] == ["Tools", "Edit", "File"]
+    assert [tool for tool, _ in TOOLS.tool_buttons] == list(PALETTE_TOOLS)
+    assert [button for button, _ in TOOLS.edit_buttons] == list(EditButton)
+    assert [button for button, _ in TOOLS.file_buttons] == list(FileButton)
+    assert Tool.PAN not in PALETTE_TOOLS  # the hand, in the Navigator
+    sections = dict(TOOLS.section_titles)
+    for title, rows in (
+        ("Tools", TOOLS.tool_buttons),
+        ("Edit", TOOLS.edit_buttons),
+        ("File", TOOLS.file_buttons),
     ):
-        assert y + h < below  # top to bottom, without overlapping
-    assert [button for button, _ in LAYOUT.view_buttons] == list(ViewButton)
-    assert [tool for tool, _ in LAYOUT.tool_buttons] == list(PALETTE_TOOLS)
-    assert [button for button, _ in LAYOUT.edit_buttons] == list(EditButton)
-    assert [button for button, _ in LAYOUT.file_buttons] == list(FileButton)
-    assert Tool.PAN not in PALETTE_TOOLS  # the hand, among the view buttons
-    sections = dict(LAYOUT.palette_titles)
-    for title, items in (
-        ("View", [r for _, r in LAYOUT.view_buttons]),
-        ("Tools", [r for _, r in LAYOUT.tool_buttons]),
-        ("Colours", list(LAYOUT.swatches)),
-        ("Edit", [r for _, r in [*LAYOUT.edit_buttons, *LAYOUT.file_buttons]]),
-        ("Level", [r for _, r in LAYOUT.level_buttons]),
-    ):
-        x, y, w, h = sections[title]
-        for rect in items:
-            assert contains(LAYOUT.palette_area, rect[:2])
-            assert contains(LAYOUT.palette_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
-            assert y < rect[1] and rect[1] + rect[3] <= y + h  # under its title
-        assert len({rx for rx, _, _, _ in items}) == 2  # two columns
-        for left, right in zip(items[::2], items[1::2], strict=False):
-            assert left[1] == right[1] and left[0] + left[2] < right[0]  # side by side
-    (_, undo), _ = LAYOUT.edit_buttons
-    (_, save), _ = LAYOUT.file_buttons
-    assert undo[1] < save[1] and undo[0] == save[0]  # undo and redo, then save and load below
-    turns = dict(LAYOUT.tool_buttons)
-    assert turns[Tool.TURN_LEFT][1] == turns[Tool.TURN_RIGHT][1]  # left and right, one row
-    for button, rect in LAYOUT.view_buttons:
-        assert view_button_at(LAYOUT, centre(rect)) == button
-    for tool, rect in LAYOUT.tool_buttons:
-        assert tool_at(LAYOUT, centre(rect)) == tool
-    for button, rect in [*LAYOUT.edit_buttons, *LAYOUT.file_buttons]:
-        assert palette_target_at(LAYOUT, centre(rect)) == button
-    assert tool_at(LAYOUT, centre(LAYOUT.board_area)) is None
+        _, y, _, h = sections[title]
+        assert all(y + h <= rect[1] for _, rect in rows)  # under its title
+    assert [title for title, _ in NAVIGATOR.section_titles] == ["View"]
+    assert [button for button, _ in NAVIGATOR.view_buttons] == list(ViewButton)
+    for tool, rect in TOOLS.tool_buttons:
+        assert tool_at(TOOLS, (rect[0] + 20, rect[1] + rect[3] // 2)) == tool
+    for button, rect in NAVIGATOR.view_buttons:
+        assert view_button_at(NAVIGATOR, (rect[0] + 20, rect[1] + rect[3] // 2)) == button
+    assert tool_at(TOOLS, centre(TOOLS.board_area)) is None
 
 
 def test_sandbox_boards():
@@ -164,30 +174,46 @@ def test_the_grid_still_fills_the_area_zoomed_out():
             assert cell_at(LAYOUT, far, (x, y)) in shown
 
 
-def test_the_palette_fits_on_screen():
-    rects = [r for _, r in LAYOUT.view_buttons] + [r for _, r in LAYOUT.tool_buttons]
-    assert max(y + h for _, y, _, h in [*rects, *LAYOUT.swatches]) <= SCREEN[1] - 8
-
-
-def test_every_palette_button_has_its_own_key_and_tooltip_target():
+def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
     keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
     assert len(set(keys)) == len(keys) and all(len(key) == 1 for key in keys)
-    assert EDIT_KEYS == {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Shift+Z"}
+    assert EDIT_KEYS == {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
     assert (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT]) == ("L", "R")
     assert TURNS == {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # directions run counter-clockwise
-    for target, rect in [*LAYOUT.tool_buttons, *LAYOUT.view_buttons]:
-        assert palette_target_at(LAYOUT, centre(rect)) == target
-    assert palette_target_at(LAYOUT, centre(LAYOUT.swatches[2])) == "colours"
+    assert [drawer for drawer, _ in LAYOUT.drawer_buttons] == list(Drawer)
+    for drawer, rect in LAYOUT.drawer_buttons:
+        assert drawer_button_at(LAYOUT, centre(rect)) is drawer
+        assert palette_target_at(LAYOUT, centre(rect)) is drawer
+        assert contains(LAYOUT.bar_area, rect[:2])
     assert palette_target_at(LAYOUT, centre(LAYOUT.board_area)) is None
 
 
-def test_map_and_run_sit_in_the_palettes_level_section_with_their_keys():
-    assert [button for button, _ in LAYOUT.level_buttons] == list(LevelButton)
+def test_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_keys():
+    (chapters, top), (run, switch) = LAYOUT.level_buttons
+    assert (chapters, run) == (LevelButton.MAP, LevelButton.RUN)
+    assert top[1] + top[3] <= switch[1] and switch[1] + switch[3] <= SCREEN[1] - 8
+    lowest_drawer = max(rect[1] + rect[3] for _, rect in LAYOUT.drawer_buttons)
+    assert lowest_drawer < top[1]  # at the foot, apart from the drawers' icons
     for button, rect in LAYOUT.level_buttons:
         assert level_button_at(LAYOUT, centre(rect)) is button
         assert palette_target_at(LAYOUT, centre(rect)) is button
+        assert contains(LAYOUT.bar_area, rect[:2])
     assert LEVEL_KEYS == {LevelButton.MAP: "Tab", LevelButton.RUN: "Space"}
-    assert contains(LAYOUT.board_area, LAYOUT.caption_at)
+    assert [name for name, _ in LAYOUT.tabs] == ["editor", "run"]
+    for name, rect in LAYOUT.tabs:
+        assert tab_at(LAYOUT, centre(rect)) == name
+    last_tab = LAYOUT.tabs[-1][1]
+    assert LAYOUT.caption_at[0] > last_tab[0] + last_tab[2] and LAYOUT.caption_at[1] < last_tab[3]
+
+
+def test_the_fold_handle_sits_on_the_drawers_edge_and_the_view_keeps_its_centre():
+    handle = LAYOUT.fold_handle
+    assert on_fold_handle(LAYOUT, centre(handle)) and not on_fold_handle(FOLDED, centre(handle))
+    assert handle[0] == LAYOUT.drawer_area[0] + LAYOUT.drawer_area[2] - 1
+    moved = moved_view(VIEW, LAYOUT, FOLDED)
+    middle_before, middle_after = centre(LAYOUT.board_area), centre(FOLDED.board_area)
+    assert cell_at(LAYOUT, VIEW, middle_before) == cell_at(FOLDED, moved, middle_after)
+    assert moved.size == VIEW.size
 
 
 def test_each_menu_row_has_its_info_disc_inside_it_and_unfolding_moves_it_along():
@@ -197,7 +223,7 @@ def test_each_menu_row_has_its_info_disc_inside_it_and_unfolding_moves_it_along(
         assert contains(rows[kind], (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
         assert info_at(LAYOUT, centre(rect)) is kind and menu_item_at(LAYOUT, centre(rect)) is kind
     assert info_at(LAYOUT, centre(rows[Kind.EYE])[:1] + (0,)) is None
-    folded = make_layout(frozenset({"Sensors"}))
+    folded = make_layout(folded=frozenset({"Sensors"}))
     assert Kind.EYE not in dict(folded.info_buttons)
 
 

@@ -1,6 +1,6 @@
 """Tutorials and hints (D-039). tutorial.py imports no pygame."""
 
-from nektoids.editor.layout import SCREEN, Tool, centred_view, contains, make_layout
+from nektoids.editor.layout import SCREEN, Drawer, Tool, centred_view, contains, make_layout
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     GAP,
@@ -11,6 +11,7 @@ from nektoids.editor.tutorial import (
     allows,
     answer,
     box_rect,
+    drawer_for,
     guided,
     met,
     next_rect,
@@ -95,10 +96,11 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
 def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_inside_it():
     eye_row = dict(LAYOUT.menu_items)[Kind.EYE]
     box = box_rect([eye_row], 3, LAYOUT.board_area)
-    assert box[0] > eye_row[0] + eye_row[2] and on_screen(box)  # right of the menu
-    tool = dict(LAYOUT.tool_buttons)[Tool.WIRE]
-    box = box_rect([tool], 3, LAYOUT.board_area)
-    assert box[0] + box[2] < tool[0] and on_screen(box)  # left of the palette
+    assert box[0] > eye_row[0] + eye_row[2] and on_screen(box)  # right of the drawer
+    tools = make_layout(Drawer.TOOLS)
+    tool = dict(tools.tool_buttons)[Tool.WIRE]
+    box = box_rect([tool], 3, tools.board_area)
+    assert box[0] > tool[0] + tool[2] and on_screen(box)  # right of the drawer too
     hint = box_rect([], 2, LAYOUT.board_area)
     assert contains(LAYOUT.board_area, hint[:2]) and on_screen(hint)
     nx, ny, nw, nh = next_rect(box)
@@ -201,7 +203,7 @@ def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
     assert [rect for rect, _ in spots] == target_rects(
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
-    panel = target_spots({"area": "palette"}, Screen.EDIT, layout, centred_view(layout))
+    panel = target_spots({"area": "bar"}, Screen.EDIT, layout, centred_view(layout))
     run = target_spots([{"run": "play"}, {"run": "inside"}], Screen.RUN, layout, None)
     assert [shape for _, shape in panel + run] == ["panel", "spot", "panel"]
 
@@ -279,9 +281,28 @@ def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
 
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    expected = {1: {"menu"}, 2: {"palette"}, 3: set(), 11: set(), 12: {"controls"}, 15: set()}
+    expected = {1: {"parts"}, 2: {"bar"}, 3: set(), 11: set(), 12: {"controls"}, 15: set()}
     for index, names in expected.items():
         tutorial.index = index
         assert panels(tutorial) == names, index
     tutorial.index = len(tutorial.steps) - 1
     assert panels(tutorial) == {"wins"} and panels(None) == frozenset()
+
+
+def test_a_step_opens_the_drawer_its_targets_are_in():
+    steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
+    assert drawer_for(steps[1]) is Drawer.PARTS  # Parts, the drawer
+    assert drawer_for(steps[3]) is Drawer.PARTS  # an Eye's row, then its cell
+    assert drawer_for(steps[4]) is Drawer.TOOLS  # Turn left
+    assert (
+        drawer_for(steps[0]) is None and drawer_for(steps[11]) is None and drawer_for(None) is None
+    )
+
+
+def test_a_tool_shown_while_tools_is_closed_lights_the_drawers_icon():
+    parts, tools = make_layout(Drawer.PARTS), make_layout(Drawer.TOOLS)
+    show = {"tool": "wire"}
+    assert target_rects(show, Screen.EDIT, parts, VIEW) == [
+        dict(parts.drawer_buttons)[Drawer.TOOLS]
+    ]
+    assert target_rects(show, Screen.EDIT, tools, VIEW) == [dict(tools.tool_buttons)[Tool.WIRE]]

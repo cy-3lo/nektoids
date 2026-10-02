@@ -133,6 +133,7 @@ P = PALETTE
 
 # Every view
 BACKGROUND = P.base
+BAR = P.deep  # the activity bar, the strip of tabs, the status line (D-051)
 DARK = P.base  # icons on parts, text on bright buttons
 PANEL = P.surface
 TOOLTIP_BG = mix(P.surface, P.raised, 0.5)

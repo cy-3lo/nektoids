@@ -47,12 +47,15 @@ from nektoids.editor.layout import (
     TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
+    Drawer,
     EditButton,
     Layout,
+    LevelButton,
     Tool,
     ViewButton,
     cell_at,
     centred_view,
+    drawer_button_at,
     edit_button_at,
     file_button_at,
     group_at,
@@ -60,8 +63,11 @@ from nektoids.editor.layout import (
     level_button_at,
     make_layout,
     menu_item_at,
+    moved_view,
+    on_fold_handle,
     palette_target_at,
     pan,
+    tab_at,
     tool_at,
     view_button_at,
     zoom,
@@ -128,13 +134,13 @@ class EditorScene:
         self.message = ""  # last refusal, empty once something succeeds
         self.cursor: Cell | None = None  # keyboard cursor, while the keyboard drives
         self.carrying = False  # Move by keyboard: grabbed with Enter, not yet dropped
-        self.tip_target: Tool | ViewButton | str | None = None  # palette button under the mouse
+        self.tip_target: Drawer | LevelButton | None = None  # the bar's icon under the mouse
         self.tip_frames = 0  # how long it has been there
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
-        self.info: Kind | None = None  # the part whose info box is open
+        self.info: object | None = None  # the row whose info box is open: a part, a tool...
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
         self.lit: frozenset[str] = (
             frozenset()
@@ -285,9 +291,23 @@ class EditorScene:
             self._drag_to(pointed)
 
     def _press(self, pos: tuple[int, int]) -> None:
+        if on_fold_handle(self.layout, pos):
+            self.open_drawer(None)
+            return
+        drawer = drawer_button_at(self.layout, pos)
+        if drawer is not None:  # the open drawer's icon folds it (D-051)
+            self.open_drawer(None if drawer is self.layout.drawer else drawer)
+            return
+        if tab_at(self.layout, pos) == "run":
+            self._ask("run")
+            return
         level = level_button_at(self.layout, pos)
         if level is not None:
             self._ask(level.value)  # "run" or "map"
+            return
+        what = info_at(self.layout, pos)  # inside its row: before the row's own action
+        if what is not None:
+            self.info = what
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:
@@ -307,11 +327,7 @@ class EditorScene:
         title = group_at(self.layout, pos)
         if title is not None:
             self.folded ^= {title}
-            self.layout = make_layout(frozenset(self.folded), self.layout.kinds)
-            return
-        kind = info_at(self.layout, pos)
-        if kind is not None:
-            self.info = kind
+            self.layout = make_layout(self.layout.drawer, frozenset(self.folded), self.layout.kinds)
             return
         kind = menu_item_at(self.layout, pos)
         if kind is not None:
@@ -348,6 +364,13 @@ class EditorScene:
         self.dragging = False
         if self.pointed is not None:
             self._add(self.pointed)
+
+    def open_drawer(self, drawer: Drawer | None) -> None:
+        """Open a drawer, or fold the open one (None): the board's view slides with its centre."""
+        before = self.layout
+        self.layout = make_layout(drawer, frozenset(self.folded), before.kinds)
+        self.view = moved_view(self.view, before, self.layout)
+        self.info = None
 
     def _ask(self, request: str) -> None:
         """Run or the map, for main.py, if the tutorial lets it through."""

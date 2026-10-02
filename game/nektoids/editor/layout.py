@@ -1,19 +1,17 @@
-"""Where everything sits on the 960 x 640 editor screen, and what is under a given pixel.
+"""Where everything sits on the 960 x 640 editor screen, and what is under a given pixel (D-051).
 
-Three columns, with vertical separators:
-- left, the menu: component groups (sensors, operators, actuators) that fold under their title,
-  each part's row with an info disc after its name (D-036); only the parts the level hands out,
-  and no group left empty;
-- centre, the hex grid, filling its column, the level's caption at its top, one status line at
-  its foot;
-- right, the palette, in titled sections of two buttons a row (D-025, D-027): the view (zoom
-  in, zoom out, hand, centre), the tools (add, wire, move, delete, turn left, turn right), a
-  colour picker, inactive until colours carry a meaning, editing (undo, redo, then save and
-  load, inactive until saving exists), and the level (the map, and Run, lit) (D-037).
+- Left, the activity bar: an icon for each drawer (Parts, Tools, Navigator), and at its foot
+  the Chapters (the map, until it is a drawer) and the accented switch to the Run.
+- Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
+  info disc, then a count or a key). Parts: the groups (sensors, operators, actuators) that fold
+  under their title, only the parts the level hands out; Tools: the tools, Edit (undo, redo),
+  File (save and load, inactive until saving exists); Navigator: the view's buttons. An arrow on
+  the drawer's edge folds it.
+- The rest is the board: the tabs over it (Editor, Run) with the level's caption after them,
+  the hex grid, one status line at its foot. A drawer opening pushes the board aside.
 
-The screen regions are fixed; the View says how big a hex is and where the grid sits in its
-column, and zoom and pan change only the View (D-013). Plain numbers and tuples, no pygame, so
-hit-testing is testable headless.
+The View says how big a hex is and where the grid sits in the board's area; zoom and pan change
+only the View (D-013). Plain numbers and tuples, no pygame, so hit-testing is testable headless.
 """
 
 from __future__ import annotations
@@ -29,20 +27,26 @@ from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel
 Rect = tuple[int, int, int, int]  # x, y, width, height [px]
 
 SCREEN = (960, 640)  # [px]
-MENU_WIDTH = 200  # left column [px]
-PALETTE_WIDTH = 120  # right column: two buttons a row [px]
-STATUS_HEIGHT = 32  # [px]
-MARGIN = 16  # [px]
-BUTTON = 40  # palette button side [px]
-BUTTON_STEP = 48  # palette button pitch [px]
-ITEM_HEIGHT = 44  # menu row [px]
-TITLE_HEIGHT = 28  # menu group title [px]
-PALETTE_TITLE = 24  # palette section title [px]
-SECTION_GAP = 8  # between palette sections [px]
-SWATCH_HEIGHT = 14  # colour picker swatch, as wide as a button [px]
-INFO_AT = 128  # a menu row's info disc: its centre, this far from the row's left [px]
+BAR_WIDTH = 48  # the activity bar, down the left edge [px]
+BAR_BUTTON = 40  # an icon's square in it [px]
+BAR_PITCH = 48  # from one icon to the next [px]
+SWITCH = 36  # the accented switch at its foot, square [px]
+DRAWER_WIDTH = 248  # [px]
+DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
+ROW_HEIGHT = 40  # a drawer's row [px]
+ROW_PITCH = 46  # from one row to the next [px]
+ROW_INSET = 12  # a row's sides from the drawer's [px]
+TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
+SECTION_GAP = 6  # before a section title or a group [px]
+INFO_AT = 150  # a row's info disc: its centre, this far from the row's left [px]
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
-SWATCHES = 6
+HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
+TABS_HEIGHT = 32  # the strip of tabs over the board [px]
+TAB_WIDTHS = (84, 64)  # Editor, Run [px]
+STATUS_HEIGHT = 28  # [px]
+MARGIN = 16  # [px]
+BUTTON = 40  # a palette button's side, in the run view [px]
+PALETTE_TITLE = 24  # a section's title, in the run view and the drawers [px]
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
@@ -90,6 +94,12 @@ class ViewButton(Enum):
     CENTRE = "centre"  # bring cell (0, 0) back to the middle, at the same zoom
 
 
+class Drawer(Enum):  # in the activity bar's order (D-051)
+    PARTS = "parts"  # the parts the level hands out, and what each does
+    TOOLS = "tools"  # the tools, undo and redo, save and load
+    NAVIGATOR = "navigator"  # zoom, hand, centre
+
+
 # Shortcut keys, matched on the character typed (so they follow the keyboard layout) and shown
 # in the tooltips. L and R turn left and right, here and in the arena view (D-025).
 TOOL_KEYS = {
@@ -107,7 +117,7 @@ VIEW_KEYS = {
     ViewButton.CENTRE: "C",
 }
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
-EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Shift+Z"}
+EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 # On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F3.
 LEVEL_KEYS = {LevelButton.MAP: "Tab", LevelButton.RUN: "Space"}
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
@@ -115,21 +125,25 @@ KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layou
 
 @dataclass(frozen=True)
 class Layout:
-    kinds: frozenset[Kind]  # the parts the menu shows: what the level hands out
-    menu_area: Rect
-    board_area: Rect
-    palette_area: Rect
-    group_titles: tuple[tuple[str, Rect], ...]  # click one to fold or unfold its group
-    menu_items: tuple[tuple[Kind, Rect], ...]
-    info_buttons: tuple[tuple[Kind, Rect], ...]  # one per menu row, a click opens its box
-    view_buttons: tuple[tuple[ViewButton, Rect], ...]
-    tool_buttons: tuple[tuple[Tool, Rect], ...]
-    palette_titles: tuple[tuple[str, Rect], ...]  # one above each section shown
+    kinds: frozenset[Kind]  # the parts the level hands out: the only ones Parts shows
+    drawer: Drawer | None  # the drawer open, if one is
+    bar_area: Rect
+    drawer_buttons: tuple[tuple[Drawer, Rect], ...]  # the bar's icons, top down
+    level_buttons: tuple[tuple[LevelButton, Rect], ...]  # at the bar's foot: Chapters, the switch
+    drawer_area: Rect | None
+    fold_handle: Rect | None  # the arrow on the drawer's edge
+    drawer_title_at: tuple[int, int]
+    section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
+    group_titles: tuple[tuple[str, Rect], ...]  # Parts: click one to fold or unfold its group
+    menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
+    tool_buttons: tuple[tuple[Tool, Rect], ...]  # Tools' rows
     edit_buttons: tuple[tuple[EditButton, Rect], ...]
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
-    level_buttons: tuple[tuple[LevelButton, Rect], ...]
-    swatches: tuple[Rect, ...]  # colour picker, inactive for now
-    caption_at: tuple[int, int]  # top-left corner of the level's title and spec
+    view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
+    info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
+    tabs: tuple[tuple[str, Rect], ...]  # "editor", "run"
+    board_area: Rect
+    caption_at: tuple[int, int]  # top-left corner of the level's title and spec, after the tabs
     status_at: tuple[int, int]  # top-left corner of the status line
 
 
@@ -142,89 +156,120 @@ class View:
 
 
 def make_layout(
-    folded: frozenset[str] = frozenset(), kinds: frozenset[Kind] = frozenset(Kind)
+    drawer: Drawer | None = Drawer.PARTS,
+    folded: frozenset[str] = frozenset(),
+    kinds: frozenset[Kind] = frozenset(Kind),
 ) -> Layout:
-    """The screen regions, menu rows and palette buttons. folded: menu groups shown closed;
-    kinds: the parts the level hands out, the only ones the menu shows (D-039)."""
+    """The bar, the open drawer's rows and the board. folded: Parts' groups shown closed;
+    kinds: the parts the level hands out, the only ones Parts shows (D-039)."""
     width, height = SCREEN
-    right = width - PALETTE_WIDTH  # palette's left edge
-    menu = (0, 0, MENU_WIDTH, height)
-    board = (MENU_WIDTH, 0, right - MENU_WIDTH, height - STATUS_HEIGHT)
-    palette = (right, 0, PALETTE_WIDTH, height)
-
-    titles, items = [], []
-    y = MARGIN
-    for title, group in MENU_GROUPS:
-        shown = [kind for kind in group if kind in kinds]
-        if not shown:
-            continue  # a group with nothing in this level: no title either
-        titles.append((title, (MARGIN, y, MENU_WIDTH - 2 * MARGIN, TITLE_HEIGHT - 4)))
-        y += TITLE_HEIGHT
-        for kind in () if title in folded else shown:
-            items.append((kind, (MARGIN, y, MENU_WIDTH - 2 * MARGIN, ITEM_HEIGHT - 4)))
-            y += ITEM_HEIGHT
-        y += MARGIN
-
-    y = MARGIN
-    view, view_rects, y = _section(right, y, "View", len(ViewButton), BUTTON, BUTTON_STEP)
-    tools, tool_rects, y = _section(right, y, "Tools", len(PALETTE_TOOLS), BUTTON, BUTTON_STEP)
-    pitch = SWATCH_HEIGHT + 6
-    colours, swatches, y = _section(right, y, "Colours", SWATCHES, SWATCH_HEIGHT, pitch)
-    count = len(EditButton) + len(FileButton)  # undo and redo, then save and load
-    edit, rects, y = _section(right, y, "Edit", count, BUTTON, BUTTON_STEP)
-    edit_rects, file_rects = rects[: len(EditButton)], rects[len(EditButton) :]
-    level, level_rects, y = _section(right, y, "Level", len(LevelButton), BUTTON, BUTTON_STEP)
+    bar = (0, 0, BAR_WIDTH, height)
+    side = (BAR_WIDTH - BAR_BUTTON) // 2
+    drawer_buttons = tuple(
+        (d, (side, BAR_PITCH // 2 + 6 + k * BAR_PITCH - BAR_BUTTON // 2, BAR_BUTTON, BAR_BUTTON))
+        for k, d in enumerate(Drawer)
+    )
+    switch = ((BAR_WIDTH - SWITCH) // 2, height - SWITCH - 12, SWITCH, SWITCH)
+    chapters = (side, switch[1] - 8 - BAR_BUTTON, BAR_BUTTON, BAR_BUTTON)
+    left = BAR_WIDTH + (DRAWER_WIDTH if drawer is not None else 0)  # the board's left edge
+    rows = _Rows()
+    if drawer is Drawer.PARTS:
+        rows.parts(folded, kinds)
+    elif drawer is Drawer.TOOLS:
+        rows.tools()
+    elif drawer is Drawer.NAVIGATOR:
+        rows.view()
+    tabs, x = [], left
+    for name, w in zip(("editor", "run"), TAB_WIDTHS, strict=True):
+        tabs.append((name, (x, 0, w, TABS_HEIGHT)))
+        x += w
+    open_ = drawer is not None
     return Layout(
         kinds=kinds,
-        menu_area=menu,
-        board_area=board,
-        palette_area=palette,
-        group_titles=tuple(titles),
-        menu_items=tuple(items),
+        drawer=drawer,
+        bar_area=bar,
+        drawer_buttons=drawer_buttons,
+        level_buttons=((LevelButton.MAP, chapters), (LevelButton.RUN, switch)),
+        drawer_area=(BAR_WIDTH, 0, DRAWER_WIDTH, height) if open_ else None,
+        fold_handle=(left - 1, height // 2 - HANDLE[1] // 2, *HANDLE) if open_ else None,
+        drawer_title_at=(BAR_WIDTH + MARGIN, 9),
+        section_titles=tuple(rows.sections),
+        group_titles=tuple(rows.groups),
+        menu_items=tuple(rows.of(Kind)),
+        tool_buttons=tuple(rows.of(Tool)),
+        edit_buttons=tuple(rows.of(EditButton)),
+        file_buttons=tuple(rows.of(FileButton)),
+        view_buttons=tuple(rows.of(ViewButton)),
         info_buttons=tuple(
-            (kind, (x + INFO_AT - INFO_HIT // 2, y + (h - INFO_HIT) // 2, INFO_HIT, INFO_HIT))
-            for kind, (x, y, _, h) in items
+            (what, (x + INFO_AT - INFO_HIT // 2, y + (h - INFO_HIT) // 2, INFO_HIT, INFO_HIT))
+            for what, (x, y, _, h) in rows.items
         ),
-        view_buttons=tuple(zip(ViewButton, view_rects, strict=True)),
-        tool_buttons=tuple(zip(PALETTE_TOOLS, tool_rects, strict=True)),
-        edit_buttons=tuple(zip(EditButton, edit_rects, strict=True)),
-        file_buttons=tuple(zip(FileButton, file_rects, strict=True)),
-        level_buttons=tuple(zip(LevelButton, level_rects, strict=True)),
-        palette_titles=(view, tools, colours, edit, level),
-        swatches=tuple(swatches),
-        caption_at=(MENU_WIDTH + MARGIN, 10),
-        status_at=(MENU_WIDTH + MARGIN, height - STATUS_HEIGHT + 8),
+        tabs=tuple(tabs),
+        board_area=(left, TABS_HEIGHT, width - left, height - TABS_HEIGHT - STATUS_HEIGHT),
+        caption_at=(x + MARGIN, 8),
+        status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
     )
 
 
-def _section(
-    left: int, top: int, title: str, count: int, height: int, pitch: int
-) -> tuple[tuple[str, Rect], list[Rect], int]:
-    """A palette section from `top` in the column at `left`: its title and the area it covers,
-    the rects of its `count` items, two a row `pitch` apart, and the top of the next section."""
-    columns = (left + (PALETTE_WIDTH - BUTTON - BUTTON_STEP) // 2,)
-    columns += (columns[0] + BUTTON_STEP,)
-    rows = math.ceil(count / 2)
-    first = top + PALETTE_TITLE
-    items = [(columns[i % 2], first + (i // 2) * pitch, BUTTON, height) for i in range(count)]
-    area = (left + MARGIN, top, PALETTE_WIDTH - 2 * MARGIN, PALETTE_TITLE + rows * pitch)
-    return (title, area), items, first + rows * pitch + SECTION_GAP
+class _Rows:
+    """A drawer's rows and titles, laid out from the top down."""
+
+    def __init__(self) -> None:
+        self.y = DRAWER_TOP
+        self.items: list[tuple[object, Rect]] = []
+        self.sections: list[tuple[str, Rect]] = []
+        self.groups: list[tuple[str, Rect]] = []
+
+    def of(self, kind: type) -> list:
+        return [(what, rect) for what, rect in self.items if isinstance(what, kind)]
+
+    def _title(self, title: str, into: list) -> None:
+        into.append((title, (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, TITLE_HEIGHT)))
+        self.y += TITLE_HEIGHT
+
+    def _row(self, what: object) -> None:
+        width = DRAWER_WIDTH - 2 * ROW_INSET
+        self.items.append((what, (BAR_WIDTH + ROW_INSET, self.y, width, ROW_HEIGHT)))
+        self.y += ROW_PITCH
+
+    def parts(self, folded: frozenset[str], kinds: frozenset[Kind]) -> None:
+        for title, group in MENU_GROUPS:
+            shown = [kind for kind in group if kind in kinds]
+            if not shown:
+                continue  # a group with nothing in this level: no title either
+            self._title(title, self.groups)
+            for kind in () if title in folded else shown:
+                self._row(kind)
+            self.y += SECTION_GAP
+
+    def tools(self) -> None:
+        for title, rows in (("Tools", PALETTE_TOOLS), ("Edit", EditButton), ("File", FileButton)):
+            self._title(title, self.sections)
+            for what in rows:
+                self._row(what)
+            self.y += SECTION_GAP
+
+    def view(self) -> None:
+        self._title("View", self.sections)
+        for what in ViewButton:
+            self._row(what)
 
 
-def palette_target_at(
-    layout: Layout, point: tuple[int, int]
-) -> Tool | ViewButton | EditButton | FileButton | LevelButton | str | None:
-    """What a tooltip would describe under `point`: a button, or "colours"."""
-    target = (
-        tool_at(layout, point)
-        or view_button_at(layout, point)
-        or edit_button_at(layout, point)
-        or file_button_at(layout, point)
-        or level_button_at(layout, point)
-    )
-    if target is None and any(contains(rect, point) for rect in layout.swatches):
-        return "colours"
-    return target
+def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelButton | None:
+    """What a tooltip would name under `point`: an icon of the activity bar."""
+    return drawer_button_at(layout, point) or level_button_at(layout, point)
+
+
+def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
+    return next((d for d, rect in layout.drawer_buttons if contains(rect, point)), None)
+
+
+def tab_at(layout: Layout, point: tuple[int, int]) -> str | None:
+    return next((name for name, rect in layout.tabs if contains(rect, point)), None)
+
+
+def on_fold_handle(layout: Layout, point: tuple[int, int]) -> bool:
+    return layout.fold_handle is not None and contains(layout.fold_handle, point)
 
 
 def contains(rect: Rect, point: tuple[int, int]) -> bool:
@@ -236,8 +281,8 @@ def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
     return next((title for title, rect in layout.group_titles if contains(rect, point)), None)
 
 
-def info_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
-    """The part whose info disc is under `point`, if any."""
+def info_at(layout: Layout, point: tuple[int, int]) -> object | None:
+    """The row whose info disc is under `point`, if any: a part, a tool, a button."""
     return next((kind for kind, rect in layout.info_buttons if contains(rect, point)), None)
 
 
@@ -269,6 +314,13 @@ def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
     """Cell (0, 0) at the centre of the board area."""
     x, y, w, h = layout.board_area
     return View(size, (x + w / 2, y + h / 2))
+
+
+def moved_view(view: View, before: Layout, after: Layout) -> View:
+    """The same view, slid with the board's centre when a drawer opens or folds."""
+    (x0, y0, w0, h0), (x1, y1, w1, h1) = before.board_area, after.board_area
+    dx, dy = (x1 + w1 / 2) - (x0 + w0 / 2), (y1 + h1 / 2) - (y0 + h0 / 2)
+    return pan(view, dx, dy)
 
 
 def fitted_view(area: Rect, points: Sequence[tuple[float, float]], margin: float) -> View:

@@ -30,22 +30,25 @@
         ]
       },
       {
-        "show": {"area": "menu"},
+        "show": {"area": "parts"},
         "say": [
-          "The menu holds the parts: eyes read the", "light, thrusters push. The (i) by a name",
-          "says what the part does."
+          "Parts holds what you build with: eyes read",
+          "the light, thrusters push. The (i) on a row", "says what the part does."
         ]
       },
       {
-        "show": {"area": "palette"},
-        "say": ["The palette holds the tools, and at its", "foot Run, which sets the swimmer going."]
+        "show": {"area": "bar"},
+        "say": [
+          "The bar on the left opens the drawers: Parts,",
+          "Tools, Navigator. At its foot, Chapters, and", "Run, which sets the swimmer going."
+        ]
       },
       {
         "show": [{"menu": "eye"}, {"cell": [2, -1]}],
         "until": {"placed": {"kind": "eye", "cell": [2, -1]}},
         "say": [
           "The faint shapes show where each part goes",
-          "and which way it points. Drag an Eye from", "the menu onto this cell."
+          "and which way it points. Drag an Eye from", "Parts onto this cell."
         ]
       },
       {
@@ -62,7 +65,7 @@
         "until": {"placed": {"kind": "eye", "cell": [1, 1]}},
         "say": [
           "Now the second eye, on this cell: pick the",
-          "Eye in the menu, or press 1, and click here."
+          "Eye in Parts, or press 1, and click here."
         ]
       },
       {

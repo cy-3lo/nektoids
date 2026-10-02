@@ -43,6 +43,7 @@ from nektoids.editor.tutorial import (
     allows,
     answer,
     box_rect,
+    drawer_for,
     guided,
     panels,
     target_rects,
@@ -68,6 +69,7 @@ levels = arenas()  # read from their files once, at startup (web.md: no file I/O
 router = Router(levels, sandbox())
 editors: dict[int, EditorScene] = {}  # each level's editor, and its undo history with it
 tutorials: dict[int, Tutorial] = {}  # each level's tutorial or hints, where it has got to
+opened_for: dict[int, int] = {}  # the step whose drawer each level's editor last opened
 
 
 def tutorial() -> Tutorial | None:
@@ -100,6 +102,7 @@ def open_map() -> None:
             router.reset(index)
             editors.pop(index, None)
             tutorials.pop(index, None)
+            opened_for.pop(index, None)
     for guide in tutorials.values():
         guide.restart()
 
@@ -234,6 +237,11 @@ async def main() -> None:
             guide.follow(Context(router.board, editor().tool, router.screen, ended))
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
+        wanted = drawer_for(guide.step) if guide is not None else None
+        if wanted is not None and opened_for.get(router.index) != guide.index:
+            opened_for[router.index] = guide.index  # once a step: then the player's to change
+            if editor().layout.drawer is not wanted:
+                editor().open_drawer(wanted)
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         editor().gate = gate  # only what the step asks goes through (D-048)
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)

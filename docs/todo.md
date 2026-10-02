@@ -75,21 +75,17 @@ column and the full-screen map.
 The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
 preview; in the Run it shows the level. Drawers never take the main screen.
 
-- [ ] One row style for every drawer: icon, name, (i), then a count, a key, a lock or a tick.
-- [ ] An activity bar down the left edge, one icon per drawer, named when the mouse rests on it;
-      the open one lighter, an accent bar on its edge. One drawer open at a time, pushing the
-      board aside; folded by its icon again or the arrow on its edge.
-      - Top, editor: Parts (puzzle-piece; also the parts' encyclopedia, a row opening into its
-        entry), Tools (screwdriver-wrench), Files (floppy-disk), Sense (stethoscope), Navigator
-        (compass). Top, Run: Objectives (list-check), Inside (magnifying-glass), Score (trophy),
-        Navigator.
-      - Foot, both: Settings (gear), Chapters (map; not "Map"), then the accented switch: Run
-        (play) in the editor, back to the editor (diagram-project) in the Run.
-      - Chapters replaces the full-screen map. Settings: fast forward's speed, key hints,
-        tooltips' delay, Fear's tutorial again; Sound and Music once there is sound. No palette.
-      - The Run's controls (play, a step, fast forward, the timeline) in a bar under the arena.
-- [ ] Environments as tabs over the content: Editor and Run (a Builder later, no tab until then).
-      Switched by a tab, or by the accented switch.
+- [ ] The activity bar's other drawers (the bar, Parts, Tools and Navigator are in, D-053):
+      Files (floppy-disk) and Sense (stethoscope) in the editor; Objectives (list-check), Inside
+      (magnifying-glass), Score (trophy) and Navigator in the Run; Settings (gear) at the foot
+      of both, over Chapters. Settings: fast forward's speed, key hints, tooltips' delay, Fear's
+      tutorial again; Sound and Music once there is sound. No palette.
+- [ ] Chapters as a drawer, replacing the full-screen map, which its icon opens for now.
+- [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
+      opens in a box beside it.
+- [ ] The Run's controls (play, a step, fast forward, the timeline) in a bar under the arena.
+- [ ] The Run as an environment with the same frame: its tabs, its bar, its switch back to the
+      editor (the editor's tabs and switch are in, D-053).
 - [ ] The Run preview, one drawing for Sense (Editor) and Inside (Run): beads on the wires,
       parts in their own colour, no numbers, a level meter by each eye and thruster (D-052). The
       two mirror each other: in the Editor, Sense puts the Run preview on the main screen (by
@@ -107,8 +103,8 @@ preview; in the Run it shows the level. Drawers never take the main screen.
       amends D-016's sensor sliders "behind DEV_VIEW only").
 - [ ] This session's winning boards kept in memory, one for each point of the score; a click
       puts one back on the board, the board left going to Undo. Files can wait: not needed yet.
-- [ ] Fear's tutorial rewritten for the bar: it lights drawers and icons, no more the menu and
-      the palette (D-039).
+- [ ] Fear's tutorial for the Run's frame and the drawers to come (its editor steps light
+      the bar and the drawers already, D-053).
 
 ## 9. A board as text (its own PR)
 

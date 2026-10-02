@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from nektoids.editor import arena_layout
-from nektoids.editor.layout import SCREEN, TURNS, Layout, LevelButton, Rect, Tool, View
+from nektoids.editor.layout import SCREEN, TURNS, Drawer, Layout, LevelButton, Rect, Tool, View
 from nektoids.editor.router import Screen
 from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
@@ -170,6 +170,18 @@ def panels(tutorial: Tutorial | None) -> frozenset[str]:
     return frozenset(one.get("area") or one.get("run") for one in shows) - {None}
 
 
+def drawer_for(step: Step | None) -> Drawer | None:
+    """The drawer a step's targets are in, which it opens as it shows: Parts for a part's row,
+    Tools for a tool; None if it needs none (D-051)."""
+    shows = [] if step is None or step.show is None else step.show
+    shows = shows if isinstance(shows, list) else [shows]
+    if any("menu" in one or one.get("area") == "parts" for one in shows):
+        return Drawer.PARTS
+    if any("tool" in one for one in shows):
+        return Drawer.TOOLS
+    return None
+
+
 def guided(data: Mapping | None) -> bool:
     """Whether a level's tutorial data leads somewhere, rather than only hinting: such a level
     starts afresh, board and all, each time the map opens (D-050)."""
@@ -268,16 +280,17 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         return RUN_TARGETS[show["run"]] if screen is Screen.RUN else None
     if screen is not Screen.EDIT:
         return None
-    if "area" in show:
+    if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)
         return {
             "board": layout.board_area,
-            "menu": layout.menu_area,
-            "palette": layout.palette_area,
+            "parts": layout.drawer_area if layout.drawer is Drawer.PARTS else None,
+            "bar": layout.bar_area,
         }[show["area"]]
-    if "menu" in show:
+    if "menu" in show:  # a part's row in the Parts drawer
         return dict(layout.menu_items).get(Kind(show["menu"]))
-    if "tool" in show:
-        return dict(layout.tool_buttons)[Tool(show["tool"])]
+    if "tool" in show:  # its row in the Tools drawer, or the drawer's icon while it is closed
+        rows, icons = dict(layout.tool_buttons), dict(layout.drawer_buttons)
+        return rows.get(Tool(show["tool"])) or icons[Drawer.TOOLS]
     if "level" in show:
         return dict(layout.level_buttons)[LevelButton(show["level"])]
     if "cell" in show:

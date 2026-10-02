@@ -668,3 +668,20 @@ size tall, 10 px wide, its centre 0.86 hex size to the right of the part's, past
 whichever way it turns, filled from the foot up to its rate in accent 1 (`METER`), the colour of
 the part's face. The developer view's thruster bars become these meters, on the eyes too, opposite
 its sliders; it keeps its names and numbers.
+
+**D-053 — 2026-10-02 — The editor's frame, step A of D-051: the activity bar with Parts, Tools and Navigator, one drawer at a time, the tabs and the switch. The menu and the palette go.**
+The bar is 48 px wide down the left edge: the drawers' icons (Parts, Tools, Navigator) at the
+top, the open one lit with an accent bar on its edge; at its foot Chapters, which opens the
+full-screen map until it is a drawer, and the accented switch to the Run. A drawer is 248 px
+wide; it pushes the board aside, and the view slides with the board's centre, so nothing jumps;
+its own icon again, or the arrow on its edge, folds it. Every row is alike: an icon (a part
+itself in Parts), the name, an info disc, then a count, the infinity sign, a key or a lock. Parts
+holds the groups that fold, Tools the tools, Edit (Undo, Redo shown as Ctrl Y) and File (Save
+and Load, locked), Navigator the view's buttons. A row's info disc opens a box beside the drawer:
+a part's entry (parts.py), a tool's hint, a button's tip; opening the entry in the drawer itself
+is to come. The tabs over the board read Editor and Run, the level's caption after them; the Run
+tab runs, like the switch and Space. Parts is open when a level opens. The tutorial now lights
+"parts" (the drawer) and "bar" (the activity bar) where it lit the menu and the palette; a tool it
+shows is its row, or the Tools icon while that drawer is closed; a step opens the drawer its
+targets are in (`tutorial.drawer_for`), once, when it comes up. Fear's first steps say so.
+`layout.make_layout(drawer, folded, kinds)` builds it all; `scene.open_drawer` changes it.

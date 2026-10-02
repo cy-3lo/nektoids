@@ -683,5 +683,24 @@ beats.
 Questions: `main.py` records the score on every frame the run stands won; why is that one
 point and not hundreds? Why are scores kept in ticks rather than seconds?
 
+## 15. The editor's frame: the activity bar and its drawers (D-051, D-053)
+
+Read D-051 and D-053 first, and look at the mockups. `python game/main.py`: the bar on the left,
+Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
+
+- [`editor/layout.py`](../game/nektoids/editor/layout.py), pure: `make_layout(drawer, folded,
+  kinds)` places the bar's icons, the open drawer's rows (`_Rows`), the tabs and the board;
+  `moved_view` slides the view when the board moves; the `*_at` functions say what is under a
+  pixel.
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `open_drawer`, and `_press`, which asks
+  the fold handle, the bar, the tabs and the info discs before the rows and the board.
+- [`editor/draw.py`](../game/nektoids/editor/draw.py): `_draw_bar`, `_draw_drawer` and
+  `_draw_row`, the one row style every drawer uses; `_draw_tabs`.
+- [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `drawer_for`, the drawer a step
+  opens.
+
+Questions: why is an info disc asked before its row, in `_press`? What would the player see if
+`open_drawer` did not slide the view?
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
