@@ -38,13 +38,19 @@ BUTTON = (84, 28)  # Next, and Skip left of it, at the box's foot [px]
 BUTTON_GAP = 8  # between Skip and Next [px]
 GAP = 14  # between the target and the box [px]
 PATH_MARGIN = 20  # the hand's way from one target to the next, this wide on either side [px]
+AREA = 400  # a target this wide is an area, lit whole: the box may lie over part of it [px]
 GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
-RUN_TARGETS = {
+_COLUMN = (arena_layout.PANEL_LEFT, arena_layout.PANEL_WIDTH)
+_LOWER = (*_COLUMN[:1], arena_layout.RULES[1], _COLUMN[1], SCREEN[1] - arena_layout.RULES[1])
+RUN_TARGETS = {  # the run view's parts, each with its title (D-050)
     "arena": arena_layout.ARENA_AREA,
+    "controls": (_COLUMN[0], 0, _COLUMN[1], arena_layout.RULES[0]),  # buttons and timeline
+    "play": dict(arena_layout.button_rects())[arena_layout.ArenaButton.PLAY],
     "timeline": arena_layout.TIMELINE,
     "objectives": arena_layout.SCORE_AREA,
-    "inside": arena_layout.CIRCUIT_AREA,
+    "inside": _LOWER,  # the wiring, until a won run puts its wins there
+    "wins": _LOWER,
 }
 
 
@@ -119,6 +125,12 @@ class Tutorial:
     def leads(self) -> bool:
         """Whether this step shows a target, dimming the rest, rather than only hinting."""
         return self.step is not None and self.step.show is not None
+
+    @property
+    def holds_run(self) -> bool:
+        """Whether this step holds the run still: it leads and waits for Next, explaining what is
+        on the screen; the run goes on when a step asks for Play (D-050)."""
+        return self.leads and self.waits_for_next
 
     @property
     def waits_for_next(self) -> bool:
@@ -259,7 +271,8 @@ def box_rect(targets: list, lines: int, hint_at: Rect, before: list = ()) -> Rec
     arena). A leading step's keeps clear of its targets, of the hand's way from each to the
     next, and of the same for the step `before`, the work just done (D-048): beside a target,
     the last first, trying its right, its left, under it, over it; else the clear spot of a
-    grid over the screen nearest the last target. Each spot is brought onto the screen."""
+    grid over the screen nearest the last target. Each spot is brought onto the screen. An area
+    (the board, the arena) is too big to keep clear of: the box may lie over part of it."""
     height = 2 * PAD + lines * LINE + 8 + BUTTON[1]
     if not targets:
         x, y, w, h = hint_at
@@ -269,7 +282,8 @@ def box_rect(targets: list, lines: int, hint_at: Rect, before: list = ()) -> Rec
 
 @lru_cache(maxsize=32)  # drawn every frame; the grid is slow to search
 def _placed(targets: tuple, before: tuple, height: int) -> Rect:
-    rects, paths = (*targets, *before), (*_paths(targets), *_paths(before))
+    kept, kept_before = _narrow(targets), _narrow(before)  # an area cannot be cleared
+    rects, paths = (*kept, *kept_before), (*_paths(kept), *_paths(kept_before))
 
     def clear(spot: Rect) -> bool:
         return not any(_meet(spot, r) for r in rects) and not any(_crosses(spot, *p) for p in paths)
@@ -292,6 +306,10 @@ def _placed(targets: tuple, before: tuple, height: int) -> Rect:
     if not free:
         return beside[0]
     return min(free, key=lambda s: (math.dist(_centre(s), goal), s[1], s[0]))
+
+
+def _narrow(rects: tuple) -> tuple:
+    return tuple(rect for rect in rects if rect[2] < AREA)
 
 
 def _paths(targets: tuple) -> list:

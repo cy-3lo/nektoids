@@ -80,9 +80,12 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     tutorial.follow(context(Tool.WIRE))
     assert tutorial.step.until == {"screen": "run"}
     tutorial.follow(context(screen=Screen.RUN))
-    assert tutorial.step.until == {"outcome": "won"}
+    for shown in ("controls", "objectives", "inside"):  # the run held still: Next
+        assert tutorial.step.show == {"run": shown} and tutorial.holds_run
+        tutorial.next()
+    assert tutorial.step.until == {"outcome": "won"} and not tutorial.holds_run  # Play
     tutorial.follow(context(screen=Screen.RUN, outcome=Outcome.WON))
-    assert tutorial.step.until is None and tutorial.leads
+    assert tutorial.step.show == {"run": "wins"} and tutorial.holds_run  # the score, last
     tutorial.next()
     assert tutorial.step is None and not tutorial.leads
     assert [g.facing for g in tutorial.ghosts][:2] == [NW, SW]
@@ -102,9 +105,10 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:  # never over what it shows
         for screen in (Screen.EDIT, Screen.RUN):
             targets = target_rects(step.show, screen, LAYOUT, VIEW)
-            if len(targets) > 1 or (targets and targets[0][2] < 400):
+            narrow = [t for t in targets if t[2] < 400]  # an area may lie under the box
+            if narrow:
                 box = box_rect(targets, len(step.say), LAYOUT.board_area)
-                assert on_screen(box) and not any(overlap(box, t) for t in targets), step.say
+                assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
 
 
 def overlap(a, b):
@@ -167,7 +171,7 @@ def test_a_leading_step_lets_through_only_the_means_to_what_it_waits_for():
     assert allows(wire, Action("tool", tool=Tool.WIRE))
     assert allows(wire, Action("wire", cell=(1, -2), other=(2, -1)))  # either way round (D-026)
     assert not allows(wire, Action("wire", cell=(2, -1), other=(-1, 2)))
-    run, watch = steps[11], steps[12]
+    run, watch = steps[11], steps[15]
     assert allows(run, Action("run")) and not allows(run, Action("map"))
     assert allows(watch, Action("run")) and allows(watch, Action("edit"))
     assert not allows(watch, Action("next"))
@@ -213,12 +217,15 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
     for index in range(len(tutorial.steps)):  # each step, as it shows once the one before is done
         tutorial.index = index
         step, done = tutorial.step, tutorial.before
-        targets = target_rects(step.show, Screen.EDIT, layout, view)
-        before = [] if done is None else target_rects(done.show, Screen.EDIT, layout, view)
-        if targets and not any(w > 400 for _, _, w, _ in targets):  # an area is too big to clear
+        for screen in (Screen.EDIT, Screen.RUN):
+            targets = target_rects(step.show, screen, layout, view)
+            before = [] if done is None else target_rects(done.show, screen, layout, view)
+            narrow = [t for t in targets if t[2] < 400]  # an area (board, arena) may lie under it
+            if not narrow:
+                continue
             box = box_rect(targets, len(step.say), layout.board_area, before)
             assert on_screen(box), step.say
-            for rects in (targets, before):
+            for rects in (narrow, [t for t in before if t[2] < 400]):
                 assert not any(overlap(box, grown(t, GAP)) for t in rects), step.say
                 assert not any(
                     _crosses(box, a, b) for a, b in zip(rects, rects[1:], strict=False)

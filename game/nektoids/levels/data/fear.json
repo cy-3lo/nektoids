@@ -99,20 +99,43 @@
         "say": ["The light is on the swimmer's right.", "Press Run, or Space, and watch."]
       },
       {
-        "show": {"run": "arena"},
-        "until": {"outcome": "won"},
         "say": [
-          "The right eye sees the light and drives the",
-          "right thruster: the swimmer turns away from",
-          "it and flees. Out of the ring, and you win."
-        ]
+          "The run waits for you. Controls: play or",
+          "pause, a step, fast forward; under them, the",
+          "timeline: click it to go to any time."
+        ],
+        "show": {"run": "controls"}
       },
       {
-        "show": {"run": "objectives"},
         "say": [
-          "That is fear, Braitenberg's vehicle 2a.",
+          "Objectives: what the level asks, each with",
+          "its bar. Here, get out of the ring round the", "light before the time runs out."
+        ],
+        "show": {"run": "objectives"}
+      },
+      {
+        "say": [
+          "Inside: the swimmer's wiring, live. Beads",
+          "flow along the wires, the faster the more", "light an eye reads."
+        ],
+        "show": {"run": "inside"}
+      },
+      {
+        "say": [
+          "Press Play, or Space. The right eye sees the",
+          "light and drives the right thruster: the", "swimmer turns away and flees."
+        ],
+        "show": [{"run": "play"}, {"run": "arena"}],
+        "until": {"outcome": "won"}
+      },
+      {
+        "say": [
+          "That is fear, Braitenberg's vehicle 2a. Each",
+          "win is scored on its time and its parts: a",
+          "point here. Fewer of either is better; the", "line joins the wins no other beats.",
           "Close, then Next level when you are ready."
-        ]
+        ],
+        "show": {"run": "wins"}
       }
     ]
   }

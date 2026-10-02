@@ -237,6 +237,8 @@ async def main() -> None:
         editor().gate = gate  # only what the step asks goes through (D-048)
         if playing is not None:
             playing.gate = gate
+            if guide is not None and guide.holds_run:
+                playing.clock.paused = True  # an explaining step holds the run still (D-050)
 
         if isinstance(developer, SchematicScene):
             developer.update()
