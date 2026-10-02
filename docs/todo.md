@@ -77,9 +77,9 @@ column and the full-screen map.
       the open one lighter, an accent bar on its edge. One drawer open at a time, pushing the
       board aside; folded by its icon again or the arrow on its edge.
       - Top, editor: Parts (puzzle-piece; also the parts' encyclopedia, a row opening into its
-        entry), Tools (screwdriver-wrench), Files (floppy-disk), Sense (stethoscope), Navigate
+        entry), Tools (screwdriver-wrench), Files (floppy-disk), Sense (stethoscope), Navigator
         (compass). Top, sim: Objectives (list-check), Inside (magnifying-glass), Score (trophy),
-        Navigate.
+        Navigator.
       - Foot, both: Settings (gear), Chapters (map; not "Map"), then the accented switch: Run
         (play) in the editor, back to the editor (diagram-project) in the sim.
       - Chapters replaces the full-screen map. Settings: fast forward's speed, key hints,

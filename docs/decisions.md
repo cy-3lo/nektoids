@@ -635,8 +635,8 @@ An activity bar down the left edge, one icon per drawer; one drawer open at a ti
 board aside, folded by its icon or an arrow on its edge; every drawer's rows alike (icon, name,
 (i), then a count, a key, a lock or a tick). At the top, what the player works with: in the
 editor Parts (puzzle-piece), which is also the parts' encyclopedia, Tools (screwdriver-wrench),
-Files (floppy-disk), Sense (stethoscope), Navigate (compass); in the sim Objectives
-(list-check), Inside (magnifying-glass), Score (trophy), Navigate. At the foot, in both:
+Files (floppy-disk), Sense (stethoscope), Navigator (compass); in the sim Objectives
+(list-check), Inside (magnifying-glass), Score (trophy), Navigator. At the foot, in both:
 Settings (gear), Chapters (map), then an accented switch between the environments, Editor and
 Sim, which are also tabs over the content (no Builder tab until there is a builder): Run (play)
 in the editor, back (diagram-project) in the sim. Chapters, not "Map", replaces the full-screen
