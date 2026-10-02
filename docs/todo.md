@@ -78,20 +78,20 @@ column and the full-screen map.
       board aside; folded by its icon again or the arrow on its edge.
       - Top, editor: Parts (puzzle-piece; also the parts' encyclopedia, a row opening into its
         entry), Tools (screwdriver-wrench), Files (floppy-disk), Sense (stethoscope), Navigator
-        (compass). Top, sim: Objectives (list-check), Inside (magnifying-glass), Score (trophy),
+        (compass). Top, Run: Objectives (list-check), Inside (magnifying-glass), Score (trophy),
         Navigator.
       - Foot, both: Settings (gear), Chapters (map; not "Map"), then the accented switch: Run
-        (play) in the editor, back to the editor (diagram-project) in the sim.
+        (play) in the editor, back to the editor (diagram-project) in the Run.
       - Chapters replaces the full-screen map. Settings: fast forward's speed, key hints,
         tooltips' delay, Fear's tutorial again; Sound and Music once there is sound. No palette.
       - The sim's controls (play, a step, fast forward, the timeline) in a bar under the arena.
-- [ ] Environments as tabs over the content: Editor and Sim (a Builder later, no tab until then).
+- [ ] Environments as tabs over the content: Editor and Run (a Builder later, no tab until then).
       Switched by a tab, or by the accented switch.
 - [ ] The circuit, one drawing for Sense (editor) and Inside (sim): parts shaded by their rate,
       beads on the wires, no numbers, a level meter by each eye and thruster in accent 1, the
       colour of their faces. A swap button on the drawer exchanges the drawer's content and the
       main screen: in the editor, circuit big and the probe's map small, or the level big with
-      the probe; in the sim, the arena big and the circuit small, or the other way round.
+      the probe; in the Run, the arena big and the circuit small, or the other way round.
 - [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as
       it would run there; nothing run, nothing scored. A Board / Circuit switch over the editor.
 - [ ] This session's winning boards kept in memory, one for each point of the score; a click
