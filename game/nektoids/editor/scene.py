@@ -68,9 +68,11 @@ from nektoids.editor.layout import (
     pan,
     tool_at,
     view_button_at,
+    win_row_at,
     zoom,
 )
 from nektoids.editor.probe import Probe, level_view
+from nektoids.editor.router import Won
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Board, Kind, Node, Refused, Wire
@@ -106,6 +108,7 @@ ENTER_SCANCODES = (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
 # 1-9 on the top row or on the keypad: the menu's parts in order.
 DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
 KEYPAD_SCANCODES = tuple(getattr(pygame, f"KSCAN_KP_{n}") for n in range(1, 10))
+MAX_WINS = 10  # the wins Files lists, the best first
 PROBE_TURN = math.radians(15.0)  # the wheel, L or R, on the probe in Sense
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
@@ -128,6 +131,7 @@ class EditorScene(Frame):
         self._probed = None  # the board as the probe was made for it
         self.probing = False  # the probe held in Sense's map, following the mouse
         self.holding: int | None = None  # the eye whose meter's knob the mouse holds
+        self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
         self.tool = Tool.ADD
@@ -346,6 +350,10 @@ class EditorScene(Frame):
             self.probing = True
             self._probe_to(pos)
             return
+        won = win_row_at(self.layout, pos)
+        if won is not None:
+            self._put_back(won)
+            return
         tool = tool_at(self.layout, pos)
         if tool is not None:
             self._choose(tool)
@@ -428,7 +436,22 @@ class EditorScene(Frame):
     def _relayout(self, drawer: Drawer | None) -> Layout:
         """The layout with `drawer` open, the same parts handed out and the same chapter."""
         kinds, chapter = self.layout.kinds, self.layout.chapter
-        return make_layout(drawer, frozenset(self.folded), kinds, chapter)
+        return make_layout(drawer, frozenset(self.folded), kinds, chapter, wins=len(self.wins))
+
+    def set_wins(self, wins: tuple[Won, ...]) -> None:
+        """The level's wins this session, as Files lists them: at most MAX_WINS (D-059)."""
+        wins = wins[:MAX_WINS]
+        if wins != self.wins:
+            self.wins = wins
+            self.layout = self._relayout(self.layout.drawer)
+
+    def _put_back(self, index: int) -> None:
+        """A win's board back on the board; the one left goes to Undo (D-059)."""
+        if self._allowed(Action("load")):
+            self._cancel()
+            self.board.restore(self.wins[index].board)
+            self.main = MainView.DIAGRAM
+            self.selected = None
 
     def _allowed(self, action: Action, cell: Cell | None = None) -> bool:
         """Whether the tutorial's step lets `action` through (D-048); if not, say so."""

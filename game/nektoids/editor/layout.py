@@ -105,6 +105,7 @@ class ViewButton(Enum):
 class Drawer(Enum):  # D-051
     PARTS = "parts"  # the parts the level hands out, and what each does
     TOOLS = "tools"  # the tools, undo and redo, save and load
+    FILES = "files"  # this session's winning boards, to put one back (D-059)
     SENSE = "sense"  # the level, small, with the probe the Run preview runs at (D-058)
     OBJECTIVES = "objectives"  # the run's: what the level asks, each with its bar; the time
     INSIDE = "inside"  # the run's: the swimmer's wiring, live
@@ -131,11 +132,18 @@ SENSE_MAP: Rect = (  # the level, small, in Sense, under its label: a square [px
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.SENSE, Drawer.NAVIGATOR),
+    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.SENSE, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.OBJECTIVES, Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),
 }
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT}
+
+
+@dataclass(frozen=True)
+class WinRow:
+    """A row of Files: the level's win `index` this session, the fastest first (D-059)."""
+
+    index: int
 
 
 @dataclass(frozen=True)
@@ -199,6 +207,7 @@ class Layout:
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # Objectives' rows: each objective, the time left
+    win_rows: tuple[tuple[WinRow, Rect], ...]  # Files' rows: this session's wins of the level
     setting_rows: tuple[tuple[Setting, Rect], ...]  # Settings' rows
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
@@ -225,11 +234,13 @@ def make_layout(
     chapter: int = 0,
     env: Env = Env.EDITOR,
     goals: int = 0,
+    wins: int = 0,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     Parts' groups shown closed; kinds: the parts the level hands out, the only ones Parts shows
     (D-039); chapter: how many levels Chapters lists, before the sandbox; goals: how many
-    objectives the level has, Objectives' rows before the time left."""
+    objectives the level has, Objectives' rows before the time left; wins: how many wins of
+    the level Files lists."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -254,6 +265,10 @@ def make_layout(
         rows.goals(goals)
     elif drawer is Drawer.SENSE:
         rows.label("The level")
+    elif drawer is Drawer.FILES:
+        rows.label("Wins this session")
+        for k in range(wins):
+            rows._row(WinRow(k))
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
         rows.label("The swimmer's wiring")
     elif drawer is Drawer.SCORE:
@@ -287,6 +302,7 @@ def make_layout(
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
+        win_rows=tuple(rows.of(WinRow)),
         setting_rows=tuple(rows.of(Setting)),
         chapter_rows=tuple(rows.of(int)),
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
@@ -383,6 +399,11 @@ def _info_disc(what: object, row: Rect) -> Rect:
     x, y, w, h = row
     cx, cy = (x + w - 16, y + 14) if isinstance(what, Goal) else (x + INFO_AT, y + h // 2)
     return (cx - INFO_HIT // 2, cy - INFO_HIT // 2, INFO_HIT, INFO_HIT)
+
+
+def win_row_at(layout: Layout, point: tuple[int, int]) -> int | None:
+    """The win whose row in Files is under `point`: its index, the fastest first."""
+    return next((w.index for w, rect in layout.win_rows if contains(rect, point)), None)
 
 
 def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:

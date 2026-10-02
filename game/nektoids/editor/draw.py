@@ -61,6 +61,7 @@ from nektoids.editor.layout import (
     Tool,
     View,
     ViewButton,
+    WinRow,
     visible_cells,
 )
 from nektoids.editor.palette import (
@@ -128,6 +129,7 @@ TIP = {
     MainView.PREVIEW: "Run preview",
     Drawer.PARTS: "Parts",
     Drawer.TOOLS: "Tools",
+    Drawer.FILES: "Files",
     Drawer.SENSE: "Sense",
     Drawer.OBJECTIVES: "Objectives",
     Drawer.INSIDE: "Inside",
@@ -530,6 +532,30 @@ def _draw_view_switch(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) 
         pygame.draw.circle(screen, ink, (cx + 14, cy), 2.5)
 
 
+def _draw_files(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Files (D-059): this session's wins of the level, the best first, a tick on those no other
+    beats, the one on the board now lit; a click puts its board back."""
+    now = scene.board.snapshot()
+    for row, rect in scene.layout.win_rows:
+        won = scene.wins[row.index]
+        status = ("tick", "") if won.best else ("none", "")
+        active = won.board == now
+        draw_row(screen, scene, fonts, rect, row, _win_name(won), status, active, icon="trophy")
+    rows = scene.layout.win_rows
+    top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else SENSE_MAP[1]
+    note = (
+        "Each win of this level is kept here for the session. A click puts its board back;"
+        " Undo brings yours back."
+        if rows
+        else "No win yet. Each win of this level will be kept here for the session."
+    )
+    draw_note(screen, fonts, note, (SENSE_MAP[0], top), SENSE_MAP[2])
+
+
+def _win_name(won) -> str:
+    return f"{won.score.ticks * DT:.2f} s, {won.score.parts} parts"
+
+
 def _draw_sense(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Sense (D-058): the level small, its obstacles, its lights and their rings, and the probe,
     the swimmer the Run preview runs at, to drag and turn."""
@@ -587,6 +613,8 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     layout, board = scene.layout, scene.board
     if layout.drawer is Drawer.SENSE:
         _draw_sense(screen, scene, fonts)
+    if layout.drawer is Drawer.FILES:
+        _draw_files(screen, scene, fonts)
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
@@ -859,9 +887,13 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
 
 
 def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
-    """What the editor's info boxes say: a part's entry, or what a row does."""
+    """What the editor's info boxes say: a part's entry, a win, or what a row does."""
     if isinstance(what, Kind):
         return NAME[what], tuple(info(what))
+    if isinstance(what, WinRow):
+        won = scene.wins[what.index]
+        beaten = "No other win beats it." if won.best else "Another win beats it."
+        return "A win", (f"This board won in {_win_name(won)}. {beaten}",)
     return ROW_NAME[what], (HINT.get(what) or TIP[what],)
 
 

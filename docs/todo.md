@@ -77,12 +77,9 @@ column and the full-screen map (gone, D-054).
 The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
 preview; in the Run it shows the level. Drawers never take the main screen.
 
-- [ ] Files (floppy-disk), the editor's last drawer; Sense and the run's are in (D-057,
-      D-058). Sound and Music in Settings once there is sound.
+- [ ] Sound and Music in Settings, once there is sound (D-054).
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
-- [ ] This session's winning boards kept in memory, one for each point of the score; a click
-      puts one back on the board, the board left going to Undo. Files can wait: not needed yet.
 - [ ] Fear's tutorial: a step for Sense and the Run preview; its bar step names Sense, and its
       editor and run steps follow the frame already (D-053, D-057, D-058).
 

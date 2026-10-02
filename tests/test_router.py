@@ -132,3 +132,19 @@ def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
     first, second = router.rows()[:2]
     assert (first.state, first.best, second.state) == ("won", Score(ticks=600, parts=7), "open")
     assert isinstance(first, ChapterRow) and first.title == router.levels[0].title
+
+
+def test_files_lists_the_wins_with_their_boards_the_unbeaten_first_each_score_once():
+    router = a_router()
+    router.begin()
+    first = router.board.snapshot()
+    router.record(Score(ticks=900, parts=4), first)
+    router.board.place(Kind.EYE, (0, 0))
+    later = router.board.snapshot()
+    router.record(Score(ticks=600, parts=5), later)
+    router.record(Score(ticks=700, parts=6), later)  # beaten by the 600-tick win
+    router.record(Score(ticks=900, parts=4), later)  # the same score: its first board stays
+    wins = router.wins(0)
+    assert [(w.score.ticks, w.best) for w in wins] == [(600, True), (900, True), (700, False)]
+    assert wins[1].board == first and wins[0].board == later
+    assert router.wins(1) == ()

@@ -16,9 +16,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 
-from nektoids.graph.board import Board
+from nektoids.graph.board import Board, BoardState
 from nektoids.levels.level import Level
-from nektoids.levels.score import Score
+from nektoids.levels.score import Score, front
 
 CHAPTER = 1  # the jam's one chapter, light (D-028): its levels are LEVEL 1.1, LEVEL 1.2...
 CHAPTER_NAME = "light"
@@ -42,6 +42,16 @@ class ChapterRow:
     current: bool  # the place open now
 
 
+@dataclass(frozen=True)
+class Won:
+    """A win of a level this session, as Files shows it (D-059): its score, the board that won
+    it, and whether no other win beats it."""
+
+    score: Score
+    board: BoardState
+    best: bool
+
+
 class Screen(Enum):
     TITLE = "title"  # the card over the first level, gone at the first click
     SPEC = "spec"  # a level's card: its name and what it asks, gone at the first click
@@ -59,6 +69,7 @@ class Router:
         self.won: set[int] = set()  # the chapter's levels won this session
         self._boards: dict[int, Board] = {}
         self._scores: dict[int, set[Score]] = {}
+        self._won_with: dict[int, dict[Score, BoardState]] = {}  # each score's first board
 
     @property
     def sandbox_index(self) -> int:
@@ -159,10 +170,21 @@ class Router:
         if not self.in_sandbox:
             self.won.add(self.index)
 
-    def record(self, score: Score) -> None:
-        """A win of the open level, scored; the sandbox, with no objective, keeps none."""
+    def record(self, score: Score, board: BoardState | None = None) -> None:
+        """A win of the open level, scored, and the board that won it, the first one to score
+        so; the sandbox, with no objective, keeps none."""
         if not self.in_sandbox:
             self._scores.setdefault(self.index, set()).add(score)
+            if board is not None:
+                self._won_with.setdefault(self.index, {}).setdefault(score, board)
+
+    def wins(self, index: int) -> tuple[Won, ...]:
+        """A level's wins this session with their boards: those no other beats first, then the
+        rest, each the fastest first (D-059)."""
+        boards = self._won_with.get(index, {})
+        best = front(frozenset(boards))
+        order = sorted(boards, key=lambda s: (s not in best, s.ticks, s.parts))
+        return tuple(Won(score, boards[score], score in best) for score in order)
 
     def next(self) -> None:
         """On to the next level, under its card; ValueError after the last one."""

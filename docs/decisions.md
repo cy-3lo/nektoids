@@ -765,3 +765,13 @@ follows; moving or turning the probe gives every eye back to the light. A test i
 nowhere and never seen by a run: the board still holds no continuous parameter (brief: "No
 sliders"); this amends D-016, whose sensor sliders were the developer's only. While a tutorial
 step leads, the preview is refused and the board stays on screen.
+
+**D-059 — 2026-10-02 — Step E of D-051: Files keeps this session's winning boards; a click puts one back, and Undo brings back the board left.**
+Each win of a level keeps the board that won it, the first one for each score, in memory for
+the session (`Router.record`, `Router.wins`); nothing is written anywhere (saving stays out of
+scope). Files (floppy-disk), an editor drawer between Tools and Sense, lists the open level's
+wins, at most ten: those no other beats first, each with a tick, then the rest, the fastest
+first; each row reads its time and its parts, lit while its board is the one on the grid. A
+click puts that board back and shows the Diagram view; the board left goes to Undo, as any
+change does. While a tutorial step leads, Files refuses. A board as text, to keep or to send,
+is its own PR (todo §9).

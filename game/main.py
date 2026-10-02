@@ -229,7 +229,8 @@ async def main() -> None:
         if playing is not None:
             if playing.outcome is Outcome.WON and playing.ended_at is not None:
                 router.mark_won()  # the next level opens in Chapters
-                router.record(Score(playing.parts, playing.ended_at))  # once: a set
+                score = Score(playing.parts, playing.ended_at)  # once: a set
+                router.record(score, router.board.snapshot())  # the board that won, for Files
             playing.scores = router.scores
             if playing.request == "next" and router.has_next:
                 router.next()
@@ -261,6 +262,7 @@ async def main() -> None:
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
         editor().chapters = router.rows()  # what Chapters shows
+        editor().set_wins(router.wins(router.index))  # what Files shows (D-059)
         if playing is not None:
             playing.chapters = router.rows()
         scene = on_screen()

@@ -46,6 +46,7 @@ from nektoids.editor.layout import (
     tool_at,
     view_button_at,
     visible_cells,
+    win_row_at,
     zoom,
 )
 from nektoids.graph.board import Kind
@@ -301,3 +302,15 @@ def test_the_editor_has_two_main_views_in_its_main_screens_corner_and_the_run_no
         assert main_view_at(LAYOUT, (x + w // 2, y + h // 2)) is view
         assert palette_target_at(LAYOUT, (x + w // 2, y + h // 2)) is view  # its tooltip
     assert make_layout(env=Env.RUN).view_switch == ()
+
+
+def test_files_has_a_row_per_win_under_its_label_in_the_editors_bar():
+    files = make_layout(Drawer.FILES, wins=3)
+    assert Drawer.FILES in DRAWERS[Env.EDITOR] and Drawer.FILES not in DRAWERS[Env.RUN]
+    assert [title for title, _ in files.section_titles] == ["Wins this session"]
+    assert [row.index for row, _ in files.win_rows] == [0, 1, 2]
+    for row, rect in files.win_rows:
+        assert win_row_at(files, centre(rect)) == row.index and contains(
+            files.drawer_area, rect[:2]
+        )
+    assert make_layout(Drawer.FILES).win_rows == () and LAYOUT.win_rows == ()

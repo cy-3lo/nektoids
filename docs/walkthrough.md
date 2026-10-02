@@ -749,5 +749,15 @@ stands; drag the probe on the map, then drag an eye's knob.
 Questions: why does the probe read the light once, and not every tick? What would a held eye
 do to a run, and why can it not?
 
+Files (D-059): win a level twice with two boards, then open Files and click the other win.
+
+- [`editor/router.py`](../game/nektoids/editor/router.py): `record` keeps the board with its
+  score; `wins` lists them, the unbeaten first (`Won`). Tested in
+  [`test_router.py`](../tests/test_router.py).
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `set_wins`, `_put_back`, which only
+  restores the board: `_keep`, after the click, puts the board left into the history.
+
+Question: why does `_put_back` not call `history.record` itself?
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).
