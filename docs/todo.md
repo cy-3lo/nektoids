@@ -77,29 +77,14 @@ column and the full-screen map (gone, D-054).
 The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
 preview; in the Run it shows the level. Drawers never take the main screen.
 
-- [ ] The editor's two other drawers, Files (floppy-disk) and Sense (stethoscope); the run's are
-      in (D-057). Sound and Music in Settings once there is sound.
+- [ ] Files (floppy-disk), the editor's last drawer; Sense and the run's are in (D-057,
+      D-058). Sound and Music in Settings once there is sound.
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
-- [ ] The Run preview, one drawing for Sense (Editor) and Inside (Run): beads on the wires,
-      parts in their own colour, no numbers, a level meter by each eye and thruster (D-052). The
-      two mirror each other: in the Editor, Sense puts the Run preview on the main screen (by
-      default; the Diagram view through its icon) and the level, with the probe, in the drawer;
-      in the Run, Inside keeps the arena on the main screen and the preview, small, in the
-      drawer.
-- [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as
-      it would run there; nothing run, nothing scored. Two icon buttons over the editor switch
-      views, as big as the Run button: the Diagram view (three hex cells) and the Run preview
-      (an operator, two wires in at ±45° and one out, a bead on each, in the wires' colour).
-- [ ] In the Run preview, each eye's meter is a handle, its knob as big as a bead: dragged, it
-      sets what the eye reads, and the circuit settles to show what follows; moving the probe
-      gives the eyes back to the light. A test input, not a setting of the board: nothing kept,
-      the run never sees it, the board still holds no continuous parameter (brief: "No sliders";
-      amends D-016's sensor sliders "behind DEV_VIEW only").
 - [ ] This session's winning boards kept in memory, one for each point of the score; a click
       puts one back on the board, the board left going to Undo. Files can wait: not needed yet.
-- [ ] Fear's tutorial for the drawers to come (Sense); its editor and run steps follow the
-      frame already (D-053, D-057).
+- [ ] Fear's tutorial: a step for Sense and the Run preview; its bar step names Sense, and its
+      editor and run steps follow the frame already (D-053, D-057, D-058).
 
 ## 9. A board as text (its own PR)
 

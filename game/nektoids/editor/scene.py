@@ -44,6 +44,7 @@ from nektoids.editor.history import History
 from nektoids.editor.layout import (
     KEY_ALIASES,
     MENU_GROUPS,
+    SENSE_MAP,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
@@ -56,6 +57,7 @@ from nektoids.editor.layout import (
     ViewButton,
     cell_at,
     centred_view,
+    contains,
     edit_button_at,
     file_button_at,
     group_at,
@@ -68,7 +70,7 @@ from nektoids.editor.layout import (
     view_button_at,
     zoom,
 )
-from nektoids.editor.probe import Probe
+from nektoids.editor.probe import Probe, level_view
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Board, Kind, Node, Refused, Wire
@@ -104,6 +106,7 @@ ENTER_SCANCODES = (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
 # 1-9 on the top row or on the keypad: the menu's parts in order.
 DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
 KEYPAD_SCANCODES = tuple(getattr(pygame, f"KSCAN_KP_{n}") for n in range(1, 10))
+PROBE_TURN = math.radians(15.0)  # the wheel, L or R, on the probe in Sense
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
@@ -123,6 +126,8 @@ class EditorScene(Frame):
         self.main = MainView.DIAGRAM  # what the main screen shows (D-058)
         self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
         self._probed = None  # the board as the probe was made for it
+        self.probing = False  # the probe held in Sense's map, following the mouse
+        self.holding: int | None = None  # the eye whose meter's knob the mouse holds
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
         self.tool = Tool.ADD
@@ -153,13 +158,16 @@ class EditorScene(Frame):
         if self.flash_frames > 0:
             self.flash_frames -= 1
         self.frame_update()
-        if self.main is MainView.PREVIEW:
+        if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.SENSE:
             self._probe_now()
+        if self.main is MainView.PREVIEW:
             for _ in range(TICKS_PER_FRAME):
                 self.probe.tick()
 
     def _probe_now(self) -> None:
         """The probe, made again if the board changed since; it stays where it stood."""
+        if self.level is None:
+            return
         now = self.board.snapshot()
         if self.probe is None or now != self._probed:
             pose = self.probe.pose if self.probe is not None else None
@@ -173,6 +181,21 @@ class EditorScene(Frame):
         elif view is not self.main and self._allowed(Action("view")):
             self._cancel()
             self.main = view
+
+    def open_drawer(self, drawer: Drawer | None) -> None:
+        """As the frame opens it; Sense puts the Run preview on the main screen (D-058)."""
+        super().open_drawer(drawer)
+        if drawer is Drawer.SENSE and self.main is not MainView.PREVIEW:
+            self.show(MainView.PREVIEW)
+
+    def _on_map(self, pos: tuple[int, int]) -> bool:
+        """Whether `pos` is on Sense's map of the level, with a probe to move."""
+        sense = self.layout.drawer is Drawer.SENSE and self.probe is not None
+        return sense and contains(SENSE_MAP, pos)
+
+    def _probe_to(self, pos: tuple[int, int]) -> None:
+        """The probe where the mouse is on Sense's map, outside the obstacles."""
+        self.probe.place(*level_view(self.level, SENSE_MAP).to_world(*pos))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION and self.cursor is not None and event.rel == (0, 0):
@@ -191,6 +214,8 @@ class EditorScene(Frame):
             self._press(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._release(event.pos)
+        elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
+            self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
             event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
         ):
@@ -228,6 +253,9 @@ class EditorScene(Frame):
             if digit < len(kinds):
                 self._pick(kinds[digit])
                 self.dragging = False  # placed with Enter, not by releasing a button
+        elif self._turns_probe(event.unicode):
+            sign = 1.0 if event.unicode.upper() == TOOL_KEYS[Tool.TURN_LEFT] else -1.0
+            self.probe.turn(sign * PROBE_TURN)
         else:
             self._shortcut(event.unicode)
 
@@ -294,6 +322,9 @@ class EditorScene(Frame):
             self.view, self.panning_from = pan(self.view, dx, dy), pos
         self.mouse = pos
         self.frame_track(pos)
+        if self.probing and self.probe is not None:
+            self._probe_to(pos)
+        self._hold(pos)
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
         self.pointed = pointed
@@ -310,6 +341,10 @@ class EditorScene(Frame):
         view = main_view_at(self.layout, pos)
         if view is not None:
             self.show(view)
+            return
+        if self._on_map(pos):
+            self.probing = True
+            self._probe_to(pos)
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:
@@ -335,7 +370,9 @@ class EditorScene(Frame):
         if kind is not None:
             self._pick(kind)
             return
-        if self.main is MainView.PREVIEW:  # the board is not on screen to edit
+        if self.main is MainView.PREVIEW:  # the board is not on screen to edit, but the eyes are
+            self.holding = self.probe.handle_at(pos) if self.probe is not None else None
+            self._hold(pos)
             return
         if self.pointed is None:
             return
@@ -359,7 +396,19 @@ class EditorScene(Frame):
         else:
             self._delete(self.hover, pos)
 
+    def _turns_probe(self, typed: str) -> bool:
+        """L and R turn the probe while Sense shows it with the Run preview; else the parts."""
+        turns = typed.upper() in (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
+        shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.SENSE
+        return turns and shown and self.probe is not None
+
+    def _hold(self, pos: tuple[int, int]) -> None:
+        """The eye whose knob is held reads what its meter says at the mouse: a test input."""
+        if self.holding is not None and self.probe is not None:
+            self.probe.hold(self.holding, self.probe.level_at(self.holding, pos[1]))
+
     def _release(self, pos: tuple[int, int]) -> None:
+        self.probing, self.holding = False, None
         self.moving, self.panning_from = None, None
         if self.pressed is not None:
             self._end_wiring()

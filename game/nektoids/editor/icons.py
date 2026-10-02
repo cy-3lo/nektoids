@@ -79,6 +79,7 @@ GLYPH = {
     "circle-xmark": 0xF057,
     "right-from-bracket": 0xF2F5,
     "location-dot": 0xF3C5,
+    "stethoscope": 0xF0F1,
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.
@@ -107,6 +108,7 @@ LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.EDIT: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.PARTS: "puzzle-piece",
     Drawer.TOOLS: "screwdriver-wrench",
+    Drawer.SENSE: "stethoscope",
     Drawer.OBJECTIVES: "list-check",
     Drawer.INSIDE: "magnifying-glass",
     Drawer.SCORE: "trophy",

@@ -746,3 +746,22 @@ headless); one set of functions draws it (`draw.py`). Fear's run steps light the
 open and outline Objectives, Inside and Score; their box keeps clear of the controls, wide but
 low, as it does of any target that is not an area. The developer's arena view (F3) has the same
 frame.
+
+**D-058 — 2026-10-02 — Step D of D-051: the Run preview, Sense and its probe, the eyes' meters as handles. Amends D-016.**
+Two buttons in the top right corner of the editor's main screen, as big as the switch, show the
+Diagram view (three hex cells: the board on its grid, to edit) or the Run preview (an operator,
+two wires in at 45 degrees and one out, a bead on each): the board as it would run where a probe
+stands, on its body, drawn plain as Inside draws it in the run, beads on the wires and a meter
+by each eye and thruster. The probe is the swimmer put anywhere on the level and turned; nothing
+moves and nothing is scored; its eyes read the light there and the circuit settles tick by tick
+(`probe.Probe`, pure). It starts at the level's start, at rest, and is made again where it stood
+when the board changes. Sense (stethoscope), an editor drawer between Tools and Navigator, shows
+the level small, its obstacles, lights and rings, and the probe: a press or a drag puts it
+anywhere outside the obstacles; the wheel over the map, or L and R while the preview shows,
+turns it by 15 degrees. Opening Sense shows the Run preview; taking a tool or a part shows the
+board again. In the preview each eye's meter is a handle, its knob as big as a bead, at what the
+eye sends: dragged, it holds the eye at that level, the knob lit, and the circuit shows what
+follows; moving or turning the probe gives every eye back to the light. A test input, kept
+nowhere and never seen by a run: the board still holds no continuous parameter (brief: "No
+sliders"); this amends D-016, whose sensor sliders were the developer's only. While a tutorial
+step leads, the preview is refused and the board stays on screen.

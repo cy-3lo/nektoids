@@ -65,6 +65,7 @@ from nektoids.editor.draw import (
     draw_button,
     draw_drawer,
     draw_info,
+    draw_note,
     draw_row,
     draw_status_line,
     draw_symbol,
@@ -439,21 +440,7 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         draw_circuit(screen, circuit, scene.y, fonts, plain=True)
         screen.set_clip(None)
         return
-    _note(screen, fonts, note, (x + MARGIN, y + 8))
-
-
-def _note(screen: pygame.Surface, fonts: Fonts, text: str, at: tuple[int, int]) -> None:
-    """A dim note in a drawer, broken into lines that fit it."""
-    width, line, lines = DRAWER_BODY[2] - 2 * MARGIN, "", []
-    for word in text.split():
-        trial = f"{line} {word}".strip()
-        if line and fonts.small.size(trial)[0] > width:
-            lines.append(line)
-            line = word
-        else:
-            line = trial
-    for k, part in enumerate([*lines, line]):
-        screen.blit(fonts.small.render(part, True, DIM_TEXT), (at[0], at[1] + 20 * k))
+    draw_note(screen, fonts, note, (x + MARGIN, y + 8), DRAWER_BODY[2] - 2 * MARGIN)
 
 
 # Developer tools
@@ -536,12 +523,8 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     scores = scene.scores | ({this} if this is not None else set())
     x, y, w, h = DRAWER_BODY
     if not scores:
-        _note(
-            screen,
-            fonts,
-            "No win yet. Each win is a point here: its time and its parts.",
-            (x + MARGIN, y + 8),
-        )
+        note = "No win yet. Each win is a point here: its time and its parts."
+        draw_note(screen, fonts, note, (x + MARGIN, y + 8), w - 2 * MARGIN)
         return
     note = fonts.small.render("Time against parts.", True, DIM_TEXT)
     screen.blit(note, (x + MARGIN, y + 4))

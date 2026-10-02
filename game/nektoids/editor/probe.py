@@ -16,6 +16,7 @@ from typing import NamedTuple
 
 import numpy as np
 
+from nektoids.editor.arena_view import ArenaView, frame
 from nektoids.editor.circuit import METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT
 from nektoids.editor.layout import Rect
@@ -25,11 +26,12 @@ from nektoids.graph.network import Network
 from nektoids.levels.level import Level
 from nektoids.levels.objectives import LeaveRing, StayNear
 from nektoids.sim import world
-from nektoids.sim.arena import BASE_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 from nektoids.sim.contact import confine
 from nektoids.sim.optics import eye_rates
 
 PREVIEW_MARGIN = 1.6  # room round the body's circle on the main screen [hex sizes]
+MAP_MARGIN = 2.0  # room round what Sense's map shows of the level [u]
 HANDLE_GRAB = 10  # a press this close to an eye's meter takes it [px]
 
 
@@ -140,6 +142,19 @@ class Probe:
         """The level eye `i`'s handle sets with its knob at screen height `y` [px]."""
         track = self.track(i)
         return RATE_MAX * min(1.0, max(0.0, (track.bottom - y) / (track.bottom - track.top)))
+
+
+def level_view(level: Level, area: Rect) -> ArenaView:
+    """The level seen whole in `area`, as the run frames it at its start: its lights and their
+    rings, its obstacles, where the swimmer starts."""
+    x, y, _ = level.start
+    arena = level.arena
+    rims = [
+        arena.light_xy + d for r in ring_radii(level) for d in ((r, 0), (-r, 0), (0, r), (0, -r))
+    ]
+    points = np.concatenate(([[x, y]], arena.light_xy, arena.disc_xy, *rims))
+    reach = float(np.concatenate(([LIGHT_RADIUS, BASE_RADIUS], arena.disc_radius)).max())
+    return frame(area, points, MAP_MARGIN + reach)
 
 
 def ring_radii(level: Level) -> list[float]:

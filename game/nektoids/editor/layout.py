@@ -105,6 +105,7 @@ class ViewButton(Enum):
 class Drawer(Enum):  # D-051
     PARTS = "parts"  # the parts the level hands out, and what each does
     TOOLS = "tools"  # the tools, undo and redo, save and load
+    SENSE = "sense"  # the level, small, with the probe the Run preview runs at (D-058)
     OBJECTIVES = "objectives"  # the run's: what the level asks, each with its bar; the time
     INSIDE = "inside"  # the run's: the swimmer's wiring, live
     SCORE = "score"  # the run's: the level's wins this session
@@ -123,8 +124,14 @@ class Env(Enum):  # the environments, each a tab over the main screen (D-051)
     RUN = "run"
 
 
+SENSE_MAP: Rect = (  # the level, small, in Sense, under its label: a square [px]
+    BAR_WIDTH + MARGIN,
+    DRAWER_TOP + TITLE_HEIGHT + 4,
+    DRAWER_WIDTH - 2 * MARGIN,
+    DRAWER_WIDTH - 2 * MARGIN,
+)
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.NAVIGATOR),
+    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.SENSE, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.OBJECTIVES, Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),
 }
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
@@ -245,6 +252,8 @@ def make_layout(
         rows.view(env)
     elif drawer is Drawer.OBJECTIVES:
         rows.goals(goals)
+    elif drawer is Drawer.SENSE:
+        rows.label("The level")
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
         rows.label("The swimmer's wiring")
     elif drawer is Drawer.SCORE:

@@ -87,3 +87,15 @@ def test_fitting_another_area_keeps_the_rates_and_the_rings_come_from_the_object
     probe.fit((48, 58, 912, 554))
     assert np.array_equal(probe.y, before)
     assert ring_radii(LEVELS["Fear"]) == [12.0] and ring_radii(LEVELS["Love"]) == [6.0]
+
+
+def test_senses_map_shows_the_whole_level_where_the_swimmer_starts():
+    from nektoids.editor.layout import SENSE_MAP, contains
+    from nektoids.editor.probe import level_view
+
+    for level in LEVELS.values():
+        view = level_view(level, SENSE_MAP)
+        x, y, _ = level.start
+        assert contains(SENSE_MAP, tuple(round(v) for v in view.to_screen(x, y)))
+        for lx, ly in level.arena.light_xy:
+            assert contains(SENSE_MAP, tuple(round(v) for v in view.to_screen(lx, ly)))

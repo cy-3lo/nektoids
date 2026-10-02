@@ -47,6 +47,7 @@ from nektoids.editor.layout import (
     LEVEL_KEYS,
     PALETTE_TITLE,
     SCREEN,
+    SENSE_MAP,
     STATUS_HEIGHT,
     TABS_HEIGHT,
     TOOL_KEYS,
@@ -66,6 +67,7 @@ from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
     BAR,
+    BODY,
     BODY_OUTLINE,
     BUTTON,
     COMPONENT,
@@ -80,13 +82,17 @@ from nektoids.editor.palette import (
     GREYED,
     GRID_LINE,
     HOVER,
+    LIGHT,
     LIT,
     LOCK_RING,
+    OBSTACLE,
     OUTSIDE,
     OUTSIDE_LINE,
     PANEL,
     REFUSED,
+    RING,
     RULE,
+    SHADOW,
     TEXT,
     THRUSTER_BACK,
     TOOLTIP_BG,
@@ -94,9 +100,11 @@ from nektoids.editor.palette import (
     ZONE,
 )
 from nektoids.editor.parts import NAME, info
+from nektoids.editor.probe import level_view, ring_radii
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
 TIP = {
     Tool.ADD: "Add a part",
@@ -120,6 +128,7 @@ TIP = {
     MainView.PREVIEW: "Run preview",
     Drawer.PARTS: "Parts",
     Drawer.TOOLS: "Tools",
+    Drawer.SENSE: "Sense",
     Drawer.OBJECTIVES: "Objectives",
     Drawer.INSIDE: "Inside",
     Drawer.SCORE: "Score",
@@ -521,6 +530,52 @@ def _draw_view_switch(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) 
         pygame.draw.circle(screen, ink, (cx + 14, cy), 2.5)
 
 
+def _draw_sense(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Sense (D-058): the level small, its obstacles, its lights and their rings, and the probe,
+    the swimmer the Run preview runs at, to drag and turn."""
+    area = pygame.Rect(SENSE_MAP)
+    pygame.draw.rect(screen, SHADOW, area, border_radius=6)
+    if scene.level is not None and scene.probe is not None:
+        level, pose = scene.level, scene.probe.pose
+        view, arena = level_view(level, SENSE_MAP), level.arena
+        screen.set_clip(area)
+        for disc in arena.obstacles:
+            pygame.draw.circle(
+                screen, OBSTACLE, view.to_screen(disc.x, disc.y), disc.radius * view.scale
+            )
+        for radius in ring_radii(level):
+            for x, y in arena.light_xy:
+                pygame.draw.circle(screen, RING, view.to_screen(x, y), radius * view.scale, 1)
+        for light in arena.lights:
+            centre = view.to_screen(light.x, light.y)
+            pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
+        body = BASE_RADIUS * view.scale
+        draw_symbol(screen, BODY, view.to_screen(pose.x, pose.y), body, pose.heading, 2)
+        screen.set_clip(None)
+    pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
+    note = (
+        "Drag the swimmer anywhere; the wheel, or L and R, turn it. The main screen runs your"
+        " board there."
+    )
+    draw_note(screen, fonts, note, (area.left, area.bottom + 10), area.width)
+
+
+def draw_note(
+    screen: pygame.Surface, fonts: Fonts, text: str, at: tuple[int, int], width: int
+) -> None:
+    """A dim note, broken into lines no wider than `width` [px], from `at` down."""
+    line, lines = "", []
+    for word in text.split():
+        trial = f"{line} {word}".strip()
+        if line and fonts.small.size(trial)[0] > width:
+            lines.append(line)
+            line = word
+        else:
+            line = trial
+    for k, part in enumerate([*lines, line]):
+        screen.blit(fonts.small.render(part, True, DIM_TEXT), (at[0], at[1] + 20 * k))
+
+
 def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[float, float]]:
     """A hex cell's corners for an icon, pointy side up, as the board draws them."""
     angles = (math.radians(30 + 60 * k) for k in range(6))
@@ -528,8 +583,10 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
 
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The editor's own drawers' rows: Parts, Tools, Navigator."""
+    """The editor's own drawers' rows: Parts, Tools, Navigator; Sense's map."""
     layout, board = scene.layout, scene.board
+    if layout.drawer is Drawer.SENSE:
+        _draw_sense(screen, scene, fonts)
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
