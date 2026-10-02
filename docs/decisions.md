@@ -572,3 +572,27 @@ step (the page is in this session's artifacts). Changing those four numbers chan
 Tests pin the conversion, the order of the levels, the accents 45° apart or more, and contrasts
 for any tint: text on the background 7 or more, dim text and parts on panels 4.5 or more, the
 accents' marks on the board 3 or more (WCAG).
+
+**D-048 — 2026-10-02 — A tutorial can be skipped; while a step leads, only what it asks goes through; its targets are lit by holes in the veil, with no outline; its box keeps clear of the targets, the way between them and the step just done. Amends D-039.**
+Skip, beside Next on every step but the last (where Close does the same), ends the level's
+tutorial and its ghosts; later levels keep their hints, which block nothing. Reopening the level
+from the map starts a skipped tutorial again from its first step, `follow` passing over what the
+board already holds; a finished one stays finished.
+While a step that shows a target is up, `tutorial.allows(step, action)` lets through only the
+means to what it waits for: picking that part and placing it on that cell; a turn tool, or L and
+R, on that part; that tool; the Wire tool and that wire, either way round (D-026); Run. While it
+waits for a win, Run and Edit. A step that waits for Next lets nothing through. The editor asks
+before every action that changes the board, the tool in hand or the screen (pick, place, tool,
+turn, wire, move, delete, undo, redo, Run, Map, Space and Tab included), the run view before
+Edit and Next; a refusal changes nothing, flashes a wrong cell and says "do what the box says,
+or press Skip". Zoom, centring, info boxes and folding the menu are not asked; hints let all
+through. Before this, a dimmed control still worked: Space mid-step jumped to the run.
+Fear's placing steps also light the menu row their part comes from, so what is lit is what is
+live; its last step says "Close, then Next level when you are ready."
+The veil has holes and no frames: a disc round a cell, a rounded rectangle round an area or a
+button. The box keeps clear of the step's targets, of the straight way from each to the next
+(the hand's path, 20 px either side) and of the targets and way of the step just done, when the
+player did something for it, so it covers neither the drag about to happen nor the part just
+placed. It tries beside each target, the last first, then the clear spot of a 16 px grid nearest
+the last target. A step that lights a whole area cannot clear it, and the box sits over its
+corner as before. Pinned for every step of Fear's tutorial in `test_tutorial.py`.

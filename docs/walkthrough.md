@@ -609,18 +609,22 @@ under its own card, which says what it asks (D-042).
 Questions: why does a won run mark its level won every frame it stays won, rather than once? What
 would a player see on the map if the mark were only set when Next level is pressed?
 
-## 12. Tutorials and hints (D-038, D-039)
+## 12. Tutorials and hints (D-038, D-039, D-048)
 
-Read D-038 and D-039 first. `python game/main.py` now opens on Fear, whose tutorial walks the
-player through the board, placing, turning and wiring.
+Read D-038, D-039 and D-048 first. `python game/main.py` now opens on Fear, whose tutorial walks
+the player through the board, placing, turning and wiring; only what each step asks works, and
+Skip ends it.
 
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
   a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
-  wait is over (`met`); `next` is the Next button. `target_rects` finds what a step shows on the
-  screen now open, `box_rect` the first spot beside a target clear of them all.
+  wait is over (`met`); `next` and `skip` are the box's buttons, `restart` the map's way back.
+  `allows(step, Action)` says what a leading step lets through. `target_spots` finds what a step
+  shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
+  (`_crosses`) and the step `before`.
 - [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) dims everything but the
-  targets and draws the box; the ghosts are drawn by `draw.py`, from `EditorScene.ghosts`, which
-  `main.py` sets every frame.
+  targets, through holes with no frame, and draws the box; the ghosts are drawn by `draw.py`,
+  from `EditorScene.ghosts`, which `main.py` sets every frame, with `gate`, which the editor
+  and the run ask before each action that changes something (`_allowed`, `_ask`).
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
   own marks, which is what lets Leave the ring sit beside Visit every light (section 13 makes
   that any state).
@@ -629,7 +633,9 @@ player through the board, placing, turning and wiring.
   failures, crossed and with the eyes looking forward.
 
 Questions: why does `follow` loop, rather than move one step? (Place an eye already turned.) Why
-does the tutorial live in `main.py` rather than in the editor's scene?
+does the tutorial live in `main.py` rather than in the editor's scene? Why does the editor ask
+the tutorial before acting, rather than `main.py` dropping the events a step does not want?
+(Drop a dragged eye on the wrong cell.)
 
 ## 13. Love, and a run that can be lost (D-040)
 
