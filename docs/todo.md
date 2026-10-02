@@ -94,6 +94,11 @@ column and the full-screen map.
       the probe; in the Run, the arena big and the circuit small, or the other way round.
 - [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as
       it would run there; nothing run, nothing scored. A Board / Circuit switch over the editor.
+- [ ] In the Editor's circuit, each eye's meter is a handle: dragged, it sets what the eye
+      reads, and the circuit settles to show what follows; moving the probe gives the eyes back
+      to the light. A test input, not a setting of the board: nothing kept, the run never sees
+      it, the board still holds no continuous parameter (brief: "No sliders"; amends D-016's
+      sensor sliders "behind DEV_VIEW only").
 - [ ] This session's winning boards kept in memory, one for each point of the score; a click
       puts one back on the board, the board left going to Undo. Files can wait: not needed yet.
 - [ ] Fear's tutorial rewritten for the bar: it lights drawers and icons, no more the menu and

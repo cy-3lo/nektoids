@@ -630,7 +630,7 @@ board, and `follow` passed straight over every step already built, so it never r
 again. The other levels keep their boards for the session (D-030); their hints start again.
 Fear's tutorial has 17 steps.
 
-**D-051 — 2026-10-02 — The editor and the run will be rebuilt round an activity bar, drawers and environment tabs. Amends D-025, D-035, D-037; the work is todo §8.**
+**D-051 — 2026-10-02 — The editor and the run will be rebuilt round an activity bar, drawers and environment tabs. Amends D-016, D-025, D-035, D-037; the work is todo §8.**
 An activity bar down the left edge, one icon per drawer; one drawer open at a time, pushing the
 board aside, folded by its icon or an arrow on its edge; every drawer's rows alike (icon, name,
 (i), then a count, a key, a lock or a tick). At the top, what the player works with: in the
@@ -647,7 +647,10 @@ and complement each other. Sense and Inside show one circuit, the board as it ru
 numbers and a level meter by each eye and thruster in accent 1, the colour of their faces; a
 swap button exchanges the drawer and the main screen. In the editor it runs where a probe
 stands, the swimmer put anywhere on the level and turned, nothing run or scored; a Board /
-Circuit switch shows it at any time. This session's winning boards are kept in memory; Files can
+Circuit switch shows it at any time. There, each eye's meter is a handle the player drags to set what
+the eye reads, to see how the circuit answers: a test input, kept nowhere and never seen by the
+run, so the board itself still holds no continuous parameter (brief: "No sliders"). This amends
+D-016, whose sensor sliders were the developer's only. This session's winning boards are kept in memory; Files can
 wait, and a board as text is its own PR (todo §9). The run's controls go to a bar under the
 arena. Fear's tutorial is rewritten with the bar. Decided from three rounds of mockups drawn with
 the game's own palette and renders.
