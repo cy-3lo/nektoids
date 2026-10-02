@@ -40,6 +40,7 @@ from nektoids.editor.shell_draw import draw_end, draw_level_card, draw_map, draw
 from nektoids.editor.tutorial import (
     Context,
     Tutorial,
+    allows,
     box_rect,
     next_rect,
     skip_rect,
@@ -181,6 +182,7 @@ async def main() -> None:
                     guide.next()  # and nothing else
                 else:
                     guide.skip()
+                editor().message = ""  # a refusal from the step before no longer holds
             elif router.screen in (Screen.TITLE, Screen.SPEC, Screen.MAP, Screen.END):
                 shell_event(event)
             elif playing is not None:
@@ -218,6 +220,10 @@ async def main() -> None:
             guide.follow(Context(router.board, editor().tool, router.screen, ended))
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
+        gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
+        editor().gate = gate  # only what the step asks goes through (D-048)
+        if playing is not None:
+            playing.gate = gate
 
         if isinstance(developer, SchematicScene):
             developer.update()

@@ -541,4 +541,5 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F3: editor."
     else:
         text = f"{keys}  Esc: back to the editor."
-    screen.blit(fonts.small.render(text, True, DIM_TEXT), (16, screen.get_height() - 22))
+    text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
+    screen.blit(fonts.small.render(text, True, colour), (16, screen.get_height() - 22))

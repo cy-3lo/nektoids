@@ -9,7 +9,8 @@ or a list of them, which the overlay leaves lit while it dims the rest: an area 
 part faces a way, a tool is taken, a wire runs from one cell to another, the run starts, or the
 run is won. A step with no target is a hint: nothing is dimmed. A step with nothing to wait for
 waits for Next. The first level's tutorial leads; later levels only hint (D-039). Skip ends a
-tutorial; reopening its level from the map starts it again (D-048).
+tutorial; reopening its level from the map starts it again (D-048). While a step leads, only the
+means to what it waits for go through (`allows`); the editor and the run ask before they act.
 Pure Python, no pygame: what the step waits for is read from a `Context`, the screen's
 geometry from the layouts.
 """
@@ -20,7 +21,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from nektoids.editor import arena_layout
-from nektoids.editor.layout import SCREEN, Layout, LevelButton, Rect, Tool, View
+from nektoids.editor.layout import SCREEN, TURNS, Layout, LevelButton, Rect, Tool, View
 from nektoids.editor.router import Screen
 from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
@@ -32,6 +33,7 @@ PAD = 14  # inside the box [px]
 BUTTON = (84, 28)  # Next, and Skip left of it, at the box's foot [px]
 BUTTON_GAP = 8  # between Skip and Next [px]
 GAP = 14  # between the target and the box [px]
+REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 RUN_TARGETS = {
     "arena": arena_layout.ARENA_AREA,
     "timeline": arena_layout.TIMELINE,
@@ -54,6 +56,18 @@ class Step:
     say: tuple[str, ...]
     show: Mapping | list | None = None  # a target or a list of them; None: a hint, nothing dimmed
     until: Mapping | None = None  # None: Next only
+
+
+@dataclass(frozen=True)
+class Action:
+    """What the player asks for that would change the board, the tool in hand or the screen.
+    `verb`: pick, place, tool, turn, wire, move, delete, undo, redo, run, map, edit, next."""
+
+    verb: str
+    kind: Kind | None = None  # pick, place
+    cell: Cell | None = None  # place, turn, move, delete; one end of a wire
+    other: Cell | None = None  # the other end of a wire
+    tool: Tool | None = None
 
 
 @dataclass(frozen=True)
@@ -113,6 +127,39 @@ class Tutorial:
         """On past every step whose wait is over: the player did what it asked."""
         while self.step is not None and self.step.until and met(self.step.until, context):
             self.index += 1
+
+
+def allows(step: Step | None, action: Action) -> bool:
+    """Whether `step` lets `action` through (D-048). No step, or a hint, lets all through. A step
+    that leads lets through only the means to what it waits for: picking that part (from the
+    menu or by its key) and placing it on that cell; a turn tool, or L and R, on that part; that
+    tool; the Wire tool and that wire, either way round (D-026); Run. While it waits for a win,
+    running and going back to edit. A step that waits for Next lets nothing through. Zoom, the
+    view's centre, info boxes and folding the menu change none of this, and are not asked."""
+    if step is None or step.show is None:
+        return True
+    until, verb = step.until or {}, action.verb
+    if "placed" in until:
+        kind, cell = Kind(until["placed"]["kind"]), _cell(until["placed"]["cell"])
+        return (
+            (verb == "pick" and action.kind is kind)
+            or (verb == "tool" and action.tool is Tool.ADD)
+            or (verb == "place" and action.kind is kind and action.cell == cell)
+        )
+    if "facing" in until:
+        cell = _cell(until["facing"]["cell"])
+        return (verb == "tool" and action.tool in TURNS) or (verb == "turn" and action.cell == cell)
+    if "tool" in until:
+        return verb == "tool" and action.tool is Tool(until["tool"])
+    if "wired" in until:
+        ends = {_cell(until["wired"]["from"]), _cell(until["wired"]["to"])}
+        wire = verb == "wire" and {action.cell, action.other} == ends
+        return wire or (verb == "tool" and action.tool is Tool.WIRE)
+    if "screen" in until:
+        return verb == "run" and Screen(until["screen"]) is Screen.RUN
+    if "outcome" in until:
+        return verb in ("run", "edit")
+    return False
 
 
 def met(until: Mapping, context: Context) -> bool:

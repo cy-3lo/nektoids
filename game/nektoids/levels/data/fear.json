@@ -41,7 +41,7 @@
         "say": ["The palette holds the tools, and at its", "foot Run, which sets the swimmer going."]
       },
       {
-        "show": {"cell": [2, -1]},
+        "show": [{"menu": "eye"}, {"cell": [2, -1]}],
         "until": {"placed": {"kind": "eye", "cell": [2, -1]}},
         "say": [
           "The faint shapes show where each part goes",
@@ -58,7 +58,7 @@
         ]
       },
       {
-        "show": {"cell": [1, 1]},
+        "show": [{"menu": "eye"}, {"cell": [1, 1]}],
         "until": {"placed": {"kind": "eye", "cell": [1, 1]}},
         "say": [
           "Now the second eye, on this cell: pick the",
@@ -71,12 +71,12 @@
         "say": ["This one looks back and to the right:", "press Turn right, or R, twice."]
       },
       {
-        "show": {"cell": [1, -2]},
+        "show": [{"menu": "thruster"}, {"cell": [1, -2]}],
         "until": {"placed": {"kind": "thruster", "cell": [1, -2]}},
         "say": ["Thrusters push the way they point, forward", "already. Put one on this cell..."]
       },
       {
-        "show": {"cell": [-1, 2]},
+        "show": [{"menu": "thruster"}, {"cell": [-1, 2]}],
         "until": {"placed": {"kind": "thruster", "cell": [-1, 2]}},
         "say": ["...and the other one here."]
       },
@@ -109,7 +109,10 @@
       },
       {
         "show": {"run": "objectives"},
-        "say": ["That is fear, Braitenberg's vehicle 2a.", "Next level, when you are ready."]
+        "say": [
+          "That is fear, Braitenberg's vehicle 2a.",
+          "Close, then Next level when you are ready."
+        ]
       }
     ]
   }

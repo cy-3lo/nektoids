@@ -16,8 +16,6 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 ## 2. The levels themselves
 
-- [ ] The tutorial: in a step that shows a target, only what the step asks for answers: the
-      target, the keys that do the same, and Next. Today the rest is dimmed but still live.
 - [ ] The tutorial: light each target with a soft spot of light, one per target, instead of
       the rectangle cut in the veil and its outline (`tutorial_draw.py`).
 - [ ] Tutorial 2, aggression (crossed: charges the light). Visit the light.

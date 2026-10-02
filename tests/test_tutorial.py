@@ -3,8 +3,10 @@
 from nektoids.editor.layout import SCREEN, Tool, centred_view, contains, make_layout
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
+    Action,
     Context,
     Tutorial,
+    allows,
     box_rect,
     met,
     next_rect,
@@ -128,3 +130,54 @@ def test_skip_sits_left_of_next_both_inside_the_box():
     assert skip[0] + skip[2] < nxt[0] and skip[1] == nxt[1]
     for x, y, w, h in (skip, nxt):
         assert 100 <= x and x + w <= 460 and 100 <= y and y + h <= 220
+
+
+ANYTHING = [
+    Action("pick", kind=Kind.EYE),
+    Action("place", kind=Kind.EYE, cell=(2, -1)),
+    Action("tool", tool=Tool.WIRE),
+    Action("turn", cell=(2, -1)),
+    Action("wire", cell=(2, -1), other=(1, -2)),
+    Action("move", cell=(2, -1)),
+    Action("delete", cell=(2, -1)),
+    *(Action(verb) for verb in ("undo", "redo", "run", "map", "edit", "next")),
+]
+
+
+def test_a_leading_step_lets_through_only_the_means_to_what_it_waits_for():
+    steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
+    place = steps[3]  # an eye on (2, -1)
+    assert allows(place, Action("pick", kind=Kind.EYE))
+    assert allows(place, Action("place", kind=Kind.EYE, cell=(2, -1)))
+    assert not allows(place, Action("place", kind=Kind.EYE, cell=(1, 1)))  # another cell
+    assert not allows(place, Action("pick", kind=Kind.THRUSTER))
+    assert not any(allows(place, Action(verb)) for verb in ("run", "map", "undo", "redo"))
+    assert not allows(place, Action("tool", tool=Tool.WIRE))
+    turn = steps[4]  # the eye on (2, -1) to face NW
+    assert allows(turn, Action("tool", tool=Tool.TURN_LEFT))
+    assert allows(turn, Action("tool", tool=Tool.TURN_RIGHT))  # four turns right get there too
+    assert allows(turn, Action("turn", cell=(2, -1)))
+    assert not allows(turn, Action("turn", cell=(1, 1)))
+    wire = steps[9]  # the upper eye to the upper thruster
+    assert allows(wire, Action("tool", tool=Tool.WIRE))
+    assert allows(wire, Action("wire", cell=(1, -2), other=(2, -1)))  # either way round (D-026)
+    assert not allows(wire, Action("wire", cell=(2, -1), other=(-1, 2)))
+    run, watch = steps[11], steps[12]
+    assert allows(run, Action("run")) and not allows(run, Action("map"))
+    assert allows(watch, Action("run")) and allows(watch, Action("edit"))
+    assert not allows(watch, Action("next"))
+
+
+def test_a_step_that_waits_for_next_lets_nothing_through_and_a_hint_lets_all():
+    steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
+    for waits_for_next in (steps[0], steps[1], steps[2], steps[13]):
+        assert not any(allows(waits_for_next, action) for action in ANYTHING)
+    hint = Tutorial.from_dict(LEVELS["Love"].tutorial).steps[0]
+    assert all(allows(hint, action) for action in ANYTHING)
+    assert all(allows(None, action) for action in ANYTHING)  # no tutorial, or over
+
+
+def test_a_placing_step_lights_the_menu_row_its_part_comes_from():
+    for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:
+        if step.until and "placed" in step.until:
+            assert {"menu": step.until["placed"]["kind"]} in step.show

@@ -34,6 +34,7 @@ selection. Every refusal flashes the cell and puts the reason in the status line
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 import pygame
 
@@ -65,6 +66,7 @@ from nektoids.editor.layout import (
     view_button_at,
     zoom,
 )
+from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Board, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
     SQRT3,
@@ -134,6 +136,9 @@ class EditorScene:
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
         self.info: Kind | None = None  # the part whose info box is open
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
+        self.gate: Callable[[Action], bool] | None = (
+            None  # what the tutorial lets through; main.py's
+        )
 
     def update(self) -> None:
         """Once per frame."""
@@ -189,11 +194,9 @@ class EditorScene:
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
             self._enter()
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
-            self._cancel()
-            self.request = "run"
+            self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # LEVEL_KEYS[MAP]
-            self._cancel()
-            self.request = "map"
+            self._ask("map")
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             digit = (DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9
             kinds = [k for _, group in MENU_GROUPS for k in group if k in self.layout.kinds]
@@ -281,8 +284,7 @@ class EditorScene:
     def _press(self, pos: tuple[int, int]) -> None:
         level = level_button_at(self.layout, pos)
         if level is not None:
-            self._cancel()
-            self.request = level.value  # "run" or "map"
+            self._ask(level.value)  # "run" or "map"
             return
         tool = tool_at(self.layout, pos)
         if tool is not None:
@@ -344,6 +346,19 @@ class EditorScene:
         if self.pointed is not None:
             self._add(self.pointed)
 
+    def _ask(self, request: str) -> None:
+        """Run or the map, for main.py, if the tutorial lets it through."""
+        if self._allowed(Action(request)):
+            self._cancel()
+            self.request = request
+
+    def _allowed(self, action: Action, cell: Cell | None = None) -> bool:
+        """Whether the tutorial's step lets `action` through (D-048); if not, say so."""
+        if self.gate is None or self.gate(action):
+            return True
+        self._refuse(REFUSAL, cell)
+        return False
+
     def _cancel(self) -> None:
         self.picked, self.dragging = None, False
         self.source, self.ghost, self.pressed = None, None, None
@@ -354,6 +369,8 @@ class EditorScene:
 
     def _view_button(self, button: ViewButton) -> None:
         if button is ViewButton.PAN:
+            if not self._allowed(Action("tool", tool=Tool.PAN)):
+                return
             self._cancel()
             self.tool = Tool.PAN
             return
@@ -375,6 +392,8 @@ class EditorScene:
 
     def _edit(self, button: EditButton) -> None:
         """Undo or redo one step; a gesture under way ends first, and counts as a step."""
+        if not self._allowed(Action(button.value)):
+            return
         self._cancel()
         self._keep()
         step = self.history.undo if button is EditButton.UNDO else self.history.redo
@@ -391,12 +410,16 @@ class EditorScene:
 
     def _choose(self, tool: Tool) -> None:
         """Take a tool, from its button or its key; a turn tool turns the selected part at once."""
+        if not self._allowed(Action("tool", tool=tool)):
+            return
         self._cancel()
         self.tool = tool
         if tool in TURNS and self.selected is not None:
             self._turn(self.board.nodes[self.selected].cell, TURNS[tool])
 
     def _pick(self, kind: Kind) -> None:
+        if not self._allowed(Action("pick", kind=kind)):
+            return
         self._cancel()
         self.tool = Tool.ADD
         if self.board.remaining(kind) == 0:
@@ -407,6 +430,8 @@ class EditorScene:
     def _add(self, cell: Cell) -> None:
         if self.picked is None:
             self._refuse("pick a component in the menu first", None)
+            return
+        if not self._allowed(Action("place", kind=self.picked, cell=cell), cell):
             return
         result = self.board.place(self.picked, cell)
         if isinstance(result, Refused):
@@ -448,6 +473,9 @@ class EditorScene:
         self._update_ghost()
 
     def _connect(self, first_id: int, second_id: int, cell: Cell) -> None:
+        ends = self.board.nodes[first_id].cell, self.board.nodes[second_id].cell
+        if not self._allowed(Action("wire", cell=ends[0], other=ends[1]), cell):
+            return  # keep the source: try another target
         result = self.board.connect(*self.board.orient(first_id, second_id))
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)  # keep the source: try another target
@@ -468,6 +496,8 @@ class EditorScene:
             self._refuse("click an eye or a thruster", cell)
             return
         self.selected = node.id
+        if not self._allowed(Action("turn", cell=cell), cell):
+            return
         result = self.board.rotate(node.id, steps)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
@@ -475,6 +505,8 @@ class EditorScene:
             self.message = ""
 
     def _grab(self, cell: Cell) -> None:
+        if not self._allowed(Action("move", cell=cell), cell):
+            return
         node = self.board.node_at(cell)
         if node is None:
             self._refuse("drag a component", cell)
@@ -494,6 +526,8 @@ class EditorScene:
             self.message = ""
 
     def _delete(self, cell: Cell, pos: tuple[int, int]) -> None:
+        if not self._allowed(Action("delete", cell=cell), cell):
+            return
         node, wire = self._delete_target(cell, pos)
         if wire is not None:
             self.board.remove_wire(wire)
