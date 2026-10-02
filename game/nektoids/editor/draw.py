@@ -61,6 +61,7 @@ from nektoids.editor.palette import (
     GREYED,
     GRID_LINE,
     HOVER,
+    LIT,
     LOCK_RING,
     OUTSIDE,
     OUTSIDE_LINE,
@@ -371,10 +372,11 @@ def _centre(view: View, cell: Cell) -> tuple[float, float]:
 def _draw_menu(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     layout, board = scene.layout, scene.board
     pygame.draw.rect(screen, PANEL, layout.menu_area)
+    ink = LIT if "menu" in scene.lit else DIM_TEXT
     for title, (x, y, _, h) in layout.group_titles:
         caret = "caret-right" if title in scene.folded else "caret-down"
-        fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, DIM_TEXT)
-        text = fonts.text.render(title.upper(), True, DIM_TEXT)
+        fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
+        text = fonts.text.render(title.upper(), True, ink)
         screen.blit(text, (x + 16, y + (h - text.get_height()) // 2))
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
@@ -415,15 +417,18 @@ def _draw_palette(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     for button, rect in layout.level_buttons:  # Run lit: what the board is built for
         draw_button(screen, fonts, rect, LEVEL_ICON[button], button is LevelButton.RUN)
     for title, (x, y, _, _) in layout.palette_titles:
-        draw_title(screen, fonts, title, (x, y))
+        draw_title(screen, fonts, title, (x, y), lit="palette" in scene.lit)
     # The colour picker keeps its place, inactive until colours carry a meaning.
     for rect in layout.swatches:
         pygame.draw.rect(screen, SWATCH_OFF, rect, border_radius=3)
 
 
-def draw_title(screen, fonts: Fonts, title: str, topleft, height: int = PALETTE_TITLE) -> None:
-    """A section's title, as every view writes them: upper case, dimmed, centred in `height`."""
-    text = fonts.text.render(title.upper(), True, DIM_TEXT)
+def draw_title(
+    screen, fonts: Fonts, title: str, topleft, height: int = PALETTE_TITLE, lit: bool = False
+) -> None:
+    """A section's title, as every view writes them: upper case, dimmed, centred in `height`;
+    `lit`, in the accent, while a tutorial step explains its panel (D-050)."""
+    text = fonts.text.render(title.upper(), True, LIT if lit else DIM_TEXT)
     screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 

@@ -271,12 +271,13 @@ def _draw_panel(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     height = screen.get_height()
     pygame.draw.rect(screen, PANEL, (PANEL_LEFT, 0, PANEL_WIDTH, height))
     pygame.draw.line(screen, RULE, (PANEL_LEFT, 0), (PANEL_LEFT, height), 2)
-    draw_title(screen, fonts, "Controls", TITLE_AT)
+    draw_title(screen, fonts, "Controls", TITLE_AT, lit="controls" in scene.lit)
     elapsed = f"{scene.clock.seconds:.1f} / {scene.level.time_limit:g} s"
     shown = fonts.text.render(elapsed, True, DIM_TEXT)
     right = PANEL_LEFT + PANEL_WIDTH - MARGIN
     screen.blit(shown, shown.get_rect(midright=(right, TITLE_AT[1] + PALETTE_TITLE // 2)))
-    draw_title(screen, fonts, "Your wins" if _shows_wins(scene) else "Inside", INSIDE_AT)
+    lower = "Your wins" if _shows_wins(scene) else "Inside"
+    draw_title(screen, fonts, lower, INSIDE_AT, lit=bool({"inside", "wins"} & scene.lit))
     for y in RULES:
         pygame.draw.line(
             screen, RULE, (PANEL_LEFT + MARGIN, y), (PANEL_LEFT + PANEL_WIDTH - MARGIN, y)
@@ -355,7 +356,7 @@ def _draw_score(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     """Each objective: its name, so many met of so many, a tick once all are, and a bar filling
     up, all red if it lost the run; then the time left, its bar running down, red once up."""
     x, y, _, _ = SCORE_AREA
-    draw_title(screen, fonts, "Objectives", (x + MARGIN, y))
+    draw_title(screen, fonts, "Objectives", (x + MARGIN, y), lit="objectives" in scene.lit)
     rows = scene.counts()
     if not rows:
         none = fonts.small.render("None in this arena yet.", True, DIM_TEXT)

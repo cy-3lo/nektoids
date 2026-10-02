@@ -14,6 +14,7 @@ from nektoids.editor.tutorial import (
     guided,
     met,
     next_rect,
+    panels,
     skip_rect,
     target_rects,
     target_spots,
@@ -81,11 +82,11 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     assert tutorial.step.until == {"screen": "run"}
     tutorial.follow(context(screen=Screen.RUN))
     for shown in ("controls", "objectives", "inside"):  # the run held still: Next
-        assert tutorial.step.show == {"run": shown} and tutorial.holds_run
+        assert tutorial.step.show == {"run": shown} and tutorial.explains
         tutorial.next()
-    assert tutorial.step.until == {"outcome": "won"} and not tutorial.holds_run  # Play
+    assert tutorial.step.until == {"outcome": "won"} and not tutorial.explains  # Play
     tutorial.follow(context(screen=Screen.RUN, outcome=Outcome.WON))
-    assert tutorial.step.show == {"run": "wins"} and tutorial.holds_run  # the score, last
+    assert tutorial.step.show == {"run": "wins"} and tutorial.explains  # the score, last
     tutorial.next()
     assert tutorial.step is None and not tutorial.leads
     assert [g.facing for g in tutorial.ghosts][:2] == [NW, SW]
@@ -271,3 +272,13 @@ def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
     first, *later = arenas()
     assert guided(first.tutorial) and not any(guided(level.tutorial) for level in later)
     assert not guided(None)
+
+
+def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    expected = {1: {"menu"}, 2: {"palette"}, 3: set(), 11: set(), 12: {"controls"}, 15: set()}
+    for index, names in expected.items():
+        tutorial.index = index
+        assert panels(tutorial) == names, index
+    tutorial.index = len(tutorial.steps) - 1
+    assert panels(tutorial) == {"wins"} and panels(None) == frozenset()

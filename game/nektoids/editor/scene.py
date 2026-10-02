@@ -136,6 +136,9 @@ class EditorScene:
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
         self.info: Kind | None = None  # the part whose info box is open
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
+        self.lit: frozenset[str] = (
+            frozenset()
+        )  # panels a tutorial step explains: "menu"... main.py's
         self.gate: Callable[[Action], bool] | None = (
             None  # what the tutorial lets through; main.py's
         )

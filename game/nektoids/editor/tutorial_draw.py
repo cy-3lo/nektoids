@@ -25,6 +25,7 @@ from nektoids.editor.tutorial import LINE, PAD, Tutorial, next_rect, skip_rect
 
 HALO = 6  # the lit margin round the target [px]
 HOLE_RADIUS = 10  # the corners of a hole round an area or a button [px]
+OUTLINE = 2  # round a panel a step explains (D-050) [px]
 
 
 def draw_tutorial(
@@ -42,13 +43,11 @@ def draw_tutorial(
         veil = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         veil.fill(VEIL)
         for rect, cell in spots:
-            hole = pygame.Rect(rect)
-            if cell:  # the hexagon's corner circle, and the margin
-                pygame.draw.circle(veil, CLEAR, hole.center, hole.height // 2 + HALO)
-            else:
-                lit = hole.inflate(2 * HALO, 2 * HALO)
-                pygame.draw.rect(veil, CLEAR, lit, border_radius=HOLE_RADIUS)
+            _hole(veil, CLEAR, rect, cell, 0)
         screen.blit(veil, (0, 0))
+        if tutorial.explains:  # it explains a panel: outlined, besides dimming the rest
+            for rect, cell in spots:
+                _hole(screen, LIT, rect, cell, OUTLINE)
     frame = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, frame, border_radius=8)
     pygame.draw.rect(screen, LIT if spots else RULE, frame, 2, border_radius=8)
@@ -64,6 +63,17 @@ def draw_tutorial(
         _button(screen, fonts, button, "Close" if last else "Next", pointer)
     if not last:  # on the last step, Close does what Skip would
         _button(screen, fonts, skip_rect(box), "Skip", pointer)
+
+
+def _hole(surface: pygame.Surface, colour, rect: Rect, cell: bool, width: int) -> None:
+    """A target's shape, filled (`width` 0) or outlined: a disc round a cell, round its corners and
+    the margin; a rounded rectangle round anything else."""
+    hole = pygame.Rect(rect)
+    if cell:
+        pygame.draw.circle(surface, colour, hole.center, hole.height // 2 + HALO, width)
+    else:
+        lit = hole.inflate(2 * HALO, 2 * HALO)
+        pygame.draw.rect(surface, colour, lit, width, border_radius=HOLE_RADIUS)
 
 
 def _button(screen: pygame.Surface, fonts: Fonts, rect: Rect, text: str, pointer) -> None:

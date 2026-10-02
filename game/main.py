@@ -44,6 +44,7 @@ from nektoids.editor.tutorial import (
     answer,
     box_rect,
     guided,
+    panels,
     target_rects,
     target_spots,
 )
@@ -235,9 +236,11 @@ async def main() -> None:
         editor().ghosts = guide.ghosts if guide is not None else ()
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         editor().gate = gate  # only what the step asks goes through (D-048)
+        editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
         if playing is not None:
             playing.gate = gate
-            if guide is not None and guide.holds_run:
+            playing.lit = panels(guide)
+            if guide is not None and guide.explains:
                 playing.clock.paused = True  # an explaining step holds the run still (D-050)
 
         if isinstance(developer, SchematicScene):

@@ -148,6 +148,7 @@ class ArenaScene:
         self.request: str | None = None  # "edit" or "next": for main.py, which clears it
         self.gate: Callable[[Action], bool] | None = None  # what the tutorial lets through
         self.message = ""  # why the last press did nothing, until the next one
+        self.lit: frozenset[str] = frozenset()  # panels a tutorial step explains: main.py's
         self.index = 0
         self.clock = Clock()
         self.circuit = Circuit(board, CIRCUIT_AREA, CIRCUIT_MARGIN, body=True)

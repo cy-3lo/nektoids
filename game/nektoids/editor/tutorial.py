@@ -127,9 +127,9 @@ class Tutorial:
         return self.step is not None and self.step.show is not None
 
     @property
-    def holds_run(self) -> bool:
-        """Whether this step holds the run still: it leads and waits for Next, explaining what is
-        on the screen; the run goes on when a step asks for Play (D-050)."""
+    def explains(self) -> bool:
+        """Whether this step explains what it shows: it leads and waits for Next. It holds the run
+        still, which goes on when a step asks for Play, and outlines its panels (D-050)."""
         return self.leads and self.waits_for_next
 
     @property
@@ -157,6 +157,16 @@ class Tutorial:
         """On past every step whose wait is over: the player did what it asked."""
         while self.step is not None and self.step.until and met(self.step.until, context):
             self.index += 1
+
+
+def panels(tutorial: Tutorial | None) -> frozenset[str]:
+    """The panels a step explains, outlined and their titles lit (D-050): the areas and run parts
+    it shows, if it leads and waits for Next. A step that asks for an action only dims."""
+    if tutorial is None or not tutorial.explains:
+        return frozenset()
+    show = tutorial.step.show
+    shows = show if isinstance(show, list) else [show]
+    return frozenset(one.get("area") or one.get("run") for one in shows) - {None}
 
 
 def guided(data: Mapping | None) -> bool:
