@@ -505,3 +505,12 @@ level, the sandbox included; it is returned to by Back from the map, Edit after 
 those show no card. At startup LEVEL 1.1 keeps the title card alone. A line too wide for the card
 is shrunk to fit: the sandbox's title is. `router.py` gains `Screen.SPEC`, which `open` and `next`
 lead to and `begin` leaves; `shell_draw.py` draws the card.
+
+**D-043 — 2026-10-02 — A light is reached at 1.05 times the sum of the radii, 2.1 u for a base body. Amends D-029.**
+At 1.2 (2.4 u), a swimmer that lost Love for touching the light still stood 0.4 u from it, rim
+to rim, two fifths of its radius: the banner said it touched what the player saw it miss. At 1.05
+the gap is 0.1 u. Visits and touches keep one definition of reaching, so a level that asks to
+touch the light (One light) and one that forbids it (Love) agree on what touching is.
+Consequences: crossed wiring in One light wins at 8.64 s (8.59 s before), the drive in In the
+shadow at 3.76 s (3.70 s); Love's winner rests 1.6 u clear of reaching (1.3 u before). At 3.6 u/s
+a tick moves 0.03 u against a reach of 2.1 u: still no visit falls between ticks.

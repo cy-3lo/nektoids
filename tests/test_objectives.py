@@ -32,8 +32,8 @@ def at(*points):
     return np.array(points, dtype=float).reshape(-1, 2)
 
 
-def test_a_swimmer_reaches_a_light_at_1_2_times_touching_distance_and_not_before():
-    assert REACHED == pytest.approx(2.4)  # 1.2 diameters, for a base body (D-029)
+def test_a_swimmer_reaches_a_light_at_1_05_times_touching_distance_and_not_before():
+    assert REACHED == pytest.approx(2.1)  # 1.05 diameters, for a base body (D-029, D-043)
     near, far = REACHED - 1e-9, REACHED + 1e-9  # either side of the edge
     assert reaching(ARENA, at([30.0 - near, 20.0]), ONE).tolist() == [[True, False]]
     assert reaching(ARENA, at([30.0 - far, 20.0]), ONE).tolist() == [[False, False]]
@@ -116,7 +116,7 @@ def test_touching_the_light_breaks_keep_off_and_loses_the_run_whatever_else_stan
     clear = begin(level, at([20.0, 20.0]), ONE)
     assert keep_off.count(clear[0]) == (1, 1) and not keep_off.lost(clear[0])
     assert outcome(level, clear, 1, DT) is Outcome.WON  # alone, met from the start
-    touched = follow(level, clear, at([30.0 - REACHED, 20.0]), ONE, DT)
+    touched = follow(level, clear, at([30.0 - REACHED + 1e-9, 20.0]), ONE, DT)  # just in
     away = follow(level, touched, at([20.0, 20.0]), ONE, DT)  # gone again: it still touched
     assert keep_off.count(away[0]) == (0, 1) and keep_off.lost(away[0])
     limit = round(level.time_limit / DT)
