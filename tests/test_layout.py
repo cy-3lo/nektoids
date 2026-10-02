@@ -26,6 +26,7 @@ from nektoids.editor.layout import (
     Tool,
     ViewButton,
     cell_at,
+    centred_on,
     centred_view,
     chapter_row_at,
     contains,
@@ -39,9 +40,11 @@ from nektoids.editor.layout import (
     menu_item_at,
     moved_view,
     on_fold_handle,
+    overview_view,
     palette_target_at,
     pan,
     setting_row_at,
+    shown_frame,
     tab_at,
     tool_at,
     view_button_at,
@@ -145,7 +148,7 @@ def test_tools_runs_its_tools_then_edit_then_file_and_the_navigator_holds_the_vi
     ):
         _, y, _, h = sections[title]
         assert all(y + h <= rect[1] for _, rect in rows)  # under its title
-    assert [title for title, _ in NAVIGATOR.section_titles] == ["View"]
+    assert [title for title, _ in NAVIGATOR.section_titles] == ["View", "Overview"]
     assert [button for button, _ in NAVIGATOR.view_buttons] == [
         b
         for b in ViewButton
@@ -314,3 +317,18 @@ def test_files_has_a_row_per_win_under_its_label_in_the_editors_bar():
             files.drawer_area, rect[:2]
         )
     assert make_layout(Drawer.FILES).win_rows == () and LAYOUT.win_rows == ()
+
+
+def test_navigators_overview_frames_what_the_main_screen_shows_and_a_press_moves_it_there():
+    for env in Env:
+        layout = make_layout(Drawer.NAVIGATOR, env=env)
+        x, y, w, h = layout.overview
+        last = layout.view_buttons[-1][1]
+        assert y > last[1] + last[3] and contains(layout.drawer_area, (x + w, y + h))
+    small = overview_view(list(hex_disc(2)), NAVIGATOR.overview)
+    frame = shown_frame(NAVIGATOR, VIEW, small)
+    centre_cell = to_pixel((0, 0), small.size, small.origin)
+    assert contains(frame, (round(centre_cell[0]), round(centre_cell[1])))  # the view shows it
+    moved = centred_on(NAVIGATOR, VIEW, small, (round(centre_cell[0]) + 10, round(centre_cell[1])))
+    assert moved.size == VIEW.size and moved.origin[0] < VIEW.origin[0]  # the board slides left
+    assert make_layout(Drawer.PARTS).overview is None

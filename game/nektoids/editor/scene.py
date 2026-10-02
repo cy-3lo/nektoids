@@ -56,6 +56,7 @@ from nektoids.editor.layout import (
     Tool,
     ViewButton,
     cell_at,
+    centred_on,
     centred_view,
     contains,
     edit_button_at,
@@ -65,6 +66,7 @@ from nektoids.editor.layout import (
     make_layout,
     menu_item_at,
     moved_view,
+    overview_view,
     pan,
     tool_at,
     view_button_at,
@@ -131,6 +133,7 @@ class EditorScene(Frame):
         self._probed = None  # the board as the probe was made for it
         self.probing = False  # the probe held in Sense's map, following the mouse
         self.holding: int | None = None  # the eye whose meter's knob the mouse holds
+        self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
@@ -330,6 +333,8 @@ class EditorScene(Frame):
         self.frame_track(pos)
         if self.probing and self.probe is not None:
             self._probe_to(pos)
+        if self.overviewing:
+            self._overview_to(pos)
         self._hold(pos)
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
@@ -351,6 +356,10 @@ class EditorScene(Frame):
         if self._on_map(pos):
             self.probing = True
             self._probe_to(pos)
+            return
+        if self.layout.overview is not None and contains(self.layout.overview, pos):
+            self.overviewing = True
+            self._overview_to(pos)
             return
         won = win_row_at(self.layout, pos)
         if won is not None:
@@ -415,13 +424,18 @@ class EditorScene(Frame):
         shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.SENSE
         return turns and shown and self.probe is not None
 
+    def _overview_to(self, pos: tuple[int, int]) -> None:
+        """The view, at its zoom, centred where the mouse is on Navigator's overview (D-060)."""
+        small = overview_view(sorted(self.board.cells), self.layout.overview)
+        self.view = centred_on(self.layout, self.view, small, pos)
+
     def _hold(self, pos: tuple[int, int]) -> None:
         """The eye whose knob is held reads what its meter says at the mouse: a test input."""
         if self.holding is not None and self.probe is not None:
             self.probe.hold(self.holding, self.probe.level_at(self.holding, pos[1]))
 
     def _release(self, pos: tuple[int, int]) -> None:
-        self.probing, self.holding = False, None
+        self.probing, self.holding, self.overviewing = False, None, False
         self.moving, self.panning_from = None, None
         if self.pressed is not None:
             self._end_wiring()

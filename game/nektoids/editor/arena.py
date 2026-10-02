@@ -79,6 +79,7 @@ from nektoids.editor.layout import (
     make_layout,
     view_button_at,
 )
+from nektoids.editor.probe import level_view
 from nektoids.editor.recording import Recording
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS
@@ -175,6 +176,7 @@ class ArenaScene(Frame):
         self.show_polar = False  # the polar plot of the light at the eyes (developer)
         self.hand = False  # dragging moves the view, not a swimmer
         self.panning: tuple[int, int] | None = None  # where the hand last was, while it drags
+        self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.seek_to: int | None = None  # the tick the run races ahead to, if it does
         self.scrubbing = False  # the timeline held down: the run follows the mouse along it
         self.pointer = (0, 0)  # where the mouse is [px]
@@ -437,7 +439,9 @@ class ArenaScene(Frame):
         elif event.type == pygame.MOUSEMOTION:
             self.pointer = event.pos
             self.frame_track(event.pos)
-            if self.scrubbing:
+            if self.overviewing:
+                self._overview_to(event.pos)
+            elif self.scrubbing:
                 self.seek(timeline_time(self.layout, event.pos[0], self.level.time_limit))
             elif self.panning is not None:
                 dx, dy = event.pos[0] - self.panning[0], event.pos[1] - self.panning[1]
@@ -447,7 +451,7 @@ class ArenaScene(Frame):
                 self._drag(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = self.panning = None
-            self.scrubbing = False
+            self.scrubbing = self.overviewing = False
         elif event.type == pygame.MOUSEWHEEL and self.developer:
             self._turn(float(event.y))
         elif event.type == pygame.KEYDOWN:
@@ -457,6 +461,10 @@ class ArenaScene(Frame):
         """A click: the frame's, Navigator's rows, the banner, the controls, the timeline, then
         the arena: to inspect, or, for a developer, to drag the swimmer about."""
         if self.frame_press(pos):
+            return
+        if self.layout.overview is not None and contains(self.layout.overview, pos):
+            self.overviewing = True
+            self._overview_to(pos)
             return
         view = view_button_at(self.layout, pos)
         button = (
@@ -560,6 +568,17 @@ class ArenaScene(Frame):
         step = ARROW_PAN * self.view.scale
         dx, dy = {left: (-step, 0.0), right: (step, 0.0), up: (0.0, -step)}.get(key, (0.0, step))
         self._look(pan_view(self.view, dx, dy))
+
+    def _overview_to(self, point: tuple[int, int]) -> None:
+        """The view, at its zoom, centred where the mouse is on Navigator's overview (D-060)."""
+        wx, wy = level_view(self.level, self.layout.overview).to_world(*point)
+        x, y, w, h = self.arena_area
+        self._look(
+            ArenaView(
+                self.view.scale,
+                (x + w / 2 - self.view.scale * wx, y + h / 2 + self.view.scale * wy),
+            )
+        )
 
     def _drag(self, point: tuple[int, int]) -> None:
         """Move the dragged swimmer under the mouse, outside the obstacles."""

@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel
+from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel, to_pixel
 
 Rect = tuple[int, int, int, int]  # x, y, width, height [px]
 
@@ -37,6 +37,7 @@ SWITCH = 36  # the accented switch at its foot, square [px]; the main view's but
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
+OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
@@ -215,6 +216,7 @@ class Layout:
     board_area: Rect  # the main screen: the board, or in the run the arena
     controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
     view_switch: tuple[tuple[MainView, Rect], ...]  # in the editor, over the main screen's corner
+    overview: Rect | None  # Navigator's: the whole board, or level, small (D-060)
     caption_at: tuple[int, int]  # top-left corner of the level's title and spec, under the tabs
     status_at: tuple[int, int]  # top-left corner of the status line
 
@@ -309,6 +311,7 @@ def make_layout(
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
         controls_area=(left, main, width - left, CONTROLS_HEIGHT) if env is Env.RUN else None,
+        overview=rows.overview,
         view_switch=tuple(
             (view, (width - 8 - (2 - k) * (SWITCH + 6) + 6, TOP + 8, SWITCH, SWITCH))
             for k, view in enumerate(MainView)
@@ -328,6 +331,7 @@ class _Rows:
         self.items: list[tuple[object, Rect]] = []
         self.sections: list[tuple[str, Rect]] = []
         self.groups: list[tuple[str, Rect]] = []
+        self.overview: Rect | None = None
 
     def of(self, kind: type) -> list:
         return [(what, rect) for what, rect in self.items if isinstance(what, kind)]
@@ -363,6 +367,10 @@ class _Rows:
         for what in ViewButton:
             if what is not ViewButton.RAYS or env is Env.RUN:
                 self._row(what)
+        self.y += SECTION_GAP
+        self._title("Overview", self.sections)
+        width = DRAWER_WIDTH - 2 * MARGIN
+        self.overview = (BAR_WIDTH + MARGIN, self.y + 4, width, OVERVIEW_HEIGHT)
 
     def label(self, title: str) -> None:
         self._title(title, self.sections)
@@ -485,6 +493,29 @@ def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
 
 def level_button_at(layout: Layout, point: tuple[int, int]) -> LevelButton | None:
     return next((b for b, rect in layout.level_buttons if contains(rect, point)), None)
+
+
+def overview_view(cells: Sequence[Cell], area: Rect) -> View:
+    """The whole board, its cells, seen small in Navigator's overview (D-060)."""
+    return fitted_view(area, [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells], 1.0)
+
+
+def shown_frame(layout: Layout, view: View, small: View) -> Rect:
+    """What the main screen shows of the board, as a frame in the overview seen through
+    `small`."""
+    x, y, w, h = layout.board_area
+    k = small.size / view.size
+    left = small.origin[0] + k * (x - view.origin[0])
+    top = small.origin[1] + k * (y - view.origin[1])
+    return (round(left), round(top), round(k * w), round(k * h))
+
+
+def centred_on(layout: Layout, view: View, small: View, point: tuple[int, int]) -> View:
+    """The view, at its zoom, centred where a press at `point` falls in the overview."""
+    px = (point[0] - small.origin[0]) / small.size
+    py = (point[1] - small.origin[1]) / small.size
+    x, y, w, h = layout.board_area
+    return View(view.size, (x + w / 2 - view.size * px, y + h / 2 - view.size * py))
 
 
 def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:

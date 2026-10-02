@@ -63,6 +63,8 @@ from nektoids.editor.layout import (
     View,
     ViewButton,
     WinRow,
+    overview_view,
+    shown_frame,
     visible_cells,
 )
 from nektoids.editor.palette import (
@@ -557,29 +559,63 @@ def _win_name(won) -> str:
     return f"{won.score.ticks * DT:.2f} s, {won.score.parts} parts"
 
 
+def draw_level_map(
+    screen: pygame.Surface,
+    level,
+    area: pygame.Rect,
+    pose: tuple[float, float, float],
+    frame: pygame.Rect | None = None,
+) -> None:
+    """The level seen whole and small in `area`: its obstacles, its lights and their rings, and
+    the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the main screen shows of it,
+    outlined (Sense's map, the run's overview, D-058, D-060)."""
+    view, arena = level_view(level, tuple(area)), level.arena
+    pygame.draw.rect(screen, SHADOW, area, border_radius=6)
+    screen.set_clip(area)
+    for disc in arena.obstacles:
+        pygame.draw.circle(
+            screen, OBSTACLE, view.to_screen(disc.x, disc.y), disc.radius * view.scale
+        )
+    for radius in ring_radii(level):
+        for x, y in arena.light_xy:
+            pygame.draw.circle(screen, RING, view.to_screen(x, y), radius * view.scale, 1)
+    for light in arena.lights:
+        pygame.draw.circle(
+            screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
+        )
+    x, y, heading = pose
+    draw_symbol(screen, BODY, view.to_screen(x, y), BASE_RADIUS * view.scale, heading, 2)
+    if frame is not None:
+        pygame.draw.rect(screen, LIT, frame, 1)
+    screen.set_clip(None)
+    pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
+
+
+def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Navigator's overview (D-060): the whole board small, its parts as dots, and a frame round
+    what the main screen shows; a press or a drag there moves the view."""
+    area = pygame.Rect(scene.layout.overview)
+    pygame.draw.rect(screen, SHADOW, area, border_radius=6)
+    small = overview_view(sorted(scene.board.cells), scene.layout.overview)
+    screen.set_clip(area)
+    for cell in scene.board.cells:
+        pygame.draw.polygon(screen, ZONE, _hexagon(small, cell))
+    for node in scene.board.nodes.values():
+        pygame.draw.circle(screen, COMPONENT, _centre(small, node.cell), 0.45 * small.size)
+    pygame.draw.rect(screen, LIT, shown_frame(scene.layout, scene.view, small), 1)
+    screen.set_clip(None)
+    pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
+
+
 def _draw_sense(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Sense (D-058): the level small, its obstacles, its lights and their rings, and the probe,
     the swimmer the Run preview runs at, to drag and turn."""
     area = pygame.Rect(SENSE_MAP)
-    pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     if scene.level is not None and scene.probe is not None:
-        level, pose = scene.level, scene.probe.pose
-        view, arena = level_view(level, SENSE_MAP), level.arena
-        screen.set_clip(area)
-        for disc in arena.obstacles:
-            pygame.draw.circle(
-                screen, OBSTACLE, view.to_screen(disc.x, disc.y), disc.radius * view.scale
-            )
-        for radius in ring_radii(level):
-            for x, y in arena.light_xy:
-                pygame.draw.circle(screen, RING, view.to_screen(x, y), radius * view.scale, 1)
-        for light in arena.lights:
-            centre = view.to_screen(light.x, light.y)
-            pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
-        body = BASE_RADIUS * view.scale
-        draw_symbol(screen, BODY, view.to_screen(pose.x, pose.y), body, pose.heading, 2)
-        screen.set_clip(None)
-    pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
+        draw_level_map(screen, scene.level, area, scene.probe.pose)
+    else:
+        pygame.draw.rect(screen, SHADOW, area, border_radius=6)
+        pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
     note = (
         "Drag the swimmer anywhere; the wheel, or L and R, turn it. The main screen runs your"
         " board there."
@@ -616,6 +652,8 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         _draw_sense(screen, scene, fonts)
     if layout.drawer is Drawer.FILES:
         _draw_files(screen, scene, fonts)
+    if layout.overview is not None:
+        _draw_overview(screen, scene, fonts)
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")

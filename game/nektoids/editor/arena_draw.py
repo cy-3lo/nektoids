@@ -65,6 +65,7 @@ from nektoids.editor.draw import (
     draw_button,
     draw_drawer,
     draw_info,
+    draw_level_map,
     draw_note,
     draw_row,
     draw_status_line,
@@ -97,6 +98,7 @@ from nektoids.editor.palette import (
     SHADOW,
     TEXT,
 )
+from nektoids.editor.probe import level_view
 from nektoids.editor.schematic_draw import draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
@@ -353,6 +355,14 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
         _draw_wiring(screen, scene, fonts)
     elif drawer is Drawer.SCORE:
         _draw_wins(screen, scene, fonts)
+    if scene.layout.overview is not None:
+        area = pygame.Rect(scene.layout.overview)
+        small = level_view(scene.level, scene.layout.overview)
+        left, bottom, right, top = shown(scene.view, scene.arena_area)
+        (x0, y0), (x1, y1) = small.to_screen(left, top), small.to_screen(right, bottom)
+        frame = pygame.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
+        pose = (*scene.pos[0], float(scene.heading[0]))
+        draw_level_map(screen, scene.level, area, pose, frame)
     for button, rect in scene.layout.view_buttons:
         active = (button is ViewButton.PAN and scene.hand) or (
             button is ViewButton.RAYS and scene.show_rays
