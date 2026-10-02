@@ -16,7 +16,7 @@ tooltip naming each button and its key; the timeline, the part of the time allow
 in a lighter grey, the part played brighter, and a red mark where the run ended (D-033); the
 objectives, each counted (so many of so many) and with a bar, red if it lost the run, and the
 time left, its bar running down to zero, red if it runs out; the selected swimmer's wiring on
-its body, plain: the parts shaded by their rate and the beads on the wires, no numbers. The
+its body, plain: the beads on the wires and a level meter by each eye and thruster, no numbers. The
 status line under the arena recalls the keys. With P, an inset over the arena shows the light at
 its eyes as a polar plot in the arena's frame: E(phi) for each eye, a circle for the scale, and
 a tick along each eye's look as long as what it reads. The plot is exact; the map is smoothed.
@@ -402,7 +402,7 @@ def _draw_row(
 
 
 def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """The selected swimmer's wiring on its body: parts shaded by rate, beads, no numbers."""
+    """The selected swimmer's wiring on its body: beads, a meter by each eye and thruster."""
     x, y, w, h = CIRCUIT_AREA
     if scene.selected is None:
         note = "Click the swimmer to see its wiring"

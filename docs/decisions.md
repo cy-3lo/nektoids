@@ -629,3 +629,42 @@ fresh board, a fresh undo history, its tutorial at step 1. Restarting the tutori
 board, and `follow` passed straight over every step already built, so it never really started
 again. The other levels keep their boards for the session (D-030); their hints start again.
 Fear's tutorial has 17 steps.
+
+**D-051 — 2026-10-02 — The editor and the run will be rebuilt round an activity bar, drawers and environment tabs. Amends D-016, D-025, D-035, D-037; the work is todo §8.**
+The rule: in the Editor the main screen shows the board, as the Diagram view or the Run preview;
+in the Run it shows the level; drawers never take it. An activity bar down the left edge, one
+icon per drawer; one drawer open at a time, pushing the board aside, folded by its icon or an
+arrow on its edge; every drawer's rows alike (icon, name, (i), then a count, a key, a lock or a
+tick). At the top, what the player works with: in the editor Parts (puzzle-piece), which is also
+the parts' encyclopedia, Tools (screwdriver-wrench), Files (floppy-disk), Sense (stethoscope),
+Navigator (compass); in the Run Objectives (list- check), Inside (magnifying-glass), Score
+(trophy), Navigator. At the foot, in both: Settings (gear), Chapters (map), then an accented
+switch between the environments, Editor and Run, which are also tabs over the content (no
+Builder tab until there is a builder): Run (play) in the editor, back (diagram-project) in the
+Run. Chapters, not "Map", replaces the full-screen map. Settings holds fast forward's speed, key
+hints, tooltips' delay, Fear's tutorial again, and Sound and Music once there is sound; not the
+palette. Tools stay in their drawer while the ring round a selected cell (todo §7) brings them
+to the hand; Parts and the ring both hand out parts, and complement each other. Sense and Inside
+show one circuit, the board as it runs, with no numbers and a level meter by each eye and
+thruster in accent 1, the colour of their faces; the two mirror each other: in the editor, Sense
+puts the Run preview on the main screen and the level, with the probe, in the drawer; in the
+Run, Inside keeps the arena on the main screen and the preview, small, in the drawer. In the
+editor it runs where a probe stands, the swimmer put anywhere on the level and turned, nothing
+run or scored; two icon buttons over the editor switch views at any time: the Diagram view, a
+hex grid, and this Run preview, an operator with two wires in at ±45° and one out, a bead on
+each. There, each eye's meter is a handle the player drags to set what the eye reads, to see how
+the circuit answers: a test input, kept nowhere and never seen by the run, so the board itself
+still holds no continuous parameter (brief: "No sliders"). This amends D-016, whose sensor
+sliders were the developer's only. This session's winning boards are kept in memory; Files can
+wait, and a board as text is its own PR (todo §9). The run's controls go to a bar under the
+arena. Fear's tutorial is rewritten with the bar. Decided from three rounds of mockups drawn
+with the game's own palette and renders.
+
+**D-052 — 2026-10-02 — In every circuit view, parts keep their colour; a level meter by each eye and thruster shows its rate, all meters alike, in accent 1. Amends D-017's shading.**
+The beads and the meters already show the rates, so shading each part by its rate said it twice.
+Wherever the circuit is drawn (the run's Inside, the developer view, and the Sense and Inside
+drawers to come), a part keeps its fill, and each eye and thruster has a meter beside it: 1.0 hex
+size tall, 10 px wide, its centre 0.86 hex size to the right of the part's, past any part's reach
+whichever way it turns, filled from the foot up to its rate in accent 1 (`METER`), the colour of
+the part's face. The developer view's thruster bars become these meters, on the eyes too, opposite
+its sliders; it keeps its names and numbers.

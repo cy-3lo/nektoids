@@ -167,8 +167,8 @@ GHOST_FILL = P.raised  # a tutorial's ghost part, under the real one
 DOOMED = P.muted  # what a Delete click would remove
 
 # The circuit: rates and beads, in the developer view and the run's column
-IDLE = mix(P.muted, P.dim, 0.5)  # a part at rate 0
-FULL = P.bright  # a part at RATE_MAX
+FULL = P.bright  # a rate at RATE_MAX: the developer's sliders, the timeline
+METER = P.accent1.mid  # a part's level meter in a circuit: the colour of its face (D-052)
 WIRE_OFF = P.line  # a wire that carries nothing
 BEAD = P.bright  # a bead on a wire at RATE_MAX
 BEAD_OFF = P.muted  # ... and on a wire that barely carries anything

@@ -65,3 +65,61 @@ From Camille's notes (`ebc4abb`), then a design for touch screens.
 - [ ] Put a part on a cell a wire crosses, and have the wire route round it, as a wire drawn
       after the part already does. Today `Board.place` refuses ("a wire runs here"). This
       reopens D-007 and D-011 (routes never change on their own), so it needs a decision first.
+
+## 8. An activity bar, drawers and environments (D-051)
+
+Mockups of every drawer, drawn with the game's own palette and renders, are in this session's
+artifacts ("Nektoids Activity Bar", round 3). It replaces the menu, the palette, the run view's
+column and the full-screen map.
+
+The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
+preview; in the Run it shows the level. Drawers never take the main screen.
+
+- [ ] One row style for every drawer: icon, name, (i), then a count, a key, a lock or a tick.
+- [ ] An activity bar down the left edge, one icon per drawer, named when the mouse rests on it;
+      the open one lighter, an accent bar on its edge. One drawer open at a time, pushing the
+      board aside; folded by its icon again or the arrow on its edge.
+      - Top, editor: Parts (puzzle-piece; also the parts' encyclopedia, a row opening into its
+        entry), Tools (screwdriver-wrench), Files (floppy-disk), Sense (stethoscope), Navigator
+        (compass). Top, Run: Objectives (list-check), Inside (magnifying-glass), Score (trophy),
+        Navigator.
+      - Foot, both: Settings (gear), Chapters (map; not "Map"), then the accented switch: Run
+        (play) in the editor, back to the editor (diagram-project) in the Run.
+      - Chapters replaces the full-screen map. Settings: fast forward's speed, key hints,
+        tooltips' delay, Fear's tutorial again; Sound and Music once there is sound. No palette.
+      - The Run's controls (play, a step, fast forward, the timeline) in a bar under the arena.
+- [ ] Environments as tabs over the content: Editor and Run (a Builder later, no tab until then).
+      Switched by a tab, or by the accented switch.
+- [ ] The Run preview, one drawing for Sense (Editor) and Inside (Run): beads on the wires,
+      parts in their own colour, no numbers, a level meter by each eye and thruster (D-052). The
+      two mirror each other: in the Editor, Sense puts the Run preview on the main screen (by
+      default; the Diagram view through its icon) and the level, with the probe, in the drawer;
+      in the Run, Inside keeps the arena on the main screen and the preview, small, in the
+      drawer.
+- [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as
+      it would run there; nothing run, nothing scored. Two icon buttons over the editor switch
+      views, as big as the Run button: the Diagram view (three hex cells) and the Run preview
+      (an operator, two wires in at ±45° and one out, a bead on each, in the wires' colour).
+- [ ] In the Run preview, each eye's meter is a handle, its knob as big as a bead: dragged, it
+      sets what the eye reads, and the circuit settles to show what follows; moving the probe
+      gives the eyes back to the light. A test input, not a setting of the board: nothing kept,
+      the run never sees it, the board still holds no continuous parameter (brief: "No sliders";
+      amends D-016's sensor sliders "behind DEV_VIEW only").
+- [ ] This session's winning boards kept in memory, one for each point of the score; a click
+      puts one back on the board, the board left going to Undo. Files can wait: not needed yet.
+- [ ] Fear's tutorial rewritten for the bar: it lights drawers and icons, no more the menu and
+      the palette (D-039).
+
+## 9. A board as text (its own PR)
+
+- [ ] A board as a short line of ASCII to copy, paste, keep in a text file and open again: the
+      board of D-024 packed into bits and spelled out. Its language is a decision first.
+      - Letters (base 32, like a licence key) or words from a list (2048 words, 11 bits each)?
+      - Length, roughly: six parts and six wires with their paths kept exactly come to under
+        200 bits, about 35 letters or 17 words; less if the paths are drawn again in wire order,
+        which gives the same routes unless Move or Delete was used (D-024).
+      - A check against typing mistakes, Shannon-like: redundant check symbols, so a mistyped
+        line is refused (or even corrected) rather than loading another board. A version mark.
+      - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Wait
+        and see on the web build.
+      - The same mechanism as the level passkeys (§0): a word that brings a state back.
