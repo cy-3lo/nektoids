@@ -6,9 +6,14 @@ one places it there, facing its default way. Round a part, its actions: turn lef
 (eyes and thrusters, 60° at once, D-009), wire, move, delete. Wire is chosen as a part is
 clicked, so the next click on another part wires the two, either way round (D-026), and the
 focus goes to that part; a drag from a part moves it, its wires following while they find a
-path (D-011). A click on the focused cell, or off the zone, drops the focus; a click on a wire
-focuses it, with Delete alone in its ring. While the mouse is on Delete, what it would remove is
-darkened. A part dragged from Parts still lands where it is dropped.
+path (D-011). A click on the focused cell, or off the zone, drops the focus. While the mouse is
+on Delete, what it would remove is darkened. A part dragged from Parts still lands where it is
+dropped.
+
+Write and Delete (D-068), a pair atop the main screen, E to go from one to the other: all the
+above is Write. In Delete there is no focus and no ring: a click removes the part under it with
+its wires, or the wire under it, darkened while the mouse is on it; Enter does the same on the
+keyboard's focus. Esc, or any action of Write, goes back to Write.
 
 Keyboard: the arrows move the focus from cell to cell; Enter opens its ring, the arrows go round
 it and Enter takes the icon chosen; a part's number places it on the focused cell. Round a part
@@ -18,7 +23,7 @@ part and Enter puts it down. Esc, or a right click, goes back one step: from a g
 ring, from the ring to nothing. H takes the hand, which drags the view (D-013); the arrows drag
 it too.
 
-Undo and Redo (D-027), in the main screen's corner, also Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on
+Undo and Redo (D-027), beside Write and Delete, also Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on
 a Mac): one step is one gesture, from press to release, so a whole drag goes back at once. Space
 asks `main.py` for a run, Tab opens Chapters: the scene sets `request` and `main.py` acts on it.
 A part's info disc in Parts opens a box that says what the part does; the next click or key
@@ -40,6 +45,7 @@ from nektoids.editor.layout import (
     KEY_ALIASES,
     MAX_HEX,
     MENU_GROUPS,
+    MODE_KEY,
     SENSE_MAP,
     TOOL_KEYS,
     TURNS,
@@ -50,6 +56,7 @@ from nektoids.editor.layout import (
     EditButton,
     Layout,
     MainView,
+    Mode,
     Tool,
     ViewButton,
     board_extent,
@@ -65,6 +72,7 @@ from nektoids.editor.layout import (
     main_view_at,
     make_layout,
     menu_item_at,
+    mode_button_at,
     moved_view,
     overview_view,
     pan,
@@ -140,8 +148,6 @@ class EditorScene(Frame):
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.focused: Cell | None = None  # the cell the ring is round, the keyboard's too (D-068)
-        self.focused_wire: Wire | None = None  # or the wire, clicked
-        self.wire_at = (0, 0)  # ... where it was clicked [px]
         self.ring_open = False  # the ring shows round the focus
         self.ring_keys = False  # the keyboard opened it: the arrows go round it
         self.choice: int | None = None  # the ring's icon the keyboard is on; None: nothing
@@ -151,6 +157,7 @@ class EditorScene(Frame):
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
+        self.mode = Mode.WRITE  # what a click on the board does: Write, or Delete (D-068)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
         self.dragging = False  # Add: mouse held since picking from the menu
@@ -318,6 +325,9 @@ class EditorScene(Frame):
         if self.focused is None:
             self._focus_key(self._start_cell())
             return
+        if self.mode is Mode.DELETE:
+            self._erase(self.focused, self._focus_pos())
+            return
         if self.carrying:
             self.carrying, self.tool = False, Tool.ADD
             return
@@ -362,7 +372,9 @@ class EditorScene(Frame):
 
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
-        if key in KEY_TOOLS:
+        if key == MODE_KEY:
+            self._set_mode(Mode.DELETE if self.mode is Mode.WRITE else Mode.WRITE)
+        elif key in KEY_TOOLS:
             self._choose(KEY_TOOLS[key])
         elif key in KEY_VIEWS:
             self._view_button(KEY_VIEWS[key])
@@ -422,6 +434,10 @@ class EditorScene(Frame):
         if won is not None:
             self._put_back(won)
             return
+        mode = mode_button_at(self.layout, pos)
+        if mode is not None:
+            self._set_mode(mode)
+            return
         edit = edit_button_at(self.layout, pos)
         if edit is not None:
             self._edit(edit)
@@ -458,6 +474,9 @@ class EditorScene(Frame):
         if self.tool is Tool.PAN:
             self.panning_from = pos
             return
+        if self.mode is Mode.DELETE:
+            self._erase(self.hover, pos)
+            return
         if self.picked is not None:  # a part picked in Parts: it goes where the click falls
             if self.pointed is not None:
                 self._add(self.pointed)
@@ -466,10 +485,7 @@ class EditorScene(Frame):
         if cell is not None and self.board.node_at(cell) is not None:
             self.press_cell = cell  # a click, or the start of a drag: the release tells
             return
-        wire = self._wire_near(pos, cell)
-        if wire is not None:
-            self._focus_wire(wire, pos)
-        elif cell is None:
+        if cell is None:
             self._focus(None)  # off the zone: nothing focused
         else:
             self._click_empty(cell)
@@ -633,6 +649,8 @@ class EditorScene(Frame):
             self.tool = Tool.ADD if self.tool is Tool.PAN else Tool.PAN
             return
         self.main = MainView.DIAGRAM  # a tool is for the board
+        if tool is not Tool.DELETE:
+            self.mode = Mode.WRITE  # writing again
         if tool is Tool.ADD:
             if self.focused is not None and self._focused_node() is None:
                 self.ring_open, self.ring_keys, self.choice = True, True, 0
@@ -648,7 +666,7 @@ class EditorScene(Frame):
         if not self._allowed(Action("pick", kind=kind)):
             return
         self._cancel()
-        self.main = MainView.DIAGRAM  # a part is for the board
+        self.main, self.mode = MainView.DIAGRAM, Mode.WRITE  # a part is for the board
         if self.board.remaining(kind) == 0:
             self._refuse("none left", None)
             return
@@ -697,20 +715,33 @@ class EditorScene(Frame):
             self.message = ""
 
     def doomed(self) -> tuple[int | None, list[Wire]]:
-        """What the ring's Delete would remove, while the mouse or the keyboard is on it, darkened
-        before it happens: the focused part and its wires, or the focused wire."""
+        """What a deletion would remove, darkened before it happens: in Delete, what is under the
+        mouse, or on the keyboard's focus; in Write, the focused part and its wires, while the
+        mouse or the keyboard is on its ring's Delete."""
+        if self.mode is Mode.DELETE:
+            if self.keyboard and self.focused is not None:
+                return self._under(self.focused, self._focus_pos())
+            if not contains(self.layout.board_area, self.mouse):
+                return None, []
+            return self._under(self.hover, self.mouse)
         slot = self.ring_hover
         if self.keyboard and self.ring_keys and self.choice is not None:
             ring = self.ring()
             slot = ring[self.choice] if self.choice < len(ring) else None
         if slot is None or slot.what is not Tool.DELETE:
             return None, []
-        if self.focused_wire is not None:
-            return None, [self.focused_wire]
-        node = self._focused_node()
-        if node is None or node.locked:
-            return None, []
-        return node.id, [w for w in self.board.wires if node.id in (w.source, w.target)]
+        return self._under(self.focused, self._focus_pos())
+
+    def _under(self, cell: Cell | None, pos: tuple[int, int]) -> tuple[int | None, list[Wire]]:
+        """What deleting at `pos`, on `cell`, removes: the part there and its wires, unless the
+        level placed it; or, on a wire, that wire."""
+        node = self.board.node_at(cell) if cell is not None else None
+        if node is not None:
+            if node.locked:
+                return None, []
+            return node.id, [w for w in self.board.wires if node.id in (w.source, w.target)]
+        wire = self._wire_near(pos, cell)
+        return None, [] if wire is None else [wire]
 
     # Helpers
 
@@ -733,18 +764,14 @@ class EditorScene(Frame):
     # The focus and its ring (D-068)
 
     def ring(self) -> list[Slot]:
-        """The ring of icons round the focused cell, or round the focused wire, as drawn; none
-        while it is closed or the Run preview shows."""
-        if self.main is not MainView.DIAGRAM or not self.ring_open:
+        """The ring of icons round the focused cell, as drawn; none while it is closed, in
+        Delete, or while the Run preview shows."""
+        shown = self.main is MainView.DIAGRAM and self.mode is Mode.WRITE and self.ring_open
+        if not shown or self.focused is None:
             return []
         size, origin = self.view.size, self.view.origin
-        if self.focused_wire is not None:
-            centre, items = self.wire_at, (Tool.DELETE,)
-        elif self.focused is not None:
-            centre = to_pixel(self.focused, size, origin)
-            items = offer(self.board, self.focused, self.layout.kinds)
-        else:
-            return []
+        centre = to_pixel(self.focused, size, origin)
+        items = offer(self.board, self.focused, self.layout.kinds)
         return slots(items, centre, size, self.layout.kinds, self.layout.board_area)
 
     def _focused_node(self) -> Node | None:
@@ -752,14 +779,14 @@ class EditorScene(Frame):
 
     def _blank(self) -> bool:
         """Whether the keyboard's way round the ring stops at "nothing": round a part's actions,
-        and round a wire, not round the parts to place."""
-        return self.focused_wire is not None or self._focused_node() is not None
+        not round the parts to place."""
+        return self._focused_node() is not None
 
     def _focus(self, cell: Cell | None, keys: bool = False) -> None:
         """Focus `cell` (None: nothing), its ring open: round a part, Wire chosen for the mouse,
         nothing for the keyboard; round an empty cell, its parts, the first chosen."""
         self._drop_gesture()
-        self.focused, self.focused_wire = cell, None
+        self.focused = cell
         self.ring_open, self.ring_keys = cell is not None, keys
         node = self._focused_node()
         self.selected = None if node is None else node.id
@@ -773,10 +800,17 @@ class EditorScene(Frame):
         self._focus(cell, keys=True)
         self.ring_open = False
 
-    def _focus_wire(self, wire: Wire, pos: tuple[int, int]) -> None:
-        """A wire, clicked: focused, a ring with Delete only where the click fell."""
+    def _set_mode(self, mode: Mode) -> None:
+        """Write or Delete (D-068): what a click on the board does. The hand is put down, the
+        ring closes; the keyboard's focus stays where it is."""
+        if mode is Mode.DELETE and not self._allowed(Action("tool", tool=Tool.DELETE)):
+            return
+        kept = self.focused if self.keyboard else None
         self._focus(None)
-        self.focused_wire, self.wire_at, self.ring_open = wire, pos, True
+        if kept is not None:
+            self._focus_key(kept)
+        self.mode, self.tool, self.main = mode, Tool.ADD, MainView.DIAGRAM
+        self.message = ""
 
     def _use(self, slot: Slot) -> None:
         """An icon of the ring, clicked or chosen with Enter: a part placed, or an action."""
@@ -791,6 +825,7 @@ class EditorScene(Frame):
             return
         if not self._allowed(Action("place", kind=kind, cell=cell), cell):
             return
+        self.mode = Mode.WRITE
         result = self.board.place(kind, cell)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
@@ -799,12 +834,8 @@ class EditorScene(Frame):
         self._focus(cell, keys=keys)
 
     def _act(self, tool: Tool) -> None:
-        """An action on the focused part, or on the focused wire: a turn at once, the part's
-        Wire or Move chosen, or it deleted."""
-        if self.focused_wire is not None:
-            if tool is Tool.DELETE:
-                self._delete_wire(self.focused_wire)
-            return
+        """An action on the focused part: a turn at once, its Wire or Move chosen, or it
+        deleted."""
         node = self._focused_node()
         if node is None:
             self._refuse("no part here", None)
@@ -887,9 +918,9 @@ class EditorScene(Frame):
             self._refuse(result.reason, node.cell)
             return
         self.message = ""
-        if self.ring_keys:  # the keyboard: its ring closed, so that a second Enter places nothing
+        if self.keyboard:  # the focus stays, its ring closed: a second Enter places nothing
             self._focus_key(node.cell)
-        else:
+        elif self.mode is Mode.WRITE:  # the cell's parts at hand
             self._focus(node.cell)
 
     def _delete_wire(self, wire: Wire) -> None:
@@ -898,12 +929,24 @@ class EditorScene(Frame):
             return
         self.board.remove_wire(wire)
         self.message = ""
-        self._focus(None)
+
+    def _erase(self, cell: Cell | None, pos: tuple[int, int]) -> None:
+        """Delete, clicked at `pos` or entered on the focus: the part on `cell` with its wires,
+        or the wire there."""
+        node_id, wires = self._under(cell, pos)
+        if node_id is not None:
+            self._delete_part(self.board.nodes[node_id])
+        elif wires:
+            self._delete_wire(wires[0])
+        elif cell is not None and self.board.node_at(cell) is not None:
+            self._refuse("placed by the level", cell)
 
     def _escape(self) -> None:
         """Esc, or a right click: back one step, from a gesture, to the ring, to nothing."""
         if self.tool is Tool.PAN:
             self.tool = Tool.ADD
+        elif self.mode is Mode.DELETE:
+            self.mode = Mode.WRITE
         elif self.carrying or (self.tool is Tool.WIRE and not self.ring_open and self.source):
             self.carrying, self.tool, self.source = False, Tool.ADD, None
             self._update_ghost()
@@ -921,8 +964,8 @@ class EditorScene(Frame):
             return "The arrows carry the part; Enter puts it down."
         if self.tool is Tool.WIRE and not self.ring_open and self.source is not None:
             return "The arrows to the part to wire to, then Enter. Esc gives up."
-        if self.focused_wire is not None:
-            return "Delete the wire from its ring, or press D."
+        if self.mode is Mode.DELETE:
+            return "Click a part to delete it with its wires, or a wire. E or Esc: back to Write."
         node = self._focused_node()
         if node is not None:
             return "Click another part to wire it to this one, drag it to move it; or its ring."

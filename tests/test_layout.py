@@ -12,6 +12,7 @@ from nektoids.editor.layout import (
     LEVEL_KEYS,
     MAX_HEX,
     MIN_HEX,
+    MODE_KEY,
     PALETTE_TOOLS,
     SCREEN,
     TABS_HEIGHT,
@@ -25,6 +26,7 @@ from nektoids.editor.layout import (
     Goal,
     LevelButton,
     MainView,
+    Mode,
     Setting,
     Tool,
     View,
@@ -47,6 +49,7 @@ from nektoids.editor.layout import (
     main_view_at,
     make_layout,
     menu_item_at,
+    mode_button_at,
     moved_view,
     on_fold_handle,
     overview_view,
@@ -146,13 +149,23 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_undo_and_redo_sit_in_the_corner_save_and_load_at_files_foot_and_navigator_the_view():
-    (undo, (ux, uy, uw, uh)), (redo, (rx, _, _, _)) = LAYOUT.edit_buttons  # D-068
-    (_, (vx, vy, _, _)), _ = LAYOUT.view_switch
-    assert (undo, redo) == (EditButton.UNDO, EditButton.REDO) and ux + uw < rx < vx and uy == vy
-    assert edit_button_at(LAYOUT, (ux + 5, uy + 5)) is EditButton.UNDO
-    assert palette_target_at(LAYOUT, (rx + 5, uy + 5)) is EditButton.REDO  # its tooltip
-    assert make_layout(env=Env.RUN).edit_buttons == ()
+def test_write_delete_undo_redo_sit_centred_atop_the_main_screen_save_and_load_in_files():
+    for layout in (LAYOUT, make_layout(None)):  # D-068: centred, a drawer open or not
+        group = [*layout.mode_buttons, *layout.edit_buttons]
+        assert [b for b, _ in group] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
+        rects = [r for _, r in group]
+        for (x, y, w, _), (x2, y2, _, _) in zip(rects, rects[1:], strict=False):
+            assert x + w < x2 and y == y2
+        bx, _, bw, _ = layout.board_area
+        left, right = rects[0][0], rects[-1][0] + rects[-1][2]
+        assert abs((left + right) / 2 - (bx + bw / 2)) <= 1
+        (_, (vx, vy, _, _)), _ = layout.view_switch
+        assert right < vx and rects[0][1] == vy
+    (_, (dx, dy, _, _)), (_, (rx, _, _, _)) = LAYOUT.mode_buttons[1], LAYOUT.edit_buttons[1]
+    assert mode_button_at(LAYOUT, (dx + 5, dy + 5)) is Mode.DELETE
+    assert edit_button_at(LAYOUT, (rx + 5, dy + 5)) is EditButton.REDO
+    assert palette_target_at(LAYOUT, (dx + 5, dy + 5)) is Mode.DELETE  # its tooltip
+    assert make_layout(env=Env.RUN).edit_buttons == make_layout(env=Env.RUN).mode_buttons == ()
     assert [title for title, _ in FILES.section_titles] == ["Wins this session", "File"]
     assert [button for button, _ in FILES.file_buttons] == list(FileButton)
     assert FILES.file_buttons[-1][1][1] + FILES.file_buttons[-1][1][3] <= SCREEN[1]  # its foot
@@ -202,6 +215,7 @@ def test_the_grid_still_fills_the_area_zoomed_out():
 
 def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
     keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
+    keys.append(MODE_KEY)  # Write and Delete in turn (D-068)
     assert len(set(keys)) == len(keys) and all(len(key) == 1 for key in keys)
     assert EDIT_KEYS == {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
     assert (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT]) == ("L", "R")

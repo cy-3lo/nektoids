@@ -16,7 +16,15 @@ from pathlib import Path
 
 import pygame
 
-from nektoids.editor.layout import Drawer, EditButton, FileButton, LevelButton, Tool, ViewButton
+from nektoids.editor.layout import (
+    Drawer,
+    EditButton,
+    FileButton,
+    LevelButton,
+    Mode,
+    Tool,
+    ViewButton,
+)
 from nektoids.graph.board import Kind
 
 FONT_FILE = Path(__file__).resolve().parent.parent / "assets" / "fontawesome" / "fa-solid-900.ttf"
@@ -26,6 +34,8 @@ SIZES = (10, 11, 12, 13, 14, 16, 18, 20, 22, 25, 28, 32, 36, 40, 44)
 # Codepoints from the font's own metadata (icons.yml, Font Awesome Free 6.7.2).
 GLYPH = {
     "eye": 0xF06E,
+    "pencil": 0xF303,
+    "eraser": 0xF12D,
     "angles-up": 0xF102,
     "angles-down": 0xF103,
     "rocket": 0xF135,
@@ -103,6 +113,7 @@ TOOL_ICON = {
 }
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
+MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser"}  # D-068
 FILE_ICON = {FileButton.SAVE: "floppy-disk", FileButton.LOAD: "folder-open"}
 LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.EDIT: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)

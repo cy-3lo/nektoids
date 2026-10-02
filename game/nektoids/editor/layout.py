@@ -34,6 +34,8 @@ BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]; the main view's buttons too
+PAIR_GAP = 2  # between Write and Delete, a pair [px]
+GROUP_GAP = 18  # between that pair and Undo, Redo [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
@@ -85,6 +87,11 @@ TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-c
 class EditButton(Enum):
     UNDO = "undo"
     REDO = "redo"
+
+
+class Mode(Enum):  # what a click on the board does (D-068)
+    WRITE = "write"  # a cell focused, its ring: place, turn, wire, move
+    DELETE = "delete"  # the part clicked removed with its wires, or the wire clicked
 
 
 class LevelButton(Enum):  # the accented switch at the bar's foot, to the other environment
@@ -181,6 +188,7 @@ VIEW_KEYS = {
 }
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
+MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
 # On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F3.
 LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
 DRAWER_KEYS = {Drawer.CHAPTERS: "Tab"}  # Tab opens the levels, as it opened the map
@@ -202,7 +210,8 @@ class Layout:
     section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
     group_titles: tuple[tuple[str, Rect], ...]  # Parts: click one to fold or unfold its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
-    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # undo, redo: the main screen's corner
+    mode_buttons: tuple[tuple[Mode, Rect], ...]  # Write, Delete: centred atop the main screen
+    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # undo, redo: beside them
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # at Files' foot, inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
@@ -295,6 +304,7 @@ def make_layout(
         tabs.append((name, (x, 0, w, TABS_HEIGHT)))
         x += w
     open_ = drawer is not None
+    hand = _hand_buttons(left + (width - left) // 2)
     main = height - STATUS_HEIGHT - (CONTROLS_HEIGHT if env is Env.RUN else 0)  # its foot
     return Layout(
         env=env,
@@ -310,12 +320,8 @@ def make_layout(
         section_titles=tuple(rows.sections),
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
-        edit_buttons=tuple(
-            (button, (width - 8 - (5 - k) * (SWITCH + 6) - 8, TOP + 8, SWITCH, SWITCH))
-            for k, button in enumerate(EditButton)
-        )
-        if env is Env.EDITOR
-        else (),
+        mode_buttons=hand[0] if env is Env.EDITOR else (),
+        edit_buttons=hand[1] if env is Env.EDITOR else (),
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
@@ -339,6 +345,17 @@ def make_layout(
         caption_at=(left + MARGIN, TABS_HEIGHT + 5),
         status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
     )
+
+
+def _hand_buttons(centre: int) -> tuple[tuple, tuple]:
+    """Write and Delete, a pair, then Undo and Redo, centred on the main screen's top edge at
+    `centre` [px] (D-068)."""
+    span = 4 * SWITCH + PAIR_GAP + GROUP_GAP + 6
+    x, y = centre - span // 2, TOP + 8
+    modes = tuple((m, (x + k * (SWITCH + PAIR_GAP), y, SWITCH, SWITCH)) for k, m in enumerate(Mode))
+    x += 2 * SWITCH + PAIR_GAP + GROUP_GAP
+    edits = tuple((b, (x + k * (SWITCH + 6), y, SWITCH, SWITCH)) for k, b in enumerate(EditButton))
+    return modes, edits
 
 
 class _Rows:
@@ -433,14 +450,16 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
 
 def palette_target_at(
     layout: Layout, point: tuple[int, int]
-) -> Drawer | LevelButton | MainView | EditButton | str | None:
-    """What a tooltip would name under `point`: an icon of the bar, a main view's button, undo or
-    redo, or the other environment's tab, by its name, which says what the switch says (D-060)."""
+) -> Drawer | LevelButton | MainView | Mode | EditButton | str | None:
+    """What a tooltip would name under `point`: an icon of the bar, a main view's button, Write
+    or Delete, undo or redo, or the other environment's tab, by its name, which says what the
+    switch says (D-060)."""
     tab = tab_at(layout, point)
     return (
         drawer_button_at(layout, point)
         or level_button_at(layout, point)
         or main_view_at(layout, point)
+        or mode_button_at(layout, point)
         or edit_button_at(layout, point)
         or (tab if tab is not None and tab != layout.env.value else None)
     )
@@ -495,6 +514,10 @@ def view_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:
 
 def edit_button_at(layout: Layout, point: tuple[int, int]) -> EditButton | None:
     return next((b for b, rect in layout.edit_buttons if contains(rect, point)), None)
+
+
+def mode_button_at(layout: Layout, point: tuple[int, int]) -> Mode | None:
+    return next((m for m, rect in layout.mode_buttons if contains(rect, point)), None)
 
 
 def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:

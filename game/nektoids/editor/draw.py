@@ -34,6 +34,7 @@ from nektoids.editor.icons import (
     FILE_ICON,
     KIND_ICON,
     LEVEL_ICON,
+    MODE_ICON,
     TOOL_ICON,
     VIEW_ICON,
     Icons,
@@ -47,6 +48,7 @@ from nektoids.editor.layout import (
     LEVEL_KEYS,
     MARGIN,
     MAX_HEX,
+    MODE_KEY,
     PALETTE_TITLE,
     SCREEN,
     SENSE_MAP,
@@ -59,6 +61,7 @@ from nektoids.editor.layout import (
     FileButton,
     LevelButton,
     MainView,
+    Mode,
     Setting,
     Tool,
     View,
@@ -129,6 +132,8 @@ TIP = {
     ViewButton.RAYS: "Show or hide the light's rays",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
+    Mode.WRITE: "Write: place, turn, wire, move",
+    Mode.DELETE: "Delete: click what goes",
     FileButton.SAVE: "Save: not yet",
     FileButton.LOAD: "Load: not yet",
     LevelButton.RUN: "Run",
@@ -264,8 +269,10 @@ def draw(
     screen.fill(BACKGROUND)
     (main or _draw_board)(screen, scene, fonts)
     _draw_view_switch(screen, scene, fonts)
+    for mode, rect in scene.layout.mode_buttons:  # Write, Delete: the one in use lit (D-068)
+        draw_button(screen, fonts, rect, MODE_ICON[mode], mode is scene.mode)
     can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
-    for button, rect in scene.layout.edit_buttons:  # undo, redo: the main screen's corner
+    for button, rect in scene.layout.edit_buttons:  # undo, redo: beside them
         draw_button(screen, fonts, rect, EDIT_ICON[button], False, can[button])
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
@@ -358,9 +365,11 @@ def _draw_ring(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         else:
             glyph = max(10, round(0.9 * radius))
             fonts.icons.draw(screen, TOOL_ICON[slot.what], slot.at, glyph, TEXT)
-        if scene.settings.key_hints:
+        if scene.settings.key_hints:  # on a dark patch: it may fall on a neighbouring part
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
-            screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
+            at = key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1])))
+            pygame.draw.rect(screen, BAR, at.inflate(4, 0), border_radius=3)
+            screen.blit(key, at)
 
 
 def _draw_wire(
@@ -912,10 +921,12 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         text = TIP[button] + (f" ({key})" if key else "")
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
-    if isinstance(target, MainView | EditButton):  # under its button, at the main screen's top
-        rects = dict(scene.layout.view_switch) | dict(scene.layout.edit_buttons)
+    if isinstance(target, MainView | Mode | EditButton):  # under it, at the main screen's top
+        layout = scene.layout
+        rects = dict(layout.view_switch) | dict(layout.mode_buttons) | dict(layout.edit_buttons)
         x, y, w, h = rects[target]
-        key = EDIT_KEYS.get(target) if scene.settings.key_hints else None
+        keys = EDIT_KEYS | {mode: MODE_KEY for mode in Mode}
+        key = keys.get(target) if scene.settings.key_hints else None
         text = TIP[target] + (f" ({key})" if key else "")
         width = fonts.text.size(text)[0] + 16
         right = min(x + w // 2 + width // 2, SCREEN[0] - 4) - 8
