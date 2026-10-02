@@ -266,8 +266,30 @@ def target_spots(show: Mapping | list | None, screen: Screen, layout: Layout, vi
     area or a part of the run view, cut and outlined on its own edges, "spot" round anything
     else, a button or a menu row (D-048, D-050)."""
     shows = [] if show is None else show if isinstance(show, list) else [show]
-    spots = [(target_rect(one, screen, layout, view), _shape(one)) for one in shows]
+    spots = []
+    for one in shows:
+        if one.get("run") == "arena" and screen is Screen.RUN and layout.env is Env.RUN:
+            spots += _run_page(layout)
+        else:
+            spots.append((target_rect(one, screen, layout, view), _shape(one)))
     return [(rect, shape) for rect, shape in spots if rect is not None]
+
+
+@dataclass(frozen=True)
+class Page:
+    """The run's page as a step explains it (D-062): the Run tab on top, then the level's line
+    and the arena, outlined as one shape."""
+
+    tab: Rect
+
+
+def _run_page(layout: Layout) -> list:
+    """The run's page, its Run tab, the level's line and the arena, and its header, the tabs
+    and the level's line, which the box keeps clear of; the page's hole covers the header's."""
+    x, _, w, _ = layout.board_area
+    bottom = layout.board_area[1] + layout.board_area[3]
+    page, header = (x, 0, w, bottom), (x, 0, w, layout.board_area[1])
+    return [(page, Page(dict(layout.tabs)[Env.RUN.value])), (header, "none")]
 
 
 def _shape(show: Mapping) -> str:

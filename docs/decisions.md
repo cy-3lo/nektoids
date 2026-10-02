@@ -801,3 +801,10 @@ where the step's gate still refuses what it does not ask for. Fear's step to the
 both ways there, the Editor tab, its name lit, and the switch. A tutorial's ghost part, where a
 part goes and which way it faces, is a paler grey shape with no outline. Fear's last step no
 longer names Braitenberg.
+
+**D-062 — 2026-10-02 — When a step explains the run's arena, it outlines the whole Run page: the Run tab, the level's line and the arena.**
+The arena alone, outlined, put the tutorial's box against the outline's top edge. The step now
+outlines the run's page as a folder: the Run tab on top, then the level's line and the arena
+under it (`tutorial.Page`). Its header, the tabs and the level's line, counts as a target the
+box keeps clear of, so the box lies inside the page, under the level's title, with room round
+it.

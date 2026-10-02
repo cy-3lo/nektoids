@@ -21,7 +21,7 @@ from nektoids.editor.palette import (
     TOOLTIP_BG,
     VEIL,
 )
-from nektoids.editor.tutorial import LINE, PAD, Tutorial, next_rect, skip_rect
+from nektoids.editor.tutorial import LINE, PAD, Page, Tutorial, next_rect, skip_rect
 
 HALO = 6  # the lit margin round the target [px]
 HOLE_RADIUS = 10  # the corners of a hole round an area or a button [px]
@@ -70,7 +70,19 @@ def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -
     the margin; a panel on its own edges, square, the outline inside them, so that one at the
     screen's edge stays on it; a rounded rectangle round anything else."""
     hole = pygame.Rect(rect)
-    if shape == "disc":
+    if shape == "none":  # inside another's hole
+        return
+    if isinstance(shape, Page):  # the Run tab on top, the page under it, the outline inside
+        inset = width // 2
+        tx, _, tw, th = shape.tab
+        left, right, top, bottom = hole.left + inset, hole.right - 1 - inset, inset, hole.bottom - 1
+        points = [(tx, top), (tx + tw, top), (tx + tw, th), (right, th), (right, bottom)]
+        points += [(left, bottom), (left, th), (tx, th)]
+        if width:
+            pygame.draw.lines(surface, colour, True, points, width)
+        else:
+            pygame.draw.polygon(surface, colour, points)
+    elif shape == "disc":
         pygame.draw.circle(surface, colour, hole.center, hole.height // 2 + HALO, width)
     elif shape == "panel":
         pygame.draw.rect(surface, colour, hole, width)

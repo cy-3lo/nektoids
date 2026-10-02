@@ -378,3 +378,15 @@ def test_fear_starts_in_the_run_and_sends_the_player_to_the_editor_by_its_tab():
         switch,
     ]
     assert target_rects(ways, Screen.EDIT, LAYOUT, VIEW) == [dict(LAYOUT.tabs)["editor"]]
+
+
+def test_the_runs_page_is_outlined_with_its_tab_and_the_box_keeps_under_its_header():
+    from nektoids.editor.tutorial import Page
+
+    spots = target_spots({"run": "arena"}, Screen.RUN, RUN_LAYOUT, None)
+    (page, shape), (header, none) = spots
+    assert shape == Page(dict(RUN_LAYOUT.tabs)["run"]) and none == "none"  # D-062
+    arena = RUN_LAYOUT.board_area
+    assert page == (arena[0], 0, arena[2], arena[1] + arena[3]) and header[3] == arena[1]
+    box = box_rect([page, header], 3, arena)
+    assert box[1] >= header[3] + GAP and contains(page, box[:2])  # inside, under the title
