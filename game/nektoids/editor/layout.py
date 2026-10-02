@@ -107,7 +107,6 @@ class ViewButton(Enum):
 
 class Drawer(Enum):  # D-051
     PARTS = "parts"  # the parts the level hands out, and what each does
-    TOOLS = "tools"  # the tools, undo and redo, save and load
     FILES = "files"  # this session's winning boards, to put one back (D-059)
     SENSE = "sense"  # the level, small, with the probe the Run preview runs at (D-058)
     INSIDE = "inside"  # the run's: the swimmer's wiring, live
@@ -134,7 +133,7 @@ SENSE_MAP: Rect = (  # the level, small, in Sense, under its label: a square [px
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.SENSE, Drawer.NAVIGATOR),
+    Env.EDITOR: (Drawer.PARTS, Drawer.FILES, Drawer.SENSE, Drawer.NAVIGATOR),  # tools in the ring
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
 }
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
@@ -203,9 +202,8 @@ class Layout:
     section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
     group_titles: tuple[tuple[str, Rect], ...]  # Parts: click one to fold or unfold its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
-    tool_buttons: tuple[tuple[Tool, Rect], ...]  # Tools' rows
-    edit_buttons: tuple[tuple[EditButton, Rect], ...]
-    file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
+    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # undo, redo: the main screen's corner
+    file_buttons: tuple[tuple[FileButton, Rect], ...]  # at Files' foot, inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
     goal_area: Rect | None  # ... at the foot of the open drawer, whichever it is (D-065)
@@ -262,8 +260,6 @@ def make_layout(
     rows = _Rows()
     if drawer is Drawer.PARTS:
         rows.parts(folded, kinds)
-    elif drawer is Drawer.TOOLS:
-        rows.tools()
     elif drawer is Drawer.NAVIGATOR:
         rows.view(env)
     elif drawer is Drawer.SENSE:
@@ -272,6 +268,10 @@ def make_layout(
         rows.label("Wins this session")
         for k in range(wins):
             rows._row(WinRow(k))
+        rows.y = height - FOOT_MARGIN - TITLE_HEIGHT - len(FileButton) * ROW_PITCH  # its foot
+        rows.label("File")
+        for what in FileButton:
+            rows._row(what)
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
         rows.label("The swimmer's wiring")
     elif drawer is Drawer.SCORE:
@@ -310,8 +310,12 @@ def make_layout(
         section_titles=tuple(rows.sections),
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
-        tool_buttons=tuple(rows.of(Tool)),
-        edit_buttons=tuple(rows.of(EditButton)),
+        edit_buttons=tuple(
+            (button, (width - 8 - (5 - k) * (SWITCH + 6) - 8, TOP + 8, SWITCH, SWITCH))
+            for k, button in enumerate(EditButton)
+        )
+        if env is Env.EDITOR
+        else (),
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
@@ -369,13 +373,6 @@ class _Rows:
             self._title(title, self.groups)
             for kind in () if title in folded else shown:
                 self._row(kind)
-            self.y += SECTION_GAP
-
-    def tools(self) -> None:
-        for title, rows in (("Tools", PALETTE_TOOLS), ("Edit", EditButton), ("File", FileButton)):
-            self._title(title, self.sections)
-            for what in rows:
-                self._row(what)
             self.y += SECTION_GAP
 
     def view(self, env: Env) -> None:
@@ -436,14 +433,15 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
 
 def palette_target_at(
     layout: Layout, point: tuple[int, int]
-) -> Drawer | LevelButton | MainView | str | None:
-    """What a tooltip would name under `point`: an icon of the bar, a main view's button, or the
-    other environment's tab, by its name, which says what the switch says (D-060)."""
+) -> Drawer | LevelButton | MainView | EditButton | str | None:
+    """What a tooltip would name under `point`: an icon of the bar, a main view's button, undo or
+    redo, or the other environment's tab, by its name, which says what the switch says (D-060)."""
     tab = tab_at(layout, point)
     return (
         drawer_button_at(layout, point)
         or level_button_at(layout, point)
         or main_view_at(layout, point)
+        or edit_button_at(layout, point)
         or (tab if tab is not None and tab != layout.env.value else None)
     )
 
@@ -493,10 +491,6 @@ def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
 
 def view_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:
     return next((b for b, rect in layout.view_buttons if contains(rect, point)), None)
-
-
-def tool_at(layout: Layout, point: tuple[int, int]) -> Tool | None:
-    return next((tool for tool, rect in layout.tool_buttons if contains(rect, point)), None)
 
 
 def edit_button_at(layout: Layout, point: tuple[int, int]) -> EditButton | None:

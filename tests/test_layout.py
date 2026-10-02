@@ -37,6 +37,7 @@ from nektoids.editor.layout import (
     chapter_row_at,
     contains,
     drawer_button_at,
+    edit_button_at,
     goal_row_at,
     group_at,
     info_at,
@@ -54,7 +55,6 @@ from nektoids.editor.layout import (
     setting_row_at,
     shown_frame,
     tab_at,
-    tool_at,
     value_at,
     view_button_at,
     visible_cells,
@@ -69,7 +69,7 @@ from nektoids.levels.sandbox import free_board, tutorial_board
 
 LAYOUT = make_layout()  # Parts open, as the editor opens
 VIEW = centred_view(LAYOUT)
-TOOLS = make_layout(Drawer.TOOLS)
+FILES = make_layout(Drawer.FILES, wins=2)
 NAVIGATOR = make_layout(Drawer.NAVIGATOR)
 FOLDED = make_layout(None)
 RUN_NAVIGATOR = make_layout(Drawer.NAVIGATOR, env=Env.RUN)  # its rays, its objectives
@@ -111,10 +111,10 @@ def test_the_bar_the_drawer_and_the_board_side_by_side_the_tabs_over_the_board()
 
 
 def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
-    tools_rows = [*TOOLS.tool_buttons, *TOOLS.edit_buttons, *TOOLS.file_buttons]
+    files_rows = [*FILES.win_rows, *FILES.file_buttons]
     for layout, rows in (
         (LAYOUT, LAYOUT.menu_items),
-        (TOOLS, tools_rows),
+        (FILES, files_rows),
         (RUN_NAVIGATOR, (*RUN_NAVIGATOR.view_buttons, *RUN_NAVIGATOR.goal_rows)),
     ):
         assert len(layout.info_buttons) == len(rows) > 0
@@ -124,7 +124,7 @@ def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
             assert rect[1] + rect[3] <= SCREEN[1] - 8
         tops = [rect[1] for _, rect in rows]
         assert tops == sorted(tops) and len(set(tops)) == len(tops)  # one under the other
-    assert LAYOUT.tool_buttons == () and TOOLS.menu_items == () and FOLDED.info_buttons == ()
+    assert LAYOUT.file_buttons == () and FILES.menu_items == () and FOLDED.info_buttons == ()
 
 
 def test_parts_has_every_kind_once_and_a_click_on_a_row_picks_it():
@@ -146,30 +146,24 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_tools_runs_its_tools_then_edit_then_file_and_the_navigator_holds_the_view():
-    assert [title for title, _ in TOOLS.section_titles] == ["Tools", "Edit", "File"]
-    assert [tool for tool, _ in TOOLS.tool_buttons] == list(PALETTE_TOOLS)
-    assert [button for button, _ in TOOLS.edit_buttons] == list(EditButton)
-    assert [button for button, _ in TOOLS.file_buttons] == list(FileButton)
-    assert Tool.PAN not in PALETTE_TOOLS  # the hand, in the Navigator
-    sections = dict(TOOLS.section_titles)
-    for title, rows in (
-        ("Tools", TOOLS.tool_buttons),
-        ("Edit", TOOLS.edit_buttons),
-        ("File", TOOLS.file_buttons),
-    ):
-        _, y, _, h = sections[title]
-        assert all(y + h <= rect[1] for _, rect in rows)  # under its title
+def test_undo_and_redo_sit_in_the_corner_save_and_load_at_files_foot_and_navigator_the_view():
+    (undo, (ux, uy, uw, uh)), (redo, (rx, _, _, _)) = LAYOUT.edit_buttons  # D-068
+    (_, (vx, vy, _, _)), _ = LAYOUT.view_switch
+    assert (undo, redo) == (EditButton.UNDO, EditButton.REDO) and ux + uw < rx < vx and uy == vy
+    assert edit_button_at(LAYOUT, (ux + 5, uy + 5)) is EditButton.UNDO
+    assert palette_target_at(LAYOUT, (rx + 5, uy + 5)) is EditButton.REDO  # its tooltip
+    assert make_layout(env=Env.RUN).edit_buttons == ()
+    assert [title for title, _ in FILES.section_titles] == ["Wins this session", "File"]
+    assert [button for button, _ in FILES.file_buttons] == list(FileButton)
+    assert FILES.file_buttons[-1][1][1] + FILES.file_buttons[-1][1][3] <= SCREEN[1]  # its foot
+    assert FILES.win_rows[-1][1][1] < FILES.file_buttons[0][1][1]
     assert [title for title, _ in NAVIGATOR.section_titles] == ["Overview"]  # no option yet
     assert NAVIGATOR.view_buttons == ()  # the editor's view has no option yet (D-065)
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
     assert [title for title, _ in run.section_titles] == ["View", "Overview", "Objectives"]
     assert [button for button, _ in run.view_buttons] == [ViewButton.RAYS]
-    for tool, rect in TOOLS.tool_buttons:
-        assert tool_at(TOOLS, (rect[0] + 20, rect[1] + rect[3] // 2)) == tool
     for button, rect in run.view_buttons:
         assert view_button_at(run, (rect[0] + 20, rect[1] + rect[3] // 2)) == button
-    assert tool_at(TOOLS, centre(TOOLS.board_area)) is None
 
 
 def test_sandbox_boards():
@@ -334,7 +328,7 @@ def test_the_editor_has_two_main_views_in_its_main_screens_corner_and_the_run_no
 def test_files_has_a_row_per_win_under_its_label_in_the_editors_bar():
     files = make_layout(Drawer.FILES, wins=3)
     assert Drawer.FILES in DRAWERS[Env.EDITOR] and Drawer.FILES not in DRAWERS[Env.RUN]
-    assert [title for title, _ in files.section_titles] == ["Wins this session"]
+    assert [title for title, _ in files.section_titles] == ["Wins this session", "File"]
     assert [row.index for row, _ in files.win_rows] == [0, 1, 2]
     for row, rect in files.win_rows:
         assert win_row_at(files, centre(rect)) == row.index and contains(

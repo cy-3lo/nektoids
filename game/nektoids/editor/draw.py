@@ -34,7 +34,6 @@ from nektoids.editor.icons import (
     FILE_ICON,
     KIND_ICON,
     LEVEL_ICON,
-    TOOL_ICON,
     VIEW_ICON,
     Icons,
 )
@@ -53,7 +52,6 @@ from nektoids.editor.layout import (
     STATUS_HEIGHT,
     SWITCH_TO,
     TABS_HEIGHT,
-    TOOL_KEYS,
     VIEW_KEYS,
     Drawer,
     EditButton,
@@ -136,7 +134,6 @@ TIP = {
     MainView.DIAGRAM: "Diagram view",
     MainView.PREVIEW: "Run preview",
     Drawer.PARTS: "Parts",
-    Drawer.TOOLS: "Tools",
     Drawer.FILES: "Files",
     Drawer.SENSE: "Sense",
     Drawer.INSIDE: "Inside",
@@ -274,6 +271,9 @@ def draw(
     screen.fill(BACKGROUND)
     (main or _draw_board)(screen, scene, fonts)
     _draw_view_switch(screen, scene, fonts)
+    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
+    for button, rect in scene.layout.edit_buttons:  # undo, redo: the main screen's corner
+        draw_button(screen, fonts, rect, EDIT_ICON[button], False, can[button])
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
@@ -669,7 +669,7 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
 
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The editor's own drawers' rows: Parts, Tools, Navigator; Sense's map."""
+    """The editor's own drawers' rows: Parts, Files, Navigator; Sense's map."""
     layout, board = scene.layout, scene.board
     if layout.drawer is Drawer.SENSE:
         _draw_sense(screen, scene, fonts)
@@ -683,34 +683,6 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
         picked = kind == scene.picked
         draw_row(screen, scene, fonts, rect, kind, NAME[kind], status, picked, left == 0, part=kind)
-    for tool, rect in layout.tool_buttons:
-        key = ("key", TOOL_KEYS[tool])
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            tool,
-            ROW_NAME[tool],
-            key,
-            tool is scene.tool,
-            icon=TOOL_ICON[tool],
-        )
-    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
-    for button, rect in layout.edit_buttons:
-        key = ("key", EDIT_KEYS[button].replace("+", " "))
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            ROW_NAME[button],
-            key,
-            False,
-            not can[button],
-            icon=EDIT_ICON[button],
-        )
     for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
         draw_row(
             screen,
@@ -920,11 +892,14 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         text = TIP[button] + (f" ({key})" if key else "")
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
-    if isinstance(target, MainView):
-        x, y, w, h = dict(scene.layout.view_switch)[target]
-        width = fonts.text.size(TIP[target])[0] + 16
+    if isinstance(target, MainView | EditButton):  # under its button, at the main screen's top
+        rects = dict(scene.layout.view_switch) | dict(scene.layout.edit_buttons)
+        x, y, w, h = rects[target]
+        key = EDIT_KEYS.get(target) if scene.settings.key_hints else None
+        text = TIP[target] + (f" ({key})" if key else "")
+        width = fonts.text.size(text)[0] + 16
         right = min(x + w // 2 + width // 2, SCREEN[0] - 4) - 8
-        draw_tip(screen, fonts, TIP[target], topright=(right, y + h + 10))
+        draw_tip(screen, fonts, text, topright=(right, y + h + 10))
         return
     rects = dict(scene.layout.drawer_buttons) | dict(scene.layout.level_buttons)
     _, y, _, h = rects[target]

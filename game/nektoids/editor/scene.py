@@ -73,7 +73,6 @@ from nektoids.editor.layout import (
     moved_view,
     overview_view,
     pan,
-    tool_at,
     value_at,
     view_button_at,
     win_row_at,
@@ -385,10 +384,6 @@ class EditorScene(Frame):
         won = win_row_at(self.layout, pos)
         if won is not None:
             self._put_back(won)
-            return
-        tool = tool_at(self.layout, pos)
-        if tool is not None:
-            self._choose(tool)
             return
         edit = edit_button_at(self.layout, pos)
         if edit is not None:

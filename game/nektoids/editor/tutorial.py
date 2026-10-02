@@ -190,8 +190,6 @@ def drawer_for(step: Step | None) -> Drawer | None:
     shows = shows if isinstance(shows, list) else [shows]
     if any("menu" in one or one.get("area") == "parts" for one in shows):
         return Drawer.PARTS
-    if any("tool" in one for one in shows):
-        return Drawer.TOOLS
     return next((RUN_DRAWERS[one["run"]] for one in shows if one.get("run") in RUN_DRAWERS), None)
 
 
@@ -328,9 +326,8 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         }[show["area"]]
     if "menu" in show:  # a part's row in the Parts drawer
         return dict(layout.menu_items).get(Kind(show["menu"]))
-    if "tool" in show:  # its row in the Tools drawer, or the drawer's icon while it is closed
-        rows, icons = dict(layout.tool_buttons), dict(layout.drawer_buttons)
-        return rows.get(Tool(show["tool"])) or icons[Drawer.TOOLS]
+    if "tool" in show:  # in the ring round a part now (D-068): the part's cell shows it
+        return None
     if "cell" in show:
         x, y = to_pixel(_cell(show["cell"]), view.size, view.origin)
         half_w, half_h = SQRT3 / 2 * view.size, view.size

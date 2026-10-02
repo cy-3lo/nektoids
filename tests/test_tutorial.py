@@ -124,10 +124,6 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     eye_row = dict(LAYOUT.menu_items)[Kind.EYE]
     box = box_rect([eye_row], 3, LAYOUT.board_area)
     assert box[0] > eye_row[0] + eye_row[2] and on_screen(box)  # right of the drawer
-    tools = make_layout(Drawer.TOOLS)
-    tool = dict(tools.tool_buttons)[Tool.WIRE]
-    box = box_rect([tool], 3, tools.board_area)
-    assert box[0] > tool[0] + tool[2] and on_screen(box)  # right of the drawer too
     hint = box_rect([], 2, LAYOUT.board_area)
     assert contains(LAYOUT.board_area, hint[:2]) and on_screen(hint)
     nx, ny, nw, nh = next_rect(box)
@@ -338,7 +334,6 @@ def test_a_step_opens_the_drawer_its_targets_are_in():
     steps = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
     assert drawer_for(steps[R + 1]) is Drawer.PARTS  # Parts, the drawer
     assert drawer_for(steps[R + 3]) is Drawer.PARTS  # an Eye's row, then its cell
-    assert drawer_for(steps[R + 4]) is Drawer.TOOLS  # Turn left
     assert drawer_for(steps[1]) is None  # the objectives, under any drawer (D-065)
     assert (
         drawer_for(steps[R]) is None
@@ -347,15 +342,6 @@ def test_a_step_opens_the_drawer_its_targets_are_in():
     )
     shown = {drawer_for(step) for step in steps if step.show and "run" in str(step.show)}
     assert shown == {None, Drawer.INSIDE, Drawer.SCORE}  # the run's (D-057, D-065)
-
-
-def test_a_tool_shown_while_tools_is_closed_lights_the_drawers_icon():
-    parts, tools = make_layout(Drawer.PARTS), make_layout(Drawer.TOOLS)
-    show = {"tool": "wire"}
-    assert target_rects(show, Screen.EDIT, parts, VIEW) == [
-        dict(parts.drawer_buttons)[Drawer.TOOLS]
-    ]
-    assert target_rects(show, Screen.EDIT, tools, VIEW) == [dict(tools.tool_buttons)[Tool.WIRE]]
 
 
 def test_a_leading_step_keeps_the_board_on_screen():

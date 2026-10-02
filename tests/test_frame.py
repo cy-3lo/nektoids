@@ -31,11 +31,11 @@ def icon(scene: Scene, drawer: Drawer) -> tuple[int, int]:
 
 def test_an_icon_opens_its_drawer_and_folds_it_again_and_the_main_screen_follows():
     scene = Scene()
-    assert scene.frame_press(icon(scene, Drawer.TOOLS)) and scene.layout.drawer is Drawer.TOOLS
-    assert scene.frame_press(icon(scene, Drawer.TOOLS)) and scene.layout.drawer is None
+    assert scene.frame_press(icon(scene, Drawer.FILES)) and scene.layout.drawer is Drawer.FILES
+    assert scene.frame_press(icon(scene, Drawer.FILES)) and scene.layout.drawer is None
     scene.frame_press(icon(scene, Drawer.PARTS))
     assert scene.frame_press(centre(scene.layout.fold_handle)) and scene.layout.drawer is None
-    assert scene.slid == [(Drawer.PARTS, Drawer.TOOLS), (Drawer.TOOLS, None)] + [
+    assert scene.slid == [(Drawer.PARTS, Drawer.FILES), (Drawer.FILES, None)] + [
         (None, Drawer.PARTS),
         (Drawer.PARTS, None),
     ]
