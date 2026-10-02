@@ -72,6 +72,9 @@ Mockups of every drawer, drawn with the game's own palette and renders, are in t
 artifacts ("Nektoids Activity Bar", round 3). It replaces the menu, the palette, the run view's
 column and the full-screen map.
 
+The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
+preview; in the Run it shows the level. Drawers never take the main screen.
+
 - [ ] One row style for every drawer: icon, name, (i), then a count, a key, a lock or a tick.
 - [ ] An activity bar down the left edge, one icon per drawer, named when the mouse rests on it;
       the open one lighter, an accent bar on its edge. One drawer open at a time, pushing the
