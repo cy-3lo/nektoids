@@ -34,8 +34,9 @@
       {
         "show": {"run": "objectives"},
         "say": [
-          "Objectives: what the level asks, each with",
-          "its bar. Here, get out of the ring round the", "light before the time runs out."
+          "At the foot of the drawer, Objectives: what",
+          "the level asks, each with its bar. Here, get",
+          "out of the ring round the light in time."
         ]
       },
       {

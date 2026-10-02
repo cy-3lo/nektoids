@@ -352,9 +352,11 @@ def _draw_control_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -
 def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """The run's own drawers: Objectives, Inside, Score, Navigator."""
     drawer = scene.layout.drawer
-    if drawer is Drawer.OBJECTIVES:
+    if scene.layout.goal_area is not None:  # the objectives, under every drawer (D-065)
+        x, y, w, _ = scene.layout.goal_area
+        pygame.draw.line(screen, RULE, (x + MARGIN, y), (x + w - MARGIN, y))
         _draw_goals(screen, scene, fonts)
-    elif drawer is Drawer.INSIDE:
+    if drawer is Drawer.INSIDE:
         _draw_wiring(screen, scene, fonts)
     elif drawer is Drawer.SCORE:
         _draw_wins(screen, scene, fonts)

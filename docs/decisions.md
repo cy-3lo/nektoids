@@ -821,3 +821,14 @@ step asks for goes through.
 At 18 px it looked smaller than the Plex Mono beside it; at 22 px its capitals stand 11 px to
 Plex's 10, the same x-height. What the level asks, after it, ends in an ellipsis where it does
 not fit: In the shadow's, with a drawer open. The level card and Objectives give it whole.
+
+**D-065 — 2026-10-02 — The run's objectives sit at the foot of every drawer, and the Objectives drawer goes; Navigator keeps only the view's options, the overview and a zoom bar; wires keep one colour. Amends D-052, D-057.**
+The objectives were seen only with their own drawer open. Now they sit at the foot of whichever
+drawer the run has open, Inside, Score, Navigator, Settings or Chapters, under a rule and their
+label, each row as before; with the drawer folded, the timeline's summary shows them (D-060).
+The bar's Objectives icon goes, and the run opens on Inside. To make room, Navigator shrinks:
+the view's options as rows, so far only the rays, in the run; the overview; under it, the zoom
+as a bar between its out and in buttons, pressed or dragged, on a log scale. Hand and centre
+leave the drawer: dragging the overview does what the hand did; their keys still work. In every
+circuit view, Inside, the Run preview and F2, wires and beads keep one colour whatever they
+carry: the beads' spacing and the meters show the rates.

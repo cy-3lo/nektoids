@@ -140,7 +140,6 @@ TIP = {
     Drawer.TOOLS: "Tools",
     Drawer.FILES: "Files",
     Drawer.SENSE: "Sense",
-    Drawer.OBJECTIVES: "Objectives",
     Drawer.INSIDE: "Inside",
     Drawer.SCORE: "Score",
     Drawer.NAVIGATOR: "Navigator",
@@ -500,8 +499,8 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
     lit = layout.drawer.value in scene.lit  # a tutorial step explains it (D-050)
     ink = LIT if lit else DIM_TEXT
     draw_title(screen, fonts, TIP[layout.drawer], layout.drawer_title_at, lit=lit)
-    for title, (x, y, _, h) in layout.section_titles:
-        shown = fonts.label.render(title.upper(), True, ink)
+    for title, (x, y, _, h) in layout.section_titles:  # lit with its drawer, or by its name
+        shown = fonts.label.render(title.upper(), True, LIT if title.lower() in scene.lit else ink)
         screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
     for title, (x, y, _, h) in layout.group_titles:
         caret = "caret-right" if title in scene.folded else "caret-down"

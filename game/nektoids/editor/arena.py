@@ -158,7 +158,7 @@ class ArenaScene(Frame):
         next_label: str | None = None,
         label: str | None = None,
         settings: Settings | None = None,
-        drawer: Drawer | None = Drawer.OBJECTIVES,
+        drawer: Drawer | None = Drawer.INSIDE,
         chapter: int = 0,
     ):
         self.levels = list(levels)

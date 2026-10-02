@@ -39,6 +39,7 @@ DRAWER_TOP = 40  # the first row or section title, under the drawer's own title 
 ROW_HEIGHT = 40  # a drawer's row [px]
 OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
 ZOOM_BUTTON = 28  # zoom out and in, either end of the zoom bar, under the overview [px]
+FOOT_MARGIN = 6  # under the objectives, at the drawer's foot [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
@@ -109,7 +110,6 @@ class Drawer(Enum):  # D-051
     TOOLS = "tools"  # the tools, undo and redo, save and load
     FILES = "files"  # this session's winning boards, to put one back (D-059)
     SENSE = "sense"  # the level, small, with the probe the Run preview runs at (D-058)
-    OBJECTIVES = "objectives"  # the run's: what the level asks, each with its bar; the time
     INSIDE = "inside"  # the run's: the swimmer's wiring, live
     SCORE = "score"  # the run's: the level's wins this session
     NAVIGATOR = "navigator"  # zoom, hand, centre; the rays in the run
@@ -135,7 +135,7 @@ SENSE_MAP: Rect = (  # the level, small, in Sense, under its label: a square [px
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.SENSE, Drawer.NAVIGATOR),
-    Env.RUN: (Drawer.OBJECTIVES, Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),
+    Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
 }
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT}
@@ -208,7 +208,8 @@ class Layout:
     edit_buttons: tuple[tuple[EditButton, Rect], ...]
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
-    goal_rows: tuple[tuple[Goal, Rect], ...]  # Objectives' rows: each objective, the time left
+    goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
+    goal_area: Rect | None  # ... at the foot of the open drawer, whichever it is (D-065)
     win_rows: tuple[tuple[WinRow, Rect], ...]  # Files' rows: this session's wins of the level
     setting_rows: tuple[tuple[Setting, Rect], ...]  # Settings' rows
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
@@ -244,8 +245,8 @@ def make_layout(
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     Parts' groups shown closed; kinds: the parts the level hands out, the only ones Parts shows
     (D-039); chapter: how many levels Chapters lists, before the sandbox; goals: how many
-    objectives the level has, Objectives' rows before the time left; wins: how many wins of
-    the level Files lists."""
+    objectives the level has, at the foot of each of the run's drawers, before the time left;
+    wins: how many wins of the level Files lists."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -266,8 +267,6 @@ def make_layout(
         rows.tools()
     elif drawer is Drawer.NAVIGATOR:
         rows.view(env)
-    elif drawer is Drawer.OBJECTIVES:
-        rows.goals(goals)
     elif drawer is Drawer.SENSE:
         rows.label("The level")
     elif drawer is Drawer.FILES:
@@ -282,6 +281,16 @@ def make_layout(
         rows.settings()
     elif drawer is Drawer.CHAPTERS:
         rows.chapters(chapter)
+    goal_area = None
+    if env is Env.RUN and drawer is not None:  # the objectives, at the foot of every drawer
+        foot = _Rows()
+        height_needed = TITLE_HEIGHT + (goals + 1) * (GOAL_HEIGHT + ROW_PITCH - ROW_HEIGHT)
+        foot.y = height - FOOT_MARGIN - height_needed
+        goal_area = (BAR_WIDTH, foot.y - 8, DRAWER_WIDTH, height - foot.y + 8)
+        foot.label("Objectives")
+        foot.goals(goals)
+        rows.items += foot.items
+        rows.sections += foot.sections
     tabs, x = [], left
     for name, w in zip(("editor", "run"), TAB_WIDTHS, strict=True):
         tabs.append((name, (x, 0, w, TABS_HEIGHT)))
@@ -307,6 +316,7 @@ def make_layout(
         file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
+        goal_area=goal_area,
         win_rows=tuple(rows.of(WinRow)),
         setting_rows=tuple(rows.of(Setting)),
         chapter_rows=tuple(rows.of(int)),

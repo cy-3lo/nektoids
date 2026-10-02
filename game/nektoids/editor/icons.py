@@ -110,7 +110,6 @@ DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.TOOLS: "screwdriver-wrench",
     Drawer.FILES: "floppy-disk",
     Drawer.SENSE: "stethoscope",
-    Drawer.OBJECTIVES: "list-check",
     Drawer.INSIDE: "magnifying-glass",
     Drawer.SCORE: "trophy",
     Drawer.NAVIGATOR: "compass",

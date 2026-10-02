@@ -185,7 +185,7 @@ async def main() -> None:
     running = True
     developer: SchematicScene | ArenaScene | None = None  # the F2 or F3 view, while open
     playing: ArenaScene | None = None  # the player's run, while it shows
-    run_drawer: Drawer | None = Drawer.OBJECTIVES  # the run's open drawer, from one run to the next
+    run_drawer: Drawer | None = Drawer.INSIDE  # the run's open drawer, from one run to the next
 
     def on_screen() -> EditorScene | ArenaScene:
         """The scene the player sees: the run, or the open level's editor."""
@@ -232,7 +232,7 @@ async def main() -> None:
         guide = tutorial()
         if begun and guide is not None and guide.index == 0 and guide.start is Screen.RUN:
             router.run()  # Fear's tutorial opens on the run, paused (D-060)
-            playing = play(Drawer.OBJECTIVES)
+            playing = play(Drawer.INSIDE)
 
         # What the scenes asked for this frame.
         if isinstance(developer, ArenaScene) and developer.request == "edit":

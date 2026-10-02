@@ -35,7 +35,7 @@ from nektoids.editor.layout import (
     make_layout,
 )
 
-RUN = make_layout(Drawer.OBJECTIVES, env=Env.RUN, goals=2)
+RUN = make_layout(Drawer.INSIDE, env=Env.RUN, goals=2)
 FOLDED = make_layout(None, env=Env.RUN, goals=2)
 
 

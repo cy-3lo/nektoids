@@ -37,14 +37,14 @@ from nektoids.levels.objectives import Outcome
 
 LAYOUT = make_layout()
 VIEW = centred_view(LAYOUT)
-RUN_LAYOUT = make_layout(Drawer.OBJECTIVES, env=Env.RUN, goals=1)  # the run's frame (D-057)
+RUN_LAYOUT = make_layout(Drawer.INSIDE, env=Env.RUN, goals=1)  # the run's frame (D-057)
 
 
 def layout_on(screen: Screen, step=None):
     """The editor's layout, or the run's with the drawer `step` opens."""
     if screen is not Screen.RUN:
         return LAYOUT
-    return make_layout(drawer_for(step) or Drawer.OBJECTIVES, env=Env.RUN, goals=1)
+    return make_layout(drawer_for(step) or Drawer.INSIDE, env=Env.RUN, goals=1)
 
 
 LEVELS = {level.title: level for level in arenas()}
@@ -339,14 +339,14 @@ def test_a_step_opens_the_drawer_its_targets_are_in():
     assert drawer_for(steps[R + 1]) is Drawer.PARTS  # Parts, the drawer
     assert drawer_for(steps[R + 3]) is Drawer.PARTS  # an Eye's row, then its cell
     assert drawer_for(steps[R + 4]) is Drawer.TOOLS  # Turn left
-    assert drawer_for(steps[1]) is Drawer.OBJECTIVES  # the run's first drawer (D-060)
+    assert drawer_for(steps[1]) is None  # the objectives, under any drawer (D-065)
     assert (
         drawer_for(steps[R]) is None
         and drawer_for(steps[R + 11]) is None
         and drawer_for(None) is None
     )
     shown = {drawer_for(step) for step in steps if step.show and "run" in str(step.show)}
-    assert shown == {None, Drawer.OBJECTIVES, Drawer.INSIDE, Drawer.SCORE}  # the run's (D-057)
+    assert shown == {None, Drawer.INSIDE, Drawer.SCORE}  # the run's (D-057, D-065)
 
 
 def test_a_tool_shown_while_tools_is_closed_lights_the_drawers_icon():

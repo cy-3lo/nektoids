@@ -67,6 +67,7 @@ VIEW = centred_view(LAYOUT)
 TOOLS = make_layout(Drawer.TOOLS)
 NAVIGATOR = make_layout(Drawer.NAVIGATOR)
 FOLDED = make_layout(None)
+RUN_NAVIGATOR = make_layout(Drawer.NAVIGATOR, env=Env.RUN)  # its rays, its objectives
 
 
 def centre(rect):
@@ -109,10 +110,7 @@ def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
     for layout, rows in (
         (LAYOUT, LAYOUT.menu_items),
         (TOOLS, tools_rows),
-        (
-            make_layout(Drawer.NAVIGATOR, env=Env.RUN),
-            make_layout(Drawer.NAVIGATOR, env=Env.RUN).view_buttons,
-        ),
+        (RUN_NAVIGATOR, (*RUN_NAVIGATOR.view_buttons, *RUN_NAVIGATOR.goal_rows)),
     ):
         assert len(layout.info_buttons) == len(rows) > 0
         for _, rect in rows:
@@ -160,7 +158,7 @@ def test_tools_runs_its_tools_then_edit_then_file_and_the_navigator_holds_the_vi
     assert [title for title, _ in NAVIGATOR.section_titles] == ["Overview"]  # no option yet
     assert NAVIGATOR.view_buttons == ()  # the editor's view has no option yet (D-065)
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
-    assert [title for title, _ in run.section_titles] == ["View", "Overview"]
+    assert [title for title, _ in run.section_titles] == ["View", "Overview", "Objectives"]
     assert [button for button, _ in run.view_buttons] == [ViewButton.RAYS]
     for tool, rect in TOOLS.tool_buttons:
         assert tool_at(TOOLS, (rect[0] + 20, rect[1] + rect[3] // 2)) == tool
@@ -285,7 +283,7 @@ def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_sec
 
 
 def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_arena():
-    run = make_layout(Drawer.OBJECTIVES, env=Env.RUN, goals=2)
+    run = make_layout(Drawer.INSIDE, env=Env.RUN, goals=2)
     assert [drawer for drawer, _ in run.drawer_buttons] == [*DRAWERS[Env.RUN], *FOOT]
     ((back, switch),) = run.level_buttons
     assert back is LevelButton.EDIT and level_button_at(run, centre(switch)) is back
@@ -296,6 +294,19 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert [goal for goal, _ in run.goal_rows] == [Goal(0), Goal(1), Goal(None)]  # time last
     for goal, rect in run.goal_rows:
         assert goal_row_at(run, centre(rect)) == goal and contains(run.drawer_area, rect[:2])
+    for drawer in (*DRAWERS[Env.RUN], *FOOT):  # the objectives, at the foot of every drawer (D-065)
+        layout = make_layout(drawer, env=Env.RUN, goals=2)
+        x, y, w, h = layout.goal_area
+        assert y + h == SCREEN[1] and [g for g, _ in layout.goal_rows] == [
+            Goal(0),
+            Goal(1),
+            Goal(None),
+        ]
+        above = [r for _, r in (*layout.setting_rows, *layout.chapter_rows, *layout.view_buttons)]
+        assert all(r[1] + r[3] < y for r in above)  # under what the drawer holds
+        assert layout.overview is None or layout.zoom_bar[1] + layout.zoom_bar[3] < y
+    assert make_layout(None, env=Env.RUN, goals=2).goal_rows == ()  # folded: by the timeline
+    assert Drawer.INSIDE in DRAWERS[Env.RUN] and len(DRAWERS[Env.RUN]) == 3
     navigator = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
     assert [b for b, _ in navigator.view_buttons][-1] is ViewButton.RAYS
     assert [name for name, _ in run.tabs] == ["editor", "run"] and run.caption_at[1] < arena[1]

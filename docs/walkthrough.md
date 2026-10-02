@@ -771,5 +771,10 @@ The run opens paused, and Fear's tutorial opens in it (D-060).
 
 Question: why must the run's controls ask the tutorial's gate, now that Fear starts in the run?
 
+The objectives at the foot of every run drawer, and Navigator's zoom bar (D-065):
+[`layout.py`](../game/nektoids/editor/layout.py)'s `goal_area` and `zoom_bar`, `level_of` and
+`value_at`, the zoom on a log scale; `arena_draw._draw_rows` draws the objectives under any
+drawer.
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

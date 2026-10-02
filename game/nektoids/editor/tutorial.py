@@ -43,7 +43,7 @@ AREA = 400  # a target this wide, and half as tall, is an area: the box may lie 
 GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 RUN_PANELS = {"arena", "controls", "objectives", "inside", "score"}  # the rest are buttons
-RUN_DRAWERS = {"objectives": Drawer.OBJECTIVES, "inside": Drawer.INSIDE, "score": Drawer.SCORE}
+RUN_DRAWERS = {"inside": Drawer.INSIDE, "score": Drawer.SCORE}  # the objectives are in each
 
 
 @dataclass(frozen=True)
@@ -347,6 +347,8 @@ def _run_target(name: str, layout: Layout) -> Rect | None:
         return (
             layout.drawer_area if layout.drawer is drawer else dict(layout.drawer_buttons)[drawer]
         )
+    if name == "objectives":  # at the foot of the open drawer (D-065)
+        return layout.goal_area
     if name == "play":
         return dict(arena_layout.control_rects(layout))[arena_layout.ArenaButton.PLAY]
     if name == "timeline":
