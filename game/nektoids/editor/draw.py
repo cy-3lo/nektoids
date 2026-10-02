@@ -34,6 +34,7 @@ from nektoids.editor.icons import (
     FILE_ICON,
     KIND_ICON,
     LEVEL_ICON,
+    TOOL_ICON,
     VIEW_ICON,
     Icons,
 )
@@ -108,6 +109,7 @@ from nektoids.editor.palette import (
 )
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.probe import level_view, ring_radii
+from nektoids.editor.ring import ICON
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -171,15 +173,6 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.RAYS: "Rays",
 }
 TAB_NAME = {"editor": "Editor", "run": "Run"}
-HINT = {
-    Tool.ADD: "Drag a part from Parts onto the board (or its number, arrows, Enter).",
-    Tool.WIRE: "Drag from one part to another, or click one then the other.",
-    Tool.TURN_LEFT: "Click a part to select it, again to turn it left. L turns the selected one.",
-    Tool.TURN_RIGHT: "Click a part to select it, again to turn it right. R turns the selected one.",
-    Tool.MOVE: "Drag a part. Its wires follow as long as they find a path.",
-    Tool.DELETE: "Click a part to delete it, or a wire.",
-    Tool.PAN: "Drag the grid to move the view. The magnifiers zoom in and out.",
-}
 
 # How parts sit in the menu: eyes looking up (flat side up), thrusters pointing up
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.
@@ -292,7 +285,6 @@ def draw(
 def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     view, board = scene.view, scene.board
     zone = set(board.cells)
-    selected = board.nodes[scene.selected].cell if scene.selected in board.nodes else None
     screen.set_clip(scene.layout.board_area)
     for cell in visible_cells(scene.layout, view):
         hexagon = _hexagon(view, cell)
@@ -300,12 +292,13 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             pygame.draw.polygon(screen, FLASH, hexagon)
         elif cell not in zone:
             pygame.draw.polygon(screen, OUTSIDE, hexagon)
-        elif cell in scene.focus:  # a cell a tutorial's step acts on (D-063)
+        elif cell == scene.focused:  # the ring's cell, the keyboard's (D-068)
+            pygame.draw.polygon(screen, ACTIVE, hexagon)
+        elif cell in scene.guide_cells:  # a cell a tutorial's step acts on (D-063)
             pygame.draw.polygon(screen, FOCUS_CELL, hexagon)
-        elif cell == selected:
-            pygame.draw.polygon(screen, ACTIVE, hexagon)  # as lit as the tool in hand
         else:
-            pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
+            hovered = cell == scene.hover and scene.ring_hover is None  # not under an icon
+            pygame.draw.polygon(screen, HOVER if hovered else ZONE, hexagon)
         pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
     if board.cells:
         draw_body(screen, board.cells, view.size, view.origin)
@@ -328,7 +321,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         angle = placed_angle(node.kind, node.facing)
         fill = DOOMED if node.id == doomed_node else None
         draw_part(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
-        if node.id == scene.source or node.id == scene._wire_start():
+        if node.id == scene.source and scene.tool is Tool.WIRE:  # a wire starts here
             pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
@@ -336,11 +329,38 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             angle = placed_angle(ghost.kind, ghost.facing)
             outline = _shape(ghost.kind, angle, _centre(view, ghost.cell), view.size)
             pygame.draw.polygon(screen, GHOST_OK, outline, 2)
-    if scene.cursor is not None:
-        pygame.draw.polygon(screen, TEXT, _hexagon(view, scene.cursor), 3)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
         pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
+    _draw_ring(screen, scene, fonts)
     screen.set_clip(None)
+
+
+def _draw_ring(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The ring round the focus (D-068): a disc per icon, a part as Parts shows it or an action,
+    its key just outside; lit, the keyboard's choice and the action in hand; paler, the one under
+    the mouse."""
+    ring, size = scene.ring(), scene.view.size
+    if not ring:
+        return
+    if scene.focused is not None:
+        pygame.draw.polygon(screen, LIT, _hexagon(scene.view, scene.focused), 2)
+    chosen = ring[scene.choice] if scene.ring_keys and scene.choice is not None else None
+    in_hand = scene.tool if scene.tool in (Tool.WIRE, Tool.MOVE) else None
+    radius = ICON * size
+    for slot in ring:
+        lit = slot == chosen or slot.what is in_hand
+        fill = ACTIVE if lit else HOVER if slot == scene.ring_hover else BUTTON
+        pygame.draw.circle(screen, fill, slot.at, radius)
+        pygame.draw.circle(screen, LIT if lit else RULE, slot.at, radius, 1)
+        if isinstance(slot.what, Kind):
+            angle = MENU_ANGLE.get(slot.what)
+            draw_part(screen, fonts, slot.what, angle, slot.at, radius, False)
+        else:
+            glyph = max(10, round(0.9 * radius))
+            fonts.icons.draw(screen, TOOL_ICON[slot.what], slot.at, glyph, TEXT)
+        if scene.settings.key_hints:
+            key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
+            screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
 
 
 def _draw_wire(
@@ -950,7 +970,7 @@ def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
         won = scene.wins[what.index]
         beaten = "No other win beats it." if won.best else "Another win beats it."
         return "A win", (f"This board won in {_win_name(won)}. {beaten}",)
-    return ROW_NAME[what], (HINT.get(what) or TIP[what],)
+    return ROW_NAME[what], (TIP[what],)
 
 
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
@@ -959,7 +979,7 @@ def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
     elif isinstance(scene.ghost, Refused):
         text, colour = scene.ghost.reason, REFUSED
     else:
-        text, colour = HINT[scene.tool], DIM_TEXT
+        text, colour = scene.hint(), DIM_TEXT
     draw_status_line(screen, scene, fonts, text, colour)
 
 

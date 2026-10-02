@@ -1,11 +1,11 @@
 """The ring of icons round a focused cell: what can be done there, at hand (D-068).
 
 An empty cell of the zone offers the parts the level still hands out; a part offers turn left,
-turn right (eyes and thrusters only), wire, move and delete. Up to six icons sit beyond the
-cell's six faces, where its neighbours are; more are spread along a 300° arc, its gap at the
-foot, at two radii in turn when they would touch, as the stations of an indexing table. Each
-icon has its key just outside it. Where the ring would leave the main screen it is slid in,
-whole. Pure numbers, no pygame.
+turn right (eyes and thrusters only), wire, move and delete. Up to six icons sit astride the
+cell's six faces, short of its neighbours' centres, which a click must still reach to wire one;
+more are spread along a 300° arc, its gap at the foot, at two radii in turn when they would
+touch, as the stations of an indexing table. Each icon has its key just outside it. Where the
+ring would leave the main screen it is slid in, whole. Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -17,9 +17,9 @@ from dataclasses import dataclass
 from nektoids.editor.layout import MENU_GROUPS, TOOL_KEYS, Rect, Tool
 from nektoids.graph.board import Board, Kind
 
-RADIUS = 1.75  # from the cell's centre to an icon's, about a neighbour's [hex sizes]
-ICON = 0.42  # an icon's disc, its radius [hex sizes]
-KEY_OUT = 0.78  # its key, this far past the icon's centre, outwards [hex sizes]
+RADIUS = 1.0  # from the cell's centre to an icon's, just past a face (√3/2) [hex sizes]
+ICON = 0.36  # an icon's disc, its radius: a neighbour's centre, √3 out, stays clear [hex sizes]
+KEY_OUT = 0.56  # its key, this far past the icon's centre, outwards [hex sizes]
 FACES = (120.0, 60.0, 0.0, 300.0, 240.0, 180.0)  # the neighbours, from the top left, clockwise
 ARC = 300.0  # more than six icons spread over this much, the gap at the foot [degrees]
 STAGGER = 0.22  # in turn nearer and farther, when they would touch [hex sizes]
