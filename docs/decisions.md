@@ -526,3 +526,49 @@ now lose: closing in, the light falls behind their flat faces, the brake fades a
 touches it. Wiring with no Diff still loses (aggression, fear, a bare drive). Powers 4 and 4.5 also
 win, but the swimmer's rim then rests on the ring's dashed line, so it looks half out. All pinned
 in `test_determinism.py`.
+
+**D-045 — 2026-10-02 — Complexity is the number of parts, and it is scored, not felt: every body stays a sphere of radius 1 u. Supersedes the scope lock's "body size grows with graph complexity" and brief §1's "thrust budget, not node budget".**
+`complexity(board)` counts the parts on the board, the locked ones included, and not the wires.
+The score reads it, as one of D-028's two axes (time to win, number of parts); the body does not.
+Two reasons. Flow comes later, and Stokesian dynamics is much simpler and faster when every
+object is a sphere of the same radius 1. And D-028 already scores the number of parts, so a
+body that grew with them would charge for the same parts twice. The cost is now read off the
+score rather than felt in the run: that is the trade against the brief. Locked parts count
+because every solution of a level pays them alike: they shift every score equally, leave the
+Pareto front unchanged, and the count is what the player sees on the board.
+Consequences: `BASE_RADIUS` stays the radius of every body; V ∝ 1/R and Ω ∝ 1/R² (D-022) stay in
+the model but R never moves; the pinned winners stand. `CLAUDE.md`'s scope lock and the graph
+rules change with it. Obstacles keep their own radii for now.
+
+**D-046 — 2026-10-02 — A won run is scored by its time and its parts; the level's wins this session show in the run view's column, in place of the wiring, with their Pareto front.**
+`Score(parts, ticks)`: `complexity(board)` (D-045) and the tick the run was won at, exact where
+seconds would not be. One score beats another if it is no worse on either axis and not the same;
+the front is the scores no other beats. The router keeps each level's scores for the session in
+a set: `main.py` records a run on every frame it stands won, and the same board always wins at the
+same tick, so a win counts once. Lost runs, runs out of time and the sandbox score nothing.
+The banner says "Done in 7.56 s with 8 parts". While the run stands won at its end, the column's
+last block, titled Your wins, plots time (0 to the level's time allowed) against parts: the front
+bright and joined by a staircase, the other wins dimmed, this run ringed. Scrub back on the
+timeline and the wiring returns. Under the banner, where it was first placed, the plot hid the
+light and the swimmer resting by it in Love; the levels' items reach most of the arena's height
+(Fear's ring 76 to 532 px), so no place over the arena stays clear, and the column always does.
+
+**D-047 — 2026-10-02 — Every colour is named by its job and comes from one palette, built from four numbers in OKLCH; the game takes Forest, violet and sky.**
+`editor/palette.py` holds every colour the game draws, and no other module holds one (a test
+checks). A palette is ten neutrals (deep, base, surface, raised, line, muted, dim, parts, text,
+bright) at the lightness of the greys the game was drawn in, measured in OKLab, so every contrast
+stays as it was; all of one tint, `tint_chroma` at the dark end fading to a third at the bright
+end. Two accents, of different hues, each in three levels: dark for fills under light icons, mid
+for marks on parts, bright for highlights over dark ground. `sense` is the eyes' and the
+tutorial's (the tool in hand, the eye's face, a target's outline), `act` the thrusters' and the
+swimmer's. The signals keep their hues: red for refusals and lost runs, amber for the developer
+view. Below the palette, each colour the drawing code uses is defined from a role, under the
+names it had: `BACKGROUND = P.base`, `ACTIVE = P.sense.dark`, `BODY = P.act.bright`. The eye's
+flat face and the thruster's back are drawn in their accent's mid level, a band astride the
+edge, wherever a part is drawn: the board, the menu, the tutorial's ghosts, the run's column.
+`PALETTE = make_palette(tint_hue=150, tint_chroma=0.028, sense_hue=315, act_hue=235)`: green-grey,
+violet and sky blue, chosen among ten candidates rendered into the editor, a run and a tutorial
+step (the page is in this session's artifacts). Changing those four numbers changes every colour.
+Tests pin the conversion, the order of the levels, the accents 45° apart or more, and contrasts
+for any tint: text on the background 7 or more, dim text and parts on panels 4.5 or more, the
+accents' marks on the board 3 or more (WCAG).

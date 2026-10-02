@@ -43,6 +43,7 @@ from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.scenarios import Scenario, scenarios
+from nektoids.levels.score import Score
 
 FPS = 60
 DEV_VIEW = True  # F1 the editor, F2 the developer view, F3 the arena view, F4 prints the board
@@ -169,8 +170,10 @@ async def main() -> None:
         if isinstance(developer, ArenaScene) and developer.request == "edit":
             developer = None
         if playing is not None:
-            if playing.outcome is Outcome.WON:
+            if playing.outcome is Outcome.WON and playing.ended_at is not None:
                 router.mark_won()  # the next level opens on the map
+                router.record(Score(playing.parts, playing.ended_at))  # once: a set
+            playing.scores = router.scores
             if playing.request == "next" and router.has_next:
                 router.next()
             elif playing.request == "next":

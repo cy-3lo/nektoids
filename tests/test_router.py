@@ -5,6 +5,7 @@ import pytest
 from nektoids.editor.router import Router, Screen, level_label
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
+from nektoids.levels.score import Score
 
 
 def a_router():
@@ -82,6 +83,21 @@ def test_the_sandbox_has_no_next_and_is_never_won():
     assert not router.has_next and not router.is_last
     router.mark_won()
     assert router.won == set()
+
+
+def test_each_level_keeps_the_scores_of_its_wins_once_each_and_the_sandbox_none():
+    router = a_router()
+    router.record(Score(4, 900))
+    router.record(Score(4, 900))  # recorded every frame the run shows won
+    router.record(Score(8, 700))
+    assert router.scores == {Score(4, 900), Score(8, 700)}
+    router.next()
+    assert router.scores == frozenset()  # the next level has its own
+    router.open(0)
+    assert len(router.scores) == 2
+    router.open(router.sandbox_index)
+    router.record(Score(4, 900))
+    assert router.scores == frozenset()
 
 
 def test_levels_are_named_by_chapter_and_place():

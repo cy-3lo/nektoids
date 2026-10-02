@@ -3,11 +3,11 @@
 Left, the arena, with a status line at its foot, and once a run is over a banner at its top with
 Next level and Edit. Right, one column: at the top the title and two palettes of five buttons,
 one row each: the view's (zoom in, zoom out, move the view, centre, rays on or off), then the
-player's (back to the editor, start again, play or pause, a step of 0.1 s, fast forward) with the
-timeline right under it; in the middle the objectives, each with its bar; at the bottom the
-swimmer's wiring on its body. The polar plot of the light at the eyes, a developer's tool, is an
-inset over the arena's top left corner. Plain numbers, no pygame, so hit-testing is testable
-headless.
+player's (back to the editor, start again, play or pause, a step of 0.1 s, fast forward) with
+the timeline right under it; in the middle the objectives, each with its bar; at the bottom the
+swimmer's wiring on its body, or, while a won run stands at its end, the level's wins this
+session. The polar plot of the light at the eyes, a developer's tool, is an inset over the
+arena's top left corner. Plain numbers, no pygame, so hit-testing is testable headless.
 """
 
 from __future__ import annotations

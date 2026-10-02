@@ -434,6 +434,12 @@ class Board:
         return False
 
 
+def complexity(board: Board) -> int:
+    """What a board costs in its level's score (D-028, D-045): its parts, the locked ones
+    included; wires are free. It never changes the body, a sphere of radius 1 u."""
+    return len(board.nodes)
+
+
 def _uses_each_edge_once(path: tuple[Cell, ...]) -> bool:
     """A route found cell by cell could cross itself through an edge it already used."""
     seen: set[tuple[Cell, int]] = set()

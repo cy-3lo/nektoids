@@ -7,12 +7,21 @@ from __future__ import annotations
 
 import pygame
 
-from nektoids.editor.draw import ACTIVE, BUTTON, DIM_TEXT, RULE, TEXT, TOOLTIP_BG, Fonts
+from nektoids.editor.draw import Fonts
 from nektoids.editor.layout import Rect, contains
+from nektoids.editor.palette import (
+    ACTIVE,
+    BUTTON,
+    CLEAR,
+    DIM_TEXT,
+    LIT,
+    RULE,
+    TEXT,
+    TOOLTIP_BG,
+    VEIL,
+)
 from nektoids.editor.tutorial import LINE, PAD, Tutorial, next_rect
 
-DIM = (0, 0, 0, 150)  # over everything but the target
-LIT = (228, 231, 240)  # the target's outline, and the box's while it leads
 HALO = 6  # the lit margin round the target [px]
 
 
@@ -30,9 +39,9 @@ def draw_tutorial(
     if targets:
         lit = [pygame.Rect(target).inflate(2 * HALO, 2 * HALO) for target in targets]
         veil = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        veil.fill(DIM)
+        veil.fill(VEIL)
         for hole in lit:
-            veil.fill((0, 0, 0, 0), hole)
+            veil.fill(CLEAR, hole)
         screen.blit(veil, (0, 0))
         for hole in lit:
             pygame.draw.rect(screen, LIT, hole, 2, border_radius=6)

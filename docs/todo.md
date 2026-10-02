@@ -18,8 +18,8 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
       menu, a click on its row that does not pick it up; on the board, the Add tool, or a ?).
 - [x] Each level says what it asks when it opens: its objective in a line or two, before any
       wiring (D-042).
-- [ ] Make it plain that an eye senses through its flat face (D-020). The info box says so
-      (`parts.py`), but the drawing does not single that face out.
+- [x] Make it plain that an eye senses through its flat face (D-020): drawn in its accent,
+      and a thruster's back in the other (D-047).
 - [ ] A passkey for each level: a word typed on the map opens that level at once, so a player
       who comes back does not win the ones before it again. Words of our own, not song titles
       (French law protects an original title, CPI L112-4). Nothing is stored, so this is not
@@ -61,17 +61,15 @@ PR that does it. Ideas for after the jam go in [`ideas.md`](ideas.md), decisions
       `test_determinism.py`.
 - [ ] The real level: to design, with a winner pinned with margin (D-004).
 
-## 3. Body size grows with complexity (brief §1: thrust budget, not node budget)
+## 3. Complexity is scored, not felt (D-045)
 
-- [ ] `complexity(graph) -> int` in `graph/`: what counts (parts, wires, crossings) is a
-      decision to write.
-- [ ] The radius from the complexity in `sim/`. V ∝ 1/R and Ω ∝ 1/R² are already there
-      (D-022): a bigger body loses its turning first.
+- [x] `complexity(board) -> int` in `graph/board.py`: the number of parts, wires free.
+      Every body stays a sphere of radius 1 u, for Stokesian dynamics later.
 
 ## 4. The score (D-028)
 
-- [ ] Each level scored on the time to win and the number of parts. The session's runs drawn as
-      points in that plane, with their Pareto front. Nothing kept between sessions.
+- [x] Each level scored on the time to win and the number of parts. The session's runs drawn as
+      points in that plane, with their Pareto front. Nothing kept between sessions (D-046).
 
 ## 5. Ship
 
