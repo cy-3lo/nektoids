@@ -638,7 +638,7 @@ editor Parts (puzzle-piece), which is also the parts' encyclopedia, Tools (screw
 Files (floppy-disk), Sense (stethoscope), Navigator (compass); in the Run Objectives
 (list-check), Inside (magnifying-glass), Score (trophy), Navigator. At the foot, in both:
 Settings (gear), Chapters (map), then an accented switch between the environments, Editor and
-Sim, which are also tabs over the content (no Builder tab until there is a builder): Run (play)
+Run, which are also tabs over the content (no Builder tab until there is a builder): Run (play)
 in the editor, back (diagram-project) in the Run. Chapters, not "Map", replaces the full-screen
 map. Settings holds fast forward's speed, key hints, tooltips' delay, Fear's tutorial again, and
 Sound and Music once there is sound; not the palette. Tools stay in their drawer while the ring
