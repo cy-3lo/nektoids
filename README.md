@@ -25,9 +25,9 @@ HTML5 project. CI builds the same zip on every push to `main`.
 
 ## Working together
 
-- `main` is protected: every change goes through a pull request reviewed by the other person.
-- The physicist owns `game/nektoids/sim/`; the CS student owns `game/nektoids/graph/` and
-  `game/nektoids/editor/`. Ownership means "decides and writes", not "the only one allowed in".
+- `main` is protected: every change goes through a pull request, checked with `/pr-prep`.
+- The physicist directs and Claude writes the code, in every package. Camille plays the builds
+  and gives his views, which go into `docs/todo.md` and `docs/ideas.md` (D-041).
 - One idea per PR. Anything that changes scope or a model choice gets a line in `docs/decisions.md`.
 
 ## Working with Claude Code
@@ -44,7 +44,7 @@ Shared configuration (committed):
 Personal configuration (not committed), one per contributor:
 
 - `CLAUDE.local.md` at the repo root, one or two lines saying who you are, for example
-  `I am the CS student. Explain, then let me write the code in graph/ and editor/.`
+  `I am the physicist.`
 - Your output style, chosen in `/config` (for learning, try *Learning* or *Explanatory*).
 
 ## Credits

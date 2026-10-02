@@ -1,8 +1,8 @@
 ---
 name: walkthrough
-description: Explain a diff, pull request, file or concept to the other contributor in his own vocabulary — physics for the physicist, software engineering for the CS student. Use when reviewing a PR or reading code the other person wrote.
+description: Explain a diff, pull request, file or concept to its reader in his own vocabulary — physics for the physicist, software engineering for the CS student. Use when reviewing a PR or reading code Claude wrote.
 ---
-# Walkthrough for the other contributor
+# Walkthrough for the reader
 
 Find out who is reading from `CLAUDE.local.md`; if it is missing, ask once.
 

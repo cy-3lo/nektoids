@@ -1,6 +1,6 @@
 ---
 name: pr-prep
-description: Prepare the current branch for a pull request — format, lint, tests, determinism, invariants, and a PR description written for the other contributor.
+description: Prepare the current branch for a pull request — format, lint, tests, determinism, invariants, and a PR description written for the physicist's review.
 disable-model-invocation: true
 ---
 # Prepare a pull request
@@ -14,6 +14,6 @@ disable-model-invocation: true
    Flag every violation explicitly, even small ones.
 5. If the change touches scope, check `docs/decisions.md` has an entry; if not, draft one.
 6. Draft the PR description from `.github/pull_request_template.md`. Write the
-   "What to look at" section for the reviewer: diffs in `sim/` are reviewed by the CS student,
-   diffs in `graph/` or `editor/` by the physicist — use their vocabulary, not the author's.
+   "What to look at" section for the physicist, who reviews his own PRs (D-041): what to read
+   in the diff, in his vocabulary, and what changes on screen for Camille to playtest.
 7. Print the description. Do not push and do not open the PR: the human does that.

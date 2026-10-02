@@ -485,3 +485,13 @@ and `lost(kept)` may lose the run: Outcome gains LOST, checked before WON and TI
 touch ends the run at once. The banner says what lost it ("It touched the light at 4.72 s"),
 with Edit only, and the objective's row turns red. The ring to stay in is drawn dashed like the
 ring to leave, lit once met. What the objectives keep goes into the recording (D-033).
+
+**D-041 — 2026-10-02 — Who does what: the physicist directs and Claude writes the code, in every package; Camille plays the builds and gives his views. Supersedes D-005.**
+Camille has no Claude subscription and is not programming; what he brings is a player's view, as
+in his notes on the editor (`ebc4abb`, `todo.md` §7). The physicist directs and reviews his own
+pull requests with `/pr-prep`; Claude writes, whole features included, after a short plan and a
+go. Camille's notes go into `todo.md` or `ideas.md`, in English, with his name on them.
+D-005 split the code between two programmers who review each other, and one of them is not
+programming: a review that cannot happen only holds the work up.
+Consequences: `CLAUDE.md`, the README, `/pr-prep` and the walkthrough change with it. The
+walkthrough stays, for when Camille wants to read the code.

@@ -1,8 +1,8 @@
 # Walkthrough: `graph/` and `editor/`
 
-For Camille. Under D-005 you own these two packages, but their first version was written before
-you joined. This page is the map: read it with the code open beside it. It takes about half an
-hour, and nothing here needs Claude.
+For Camille, for when you want to read the code behind what you play (D-041). This page is the
+map: read it with the code open beside it. It takes about half an hour, and nothing here needs
+Claude.
 
 Read the sections in order: run the editor, see what it does, follow the code in the order it
 runs, then check yourself with the questions in section 3. Section 4 lists what is weak or
@@ -243,8 +243,7 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 
 ## 6. The graph as dynamics, and the developer view (D-017)
 
-Your father wrote this part, and you review it (D-005): it is where your two packages meet the
-simulation. Read D-016 and D-017 in [`decisions.md`](decisions.md) first; D-017 replaces part of
+This part is where `graph/` and `editor/` meet the simulation. Read D-016 and D-017 in [`decisions.md`](decisions.md) first; D-017 replaces part of
 D-016.
 
 ### 6.1 What it computes
