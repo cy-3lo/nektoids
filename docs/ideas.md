@@ -73,7 +73,7 @@ puts it in scope. Until D-028 these were logged in the decision log as "post-jam
 
 ## Interface
 
-- **An activity bar**: promoted to the todo, §8, with mockups of its drawers.
+- **An activity bar**: decided (D-051), the work is todo §8.
 
 ## Presentation
 

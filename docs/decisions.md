@@ -629,3 +629,17 @@ fresh board, a fresh undo history, its tutorial at step 1. Restarting the tutori
 board, and `follow` passed straight over every step already built, so it never really started
 again. The other levels keep their boards for the session (D-030); their hints start again.
 Fear's tutorial has 17 steps.
+
+**D-051 — 2026-10-02 — The editor and the run will be rebuilt round an activity bar, drawers and environment tabs. Amends D-025, D-035, D-037; the work is todo §8.**
+An activity bar down the left edge, one icon per drawer; one drawer open at a time, pushing the
+board aside, folded by its icon or an arrow on its edge; every drawer's rows alike (icon, name,
+(i), then a count, a key, a lock or a tick). Settings at the foot of the bar, over an accented
+button that switches environments: Editor and Sim, as tabs over the content (no Builder tab
+until there is a builder). Editor drawers: Parts, which is also the parts' encyclopedia; Tools,
+which stay there while the ring round a selected cell (todo §7) brings them to the hand; Files,
+for this session's winning boards, kept in memory, and a board as a line of ASCII to save in a
+text file; Sense, a probe whose circuit the board shows, with a general Board / Circuit switch;
+Navigate; Map, which replaces the full-screen map. Sim drawers: Objectives, Inside, Score,
+Navigate, Map; the run's controls go to a bar under the arena. Parts and the ring both hand
+out parts: they complement each other. Fear's tutorial is rewritten with the bar. Decided from
+two rounds of mockups drawn with the game's own palette and renders.
