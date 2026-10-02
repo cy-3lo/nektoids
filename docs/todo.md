@@ -88,8 +88,7 @@ column and the full-screen map.
 - [ ] Environments as tabs over the content: Editor and Run (a Builder later, no tab until then).
       Switched by a tab, or by the accented switch.
 - [ ] The circuit, one drawing for Sense (Editor) and Inside (Run): parts shaded by their rate,
-      beads on the wires, no numbers, a level meter by each eye and thruster in accent 1, the
-      colour of their faces, as tall as the part and just beside it. A swap button on the drawer exchanges the drawer's content and the
+      beads on the wires, no numbers, a level meter by each eye and thruster (D-052). A swap button on the drawer exchanges the drawer's content and the
       main screen: in the editor, circuit big and the probe's map small, or the level big with
       the probe; in the Run, the arena big and the circuit small, or the other way round.
 - [ ] The probe: the swimmer put anywhere on the level and turned; the circuit is the board as

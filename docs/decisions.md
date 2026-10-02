@@ -654,3 +654,12 @@ D-016, whose sensor sliders were the developer's only. This session's winning bo
 wait, and a board as text is its own PR (todo §9). The run's controls go to a bar under the
 arena. Fear's tutorial is rewritten with the bar. Decided from three rounds of mockups drawn with
 the game's own palette and renders.
+
+**D-052 — 2026-10-02 — In every circuit view, parts keep their colour; a level meter by each eye and thruster shows its rate, all meters alike, in accent 1. Amends D-017's shading.**
+The beads and the meters already show the rates, so shading each part by its rate said it twice.
+Wherever the circuit is drawn (the run's Inside, the developer view, and the Sense and Inside
+drawers to come), a part keeps its fill, and each eye and thruster has a meter beside it: 1.0 hex
+size tall, 10 px wide, its centre 0.86 hex size to the right of the part's, past any part's reach
+whichever way it turns, filled from the foot up to its rate in accent 1 (`METER`), the colour of
+the part's face. The developer view's thruster bars become these meters, on the eyes too, opposite
+its sliders; it keeps its names and numbers.

@@ -28,7 +28,7 @@ from nektoids.editor.palette import (
     DARK,
     DIM_TEXT,
     FULL,
-    IDLE,
+    METER,
     PANEL,
     RULE,
     TEXT,
@@ -44,6 +44,9 @@ from nektoids.graph.network import label
 
 BEAD_RADIUS = 0.12  # hex sizes
 BAR_WIDTH = 6  # [px]
+METER_HEIGHT = 1.0  # every part's level meter, eye or thruster alike [hex sizes]
+METER_AT = 0.86  # its centre right of the part's, past every part's reach [hex sizes]
+METER_WIDTH = 10  # [px]
 HEADINGS = {"head": DIM_TEXT, "eq": TEXT, "warn": WARN}
 LINE_HEIGHT = 17  # [px]
 HINTS = (
@@ -98,7 +101,8 @@ def draw_circuit(
     belt: bool = False,
     plain: bool = False,
 ) -> None:
-    """Wires, beads and parts at the rates y (n,), each part shaded by its rate. Unless `plain`,
+    """Wires, beads and parts at the rates y (n,): the beads, and a level meter by each eye and
+    thruster, show the rates; the parts keep their colour (D-052). Unless `plain`,
     every part has its name and its rate as a number, and every thruster a bar."""
     _draw_wires(screen, circuit, belt)
     _draw_parts(screen, circuit, y, fonts, plain)
@@ -127,16 +131,15 @@ def _draw_parts(
         kind, rate = net.kinds[i], float(y[i])
         cx, cy = circuit.centre(i)
         facing = circuit.board.nodes[node_id].facing
-        fill = mix(IDLE, FULL, rate / RATE_MAX)
-        draw_part(screen, fonts, kind, placed_angle(kind, facing), (cx, cy), size, False, fill)
+        draw_part(screen, fonts, kind, placed_angle(kind, facing), (cx, cy), size, False)
+        if kind in (Kind.EYE, Kind.THRUSTER):
+            _draw_meter(screen, (cx + METER_AT * size, cy), size, rate)
         if plain:
             continue
         name = _text(fonts.small, label(net, i), DIM_TEXT)
         screen.blit(name, name.get_rect(center=(cx, cy - 1.35 * size)))
         number = _text(fonts.small, f"{rate:.2f}", TEXT)
         screen.blit(number, number.get_rect(center=(cx, cy + 1.3 * size)))
-        if kind is Kind.THRUSTER:
-            _draw_bar(screen, (cx + 1.45 * size, cy), size, rate)
 
 
 def _draw_slider(screen: pygame.Surface, scene: SchematicScene, i: int) -> None:
@@ -150,17 +153,18 @@ def _draw_slider(screen: pygame.Surface, scene: SchematicScene, i: int) -> None:
     pygame.draw.circle(screen, DARK, knob, 7, 2)
 
 
-def _draw_bar(
+def _draw_meter(
     screen: pygame.Surface, centre: tuple[float, float], size: float, rate: float
 ) -> None:
-    height = 1.6 * size
-    outline = pygame.Rect(0, 0, BAR_WIDTH + 4, round(height))
+    """A part's level meter: filled from the foot up to its rate, in the colour of its face."""
+    outline = pygame.Rect(0, 0, METER_WIDTH, round(METER_HEIGHT * size))
     outline.center = (round(centre[0]), round(centre[1]))
-    filled = pygame.Rect(outline.x + 2, outline.bottom - 2, BAR_WIDTH, 0)
-    filled.height = round((outline.height - 4) * min(1.0, rate / RATE_MAX))
-    filled.bottom = outline.bottom - 2
+    filled = outline.inflate(-4, -4)
+    foot = filled.bottom
+    filled.height = round(filled.height * min(1.0, rate / RATE_MAX))
+    filled.bottom = foot
     pygame.draw.rect(screen, RULE, outline, 1)
-    pygame.draw.rect(screen, FULL, filled)
+    pygame.draw.rect(screen, METER, filled)
 
 
 def _draw_panel(screen: pygame.Surface, scene: SchematicScene, fonts: Fonts) -> None:
