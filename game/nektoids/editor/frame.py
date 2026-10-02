@@ -123,8 +123,6 @@ class Frame:
             self.settings.next_fast()
         elif setting is Setting.HINTS:
             self.settings.toggle_hints()
-        elif setting is Setting.TOOLTIPS:
-            self.settings.next_tooltip()
         elif setting is Setting.TUTORIAL:
             self._ask("tutorial")
         else:

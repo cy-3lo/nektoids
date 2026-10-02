@@ -158,7 +158,6 @@ class Goal:
 class Setting(Enum):  # the Settings drawer's rows (D-054)
     FAST = "fast"  # fast forward's speed
     HINTS = "hints"  # keys on the rows and in the tooltips
-    TOOLTIPS = "tooltips"  # how soon a tooltip shows
     TUTORIAL = "tutorial"  # Fear's tutorial again
     SOUND = "sound"  # locked: there is no sound yet
     MUSIC = "music"
@@ -405,17 +404,9 @@ class _Rows:
             self._row(Goal(k), GOAL_HEIGHT)
 
     def settings(self) -> None:
-        sections = (
-            ("Run", (Setting.FAST,)),
-            ("Display", (Setting.HINTS, Setting.TOOLTIPS)),
-            ("Help", (Setting.TUTORIAL,)),
-            ("Sound", (Setting.SOUND, Setting.MUSIC)),
-        )
-        for title, rows in sections:
-            self._title(title, self.sections)
-            for what in rows:
-                self._row(what)
-            self.y += SECTION_GAP
+        """Its rows one under the other, no titles (D-067)."""
+        for what in Setting:
+            self._row(what)
 
     def chapters(self, levels: int) -> None:
         self._title("Chapter 1: light", self.sections)

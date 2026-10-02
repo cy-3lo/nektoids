@@ -148,11 +148,6 @@ TIP = {
 SETTING = {  # Settings' rows: their name, icon and what their info box says (D-054)
     Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
     Setting.HINTS: ("Key hints", "keyboard", "Show each row's key, and the bar's in its tooltip."),
-    Setting.TOOLTIPS: (
-        "Tooltips",
-        "clock",
-        "How long the mouse rests on an icon before its name shows.",
-    ),
     Setting.TUTORIAL: (
         "Tutorial",
         "graduation-cap",
@@ -750,7 +745,6 @@ def _draw_settings(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     shown = {
         Setting.FAST: ("count", f"{settings.fast}x"),
         Setting.HINTS: ("tick", "on") if settings.key_hints else ("count", "off"),
-        Setting.TOOLTIPS: ("count", f"{settings.tooltip_seconds:.1f} s"),
         Setting.TUTORIAL: ("none", ""),
     }
     for setting, rect in scene.layout.setting_rows:

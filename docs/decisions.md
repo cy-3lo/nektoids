@@ -843,3 +843,9 @@ obstacles and the swimmer where it is now, so the extent grows as the swimmer le
 frame. The farthest zoom shows the extent exactly, and the zoom bar runs from there to the
 nearest; the view is kept inside the extent, whatever moves it (`layout.kept_on_board`,
 `arena_view.kept_in`), so the frame is always inside the overview.
+
+**D-067 — 2026-10-02 — Settings drops the tooltips' delay and its titles. Amends D-054.**
+Settings is its rows one under the other, with no section titles: fast forward's speed, key
+hints, the tutorial again, Sound and Music (locked). The tooltips' delay is no longer set: a
+tooltip shows after 1 s. Shorter, Settings leaves room in the run for the objectives under it
+(D-065).

@@ -274,7 +274,7 @@ def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_sec
     assert [k for k, _ in chapters.chapter_rows] == [0, 1, 2, 3]  # the sandbox last
     settings = make_layout(Drawer.SETTINGS)
     assert [what for what, _ in settings.setting_rows] == list(Setting)
-    assert [title for title, _ in settings.section_titles] == ["Run", "Display", "Help", "Sound"]
+    assert settings.section_titles == ()  # its rows, no titles (D-067)
     for layout, rows, row_at in (
         (chapters, chapters.chapter_rows, chapter_row_at),
         (settings, settings.setting_rows, setting_row_at),
