@@ -1,6 +1,6 @@
 {
   "title": "Love",
-  "spec": "Stay by the light without touching it.",
+  "spec": "Stay by the light for 5 s without touching it.",
   "start": {"at": [10.0, 19.0], "heading": 0.0},
   "items": [{"kind": "light", "at": [25.0, 19.0], "power": 8.0}],
   "board": {
