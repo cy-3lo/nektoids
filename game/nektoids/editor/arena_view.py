@@ -14,9 +14,10 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.editor.layout import Rect
+from nektoids.editor.palette import LIGHT, SHADOW
 
-DARKEST = np.array([16, 17, 22])  # a reading of 0: shadow
-BRIGHTEST = np.array([236, 238, 244])  # a reading of RATE_MAX
+DARKEST = np.array(SHADOW)  # a reading of 0: shadow
+BRIGHTEST = np.array(LIGHT)  # a reading of RATE_MAX
 GRAB = 6.0  # a press this far outside a body still grabs it [px]
 EDGE_INSET = 14.0  # a marker for a swimmer out of view sits this far inside the edge [px]
 SMOOTHING = 2  # passes of the 1-2-1 filter over the light map

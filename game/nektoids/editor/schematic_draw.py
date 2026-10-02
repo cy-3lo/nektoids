@@ -16,30 +16,32 @@ from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import knob_y, track_for
 from nektoids.editor.draw import (
-    BACKGROUND,
-    DARK,
-    DIM_TEXT,
-    PANEL,
-    RULE,
-    TEXT,
-    WIRE,
     Fonts,
     draw_part,
     placed_angle,
 )
 from nektoids.editor.geometry import cumulative_lengths, point_at, wire_points
+from nektoids.editor.palette import (
+    BACKGROUND,
+    BEAD,
+    BEAD_OFF,
+    DARK,
+    DIM_TEXT,
+    FULL,
+    IDLE,
+    PANEL,
+    RULE,
+    TEXT,
+    VALUE,
+    WARN,
+    WIRE,
+    WIRE_OFF,
+)
 from nektoids.editor.schematic import BOARD_AREA, PANEL_WIDTH, STATUS_HEIGHT, SchematicScene
 from nektoids.graph.board import Kind
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 
-IDLE = (110, 114, 128)  # a part at rate 0
-FULL = (240, 242, 248)  # a part at RATE_MAX
-WIRE_OFF = (58, 62, 76)  # a wire that carries nothing
-BEAD = (232, 234, 242)  # a bead on a wire at RATE_MAX
-BEAD_OFF = (92, 96, 110)  # ... and on a wire that barely carries anything
-VALUE = (196, 200, 214)  # the live numbers in the panel
-WARN = (240, 184, 96)
 BEAD_RADIUS = 0.12  # hex sizes
 BAR_WIDTH = 6  # [px]
 HEADINGS = {"head": DIM_TEXT, "eq": TEXT, "warn": WARN}

@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import pygame
 
-from nektoids.editor.draw import (
+from nektoids.editor.draw import Fonts, draw_title
+from nektoids.editor.layout import contains
+from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
     BUTTON,
@@ -15,14 +17,11 @@ from nektoids.editor.draw import (
     PANEL,
     RULE,
     TEXT,
-    Fonts,
-    draw_title,
+    VEIL,
 )
-from nektoids.editor.layout import contains
 from nektoids.editor.router import CHAPTER, CHAPTER_NAME, Router, level_label
 from nektoids.editor.shell import BACK_KEY, CARD, END_KEY, MAP_TOP, bottom_button, map_rows
 
-VEIL = (0, 0, 0, 150)  # over a level's board, under its card
 STUDIO = "Cy-3LO"  # always written so (CLAUDE.md)
 INVITE = "Wire the eyes to the thrusters, then Run."  # the card's one instruction (D-028)
 START = "Click, or press a key, to start."  # how either card goes

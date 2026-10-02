@@ -44,37 +44,38 @@ from nektoids.editor.layout import (
     ViewButton,
     visible_cells,
 )
+from nektoids.editor.palette import (
+    ACTIVE,
+    BACKGROUND,
+    BODY_OUTLINE,
+    BUTTON,
+    COMPONENT,
+    DARK,
+    DIM_TEXT,
+    DOOMED,
+    FLASH,
+    GHOST,
+    GHOST_FILL,
+    GHOST_OK,
+    GREYED,
+    GRID_LINE,
+    HOVER,
+    LOCK_RING,
+    OUTSIDE,
+    OUTSIDE_LINE,
+    PANEL,
+    REFUSED,
+    RULE,
+    SWATCH_OFF,
+    TEXT,
+    TOOLTIP_BG,
+    WIRE,
+    ZONE,
+)
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
-
-BACKGROUND = (18, 20, 28)
-PANEL = (26, 29, 40)
-GRID_LINE = (60, 64, 78)
-ZONE = (26, 29, 40)  # cells of the level's zone
-OUTSIDE = (11, 12, 17)  # cells outside it
-OUTSIDE_LINE = (28, 30, 38)
-HOVER = (44, 50, 68)
-FLASH = (150, 50, 55)
-BUTTON = (40, 44, 58)
-ACTIVE = (78, 84, 100)  # selected tool or menu row
-RULE = (52, 56, 70)  # separators between columns and between sets of buttons
-SWATCH_OFF = (44, 47, 58)  # colour picker, not active yet
-TOOLTIP_BG = (34, 37, 50)
-TEXT = (220, 222, 230)
-DIM_TEXT = (130, 134, 150)
-REFUSED = (240, 110, 110)
-DOOMED = (86, 90, 104)  # darker grey: what a Delete click would remove
-DARK = (18, 20, 28)
-WIRE = (150, 154, 166)
-GHOST = (96, 101, 118)  # where a wire would run
-GHOST_OK = (228, 231, 240)  # ... and it may connect there
-GHOST_FILL = (40, 44, 58)  # a tutorial's ghost part, under the real one
-LOCK_RING = (170, 175, 190)
-COMPONENT = (178, 182, 194)
-GREYED = (80, 84, 96)
-BODY_OUTLINE = (54, 58, 74)  # the swimmer's symbol behind the board: which way is forward
 
 TIP = {
     Tool.ADD: "Add a component",

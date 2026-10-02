@@ -552,3 +552,21 @@ bright and joined by a staircase, the other wins dimmed, this run ringed. Scrub 
 timeline and the wiring returns. Under the banner, where it was first placed, the plot hid the
 light and the swimmer resting by it in Love; the levels' items reach most of the arena's height
 (Fear's ring 76 to 532 px), so no place over the arena stays clear, and the column always does.
+
+**D-047 — 2026-10-02 — Every colour is named by its job and comes from one palette, built from four numbers in OKLCH; the game takes Forest, violet and sky.**
+`editor/palette.py` holds every colour the game draws, and no other module holds one (a test
+checks). A palette is ten neutrals (deep, base, surface, raised, line, muted, dim, parts, text,
+bright) at the lightness of the greys the game was drawn in, measured in OKLab, so every contrast
+stays as it was; all of one tint, `tint_chroma` at the dark end fading to a third at the bright
+end. Two accents, of different hues, each in three levels: dark for fills under light icons, mid
+for marks on parts, bright for highlights over dark ground. `sense` is the eyes' and the
+tutorial's (the tool in hand, the eye's face, a target's outline), `act` the thrusters' and the
+swimmer's. The signals keep their hues: red for refusals and lost runs, amber for the developer
+view. Below the palette, each colour the drawing code uses is defined from a role, under the
+names it had: `BACKGROUND = P.base`, `ACTIVE = P.sense.dark`, `BODY = P.act.bright`.
+`PALETTE = make_palette(tint_hue=150, tint_chroma=0.028, sense_hue=315, act_hue=235)`: green-grey,
+violet and sky blue, chosen among ten candidates rendered into the editor, a run and a tutorial
+step (the page is in this session's artifacts). Changing those four numbers changes every colour.
+Tests pin the conversion, the order of the levels, the accents 45° apart or more, and contrasts
+for any tint: text on the background 7 or more, dim text and parts on panels 4.5 or more, the
+accents' marks on the board 3 or more (WCAG).

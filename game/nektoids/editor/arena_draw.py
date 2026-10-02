@@ -54,7 +54,6 @@ from nektoids.editor.arena_layout import (
     timeline_x,
 )
 from nektoids.editor.arena_view import (
-    DARKEST,
     edge_marker,
     polar_scale,
     ray_ends,
@@ -64,14 +63,6 @@ from nektoids.editor.arena_view import (
 )
 from nektoids.editor.devdrive import DT
 from nektoids.editor.draw import (
-    ACTIVE,
-    BACKGROUND,
-    DARK,
-    DIM_TEXT,
-    PANEL,
-    REFUSED,
-    RULE,
-    TEXT,
     Fonts,
     draw_body,
     draw_button,
@@ -80,7 +71,27 @@ from nektoids.editor.draw import (
     draw_title,
 )
 from nektoids.editor.layout import PALETTE_TITLE
-from nektoids.editor.schematic_draw import FULL, draw_circuit
+from nektoids.editor.palette import (
+    ACTIVE,
+    BACKGROUND,
+    BODY,
+    BODY_UNSELECTED,
+    DARK,
+    DIM_TEXT,
+    EYE_SHADES,
+    FULL,
+    LIGHT,
+    OBSTACLE,
+    PANEL,
+    RAY,
+    REFUSED,
+    RING,
+    RULE,
+    RUN_SO_FAR,
+    SHADOW,
+    TEXT,
+)
+from nektoids.editor.schematic_draw import draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 from nektoids.levels.objectives import Outcome
@@ -88,27 +99,18 @@ from nektoids.levels.score import Score, front
 from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.optics import discs
 
-OBSTACLE = (84, 88, 102)
-RAY = (36, 38, 47)  # every ray, whatever its light
 RAY_WIDTH = 2  # [px]
 SUN = 1.3  # the sun's height on a light, in light radii
-DARK_ARENA = tuple(int(v) for v in DARKEST)  # the arena under the rays
-LIGHT = (236, 238, 244)
-BODY = (228, 231, 240)  # the selected swimmer
-BODY_UNSELECTED = (132, 136, 150)
 SYMBOL_WIDTH = 2  # [px]
 MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
-RUN_SO_FAR = (110, 114, 128)  # the timeline's part already run, ahead of the playhead
 PLAYHEAD = 6  # [px]
 END_MARK = 3  # the red mark across the timeline where the run ended [px]
 PART_DOT = 4  # an eye's reading in the polar plot [px]
 POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its circle
-EYE_SHADES = ((232, 234, 242), (150, 154, 166))  # one per eye in the polar plot, in turn
 BAR_HEIGHT = 8  # an objective's bar [px]
 ROW_PITCH = 40  # one objective [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
-RING = (150, 154, 166)  # the ring to leave round a light, until it is left
 RING_DASHES = 72  # half of them drawn
 ICON = {
     ArenaButton.EDIT: "pen",
@@ -180,7 +182,7 @@ def _map_surface(scene: ArenaScene, size: tuple[int, int]) -> pygame.Surface:
 
 def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     view, arena = scene.view, scene.arena
-    pygame.draw.rect(screen, DARK_ARENA, ARENA_AREA)  # the open plane, as far as it shows
+    pygame.draw.rect(screen, SHADOW, ARENA_AREA)  # the open plane, as far as it shows
     if scene.show_map:
         rect = _map_rect(scene)
         screen.blit(_map_surface(scene, rect.size), rect.topleft)
