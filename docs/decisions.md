@@ -1175,7 +1175,9 @@ place in the order. If one finds no way round, nothing changes and the status li
 part moved routes again its own wires and those crossing the cell it goes to, together, in the
 order they were drawn. A drag, or the keyboard carrying a part, works each step out from the
 board as it was when the part was picked up: a wire the part passed over goes back as it moves
-on, and only where it is let go are the wires routed round it. D-007's "routes never move once
+on, and only where it is let go are the wires routed round it. If the board is edited otherwise
+on the way, a turn while the keyboard carries the part, the move goes on from the board as it
+then is, and the turn stays. D-007's "routes never move once
 drawn" becomes: a route changes only when a part is put on a cell it crosses, placed or moved
 there, or when its own part moves (D-011); it never changes on its own.
 
