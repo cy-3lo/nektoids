@@ -23,7 +23,7 @@
     ],
     "steps": [
       {
-        "show": {"run": "arena"},
+        "show": {"run": "swimmer"},
         "say": [
           "This is your swimmer, seen from above: the",
           "tip of its triangle is the way it heads. On",
@@ -48,7 +48,7 @@
         ]
       },
       {
-        "show": {"area": "board"},
+        "show": {"page": "editor"},
         "say": [
           "The board is your swimmer's body, its front to",
           "the right. Where you put a part is where it", "sits. Atop it: what a click does now."
@@ -59,15 +59,6 @@
         "say": [
           "Tools: Write builds and Delete removes, with",
           "Undo and Redo. At its foot, the Wheel: what", "can be done on the cell you click."
-        ]
-      },
-      {
-        "show": {"area": "bar"},
-        "say": [
-          "The bar on the left opens the drawers: Tools,",
-          "Parts, Files, Diagnostic, Navigator, or press",
-          "their initial. At its foot: Settings, Chapters,",
-          "and Run, which sets the swimmer going."
         ]
       },
       {
@@ -88,17 +79,18 @@
         ]
       },
       {
-        "show": [{"cell": [1, 1]}, {"wheel": "eye"}],
-        "until": {"placed": {"kind": "eye", "cell": [1, 1]}},
-        "say": ["Now the second eye: click this cell, then the", "Eye on the Wheel, or press 1."]
+        "show": [{"cell": [1, 1]}, {"wheel": "eye"}, {"wheel": "turn right"}],
+        "until": [
+          {"placed": {"kind": "eye", "cell": [1, 1]}},
+          {"facing": {"cell": [1, 1], "facing": "SW"}}
+        ],
+        "say": [
+          "The second eye goes on this cell, looking back",
+          "and to the right: the Eye on the Wheel, or 1,", "then Turn right, or R, twice."
+        ]
       },
       {
-        "show": [{"wheel": "turn right"}, {"cell": [1, 1]}],
-        "until": {"facing": {"cell": [1, 1], "facing": "SW"}},
-        "say": ["This one looks back and to the right: Turn", "right on the Wheel, or R, twice."]
-      },
-      {
-        "show": {"area": "parts"},
+        "show": {"drawer": "parts"},
         "say": [
           "Parts lists what the level hands out; the (i)",
           "on a row says what the part does. A part can",
@@ -106,17 +98,15 @@
         ]
       },
       {
-        "show": [{"menu": "thruster"}, {"cell": [1, -2]}],
-        "until": {"placed": {"kind": "thruster", "cell": [1, -2]}},
+        "show": [{"menu": "thruster"}, {"cell": [1, -2]}, {"cell": [-1, 2]}],
+        "until": [
+          {"placed": {"kind": "thruster", "cell": [1, -2]}},
+          {"placed": {"kind": "thruster", "cell": [-1, 2]}}
+        ],
         "say": [
           "Thrusters push the way they point, forward",
-          "already. Drag one from Parts onto this cell..."
+          "already. Drag one from Parts onto each of", "these two cells."
         ]
-      },
-      {
-        "show": [{"menu": "thruster"}, {"cell": [-1, 2]}],
-        "until": {"placed": {"kind": "thruster", "cell": [-1, 2]}},
-        "say": ["...and the other one here."]
       },
       {
         "show": [{"cell": [2, -1]}, {"cell": [1, -2]}],
@@ -140,37 +130,33 @@
         ]
       },
       {
-        "say": [
-          "The run waits for you. Under the arena: start",
-          "again, play or pause, a step, fast forward;",
-          "then the timeline: click it to go to any time."
-        ],
-        "show": {"run": "controls"}
-      },
-      {
-        "say": [
-          "Inside: the swimmer's wiring, live. Beads",
-          "flow along the wires, the faster the more", "light an eye reads."
-        ],
-        "show": {"run": "inside"}
-      },
-      {
-        "say": [
-          "Press Play, or Space. The right eye sees the",
-          "light and drives the right thruster: the", "swimmer turns away and flees."
-        ],
         "show": [{"run": "play"}, {"run": "arena"}],
-        "until": {"outcome": "won"}
+        "until": {"time": 1.0},
+        "say": ["Press Play, or Space, and watch the swimmer."]
       },
       {
+        "show": {"run": "inside"},
         "say": [
-          "That is fear: it turns away from the light.",
+          "The run waits. Inside: the swimmer's wiring,",
+          "live. Beads flow along the wires, the faster",
+          "the more light an eye reads. Next goes on."
+        ]
+      },
+      {
+        "show": {"run": "arena"},
+        "until": {"outcome": "won"},
+        "say": [
+          "The right eye sees the light and drives the",
+          "right thruster: the swimmer turns away and", "flees. That is fear."
+        ]
+      },
+      {
+        "show": {"run": "score"},
+        "say": [
           "Each win is scored on its time and its parts:",
           "a point in Score. Fewer of either is better;",
-          "the line joins the wins no other beats.",
-          "Close, then Next level when you are ready."
-        ],
-        "show": {"run": "score"}
+          "the line joins the wins no other beats."
+        ]
       }
     ]
   }

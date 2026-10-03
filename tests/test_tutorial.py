@@ -64,14 +64,28 @@ def fear(until=None, show=None) -> int:
 
 
 TAB = fear({"screen": "edit"})  # from the run to the editor (D-060)
-BOARD, TOOLS = fear(show={"area": "board"}), fear(show={"drawer": "tools"})
-BAR, PARTS = fear(show={"area": "bar"}), fear(show={"area": "parts"})
+BOARD, TOOLS = fear(show={"page": "editor"}), fear(show={"drawer": "tools"})
+PARTS = fear(show={"drawer": "parts"})
 EYE = fear({"placed": {"kind": "eye", "cell": [2, -1]}})  # from the Wheel
 TURN = fear({"facing": {"cell": [2, -1], "facing": "NW"}})
-THRUSTER = fear({"placed": {"kind": "thruster", "cell": [1, -2]}})  # from Parts
+SECOND = fear(  # the second eye, placed and turned on one card (D-071)
+    [{"placed": {"kind": "eye", "cell": [1, 1]}}, {"facing": {"cell": [1, 1], "facing": "SW"}}]
+)
+THRUSTER = fear(  # both thrusters, from Parts, on one card
+    [
+        {"placed": {"kind": "thruster", "cell": [1, -2]}},
+        {"placed": {"kind": "thruster", "cell": [-1, 2]}},
+    ]
+)
 WIRE = fear({"wired": {"from": [2, -1], "to": [1, -2]}})
-RUN, PLAY = fear({"screen": "run"}), fear({"outcome": "won"})
-CONTROLS = fear(show={"run": "controls"})
+RUN, PLAY = fear({"screen": "run"}), fear({"time": 1.0})  # Run, then Play: 1 s of it
+INSIDE, WIN = fear(show={"run": "inside"}), fear({"outcome": "won"})
+
+
+def conditions(step) -> list:
+    """What `step` waits for, one or several (D-071), as a list."""
+    until = step.until or []
+    return until if isinstance(until, list) else [until]
 
 
 def wheel_for(step, layout):
@@ -81,8 +95,10 @@ def wheel_for(step, layout):
         return Live()
     board = LEVELS["Fear"].new_board()
     cell = next(tuple(one["cell"]) for one in step.show if "cell" in one)
-    if "facing" in step.until:
-        board.place(Kind.EYE, cell)
+    if any("facing" in until for until in conditions(step)) and not any(
+        "placed" in until for until in conditions(step)
+    ):
+        board.place(Kind.EYE, cell)  # an eye to turn; a card that also places it starts empty
     items = offer(board, cell, FEAR_KINDS)
     return Live(slots(items, centre_in(layout.wheel_view), WHEEL_HEX, FEAR_KINDS), cell)
 
@@ -116,15 +132,16 @@ def test_only_the_first_level_leads_the_later_ones_only_hint():
 def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     level = LEVELS["Fear"]
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
-    context = lambda tool=Tool.ADD, screen=Screen.EDIT, outcome=None: Context(  # noqa: E731
-        board, tool, screen, outcome
-    )
-    for _ in range(2):  # in the run: the swimmer, Objectives: Next
+
+    def context(tool=Tool.ADD, screen=Screen.EDIT, outcome=None, time=0.0):
+        return Context(board, tool, screen, outcome, time)
+
+    for shown in ("swimmer", "objectives"):  # in the run, nothing dimmed (D-071): Next
         tutorial.follow(context(screen=Screen.RUN))
+        assert tutorial.step.show == {"run": shown} and tutorial.explains
         tutorial.next()
-    tutorial.follow(context(screen=Screen.RUN))
     assert tutorial.step.until == {"screen": "edit"}  # the Editor tab
-    for _ in range(3):  # the board, Tools and its Wheel, the bar: Next
+    for _ in range(2):  # the editor's page, Tools and its Wheel: Next
         tutorial.follow(context())
         tutorial.next()
     assert tutorial.step.until == {"placed": {"kind": "eye", "cell": [2, -1]}}
@@ -138,22 +155,34 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     assert "facing" in tutorial.step.until
     board.rotate(upper.id, 1)  # NW
     tutorial.follow(context(Tool.TURN_LEFT))
-    assert_wheel_offers(tutorial.step, board)  # the second eye's
-    lower = board.place(Kind.EYE, (1, 1), facing=SW)  # placed already turned: two steps at once
+    assert tutorial.index == SECOND  # the second eye: one card to place and turn it (D-071)
+    assert_wheel_offers(tutorial.step, board)  # the Eye first
+    lower = board.place(Kind.EYE, (1, 1))
     tutorial.follow(context())
-    assert tutorial.step.show == {"area": "parts"} and tutorial.explains  # then Parts: Next
+    assert tutorial.index == SECOND  # placed, not turned yet
+    assert_wheel_offers(tutorial.step, board)  # then Turn right
+    board.rotate(lower.id, -1)
+    board.rotate(lower.id, -1)  # SW
+    tutorial.follow(context())
+    assert tutorial.step.show == {"drawer": "parts"} and tutorial.explains  # then Parts: Next
     tutorial.next()
-    assert tutorial.step.until == {"placed": {"kind": "thruster", "cell": [1, -2]}}
-    left, right = board.place(Kind.THRUSTER, (1, -2)), board.place(Kind.THRUSTER, (-1, 2))
+    assert tutorial.index == THRUSTER  # both thrusters on one card
+    left = board.place(Kind.THRUSTER, (1, -2))
+    tutorial.follow(context())
+    assert tutorial.index == THRUSTER  # one of the two
+    right = board.place(Kind.THRUSTER, (-1, 2))
     board.connect(upper.id, left.id)
     board.connect(lower.id, right.id)
     tutorial.follow(context(Tool.WIRE))
     assert tutorial.step.until == {"screen": "run"}
     tutorial.follow(context(screen=Screen.RUN))
-    for shown in ("controls", "inside"):  # the run held still: Next
-        assert tutorial.step.show == {"run": shown} and tutorial.explains
-        tutorial.next()
-    assert tutorial.step.until == {"outcome": "won"} and not tutorial.explains  # Play
+    assert tutorial.index == PLAY and not tutorial.explains  # Play first
+    tutorial.follow(context(screen=Screen.RUN, time=0.5))
+    assert tutorial.index == PLAY
+    tutorial.follow(context(screen=Screen.RUN, time=1.0))  # 1 s on: the run waits, Inside
+    assert tutorial.step.show == {"run": "inside"} and tutorial.explains
+    tutorial.next()  # Next: the run goes on to the win
+    assert tutorial.step.until == {"outcome": "won"} and not tutorial.explains
     tutorial.follow(context(screen=Screen.RUN, outcome=Outcome.WON))
     assert tutorial.step.show == {"run": "score"} and tutorial.explains  # the score, last
     tutorial.next()
@@ -162,11 +191,15 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
 
 
 def assert_wheel_offers(step, board):
-    """Every Wheel's icon `step` shows is one the Wheel offers round its cell on `board`."""
+    """Every Wheel's icon `step` shows for the stage its cell is at, a part to place on it while
+    it is empty, an action once a part is on it, is one the Wheel offers there on `board`."""
     cell = next(tuple(one["cell"]) for one in step.show if "cell" in one)
     offered = {what.value for what in offer(board, cell, FEAR_KINDS)}
-    for one in step.show:
-        assert "wheel" not in one or one["wheel"] in offered, (one, offered)
+    parts = {kind.value for kind in Kind}
+    empty = board.node_at(cell) is None
+    icons = [one["wheel"] for one in step.show if "wheel" in one]
+    stage = [icon for icon in icons if (icon in parts) == empty]
+    assert stage and all(icon in offered for icon in stage), (stage, offered)
 
 
 def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_inside_it():
@@ -204,7 +237,7 @@ def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds()
     context = Context(board, Tool.ADD, Screen.EDIT)
     for _ in range(2):  # the swimmer, Objectives: Next; the tab, met in the editor
         tutorial.next()
-    for _ in range(3):  # the board, Tools, the bar: Next
+    for _ in range(2):  # the editor's page, Tools: Next
         tutorial.follow(context)
         tutorial.next()
     tutorial.follow(context)
@@ -249,7 +282,8 @@ def test_a_leading_step_lets_through_only_the_means_to_what_it_waits_for():
     assert allows(wire, Action("tool", tool=Tool.WIRE))
     assert allows(wire, Action("wire", cell=(1, -2), other=(2, -1)))  # either way round (D-026)
     assert not allows(wire, Action("wire", cell=(2, -1), other=(-1, 2)))
-    run, watch = steps[RUN], steps[PLAY]
+    run, watch = steps[RUN], steps[WIN]
+    assert allows(steps[PLAY], Action("play")) and not allows(steps[PLAY], Action("map"))
     assert allows(run, Action("run")) and not allows(run, Action("map"))
     assert allows(watch, Action("run")) and allows(watch, Action("edit"))
     assert allows(watch, Action("play")) and not allows(steps[TAB], Action("play"))
@@ -268,9 +302,10 @@ def test_a_step_that_waits_for_next_lets_nothing_through_and_a_hint_lets_all():
 
 def test_a_placing_step_shows_where_its_part_comes_from_its_row_or_the_wheel():
     for step in FEAR:  # the eyes from the Wheel, the thrusters from Parts (D-070)
-        if step.until and "placed" in step.until:
-            kind = step.until["placed"]["kind"]
-            assert {"menu": kind} in step.show or {"wheel": kind} in step.show
+        for until in conditions(step):
+            if "placed" in until:
+                kind = until["placed"]["kind"]
+                assert {"menu": kind} in step.show or {"wheel": kind} in step.show
     assert {"wheel": "eye"} in FEAR[EYE].show and {"menu": "thruster"} in FEAR[THRUSTER].show
 
 
@@ -278,7 +313,7 @@ def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
     step = FEAR[THRUSTER]  # the Thruster's row in Parts, its cell
     layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
     spots = target_spots(step.show, Screen.EDIT, layout, centred_view(layout))
-    assert [shape for _, shape in spots] == ["spot", "disc"]  # the row, the cell
+    assert [shape for _, shape in spots] == ["spot", "disc", "disc"]  # the row, the two cells
     assert [rect for rect, _ in spots] == target_rects(
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
@@ -330,12 +365,12 @@ def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_l
         tutorial.next()
     assert not tutorial.waits_for_next  # the Editor tab: there is no Next
     tutorial.index = BOARD
-    for _ in range(3):  # the board, Tools, the bar
+    for _ in range(2):  # the editor's page, Tools
         assert tutorial.waits_for_next
         tutorial.next()
     assert not tutorial.waits_for_next  # place an eye: there is no Next
     tutorial.next()
-    assert tutorial.index == EYE == BOARD + 3
+    assert tutorial.index == EYE == BOARD + 2
 
 
 def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
@@ -368,8 +403,8 @@ def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
 
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    expected = {0: {"arena"}, 1: {"objectives"}, TAB: set(), TOOLS: {"tools"}, BAR: {"bar"}}
-    expected |= {PARTS: {"parts"}, EYE: set(), RUN: set(), CONTROLS: {"controls"}, PLAY: set()}
+    expected = {0: {"swimmer"}, 1: {"objectives"}, TAB: set(), BOARD: set(), TOOLS: {"tools"}}
+    expected |= {PARTS: {"parts"}, EYE: set(), RUN: set(), PLAY: set(), INSIDE: {"inside"}}
     for index, names in expected.items():
         tutorial.index = index
         assert panels(tutorial) == names, index
@@ -438,7 +473,9 @@ def test_a_wheel_icon_is_a_target_while_the_steps_cell_is_focused_and_only_then(
     wheel = tuple(slots(offer(board, cell, kinds), centre_in(tools.wheel_view), WHEEL_HEX, kinds))
     show = [{"cell": [2, -1]}, {"wheel": "eye"}]
     spots = target_spots(show, Screen.EDIT, tools, VIEW, Live(wheel, focused=cell))
-    (_, disc), (icon, shape) = spots
+    (_, disc), (icon, shape), (wheel_area, none) = spots  # the box keeps clear of the Wheel
+    assert none == "none" and wheel_area[1] < tools.wheel_fold[1]  # its title and rule too
+    assert contains(wheel_area, tools.wheel_view[:2]) and contains(wheel_area, icon[:2])
     eye = next(slot for slot in wheel if slot.what is Kind.EYE)
     r = ICON * WHEEL_HEX
     assert shape == "icon" and disc == "disc" and icon[2] == icon[3] == round(2 * r)

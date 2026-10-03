@@ -926,3 +926,18 @@ Wheel's icon keeps Tools or Parts open, whichever is, else opens Tools, and unfo
 it is folded. The {"tool": ...} target, which showed nothing since D-068, goes, and so does a
 tutorial's start screen: every level opens on its run (D-069). Diagnostic is only named, in the
 bar step; teaching it is for later.
+
+**D-071 — 2026-10-03 — Fear's tutorial in 17 steps: nothing dimmed, the swimmer boxed, pages and drawers outlined with their tab or icon; one card for the second eye, one for both thrusters; in the run, Play first, a pause for Inside, then the win and the score. Amends D-050, D-062, D-070.**
+No step dims the screen any more: an explaining step outlines what it shows in the accent and
+leaves the rest as it is, as a step that asks for an action already did (D-063). Fear's first
+step boxes the swimmer alone, {"run": "swimmer"}, its place read off the run; Objectives is
+outlined. The editor's board is explained as its page, {"page": "editor"}: the Editor tab, the
+level's line and the board as one shape, as the run's page (D-062). Tools and Parts are each
+outlined with their icon in the bar, {"drawer": "tools"}, as one shape. The bar's step goes. The
+second eye is placed and turned on one card, and both thrusters placed on one: a step may wait
+for a list of things, met once each is, letting through the means to any. A step that shows a
+Wheel's icon keeps its box clear of the whole Wheel. In the run, Play comes first and waits for
+1 s of the run ({"time": 1.0}); then the run pauses for Inside, the beads explained, and Next
+lets it go on by itself, an explaining step resuming the run it paused; a step waits for the
+win; the last explains the score alone: time and parts, fewer is better, the line of unbeaten
+wins. The step on the run's controls goes: Play's own text and the controls' tooltips name them.

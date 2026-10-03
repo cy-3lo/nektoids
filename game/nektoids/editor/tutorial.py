@@ -339,7 +339,10 @@ def target_spots(
             spots.append(_docked(layout, Drawer(one["drawer"])))
         elif "wheel" in one:
             on = editing and (not cells or live.focused in cells)
-            spots.append((_wheel_icon(one["wheel"], live.wheel) if on else None, "icon"))
+            icon = _wheel_icon(one["wheel"], live.wheel) if on else None
+            spots.append((icon, "icon"))
+            if icon is not None and (_wheel_area(layout), "none") not in spots:
+                spots.append((_wheel_area(layout), "none"))  # the box keeps clear of the Wheel
         else:
             spots.append((target_rect(one, screen, layout, view), _shape(one)))
     return [(rect, shape) for rect, shape in spots if rect is not None]
@@ -413,6 +416,13 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         half_w, half_h = SQRT3 / 2 * view.size, view.size
         return (round(x - half_w), round(y - half_h), round(2 * half_w), round(2 * half_h))
     raise ValueError(f"a step cannot show {dict(show)!r}")
+
+
+def _wheel_area(layout: Layout) -> Rect:
+    """The Wheel at the drawer's foot, its title and the rule over it included (D-071)."""
+    x, top, w, _ = layout.wheel_fold
+    _, y, _, h = layout.wheel_view
+    return (x, top - 4, w, y + h - top + 4)
 
 
 def _wheel_icon(name: str, wheel: tuple[Slot, ...]) -> Rect | None:
