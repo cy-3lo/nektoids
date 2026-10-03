@@ -127,7 +127,7 @@ DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.PARTS: "puzzle-piece",
     Drawer.FILES: "floppy-disk",
     Drawer.DIAGNOSTIC: "stethoscope",
-    Drawer.INSIDE: "magnifying-glass",
+    Drawer.INSIDE: "stethoscope",  # the run's Diagnostic, as the editor's (D-089)
     Drawer.SCORE: "trophy",
     Drawer.NAVIGATOR: "compass",
     Drawer.HINTS: "life-ring",

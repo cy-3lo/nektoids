@@ -140,7 +140,7 @@ class Drawer(Enum):  # D-051
     PARTS = "parts"  # the parts the level hands out, and what each does
     FILES = "files"  # this session's winning boards, to put one back (D-059)
     DIAGNOSTIC = "diagnostic"  # the level, small, with the probe the Run preview runs at (D-058)
-    INSIDE = "inside"  # the run's: the swimmer's wiring, live
+    INSIDE = "inside"  # the run's: the swimmer's wiring, live; shown as Diagnostic (D-089)
     SCORE = "score"  # the run's: the level's wins this session
     NAVIGATOR = "navigator"  # zoom, hand, centre; the rays in the run
     HINTS = "hints"  # at the bar's foot: the level's hints, asked for in turn (D-078)
@@ -239,7 +239,7 @@ DRAWER_KEYS = {
     Drawer.FILES: "F",
     Drawer.DIAGNOSTIC: "D",
     Drawer.NAVIGATOR: "N",
-    Drawer.INSIDE: "I",
+    Drawer.INSIDE: "D",  # the run's Diagnostic (D-089)
     Drawer.SCORE: "S",
     Drawer.HINTS: "?",
     Drawer.SETTINGS: ",",

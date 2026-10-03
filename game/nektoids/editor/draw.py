@@ -182,7 +182,7 @@ TIP = {
     Drawer.PARTS: "Parts",
     Drawer.FILES: "Files",
     Drawer.DIAGNOSTIC: "Diagnostic",
-    Drawer.INSIDE: "Inside",
+    Drawer.INSIDE: "Diagnostic",  # the run's, as the editor's (D-089)
     Drawer.SCORE: "Score",
     Drawer.NAVIGATOR: "Navigator",
     Drawer.HINTS: "Hints",

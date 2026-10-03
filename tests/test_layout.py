@@ -306,7 +306,8 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
     # D-069: a letter may mean one thing in the editor and another in the run, never two in one
     assert set(DRAWER_KEYS) == {*DRAWERS[Env.EDITOR], *DRAWERS[Env.RUN], *FOOT} == set(Drawer)
     for drawer, key in DRAWER_KEYS.items():
-        assert key == drawer.value[0].upper() or drawer in (Drawer.HINTS, *FOOT[1:])
+        named = Drawer.INSIDE  # shown as Diagnostic in the run: D, as the editor's (D-089)
+        assert key == drawer.value[0].upper() or drawer in (Drawer.HINTS, named, *FOOT[1:])
     views = [VIEW_KEYS[b] for b in ViewButton if b not in RUN_VIEWS]  # rays, motion: the run's
     editor = [*(TOOL_KEYS[t] for t in PALETTE_TOOLS), *views, MODE_KEY, LEVEL_KEYS[LevelButton.RUN]]
     editor += [DRAWER_KEYS[d] for d in (*DRAWERS[Env.EDITOR], *FOOT)]
@@ -315,7 +316,8 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
         assert len(set(keys)) == len(keys)
     assert drawer_key(Env.EDITOR, "F") is Drawer.FILES and drawer_key(Env.RUN, "F") is None
     assert drawer_key(Env.RUN, "S") is Drawer.SCORE and drawer_key(Env.EDITOR, "S") is None
-    assert drawer_key(Env.EDITOR, "D") is Drawer.DIAGNOSTIC and drawer_key(Env.RUN, "I")
+    assert drawer_key(Env.EDITOR, "D") is Drawer.DIAGNOSTIC
+    assert drawer_key(Env.RUN, "D") is Drawer.INSIDE  # the run's Diagnostic (D-089)
     assert drawer_key(Env.EDITOR, ",") is drawer_key(Env.RUN, ",") is Drawer.SETTINGS
     assert drawer_key(Env.EDITOR, "?") is drawer_key(Env.RUN, "?") is Drawer.HINTS  # H: the hand
 
