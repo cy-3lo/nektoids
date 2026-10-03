@@ -908,4 +908,5 @@ no longer zooms out in the editor. Once a tooltip of the bar shows, the next ico
 once, for 0.3 s after the last one went, as the mouse crosses the gaps between icons. Every
 tooltip shows after 0.5 s, not 1 s (amends D-067). The tabs read Run, then Editor, and every
 level opens on its run, paused, as Fear's did (D-060): at the start, from Chapters, by Next
-level; the editor is a tab or Esc away. The tutorial follows in its own PR.
+level; its card, the title card or the level's, shows over that run, so only the card goes when
+it is dismissed; the editor is a tab or Esc away. The tutorial follows in its own PR.
