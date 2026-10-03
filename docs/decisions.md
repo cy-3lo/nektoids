@@ -1189,3 +1189,12 @@ the board, made, darkened for Delete, a shadow or being drawn, may connect or no
 whatever the zoom, its arrowheads as before; the hint's small picture of a shadow too. 5 px,
 scaling with the zoom, was tried and found too heavy. Inside's circuit and the parts' entries
 keep their 2 px wires, sized for their beads.
+
+**D-088 — 2026-10-03 — Hints' rows are all speech bubbles; under the shadow's picture, "Go to Tools or Parts", with their icons. Amends D-078.**
+Hints' three rows had three icons: a speech bubble for the idea, a puzzle piece for the parts,
+which is Parts' own icon in the bar, and a ghost for the shadow. Each is now a speech bubble: a
+hint, whatever it says. The bar's Hints keeps its life ring. Under the shadow's picture, in the
+editor and in the run, a line says where to build it: "Go to Tools or Parts", each drawer's
+icon before its name, as the bar draws it; in the run, the editor is a tab away. The picture
+gives up a line's room to it where room is short, in the run above the objectives, where it
+stays at least 140 px across.
