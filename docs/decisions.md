@@ -896,4 +896,6 @@ browser keeps Cmd+comma for its own settings); Tab Chapters, as before. Delete t
 and Delete, the keys that delete everywhere else, and frees D. D-021 becomes one key, one
 meaning within an environment: a letter may mean one thing in the editor and another in the
 run, as F is Files in the editor and Fast forward in the run, S Swap and Score, since the two
-never show together. X, the run's rays, no longer zooms out in the editor.
+never show together. X, the run's rays, no longer zooms out in the editor. Once a tooltip of
+the bar shows, the next icon's shows at once, for 0.3 s after the last one went, as the mouse
+crosses the gaps between icons.

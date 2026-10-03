@@ -1,6 +1,6 @@
 """The frame the editor and the run share (D-051, D-054). frame.py imports no pygame."""
 
-from nektoids.editor.frame import Frame
+from nektoids.editor.frame import WARM_FRAMES, Frame
 from nektoids.editor.layout import Drawer, Layout, LevelButton, Setting, make_layout
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.tutorial import REFUSAL
@@ -96,6 +96,24 @@ def test_an_icons_tooltip_shows_once_the_mouse_has_rested_on_it():
     assert scene.tooltip is Drawer.NAVIGATOR
     scene.frame_track(centre(scene.layout.board_area))
     assert scene.tooltip is None and scene.tip_frames == 0
+
+
+def test_once_a_tooltip_shows_the_next_icons_shows_at_once_across_the_gap_between_them():
+    scene = Scene()  # D-069
+    scene.frame_track(icon(scene, Drawer.NAVIGATOR))
+    for _ in range(scene.settings.tooltip_frames):
+        scene.frame_update()
+    assert scene.tooltip is Drawer.NAVIGATOR
+    x, y = icon(scene, Drawer.NAVIGATOR)
+    scene.frame_track((x, y - 23))  # between two icons: nothing under the mouse
+    scene.frame_update()
+    scene.frame_track(icon(scene, Drawer.DIAGNOSTIC))
+    assert scene.tooltip is Drawer.DIAGNOSTIC  # at once
+    scene.frame_track(centre(scene.layout.board_area))
+    for _ in range(WARM_FRAMES):
+        scene.frame_update()
+    scene.frame_track(icon(scene, Drawer.FILES))
+    assert scene.tooltip is None  # rested long enough off the bar: the wait again
 
 
 def test_the_other_tab_says_what_the_switch_says_and_this_one_nothing():

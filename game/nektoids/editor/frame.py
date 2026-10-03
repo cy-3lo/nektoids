@@ -31,6 +31,7 @@ from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 
 LEAVE = {"editor": "edit", "run": "run"}  # what a tab asks for: the screen it names
+WARM_FRAMES = 18  # after a tooltip, the next one shows at once for this long: 0.3 s [frames]
 
 
 class Frame:
@@ -45,6 +46,7 @@ class Frame:
         self.info: object | None = None  # the row whose info box is open: a part, a tool...
         self.tip_target: object | None = None  # the bar's icon, or the other tab, under the mouse
         self.tip_frames = 0  # how long it has been there
+        self.tip_warm = 0  # a tooltip showed lately: the next shows at once, for so long [frames]
         self.message = ""  # the last refusal, until something succeeds
         self.lit: frozenset[str] = frozenset()  # what a tutorial step explains (D-050); main.py's
         self.gate: Callable[[Action], bool] | None = None  # what it lets through; main.py's
@@ -58,11 +60,16 @@ class Frame:
     def frame_update(self) -> None:
         if self.tip_target is not None:
             self.tip_frames += 1
+        self.tip_warm = WARM_FRAMES if self.tooltip is not None else max(0, self.tip_warm - 1)
 
     def frame_track(self, pos: tuple[int, int]) -> None:
+        """The tooltip follows the mouse: after a rest on a new target; at once if one showed a
+        moment ago, as the mouse goes from icon to icon across the gaps between them (D-069)."""
         target = palette_target_at(self.layout, pos)
         if target != self.tip_target:
-            self.tip_target, self.tip_frames = target, 0
+            warm = target is not None and self.tip_warm > 0
+            self.tip_target = target
+            self.tip_frames = self.settings.tooltip_frames if warm else 0
 
     def frame_press(self, pos: tuple[int, int]) -> bool:
         """A click on the frame, taken: the fold arrow, the bar, a tab, an info disc, a row of
