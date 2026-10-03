@@ -2,6 +2,7 @@
 
 import pytest
 
+from nektoids.editor.arena_layout import BUTTON_KEYS
 from nektoids.editor.layout import (
     ACTION_WIDTH,
     BAR_WIDTH,
@@ -45,6 +46,7 @@ from nektoids.editor.layout import (
     chapter_row_at,
     contains,
     drawer_button_at,
+    drawer_key,
     edit_button_at,
     goal_row_at,
     group_at,
@@ -291,6 +293,23 @@ def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
     assert palette_target_at(LAYOUT, centre(LAYOUT.board_area)) is None
 
 
+def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_environment():
+    # D-069: a letter may mean one thing in the editor and another in the run, never two in one
+    assert set(DRAWER_KEYS) == {*DRAWERS[Env.EDITOR], *DRAWERS[Env.RUN], *FOOT} == set(Drawer)
+    for drawer, key in DRAWER_KEYS.items():
+        assert key == drawer.value[0].upper() or drawer in (Drawer.SETTINGS, Drawer.CHAPTERS)
+    views = [VIEW_KEYS[b] for b in ViewButton if b is not ViewButton.RAYS]  # the rays: the run's
+    editor = [*(TOOL_KEYS[t] for t in PALETTE_TOOLS), *views, MODE_KEY, LEVEL_KEYS[LevelButton.RUN]]
+    editor += [DRAWER_KEYS[d] for d in (*DRAWERS[Env.EDITOR], *FOOT)]
+    run = [*BUTTON_KEYS.values(), *(DRAWER_KEYS[d] for d in (*DRAWERS[Env.RUN], *FOOT))]
+    for keys in (editor, run):
+        assert len(set(keys)) == len(keys)
+    assert drawer_key(Env.EDITOR, "F") is Drawer.FILES and drawer_key(Env.RUN, "F") is None
+    assert drawer_key(Env.RUN, "S") is Drawer.SCORE and drawer_key(Env.EDITOR, "S") is None
+    assert drawer_key(Env.EDITOR, "D") is Drawer.DIAGNOSTIC and drawer_key(Env.RUN, "I")
+    assert drawer_key(Env.EDITOR, ",") is drawer_key(Env.RUN, ",") is Drawer.SETTINGS
+
+
 def test_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_keys():
     ((run, switch),) = LAYOUT.level_buttons
     assert run is LevelButton.RUN and switch[1] + switch[3] <= SCREEN[1] - 8
@@ -303,7 +322,7 @@ def test_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_ke
     assert palette_target_at(LAYOUT, centre(switch)) is run
     assert contains(LAYOUT.bar_area, switch[:2])
     assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
-    assert DRAWER_KEYS == {Drawer.CHAPTERS: "Tab"}
+    assert (DRAWER_KEYS[Drawer.SETTINGS], DRAWER_KEYS[Drawer.CHAPTERS]) == (",", "Tab")
     assert [name for name, _ in LAYOUT.tabs] == ["editor", "run"]
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name

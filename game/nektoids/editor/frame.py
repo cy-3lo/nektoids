@@ -97,9 +97,9 @@ class Frame:
             return True
         return False
 
-    def toggle_chapters(self) -> None:
-        """Tab: Chapters opens, or folds if it is open (D-054)."""
-        self.open_drawer(None if self.layout.drawer is Drawer.CHAPTERS else Drawer.CHAPTERS)
+    def toggle_drawer(self, drawer: Drawer) -> None:
+        """A drawer's key: it opens, or folds if it is open (D-054, D-069)."""
+        self.open_drawer(None if self.layout.drawer is drawer else drawer)
 
     def open_drawer(self, drawer: Drawer | None) -> None:
         """Open a drawer, or fold the open one (None); what the main screen shows slides with it."""

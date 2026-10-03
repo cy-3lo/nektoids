@@ -39,9 +39,9 @@ def test_an_icon_opens_its_drawer_and_folds_it_again_and_the_main_screen_follows
         (None, Drawer.PARTS),
         (Drawer.PARTS, None),
     ]
-    scene.toggle_chapters()
+    scene.toggle_drawer(Drawer.CHAPTERS)
     assert scene.layout.drawer is Drawer.CHAPTERS
-    scene.toggle_chapters()
+    scene.toggle_drawer(Drawer.CHAPTERS)
     assert scene.layout.drawer is None
     assert not scene.frame_press(centre(scene.layout.board_area))  # the scene's to take
 

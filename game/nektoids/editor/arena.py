@@ -80,6 +80,7 @@ from nektoids.editor.layout import (
     Env,
     Layout,
     contains,
+    drawer_key,
     make_layout,
     value_at,
     view_button_at,
@@ -562,8 +563,11 @@ class ArenaScene(Frame):
         elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
             self.press(ArenaButton.NEXT)
         elif not self.developer:
+            drawer = Drawer.SETTINGS if event.key == pygame.K_COMMA else drawer_key(Env.RUN, typed)
             if event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS], as in the editor
-                self.toggle_chapters()
+                self.toggle_drawer(Drawer.CHAPTERS)
+            elif drawer is not None:  # its initial, or the comma, with Ctrl or Cmd too (D-069)
+                self.toggle_drawer(drawer)
             elif typed in KEY_BUTTONS:
                 self.press(KEY_BUTTONS[typed])
         elif event.scancode == pygame.KSCAN_TAB:

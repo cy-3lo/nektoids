@@ -92,7 +92,7 @@ def test_a_key_means_the_same_here_as_in_the_editor():
     # Turning the swimmer left and right, as the editor turns a part (D-025).
     assert TURN_KEYS == (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
     others = {*BUTTON_KEYS.values(), MAP_KEY, POLAR_KEY}
-    assert not others & set(TOOL_KEYS.values())  # nothing else means an editor tool here
+    assert not others & set(TOOL_KEYS.values())  # nothing else means an editor tool here (D-021)
     ours = others | set(TURN_KEYS)
     assert len(ours) == len(BUTTON_KEYS) + len(TURN_KEYS) + 2  # and no key twice here
 

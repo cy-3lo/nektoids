@@ -64,7 +64,8 @@ VIEW_BUTTON = {  # Navigator's rows, as the run's buttons
     ViewButton.RAYS: ArenaButton.LIGHT,
 }
 # One key, one meaning, in the editor and here: the view's keys are the editor's own, and no key
-# the editor uses means anything else here (R rotates there, so starting again is 0: t = 0).
+# the editor uses means anything else here (R rotates there, so starting again is 0: t = 0). The
+# drawers' keys alone may differ, each the initial of a drawer of its environment (D-069).
 BUTTON_KEYS = {
     ArenaButton.EDIT: "Esc",  # leave the run, as Escape leaves a gesture in the editor
     ArenaButton.NEXT: "Enter",

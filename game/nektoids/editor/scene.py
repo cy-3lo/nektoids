@@ -71,6 +71,7 @@ from nektoids.editor.layout import (
     centred_on,
     centred_view,
     contains,
+    drawer_key,
     edit_button_at,
     file_button_at,
     group_at,
@@ -317,6 +318,8 @@ class EditorScene(Frame):
                 self._edit(EditButton.REDO if event.mod & pygame.KMOD_SHIFT else EditButton.UNDO)
             elif event.key == pygame.K_y:
                 self._edit(EditButton.REDO)
+            elif event.key == pygame.K_COMMA:  # Settings, as in desktop apps (D-069)
+                self.toggle_drawer(Drawer.SETTINGS)
             return  # no other shortcut with Ctrl or Cmd: they are the browser's
         self.keyboard = True
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
@@ -329,7 +332,7 @@ class EditorScene(Frame):
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS]
-            self.toggle_chapters()
+            self.toggle_drawer(Drawer.CHAPTERS)
         elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
             self._choose(Tool.DELETE)
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
@@ -439,7 +442,10 @@ class EditorScene(Frame):
 
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
-        if key == MODE_KEY:
+        drawer = drawer_key(self.layout.env, key)
+        if drawer is not None:  # not refused in the preview: the way out of it (D-069)
+            self.toggle_drawer(drawer)
+        elif key == MODE_KEY:
             self._set_mode(Mode.DELETE if self.mode is Mode.WRITE else Mode.WRITE)
         elif key in KEY_TOOLS:
             self._choose(KEY_TOOLS[key])

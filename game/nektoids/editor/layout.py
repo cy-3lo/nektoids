@@ -211,7 +211,21 @@ EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
 # On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F3.
 LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
-DRAWER_KEYS = {Drawer.CHAPTERS: "Tab"}  # Tab opens the levels, as it opened the map
+# Each drawer's key, its initial (D-069): it opens the drawer, or folds it. A letter may mean
+# something else in the other environment, F Fast forward in the run, S Swap in the editor, since
+# the two never show together. Tab opens the levels, as it opened the map; the comma Settings,
+# with Ctrl or Cmd too.
+DRAWER_KEYS = {
+    Drawer.TOOLS: "T",
+    Drawer.PARTS: "P",
+    Drawer.FILES: "F",
+    Drawer.DIAGNOSTIC: "D",
+    Drawer.NAVIGATOR: "N",
+    Drawer.INSIDE: "I",
+    Drawer.SCORE: "S",
+    Drawer.SETTINGS: ",",
+    Drawer.CHAPTERS: "Tab",
+}
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
 
@@ -528,6 +542,11 @@ def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelB
         or level_button_at(layout, point)
         or (tab if tab is not None and tab != layout.env.value else None)
     )
+
+
+def drawer_key(env: Env, typed: str) -> Drawer | None:
+    """The drawer of `env`, in its bar or at its foot, whose key is `typed`, upper case (D-069)."""
+    return next((d for d in (*DRAWERS[env], *FOOT) if DRAWER_KEYS[d] == typed), None)
 
 
 def main_view_for(drawer: Drawer | None, last: MainView) -> MainView:
