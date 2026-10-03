@@ -1,7 +1,7 @@
 """Drawing the swimmer at work (D-076) through an arena view. Under the swimmer, the specks of the
 light its eyes draw in and of its flames, each on a grid of SPECK pixels, so they read as pixels
-scattered; over it, its parts' outlines and faces, its velocity and its spin. The run, the map
-in Diagnostic and Diagnostic's main screen share it. Reads; never changes anything.
+scattered; over it, its parts' outlines and faces, its velocity and its spin. The run and the
+map in Diagnostic share it. Reads; never changes anything.
 """
 
 from __future__ import annotations

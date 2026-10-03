@@ -28,7 +28,7 @@ from nektoids.graph.dynamics import RATE_MAX, thrust_rates
 from nektoids.graph.hexgrid import Cell
 from nektoids.graph.network import Network, body_disc
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
-from nektoids.sim.motion import SPEED, stokes, thrust
+from nektoids.sim.motion import stokes, thrust
 from nektoids.sim.optics import FACING_STEP, TINY, discs, exposure, eye_poses, visible
 from nektoids.sim.world import parts
 
@@ -41,9 +41,6 @@ INTAKE_SPECKS = 12  # specks drawn into an eye reading RATE_MAX, at once, on ave
 INTAKE_SPREAD = math.radians(10.0)
 INTAKE_LIFE = 30  # [frames] a speck's way in, 0.5 s
 VELOCITY_SPAN = 1.0  # [s] the segment is the way the body goes in this long
-# [s] ... on Diagnostic's main screen, where the body is large: there 6 u/s, two thrusters at
-# RATE_MAX through the centre, reaches one body radius past the rim
-PREVIEW_SPAN = 1.0 / (2.0 * SPEED)
 SPIN_SPAN = 2.0  # [s] the arc is the angle the body turns in this long
 SPIN_RADIUS = 1.6  # [body radii]
 SPIN_MOST = math.radians(300.0)  # the longest arc
