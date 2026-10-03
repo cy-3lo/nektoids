@@ -44,9 +44,6 @@ wire with Wire chosen (D-072).
         first.
       - How far must a finger move before a tap becomes a drag? Today a press becomes a drag
         once the pointer leaves the part's cell (D-085): enough for a finger on large hexes?
-- [ ] Put a part on a cell a wire crosses, and have the wire route round it, as a wire drawn
-      after the part already does. Today `Board.place` refuses ("a wire runs here"). This
-      reopens D-007 and D-011 (routes never change on their own), so it needs a decision first.
 
 ## 8. An activity bar, drawers and environments (D-051)
 

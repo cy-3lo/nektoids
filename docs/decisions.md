@@ -1164,3 +1164,17 @@ undo, which puts the part back where the drag began. A tutorial step that does n
 deleted leaves nothing darkened, and the part let go off the body stays, the status line saying
 why. A press still becomes a drag once the pointer leaves the part's cell; whether that suits a
 finger is the touch item's question (todo §7).
+
+**D-086 — 2026-10-03 — A part may go on a cell a wire crosses: placed or moved there, the wires crossing it are routed round it, and stay so. Amends D-007, D-011.**
+Dropping a part on a cell a wire used was refused (D-007), and so was moving one there (D-011): a
+wire drawn after a part went round it, but a part put after a wire could not go where the wire
+ran. Now the wires crossing that cell are routed again round the part, in the order they were
+drawn, each by D-007's rule (the shortest free path, then the fewest bends, then the direction
+order), round the parts and the wires already there; every other wire stays, and each keeps its
+place in the order. If one finds no way round, nothing changes and the status line says so. A
+part moved routes again its own wires and those crossing the cell it goes to, together, in the
+order they were drawn. A drag, or the keyboard carrying a part, works each step out from the
+board as it was when the part was picked up: a wire the part passed over goes back as it moves
+on, and only where it is let go are the wires routed round it. D-007's "routes never move once
+drawn" becomes: a route changes only when a part is put on a cell it crosses, placed or moved
+there, or when its own part moves (D-011); it never changes on its own.
