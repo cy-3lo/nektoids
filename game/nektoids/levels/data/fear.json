@@ -55,7 +55,7 @@
         ]
       },
       {
-        "show": {"area": "tools"},
+        "show": {"drawer": "tools"},
         "say": [
           "Tools: Write builds and Delete removes, with",
           "Undo and Redo. At its foot, the Wheel: what", "can be done on the cell you click."

@@ -41,6 +41,7 @@ from nektoids.editor.shell import bottom_button
 from nektoids.editor.shell_draw import draw_end, draw_level_card, draw_title_card
 from nektoids.editor.tutorial import (
     Context,
+    Live,
     Tutorial,
     allows,
     answer,
@@ -89,9 +90,11 @@ def tutorial() -> Tutorial | None:
 def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
     """Where the step's target and its box are, on the screen now open: `scene`'s; in the
     editor, the Wheel's icons round the focused cell are targets too (D-070)."""
-    editing = isinstance(scene, EditorScene)
-    wheel, focused = (scene.wheel(), scene.focused) if editing else ((), None)
-    where = (router.screen, scene.layout, scene.view, wheel, focused)
+    if isinstance(scene, EditorScene):
+        live = Live(wheel=tuple(scene.wheel()), focused=scene.focused)
+    else:  # the run: the swimmer, which Fear's first step outlines (D-071)
+        live = Live(swimmer=scene.swimmer_box())
+    where = (router.screen, scene.layout, scene.view, live)
     spots = target_spots(guide.step.show, *where)
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = [] if done is None else target_rects(done.show, *where)

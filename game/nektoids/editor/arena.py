@@ -593,6 +593,12 @@ class ArenaScene(Frame):
         dx, dy = {left: (-step, 0.0), right: (step, 0.0), up: (0.0, -step)}.get(key, (0.0, step))
         self._look(pan_view(self.view, dx, dy))
 
+    def swimmer_box(self) -> tuple[int, int, int, int]:
+        """A square round the swimmer on screen, its body and a little: what Fear's tutorial
+        outlines first (D-071)."""
+        (cx, cy), r = self.view.to_screen(*self.pos[0]), float(self.radius[0]) * self.view.scale + 8
+        return (round(cx - r), round(cy - r), round(2 * r), round(2 * r))
+
     def extent(self) -> tuple[float, float, float, float]:
         """What Navigator's overview shows, and the most the arena may (D-066): the lights and
         their rings, the obstacles and the swimmer where it is now, with room to spare."""

@@ -13,15 +13,13 @@ from nektoids.editor.layout import Rect, contains
 from nektoids.editor.palette import (
     ACTIVE,
     BUTTON,
-    CLEAR,
     DIM_TEXT,
     LIT,
     RULE,
     TEXT,
     TOOLTIP_BG,
-    VEIL,
 )
-from nektoids.editor.tutorial import LINE, PAD, Page, Tutorial, next_rect, skip_rect
+from nektoids.editor.tutorial import LINE, PAD, Docked, Page, Tutorial, next_rect, skip_rect
 
 HALO = 6  # the lit margin round the target [px]
 HOLE_RADIUS = 10  # the corners of a hole round an area or a button [px]
@@ -39,18 +37,9 @@ def draw_tutorial(
     step = tutorial.step
     if step is None:
         return
-    if spots and tutorial.explains:  # it explains: the rest dimmed, its panels outlined (D-050)
-        veil = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        veil.fill(VEIL)
-        for rect, shape in spots:  # pygame.draw writes CLEAR as it is, alpha and all: holes
-            _hole(veil, CLEAR, rect, shape, 0)
-        screen.blit(veil, (0, 0))
-        for rect, shape in spots:
-            _hole(screen, LIT, rect, shape, OUTLINE)
-    elif spots:  # it asks for an action: nothing dimmed; its cells lit by the board (D-063),
-        for rect, shape in spots:  # a row, a Wheel's icon, a button outlined in the accent
-            if shape in ("spot", "icon"):
-                _hole(screen, LIT, rect, shape, OUTLINE)
+    for rect, shape in spots:  # nothing dimmed (D-063, D-071): what it shows outlined in the
+        if tutorial.explains or shape in ("spot", "icon"):  # accent; the cells a step asks
+            _hole(screen, LIT, rect, shape, OUTLINE)  # for are lit by the board instead
     frame = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, frame, border_radius=8)
     pygame.draw.rect(screen, LIT if spots else RULE, frame, 2, border_radius=8)
@@ -74,6 +63,18 @@ def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -
     screen's edge stays on it; a rounded rectangle round anything else."""
     hole = pygame.Rect(rect)
     if shape == "none":  # inside another's hole
+        return
+    if isinstance(shape, Docked):  # the drawer and its icon beside it, in the bar (D-071)
+        inset = width // 2
+        ix, iy, _, ih = shape.icon
+        left, right = hole.left + inset, hole.right - 1 - inset
+        top, bottom = hole.top + inset, hole.bottom - 1 - inset
+        points = [(ix, iy), (left, iy), (left, top), (right, top), (right, bottom)]
+        points += [(left, bottom), (left, iy + ih), (ix, iy + ih)]
+        if width:
+            pygame.draw.lines(surface, colour, True, points, width)
+        else:
+            pygame.draw.polygon(surface, colour, points)
         return
     if isinstance(shape, Page):  # the Run tab on top, the page under it, the outline inside
         inset = width // 2

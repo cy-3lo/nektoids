@@ -15,6 +15,8 @@ from nektoids.editor.tutorial import (
     GAP,
     Action,
     Context,
+    Docked,
+    Live,
     Step,
     Tutorial,
     _crosses,
@@ -62,7 +64,7 @@ def fear(until=None, show=None) -> int:
 
 
 TAB = fear({"screen": "edit"})  # from the run to the editor (D-060)
-BOARD, TOOLS = fear(show={"area": "board"}), fear(show={"area": "tools"})
+BOARD, TOOLS = fear(show={"area": "board"}), fear(show={"drawer": "tools"})
 BAR, PARTS = fear(show={"area": "bar"}), fear(show={"area": "parts"})
 EYE = fear({"placed": {"kind": "eye", "cell": [2, -1]}})  # from the Wheel
 TURN = fear({"facing": {"cell": [2, -1], "facing": "NW"}})
@@ -76,13 +78,13 @@ def wheel_for(step, layout):
     """The Wheel as it shows while `step` waits, round its cell, and that cell: the parts for
     an empty cell, the eye's actions for an eye to turn; none for a step that shows no Wheel."""
     if not shows_wheel(step) or layout.wheel_view is None:
-        return (), None
+        return Live()
     board = LEVELS["Fear"].new_board()
     cell = next(tuple(one["cell"]) for one in step.show if "cell" in one)
     if "facing" in step.until:
         board.place(Kind.EYE, cell)
     items = offer(board, cell, FEAR_KINDS)
-    return slots(items, centre_in(layout.wheel_view), WHEEL_HEX, FEAR_KINDS), cell
+    return Live(slots(items, centre_in(layout.wheel_view), WHEEL_HEX, FEAR_KINDS), cell)
 
 
 def on_screen(rect):
@@ -178,7 +180,7 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:  # never over what it shows
         for screen in (Screen.EDIT, Screen.RUN):
             layout = layout_on(screen, step)
-            targets = target_rects(step.show, screen, layout, VIEW, *wheel_for(step, layout))
+            targets = target_rects(step.show, screen, layout, VIEW, wheel_for(step, layout))
             narrow = [t for t in targets if not is_area(t)]  # an area may lie under the box
             if narrow:
                 box = box_rect(targets, len(step.say), layout.board_area)
@@ -301,8 +303,8 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
         step, done = tutorial.step, tutorial.before
         for screen in (Screen.EDIT, Screen.RUN):
             frame = layout_on(screen, step)
-            wheel = wheel_for(step, frame)  # the Wheel's icon it shows, as it sits (D-070)
-            targets = target_rects(step.show, screen, frame, view, *wheel)
+            live = wheel_for(step, frame)  # the Wheel's icon it shows, as it sits (D-070)
+            targets = target_rects(step.show, screen, frame, view, live)
             before = [] if done is None else target_rects(done.show, screen, frame, view)
             narrow = [t for t in targets if not is_area(t)]  # an area (board, arena) may lie under
             if not narrow:
@@ -433,30 +435,45 @@ def test_a_wheel_icon_is_a_target_while_the_steps_cell_is_focused_and_only_then(
     # D-070: the Wheel at the drawer's foot, round the focused cell
     board, cell, kinds = LEVELS["Fear"].new_board(), (2, -1), frozenset({Kind.EYE, Kind.THRUSTER})
     tools = make_layout(Drawer.TOOLS, kinds=kinds)
-    wheel = slots(offer(board, cell, kinds), centre_in(tools.wheel_view), WHEEL_HEX, kinds)
+    wheel = tuple(slots(offer(board, cell, kinds), centre_in(tools.wheel_view), WHEEL_HEX, kinds))
     show = [{"cell": [2, -1]}, {"wheel": "eye"}]
-    spots = target_spots(show, Screen.EDIT, tools, VIEW, wheel, focused=cell)
+    spots = target_spots(show, Screen.EDIT, tools, VIEW, Live(wheel, focused=cell))
     (_, disc), (icon, shape) = spots
     eye = next(slot for slot in wheel if slot.what is Kind.EYE)
     r = ICON * WHEEL_HEX
     assert shape == "icon" and disc == "disc" and icon[2] == icon[3] == round(2 * r)
     assert contains(icon, tuple(round(v) for v in eye.at)) and contains(tools.drawer_area, icon[:2])
-    elsewhere = target_rects(show, Screen.EDIT, tools, VIEW, wheel, focused=(1, 1))
+    elsewhere = target_rects(show, Screen.EDIT, tools, VIEW, Live(wheel, focused=(1, 1)))
     assert len(elsewhere) == 1  # on another cell the Wheel's Eye would place there: not shown
-    assert target_rects(show, Screen.RUN, tools, VIEW, wheel, focused=cell) == []
+    assert target_rects(show, Screen.RUN, tools, VIEW, Live(wheel, focused=cell)) == []
     assert (
-        target_rects([{"wheel": "turn left"}], Screen.EDIT, tools, VIEW, wheel) == []
+        target_rects([{"wheel": "turn left"}], Screen.EDIT, tools, VIEW, Live(wheel)) == []
     )  # not offered
 
 
-def test_tools_is_an_area_a_step_may_explain_and_a_wheels_step_keeps_tools_or_parts_open():
+def test_a_drawer_a_step_explains_is_outlined_with_its_icon_and_a_wheels_step_keeps_it():
     tools, parts = make_layout(Drawer.TOOLS), make_layout(Drawer.PARTS)
-    explain = [{"area": "tools"}]
-    assert target_rects(explain, Screen.EDIT, tools, VIEW) == [tools.drawer_area]
+    explain = {"drawer": "tools"}  # D-071: the drawer joined to its icon in the bar
+    ((rect, shape),) = target_spots(explain, Screen.EDIT, tools, VIEW)
+    assert rect == tools.drawer_area and shape == Docked(dict(tools.drawer_buttons)[Drawer.TOOLS])
     assert target_rects(explain, Screen.EDIT, parts, VIEW) == []  # Tools is not open
-    assert drawer_for(Step(("Tools",), {"area": "tools"})) is Drawer.TOOLS
+    assert drawer_for(Step(("Tools",), explain)) is Drawer.TOOLS
     place = Step(("Place",), [{"cell": [2, -1]}, {"wheel": "eye"}], {"placed": {}})
-    assert shows_wheel(place) and not shows_wheel(Step(("Tools",), {"area": "tools"}))
+    assert shows_wheel(place) and not shows_wheel(Step(("Tools",), explain))
     assert drawer_for(place, Drawer.PARTS) is Drawer.PARTS  # the Wheel is at the foot of both
     assert drawer_for(place, Drawer.TOOLS) is Drawer.TOOLS
     assert drawer_for(place, Drawer.FILES) is drawer_for(place) is Drawer.TOOLS
+
+
+def test_the_editors_page_is_outlined_with_its_tab_and_the_swimmer_by_a_box_from_the_run():
+    from nektoids.editor.tutorial import Page
+
+    (page, shape), (header, none) = target_spots({"page": "editor"}, Screen.EDIT, LAYOUT, VIEW)
+    board = LAYOUT.board_area  # D-071: the Editor tab, the level's line, the board, one shape
+    assert shape == Page(dict(LAYOUT.tabs)["editor"]) and none == "none"
+    assert page == (board[0], 0, board[2], board[1] + board[3]) and header[3] == board[1]
+    assert target_rects({"page": "editor"}, Screen.RUN, RUN_LAYOUT, VIEW) == []
+    box = (500, 300, 40, 40)
+    swimmer = target_spots({"run": "swimmer"}, Screen.RUN, RUN_LAYOUT, None, Live(swimmer=box))
+    assert swimmer == [(box, "spot")]
+    assert target_rects({"run": "swimmer"}, Screen.EDIT, LAYOUT, VIEW, Live(swimmer=box)) == []
