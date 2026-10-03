@@ -215,6 +215,7 @@ LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
 # something else in the other environment, F Fast forward in the run, S Swap in the editor, since
 # the two never show together. Tab opens the levels, as it opened the map; the comma Settings,
 # with Ctrl or Cmd too.
+PASSKEY_KEY = "P"  # with Chapters open, a passkey to type, not Parts (D-075)
 DRAWER_KEYS = {
     Drawer.TOOLS: "T",
     Drawer.PARTS: "P",
@@ -260,6 +261,7 @@ class Layout:
     win_rows: tuple[tuple[WinRow, Rect], ...]  # Files' rows: this session's wins of the level
     setting_rows: tuple[tuple[Setting, Rect], ...]  # Settings' rows
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
+    passkey_field: Rect | None  # Chapters' foot: a level's passkey typed there (D-075)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "run", "editor"
     board_area: Rect  # the main screen: the board, or in the run the arena
@@ -384,6 +386,7 @@ def make_layout(
         win_rows=tuple(rows.of(WinRow)),
         setting_rows=tuple(rows.of(Setting)),
         chapter_rows=tuple(rows.of(int)),
+        passkey_field=rows.passkey,
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
@@ -412,6 +415,7 @@ class _Rows:
         self.overview: Rect | None = None
         self.zoom_buttons: list[tuple[ViewButton, Rect]] = []
         self.zoom_bar: Rect | None = None
+        self.passkey: Rect | None = None
 
     def of(self, kind: type) -> list:
         return [(what, rect) for what, rect in self.items if isinstance(what, kind)]
@@ -514,6 +518,10 @@ class _Rows:
         self.y += SECTION_GAP
         self._title("Free play", self.sections)
         self._row(levels)  # the sandbox
+        self.y += SECTION_GAP
+        self._title("Passkey", self.sections)  # a level's word typed: it opens (D-075)
+        self.passkey = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
+        self.y += ROW_PITCH
 
 
 def _info_disc(what: object, row: Rect) -> Rect:
@@ -560,6 +568,11 @@ def main_view_for(drawer: Drawer | None, last: MainView) -> MainView:
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
     return next((d for d, rect in layout.drawer_buttons if contains(rect, point)), None)
+
+
+def passkey_at(layout: Layout, point: tuple[int, int]) -> bool:
+    """Whether `point` is on Chapters' passkey field (D-075)."""
+    return layout.passkey_field is not None and contains(layout.passkey_field, point)
 
 
 def chapter_row_at(layout: Layout, point: tuple[int, int]) -> int | None:
