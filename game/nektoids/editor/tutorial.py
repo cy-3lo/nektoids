@@ -31,7 +31,18 @@ from functools import lru_cache
 import numpy as np
 
 from nektoids.editor import arena_layout
-from nektoids.editor.layout import SCREEN, TURNS, Drawer, Env, Layout, LevelButton, Rect, Tool, View
+from nektoids.editor.layout import (
+    DRAWERS,
+    SCREEN,
+    TURNS,
+    Drawer,
+    Env,
+    Layout,
+    LevelButton,
+    Rect,
+    Tool,
+    View,
+)
 from nektoids.editor.marks import SPECKS, Specks
 from nektoids.editor.router import Screen
 from nektoids.editor.wheel import ICON, WHEEL_HEX, Slot
@@ -354,6 +365,9 @@ def target_spots(
             spots += _page(layout, Env.EDITOR) if editing and layout.env is Env.EDITOR else []
         elif one.get("run") == "swimmer":  # a box round it, nothing else (D-071)
             spots.append((live.swimmer if running else None, "spot"))
+        elif one.get("area") == "bar":  # its two groups of icons, each on its own (D-080)
+            on = running or editing
+            spots += [(group, "spot") for group in _bar_groups(layout)] if on else []
         elif "drawer" in one:  # the drawer joined to its icon in the bar (D-071)
             spots.append(_docked(layout, Drawer(one["drawer"])))
         elif "wheel" in one:
@@ -399,6 +413,22 @@ def _docked(layout: Layout, drawer: Drawer) -> tuple:
     if icon is None:
         return (None, "spot")
     return (layout.drawer_area, Docked(icon)) if layout.drawer is drawer else (icon, "spot")
+
+
+def _bar_groups(layout: Layout) -> tuple[Rect, Rect]:
+    """The activity bar's two groups of icons: the drawers at its top; at its foot, the drawers
+    there and the switch to the other environment."""
+    top = set(DRAWERS[layout.env])
+    upper = [rect for drawer, rect in layout.drawer_buttons if drawer in top]
+    lower = [rect for drawer, rect in layout.drawer_buttons if drawer not in top]
+    return _around(upper), _around([*lower, *(rect for _, rect in layout.level_buttons)])
+
+
+def _around(rects: list[Rect]) -> Rect:
+    """The smallest rectangle round `rects`."""
+    left, top = min(r[0] for r in rects), min(r[1] for r in rects)
+    right, bottom = max(r[0] + r[2] for r in rects), max(r[1] + r[3] for r in rects)
+    return (left, top, right - left, bottom - top)
 
 
 def _shape(show: Mapping) -> str:

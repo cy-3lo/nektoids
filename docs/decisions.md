@@ -1075,8 +1075,10 @@ cold.
 **D-080 — 2026-10-03 — A tutorial's target is drawn in accent 1, with sparks drifting out of where its outline was; no outline. Amends D-048, D-050, D-063, D-071.**
 An outline round a target said where to look, and nothing more; the outlines of the tab, the
 switch and an icon crowded the strip they sit in. Now what a step shows is drawn in accent 1 by
-what draws it: the bar's icons for the bar, a drawer's icon, a tab's name, the titles of a panel
-or a drawer, as D-050 lit titles; the swimmer and the switch are accent 1 already. `panels`
+what draws it: a drawer's icon, a tab's name, the titles of a panel or a drawer, as D-050 lit
+titles; the swimmer and the switch are accent 1 already. The activity bar keeps its colours and
+sparks round its two groups of icons, each on its own: the drawers at its top, and at its foot
+the drawers there with the switch. `panels`
 names them for every step that leads, not only those that explain: an area, a drawer or a part
 of the run by its name, a tab as "tab:editor", an icon as "icon:hints"; `main.py` sets them as
 the scene's `lit`. Colour alone cannot single a target out, since accent 1 already marks what

@@ -361,9 +361,15 @@ def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
     assert [rect for rect, _ in spots] == target_rects(
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
-    panel = target_spots({"area": "bar"}, Screen.EDIT, layout, centred_view(layout))
+    panel = target_spots({"area": "board"}, Screen.EDIT, layout, centred_view(layout))
     run = target_spots([{"run": "play"}, {"run": "inside"}], Screen.RUN, RUN_LAYOUT, None)
     assert [shape for _, shape in panel + run] == ["panel", "spot", "panel"]
+    (upper, shape), (lower, _) = target_spots({"area": "bar"}, Screen.EDIT, layout, None)
+    assert shape == "spot" and upper[1] + upper[3] < lower[1]  # the bar's two groups (D-080)
+    icons = dict(layout.drawer_buttons)
+    assert contains(upper, icons[Drawer.TOOLS][:2]) and contains(lower, icons[Drawer.HINTS][:2])
+    switch = layout.level_buttons[0][1]
+    assert contains(lower, (switch[0] + switch[2] - 1, switch[1] + switch[3] - 1))
 
 
 def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_beside_it():
