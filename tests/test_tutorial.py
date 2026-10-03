@@ -122,10 +122,11 @@ def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for
                 assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
 
 
-def test_only_the_first_level_leads_the_later_ones_only_hint():
-    first, *later = arenas()
-    assert any(step.show for step in Tutorial.from_dict(first.tutorial).steps)
-    for level in later:
+def test_the_first_two_levels_lead_the_later_ones_only_hint():
+    *first, love, shadow = arenas()  # Fear and Aggression lead (D-074)
+    for level in first:
+        assert any(step.show for step in Tutorial.from_dict(level.tutorial).steps)
+    for level in (love, shadow):
         assert not any(step.show or step.until for step in Tutorial.from_dict(level.tutorial).steps)
 
 
@@ -395,10 +396,10 @@ def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_o
     assert answer(hint, box, centre(nxt)) == "next"
 
 
-def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
-    first, *later = arenas()
-    assert guided(first.tutorial) and not any(guided(level.tutorial) for level in later)
-    assert not guided(None)
+def test_the_first_two_levels_are_guided_and_so_start_afresh_at_the_map():
+    fear, aggression, *later = arenas()  # D-074
+    assert guided(fear.tutorial) and guided(aggression.tutorial)
+    assert not any(guided(level.tutorial) for level in later) and not guided(None)
 
 
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
@@ -593,3 +594,81 @@ def test_a_tutorial_may_carry_its_models_wires():
     }
     assert Tutorial.from_dict(data).ghost_wires == (((-1, -1), (1, 1)),)  # D-074
     assert Tutorial.from_dict(LEVELS["Fear"].tutorial).ghost_wires == ()
+
+
+AGGRESSION = Tutorial.from_dict(LEVELS["Aggression"].tutorial)
+
+
+def test_aggressions_model_is_the_crossed_board_that_wins_it():
+    # D-074: its shadows and their wires are the tutorial board, crossed (test_determinism)
+    from nektoids.levels.sandbox import IO_PARTS
+
+    model = [(g.kind, g.cell, g.facing) for g in AGGRESSION.ghosts]
+    assert model == list(IO_PARTS)
+    (upper, lower), (front_up, front_down) = (
+        [c for _, c, _ in IO_PARTS[:2]],
+        [c for _, c, _ in IO_PARTS[2:]],
+    )
+    assert AGGRESSION.ghost_wires == ((upper, front_down), (lower, front_up))  # crossed
+
+
+def test_the_aggression_tutorial_moves_on_as_the_player_builds_tries_and_runs_it():
+    tutorial, board = (
+        Tutorial.from_dict(LEVELS["Aggression"].tutorial),
+        LEVELS["Aggression"].new_board(),
+    )
+
+    def context(screen=Screen.EDIT, drawer=Drawer.TOOLS, outcome=None):
+        return Context(board, Tool.ADD, screen, outcome, 0.0, drawer)
+
+    tutorial.next()  # the swimmer and its objective: Next
+    tutorial.follow(context(Screen.RUN, Drawer.INSIDE))
+    assert tutorial.step.until == {"screen": "edit"}  # to the editor
+    tutorial.follow(context())
+    build = tutorial.step  # one card for the whole model
+    assert isinstance(build.until, list) and len(build.until) == 8
+    assert focus_cells_of(tutorial) == {g.cell for g in tutorial.ghosts}
+    assert not allows(build, Action("move", cell=(-1, -1))) and not allows(build, Action("view"))
+    assert allows(build, Action("wire", cell=(1, 1), other=(-1, -1)))  # either way round
+    for ghost in tutorial.ghosts:  # placed as they come, facing their default way
+        board.place(ghost.kind, ghost.cell)
+    tutorial.follow(context())
+    assert tutorial.step is build  # placed, not turned nor wired yet
+    for ghost in tutorial.ghosts:  # each turned to face as its shadow does
+        for _ in range(6):
+            node = board.node_at(ghost.cell)
+            if node.facing == ghost.facing:
+                break
+            board.rotate(node.id, 1)
+    for start, end in tutorial.ghost_wires:
+        board.connect(board.node_at(start).id, board.node_at(end).id)
+    tutorial.follow(context())
+    assert tutorial.step.until == {"drawer": "diagnostic"}  # try it first
+    assert allows(tutorial.step, Action("view")) and drawer_for(tutorial.step) is None
+    tutorial.follow(context(drawer=Drawer.DIAGNOSTIC))
+    assert tutorial.explains and drawer_for(tutorial.step) is Drawer.DIAGNOSTIC  # what it shows
+    tutorial.next()
+    assert tutorial.step.until == {"screen": "run"}
+    tutorial.follow(context(Screen.RUN, Drawer.INSIDE))
+    assert tutorial.step.until == {"outcome": "won"}
+    tutorial.follow(context(Screen.RUN, Drawer.INSIDE, Outcome.WON))
+    assert not tutorial.leads and tutorial.waits_for_next  # a closing hint
+    tutorial.next()
+    assert tutorial.step is None
+
+
+def focus_cells_of(tutorial):
+    from nektoids.editor.tutorial import focus_cells
+
+    return focus_cells(tutorial)
+
+
+def test_aggressions_boxes_keep_clear_of_what_they_show_on_screen():
+    for step in AGGRESSION.steps:  # D-074, as Fear's do
+        for screen in (Screen.EDIT, Screen.RUN):
+            layout = layout_on(screen, step)
+            targets = target_rects(step.show, screen, layout, VIEW)
+            narrow = [t for t in targets if not is_area(t)]
+            if narrow:
+                box = box_rect(targets, len(step.say), layout.board_area)
+                assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say

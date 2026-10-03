@@ -959,3 +959,20 @@ kept inside it, zoomed in on its own. Now the extent is kept from frame to frame
 now, never less than the extent at the run's start, and never less than it was while the main
 screen's frame touches its border, zoomed out or slid to an edge. Away from the border it may
 shrink back, as far as its start, once the swimmer has gone far and come back.
+
+**D-074 — 2026-10-03 — LEVEL 1.2 is Aggression, guided: the player builds Braitenberg's 2b from its shadows, wires and all, then tries it in Diagnostic before the run. Love is 1.3. Amends D-039, D-040.**
+One light, the level crossed wiring wins, is called Aggression, Braitenberg's vehicle 2b, and
+comes second, after Fear, his 2a: the brief's order (§3, level 2: crossed, the swimmer charges
+the light). Love is 1.3, In the shadow 1.4. Aggression hands out two eyes and two thrusters
+only, the parts Fear taught; its arena, objective and time stand, and so do its pinned results.
+Its tutorial leads, so the first two levels are guided (D-039 had only the first) and each
+starts afresh from Chapters (D-050). In the run: the swimmer and its objective; to the editor.
+In the editor, one card: build what the shadows show. The model is the board crossed wiring wins
+with: the eyes at the back looking NE and SE, the thrusters at the front, each eye wired to the
+thruster on the other side; the four cells lit, the shadow parts and, new, shadow wires, a
+tutorial's ghost_wires drawn faintly along their route until the real wire is made. The card
+waits for all of it, placed, turned and wired, and lets through only what builds toward the
+model. Then: open Diagnostic, a step that waits for that drawer and lets it open, its icon shown
+while it is closed; then what Diagnostic shows, the run held, the swimmer free to drag on the
+map. Then Run, Play to the win, and a closing hint: crossed, the wires turn the swimmer toward
+the light. Sources stay for Love, where a Diff of a Source and an eye is the point.
