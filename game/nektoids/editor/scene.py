@@ -126,7 +126,9 @@ FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
 PILE_FRAMES = 24  # the mouse resting on a pile turns the Wheel one icon this often [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
-KEY_VIEWS = {key: button for button, key in VIEW_KEYS.items()}
+KEY_VIEWS = {  # the rays are the run's: X zoomed out here, as any button not handled
+    key: button for button, key in VIEW_KEYS.items() if button is not ViewButton.RAYS
+}
 # Arrows, Enter and digits are matched on their scancode, the physical key, which every platform
 # reports alike: Safari on macOS tags the arrows as keypad keys (its `key` for the right arrow is
 # keypad 6), and the digits are shifted on AZERTY. The key code is only a fallback.
