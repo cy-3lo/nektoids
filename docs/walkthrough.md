@@ -703,8 +703,9 @@ Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `drawer_for`, the drawer a step
   opens.
 - [`editor/entry.py`](../game/nektoids/editor/entry.py), pure: a part's entry at work (D-082),
-  its own small circuit (`DEMOS`), run by `Frame.frame_update` while its box is open and drawn
-  by `draw_info` with `draw_circuit`, as Inside draws a board. Open a part's (i) in Parts.
+  its own small circuit (`DEMOS`), its light and flames (`light`, `flames`), run by
+  `Frame.frame_update` while its box is open and drawn by `draw_info` with `draw_circuit`, as
+  Inside draws a board; its beads are `beads.Travelling`. Open a part's (i) in Parts.
 
 Questions: why is an info disc asked before its row, in `_press`? What would the player see if
 `open_drawer` did not slide the view? Why do ×2's beads leave in step with those coming in

@@ -1104,20 +1104,26 @@ player may switch windows. A step that waits for an action is unchanged: the pre
 screen. On the last card a click that closes it still reaches the screen (D-079), so a click on
 the life ring opens Hints. `Tutorial.opening` goes with the rule it served.
 
-**D-082 — 2026-10-03 — A part's entry shows the part at work: its own small circuit, running under what the entry says.**
+**D-082 — 2026-10-03 — A part's entry shows the part at work: its own small circuit, running under what the entry says, with the run's light and flames.**
 A part's (i) in Parts said what the part does in words (D-036); the beads that say it on the
 board were seen only once a board ran. Now the entry's box holds, under its lines, a circuit of
-the part's own, 360 by 140 px, drawn as Inside draws a board (`draw_circuit`, moved to
-`draw.py`): wires, beads, the parts, the eyes' and thrusters' meters. The inputs on the left,
+the part's own, 420 by 140 px, drawn as Inside draws a board (`draw_circuit`, moved to
+`draw.py`), its wires, beads and parts, at one scale for every entry. The inputs on the left,
 the part in the middle, a thruster on the right taking what it sends. The inputs are eyes set to
 a reading, not lit by a light, so that less than 1 can go in: a Source sends 1, and ×2 of 1 is
-still 1. Eye: an eye into a thruster, its reading rising and falling from 0.2 to 0.9 every 4 s,
-more light giving more beads. Source: a Source into a thruster, a steady 1. Double: 0.3 in, 0.6
-out. Halve: 0.8 in, 0.4 out. Sum: 0.3 and 0.4 in, 0.7 out. Diff: 0.7 and 0.3 in, 0.4 out.
-Thruster: two eyes, 0.3 and 0.4, into it, added. Only the Eye's reading moves, so that the beads
-can be counted. The circuit opens at its steady rates, run 0.25 s before it shows. For ×2 and ÷2
-the beads going out keep time with those coming in: a bead leaves as one arrives, and ×2 sends
-another halfway to the next, ÷2 one for every two; every other wire's beads keep their own time
-(`beads.py`). The entry is made when a part's box opens and dropped when it closes; the scene's
-update moves it once a frame (`Frame.frame_update`), so drawing changes nothing. Never read by the
-model. The entry stays in the box beside the drawer until it moves into the drawer (todo §8).
+still 1. Eyes and thrusters face outwards, the eye's face to the left and the thruster's back to
+the right, and the run's marks show what they read and push (D-076): specks of light drawn into
+each eye's face from the left, as many as it reads, and flames streaming out of each thruster's
+back to the right, as many as its rate, from the same table of draws; no meters. Eye: an eye into
+a thruster, three cells apart, its reading rising and falling from 0.2 to 0.9 every 10 s, more
+light giving more beads. Source: a Source into a thruster, a steady 1. Double: 0.3 in, 0.6 out.
+Halve: 0.8 in, 0.4 out. Sum: 0.3 and 0.4 in, 0.7 out. Diff: 0.7 and 0.3 in, 0.4 out. Thruster:
+two eyes, 0.3 and 0.4, into it, added. Only the Eye's reading moves, so that the beads can be
+counted. The entry's beads keep their speed once out (`beads.Travelling`): the spacing is the
+rate when each left, so a change of rate runs down the wire as a front and no bead goes
+backwards, as `Beads` would as the reading climbed; Inside keeps `Beads`. The circuit opens at
+its steady rates, run 0.25 s before it shows. For ×2 and ÷2 the beads going out keep time with
+those coming in: a bead leaves as one arrives, and ×2 sends another halfway to the next, ÷2 one
+for every two. The entry is made when a part's box opens and dropped when it closes; the scene's
+update moves it once a frame (`Frame.frame_update`), so drawing changes nothing. Never read by
+the model. The entry stays in the box beside the drawer until it moves into the drawer (todo §8).

@@ -97,7 +97,7 @@ from nektoids.editor.layout import (
     visible_cells,
 )
 from nektoids.editor.marks import AtWork, at_work
-from nektoids.editor.marks_draw import draw_over, draw_under
+from nektoids.editor.marks_draw import SPECK, draw_over, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -111,6 +111,7 @@ from nektoids.editor.palette import (
     DIM_TEXT,
     DOOMED,
     EYE_FACE,
+    FLAME,
     FLASH,
     FOCUS_CELL,
     FULL,
@@ -121,6 +122,7 @@ from nektoids.editor.palette import (
     GRID_LINE,
     HOVER,
     ICON_EDGE,
+    INTAKE,
     LIGHT,
     LIT,
     LOCK_RING,
@@ -1206,10 +1208,14 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
     for row in rows:
         screen.blit(row, (box.left + INFO_PAD, y))
         y += row.get_height() + 4
-    if entry is not None:  # under the lines, across the box
+    if entry is not None:  # under the lines, across the box: the light, the flames, the circuit
         place = pygame.Rect(box.centerx - circuit_w // 2, y + INFO_PAD - 4, circuit_w, circuit_h)
         pygame.draw.rect(screen, PANEL, place, border_radius=6)
-        draw_circuit(screen.subsurface(place), entry.circuit, entry.y, fonts, plain=True)
+        inside = screen.subsurface(place)
+        for specks, colour in ((entry.light(), INTAKE), (entry.flames(), FLAME)):
+            for sx, sy in specks:  # on the grid of the run's specks (D-076)
+                inside.fill(colour, (sx // SPECK * SPECK, sy // SPECK * SPECK, SPECK, SPECK))
+        draw_circuit(inside, entry.circuit, entry.y, fonts, plain=True, meters=False)
 
 
 def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
@@ -1270,12 +1276,13 @@ def draw_circuit(
     fonts: Fonts,
     belt: bool = False,
     plain: bool = False,
+    meters: bool = True,
 ) -> None:
     """Wires, beads and parts at the rates y (n,): the beads, and a level meter by each eye and
-    thruster, show the rates; the parts keep their colour (D-052). Unless `plain`,
-    every part has its name and its rate as a number, and every thruster a bar."""
+    thruster unless not `meters`, show the rates; the parts keep their colour (D-052). Unless
+    `plain`, every part has its name and its rate as a number, and every thruster a bar."""
     _draw_wires(screen, circuit, belt)
-    _draw_parts(screen, circuit, y, fonts, plain)
+    _draw_parts(screen, circuit, y, fonts, plain, meters)
 
 
 def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
@@ -1292,7 +1299,12 @@ def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
 
 
 def _draw_parts(
-    screen: pygame.Surface, circuit: Circuit, y: np.ndarray, fonts: Fonts, plain: bool
+    screen: pygame.Surface,
+    circuit: Circuit,
+    y: np.ndarray,
+    fonts: Fonts,
+    plain: bool,
+    meters: bool = True,
 ) -> None:
     net, size = circuit.net, circuit.view.size
     for i, node_id in enumerate(net.ids):
@@ -1300,7 +1312,7 @@ def _draw_parts(
         cx, cy = circuit.centre(i)
         facing = circuit.board.nodes[node_id].facing
         draw_part(screen, fonts, kind, placed_angle(kind, facing), (cx, cy), size, False)
-        if kind in (Kind.EYE, Kind.THRUSTER):
+        if meters and kind in (Kind.EYE, Kind.THRUSTER):
             _draw_meter(screen, (cx + METER_AT * size, cy), size, rate)
         if plain:
             continue

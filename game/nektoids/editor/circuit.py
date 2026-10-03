@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from nektoids.editor.beads import BEAD_RATE_AT_FULL, Beads
+from nektoids.editor.beads import BEAD_RATE_AT_FULL, Beads, Travelling
 from nektoids.editor.geometry import body_circle, cumulative_lengths, wire_points
 from nektoids.editor.layout import HEX_SIZE, Rect, View, fitted_view
 from nektoids.graph.board import Board
@@ -25,11 +25,18 @@ METER_AT = 0.86  # its centre right of the part's, past every part's reach [hex 
 
 class Circuit:
     def __init__(
-        self, board: Board, area: Rect, margin: float, body: bool = False, view: View | None = None
+        self,
+        board: Board,
+        area: Rect,
+        margin: float,
+        body: bool = False,
+        view: View | None = None,
+        travelling: bool = False,
     ):
         """area: where to draw it [px]; margin: room kept round it [hex sizes]. body: fit the
         swimmer's whole body too, not only the parts and the wires. view: drawn through this
-        view instead, as the editor shows the board (the Run preview, D-060)."""
+        view instead, as the editor shows the board (the Run preview, D-060). travelling: beads
+        that keep their speed once out (`beads.Travelling`), as a part's entry runs them."""
         self.board = board
         self.net = net = Network.from_board(board)
         self.cells: list[Cell] = [board.nodes[i].cell for i in net.ids]
@@ -46,7 +53,8 @@ class Circuit:
                 (cx, cy), r = body_circle(board.cells, 1.0, (0.0, 0.0))
                 shown += [(cx - r, cy - r), (cx + r, cy + r)]
             self.view = fitted_view(area, shown, margin)
-        self.beads = Beads([cumulative_lengths(points)[-1] for points in unit])
+        lengths = [cumulative_lengths(points)[-1] for points in unit]
+        self.beads = Travelling(lengths) if travelling else Beads(lengths)
         self.flux = np.zeros(len(self.paths))
 
     def centre(self, i: int) -> tuple[float, float]:

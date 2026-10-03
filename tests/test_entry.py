@@ -3,7 +3,16 @@
 import pytest
 
 from nektoids.editor.devdrive import TICKS_PER_FRAME
-from nektoids.editor.entry import DEMOS, ENTRY_AREA, EYE_HIGH, EYE_LOW, EYE_PERIOD, KEEP_TIME, Entry
+from nektoids.editor.entry import (
+    DEMOS,
+    ENTRY_AREA,
+    EYE_HIGH,
+    EYE_LOW,
+    EYE_PERIOD,
+    KEEP_TIME,
+    OUTWARDS,
+    Entry,
+)
 from nektoids.editor.layout import contains
 from nektoids.graph.board import Kind
 
@@ -67,3 +76,34 @@ def test_double_gives_two_beads_for_one_and_halve_one_for_two_in_time(kind):
         lag = (beads.phase[1] - ratio * (beads.phase[0] - arrives)) % every
         assert min(lag, every - lag) < 1e-6
     assert TICKS_PER_FRAME * FPS == 120
+
+
+@pytest.mark.parametrize("kind", list(Kind))
+def test_eyes_and_thrusters_face_out_the_light_comes_in_and_the_flames_go_out(kind):
+    entry = Entry(kind)  # D-082: the eye's face on the left, the thruster's back on the right
+    for _ in range(20):
+        entry.tick()
+    net = entry.circuit.net
+    turned = [net.facing[i] for i in (*net.eyes, *net.thrusters)]
+    assert turned and all(facing == OUTWARDS for facing in turned)
+    eyes = [entry.circuit.centre(int(i))[0] for i in net.eyes]
+    thrusters = [entry.circuit.centre(int(i))[0] for i in net.thrusters]
+    light, flames = entry.light(), entry.flames()
+    assert all(x < max(eyes) for x, _ in light)  # coming in from the left
+    assert flames and all(x > min(thrusters) for x, _ in flames)  # going out to the right
+    for x, y in (*light, *flames):
+        assert contains(ENTRY_AREA, (int(x), int(y)))
+
+
+def test_every_entry_is_drawn_at_the_same_scale():
+    assert len({Entry(kind).circuit.view.size for kind in Kind}) == 1
+
+
+def test_the_light_and_the_flames_are_as_many_as_the_rates():
+    double = Entry(Kind.DOUBLE)  # 0.3 in, 0.6 out
+    seen, out = 0, 0
+    for _ in range(600):
+        double.tick()
+        seen, out = seen + len(double.light()), out + len(double.flames())
+    assert 12 * 0.3 * 0.8 < seen / 600 < 12 * 0.3 * 1.2  # INTAKE_SPECKS at the eye's reading
+    assert 12 * 0.6 * 0.8 < out / 600 < 12 * 0.6 * 1.2  # FLAME_SPECKS at the thruster's rate
