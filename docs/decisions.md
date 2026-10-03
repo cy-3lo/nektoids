@@ -1032,13 +1032,13 @@ its passkey, DARK, stands. Earlier entries keep the old name.
 **D-078 — 2026-10-03 — Each level's three hints are asked for in turn in Hints, a drawer at the bar's foot in the editor and the run: an idea, the parts, the shadow. Amends D-039, D-051, D-054, D-069.**
 Love and Shadows opened with two boxes over the board (D-039), and nothing could be asked for: a
 player stuck, or past Skip, had no help. Hints (a life ring; ?, H being the hand's) sits at the
-bar's foot above Settings, in both environments. Its rows, in the common style: Idea, Parts,
-Shadow, each locked until the one before is taken. A click takes one, and its lines stay under
-its row, so every hint taken reads at once. Idea is a line of the level's, a bit cryptic. Parts
-counts the shadow's parts in Parts' order, each name as Parts writes it ("One Eye, one Source,
-one Thruster, one Diff."), so the two cannot disagree. Shadow is one winning board drawn as a
-tutorial draws its model (D-074), faint: in a picture under its row, and on the editor's board;
-its row is then a switch for both. Each shadow, built on its level's own board, wins it
+bar's foot above Settings, in both environments. Its rows, in the common style: Hint 1, Hint 2,
+Hint 3, each locked until the one before is taken. A click takes one, and its lines stay under
+its row, so every hint taken reads at once. Hint 1, the idea, is a line of the level's, a bit
+cryptic. Hint 2, the parts, counts the shadow's parts in Parts' order, each name as Parts writes it ("One Eye, one Source,
+one Thruster, one Diff."), so the two cannot disagree. Hint 3, the shadow, is one winning board
+drawn as a tutorial draws its model (D-074), faint, its wires as thick as a wire made: in a
+picture under its row, and on the editor's board; its row is then a switch for both. Each shadow, built on its level's own board, wins it
 (`test_hints.py`). The ideas: Fear "Each eye its thruster.", Aggression "Cross the wires.",
 Love "The light softens the push.", Shadows "There is no light in the dark."; the shadows are
 the boards the tests pinned: Fear's and Aggression's models, D-044's smallest Love, and

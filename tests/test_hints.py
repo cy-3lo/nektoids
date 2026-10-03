@@ -63,9 +63,9 @@ def test_the_parts_are_counted_from_the_shadow_in_parts_order():
 
 def test_hints_are_taken_in_turn_and_the_shadow_shows_or_hides():
     taken = Taken()
-    assert taken.take(PARTS) == "take Idea first" and taken.count == 0
+    assert taken.take(PARTS) == "take Hint 1 first" and taken.count == 0
     assert taken.take(IDEA) is None and taken.count == 1
-    assert taken.take(SHADOW) == "take Parts first"
+    assert taken.take(SHADOW) == "take Hint 2 first"
     assert taken.take(IDEA) is None and taken.count == 1  # taken already: it stays
     taken.take(PARTS)
     assert not taken.shown

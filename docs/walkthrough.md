@@ -780,8 +780,9 @@ drawer.
 
 ## 16. Hints, asked for in turn (D-078)
 
-Read D-078 first. Open Love, press ?, and take the Idea, the Parts, then the Shadow; go to the
-Editor, where the shadow lies on the board too, and click Shadow to hide it.
+Read D-078 first. Open Love, press ?, and take Hint 1, the idea, Hint 2, the parts, then Hint
+3, the shadow; go to the Editor, where the shadow lies on the board too, and click Hint 3 to
+hide it.
 
 - [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.from_dict` reads a level's
   `hints`, its idea and its shadow (ghosts, as a tutorial writes them); `says` the lines under a

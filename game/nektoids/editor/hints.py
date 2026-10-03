@@ -21,7 +21,7 @@ from nektoids.editor.tutorial import Ghost, ghost_wires_from, ghosts_from
 from nektoids.graph.board import Board, Refused
 from nektoids.graph.hexgrid import Cell
 
-NAMES = ("Idea", "Parts", "Shadow")  # the drawer's rows, in the order they are taken
+NAMES = ("Hint 1", "Hint 2", "Hint 3")  # the drawer's rows: the idea, the parts, the shadow
 IDEA, PARTS, SHADOW = range(3)
 ADVANCE = 9  # a letter of Plex Mono at 15 px, the drawer's text: 0.6 em [px]
 CHARS = (DRAWER_WIDTH - 2 * MARGIN) // ADVANCE  # a line of a hint, in the drawer [characters]

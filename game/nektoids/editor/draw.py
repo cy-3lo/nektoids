@@ -323,7 +323,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         if path is not None:
             target = board.node_at(end) or next((g for g in scene.ghosts if g.cell == end), None)
             reach = extent(target.kind) if target is not None else 0.3
-            _draw_wire(screen, view, path, GHOST_FILL, 2, reach)
+            _draw_wire(screen, view, path, GHOST_FILL, 3, reach)  # as thick as a wire made
     doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
     for wire in board.wires:
         colour = DOOMED if wire in doomed_wires else WIRE
@@ -940,7 +940,7 @@ def _draw_shadow(screen: pygame.Surface, board: Board, rect) -> None:
     draw_body(screen, board.cells, view.size, view.origin)
     for wire in board.wires:
         reach = extent(board.nodes[wire.target].kind)
-        _draw_wire(screen, view, wire.path, GHOST_FILL, 2, reach)
+        _draw_wire(screen, view, wire.path, GHOST_FILL, 3, reach)
     for node in board.nodes.values():
         angle = placed_angle(node.kind, node.facing)
         shape = _shape(node.kind, angle, _centre(view, node.cell), view.size)
