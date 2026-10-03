@@ -1092,3 +1092,14 @@ the target and a colour that breathes, from a preview in the game's own renderer
 its accent border, now RULE, 1 px, as an info box's; the accent goes to Next or Close, filled in
 accent 1 dark as the tool in hand is, since that is what Enter, or on the opening and last steps
 any key, does. Skip stays plain.
+
+**D-081 — 2026-10-03 — Every tutorial card that waits for Next closes at any key or click, which does nothing else. Amends D-048, D-060, D-061.**
+Only the opening cards and the last closed at any key or click (D-061); the others waited for
+Next or Enter, so that a click to look round went to the screen (D-060), and a card with no
+target let everything through (D-048). In Fear's introduction that made cards 4 and 5 leak:
+Space on the board's card ran the level, a drawer's key on the bar's card opened it. Now a card
+that waits for Next takes every key and every click, Skip aside, and moves on; the key or click
+does nothing else. A modifier alone, Shift, Ctrl, Cmd, Alt or Caps Lock, closes nothing, so a
+player may switch windows. A step that waits for an action is unchanged: the press goes to the
+screen. On the last card a click that closes it still reaches the screen (D-079), so a click on
+the life ring opens Hints. `Tutorial.opening` goes with the rule it served.

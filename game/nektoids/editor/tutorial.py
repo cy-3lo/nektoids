@@ -14,11 +14,11 @@ introduction that builds nothing and shows once a session (D-079); every level's
 for in the Hints drawer (`hints.py`, D-078). What a tutorial that builds needs, the waits for a
 part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, used by no level
 now and tested on the tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial;
-Settings' Tutorial starts Fear's again. On a step that leads and waits for Next,
-any key or click moves on, but a click on Skip. While a step leads, only the means to what it
-waits for go through (`allows`); the editor and the run ask before they act. Pure Python, no
-pygame: what the step waits for is read from a `Context`, the screen's geometry from the
-layouts.
+Settings' Tutorial starts Fear's again. On a step that waits for Next, any key or click moves
+on and does nothing else, but a click on Skip (D-081). While a step leads, only the means to
+what it waits for go through (`allows`); the editor and the run ask before they act. Pure
+Python, no pygame: what the step waits for is read from a `Context`, the screen's geometry from
+the layouts.
 """
 
 from __future__ import annotations
@@ -161,14 +161,6 @@ class Tutorial:
         """Whether this step explains what it shows: it leads and waits for Next. It holds the run
         still, which goes on when a step asks for Play, and outlines its panels (D-050)."""
         return self.leads and self.waits_for_next
-
-    @property
-    def opening(self) -> bool:
-        """Whether this step comes before the first that asks for an action, or is the last:
-        such a step moves on at any key or click (D-048); a later one only by Next or Enter, so
-        that a click to look round, an info disc, a drawer, goes to the screen (D-060)."""
-        first = next((k for k, step in enumerate(self.steps) if step.until), len(self.steps))
-        return self.index < first or self.index == len(self.steps) - 1
 
     @property
     def waits_for_next(self) -> bool:
@@ -624,22 +616,14 @@ def next_rect(box: Rect) -> Rect:
     return (x + w - PAD - bw, y + h - PAD - bh, bw, bh)
 
 
-def answer(
-    tutorial: Tutorial, box: Rect, click: tuple[int, int] | None, enter: bool = False
-) -> str | None:
-    """What a key (`click` None; `enter` if it is Enter) or a click at `click` does to the
-    tutorial, before the editor or the run sees it: "skip" on Skip; on a step that waits for
-    Next, "next" on Next or at Enter, and, on an opening step that leads, at any key or any
-    click (`Tutorial.opening`); otherwise None, and the press goes on."""
+def answer(tutorial: Tutorial, box: Rect, click: tuple[int, int] | None) -> str | None:
+    """What a key (`click` None) or a click at `click` does to the tutorial, before the editor or
+    the run sees it: "skip" on Skip; on a step that waits for Next, "next" at any other key or
+    click, which does nothing else (D-081); otherwise None, and the press goes on."""
     last = tutorial.index == len(tutorial.steps) - 1
     if click is not None and not last and _inside(skip_rect(box), click):
         return "skip"
-    if not tutorial.waits_for_next:
-        return None
-    on_next = click is not None and _inside(next_rect(box), click)
-    if (tutorial.leads and tutorial.opening) or on_next or (click is None and enter):
-        return "next"
-    return None
+    return "next" if tutorial.waits_for_next else None
 
 
 def _inside(rect: Rect, point: tuple[int, int]) -> bool:

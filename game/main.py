@@ -132,11 +132,23 @@ def replay_tutorial() -> None:
     choose_place(0)
 
 
+MODIFIERS = {  # alone, they close no card: Cmd+Tab to another window, Shift before a letter
+    pygame.K_LSHIFT,
+    pygame.K_RSHIFT,
+    pygame.K_LCTRL,
+    pygame.K_RCTRL,
+    pygame.K_LALT,
+    pygame.K_RALT,
+    pygame.K_LMETA,
+    pygame.K_RMETA,
+    pygame.K_CAPSLOCK,
+}
+
+
 def tutorial_press(guide: Tutorial, event: pygame.event.Event, scene) -> str | None:
     """ "next" or "skip" if this key or click is the tutorial's (`tutorial.answer`), else None."""
-    if event.type == pygame.KEYDOWN:
-        enter = event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
-        return answer(guide, tutorial_box(guide, scene)[1], None, enter)
+    if event.type == pygame.KEYDOWN and event.key not in MODIFIERS:
+        return answer(guide, tutorial_box(guide, scene)[1], None)
     if event.type == pygame.MOUSEBUTTONDOWN and 1 <= event.button <= 3:  # not the wheel
         return answer(guide, tutorial_box(guide, scene)[1], event.pos)
     return None

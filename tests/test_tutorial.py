@@ -158,17 +158,17 @@ def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_on_hin
 
     for shown in ({"run": "swimmer"}, {"run": "objectives"}):  # in the run: any key goes on
         tutorial.follow(context(Screen.RUN))
-        assert tutorial.step.show == shown and tutorial.opening
+        assert tutorial.step.show == shown and tutorial.waits_for_next
         tutorial.next()
     tutorial.follow(context(Screen.RUN))
     assert {"tab": "editor"} in tutorial.step.show  # waits for the Editor
     tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
     assert tutorial.step.show is None and not tutorial.leads  # the board: its box out of the way
     tutorial.next()
-    assert tutorial.step.show == {"area": "bar"} and not tutorial.opening  # Next, or Enter
+    assert tutorial.step.show == {"area": "bar"} and tutorial.waits_for_next  # any key, D-081
     tutorial.next()
     assert tutorial.step.show == {"icon": "hints"} and drawer_for(tutorial.step) is None
-    assert tutorial.opening and tutorial.waits_for_next  # the last: any key or click closes it
+    assert tutorial.waits_for_next  # the last: any key or click closes it
     tutorial.next()
     assert tutorial.step is None  # over: the hints may be taken
 
@@ -423,26 +423,23 @@ def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_l
     assert tutorial.index == EYE == BOARD + 2
 
 
-def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
+def test_a_step_that_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
     tutorial = Tutorial.from_dict(BUILT["fear"])
     box = (300, 300, 360, 100)
     skip, nxt = skip_rect(box), next_rect(box)
     centre = lambda r: (r[0] + r[2] // 2, r[1] + r[3] // 2)  # noqa: E731
-    assert answer(tutorial, box, None) == "next"  # the board: any key
-    assert answer(tutorial, box, (5, 5)) == "next"  # ... or a click anywhere
-    assert answer(tutorial, box, centre(skip)) == "skip"
-    tutorial.index = TOOLS  # after the Editor tab: only Next or Enter (D-060)
-    assert answer(tutorial, box, None) is None and answer(tutorial, box, (5, 5)) is None
-    assert answer(tutorial, box, None, enter=True) == "next"
-    assert answer(tutorial, box, centre(nxt)) == "next"
+    for index in (0, TOOLS):  # before the first action and after it alike (D-081)
+        tutorial.index = index
+        assert answer(tutorial, box, None) == "next"  # any key
+        assert answer(tutorial, box, (5, 5)) == answer(tutorial, box, centre(nxt)) == "next"
+        assert answer(tutorial, box, centre(skip)) == "skip"
     tutorial.index = EYE  # place an eye: the press is the editor's, but Skip
     assert answer(tutorial, box, None) is None and answer(tutorial, box, centre(nxt)) is None
     assert answer(tutorial, box, centre(skip)) == "skip"
     tutorial.index = len(tutorial.steps) - 1  # the last: Close, any key or click; no Skip
     assert answer(tutorial, box, centre(skip)) == "next"
-    hint = Tutorial((), HINT.steps)  # a hint takes only its own buttons
-    assert answer(hint, box, None) is None and answer(hint, box, (5, 5)) is None
-    assert answer(hint, box, centre(nxt)) == "next"
+    hint = Tutorial((), HINT.steps)  # a step with no target, as Fear's board (D-081)
+    assert answer(hint, box, None) == answer(hint, box, (5, 5)) == "next"
 
 
 def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
