@@ -658,6 +658,12 @@ class EditorScene(Frame):
             scroll=self.scroll,
         )
 
+    def unfold_wheel(self) -> None:
+        """The Wheel unfolded, if it was folded: a tutorial's step shows one of its icons."""
+        if self.wheel_folded:
+            self.wheel_folded = False
+            self.layout = self._relayout(self.layout.drawer)
+
     def _on_list(self, pos: tuple[int, int]) -> bool:
         """Whether `pos` is on Parts' list, where the mouse wheel scrolls it (D-069)."""
         return self.layout.list_area is not None and contains(self.layout.list_area, pos)

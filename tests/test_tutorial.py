@@ -15,6 +15,7 @@ from nektoids.editor.tutorial import (
     GAP,
     Action,
     Context,
+    Step,
     Tutorial,
     _crosses,
     allows,
@@ -26,10 +27,12 @@ from nektoids.editor.tutorial import (
     met,
     next_rect,
     panels,
+    shows_wheel,
     skip_rect,
     target_rects,
     target_spots,
 )
+from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NW, SW
 from nektoids.levels.arenas import arenas
@@ -384,3 +387,36 @@ def test_a_step_that_asks_for_an_action_lights_its_cells_and_one_that_explains_n
     assert focus_cells(tutorial) == {(2, -1), (1, -2)}
     tutorial.index = R  # the board, explained: dimmed round it instead
     assert focus_cells(tutorial) == frozenset() and focus_cells(None) == frozenset()
+
+
+def test_a_wheel_icon_is_a_target_while_the_steps_cell_is_focused_and_only_then():
+    # D-070: the Wheel at the drawer's foot, round the focused cell
+    board, cell, kinds = LEVELS["Fear"].new_board(), (2, -1), frozenset({Kind.EYE, Kind.THRUSTER})
+    tools = make_layout(Drawer.TOOLS, kinds=kinds)
+    wheel = slots(offer(board, cell, kinds), centre_in(tools.wheel_view), WHEEL_HEX, kinds)
+    show = [{"cell": [2, -1]}, {"wheel": "eye"}]
+    spots = target_spots(show, Screen.EDIT, tools, VIEW, wheel, focused=cell)
+    (_, disc), (icon, shape) = spots
+    eye = next(slot for slot in wheel if slot.what is Kind.EYE)
+    r = ICON * WHEEL_HEX
+    assert shape == "icon" and disc == "disc" and icon[2] == icon[3] == round(2 * r)
+    assert contains(icon, tuple(round(v) for v in eye.at)) and contains(tools.drawer_area, icon[:2])
+    elsewhere = target_rects(show, Screen.EDIT, tools, VIEW, wheel, focused=(1, 1))
+    assert len(elsewhere) == 1  # on another cell the Wheel's Eye would place there: not shown
+    assert target_rects(show, Screen.RUN, tools, VIEW, wheel, focused=cell) == []
+    assert (
+        target_rects([{"wheel": "turn left"}], Screen.EDIT, tools, VIEW, wheel) == []
+    )  # not offered
+
+
+def test_tools_is_an_area_a_step_may_explain_and_a_wheels_step_keeps_tools_or_parts_open():
+    tools, parts = make_layout(Drawer.TOOLS), make_layout(Drawer.PARTS)
+    explain = [{"area": "tools"}]
+    assert target_rects(explain, Screen.EDIT, tools, VIEW) == [tools.drawer_area]
+    assert target_rects(explain, Screen.EDIT, parts, VIEW) == []  # Tools is not open
+    assert drawer_for(Step(("Tools",), {"area": "tools"})) is Drawer.TOOLS
+    place = Step(("Place",), [{"cell": [2, -1]}, {"wheel": "eye"}], {"placed": {}})
+    assert shows_wheel(place) and not shows_wheel(Step(("Tools",), {"area": "tools"}))
+    assert drawer_for(place, Drawer.PARTS) is Drawer.PARTS  # the Wheel is at the foot of both
+    assert drawer_for(place, Drawer.TOOLS) is Drawer.TOOLS
+    assert drawer_for(place, Drawer.FILES) is drawer_for(place) is Drawer.TOOLS

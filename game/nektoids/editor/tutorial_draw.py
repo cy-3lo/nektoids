@@ -48,8 +48,8 @@ def draw_tutorial(
         for rect, shape in spots:
             _hole(screen, LIT, rect, shape, OUTLINE)
     elif spots:  # it asks for an action: nothing dimmed; its cells lit by the board (D-063),
-        for rect, shape in spots:  # a row, a tool, a button outlined in the accent
-            if shape == "spot":
+        for rect, shape in spots:  # a row, a Wheel's icon, a button outlined in the accent
+            if shape in ("spot", "icon"):
                 _hole(screen, LIT, rect, shape, OUTLINE)
     frame = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, frame, border_radius=8)
@@ -86,7 +86,7 @@ def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -
             pygame.draw.lines(surface, colour, True, points, width)
         else:
             pygame.draw.polygon(surface, colour, points)
-    elif shape == "disc":
+    elif shape in ("disc", "icon"):  # a cell, a Wheel's icon (D-070)
         pygame.draw.circle(surface, colour, hole.center, hole.height // 2 + HALO, width)
     elif shape == "panel":
         pygame.draw.rect(surface, colour, hole, width)

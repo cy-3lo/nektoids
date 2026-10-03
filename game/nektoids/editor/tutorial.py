@@ -21,13 +21,14 @@ layouts.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 
 from nektoids.editor import arena_layout
 from nektoids.editor.layout import SCREEN, TURNS, Drawer, Env, Layout, LevelButton, Rect, Tool, View
 from nektoids.editor.router import Screen
+from nektoids.editor.wheel import ICON, WHEEL_HEX, Slot
 from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
 from nektoids.levels.objectives import Outcome
@@ -180,14 +181,28 @@ def focus_cells(tutorial: Tutorial | None) -> frozenset[Cell]:
     return frozenset(_cell(one["cell"]) for one in shows if "cell" in one)
 
 
-def drawer_for(step: Step | None) -> Drawer | None:
+def drawer_for(step: Step | None, open_now: Drawer | None = None) -> Drawer | None:
     """The drawer a step's targets are in, which it opens as it shows: Parts for a part's row,
-    Tools for a tool, the run's drawer it explains; None if it needs none (D-051, D-057)."""
-    shows = [] if step is None or step.show is None else step.show
-    shows = shows if isinstance(shows, list) else [shows]
+    Tools for Tools; for a Wheel's icon, Tools or Parts, whichever is open (`open_now`), else
+    Tools; the run's drawer it explains; None if it needs none (D-051, D-057, D-070)."""
+    shows = _shows(step)
     if any("menu" in one or one.get("area") == "parts" for one in shows):
         return Drawer.PARTS
+    if any(one.get("area") == "tools" for one in shows):
+        return Drawer.TOOLS
+    if shows_wheel(step):  # the Wheel is at the foot of both
+        return open_now if open_now in (Drawer.TOOLS, Drawer.PARTS) else Drawer.TOOLS
     return next((RUN_DRAWERS[one["run"]] for one in shows if one.get("run") in RUN_DRAWERS), None)
+
+
+def shows_wheel(step: Step | None) -> bool:
+    """Whether a step shows one of the Wheel's icons: the Wheel, folded, unfolds for it."""
+    return any("wheel" in one for one in _shows(step))
+
+
+def _shows(step: Step | None) -> list:
+    shows = [] if step is None or step.show is None else step.show
+    return shows if isinstance(shows, list) else [shows]
 
 
 def guided(data: Mapping | None) -> bool:
@@ -258,20 +273,39 @@ def met(until: Mapping, context: Context) -> bool:
 # Where things are
 
 
-def target_rects(show: Mapping | list | None, screen: Screen, layout: Layout, view: View) -> list:
+def target_rects(
+    show: Mapping | list | None,
+    screen: Screen,
+    layout: Layout,
+    view: View,
+    wheel: Sequence[Slot] = (),
+    focused: Cell | None = None,
+) -> list:
     """Every target a step shows that is on the screen now open, in the step's order."""
-    return [rect for rect, _ in target_spots(show, screen, layout, view)]
+    return [rect for rect, _ in target_spots(show, screen, layout, view, wheel, focused)]
 
 
-def target_spots(show: Mapping | list | None, screen: Screen, layout: Layout, view: View) -> list:
-    """The same, each with the shape the overlay gives it: "disc" round a cell, "panel" for an
-    area or a part of the run view, cut and outlined on its own edges, "spot" round anything
-    else, a button or a menu row (D-048, D-050)."""
+def target_spots(
+    show: Mapping | list | None,
+    screen: Screen,
+    layout: Layout,
+    view: View,
+    wheel: Sequence[Slot] = (),
+    focused: Cell | None = None,
+) -> list:
+    """The same, each with the shape the overlay gives it: "disc" round a cell, "icon" round
+    a Wheel's icon, "panel" for an area or a part of the run view, cut and outlined on its own
+    edges, "spot" round anything else, a button or a menu row (D-048, D-050, D-070). `wheel`:
+    the Wheel's icons as the editor draws them, round the cell `focused`."""
     shows = [] if show is None else show if isinstance(show, list) else [show]
+    cells = frozenset(_cell(one["cell"]) for one in shows if "cell" in one)
     spots = []
     for one in shows:
         if one.get("run") == "arena" and screen is Screen.RUN and layout.env is Env.RUN:
             spots += _run_page(layout)
+        elif "wheel" in one:
+            on = screen is Screen.EDIT and (not cells or focused in cells)
+            spots.append((_wheel_icon(one["wheel"], wheel) if on else None, "icon"))
         else:
             spots.append((target_rect(one, screen, layout, view), _shape(one)))
     return [(rect, shape) for rect, shape in spots if rect is not None]
@@ -297,6 +331,8 @@ def _run_page(layout: Layout) -> list:
 def _shape(show: Mapping) -> str:
     if "cell" in show:
         return "disc"
+    if "wheel" in show:
+        return "icon"
     if "area" in show or show.get("run") in RUN_PANELS:
         return "panel"
     return "spot"
@@ -315,21 +351,31 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         return dict(layout.level_buttons).get(LevelButton(show["level"])) if on else None
     if screen is not Screen.EDIT:
         return None
-    if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)
+    if "area" in show:  # the board, the Parts or Tools drawer, the activity bar (D-051, D-070)
         return {
             "board": layout.board_area,
             "parts": layout.drawer_area if layout.drawer is Drawer.PARTS else None,
+            "tools": layout.drawer_area if layout.drawer is Drawer.TOOLS else None,
             "bar": layout.bar_area,
         }[show["area"]]
     if "menu" in show:  # a part's row in the Parts drawer
         return dict(layout.menu_items).get(Kind(show["menu"]))
-    if "tool" in show:  # in the Wheel round a part now (D-068): the part's cell shows it
-        return None
     if "cell" in show:
         x, y = to_pixel(_cell(show["cell"]), view.size, view.origin)
         half_w, half_h = SQRT3 / 2 * view.size, view.size
         return (round(x - half_w), round(y - half_h), round(2 * half_w), round(2 * half_h))
     raise ValueError(f"a step cannot show {dict(show)!r}")
+
+
+def _wheel_icon(name: str, wheel: Sequence[Slot]) -> Rect | None:
+    """A Wheel's icon, a part or an action, by its name, while the Wheel shows it on its rim
+    (D-070): the square round its disc. Not on the rim, or not offered: not on screen."""
+    what = Kind(name) if name in {kind.value for kind in Kind} else Tool(name)
+    slot = next((s for s in wheel if s.what is what and not s.depth), None)
+    if slot is None:
+        return None
+    r, (x, y) = ICON * WHEEL_HEX, slot.at
+    return (round(x - r), round(y - r), round(2 * r), round(2 * r))
 
 
 def _run_target(name: str, layout: Layout) -> Rect | None:

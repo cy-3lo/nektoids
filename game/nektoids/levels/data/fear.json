@@ -78,7 +78,7 @@
         ]
       },
       {
-        "show": [{"tool": "turn left"}, {"cell": [2, -1]}],
+        "show": [{"wheel": "turn left"}, {"cell": [2, -1]}],
         "until": {"facing": {"cell": [2, -1], "facing": "NW"}},
         "say": [
           "It looks forward, but this eye must look",
@@ -95,7 +95,7 @@
         ]
       },
       {
-        "show": [{"tool": "turn right"}, {"cell": [1, 1]}],
+        "show": [{"wheel": "turn right"}, {"cell": [1, 1]}],
         "until": {"facing": {"cell": [1, 1], "facing": "SW"}},
         "say": ["This one looks back and to the right:", "press Turn right, or R, twice."]
       },
@@ -110,7 +110,7 @@
         "say": ["...and the other one here."]
       },
       {
-        "show": [{"tool": "wire"}, {"cell": [2, -1]}, {"cell": [1, -2]}],
+        "show": [{"cell": [2, -1]}, {"cell": [1, -2]}],
         "until": {"wired": {"from": [2, -1], "to": [1, -2]}},
         "say": [
           "Wire each eye to the thruster on its own", "side: take Wire, or W, and drag from the",

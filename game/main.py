@@ -49,6 +49,7 @@ from nektoids.editor.tutorial import (
     focus_cells,
     guided,
     panels,
+    shows_wheel,
     target_rects,
     target_spots,
 )
@@ -86,12 +87,14 @@ def tutorial() -> Tutorial | None:
 
 
 def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
-    """Where the step's target and its box are, on the screen now open: `scene`'s."""
-    spots = target_spots(guide.step.show, router.screen, scene.layout, scene.view)
+    """Where the step's target and its box are, on the screen now open: `scene`'s; in the
+    editor, the Wheel's icons round the focused cell are targets too (D-070)."""
+    editing = isinstance(scene, EditorScene)
+    wheel, focused = (scene.wheel(), scene.focused) if editing else ((), None)
+    where = (router.screen, scene.layout, scene.view, wheel, focused)
+    spots = target_spots(guide.step.show, *where)
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
-    before = (
-        [] if done is None else target_rects(done.show, router.screen, scene.layout, scene.view)
-    )
+    before = [] if done is None else target_rects(done.show, *where)
     beside = scene.layout.board_area  # the board, or the arena
     return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
 
@@ -271,12 +274,14 @@ async def main() -> None:
         if playing is not None:
             playing.chapters = router.rows()
         scene = on_screen()
-        wanted = drawer_for(guide.step) if guide is not None else None
+        wanted = drawer_for(guide.step, scene.layout.drawer) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on
         if wanted in here and opened_for.get(router.index) != guide.index:
             opened_for[router.index] = guide.index  # once a step: then the player's to change
             if scene.layout.drawer is not wanted:
                 scene.open_drawer(wanted)
+            if shows_wheel(guide.step) and isinstance(scene, EditorScene):
+                scene.unfold_wheel()  # its icon must show (D-070)
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         editor().gate = gate  # only what the step asks goes through (D-048)
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
