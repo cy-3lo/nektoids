@@ -1209,3 +1209,14 @@ icon and the key: in the run, Diagnostic, the stethoscope, D, its initial; I is 
 D-069 allows, the key means the same drawer's place in each environment, never two things in
 one. In the code the run's drawer stays `Drawer.INSIDE`, the name the tutorials' data uses; the
 earlier decisions and the walkthrough keep calling it Inside.
+
+**D-090 — 2026-10-03 — A drag from the part Wire is lit for draws its wire; a drag from any other part moves it. Amends D-068, D-072, D-085.**
+A click on a part, or a part just placed, focuses it and lights Wire in its Wheel: the next part
+clicked is wired to it. Yet a drag from it moved it, since only Wire chosen, by W or the Wheel's
+icon, made a drag draw a wire (D-072); the Wheel showed one thing and the drag did another. Now a
+drag from the part Wire is lit for draws its wire, as Wire chosen does, either way round (D-026),
+released on the part to wire to; released on an empty cell it ends the attempt, as D-072 has it.
+A drag from any other part still moves that part, and dropped off the body deletes it (D-085);
+the lit part moves by M or the Wheel's Move, or by a drag once the focus is elsewhere. Clicks do
+not change: a click that cannot wire focuses the cell or the part it falls on, so lighting Wire
+costs nothing. The status line says "Click or drag to another part to wire it; M moves it."
