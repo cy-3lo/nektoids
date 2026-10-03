@@ -44,7 +44,7 @@ VELOCITY_SPAN = 1.0  # [s] the segment is the way the body goes in this long
 # [s] ... on Diagnostic's main screen, where the body is large: there 6 u/s, two thrusters at
 # RATE_MAX through the centre, reaches one body radius past the rim
 PREVIEW_SPAN = 1.0 / (2.0 * SPEED)
-SPIN_SPAN = 4.0  # [s] the arc is the angle the body turns in this long
+SPIN_SPAN = 2.0  # [s] the arc is the angle the body turns in this long
 SPIN_RADIUS = 1.6  # [body radii]
 SPIN_MOST = math.radians(300.0)  # the longest arc
 ARC_STEP = math.radians(6.0)  # an arc is a polyline of steps this long at most

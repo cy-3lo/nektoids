@@ -1012,7 +1012,7 @@ run's frame, as the rays are (invariant 1): never read by the model, still while
 same on a replay or a scrub, faster under fast forward. The motion, both in the swimmer's own
 accent1, 2 px: a segment from the rim along the velocity, as long as the way gone in 1 s, its
 leaving the rim saying its way; an arc 1.6 body radii from the centre, from the heading, as long
-as the angle turned in 4 s, at most 300°. Both come from the thrust now (D-022), what the next
+as the angle turned in 2 s, at most 300°. Both come from the thrust now (D-022), what the next
 tick does, so Diagnostic's probe, which stands still, shows where it would go, and a swimmer
 against an obstacle points into it while it slides. Nothing is cleared over the body: the marks
 cross it. Diagnostic's map shows all of them at its scale; its main screen, where the body is

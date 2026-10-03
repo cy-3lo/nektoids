@@ -64,7 +64,7 @@ def test_the_segment_leaves_the_rim_and_the_arc_the_heading():
     segment = velocity_segment((1.0, 2.0), heading_north, 1.0, np.array([3.0, 0.0]))
     assert np.allclose(segment, [[1.0, 3.0], [1.0, 6.0]])  # 3 u/s for 1 s, from the rim
     assert velocity_segment((0.0, 0.0), 0.0, 1.0, np.zeros(2)) is None
-    arc = spin_arc((0.0, 0.0), 0.0, 1.0, 0.5)  # 0.5 rad/s for 4 s: 2 rad, counter-clockwise
+    arc = spin_arc((0.0, 0.0), 0.0, 1.0, 1.0)  # 1 rad/s for 2 s: 2 rad, counter-clockwise
     assert np.allclose(arc[0], [SPIN_RADIUS, 0.0])
     assert math.atan2(arc[-1][1], arc[-1][0]) == pytest.approx(2.0)
     fast = spin_arc((0.0, 0.0), 0.0, 1.0, -10.0)  # clockwise, past the longest arc
