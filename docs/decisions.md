@@ -1086,5 +1086,7 @@ disc round a cell or a Wheel's icon), 14 px out in 24 frames (0.4 s), one alive 
 edge on average, on the 3 px grid of the thrusters' flames and from the same table of draws,
 made once and read by the frame (D-076): still while nothing moves, the same each time. Their
 frame is `main.py`'s count of frames drawn, drawing only. Chosen over a glint sweeping across
-the target and a colour that breathes, from a preview in the game's own renderer. The box keeps
-its accent border.
+the target and a colour that breathes, from a preview in the game's own renderer. The box loses
+its accent border, now RULE, 1 px, as an info box's; the accent goes to Next or Close, filled in
+accent 1 dark as the tool in hand is, since that is what Enter, or on the opening and last steps
+any key, does. Skip stays plain.
