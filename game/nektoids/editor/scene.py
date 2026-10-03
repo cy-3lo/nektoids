@@ -194,7 +194,7 @@ class EditorScene(Frame):
         self.wire_chosen = False  # Wire chosen by its key or in the Wheel, not only at hand
         self.piling = 0  # the mouse on a pile of the Wheel: the way it turns the Wheel, -1 or 1
         self.pile_frames = 0  # how long it has rested there
-        self.onward = False  # the focus came unclicked, placed or wired to: it wires only forward
+        self.onward = False  # the focus came on to the part just wired to: it wires only forward
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
@@ -858,7 +858,8 @@ class EditorScene(Frame):
             self._refuse("a wire runs from a part to a part", cell)
             self._focus(None)
         elif target.id != source.id:
-            self._focus(cell if self._try_wire(source, target, cell) else None)
+            wired = self._try_wire(source, target, cell)
+            self._focus(cell if wired else None, onward=wired)
 
     def _grab(self, cell: Cell) -> None:
         """A drag from a part: it moves with the mouse (D-011, D-068), if it may."""
@@ -1044,11 +1045,12 @@ class EditorScene(Frame):
     def _focused_node(self) -> Node | None:
         return self.board.node_at(self.focused) if self.focused is not None else None
 
-    def _focus(self, cell: Cell | None, keys: bool = False) -> None:
+    def _focus(self, cell: Cell | None, keys: bool = False, onward: bool = False) -> None:
         """Focus `cell` (None: nothing), its Wheel open: round a part, Wire chosen for the mouse,
-        nothing for the keyboard; round an empty cell, its parts, the first chosen."""
+        nothing for the keyboard; round an empty cell, its parts, the first chosen. `onward`: the
+        focus goes on to the part just wired to, which wires on only forward (D-068, D-091)."""
         self._drop_gesture()
-        self.focused, self.onward = cell, True  # unless a click on the part brought it
+        self.focused, self.onward = cell, onward
         self.wire_chosen = False
         self.turn, self.slide_left = 0, 0  # the Wheel at its start, at once
         self.wheel_open, self.wheel_keys = cell is not None, keys
@@ -1177,11 +1179,11 @@ class EditorScene(Frame):
         then goes to it; if they cannot be wired, the attempt ends, nothing focused, the reason
         in the status line; the focus dropped if it was there already; else the focus there.
 
-        Only a part clicked wires either way round (D-026). A part focused otherwise, placed,
-        moved or just wired to, wires on only forward, along the signal: an eye just placed
-        wires to the thruster clicked next; from an eye wired to a sum, a click on a thruster
-        wires the sum to it; but from a thruster, a click on the other eye only focuses that
-        eye, to start the next wire there."""
+        A part clicked, placed or moved wires either way round (D-026, D-091): a thruster just
+        placed is wired to by the eye clicked next. Only the part just wired to wires on only
+        forward, along the signal: from an eye wired to a sum, a click on a thruster wires the
+        sum to it; but from a thruster, a click on the other eye only focuses that eye, to start
+        the next wire there."""
         node, source = self.board.node_at(cell), self._focused_node()
         if cell == self.focused:
             self._focus(None)
@@ -1190,12 +1192,11 @@ class EditorScene(Frame):
         fresh = self.onward and not self.wire_chosen and not self._forward(source or node, node)
         if wiring and not fresh:
             if self._try_wire(source, node, cell):
-                self._focus(cell)  # on to the part wired to
+                self._focus(cell, onward=True)  # on to the part wired to
             else:
                 self._focus(None)  # the attempt ends, the reason in the status line
             return
-        self._focus(cell)
-        self.onward = False  # clicked: it wires either way round
+        self._focus(cell)  # clicked: it wires either way round
 
     @staticmethod
     def _forward(source: Node, target: Node) -> bool:
