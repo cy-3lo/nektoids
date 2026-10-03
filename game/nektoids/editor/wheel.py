@@ -190,11 +190,12 @@ def slot_at(wheel: Sequence[Slot], point: tuple[float, float], size: float) -> S
     return next((s for s in wheel if not s.depth and math.dist(s.at, point) <= ICON * size), None)
 
 
-def cycled(wheel: Sequence[Slot], chosen: int | None, step: int, blank: bool) -> int | None:
-    """The keyboard's choice after an arrow: the next icon round (step 1) or the one before;
-    with `blank`, "nothing" is one of the stops, between the last icon and the first."""
-    stops: list[int | None] = list(range(len(wheel))) + ([None] if blank else [])
-    if not stops:
+def cycled(wheel: Sequence[Slot], chosen: int | None, step: int) -> int | None:
+    """The keyboard's choice after an arrow: the next icon along the arc (step 1) or the one
+    before, stopping at its first and its last; from "nothing", where the Wheel opens round a
+    part, the first or the last (D-084)."""
+    if not wheel:
         return None
-    k = stops.index(chosen) if chosen in stops else (len(stops) - 1 if step > 0 else 0)
-    return stops[(k + step) % len(stops)]
+    if chosen is None or not 0 <= chosen < len(wheel):
+        return 0 if step > 0 else len(wheel) - 1
+    return min(max(chosen + step, 0), len(wheel) - 1)

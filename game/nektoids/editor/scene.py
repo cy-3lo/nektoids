@@ -366,7 +366,7 @@ class EditorScene(Frame):
         items = self.offered()
         if self.going_round() and items:
             step = 1 if key in (right, ARROWS[3]) else -1
-            self.choice = cycled(items, self.choice, step, blank=self._blank())
+            self.choice = cycled(items, self.choice, step)
             self._turn_wheel(turned(self.turn, self.choice, len(items)))  # brought round
             return
         if self.focused is None:
@@ -1013,11 +1013,6 @@ class EditorScene(Frame):
 
     def _focused_node(self) -> Node | None:
         return self.board.node_at(self.focused) if self.focused is not None else None
-
-    def _blank(self) -> bool:
-        """Whether the keyboard's way round the Wheel stops at "nothing": round a part's actions,
-        not round the parts to place, or to swap it for."""
-        return self._focused_node() is not None and not self.swapping
 
     def _focus(self, cell: Cell | None, keys: bool = False) -> None:
         """Focus `cell` (None: nothing), its Wheel open: round a part, Wire chosen for the mouse,

@@ -156,12 +156,12 @@ def test_while_the_wheel_slides_its_icons_run_along_the_circle_between_their_pla
     assert 0 < half[5].depth < 1 and half[4].depth == 0  # back: 5 under the last end, 4 over
 
 
-def test_the_arrows_go_round_the_wheel_and_through_nothing_when_it_is_a_stop():
-    wheel = slots([Kind.EYE, Kind.THRUSTER], CENTRE, SIZE, frozenset(Kind))
-    assert cycled(wheel, None, 1, blank=True) == 0
-    assert cycled(wheel, 1, 1, blank=True) is None  # nothing, then round again
-    assert cycled(wheel, 1, 1, blank=False) == 0
-    assert cycled(wheel, 0, -1, blank=True) is None
+def test_the_arrows_go_along_the_arc_and_stop_at_its_ends():
+    wheel = slots([Kind.EYE, Kind.THRUSTER, Kind.SUM], CENTRE, SIZE, frozenset(Kind))
+    assert cycled(wheel, None, 1) == 0 and cycled(wheel, None, -1) == 2  # from nothing: an end
+    assert cycled(wheel, 0, 1) == 1 and cycled(wheel, 2, -1) == 1
+    assert cycled(wheel, 2, 1) == 2 and cycled(wheel, 0, -1) == 0  # never round past an end
+    assert cycled([], None, 1) is None
 
 
 def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
