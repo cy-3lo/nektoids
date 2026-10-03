@@ -42,6 +42,7 @@ GAP = 14  # between the target and the box [px]
 PATH_MARGIN = 20  # the hand's way from one target to the next, this wide on either side [px]
 AREA = 400  # a target this wide, and half as tall, is an area: the box may lie over it [px]
 GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
+EDGE = 3  # an outline keeps this far inside the screen's edges [px] (D-071)
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 RUN_PANELS = {"arena", "controls", "objectives", "inside", "score"}  # the rest are buttons
 RUN_DRAWERS = {"inside": Drawer.INSIDE, "score": Drawer.SCORE}  # the objectives are in each
@@ -597,6 +598,16 @@ def skip_rect(box: Rect) -> Rect:
     """Skip, left of Next."""
     x, y, w, h = next_rect(box)
     return (x - BUTTON_GAP - w, y, w, h)
+
+
+def outline_kept(rect: Rect) -> Rect:
+    """`rect` cut to the screen less EDGE all round: the outline round a target at the screen's
+    edge, a tab at its top, the switch by its left, the objectives at its foot, stays on it and
+    clear of its first and last rows and columns (D-071)."""
+    x, y, w, h = rect
+    left, top = max(x, EDGE), max(y, EDGE)
+    right, bottom = min(x + w, SCREEN[0] - EDGE), min(y + h, SCREEN[1] - EDGE)
+    return (left, top, right - left, bottom - top)
 
 
 def _cell(data) -> Cell:

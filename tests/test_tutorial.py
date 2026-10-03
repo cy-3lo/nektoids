@@ -28,6 +28,7 @@ from nektoids.editor.tutorial import (
     is_area,
     met,
     next_rect,
+    outline_kept,
     panels,
     shows_wheel,
     skip_rect,
@@ -551,3 +552,15 @@ def test_a_step_may_wait_for_several_things_and_for_the_run_to_have_played_a_whi
     assert met(played, Context(board, Tool.ADD, Screen.RUN, time=1.0))
     waiting = Step(("Play",), [{"run": "play"}], played)
     assert allows(waiting, Action("play")) and not allows(waiting, Action("pick", kind=Kind.EYE))
+
+
+def test_an_outline_at_the_screens_edge_keeps_inside_it_clear_of_its_first_rows_and_columns():
+    tab = dict(RUN_LAYOUT.tabs)["editor"]  # D-071: a tab at the top, the switch by the left
+    x, y, w, h = tab
+    assert outline_kept((x - 6, y - 6, w + 12, h + 12))[1] == 3  # not above the screen
+    sx, sy, sw, sh = dict(RUN_LAYOUT.level_buttons)[LevelButton.EDIT]
+    assert outline_kept((sx - 6, sy - 6, sw + 12, sh + 12))[0] == 3  # nor on its first column
+    foot = outline_kept(RUN_LAYOUT.goal_area)
+    assert foot[1] + foot[3] == SCREEN[1] - 3  # nor on its last row
+    inside = (100, 100, 50, 40)
+    assert outline_kept(inside) == inside  # away from the edges: as it is
