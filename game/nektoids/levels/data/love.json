@@ -30,21 +30,5 @@
         {"from": [1, 0], "to": [-2, 0]}
       ]
     }
-  },
-  "tutorial": {
-    "steps": [
-      {
-        "say": [
-          "Come to the light and stay by it: the closer",
-          "it is, the less the swimmer should push."
-        ]
-      },
-      {
-        "say": [
-          "A Source sends a steady 1. A Diff of a Source",
-          "and an eye sends 1 less what the eye reads."
-        ]
-      }
-    ]
   }
 }

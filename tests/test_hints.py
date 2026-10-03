@@ -3,7 +3,18 @@
 import pytest
 from test_determinism import play
 
-from nektoids.editor.hints import CHARS, IDEA, PARTS, SHADOW, Hints, Taken, parts_line
+from nektoids.editor.hints import (
+    CHARS,
+    IDEA,
+    NAMES,
+    PARTS,
+    SHADOW,
+    Hints,
+    Taken,
+    hint_view,
+    parts_line,
+)
+from nektoids.editor.layout import HINT_ROWS, Drawer, Env, make_layout
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome
@@ -28,6 +39,20 @@ def test_each_hint_fits_the_drawer_and_the_shadow_says_nothing(title):
         assert 1 <= len(hints.says(index)) <= 2
         assert all(len(line) <= CHARS for line in hints.says(index))
     assert hints.says(SHADOW) == ()
+
+
+@pytest.mark.parametrize("title", LEVELS)
+def test_all_taken_in_the_run_they_fit_above_the_objectives_and_the_picture_stays_large(title):
+    level = LEVELS[title]
+    hints, taken = Hints.from_dict(level.hints), Taken(count=len(NAMES), shown=True)
+    view = hint_view(hints, taken, False, hints.build(level.new_board()))
+    lines = tuple(map(len, view.lines))
+    layout = make_layout(
+        Drawer.HINTS, env=Env.RUN, goals=len(level.objectives), hint_lines=lines, shadow=True
+    )
+    x, y, w, h = layout.shadow_picture
+    assert w == h >= 140 and y + h < layout.goal_area[1]
+    assert len(NAMES) == HINT_ROWS == len(layout.hint_rows)
 
 
 def test_the_parts_are_counted_from_the_shadow_in_parts_order():

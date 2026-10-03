@@ -9,8 +9,9 @@ or a list of them, which the overlay leaves lit while it dims the rest: an area 
 until a part is placed in a cell, a part faces a way, a tool is taken, a wire runs from one cell
 to another, the run starts, or the run is won. A step with no target is a hint: nothing is
 dimmed. A step with nothing to wait for waits for Next, and only such a step has a Next: one
-that waits for an action moves on when it is done, never before (D-048). The first level's
-tutorial leads; later levels only hint (D-039). Skip ends a tutorial; a place chosen in Chapters
+that waits for an action moves on when it is done, never before (D-048). The first two levels'
+tutorials lead (D-074); the later levels have none, their hints asked for in the Hints drawer
+(`hints.py`, D-078). Skip ends a tutorial; a place chosen in Chapters
 starts every tutorial again from its beginning (D-048). On a step that leads and waits for Next,
 any key or click moves on, but a click on Skip. While a step leads, only the means to what it
 waits for go through (`allows`); the editor and the run ask before they act. Pure Python, no

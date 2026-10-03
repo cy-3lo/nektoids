@@ -45,13 +45,5 @@
         {"from": [-2, 1], "to": [2, -1]}
       ]
     }
-  },
-  "tutorial": {
-    "steps": [
-      {
-        "say": ["In a shadow the eyes read nothing, and an", "eye that reads nothing drives nothing."]
-      },
-      {"say": ["A Source senses nothing: it sends a steady", "1, wherever the swimmer is."]}
-    ]
   }
 }

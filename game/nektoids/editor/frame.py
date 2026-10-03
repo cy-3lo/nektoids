@@ -1,18 +1,21 @@
 """What the editor and the run share (D-051): the activity bar, one drawer at a time, the tabs
-and the switch between them, the rows' info discs, Chapters and Settings, the bar's tooltips.
+and the switch between them, the rows' info discs, Hints, Chapters and Settings, the bar's
+tooltips.
 
 A scene inherits `Frame`, calls `_start_frame` once, `frame_track` as the mouse moves,
 `frame_press` first on a click, and `frame_update` once a frame; it gives `_relayout` (its
 layout with another drawer open), and may give `_slid` (what follows the main screen when a
 drawer opens or folds), `_cancel` (a gesture under way ends) and `_refuse` (says why not).
-What the player asks of `main.py` is left in `request` ("run", "edit", "tutorial") or `chosen`
-(a place picked in Chapters), which `main.py` clears. Pure Python, no pygame.
+What the player asks of `main.py` is left in `request` ("run", "edit", "tutorial"), `chosen`
+(a place picked in Chapters) or `asked_hint` (a row of Hints), which `main.py` clears. Pure
+Python, no pygame.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 
+from nektoids.editor.hints import HintView
 from nektoids.editor.layout import (
     PASSKEY_KEY,
     Drawer,
@@ -20,6 +23,7 @@ from nektoids.editor.layout import (
     Setting,
     chapter_row_at,
     drawer_button_at,
+    hint_row_at,
     info_at,
     level_button_at,
     on_fold_handle,
@@ -56,6 +60,8 @@ class Frame:
         self.typing: str | None = None  # a passkey being typed in Chapters; None: not (D-075)
         self.asked_passkey: str | None = None  # a passkey typed: main.py's to try and clear
         self.said = ""  # what that passkey opened, in the status line until the next click
+        self.hints: HintView | None = None  # what Hints shows; None, the level has none; main.py's
+        self.asked_hint: int | None = None  # a row of Hints clicked: main.py's to take and clear
 
     @property
     def tooltip(self) -> object | None:
@@ -79,7 +85,7 @@ class Frame:
 
     def frame_press(self, pos: tuple[int, int]) -> bool:
         """A click on the frame, taken: the fold arrow, the bar, a tab, an info disc, a row of
-        Chapters or of Settings, the passkey field. False if it fell elsewhere, for the scene to
+        Hints, Chapters or Settings, the passkey field. False if it fell elsewhere, for the scene to
         take. A passkey being typed is given up by a click anywhere but on its field."""
         self.said, self.typing = "", None
         if passkey_at(self.layout, pos):
@@ -104,6 +110,10 @@ class Frame:
         what = info_at(self.layout, pos)  # inside its row: before the row's own action
         if what is not None:
             self.info = what
+            return True
+        hint = hint_row_at(self.layout, pos)
+        if hint is not None:
+            self._take_hint(hint.index)
             return True
         place = chapter_row_at(self.layout, pos)
         if place is not None:
@@ -146,6 +156,26 @@ class Frame:
         self.layout = self._relayout(drawer)
         self._slid(before, self.layout)
         self.info = None
+
+    def set_hints(self, hints: HintView | None) -> None:
+        """What Hints shows of the level's hints (D-078); the drawer is laid out again if that
+        changed."""
+        if hints != self.hints:
+            self.hints = hints
+            self.layout = self._relayout(self.layout.drawer)
+
+    def _hint_layout(self) -> dict:
+        """What `make_layout` needs of the hints shown: the lines under each row, the picture."""
+        if self.hints is None:
+            return {}
+        return {"hint_lines": tuple(map(len, self.hints.lines)), "shadow": self.hints.shadow}
+
+    def _take_hint(self, index: int) -> None:
+        """A row of Hints: main.py takes it, unless the level's tutorial leads (D-078)."""
+        if self.hints is not None and self.hints.locked:
+            self._refuse("skip or finish the tutorial for hints")
+        elif self.hints is not None:
+            self.asked_hint = index
 
     def _choose_place(self, index: int) -> None:
         """A level or the sandbox, picked in Chapters, if it is open and the tutorial lets it."""

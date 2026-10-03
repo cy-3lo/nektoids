@@ -37,6 +37,8 @@ from nektoids.editor.geometry import (
     wire_arrows,
     wire_points,
 )
+from nektoids.editor.hints import NAMES
+from nektoids.editor.hints import SHADOW as SHADOW_HINT
 from nektoids.editor.icons import (
     DRAWER_ICON,
     EDIT_ICON,
@@ -55,6 +57,7 @@ from nektoids.editor.layout import (
     DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     EDIT_KEYS,
+    HINT_LINE,
     INFO_AT,
     LEVEL_KEYS,
     MARGIN,
@@ -71,6 +74,7 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     FileButton,
+    HintRow,
     LevelButton,
     MainView,
     Mode,
@@ -79,6 +83,7 @@ from nektoids.editor.layout import (
     View,
     ViewButton,
     WinRow,
+    fitted_view,
     level_of,
     overview_view,
     scroll_thumb,
@@ -132,7 +137,7 @@ from nektoids.editor.probe import level_view, ring_radii
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
-from nektoids.graph.board import Category, Kind, Refused
+from nektoids.graph.board import Board, Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
@@ -167,6 +172,7 @@ TIP = {
     Drawer.INSIDE: "Inside",
     Drawer.SCORE: "Score",
     Drawer.NAVIGATOR: "Navigator",
+    Drawer.HINTS: "Hints",
     Drawer.SETTINGS: "Settings",
     Drawer.CHAPTERS: "Chapters",
 }
@@ -181,6 +187,11 @@ SETTING = {  # Settings' rows: their name, icon and what their info box says (D-
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),
 }
+HINT = (  # Hints' rows, in NAMES' order: their icon and what their info box says (D-078)
+    ("comment", "An idea to start from, a bit cryptic."),
+    ("puzzle-piece", "The parts one way to win takes."),
+    ("ghost", "One way to win, faint: here and on the board."),
+)
 ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's name
     Tool.ADD: "Add",
     Tool.WIRE: "Wire",
@@ -665,6 +676,7 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
         draw_fold_title(screen, fonts, title, rect, title in scene.folded, ink)
     screen.set_clip(None)
     rows(screen, scene, fonts)
+    _draw_hints(screen, scene, fonts)
     _draw_settings(screen, scene, fonts)
     _draw_chapters(screen, scene, fonts)
     _draw_passkey(screen, scene, fonts)
@@ -879,6 +891,61 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
             active,
             icon=VIEW_ICON[button],
         )
+
+
+def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
+    """Hints (D-078): a row locked until the one before it is taken, ticked once taken, the
+    shadow's on or off; under each taken one, its lines; under the shadow's, its picture. A
+    level with none, or whose tutorial leads, says so."""
+    layout, hints = scene.layout, scene.hints
+    if layout.drawer is not Drawer.HINTS:
+        return
+    taken = len(hints.lines) if hints is not None else 0
+    for row, rect in layout.hint_rows:
+        k = row.index
+        if k == SHADOW_HINT and k < taken:
+            status = ("tick", "on") if hints.shadow else ("count", "off")
+        elif k < taken:
+            status = ("tick", "")
+        else:
+            status = ("none", "") if k == taken and not hints.locked else ("lock", "")
+        greyed = status[0] == "lock"
+        draw_row(screen, scene, fonts, rect, row, NAMES[k], status, False, greyed, HINT[k][0])
+    for k, (x, y, _, _) in layout.hint_texts:
+        for n, line in enumerate(hints.lines[k]):
+            screen.blit(fonts.small.render(line, True, TEXT), (x, y + n * HINT_LINE))
+    if layout.shadow_picture is not None and hints.board is not None:
+        _draw_shadow(screen, hints.board, layout.shadow_picture)
+    note = None
+    if hints is None:
+        note = "No hints in the sandbox."
+    elif hints.locked:
+        note = "Skip or finish the tutorial for hints."
+    if note is not None:
+        rows = layout.hint_rows
+        top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else DIAGNOSTIC_MAP[1]
+        draw_note(screen, fonts, note, (DIAGNOSTIC_MAP[0], top), DIAGNOSTIC_MAP[2])
+
+
+def _draw_shadow(screen: pygame.Surface, board: Board, rect) -> None:
+    """The shadow's picture (D-078): the level's board, small, the shadow on it as the editor's
+    board draws one, its parts and wires faint."""
+    area = pygame.Rect(rect)
+    pygame.draw.rect(screen, SHADOW, area, border_radius=6)
+    view = fitted_view(rect, [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in board.cells], 1.2)
+    for cell in board.cells:
+        hexagon = _hexagon(view, cell)
+        pygame.draw.polygon(screen, ZONE, hexagon)
+        pygame.draw.polygon(screen, GRID_LINE, hexagon, 1)
+    draw_body(screen, board.cells, view.size, view.origin)
+    for wire in board.wires:
+        reach = extent(board.nodes[wire.target].kind)
+        _draw_wire(screen, view, wire.path, GHOST_FILL, 2, reach)
+    for node in board.nodes.values():
+        angle = placed_angle(node.kind, node.facing)
+        shape = _shape(node.kind, angle, _centre(view, node.cell), view.size)
+        pygame.draw.polygon(screen, GHOST_FILL, shape)
+    pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
 
 
 def _draw_settings(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
@@ -1097,6 +1164,8 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
     if isinstance(what, Setting):
         name, _, line = SETTING[what]
         lines = (line,)
+    elif isinstance(what, HintRow):
+        name, lines = NAMES[what.index], (HINT[what.index][1],)
     elif isinstance(what, int) and what in places:
         place = places[what]
         name, lines = place.title, (place.spec,)

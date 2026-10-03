@@ -56,6 +56,7 @@ def layout_on(screen: Screen, step=None):
 LEVELS = {level.title: level for level in arenas()}
 FEAR = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
 FEAR_KINDS = frozenset({Kind.EYE, Kind.THRUSTER})  # what Fear hands out
+HINT = Tutorial((), (Step(("A step with no target hints: it dims nothing.",)),))
 
 
 def fear(until=None, show=None) -> int:
@@ -109,8 +110,7 @@ def on_screen(rect):
 
 
 def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
-    for level in arenas():
-        assert level.tutorial is not None, level.title  # the first leads, the rest hint
+    for level in arenas()[:2]:  # Fear and Aggression; the others' hints are asked for (D-078)
         tutorial = Tutorial.from_dict(level.tutorial)
         context = Context(level.new_board(), Tool.ADD, Screen.EDIT)
         for step in tutorial.steps:
@@ -122,12 +122,11 @@ def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for
                 assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
 
 
-def test_the_first_two_levels_lead_the_later_ones_only_hint():
-    *first, love, shadow = arenas()  # Fear and Aggression lead (D-074)
+def test_the_first_two_levels_lead_and_the_later_ones_have_no_tutorial():
+    *first, love, shadows = arenas()  # Fear and Aggression lead (D-074)
     for level in first:
         assert any(step.show for step in Tutorial.from_dict(level.tutorial).steps)
-    for level in (love, shadow):
-        assert not any(step.show or step.until for step in Tutorial.from_dict(level.tutorial).steps)
+    assert love.tutorial is None and shadows.tutorial is None  # their hints, in Hints (D-078)
 
 
 def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
@@ -295,7 +294,7 @@ def test_a_leading_step_lets_through_only_the_means_to_what_it_waits_for():
 def test_a_step_that_waits_for_next_lets_nothing_through_and_a_hint_lets_all():
     for waits_for_next in [step for step in FEAR if not step.until]:
         assert not any(allows(waits_for_next, action) for action in ANYTHING)
-    hint = Tutorial.from_dict(LEVELS["Love"].tutorial).steps[0]
+    hint = HINT.steps[0]
     assert all(allows(hint, action) for action in ANYTHING)
     assert all(allows(None, action) for action in ANYTHING)  # no tutorial, or over
 
@@ -391,7 +390,7 @@ def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_o
     assert answer(tutorial, box, centre(skip)) == "skip"
     tutorial.index = len(tutorial.steps) - 1  # the last: Close, any key or click; no Skip
     assert answer(tutorial, box, centre(skip)) == "next"
-    hint = Tutorial.from_dict(LEVELS["Love"].tutorial)  # a hint takes only its own buttons
+    hint = Tutorial((), HINT.steps)  # a hint takes only its own buttons
     assert answer(hint, box, None) is None and answer(hint, box, (5, 5)) is None
     assert answer(hint, box, centre(nxt)) == "next"
 

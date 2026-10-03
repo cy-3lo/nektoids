@@ -13,7 +13,7 @@ from __future__ import annotations
 import textwrap
 from collections import Counter
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from nektoids.editor.layout import DRAWER_WIDTH, MARGIN, MENU_GROUPS
 from nektoids.editor.parts import NAME
@@ -76,6 +76,23 @@ def parts_line(ghosts: tuple[Ghost, ...]) -> str:
 
 def _number(n: int) -> str:
     return NUMBERS[n - 1] if n <= len(NUMBERS) else str(n)
+
+
+@dataclass(frozen=True)
+class HintView:
+    """What the Hints drawer shows of the open level's hints; main.py's, every frame."""
+
+    lines: tuple[tuple[str, ...], ...]  # each hint taken, its lines under its row, in order
+    locked: bool  # a tutorial leads: no hint may be taken yet
+    shadow: bool  # the shadow shows, in its picture and on the editor's board
+    board: Board | None = field(default=None, compare=False)  # the shadow built, for the picture
+
+
+def hint_view(hints: Hints, taken: Taken, locked: bool, shadow: Board) -> HintView:
+    """What the drawer shows: the hints `taken`, and `shadow`, the shadow built (`build`), once
+    it is taken."""
+    lines = tuple(hints.says(k) for k in range(taken.count))
+    return HintView(lines, locked, taken.shown, shadow if taken.count > SHADOW else None)
 
 
 @dataclass
