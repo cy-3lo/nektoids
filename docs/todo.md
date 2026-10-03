@@ -6,17 +6,13 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 ## 2. The levels themselves
 
-The chapter is Fear, Aggression, Love, Shadows (D-074, D-077); the first two lead, the others
-only hint.
+The chapter is Fear, Aggression, Love, Shadows (D-074, D-077); Fear opens on an introduction
+(D-079), and every level has its hints (D-078).
 
 - [ ] Tutorial 3, ÷2 on one side (orbits), the brief's level 3: a level of its own, or Love's
       place? Its objective is to be chosen: stay within a ring round the light for T s, or
       circle it N times.
 - [ ] The real level: to design, with a winner pinned with margin (D-004).
-- [ ] Simpler tutorials, now that every level has its hints (D-078).
-      - Simpler how: fewer cards than Fear's 16 (D-071)?
-      - Aggression's card "build what the shadows show" and its Shadow hint now show the same
-        board: does the card stay?
 
 ## 5. Ship
 

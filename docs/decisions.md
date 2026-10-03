@@ -1050,3 +1050,22 @@ are locked and the drawer says to skip or finish it; the sandbox has none. Love'
 boxes go: only Fear and Aggression have a tutorial. Like the comma and Tab, ? is a drawer's key
 that is not its initial (D-069); in the run the comma now matches on the character typed,
 since AZERTY's ? is a shifted comma. Settings' "Key hints" keeps its name.
+
+**D-079 — 2026-10-03 — Fear's tutorial is an introduction of six steps that builds nothing, shown once a session; Aggression's goes. Amends D-039, D-048, D-050, D-054, D-071, D-074.**
+With every level's hints (D-078), a tutorial that built the board showed again what Hint 3
+shows, and took sixteen cards to do it. Fear's tutorial now introduces what the hints do not:
+in the run, the swimmer and the light, then Objectives; the tabs, Run playing the level and the
+Editor building the swimmer, waiting for the Editor; there, the board as the body, a click on a
+cell and its Wheel; the activity bar, its drawers each by its initial, and those at its foot;
+last, the Hints icon, waiting for Hints to open, which ends it, so a hint may be taken at once.
+Nothing is placed, turned or wired, and there are no ghosts; the steps on Run, Play, Inside and
+Score go, the controls' tooltips naming them. Aggression has no tutorial: it is a level like
+Love. The tutorial shows once a session: choosing a place in Chapters no longer starts Fear
+afresh, board and tutorial, nor restarts any tutorial (D-050, D-054); every level keeps its
+board. Settings' Tutorial plays the introduction again from its first step, on Fear as the
+player left it. What a tutorial that builds needs, the waits for a part placed, turned or wired,
+the ghosts, the Wheel's icons as targets, stays in `tutorial.py`, used by no level; the tests
+walk the tutorials Fear and Aggression had, kept in `tests/data`. `guided` goes with the rule it
+served. Nothing teaches placing, turning or wiring now: the action atop the board, the status
+line, the Wheel's tooltips, Parts' (i) and Hint 3 carry it, to be watched when Camille plays it
+cold.

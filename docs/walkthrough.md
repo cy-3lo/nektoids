@@ -611,16 +611,18 @@ would a player see in Chapters if the mark were only set when Next level is pres
 
 ## 12. Tutorials and hints (D-038, D-039, D-048, D-050)
 
-Read D-038, D-039 and D-048 first. `python game/main.py` now opens on Fear, whose tutorial walks
-the player through the board, placing, turning and wiring; only what each step asks works, and
-Skip ends it.
+Read D-038, D-039 and D-048 first. `python game/main.py` now opens on Fear, whose tutorial
+introduces the objective, the tabs, the bar and Hints, once a session (D-079); only what each
+step asks works, and Skip ends it. Until D-079 it walked the player through placing, turning and
+wiring; the machinery for that stays, used by no level, and the tests walk the old tutorials,
+kept in [`tests/data`](../tests/data).
 
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
   a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
   wait is over (`met`); `next` and `skip` are the box's buttons, `answer` what a key or click
-  does to the tutorial, `restart` what choosing a place in Chapters does.
+  does to the tutorial, `restart` from the first step again.
   `allows(step, Action)` says what a leading step lets through; `explains` whether it holds the
-  run and outlines its `panels`; `guided` whether a level starts afresh when a place is chosen.
+  run and outlines its `panels`.
   `target_spots` finds what a step
   shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
   (`_crosses`) and the step `before`.
