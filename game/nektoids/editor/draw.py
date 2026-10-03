@@ -283,6 +283,7 @@ def draw(
     draw_bar(screen, scene, fonts)
     draw_drawer(screen, scene, fonts, _draw_rows)
     draw_tooltip(screen, scene, fonts)
+    _draw_wheel_tip(screen, scene, fonts)
     draw_info(screen, scene, fonts, _about)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
@@ -348,20 +349,14 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Atop the main screen: what the next click or Enter does (D-068), as a lit button with its
     key beside it while key hints are on, and a line under it saying what it is. A click on it
-    opens Tools. Beside it instead of the key, in the accent, the Wheel's icon under the mouse or
-    chosen, by its name and key (D-069)."""
+    opens Tools. Beside it, in the accent, its name and its key (D-069)."""
     box = pygame.Rect(scene.layout.action_at)
     what, key = scene.action()
     _draw_disc(screen, fonts, box.center, what, ACTIVE, LIT)  # as the Wheel draws its icons
-    named = scene.named_slot()
-    if named is not None:
-        shown = fonts.text.render(_slot_name(scene, named), True, LIT)
-        at = shown.get_rect(midleft=(box.right + 10, box.centery))
-        pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
-        screen.blit(shown, at)
-    elif scene.settings.key_hints:
-        shown = fonts.text.render(key, True, DIM_TEXT)
-        screen.blit(shown, shown.get_rect(midleft=(box.right + 8, box.centery)))
+    shown = fonts.text.render(_named(scene, what, key), True, LIT)
+    at = shown.get_rect(midleft=(box.right + 10, box.centery))
+    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
+    screen.blit(shown, at)
     says = fonts.small.render(_action_says(scene, what), True, TEXT)
     at = says.get_rect(midtop=(box.centerx, box.bottom + 8))  # its patch clear of the disc
     pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
@@ -450,8 +445,8 @@ def _draw_wheel(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
             screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
     lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
-    named = scene.named_slot()  # the icon under the mouse or chosen, named in the accent (D-069)
-    says, ink = (_slot_name(scene, named), LIT) if named else (_cell_says(scene), DIM_TEXT)
+    lit = scene.wheel_lit()  # the icon chosen or in hand, named in the accent (D-069)
+    says, ink = (_named(scene, lit.what, lit.key), LIT) if lit else (_cell_says(scene), DIM_TEXT)
     line = fonts.small.render(_fitted(fonts.small, says, w), True, ink)
     screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
 
@@ -483,11 +478,26 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         )
 
 
-def _slot_name(scene: EditorScene, slot) -> str:
-    """A Wheel's icon named as the bar's tooltips name a drawer: its name, then its key while the
-    key hints are on (D-069)."""
-    name = NAME[slot.what] if isinstance(slot.what, Kind) else ROW_NAME[slot.what]
-    return f"{name} ({slot.key})" if scene.settings.key_hints else name
+def _named(scene: EditorScene, what: Kind | Tool | Mode, key: str) -> str:
+    """An action, a Wheel's icon, named as the bar's tooltips name a drawer: its name, then its
+    key while the key hints are on (D-069)."""
+    if isinstance(what, Kind):
+        name = NAME[what]
+    else:
+        name = ROW_NAME[ViewButton.PAN] if what is Tool.PAN else ROW_NAME[what]
+    return f"{name} ({key})" if scene.settings.key_hints else name
+
+
+def _draw_wheel_tip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The Wheel's icon under the mouse, named at once in a tooltip as the bar's are (D-069),
+    centred over the icon, kept clear of the bar."""
+    slot = scene.wheel_tip()
+    if slot is None:
+        return
+    text = _named(scene, slot.what, slot.key)
+    half = fonts.text.size(text)[0] // 2 + 8  # the box's half width
+    x = max(round(slot.at[0]), BAR_WIDTH + 4 + half)
+    draw_tip(screen, fonts, text, midbottom=(x, round(slot.at[1] - ICON * WHEEL_HEX - 10)))
 
 
 def _cell_says(scene: EditorScene) -> str:
