@@ -874,31 +874,31 @@ is on it. The keyboard drives the same focus: the arrows, Enter, the ring's keys
 step. Atop the main screen, always, what the next click or Enter does: the action as a ring's
 icon, its key beside it, a line under it saying what it is; a click on it opens Tools.
 
-**D-069 — 2026-10-03 — The main view follows the drawer: the Run preview only in Diagnostic, Sense renamed. Parts has the cell and its ring under its list, which scrolls. A key for each drawer, its initial; Delete on Backspace; one key, one meaning within an environment. Amends D-021, D-058, D-068.**
+**D-069 — 2026-10-03 — The main view follows the drawer: the Run preview only in Diagnostic, Sense renamed. The ring is the Wheel, at the foot of Tools and of Parts. A key for each drawer, its initial; Delete on Backspace; one key, one meaning within an environment. Amends D-021, D-058, D-068.**
 The switch between the Diagram view and the Run preview goes. The main screen shows the board,
 except while Diagnostic is open, where it shows the Run preview; Navigator keeps what was shown
 before it, so the preview can be zoomed and moved. Sense is called Diagnostic: it is where the
-board is tested. While the preview shows, a key that edits the board is refused, and the status
-line says to open Tools or Parts; undo and redo still work, and the preview follows them. The
-action atop the main screen hides meanwhile, and the status line says what the preview offers:
-an eye's knob to drag. While
-a tutorial step leads, Diagnostic does not open. The ring of D-068, with the focused cell
-drawn large at its middle, is called the Wheel. Tools and Parts both have it at their foot, under
-a rule and its title, The Wheel, that folds as Parts' groups do, in both at once; folded, the
-title sits at the drawer's foot and the rows above take the room. Parts' list scrolls, by the wheel or its scroll bar, when it does not fit. The
-Wheel's icon under the mouse, or the one the keyboard has chosen going round, is named at once,
-with its key, in the accent, twice: beside the action atop the main screen, where its key was,
-and in the line under the Wheel. On the board, the focused part loses its white circle: the lit
-cell says it, and while the keyboard wires, the ghost wire shows where the wire starts. Over a
-part the wire cannot reach, its way still shows, dimmed, as over an empty cell, with the cell
-outlined in red and the reason in the status line. The line
+board is tested. While a tutorial step leads, Diagnostic does not open. While the preview shows,
+a key that edits the board is refused and the status line says to open Tools or Parts; undo and
+redo still work, and the preview follows them; the action atop the main screen hides, and the
+status line says what the preview offers, an eye's knob to drag. The ring of D-068, the focused
+cell drawn large at its hub, is called the Wheel, in the code too (`wheel.py`, where the rim is
+its arc of up to five icons). Tools and Parts both have it at their foot, under a rule and its
+title, The Wheel, which folds as Parts' groups do, in both at once; folded, the title sits at
+the drawer's foot and the rows above take the room. Parts' list scrolls, by the mouse wheel or a
+scroll bar, when it does not fit. The Wheel's icon under the mouse, or the one the keyboard has
+chosen going round, is named at once, with its key, in the accent, twice: beside the action atop
+the main screen, where its key was, and in the line under the Wheel. On the board, the focused
+part loses its white circle: the lit cell says it, and while the keyboard wires, the ghost wire
+shows where the wire starts. Over a part the wire cannot reach, its way still shows, dimmed, as
+over an empty cell, with the cell outlined in red and the reason in the status line. The line
 under the action atop the main screen sits under its disc. Each drawer opens, or folds, by a
 key, its initial: T Tools, P Parts, F Files, D Diagnostic, N Navigator in the editor; I Inside,
 S Score, N Navigator in the run; the comma Settings in both, with Ctrl or Cmd too (a Mac's
 browser keeps Cmd+comma for its own settings); Tab Chapters, as before. Delete takes Backspace
 and Delete, the keys that delete everywhere else, and frees D. D-021 becomes one key, one
-meaning within an environment: a letter may mean one thing in the editor and another in the
-run, as F is Files in the editor and Fast forward in the run, S Swap and Score, since the two
-never show together. X, the run's rays, no longer zooms out in the editor. Once a tooltip of
-the bar shows, the next icon's shows at once, for 0.3 s after the last one went, as the mouse
-crosses the gaps between icons.
+meaning within an environment: a letter may mean one thing in the editor and another in the run,
+as F is Files in the editor and Fast forward in the run, S Swap and Score, since the two never
+show together. X, the run's rays, no longer zooms out in the editor. Once a tooltip of the bar
+shows, the next icon's shows at once, for 0.3 s after the last one went, as the mouse crosses
+the gaps between icons.
