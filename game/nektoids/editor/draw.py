@@ -115,7 +115,6 @@ from nektoids.editor.palette import (
     FLASH,
     FOCUS_CELL,
     FULL,
-    GHOST,
     GHOST_FILL,
     GHOST_OK,
     GREYED,
@@ -140,6 +139,8 @@ from nektoids.editor.palette import (
     THRUSTER_BACK,
     TOOLTIP_BG,
     WIRE,
+    WIRING,
+    WIRING_OK,
     ZONE,
 )
 from nektoids.editor.parts import NAME, info
@@ -232,7 +233,8 @@ TAB_NAME = {"editor": "Editor", "run": "Run"}
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.
 MENU_ANGLE = {Kind.EYE: 90.0, Kind.THRUSTER: 90.0}
 
-ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
+WIRE_WIDTH = 0.125  # every wire on the board, made, shadow or being drawn: 5 px at 40 [hex sizes]
+ARROW_HALF = 0.23  # half-length of every arrowhead on a wire, in step with its width [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
 FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 12  # a menu row's info disc [px]
@@ -325,21 +327,21 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 
     way = scene.ghost if isinstance(scene.ghost, tuple) else scene.ghost_way  # D-069
     if way is not None:
-        colour = GHOST_OK if scene.ghost_connects else GHOST
+        colour = WIRING_OK if scene.ghost_connects else WIRING  # D-087
         target = board.node_at(way[-1])
         reach = extent(target.kind) if target is not None else 0.3
-        _draw_wire(screen, view, way, colour, 3, reach)  # as thick as a wire made
+        _draw_wire(screen, view, way, colour, reach)
     wired = {(board.nodes[w.source].cell, board.nodes[w.target].cell) for w in board.wires}
     for start, end in scene.ghost_wires:  # the model's wires, faint, until each is made (D-074)
         path = None if (start, end) in wired else board.route(start, end)
         if path is not None:
             target = board.node_at(end) or next((g for g in scene.ghosts if g.cell == end), None)
             reach = extent(target.kind) if target is not None else 0.3
-            _draw_wire(screen, view, path, GHOST_FILL, 2, reach)
+            _draw_wire(screen, view, path, GHOST_FILL, reach)
     doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
     for wire in board.wires:
         colour = DOOMED if wire in doomed_wires else WIRE
-        _draw_wire(screen, view, wire.path, colour, 3, extent(board.nodes[wire.target].kind))
+        _draw_wire(screen, view, wire.path, colour, extent(board.nodes[wire.target].kind))
 
     for ghost in scene.ghosts:  # where a part goes, facing the way it should (D-039, D-060)
         centre, angle = _centre(view, ghost.cell), placed_angle(ghost.kind, ghost.facing)
@@ -530,13 +532,15 @@ def _cell_says(scene: EditorScene) -> str:
     return NAME[node.kind] + (", the level's" if node.locked else "")
 
 
-def _draw_wire(
-    screen, view: View, path: tuple[Cell, ...], colour, width: int, reach: float = 0.3
-) -> None:
-    """One arrow in each free cell crossed; between neighbours, which have none, one just outside
-    the target's shape instead. reach: how far that shape extends [hex sizes]."""
+def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, reach: float = 0.3) -> None:
+    """One width for every wire, a share of the hex (D-087); one arrow in each free cell crossed;
+    between neighbours, which have none, one just outside the target's shape instead. reach: how
+    far that shape extends [hex sizes]."""
     points = wire_points(path, view.size, view.origin)  # arcs where it turns
+    width = max(2, round(WIRE_WIDTH * view.size))
     pygame.draw.lines(screen, colour, False, points, width)
+    for point in points[1:-1]:  # round joins: a thick wire bends without notches
+        pygame.draw.circle(screen, colour, point, width / 2)
     arrows = wire_arrows(path, view.size, view.origin)
     for at, angle in arrows:
         _draw_arrow(screen, at, angle, ARROW_HALF * view.size, colour)
@@ -954,7 +958,7 @@ def _draw_shadow(screen: pygame.Surface, board: Board, rect) -> None:
     draw_body(screen, board.cells, view.size, view.origin)
     for wire in board.wires:
         reach = extent(board.nodes[wire.target].kind)
-        _draw_wire(screen, view, wire.path, GHOST_FILL, 2, reach)
+        _draw_wire(screen, view, wire.path, GHOST_FILL, reach)
     for node in board.nodes.values():
         angle = placed_angle(node.kind, node.facing)
         shape = _shape(node.kind, angle, _centre(view, node.cell), view.size)
