@@ -9,7 +9,7 @@
   File (save and load, inactive until saving exists); Navigator: the view's buttons; Settings:
   what the player sets (D-054); Chapters: the levels, then the sandbox, which replaces the
   full-screen map. An arrow on the drawer's edge folds it.
-- The rest is the main screen: the tabs over it (Editor, Run), the level's caption under them,
+- The rest is the main screen: the tabs over it (Run, Editor), the level's caption under them,
   then the board's hex grid, or in the run the arena with its controls under it; one status
   line at its foot. A drawer opening pushes the main screen aside.
 
@@ -57,7 +57,7 @@ HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
 TABS_HEIGHT = 32  # the strip of tabs over the board [px]
 CAPTION_HEIGHT = 26  # under the tabs, inside the Editor's: the level's title and spec [px]
 TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
-TAB_WIDTHS = (84, 64)  # Editor, Run [px]
+TAB_WIDTHS = (64, 84)  # Run, then Editor (D-069) [px]
 STATUS_HEIGHT = 28  # [px]
 CONTROLS_HEIGHT = 48  # the run's controls, a strip under the arena [px]
 MARGIN = 16  # [px]
@@ -261,7 +261,7 @@ class Layout:
     setting_rows: tuple[tuple[Setting, Rect], ...]  # Settings' rows
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
-    tabs: tuple[tuple[str, Rect], ...]  # "editor", "run"
+    tabs: tuple[tuple[str, Rect], ...]  # "run", "editor"
     board_area: Rect  # the main screen: the board, or in the run the arena
     controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
     overview: Rect | None  # Navigator's: the whole board, or level, small (D-060)
@@ -346,7 +346,7 @@ def make_layout(
         rows.items += foot.items
         rows.sections += foot.sections
     tabs, x = [], left
-    for name, w in zip(("editor", "run"), TAB_WIDTHS, strict=True):
+    for name, w in zip(("run", "editor"), TAB_WIDTHS, strict=True):
         tabs.append((name, (x, 0, w, TABS_HEIGHT)))
         x += w
     open_ = drawer is not None

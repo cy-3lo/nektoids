@@ -329,7 +329,7 @@ def test_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_ke
     assert contains(LAYOUT.bar_area, switch[:2])
     assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
     assert (DRAWER_KEYS[Drawer.SETTINGS], DRAWER_KEYS[Drawer.CHAPTERS]) == (",", "Tab")
-    assert [name for name, _ in LAYOUT.tabs] == ["editor", "run"]
+    assert [name for name, _ in LAYOUT.tabs] == ["run", "editor"]  # Run first (D-069)
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name
     x, y = LAYOUT.caption_at  # under the tabs, inside the Editor's, over the board (D-056)
@@ -410,7 +410,7 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert Drawer.INSIDE in DRAWERS[Env.RUN] and len(DRAWERS[Env.RUN]) == 3
     navigator = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
     assert [b for b, _ in navigator.view_buttons][-1] is ViewButton.RAYS
-    assert [name for name, _ in run.tabs] == ["editor", "run"] and run.caption_at[1] < arena[1]
+    assert [name for name, _ in run.tabs] == ["run", "editor"] and run.caption_at[1] < arena[1]
     folded = make_layout(None, env=Env.RUN)
     assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]
 

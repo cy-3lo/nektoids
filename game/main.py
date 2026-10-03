@@ -230,9 +230,8 @@ async def main() -> None:
                 editor().handle_event(event)
 
         guide = tutorial()
-        if begun and guide is not None and guide.index == 0 and guide.start is Screen.RUN:
-            router.run()  # Fear's tutorial opens on the run, paused (D-060)
-            playing = play(Drawer.INSIDE)
+        if begun:  # a level opens on its run, paused, whichever it is (D-060, D-069)
+            playing = play(run_drawer)
 
         # What the scenes asked for this frame.
         if isinstance(developer, ArenaScene) and developer.request == "edit":

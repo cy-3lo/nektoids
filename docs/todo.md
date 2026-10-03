@@ -83,6 +83,9 @@ preview; in the Run it shows the level. Drawers never take the main screen.
 - [ ] Fear's tutorial: a step for Diagnostic and the Run preview; its bar step names
       Diagnostic, and its editor and run steps follow the frame already (D-053, D-057, D-058,
       D-069).
+- [ ] The tutorial's rework (the next PR, after D-069): every level now opens on its run, so
+      `Tutorial.start` and Fear's `"start": "run"` say nothing any more and can go; the steps
+      should follow the Wheel, the drawer keys and the Run tab first.
 
 ## 9. A board as text (its own PR)
 

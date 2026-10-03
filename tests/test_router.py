@@ -16,7 +16,7 @@ def test_the_game_opens_on_the_first_level_under_its_title_card():
     router = a_router()
     assert router.screen is Screen.TITLE and router.index == 0
     router.begin()
-    assert router.screen is Screen.EDIT and router.label == "LEVEL 1.1"
+    assert router.screen is Screen.RUN and router.label == "LEVEL 1.1"  # D-069
     assert router.board.nodes == {} and router.board.remaining(Kind.EYE) == 2  # its own stock
 
 
@@ -63,7 +63,7 @@ def test_a_level_opened_comes_up_under_its_card_and_one_returned_to_does_not():
     router.open(1)
     assert router.screen is Screen.SPEC
     router.begin()
-    assert router.screen is Screen.EDIT
+    assert router.screen is Screen.RUN  # a level opens on its run (D-069)
     router.run()
     router.edit()  # Edit after a run
     assert router.screen is Screen.EDIT
