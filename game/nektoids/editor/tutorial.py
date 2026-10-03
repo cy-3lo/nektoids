@@ -4,7 +4,7 @@ the player has done what they ask, or presses Next (D-039).
 A level's data may carry one: its ghosts, the parts the tutorial builds drawn faintly in their
 cells, facing the way they should, and its steps. A step says a few short lines; shows a target,
 or a list of them, which the overlay leaves lit while it dims the rest: an area ("board",
-"parts", "bar"), a part's row, a tool, the switch, a cell, or a part of the run ("arena",
+"parts", "bar"), a part's row, a drawer's icon, the switch, a cell, or a part of the run ("arena",
 "controls", "play", "timeline", and the drawers "objectives", "inside", "score"); and waits,
 until a part is placed in a cell, a part faces a way, a tool is taken, a wire runs from one cell
 to another, the run starts, or the run is won. A step with no target is a hint: nothing is
@@ -411,6 +411,9 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
     if "level" in show:  # the switch, Run in the editor, Editor in the run
         on = screen in (Screen.EDIT, Screen.RUN)
         return dict(layout.level_buttons).get(LevelButton(show["level"])) if on else None
+    if "icon" in show:  # a drawer's icon in the bar, alone: it opens nothing (D-079)
+        on = screen in (Screen.EDIT, Screen.RUN)
+        return dict(layout.drawer_buttons).get(Drawer(show["icon"])) if on else None
     if screen is not Screen.EDIT:
         return None
     if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)

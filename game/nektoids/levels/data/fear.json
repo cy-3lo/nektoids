@@ -55,7 +55,6 @@
         "until": {"screen": "edit"}
       },
       {
-        "show": {"page": "editor"},
         "say": [
           "The board is your swimmer's body, its front to",
           "the right: a part acts where it sits. Click a",
@@ -71,12 +70,11 @@
         ]
       },
       {
-        "show": {"drawer": "hints"},
+        "show": {"icon": "hints"},
         "say": [
           "Stuck? Hints, the life ring, or ?, gives three",
-          "hints, one at a time; the last shows a swimmer", "that wins. Open it now."
-        ],
-        "until": {"drawer": "hints"}
+          "hints, one at a time; the last shows a swimmer", "that wins."
+        ]
       }
     ]
   }

@@ -236,7 +236,10 @@ async def main() -> None:
                 and (button := tutorial_press(guide, event, on_screen())) is not None
             ):
                 if button == "next":
-                    guide.next()  # and nothing else
+                    last = guide.index == len(guide.steps) - 1
+                    guide.next()  # and nothing else, but on the last step: a click there
+                    if last and event.type == pygame.MOUSEBUTTONDOWN:  # does what it does too
+                        on_screen().handle_event(event)  # Hints opens by its icon (D-079)
                 else:
                     guide.skip()
                 editor().message = ""  # a refusal from the step before no longer holds

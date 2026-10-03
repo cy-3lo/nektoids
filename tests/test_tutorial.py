@@ -142,10 +142,10 @@ def test_only_fear_has_a_tutorial_an_introduction_that_builds_nothing():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
     assert tutorial.ghosts == () and tutorial.ghost_wires == ()
     waits = [step.until for step in tutorial.steps if step.until]
-    assert waits == [{"screen": "edit"}, {"drawer": "hints"}]  # nothing placed, turned or wired
+    assert waits == [{"screen": "edit"}]  # nothing placed, turned or wired
 
 
-def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_as_hints_opens():
+def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_on_hints():
     level = LEVELS["Fear"]
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
 
@@ -159,13 +159,13 @@ def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_as_hin
     tutorial.follow(context(Screen.RUN))
     assert {"tab": "editor"} in tutorial.step.show  # waits for the Editor
     tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
-    for shown in ({"page": "editor"}, {"area": "bar"}):  # Next, or Enter
-        assert tutorial.step.show == shown and not tutorial.opening
-        tutorial.next()
-    assert tutorial.step.show == {"drawer": "hints"} and drawer_for(tutorial.step) is None
-    tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
-    assert tutorial.step is not None  # the player opens Hints, by its icon or ?
-    tutorial.follow(context(Screen.EDIT, Drawer.HINTS))
+    assert tutorial.step.show is None and not tutorial.leads  # the board: its box out of the way
+    tutorial.next()
+    assert tutorial.step.show == {"area": "bar"} and not tutorial.opening  # Next, or Enter
+    tutorial.next()
+    assert tutorial.step.show == {"icon": "hints"} and drawer_for(tutorial.step) is None
+    assert tutorial.opening and tutorial.waits_for_next  # the last: any key or click closes it
+    tutorial.next()
     assert tutorial.step is None  # over: the hints may be taken
 
 

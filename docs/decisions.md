@@ -1056,8 +1056,10 @@ With every level's hints (D-078), a tutorial that built the board showed again w
 shows, and took sixteen cards to do it. Fear's tutorial now introduces what the hints do not:
 in the run, the swimmer and the light, then Objectives; the tabs, Run playing the level and the
 Editor building the swimmer, waiting for the Editor; there, the board as the body, a click on a
-cell and its Wheel; the activity bar, its drawers each by its initial, and those at its foot;
-last, the Hints icon, waiting for Hints to open, which ends it, so a hint may be taken at once.
+cell and its Wheel, a step with no target, its box in the main screen's bottom left; the
+activity bar, its drawers each by its initial, and those at its foot; last, the Hints icon
+alone, `{"icon": "hints"}`, which opens nothing. Any key or click closes that last step, and a
+click there also does what it does, so a click on the icon closes it and opens Hints.
 Nothing is placed, turned or wired, and there are no ghosts; the steps on Run, Play, Inside and
 Score go, the controls' tooltips naming them. Aggression has no tutorial: it is a level like
 Love. The tutorial shows once a session: choosing a place in Chapters no longer starts Fear
