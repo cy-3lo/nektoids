@@ -92,7 +92,12 @@ def test_a_key_means_the_same_here_as_in_the_editor():
     # Turning the swimmer left and right, as the editor turns a part (D-025).
     assert TURN_KEYS == (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
     others = {*BUTTON_KEYS.values(), MAP_KEY, POLAR_KEY}
-    assert not others & set(TOOL_KEYS.values())  # nothing else means an editor tool here (D-021)
+    # Motion and Streams take Move's and Wire's letters, as the editor never shows them (D-069,
+    # D-076); nothing else means an editor tool here (D-021)
+    shared = {BUTTON_KEYS[ArenaButton.MOTION], BUTTON_KEYS[ArenaButton.STREAMS]}
+    assert (
+        others & set(TOOL_KEYS.values()) == shared == {TOOL_KEYS[Tool.MOVE], TOOL_KEYS[Tool.WIRE]}
+    )
     ours = others | set(TURN_KEYS)
     assert len(ours) == len(BUTTON_KEYS) + len(TURN_KEYS) + 2  # and no key twice here
 

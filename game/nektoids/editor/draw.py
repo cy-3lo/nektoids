@@ -25,9 +25,18 @@ from pathlib import Path
 
 import pygame
 
-from nektoids.editor.devdrive import DT
+from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
-from nektoids.editor.geometry import body_circle, symbol_corners, wire_arrows, wire_points
+from nektoids.editor.geometry import (
+    DIAMOND,
+    DISC,
+    EYE_DISC,
+    SQUARE_POINT,
+    body_circle,
+    symbol_corners,
+    wire_arrows,
+    wire_points,
+)
 from nektoids.editor.icons import (
     DRAWER_ICON,
     EDIT_ICON,
@@ -76,6 +85,8 @@ from nektoids.editor.layout import (
     shown_frame,
     visible_cells,
 )
+from nektoids.editor.marks import AtWork, at_work
+from nektoids.editor.marks_draw import draw_over, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -138,6 +149,8 @@ TIP = {
     ViewButton.PAN: "Move the view",
     ViewButton.CENTRE: "Centre the view",
     ViewButton.RAYS: "Show or hide the light's rays",
+    ViewButton.MOTION: "Show or hide the swimmer's velocity and spin",
+    ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
     Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them; drag"
@@ -187,6 +200,8 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.PAN: "Hand",
     ViewButton.CENTRE: "Centre",
     ViewButton.RAYS: "Rays",
+    ViewButton.MOTION: "Motion",
+    ViewButton.STREAMS: "Streams",
 }
 TAB_NAME = {"editor": "Editor", "run": "Run"}
 
@@ -203,38 +218,6 @@ INFO_PAD = 12  # inside the info box [px]
 # Icon height as a fraction of the hex size.
 ICON_SCALE = {Kind.EYE: 0.68, Kind.THRUSTER: 0.62}  # the rest: 0.5
 
-# Shapes in a local frame: unit = hex size, forward = +x. Each outline is scaled to the same
-# area, SHAPE_AREA, so that no part looks bigger than another: fitted to one circle, the disc
-# covered 1.7 times the thruster's area.
-SHAPE_AREA = 0.8
-
-
-def _to_area(outline: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    """The outline scaled about the cell centre until it encloses SHAPE_AREA (shoelace formula)."""
-    closed = zip(outline, outline[1:] + outline[:1], strict=True)
-    area = 0.5 * abs(sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in closed))
-    k = math.sqrt(SHAPE_AREA / area)
-    return [(k * x, k * y) for x, y in outline]
-
-
-def _arc(start: int, stop: int) -> list[tuple[float, float]]:
-    """Points on the unit circle every 10°, from `start` to `stop` degrees."""
-    return [(math.cos(math.radians(a)), math.sin(math.radians(a))) for a in range(start, stop, 10)]
-
-
-_S = 1.0 / math.sqrt(2.0)  # half-side of the square inscribed in the unit circle
-_SHOULDER = _S * (1.0 - math.tan(math.radians(15.0)))
-# The eye's and the thruster's outlines end where their face begins: the edge from the last
-# point back to the first is the face, drawn in its accent (D-047).
-# Eye: a disc with its front cut off by a chord at half the radius. The flat face is the
-# photosensor, and it looks forward (D-019, D-020).
-EYE_DISC = _to_area(_arc(60, 301))
-# Source: a whole disc; it has no direction.
-DISC = _to_area(_arc(0, 360))
-DIAMOND = _to_area([(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)])
-# Thruster: a square, its front corners cut so the front is a point of 150° that ends on the
-# square's front edge: the outline stays square, 1:1. Its face is its back, where it pushes from.
-SQUARE_POINT = _to_area([(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)])
 # Icon shift along the facing [hex sizes]: the eye's shape runs from its rim, a radius R behind
 # the centre, to its flat face, half a radius ahead, so its middle lies R/4 behind the centre.
 ICON_AHEAD = {Kind.EYE: -0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
@@ -733,11 +716,12 @@ def draw_level_map(
     pose: tuple[float, float, float],
     frame: pygame.Rect | None = None,
     view=None,
+    body: AtWork | None = None,
 ) -> None:
     """The level seen whole and small in `area`: its obstacles, its lights and their rings, and
     the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the main screen shows of it,
     outlined (Diagnostic's map, the run's overview, D-058, D-060); `view`, how it is seen, else the
-    level seen whole."""
+    level seen whole; `body`, the swimmer at work, drawn round it (Diagnostic's map, D-076)."""
     view, arena = view or level_view(level, tuple(area)), level.arena
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     screen.set_clip(area)
@@ -753,7 +737,11 @@ def draw_level_map(
             screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
         )
     x, y, heading = pose
+    if body is not None:
+        draw_under(screen, view, body)
     draw_symbol(screen, BODY, view.to_screen(x, y), BASE_RADIUS * view.scale, heading, 2)
+    if body is not None:
+        draw_over(screen, view, body)
     if frame is not None:
         pygame.draw.rect(screen, LIT, frame, 1)
     screen.set_clip(None)
@@ -799,10 +787,14 @@ def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> 
 
 def _draw_diagnostic(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Diagnostic (D-058, D-069): the level small, its obstacles, its lights and their rings,
-    and the probe, the swimmer the Run preview runs at, to drag and turn."""
+    and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076)."""
     area = pygame.Rect(DIAGNOSTIC_MAP)
-    if scene.level is not None and scene.probe is not None:
-        draw_level_map(screen, scene.level, area, scene.probe.pose)
+    probe = scene.probe
+    if scene.level is not None and probe is not None:
+        frame = probe.ticks // TICKS_PER_FRAME
+        cells = probe.circuit.board.cells
+        body = at_work(scene.level.arena, probe.net, cells, probe.y, probe.pose, BASE_RADIUS, frame)
+        draw_level_map(screen, scene.level, area, probe.pose, body=body)
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)

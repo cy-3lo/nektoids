@@ -62,6 +62,7 @@ class Probe:
         self.radius = np.full(1, BASE_RADIUS)  # every body alike (D-045)
         self.held: dict[int, float] = {}  # an eye's network index: the level it is held at
         self.state = initial_state(self.net)  # (1, n), from rest
+        self.ticks = 0  # ticks run: the clock of the specks on Diagnostic's map (D-076)
         self.mount, self.facing = world.parts(self.net, self.net.eyes)
         self._look()
 
@@ -95,6 +96,7 @@ class Probe:
     def tick(self, dt: float = DT) -> None:
         self.state = step(self.net, self.state, self.eyes()[None, :], dt)
         self.circuit.advance(self.y, dt)
+        self.ticks += 1
 
     def place(self, x: float, y: float) -> None:
         """The probe to (x, y) [u], outside the obstacles; the eyes back to the light."""

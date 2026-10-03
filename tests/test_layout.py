@@ -18,6 +18,7 @@ from nektoids.editor.layout import (
     MIN_HEX,
     MODE_KEY,
     PALETTE_TOOLS,
+    RUN_VIEWS,
     SCREEN,
     TABS_HEIGHT,
     TOOL_KEYS,
@@ -243,7 +244,7 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
     assert NAVIGATOR.view_buttons == ()  # the editor's view has no option yet (D-065)
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
     assert [title for title, _ in run.section_titles] == ["View", "Overview", "Objectives"]
-    assert [button for button, _ in run.view_buttons] == [ViewButton.RAYS]
+    assert [button for button, _ in run.view_buttons] == list(RUN_VIEWS)  # rays, motion, streams
     for button, rect in run.view_buttons:
         assert view_button_at(run, (rect[0] + 20, rect[1] + rect[3] // 2)) == button
 
@@ -283,7 +284,8 @@ def test_the_grid_still_fills_the_area_zoomed_out():
 
 
 def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
-    keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
+    views = [VIEW_KEYS[b] for b in ViewButton if b not in RUN_VIEWS]  # the editor's own
+    keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + views
     keys.append(MODE_KEY)  # Write and Delete in turn (D-068)
     assert len(set(keys)) == len(keys)
     assert all(len(key) == 1 for key in keys if key != TOOL_KEYS[Tool.DELETE])  # one character
@@ -304,7 +306,7 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
     assert set(DRAWER_KEYS) == {*DRAWERS[Env.EDITOR], *DRAWERS[Env.RUN], *FOOT} == set(Drawer)
     for drawer, key in DRAWER_KEYS.items():
         assert key == drawer.value[0].upper() or drawer in (Drawer.SETTINGS, Drawer.CHAPTERS)
-    views = [VIEW_KEYS[b] for b in ViewButton if b is not ViewButton.RAYS]  # the rays: the run's
+    views = [VIEW_KEYS[b] for b in ViewButton if b not in RUN_VIEWS]  # rays, motion: the run's
     editor = [*(TOOL_KEYS[t] for t in PALETTE_TOOLS), *views, MODE_KEY, LEVEL_KEYS[LevelButton.RUN]]
     editor += [DRAWER_KEYS[d] for d in (*DRAWERS[Env.EDITOR], *FOOT)]
     run = [*BUTTON_KEYS.values(), *(DRAWER_KEYS[d] for d in (*DRAWERS[Env.RUN], *FOOT))]
@@ -409,7 +411,7 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert make_layout(None, env=Env.RUN, goals=2).goal_rows == ()  # folded: by the timeline
     assert Drawer.INSIDE in DRAWERS[Env.RUN] and len(DRAWERS[Env.RUN]) == 3
     navigator = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
-    assert [b for b, _ in navigator.view_buttons][-1] is ViewButton.RAYS
+    assert [b for b, _ in navigator.view_buttons] == list(RUN_VIEWS)
     assert [name for name, _ in run.tabs] == ["run", "editor"] and run.caption_at[1] < arena[1]
     folded = make_layout(None, env=Env.RUN)
     assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]

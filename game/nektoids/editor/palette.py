@@ -8,8 +8,8 @@ shorter way round, between LIGHT_TURN's two lightnesses. Each accent comes in th
 for fills under light text, mid for marks on parts, bright for outlines and highlights over dark
 ground. `accent1` marks what the player works with: the faces of eyes and thrusters, the tool in
 hand, the tutorial's highlight, the swimmer in the run. `accent2` marks what goes wrong: a
-refusal, a lost run, a warning. Change `PALETTE` and the whole game follows: no other module
-holds a colour. Pure Python, no pygame.
+refusal, a lost run, a warning; and, darker, the thrust: a thruster's flames (D-076). Change
+`PALETTE` and the whole game follows: no other module holds a colour. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -187,3 +187,10 @@ BODY_UNSELECTED = P.dim
 RING = P.dim  # a ring to leave or to stay in, until that is done
 RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead of the playhead
 EYE_SHADES = (P.bright, P.dim)  # one per eye in the polar plot, in turn
+
+# The swimmer at work (D-076): its flames and the light it draws in, of one lightness (OKLab L
+# 0.56), dimmer than the swimmer
+FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks drifting out
+INTAKE = mix(P.muted, P.dim, 0.6)  # the light an eye draws in, specks drifting to its face
+PART_OUTLINE = P.dim  # a part's outline on the swimmer; its face keeps EYE_FACE, THRUSTER_BACK
+MOTION = P.accent1.bright  # its velocity and its spin, in the swimmer's own colour

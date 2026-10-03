@@ -539,6 +539,10 @@ class ArenaScene(Frame):
             self.hand = not self.hand
         elif button is ArenaButton.LIGHT:
             self.show_rays = not self.show_rays
+        elif button is ArenaButton.MOTION:  # for the session, as the settings are (D-076)
+            self.settings.motion = not self.settings.motion
+        elif button is ArenaButton.STREAMS:
+            self.settings.streams = not self.settings.streams
         elif button in (ArenaButton.PLAY, ArenaButton.STEP) and self.outcome is not None:
             return  # over: 0 starts it again
         elif button is ArenaButton.PLAY:

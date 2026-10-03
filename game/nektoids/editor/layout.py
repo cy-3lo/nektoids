@@ -127,6 +127,8 @@ class ViewButton(Enum):
     PAN = "pan"
     CENTRE = "centre"  # bring cell (0, 0) back to the middle, at the same zoom
     RAYS = "rays"  # the run's only: the light's rays, shown or not
+    MOTION = "motion"  # the run's only: the swimmer's velocity and spin, shown or not (D-076)
+    STREAMS = "streams"  # the run's only: its flames and the light it draws in, shown or not
 
 
 class Drawer(Enum):  # D-051
@@ -205,7 +207,10 @@ VIEW_KEYS = {
     ViewButton.PAN: "H",
     ViewButton.CENTRE: "C",
     ViewButton.RAYS: "X",  # as in x-rays: L turns left (D-025)
+    ViewButton.MOTION: "M",  # Move in the editor, where these three do not show (D-069)
+    ViewButton.STREAMS: "W",  # as in wind, its icon; Wire in the editor
 }
+RUN_VIEWS = (ViewButton.RAYS, ViewButton.MOTION, ViewButton.STREAMS)  # Navigator's, in the run
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
@@ -482,11 +487,13 @@ class _Rows:
         return top
 
     def view(self, env: Env) -> None:
-        """The view's options as rows, the rays in the run; then the overview and, under it,
-        the zoom: a bar between its two buttons (D-065)."""
+        """The view's options as rows, in the run the rays, the swimmer's motion and its streams
+        (D-076); then the overview and, under it, the zoom: a bar between its two buttons
+        (D-065)."""
         if env is Env.RUN:
             self._title("View", self.sections)
-            self._row(ViewButton.RAYS)
+            for button in RUN_VIEWS:
+                self._row(button)
             self.y += SECTION_GAP
         self._title("Overview", self.sections)
         x, width = BAR_WIDTH + MARGIN, DRAWER_WIDTH - 2 * MARGIN

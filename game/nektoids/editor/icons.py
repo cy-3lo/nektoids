@@ -53,7 +53,6 @@ GLYPH = {
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,
     "location-crosshairs": 0xF601,
-    "sun": 0xF185,
     "play": 0xF04B,
     "pause": 0xF04C,
     "forward-step": 0xF051,
@@ -61,6 +60,8 @@ GLYPH = {
     "backward-step": 0xF048,
     "forward": 0xF04E,
     "lightbulb": 0xF0EB,
+    "gauge-high": 0xF625,
+    "wind": 0xF72E,
     "check": 0xF00C,
     "backward-fast": 0xF049,
     "reply": 0xF3E5,
@@ -136,6 +137,8 @@ VIEW_ICON = {
     ViewButton.PAN: "hand",
     ViewButton.CENTRE: "location-crosshairs",
     ViewButton.RAYS: "lightbulb",
+    ViewButton.MOTION: "gauge-high",
+    ViewButton.STREAMS: "wind",
 }
 
 

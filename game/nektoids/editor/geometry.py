@@ -14,6 +14,7 @@ An arrow in each crossed cell shows which way the signal flows: a little past th
 straight run (so two wires crossing there keep distinct arrows), at the middle of the arc on a
 turn.
 
+Also the parts' shapes, in a cell's frame, which the board and the run's swimmer share (D-076).
 Pure numbers, no pygame, so the drawing and the delete tool's hit test share one geometry.
 """
 
@@ -35,6 +36,39 @@ ARROW_PAST_CENTRE = 0.3  # where a straight run's arrow sits, past the centre [h
 # The swimmer's symbol: a circle round a wedge, two sides of an equilateral triangle, tip
 # forward [rad]: the tip, then its two other corners.
 BODY_CORNERS = (0.0, 2.0 * math.pi / 3.0, -2.0 * math.pi / 3.0)
+
+# Shapes in a local frame: unit = hex size, forward = +x. Each outline is scaled to the same
+# area, SHAPE_AREA, so that no part looks bigger than another: fitted to one circle, the disc
+# covered 1.7 times the thruster's area.
+SHAPE_AREA = 0.8
+
+
+def _to_area(outline: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """The outline scaled about the cell centre until it encloses SHAPE_AREA (shoelace formula)."""
+    closed = zip(outline, outline[1:] + outline[:1], strict=True)
+    area = 0.5 * abs(sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in closed))
+    k = math.sqrt(SHAPE_AREA / area)
+    return [(k * x, k * y) for x, y in outline]
+
+
+def _unit_arc(start: int, stop: int) -> list[tuple[float, float]]:
+    """Points on the unit circle every 10°, from `start` to `stop` degrees."""
+    return [(math.cos(math.radians(a)), math.sin(math.radians(a))) for a in range(start, stop, 10)]
+
+
+_S = 1.0 / math.sqrt(2.0)  # half-side of the square inscribed in the unit circle
+_SHOULDER = _S * (1.0 - math.tan(math.radians(15.0)))
+# The eye's and the thruster's outlines end where their face begins: the edge from the last
+# point back to the first is the face, drawn in its accent (D-047).
+# Eye: a disc with its front cut off by a chord at half the radius. The flat face is the
+# photosensor, and it looks forward (D-019, D-020).
+EYE_DISC = _to_area(_unit_arc(60, 301))
+# Source: a whole disc; it has no direction.
+DISC = _to_area(_unit_arc(0, 360))
+DIAMOND = _to_area([(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)])
+# Thruster: a square, its front corners cut so the front is a point of 150° that ends on the
+# square's front edge: the outline stays square, 1:1. Its face is its back, where it pushes from.
+SQUARE_POINT = _to_area([(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)])
 
 
 def body_circle(zone: list[Cell], size: float, origin: Point) -> tuple[Point, float]:

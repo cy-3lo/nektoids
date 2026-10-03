@@ -991,3 +991,36 @@ says which, in the accent, or that no level has that word. D-035's rule stands o
 level opens once the one before it is won, or by its word. The words are ours (the todo's
 caution about titles). Whether a phone's keyboard comes up for the canvas is left to the touch
 work (todo §7).
+
+**D-076 — 2026-10-03 — The body at work, seen: in the run and in Diagnostic the swimmer shows its parts, its thrusters' flames, the light its eyes draw in, where it goes and how it turns. accent2 marks the thrust too; the light is a bulb. Amends D-049; reads the scope lock's "art".**
+The run drew the swimmer as a circle round a wedge: what it read, what it pushed and what that
+did showed only in Inside's beads, a failure the player could not see on the arena (invariant
+6). It now shows the brief's steering vector (§1) and more, chosen on an art sheet drawn in the
+game's palette over the game's own runs of Aggression. The parts: each eye's face and each
+thruster's back in their teal, 2 px, where the board puts them on the body (D-018), with the
+parts' outlines in a dim grey, 1 px, the board's shapes scaled by the body's reach. The flames:
+specks of 3 px drifting out of each thruster's back, 3 body radii long at any rate, widening by
+10° either side; the rate is their density, 12 at once at RATE_MAX, each speck out in 16 frames.
+The light drawn in: the flames run backwards, specks drawn into each eye's face from each light
+it sees, along the light's own direction, from 3 body radii out, in 0.5 s; as many as that light
+gives the reading, 12 at once at RATE_MAX; over the face's width as the light sees it, its
+cosine (D-019); none from a light behind the face or in shadow. Headlight cones out of the faces
+were tried and left: they point where the eye looks, not where its light comes from. Flames and
+light are of one lightness (OKLab L 0.56), the flames a darker accent2, the light a warm grey,
+both dimmer than the swimmer. The specks are drawn from a table seeded once and read by the
+run's frame, as the rays are (invariant 1): never read by the model, still while paused, the
+same on a replay or a scrub, faster under fast forward. The motion, both in the swimmer's own
+accent1, 2 px: a segment from the rim along the velocity, as long as the way gone in 1 s, its
+leaving the rim saying its way; an arc 1.6 body radii from the centre, from the heading, as long
+as the angle turned in 2 s, at most 300°. Both come from the thrust now (D-022), what the next
+tick does, so Diagnostic's probe, which stands still, shows where it would go, and a swimmer
+against an obstacle points into it while it slides. Nothing is cleared over the body: the marks
+cross it. Diagnostic's map shows all of them at its scale; its main screen, where the body is
+the board, none. Navigator's overview stays plain. In the run, Navigator's View shows two more
+rows under Rays, each on or off for the session: Motion, M, a gauge, the velocity and the spin;
+Streams, W, the wind, the flames and the light drawn in. M and W are Move and Wire in the editor,
+which never shows these rows (D-069). A light in the run is a
+bulb, 1.6 light radii high, not a sun; the Rays button's bulb now says the same. Amends D-049:
+accent2 marks what goes wrong and, darker, the thrust. The scope lock has art out: these marks
+are legibility, each shows a quantity of the model, and the scatter of the specks, the nearest
+thing to art, is drawing only.
