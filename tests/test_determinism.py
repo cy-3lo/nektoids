@@ -101,17 +101,17 @@ def test_other_starts_give_another_run():
 
 
 def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
-    ended, ticks, _ = play(CROSSED, "One light")
+    ended, ticks, _ = play(CROSSED, "Aggression")
     assert ended is Outcome.WON and ticks * DT < 12.0
-    assert play(CROSSED, "One light")[1] == ticks  # the same tick, every run
+    assert play(CROSSED, "Aggression")[1] == ticks  # the same tick, every run
 
 
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
-    ended, _, (visited,) = play(UNCROSSED, "One light")
+    ended, _, (visited,) = play(UNCROSSED, "Aggression")
     assert ended is Outcome.TIME_UP and not visited.any()
-    light, touch = LEVELS["One light"].arena.light_xy[0], REACH * (LIGHT_RADIUS + 1.0)
-    begun = np.hypot(*(np.array(LEVELS["One light"].start[:2]) - light)) - touch
-    states = list(run(UNCROSSED, "One light", 12.0))
+    light, touch = LEVELS["Aggression"].arena.light_xy[0], REACH * (LIGHT_RADIUS + 1.0)
+    begun = np.hypot(*(np.array(LEVELS["Aggression"].start[:2]) - light)) - touch
+    states = list(run(UNCROSSED, "Aggression", 12.0))
     nearest = min(np.hypot(*(pos[0] - light)) - touch for pos, _, _ in states)
     assert nearest > 0.8 * begun  # never a fifth of the way to reaching it
     _, _, y = states[-1]
@@ -243,15 +243,15 @@ def test_without_a_diff_the_swimmer_touches_the_light_and_loses():
 
 
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
-    arena = LEVELS["One light"].arena
-    for pos, heading, y in run(CROSSED, "One light", 2.0):
+    arena = LEVELS["Aggression"].arena
+    for pos, heading, y in run(CROSSED, "Aggression", 2.0):
         seen = eye_rates(arena, pos, heading, np.ones(1), *parts(CROSSED, CROSSED.eyes))
         assert np.array_equal(y[:, CROSSED.eyes], seen)
 
 
 def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no_walls():
     net = Network.from_edges([Kind.SOURCE, Kind.THRUSTER, Kind.THRUSTER], [(0, 1), (0, 2)])
-    pos, heading, _ = last(run(net, "One light", 15.0))  # from (9, 15), heading E
+    pos, heading, _ = last(run(net, "Aggression", 15.0))  # from (9, 15), heading E
     lag = SPEED * TAU  # the thrusters take TAU to reach their rate (D-017)
     assert pos[0, 0] == pytest.approx(9.0 + SPEED * 15.0 - lag, abs=1e-9)  # far past x = 40
     assert pos[0, 1] == 15.0 and heading.tolist() == [0.0]

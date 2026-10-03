@@ -321,6 +321,13 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         target = board.node_at(way[-1])
         reach = extent(target.kind) if target is not None else 0.3
         _draw_wire(screen, view, way, colour, width, reach)
+    wired = {(board.nodes[w.source].cell, board.nodes[w.target].cell) for w in board.wires}
+    for start, end in scene.ghost_wires:  # the model's wires, faint, until each is made (D-074)
+        path = None if (start, end) in wired else board.route(start, end)
+        if path is not None:
+            target = board.node_at(end) or next((g for g in scene.ghosts if g.cell == end), None)
+            reach = extent(target.kind) if target is not None else 0.3
+            _draw_wire(screen, view, path, GHOST_FILL, 2, reach)
     doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
     for wire in board.wires:
         colour = DOOMED if wire in doomed_wires else WIRE

@@ -28,7 +28,7 @@ import pygame
 
 from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
-from nektoids.editor.devdrive import SIM_HZ, TICKS_PER_FRAME
+from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
 from nektoids.editor.preview_draw import draw_preview
@@ -41,6 +41,7 @@ from nektoids.editor.shell import bottom_button
 from nektoids.editor.shell_draw import draw_end, draw_level_card, draw_title_card
 from nektoids.editor.tutorial import (
     Context,
+    Live,
     Tutorial,
     allows,
     answer,
@@ -49,6 +50,7 @@ from nektoids.editor.tutorial import (
     focus_cells,
     guided,
     panels,
+    shows_wheel,
     target_rects,
     target_spots,
 )
@@ -86,12 +88,16 @@ def tutorial() -> Tutorial | None:
 
 
 def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
-    """Where the step's target and its box are, on the screen now open: `scene`'s."""
-    spots = target_spots(guide.step.show, router.screen, scene.layout, scene.view)
+    """Where the step's target and its box are, on the screen now open: `scene`'s; in the
+    editor, the Wheel's icons round the focused cell are targets too (D-070)."""
+    if isinstance(scene, EditorScene):
+        live = Live(wheel=tuple(scene.wheel()), focused=scene.focused)
+    else:  # the run: the swimmer, which Fear's first step outlines (D-071)
+        live = Live(swimmer=scene.swimmer_box())
+    where = (router.screen, scene.layout, scene.view, live)
+    spots = target_spots(guide.step.show, *where)
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
-    before = (
-        [] if done is None else target_rects(done.show, router.screen, scene.layout, scene.view)
-    )
+    before = [] if done is None else target_rects(done.show, *where)
     beside = scene.layout.board_area  # the board, or the arena
     return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
 
@@ -184,6 +190,7 @@ async def main() -> None:
     developer: SchematicScene | ArenaScene | None = None  # the F2 or F3 view, while open
     playing: ArenaScene | None = None  # the player's run, while it shows
     run_drawer: Drawer | None = Drawer.INSIDE  # the run's open drawer, from one run to the next
+    held: ArenaScene | None = None  # the run an explaining step paused while it played (D-071)
 
     def on_screen() -> EditorScene | ArenaScene:
         """The scene the player sees: the run, or the open level's editor."""
@@ -263,20 +270,25 @@ async def main() -> None:
         guide = tutorial()
         if guide is not None:  # on past what the player has done
             ended = playing.outcome if playing is not None else None
-            guide.follow(Context(router.board, editor().tool, router.screen, ended))
+            time = playing.clock.tick * DT if playing is not None else 0.0  # the run's [s]
+            drawer = on_screen().layout.drawer  # one a step may wait for (D-074)
+            guide.follow(Context(router.board, editor().tool, router.screen, ended, time, drawer))
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
+        editor().ghost_wires = guide.ghost_wires if guide is not None else ()  # D-074
         editor().chapters = router.rows()  # what Chapters shows
         editor().set_wins(router.wins(router.index))  # what Files shows (D-059)
         if playing is not None:
             playing.chapters = router.rows()
         scene = on_screen()
-        wanted = drawer_for(guide.step) if guide is not None else None
+        wanted = drawer_for(guide.step, scene.layout.drawer) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on
         if wanted in here and opened_for.get(router.index) != guide.index:
             opened_for[router.index] = guide.index  # once a step: then the player's to change
             if scene.layout.drawer is not wanted:
                 scene.open_drawer(wanted)
+            if shows_wheel(guide.step) and isinstance(scene, EditorScene):
+                scene.unfold_wheel()  # its icon must show (D-070)
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         editor().gate = gate  # only what the step asks goes through (D-048)
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
@@ -284,8 +296,11 @@ async def main() -> None:
         if playing is not None:
             playing.gate = gate
             playing.lit = panels(guide)
-            if guide is not None and guide.explains:
-                playing.clock.paused = True  # an explaining step holds the run still (D-050)
+            explaining = guide is not None and guide.explains
+            if explaining and not playing.clock.paused:  # it holds the run still (D-050)
+                playing.clock.paused, held = True, playing
+            elif not explaining and held is playing:  # and lets it go on once explained (D-071)
+                playing.clock.paused, held = False, None
 
         if isinstance(developer, SchematicScene):
             developer.update()

@@ -910,3 +910,69 @@ tooltip shows after 0.5 s, not 1 s (amends D-067). The tabs read Run, then Edito
 level opens on its run, paused, as Fear's did (D-060): at the start, from Chapters, by Next
 level; its card, the title card or the level's, shows over that run, so only the card goes when
 it is dismissed; the editor is a tab or Esc away. The tutorial follows in its own PR.
+
+**D-070 — 2026-10-03 — Fear's tutorial follows the Wheel: the eyes from the Wheel, the thrusters from Parts, each wire by two clicks; a step may show a Wheel's icon, or Tools. Amends D-048, D-060.**
+After D-069 the tutorial still taught the old panel: its wiring step said to drag from the upper
+eye, which now moves the part, and a step refuses moves; its turns pointed at buttons that were
+gone. Fear's editor steps are now: the board, and atop it what a click does; Tools, with Write
+and Delete, Undo and Redo, and the Wheel at its foot; the bar, each drawer by its initial too;
+the first eye, by a click on its cell then the Eye on the Wheel, or 1, turned by Turn left on
+the Wheel, or L; the second eye the same way; then Parts, and the two thrusters dragged from it;
+each wire by a click on the eye, then on the thruster; Run, by its tab, the switch or Space.
+Fear has 20 steps. A step may show a Wheel's icon by its name, {"wheel": "eye"} or {"wheel":
+"turn left"}, outlined as a disc, and only while the step's own cell is focused, since the Wheel
+round another cell would act there; and the Tools drawer, {"area": "tools"}. A step that shows a
+Wheel's icon keeps Tools or Parts open, whichever is, else opens Tools, and unfolds the Wheel if
+it is folded. The {"tool": ...} target, which showed nothing since D-068, goes, and so does a
+tutorial's start screen: every level opens on its run (D-069). Diagnostic is only named, in the
+bar step; teaching it is for later.
+
+**D-071 — 2026-10-03 — Fear's tutorial in 16 steps: nothing dimmed, the swimmer boxed, pages and drawers outlined with their tab or icon; one card for the second eye, one for Parts and both thrusters; in the run, Play first, a pause for Inside, then the win and the score. Amends D-050, D-062, D-070.**
+No step dims the screen any more: an explaining step outlines what it shows in the accent and
+leaves the rest as it is, as a step that asks for an action already did (D-063). Fear's first
+step boxes the swimmer alone, {"run": "swimmer"}, its place read off the run; Objectives is
+outlined. The editor's board is explained as its page, {"page": "editor"}: the Editor tab, the
+level's line and the board as one shape, as the run's page (D-062). Tools, Parts, Inside and
+Score are each outlined with their icon in the bar, {"drawer": "tools"}, as one shape, a step
+that asks for an action outlining it too. The bar's step goes. The second eye is placed and
+turned on one card, and Parts explained and both thrusters dragged from it on one: a step may
+wait for a list of things, met once each is, letting through the means to any. A step that shows
+a Wheel's icon keeps its box clear of the whole Wheel. In the run, Play comes first and waits
+for 1 s of the run ({"time": 1.0}); then the run pauses for Inside, the beads explained, and
+Next lets it go on by itself, an explaining step resuming the run it paused; a step waits for
+the win; the last explains the score alone: time and parts, fewer is better, the line of
+unbeaten wins. The step on the run's controls goes: Play's own text and the controls' tooltips
+name them. An outline round a target at the screen's edge, a tab, the switch, a drawer, keeps 3
+px inside it.
+
+**D-072 — 2026-10-03 — With Wire chosen, a drag from a part draws a wire, not a move. Amends D-068.**
+With Wire chosen, by W or the Wheel's icon, a drag from a part moved it, as D-068 has any drag do.
+Now it draws a wire from that part, its ghost following the mouse, made to the part it is released
+on, the focus going on to that part, as a click on the one then on the other would; released on an
+empty cell, the attempt ends with the reason; back on its own part, or off the board, nothing. With
+Wire only at hand, after a click on a part, a drag still moves it.
+
+**D-073 — 2026-10-03 — The run's overview never shrinks below its start, nor while the main screen's frame touches its border. Amends D-066.**
+The run's extent, what Navigator's overview shows and the most the arena may, followed what
+matters every frame (D-066), so in Love, as the swimmer came to the light, it shrank and the view,
+kept inside it, zoomed in on its own. Now the extent is kept from frame to frame: what matters
+now, never less than the extent at the run's start, and never less than it was while the main
+screen's frame touches its border, zoomed out or slid to an edge. Away from the border it may
+shrink back, as far as its start, once the swimmer has gone far and come back.
+
+**D-074 — 2026-10-03 — LEVEL 1.2 is Aggression, guided: the player builds Braitenberg's 2b from its shadows, wires and all, then tries it in Diagnostic before the run. Love is 1.3. Amends D-039, D-040.**
+One light, the level crossed wiring wins, is called Aggression, Braitenberg's vehicle 2b, and
+comes second, after Fear, his 2a: the brief's order (§3, level 2: crossed, the swimmer charges
+the light). Love is 1.3, In the shadow 1.4. Aggression hands out two eyes and two thrusters
+only, the parts Fear taught; its arena, objective and time stand, and so do its pinned results.
+Its tutorial leads, so the first two levels are guided (D-039 had only the first) and each
+starts afresh from Chapters (D-050). In the run: the swimmer and its objective; to the editor.
+In the editor, one card: build what the shadows show. The model is the board crossed wiring wins
+with: the eyes at the back looking NE and SE, the thrusters at the front, each eye wired to the
+thruster on the other side; the four cells lit, the shadow parts and, new, shadow wires, a
+tutorial's ghost_wires drawn faintly along their route until the real wire is made. The card
+waits for all of it, placed, turned and wired, and lets through only what builds toward the
+model. Then: open Diagnostic, a step that waits for that drawer and lets it open, its icon shown
+while it is closed; then what Diagnostic shows, the run held, the swimmer free to drag on the
+map. Then Run, Play to the win, and a closing hint: crossed, the wires turn the swimmer toward
+the light. Sources stay for Love, where a Diff of a Source and an eye is the point.

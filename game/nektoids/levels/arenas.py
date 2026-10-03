@@ -14,10 +14,10 @@ from nektoids.levels.level import Level, load
 DATA = Path(__file__).resolve().parent / "data"
 ORDER = (
     "fear",
+    "aggression",
     "love",
-    "one-light",
     "in-the-shadow",
-)  # the route's files, in the order the levels come
+)  # the route's files, in the order the levels come: Braitenberg's 2a, 2b, 3a, then (D-074)
 SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)
 
 
