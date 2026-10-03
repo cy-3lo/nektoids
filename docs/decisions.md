@@ -1220,3 +1220,14 @@ A drag from any other part still moves that part, and dropped off the body delet
 the lit part moves by M or the Wheel's Move, or by a drag once the focus is elsewhere. Clicks do
 not change: a click that cannot wire focuses the cell or the part it falls on, so lighting Wire
 costs nothing. The status line says "Click or drag to another part to wire it; M moves it."
+
+**D-091 — 2026-10-03 — A part placed or moved with the mouse wires either way round, as a part clicked; only the part just wired to wires on only forward. Amends D-068.**
+D-068 had a part focused without a click on it, placed, moved or just wired to, wire on only
+along the signal: a click on a part it could not feed only focused that part. So an eye just
+placed was wired to the thruster clicked next, but a thruster just placed, Wire lit for it, was
+not wired to the eye clicked next: the eye was only focused. Now a part placed, from Parts or the
+Wheel, or moved, by a drag or Move, wires either way round, as a part clicked does (D-026): a
+click, or a drag (D-090), on any part their kinds let it be wired to makes the wire. Only the part
+the focus goes on to after a wire keeps D-068's rule, so that a chain goes on by clicks (eye, sum,
+thruster) and, from a thruster just wired to, a click on the other eye focuses that eye to start
+its own wire. A click that cannot wire still focuses what it falls on.
