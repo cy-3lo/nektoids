@@ -535,7 +535,8 @@ class EditorScene(Frame):
         if slot is not None:  # an icon of the Wheel, in Tools or Parts
             self._use(slot.what)
             return
-        if action_at(self.layout, pos) is not None:  # the action shown: Tools, to see it all
+        shown = self.main is MainView.DIAGRAM  # the action atop shows only with the board
+        if shown and action_at(self.layout, pos) is not None:  # the action: Tools, to see it all
             self.open_drawer(Drawer.TOOLS)
             return
         if self.main is MainView.PREVIEW:  # the board is not on screen to edit, but the eyes are
@@ -1164,6 +1165,8 @@ class EditorScene(Frame):
         """What the status line says the player can do now."""
         if self.tool is Tool.PAN:
             return "Drag the board to move the view. H or Esc puts the hand down."
+        if self.main is MainView.PREVIEW:  # nothing to edit here (D-069)
+            return "Drag an eye's knob to set what it reads. Tools or Parts to edit."
         if self.carrying:
             return "The arrows carry the part; Enter puts it down."
         if self.tool is Tool.WIRE and not self.wheel_open and self.source is not None:

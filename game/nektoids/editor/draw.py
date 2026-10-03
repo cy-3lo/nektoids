@@ -61,6 +61,7 @@ from nektoids.editor.layout import (
     EditButton,
     FileButton,
     LevelButton,
+    MainView,
     Mode,
     Setting,
     Tool,
@@ -275,7 +276,7 @@ def draw(
     draws there instead (the Run preview, D-058); then the frame round it."""
     screen.fill(BACKGROUND)
     (main or _draw_board)(screen, scene, fonts)
-    if scene.layout.action_at is not None:  # while Tools is folded (D-068)
+    if scene.layout.action_at is not None and scene.main is MainView.DIAGRAM:  # D-068, D-069
         _draw_action(screen, scene, fonts)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)

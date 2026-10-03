@@ -879,7 +879,9 @@ The switch between the Diagram view and the Run preview goes. The main screen sh
 except while Diagnostic is open, where it shows the Run preview; Navigator keeps what was shown
 before it, so the preview can be zoomed and moved. Sense is called Diagnostic: it is where the
 board is tested. While the preview shows, a key that edits the board is refused, and the status
-line says to open Tools or Parts; undo and redo still work, and the preview follows them. While
+line says to open Tools or Parts; undo and redo still work, and the preview follows them. The
+action atop the main screen hides meanwhile, and the status line says what the preview offers:
+an eye's knob to drag. While
 a tutorial step leads, Diagnostic does not open. The ring of D-068, with the focused cell
 drawn large at its middle, is called the Wheel. Tools and Parts both have it at their foot, under
 a rule and its title, The Wheel, that folds as Parts' groups do, in both at once; folded, the
