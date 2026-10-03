@@ -113,7 +113,7 @@ from nektoids.editor.wheel import (
     swaps,
     turned,
 )
-from nektoids.graph.board import Board, Kind, Node, Refused, Wire
+from nektoids.graph.board import Board, BoardState, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
     SQRT3,
     Cell,
@@ -214,6 +214,7 @@ class EditorScene(Frame):
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
         self.hover: Cell | None = None  # the same, if it is in the zone
         self.carrying = False  # Move by keyboard: grabbed with Enter, not yet dropped
+        self._grabbed: BoardState | None = None  # the board as the part being moved was picked up
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
         self.history = History()
@@ -866,6 +867,7 @@ class EditorScene(Frame):
             self.press_cell = None
             return
         self.moving, self.message = node.id, ""
+        self._grabbed = self.board.snapshot()
 
     def _dropping(self) -> bool:
         """Whether the part being dragged is off the body, the zone's cells, on the drawer or the
@@ -887,7 +889,7 @@ class EditorScene(Frame):
 
     def _drag_to(self, cell: Cell) -> None:
         """One step of a move: the part stays at the last cell its wires could follow it to."""
-        result = self.board.move_node(self.moving, cell)
+        result = self._step(self.moving, cell)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
         else:
@@ -1115,6 +1117,7 @@ class EditorScene(Frame):
                 self.tool = Tool.MOVE
                 if self.wheel_keys:  # the keyboard: the arrows carry it, Enter puts it down
                     self.wheel_open, self.carrying = False, True
+                    self._grabbed = self.board.snapshot()
         elif tool is Tool.DELETE:
             self._delete_part(node)
         elif tool is Tool.SWAP:
@@ -1215,12 +1218,24 @@ class EditorScene(Frame):
         if node.locked:
             self._refuse("placed by the level", node.cell)
             return False
-        result = self.board.move_node(node.id, cell)
+        result = self._step(node.id, cell)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
             return False
         self.message = ""
         return True
+
+    def _step(self, node_id: int, cell: Cell) -> Node | Refused:
+        """The part moved to `cell`; while a drag or the keyboard carries it, worked out from the
+        board as it was picked up, so a wire it passed over, routed round it, goes back (D-086).
+        Refused, the board stays as it was."""
+        before = self.board.snapshot()
+        if (self.moving is not None or self.carrying) and self._grabbed is not None:
+            self.board.restore(self._grabbed)
+        result = self.board.move_node(node_id, cell)
+        if isinstance(result, Refused):
+            self.board.restore(before)
+        return result
 
     def _delete_part(self, node: Node) -> None:
         """The part deleted, with its wires; the focus stays on its cell, empty now."""

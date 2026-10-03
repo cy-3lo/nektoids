@@ -183,7 +183,8 @@ class Board:
     def place(
         self, kind: Kind, cell: Cell, locked: bool = False, facing: int | None = None
     ) -> Node | Refused:
-        """Put a component on an empty cell.
+        """Put a component on a cell no other holds. The wires crossing it are routed again round
+        it, in the order they were drawn (D-086); if one finds no way round, nothing changes.
 
         Eyes and thrusters point along `facing`, or their kind's default if it is None;
         operators have no direction.
@@ -192,19 +193,23 @@ class Board:
             return Refused("outside the zone")
         if self.node_at(cell) is not None:
             return Refused("cell taken")
-        if self.wires_in(cell):
-            return Refused("a wire runs here")
         left = self.remaining(kind)
-        if not locked and left is not None:
-            if left == 0:
-                return Refused("none left")
-            self._stock[kind] = left - 1
+        if not locked and left == 0:
+            return Refused("none left")
         if kind.default_facing is None:
             facing = None
         elif facing is None:
             facing = kind.default_facing
         node = Node(self._next_id, kind, cell, locked=locked, facing=facing)
         self.nodes[node.id] = node
+        saved = list(self.wires)
+        crossing = [i for i, wire in enumerate(saved) if cell in wire.path[1:-1]]
+        if self._route_again(saved, crossing) is not None:
+            del self.nodes[node.id]
+            self.wires = saved
+            return Refused("the wires here would find no way round")
+        if not locked and left is not None:
+            self._stock[kind] = left - 1
         self._next_id += 1
         return node
 
@@ -247,10 +252,11 @@ class Board:
         return node, lost
 
     def move_node(self, node_id: int, cell: Cell) -> Node | Refused:
-        """Move a component to another cell, routing its wires again (D-011).
+        """Move a component to another cell, routing again its wires (D-011) and those crossing
+        that cell (D-086).
 
-        Its wires are routed in the order they were drawn; other wires stay put. If one of them
-        finds no free path from there, nothing changes.
+        They are routed in the order they were drawn; other wires stay put. If one of them finds
+        no free path, nothing changes.
         """
         node = self.nodes[node_id]
         if node.locked:
@@ -262,22 +268,18 @@ class Board:
         if self.node_at(cell) is not None:
             return Refused("cell taken")
         saved = list(self.wires)
-        attached = [i for i, wire in enumerate(saved) if node_id in (wire.source, wire.target)]
-        self.wires = [wire for i, wire in enumerate(saved) if i not in attached]
-        if self.wires_in(cell):
-            self.wires = saved
-            return Refused("a wire runs here")
+        again = [
+            i
+            for i, wire in enumerate(saved)
+            if node_id in (wire.source, wire.target) or cell in wire.path[1:-1]
+        ]
         self.nodes[node_id] = replace(node, cell=cell)
-        rerouted: dict[int, Wire] = {}
-        for i in attached:
-            old = saved[i]
-            path = self.route(self.nodes[old.source].cell, self.nodes[old.target].cell)
-            if path is None:
-                self.nodes[node_id], self.wires = node, saved
+        lost = self._route_again(saved, again)
+        if lost is not None:
+            self.nodes[node_id], self.wires = node, saved
+            if node_id in (lost.source, lost.target):
                 return Refused("its wires would find no free path")
-            rerouted[i] = Wire(old.source, old.target, path)
-            self.wires.append(rerouted[i])  # so the next ones route around it
-        self.wires = [rerouted.get(i, wire) for i, wire in enumerate(saved)]
+            return Refused("the wires here would find no way round")
         return self.nodes[node_id]
 
     def rotate(self, node_id: int, steps: int) -> Node | Refused:
@@ -384,7 +386,8 @@ class Board:
     def from_dict(cls, data: Mapping) -> Board:
         """A board from `to_dict`'s data: the parts placed in order, then the wires drawn in
         order, so the network is the one saved. A path comes back as saved unless the board had
-        been edited with Move or Delete; then it may take another route as short. Raises
+        been edited with Move or Delete, or a part put on a wire; then it may take another route
+        as short. Raises
         ValueError for data no board could hold."""
         stock = {Kind(name): left for name, left in data["stock"].items()}
         board = cls([tuple(cell) for cell in data["zone"]], stock)
@@ -437,6 +440,24 @@ class Board:
         return None
 
     # Internals
+
+    def _route_again(self, saved: list[Wire], again: list[int]) -> Wire | None:
+        """The wires at places `again` of `saved`, the wires as they were, routed again in the
+        order they were drawn, each round the parts and the wires already there, which stay;
+        each keeps its place. The first that finds no free path, if one does: the caller then
+        puts the board back.
+        """
+        self.wires = [wire for i, wire in enumerate(saved) if i not in again]
+        rerouted: dict[int, Wire] = {}
+        for i in again:
+            old = saved[i]
+            path = self.route(self.nodes[old.source].cell, self.nodes[old.target].cell)
+            if path is None:
+                return old
+            rerouted[i] = Wire(old.source, old.target, path)
+            self.wires.append(rerouted[i])  # so the next ones route round it
+        self.wires = [rerouted.get(i, wire) for i, wire in enumerate(saved)]
+        return None
 
     def _edges_used(self) -> dict[Cell, set[int]]:
         """Edges of each free cell already taken by a wire."""

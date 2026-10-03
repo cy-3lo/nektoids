@@ -108,16 +108,31 @@ def test_move_refusals():
     board, (eye, gain, other, half) = build(
         [((0, 3), Kind.EYE), ((4, 3), Kind.DOUBLE), ((2, 1), Kind.EYE), ((2, 5), Kind.HALVE)]
     )
-    board.connect(other.id, half.id)  # runs straight down through (2, 3)
-    assert board.move_node(eye.id, (2, 3)) == Refused("a wire runs here")
     assert board.move_node(eye.id, (4, 3)) == Refused("cell taken")
     assert board.move_node(eye.id, (20, 3)) == Refused("outside the zone")
     fixed = board.place(Kind.THRUSTER, (6, 3), locked=True)
     assert board.move_node(fixed.id, (6, 2)) == Refused("placed by the level")
     # Onto a cell its own wire crosses is fine: that wire is routed again.
     board.connect(eye.id, gain.id)
-    assert board.move_node(eye.id, (2, 3)) == Refused("a wire runs here")  # still the other's
     assert board.move_node(eye.id, (1, 3)).cell == (1, 3)
+
+
+def test_a_part_moved_onto_a_wire_has_it_routed_round():
+    board, (eye, _, other, half) = build(
+        [((0, 3), Kind.EYE), ((4, 3), Kind.DOUBLE), ((2, 1), Kind.EYE), ((2, 5), Kind.HALVE)]
+    )
+    board.connect(other.id, half.id)  # runs straight down through (2, 3)
+    assert board.move_node(eye.id, (2, 3)).cell == (2, 3)  # D-086
+    (wire,) = board.wires
+    assert (2, 3) not in wire.path and (wire.source, wire.target) == (other.id, half.id)
+    # A part whose cell a wire crosses with no way round: nothing changes.
+    board, (eye, gain, spare) = build(
+        [((0, 0), Kind.EYE), ((2, 0), Kind.DOUBLE), ((3, 0), Kind.HALVE)], cols=4, rows=1
+    )
+    wire = board.connect(eye.id, gain.id)
+    refused = Refused("the wires here would find no way round")
+    assert board.move_node(spare.id, (1, 0)) == refused
+    assert board.nodes[spare.id].cell == (3, 0) and board.wires == [wire]
 
 
 def test_place_refuses_off_board_and_taken_cells():
@@ -148,10 +163,45 @@ def test_locked_nodes_use_no_stock_and_cannot_be_removed():
     assert board.node_at((0, 3)) == eye
 
 
-def test_cannot_drop_a_component_on_a_wire():
+def test_a_part_put_on_a_wire_has_the_wire_routed_round_it():
     board, (eye, gain) = build([((0, 3), Kind.EYE), ((4, 3), Kind.DOUBLE)])
-    board.connect(eye.id, gain.id)
-    assert board.place(Kind.HALVE, (2, 3)) == Refused("a wire runs here")
+    straight = board.connect(eye.id, gain.id)
+    assert (2, 3) in straight.path
+    assert board.place(Kind.HALVE, (2, 3)).cell == (2, 3)  # D-086
+    (wire,) = board.wires
+    assert (wire.source, wire.target) == (eye.id, gain.id) and (2, 3) not in wire.path
+    assert len(wire.path) == len(straight.path) + 1  # the shortest way round: one step more
+
+
+def test_the_wires_crossing_a_part_go_round_in_the_order_drawn_each_in_its_place():
+    board, (west, east, north, south, low, high) = build(
+        [
+            ((0, 3), Kind.EYE),
+            ((4, 3), Kind.DOUBLE),
+            ((2, 1), Kind.EYE),
+            ((2, 5), Kind.HALVE),
+            ((0, 6), Kind.EYE),
+            ((4, 6), Kind.SUM),
+        ]
+    )
+    apart = board.connect(low.id, high.id)  # along the bottom row, nowhere near (2, 3)
+    board.connect(west.id, east.id)  # across (2, 3)
+    board.connect(north.id, south.id)  # down through (2, 3), on another axis
+    board.place(Kind.DIFFERENCE, (2, 3))
+    assert board.wires[0] == apart  # untouched
+    ends = [(w.source, w.target) for w in board.wires]
+    assert ends == [(low.id, high.id), (west.id, east.id), (north.id, south.id)]
+    assert all((2, 3) not in w.path for w in board.wires)
+
+
+def test_a_part_whose_wires_find_no_way_round_is_refused_and_nothing_changes():
+    board = Board(offset_rect(3, 1), stock={Kind.EYE: 1, Kind.DOUBLE: 1, Kind.HALVE: 1})
+    eye, gain = board.place(Kind.EYE, (0, 0)), board.place(Kind.DOUBLE, (2, 0))
+    wire = board.connect(eye.id, gain.id)
+    refused = Refused("the wires here would find no way round")
+    assert board.place(Kind.HALVE, (1, 0)) == refused
+    assert board.wires == [wire] and board.node_at((1, 0)) is None
+    assert board.remaining(Kind.HALVE) == 1  # the part is still to place
 
 
 def test_removing_a_node_removes_its_wires_and_frees_their_cells():
