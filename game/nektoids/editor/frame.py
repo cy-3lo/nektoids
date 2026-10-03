@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from nektoids.editor.layout import (
+    PASSKEY_KEY,
     Drawer,
     Layout,
     Setting,
@@ -23,12 +24,14 @@ from nektoids.editor.layout import (
     level_button_at,
     on_fold_handle,
     palette_target_at,
+    passkey_at,
     setting_row_at,
     tab_at,
 )
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
+from nektoids.levels.level import PASSKEY_LENGTH
 
 LEAVE = {"editor": "edit", "run": "run"}  # what a tab asks for: the screen it names
 WARM_FRAMES = 18  # after a tooltip, the next one shows at once for this long: 0.3 s [frames]
@@ -50,6 +53,9 @@ class Frame:
         self.message = ""  # the last refusal, until something succeeds
         self.lit: frozenset[str] = frozenset()  # what a tutorial step explains (D-050); main.py's
         self.gate: Callable[[Action], bool] | None = None  # what it lets through; main.py's
+        self.typing: str | None = None  # a passkey being typed in Chapters; None: not (D-075)
+        self.asked_passkey: str | None = None  # a passkey typed: main.py's to try and clear
+        self.said = ""  # what that passkey opened, in the status line until the next click
 
     @property
     def tooltip(self) -> object | None:
@@ -73,7 +79,12 @@ class Frame:
 
     def frame_press(self, pos: tuple[int, int]) -> bool:
         """A click on the frame, taken: the fold arrow, the bar, a tab, an info disc, a row of
-        Chapters or of Settings. False if it fell elsewhere, for the scene to take."""
+        Chapters or of Settings, the passkey field. False if it fell elsewhere, for the scene to
+        take. A passkey being typed is given up by a click anywhere but on its field."""
+        self.said, self.typing = "", None
+        if passkey_at(self.layout, pos):
+            self.typing = ""  # a word to type (D-075)
+            return True
         if on_fold_handle(self.layout, pos):
             self.open_drawer(None)
             return True
@@ -103,6 +114,27 @@ class Frame:
             self._set(setting)
             return True
         return False
+
+    def start_passkey(self, typed: str) -> bool:
+        """P with Chapters open: a passkey to type, not Parts (D-075); False for any other key."""
+        if self.layout.drawer is not Drawer.CHAPTERS or typed.upper() != PASSKEY_KEY:
+            return False
+        self.typing, self.said = "", ""
+        return True
+
+    def type_key(self, name: str, char: str) -> None:
+        """A key while a passkey is typed, by its pygame name and the character it types: A to Z
+        added, up to PASSKEY_LENGTH; Backspace takes one back; Enter asks main.py to try the word;
+        Esc gives it up (D-075)."""
+        if name == "escape":
+            self.typing = None
+        elif name == "backspace":
+            self.typing = self.typing[:-1]
+        elif name in ("return", "enter"):
+            word, self.typing = self.typing, None
+            self.asked_passkey = word or None
+        elif len(char) == 1 and "A" <= char.upper() <= "Z" and len(self.typing) < PASSKEY_LENGTH:
+            self.typing += char.upper()
 
     def toggle_drawer(self, drawer: Drawer) -> None:
         """A drawer's key: it opens, or folds if it is open (D-054, D-069)."""

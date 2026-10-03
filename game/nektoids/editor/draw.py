@@ -52,6 +52,7 @@ from nektoids.editor.layout import (
     MAX_HEX,
     MODE_KEY,
     PALETTE_TITLE,
+    PASSKEY_KEY,
     SCREEN,
     STATUS_HEIGHT,
     SWITCH_TO,
@@ -117,6 +118,7 @@ from nektoids.editor.palette import (
 )
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.probe import level_view, ring_radii
+from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
 from nektoids.graph.board import Category, Kind, Refused
@@ -682,6 +684,7 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
     rows(screen, scene, fonts)
     _draw_settings(screen, scene, fonts)
     _draw_chapters(screen, scene, fonts)
+    _draw_passkey(screen, scene, fonts)
     handle = pygame.Rect(layout.fold_handle)
     corners = {"border_top_right_radius": 6, "border_bottom_right_radius": 6}
     pygame.draw.rect(screen, PANEL, handle, **corners)
@@ -928,6 +931,22 @@ def _draw_chapters(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         )
 
 
+def _draw_passkey(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
+    """Chapters' passkey field (D-075): a key, then what is typed with a caret, lit while it
+    is typed; else what to do, its key hinted."""
+    if scene.layout.passkey_field is None:
+        return
+    box, typing = pygame.Rect(scene.layout.passkey_field), scene.typing
+    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
+    if typing is not None:
+        pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
+    ink = TEXT if typing is not None else DIM_TEXT
+    fonts.icons.draw(screen, "key", (box.left + 20, box.centery), 16, ink)
+    hint = f"Type a word ({PASSKEY_KEY})" if scene.settings.key_hints else "Type a word"
+    shown = fonts.text.render(f"{typing}_" if typing is not None else hint, True, ink)
+    screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
+
+
 def draw_row(
     screen: pygame.Surface,
     scene: Frame,
@@ -1091,6 +1110,8 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
         name, lines = place.title, (place.spec,)
         if place.best is not None:
             lines += (f"Fastest win: {place.best.ticks * DT:.2f} s, {place.best.parts} parts.",)
+        if place.passkey:  # won: its word, to copy down (D-075)
+            lines += (f"Passkey: {place.passkey}, opens {level_label(place.index + 1)}.",)
     else:
         name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]
@@ -1123,6 +1144,8 @@ def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
 def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     if scene.message:
         text, colour = scene.message, REFUSED
+    elif scene.said:  # a passkey that opened a level (D-075)
+        text, colour = scene.said, LIT
     elif isinstance(scene.ghost, Refused):
         text, colour = scene.ghost.reason, REFUSED
     else:

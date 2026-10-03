@@ -976,3 +976,18 @@ model. Then: open Diagnostic, a step that waits for that drawer and lets it open
 while it is closed; then what Diagnostic shows, the run held, the swimmer free to drag on the
 map. Then Run, Play to the win, and a closing hint: crossed, the wires turn the swimmer toward
 the light. Sources stay for Love, where a Diff of a Source and an eye is the point.
+
+**D-075 — 2026-10-03 — Each level's win gives a passkey, a word that opens the next level at once when typed in Chapters. Nothing is stored: not saving. Amends D-035.**
+A player who comes back, the session gone, need not win the levels before again. A level's file
+holds its passkey, A to Z, at most 10 letters: the word its win gives, which opens the next
+level. Fear gives LOVE, Aggression SWORD, Love HEART; In the shadow gives DARK, which opens
+nothing until there is a 1.5. The win card names it under the time, "Passkey for LEVEL 1.2:
+LOVE", in the accent; a won level's info box in Chapters gives it too, never one not yet won. At
+Chapters' foot, under the sandbox, a field: a click on it, or P while Chapters is open (P is not
+Parts then), and the player types, A to Z, Backspace, Enter to try, Esc or a click elsewhere to
+give up; every key goes to the field meanwhile, in the editor and in the run. A word opens its
+level and every level before it, for the session, none of them won, so no score; the status line
+says which, in the accent, or that no level has that word. D-035's rule stands otherwise: a
+level opens once the one before it is won, or by its word. The words are ours (the todo's
+caution about titles). Whether a phone's keyboard comes up for the canvas is left to the touch
+work (todo §7).

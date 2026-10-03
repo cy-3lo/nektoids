@@ -14,6 +14,7 @@
   },
   "time_limit": 10.0,
   "objectives": [{"kind": "leave ring", "radius": 12.0}],
+  "passkey": "LOVE",
   "tutorial": {
     "ghosts": [
       {"kind": "eye", "cell": [2, -1], "facing": "NW"},

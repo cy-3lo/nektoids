@@ -141,3 +141,28 @@ def test_the_other_tab_says_what_the_switch_says_and_this_one_nothing():
     assert scene.tooltip == "run"  # drawn as the switch's: "Run (Space)" (D-060)
     scene.frame_track(centre(tabs["editor"]))
     assert scene.tip_target is None
+
+
+def test_chapters_ends_with_a_passkey_field_typed_in_by_a_click_or_p():
+    scene = Scene(Drawer.CHAPTERS)  # D-075
+    field = scene.layout.passkey_field
+    last = max(rect[1] + rect[3] for _, rect in scene.layout.chapter_rows)
+    assert field is not None and field[1] > last  # under the sandbox
+    assert Scene(Drawer.PARTS).layout.passkey_field is None
+    assert scene.frame_press(centre(field)) and scene.typing == ""
+    for name, char in (("s", "s"), ("w", "w"), ("1", "1"), ("o", "o"), ("backspace", "")):
+        scene.type_key(name, char)
+    assert scene.typing == "SW"  # letters only, upper case; Backspace takes one back
+    scene.type_key("return", "\r")
+    assert scene.asked_passkey == "SW" and scene.typing is None  # main.py tries it
+    assert not Scene(Drawer.PARTS).start_passkey("p")  # P is Parts elsewhere
+    assert scene.start_passkey("p") and scene.typing == ""
+    scene.type_key("escape", "")
+    assert scene.typing is None
+    scene.start_passkey("P")
+    scene.frame_press(centre(scene.layout.board_area))  # a click elsewhere gives it up
+    assert scene.typing is None
+    scene.start_passkey("P")
+    for _ in range(12):
+        scene.type_key("a", "a")
+    assert scene.typing == "A" * 10  # at most PASSKEY_LENGTH

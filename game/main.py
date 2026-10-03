@@ -32,7 +32,7 @@ from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
 from nektoids.editor.preview_draw import draw_preview
-from nektoids.editor.router import Router, Screen
+from nektoids.editor.router import Router, Screen, level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
@@ -153,6 +153,7 @@ def play(drawer: Drawer | None) -> ArenaScene:
         settings=settings,
         drawer=drawer,
         chapter=len(levels),
+        passkey=router.next_passkey(),  # on the win card (D-075)
     )
 
 
@@ -266,6 +267,18 @@ async def main() -> None:
                 choose_place(chosen)
         if router.screen in (Screen.TITLE, Screen.SPEC) and playing is None:
             playing = play(run_drawer)  # the run it opens on, paused, under its card (D-069)
+
+        for scene in (editor(), playing):  # a passkey typed in Chapters (D-075)
+            if scene is not None and scene.asked_passkey is not None:
+                word, scene.asked_passkey = scene.asked_passkey, None
+                opened = router.unlock(word)
+                if opened is None:
+                    scene.message = "no level has that word"
+                else:
+                    title = router.levels[opened].title
+                    scene.said = (
+                        f"{word} opens {level_label(opened)}, {title}: it is open in Chapters"
+                    )
 
         guide = tutorial()
         if guide is not None:  # on past what the player has done

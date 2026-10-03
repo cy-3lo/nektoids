@@ -27,6 +27,7 @@
   },
   "time_limit": 15.0,
   "objectives": [{"kind": "visit lights"}],
+  "passkey": "DARK",
   "tutorial": {
     "steps": [
       {

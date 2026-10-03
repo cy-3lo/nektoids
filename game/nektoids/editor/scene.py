@@ -303,6 +303,8 @@ class EditorScene(Frame):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif event.type == pygame.MOUSEWHEEL and self._on_list(self.mouse):
             self._scroll_to(self.layout.scroll - event.y * SCROLL_STEP)  # up: the list comes down
+        elif event.type == pygame.KEYDOWN and self.typing is not None:  # a passkey (D-075)
+            self.type_key(pygame.key.name(event.key), event.unicode)
         elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
             event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
         ):
@@ -445,7 +447,9 @@ class EditorScene(Frame):
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
         drawer = drawer_key(self.layout.env, key)
-        if drawer is not None:  # not refused in the preview: the way out of it (D-069)
+        if self.start_passkey(key):  # P in Chapters: a passkey, not Parts (D-075)
+            pass
+        elif drawer is not None:  # not refused in the preview: the way out of it (D-069)
             self.toggle_drawer(drawer)
         elif key == MODE_KEY:
             self._set_mode(Mode.DELETE if self.mode is Mode.WRITE else Mode.WRITE)

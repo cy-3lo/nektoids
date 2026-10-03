@@ -77,6 +77,7 @@ GLYPH = {
     "chevron-left": 0xF053,
     "gear": 0xF013,
     "keyboard": 0xF11C,
+    "key": 0xF084,  # Chapters' passkey field (D-075)
     "clock": 0xF017,
     "graduation-cap": 0xF19D,
     "volume-high": 0xF028,

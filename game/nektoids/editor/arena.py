@@ -165,6 +165,7 @@ class ArenaScene(Frame):
         settings: Settings | None = None,
         drawer: Drawer | None = Drawer.INSIDE,
         chapter: int = 0,
+        passkey: tuple[str, str] | None = None,
     ):
         self.levels = list(levels)
         self.index = 0
@@ -173,6 +174,7 @@ class ArenaScene(Frame):
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.next_label = next_label  # what the banner's next button says after a win; None: none
+        self.passkey = passkey  # the word its win gives and the level it opens (D-075)
         self.clock = Clock()
         self.clock.paused = True  # a run waits for Play, to open the drawer it wants (D-060)
         self.circuit = Circuit(board, DRAWER_BODY, CIRCUIT_MARGIN, body=True)  # in Inside
@@ -556,6 +558,9 @@ class ArenaScene(Frame):
             self._look(frame(self.arena_area, points, margin))
 
     def _key(self, event: pygame.event.Event) -> None:
+        if self.typing is not None:  # a passkey in Chapters takes every key (D-075)
+            self.type_key(pygame.key.name(event.key), event.unicode)
+            return
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         typed = KEY_ALIASES.get(event.unicode, event.unicode).upper()
         if arrow is not None:
@@ -572,6 +577,8 @@ class ArenaScene(Frame):
             drawer = Drawer.SETTINGS if event.key == pygame.K_COMMA else drawer_key(Env.RUN, typed)
             if event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS], as in the editor
                 self.toggle_drawer(Drawer.CHAPTERS)
+            elif self.start_passkey(typed):  # P in Chapters: a passkey (D-075)
+                pass
             elif drawer is not None:  # its initial, or the comma, with Ctrl or Cmd too (D-069)
                 self.toggle_drawer(drawer)
             elif typed in KEY_BUTTONS:
