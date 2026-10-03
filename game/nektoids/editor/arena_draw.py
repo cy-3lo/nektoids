@@ -529,6 +529,9 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     rows = [f"{row.name}: {row.met} of {row.needed}" for row in scene.counts()]
     lines = [fonts.text.render(head, True, TEXT)]
     lines += [fonts.small.render(row, True, DIM_TEXT) for row in rows]  # 0 starts again
+    if ended is Outcome.WON and scene.passkey is not None:  # to keep: it opens the next (D-075)
+        word, label = scene.passkey
+        lines.append(fonts.small.render(f"Passkey for {label}: {word}", True, LIT))
     box = pygame.Rect(banner_rect(scene.layout))
     pygame.draw.rect(screen, PANEL, box, border_radius=6)
     pygame.draw.rect(screen, LIGHT if ended is Outcome.WON else RULE, box, 2, border_radius=6)

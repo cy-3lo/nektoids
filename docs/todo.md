@@ -4,16 +4,6 @@ What is left before the jam build ships, in the order it unblocks the rest. The 
 item removes it; what was done is in git and in [`decisions.md`](decisions.md). Sections keep
 their numbers, which the decision log cites. Ideas for after the jam go in [`ideas.md`](ideas.md).
 
-## 0. What the player sees first, and how they move around (D-028)
-
-- [ ] A passkey for each level: a word typed in Chapters (the map's place since D-054) opens
-      that level at once, so a player who comes back does not win the ones before it again. Words of our own, not song titles
-      (French law protects an original title, CPI L112-4). Nothing is stored, so this is not
-      saving; it amends D-035 ("a level opens once the one before it is won"): a decision first.
-      - Where does the player learn a level's word: on the banner after a win, in Chapters?
-      - No text input exists yet. Does a phone's keyboard come up for a pygbag canvas?
-      - Matched in upper case, ASCII only? One word per level, or per chapter?
-
 ## 2. The levels themselves
 
 The chapter is Fear, Aggression, Love, In the shadow (D-074); the first two lead, the others
@@ -50,6 +40,8 @@ wire with Wire chosen (D-072).
       - How far must a finger move before a tap becomes a drag?
 - [ ] Touch: no hover and no keys. The tooltips (D-025) and L, R, Space, Esc and 0 need an
       on-screen form. One gesture stays one undo step (D-027).
+      - Does a phone's keyboard come up for Chapters' passkey field (D-075)? If not, the field
+        needs letters of its own on screen.
       - The canvas is 960 × 640 px: on a phone a 40 px hex is about 16 px wide in portrait and
         24 px in landscape, where a finger wants about 44. Landscape only, larger hexes?
       - Under pygbag, do touches arrive as mouse events or as FINGERDOWN only? Try on a phone

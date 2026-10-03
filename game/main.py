@@ -153,6 +153,7 @@ def play(drawer: Drawer | None) -> ArenaScene:
         settings=settings,
         drawer=drawer,
         chapter=len(levels),
+        passkey=router.next_passkey(),  # on the win card (D-075)
     )
 
 

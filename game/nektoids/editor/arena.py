@@ -165,6 +165,7 @@ class ArenaScene(Frame):
         settings: Settings | None = None,
         drawer: Drawer | None = Drawer.INSIDE,
         chapter: int = 0,
+        passkey: tuple[str, str] | None = None,
     ):
         self.levels = list(levels)
         self.index = 0
@@ -173,6 +174,7 @@ class ArenaScene(Frame):
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.next_label = next_label  # what the banner's next button says after a win; None: none
+        self.passkey = passkey  # the word its win gives and the level it opens (D-075)
         self.clock = Clock()
         self.clock.paused = True  # a run waits for Play, to open the drawer it wants (D-060)
         self.circuit = Circuit(board, DRAWER_BODY, CIRCUIT_MARGIN, body=True)  # in Inside

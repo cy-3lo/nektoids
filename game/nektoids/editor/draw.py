@@ -118,6 +118,7 @@ from nektoids.editor.palette import (
 )
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.probe import level_view, ring_radii
+from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
 from nektoids.graph.board import Category, Kind, Refused
@@ -1109,6 +1110,8 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
         name, lines = place.title, (place.spec,)
         if place.best is not None:
             lines += (f"Fastest win: {place.best.ticks * DT:.2f} s, {place.best.parts} parts.",)
+        if place.passkey:  # won: its word, to copy down (D-075)
+            lines += (f"Passkey: {place.passkey}, opens {level_label(place.index + 1)}.",)
     else:
         name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]
