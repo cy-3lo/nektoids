@@ -6,19 +6,22 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 ## 0. What the player sees first, and how they move around (D-028)
 
-- [ ] A passkey for each level: a word typed on the map opens that level at once, so a player
-      who comes back does not win the ones before it again. Words of our own, not song titles
+- [ ] A passkey for each level: a word typed in Chapters (the map's place since D-054) opens
+      that level at once, so a player who comes back does not win the ones before it again. Words of our own, not song titles
       (French law protects an original title, CPI L112-4). Nothing is stored, so this is not
       saving; it amends D-035 ("a level opens once the one before it is won"): a decision first.
-      - Where does the player learn a level's word: on the banner after a win, on the map?
+      - Where does the player learn a level's word: on the banner after a win, in Chapters?
       - No text input exists yet. Does a phone's keyboard come up for a pygbag canvas?
       - Matched in upper case, ASCII only? One word per level, or per chapter?
 
 ## 2. The levels themselves
 
-- [ ] Tutorial 2, aggression (crossed: charges the light). Visit the light.
-- [ ] Tutorial 3, ÷2 on one side (orbits). Its objective is to be chosen: stay within a ring
-      round the light for T s, or circle it N times.
+The chapter is Fear, Aggression, Love, In the shadow (D-074); the first two lead, the others
+only hint.
+
+- [ ] Tutorial 3, ÷2 on one side (orbits), the brief's level 3: a level of its own, or Love's
+      place? Its objective is to be chosen: stay within a ring round the light for T s, or
+      circle it N times.
 - [ ] The real level: to design, with a winner pinned with margin (D-004).
 
 ## 5. Ship
@@ -32,31 +35,18 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 - [ ] Click-to-inspect: draw the swimmer's steering vector (brief §1).
 - [ ] F2's W (waveform) clashes with the editor's Wire (D-021).
-- [ ] `draw.py` calls `scene._wire_start()`, a private method.
 - [ ] `eye_rates` timed natively only; measure it under WASM (D-019).
 - [ ] The names: itch.io search, Google and TMview (classes 9 and 41) to check by hand (D-006).
 - [ ] In headless Chrome the first click after a key press is lost: on Fear's first drag step,
       Skip takes two clicks there. Check it in a real browser (seen 2026-10-02).
 
-## 7. The editor's hand: a ring of icons round a cell, for a finger as for a mouse
+## 7. The editor's hand, for a finger as for a mouse
 
-From Camille's notes (`ebc4abb`), then a design for touch screens.
+From Camille's notes (`ebc4abb`). The Wheel (D-068, D-069) does the rest: a click on a cell
+shows what can be done there, a click on a part arms Wire, a drag moves a part, or draws a
+wire with Wire chosen (D-072).
 
-- [ ] Tap an empty cell: a ring of icons round it, in its six directions, offers the parts the
-      level hands out; tap one and it is placed. Tap a placed part: the ring offers turn left,
-      turn right and wire (D-025's buttons, brought to the cell). Replaces the Add tool and
-      changes D-025 and D-031: a decision first.
-      - More than six kinds: the free board hands out all seven. A second ring, a "more" slot?
-      - Could the six slots round an eye or a thruster be its six facings (D-009), one tap to
-        point it rather than turns of 60°? Then where do Wire and Delete go?
-      - The ring covers the six neighbours, which may hold parts; at the zone's or the
-        screen's edge it is cut off.
-- [ ] Wire is the default: a tap on a part opens its ring with Wire chosen, so a tap on a second
-      part wires the two, either way round (D-026). While wiring, the parts that cannot take
-      the wire are dimmed or red.
-      - Only the parts whose kinds refuse, or also the ones no free path reaches?
-- [ ] Drag a part to move it (D-011), with no Move tool; drag it off the body or onto the
-      palette to delete it.
+- [ ] Drag a part off the body, or onto Parts, to delete it.
       - How far must a finger move before a tap becomes a drag?
 - [ ] Touch: no hover and no keys. The tooltips (D-025) and L, R, Space, Esc and 0 need an
       on-screen form. One gesture stays one undo step (D-027).
@@ -74,16 +64,12 @@ Mockups of every drawer, drawn with the game's own palette and renders, are in t
 artifacts ("Nektoids Activity Bar", round 3). It replaces the menu, the palette, the run view's
 column and the full-screen map (gone, D-054).
 
-The rule: in the Editor the main screen shows the board, as the Diagram view or the Run
-preview; in the Run it shows the level. Drawers never take the main screen.
+The rule: in the Editor the main screen shows the board, and the Run preview while Diagnostic
+is open (D-069); in the Run it shows the level. Drawers never take the main screen.
 
 - [ ] Sound and Music in Settings, once there is sound (D-054).
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
-- [x] Diagnostic and the Run preview taught: Aggression's tutorial tries the board in it
-      before the run (D-074).
-- [x] The tutorial's rework: Fear's steps follow the Wheel, the drawer keys and the Run tab
-      first (D-070).
 
 ## 9. A board as text (its own PR)
 
