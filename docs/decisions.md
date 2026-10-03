@@ -1152,3 +1152,15 @@ the foot. The keyboard went round it as a circle, from the last icon on to the f
 last, ← and ↑ to the one before and stop at the first. Round a part, the Wheel still opens on
 "nothing", where Enter closes it; from there → goes to the first icon, ← to the last, and
 "nothing" is not met again: Esc closes the Wheel. The Wheel turns with the choice, as before.
+
+**D-085 — 2026-10-03 — A part dragged off the body is deleted when let go there: off the zone's cells, on the drawer or the bar. Amends D-068.**
+A drag that moved a part off the zone flashed "outside the zone", and the part waited at the
+last cell that worked. Now, off the body, the part still waits there, but darkened with its
+wires, as Delete's preview darkens them, the action atop the main screen is Delete, and the
+status line says that letting go deletes it. Let go there, on the grid outside the zone, on the
+drawer, Parts or another, or on the bar, the part goes with its wires and nothing is focused;
+brought back on the body first, the move goes on. The drag and the deletion are one step for
+undo, which puts the part back where the drag began. A tutorial step that does not let a part be
+deleted leaves nothing darkened, and the part let go off the body stays, the status line saying
+why. A press still becomes a drag once the pointer leaves the part's cell; whether that suits a
+finger is the touch item's question (todo §7).
