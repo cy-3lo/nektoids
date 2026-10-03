@@ -277,7 +277,9 @@ def test_the_grid_still_fills_the_area_zoomed_out():
 def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
     keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + [VIEW_KEYS[b] for b in ViewButton]
     keys.append(MODE_KEY)  # Write and Delete in turn (D-068)
-    assert len(set(keys)) == len(keys) and all(len(key) == 1 for key in keys)
+    assert len(set(keys)) == len(keys)
+    assert all(len(key) == 1 for key in keys if key != TOOL_KEYS[Tool.DELETE])  # one character
+    assert TOOL_KEYS[Tool.DELETE] == "Del"  # Backspace and Delete, on the physical key (D-069)
     assert EDIT_KEYS == {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
     assert (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT]) == ("L", "R")
     assert TURNS == {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # directions run counter-clockwise

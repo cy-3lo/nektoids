@@ -188,12 +188,13 @@ class Setting(Enum):  # the Settings drawer's rows (D-054)
 
 
 # Shortcut keys, matched on the character typed (so they follow the keyboard layout) and shown
-# in the tooltips. L and R turn left and right, here and in the arena view (D-025).
+# in the tooltips. L and R turn left and right, here and in the arena view (D-025). Delete is on
+# Backspace and Delete, matched on the physical key (D-069): its label, not a character.
 TOOL_KEYS = {
     Tool.ADD: "A",
     Tool.WIRE: "W",
     Tool.MOVE: "M",
-    Tool.DELETE: "D",
+    Tool.DELETE: "Del",
     Tool.TURN_LEFT: "L",
     Tool.TURN_RIGHT: "R",
     Tool.SWAP: "S",

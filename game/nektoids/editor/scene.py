@@ -21,11 +21,11 @@ focus. Esc, or any action of Write, goes back to Write.
 
 Keyboard, Tools open or not: the arrows move the focus from cell to cell; Enter opens its Wheel,
 the arrows go round it and Enter takes the icon chosen; a part's number places it on the focused
-cell. Round a part the Wheel starts on "nothing", so a second Enter closes it. L, R, W, M and D
-act on the focused part: after W the arrows go to the part to wire to and Enter wires it; after
-M they carry the part and Enter puts it down. Esc, or a right click, goes back one step: from a
-gesture to the Wheel, from the Wheel to nothing. H takes the hand, which drags the view (D-013);
-the arrows drag it too.
+cell. Round a part the Wheel starts on "nothing", so a second Enter closes it. L, R, W, M and
+Backspace or Delete act on the focused part: after W the arrows go to the part to wire to and
+Enter wires it; after M they carry the part and Enter puts it down. Esc, or a right click, goes
+back one step: from a gesture to the Wheel, from the Wheel to nothing. H takes the hand, which
+drags the view (D-013); the arrows drag it too.
 
 Undo and Redo (D-027), rows in Tools under Write and Delete, also Ctrl+Z, Ctrl+Shift+Z and
 Ctrl+Y (Cmd on a Mac): one step is one gesture, from press to release, so a whole drag goes back
@@ -143,6 +143,7 @@ ARROW_SCANCODES = dict(
 ENTER = (pygame.K_RETURN, pygame.K_KP_ENTER)
 ENTER_SCANCODES = (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
 # 1-9 on the top row or on the keypad: the menu's parts in order.
+DELETE_SCANCODES = (pygame.KSCAN_BACKSPACE, pygame.KSCAN_DELETE)  # Delete, as everywhere else
 DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
 KEYPAD_SCANCODES = tuple(getattr(pygame, f"KSCAN_KP_{n}") for n in range(1, 10))
 MAX_WINS = 10  # the wins Files lists, the best first
@@ -329,6 +330,8 @@ class EditorScene(Frame):
             self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS]
             self.toggle_chapters()
+        elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
+            self._choose(Tool.DELETE)
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             self._digit((DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9)
         elif self._turns_probe(event.unicode):
@@ -739,7 +742,7 @@ class EditorScene(Frame):
 
     def _choose(self, tool: Tool) -> None:
         """A tool's key, on the focus (D-068): A opens the parts' Wheel of an empty cell; L, R, W,
-        M and D act on the focused part, D on the focused wire too; H takes the hand or puts it
+        M and Backspace or Delete (D-069) act on the focused part; H takes the hand or puts it
         down."""
         if tool is Tool.PAN:
             self._drop_gesture()
