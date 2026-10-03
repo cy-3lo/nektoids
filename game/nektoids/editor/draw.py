@@ -40,6 +40,7 @@ from nektoids.editor.icons import (
     Icons,
 )
 from nektoids.editor.layout import (
+    ACTION_WIDTH,
     BAR_WIDTH,
     CAPTION_HEIGHT,
     DIAGNOSTIC_MAP,
@@ -352,7 +353,7 @@ def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
     opens Tools. Beside it, in the accent, its name and its key (D-069)."""
     box = pygame.Rect(scene.layout.action_at)
     what, key = scene.action()
-    _draw_disc(screen, fonts, box.center, what, ACTIVE, LIT)  # as the Wheel draws its icons
+    _draw_disc(screen, fonts, box.center, what, ACTIVE, LIT, ACTION_WIDTH / 2)  # as the Wheel's
     shown = fonts.text.render(_named(scene, what, key), True, LIT)
     at = shown.get_rect(midleft=(box.right + 10, box.centery))
     pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
@@ -386,10 +387,12 @@ def _action_says(scene: EditorScene, what: Kind | Tool | Mode) -> str:
     return f"{NAME[what]}: Enter places one on the cell"
 
 
-def _draw_disc(screen, fonts: Fonts, at, what: Kind | Tool | Mode | None, fill, edge) -> None:
-    """One of the Wheel's icons, or the action atop the main screen, alike (D-068): a disc, the
-    part on it just smaller than Tools' cell's, or the action's glyph; empty for None."""
-    radius = ICON * WHEEL_HEX
+def _draw_disc(
+    screen, fonts: Fonts, at, what: Kind | Tool | Mode | None, fill, edge, radius: float
+) -> None:
+    """One of the Wheel's icons, or the action atop the main screen, alike (D-068): a disc of
+    `radius` [px], the part on it just smaller than the Wheel's cell's, or the action's glyph;
+    empty for None."""
     pygame.draw.circle(screen, fill, at, radius)
     pygame.draw.circle(screen, edge, at, radius, 2)
     if isinstance(what, Kind):  # its tips well inside the disc, a diamond's too
@@ -436,14 +439,12 @@ def _draw_wheel(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     for slot in sorted(wheel, key=lambda s: -s.depth):  # down a pile, the further first, under
         if slot.depth:  # piled: an empty disc, its edge showing past the one over it
             turning = (slot.at[0] > centre[0]) == (scene.piling > 0) and scene.piling != 0
-            _draw_disc(screen, fonts, slot.at, None, BUTTON, LIT if turning else ICON_EDGE)
+            edge = LIT if turning else ICON_EDGE
+            _draw_disc(screen, fonts, slot.at, None, BUTTON, edge, radius)
             continue
         lit = slot == chosen or slot.what is in_hand
         fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
-        _draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE)
-        if scene.settings.key_hints:
-            key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
-            screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
+        _draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE, radius)
     lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
     lit = scene.wheel_lit()  # the icon chosen or in hand, named in the accent (D-069)
     says, ink = (_named(scene, lit.what, lit.key), LIT) if lit else (_cell_says(scene), DIM_TEXT)

@@ -9,7 +9,8 @@ corner, an even one as many each side of it. More turn as cards on a rotary file
 rim, the others piled under its two ends, drawn empty, each set back a third of an icon's radius
 along the circle, those before the rim under its first end, those after it under its last. The
 keyboard going round turns the Wheel; so does the mouse wheel, or the mouse resting on a pile,
-past its end icon. Each icon on the rim has its key just outside it. Pure numbers, no pygame.
+past its end icon. An icon's key shows in its tooltip, not round the rim, which leaves the Wheel
+room to be larger (D-069). Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -23,9 +24,8 @@ from nektoids.graph.board import Board, Kind
 
 RADIUS = 1.8  # from the cell's centre to an icon's, beyond a corner [hex sizes]
 ICON = 0.62  # an icon's disc, its radius: the part on it just smaller than the cell's [hex sizes]
-KEY_OUT = 0.95  # its key, this far past the icon's centre, outwards [hex sizes]
-WHEEL_HEX = 40  # the cell's size in the drawer's picture [px]
-HEADROOM = 14  # over the Wheel's top key, in that picture [px]
+WHEEL_HEX = 46  # the cell's size in the drawer's picture [px]
+HEADROOM = 6  # over the Wheel's top icon, in that picture [px]
 LINE_BELOW = 12  # from its lowest icon to the line under it, saying what the cell holds [px]
 ON_RIM = 5  # the most icons on the rim, beyond the cell's corners; more pile up below its ends
 CORNERS = (210.0, 150.0, 90.0, 30.0, -30.0)  # left to right over the top; the lowest is the gap
@@ -45,7 +45,6 @@ TURNING = (Kind.EYE, Kind.THRUSTER)  # the parts whose facing matters (D-009)
 class Slot:
     what: Kind | Tool  # a part to place, or an action on the part
     at: tuple[float, float]  # the icon's centre [px]
-    key_at: tuple[float, float]  # where its key is written [px]
     key: str
     depth: int = 0  # 0 on the rim; 1, 2... down a pile, the further the lower
 
@@ -131,16 +130,14 @@ def slots(
     for k, item in enumerate(items):
         key = TOOL_KEYS[item] if isinstance(item, Tool) else part_key(item, kinds)
         if turn <= k < turn + ON_RIM:
-            at, (c, s) = on_rim(rim[k - turn])
-            out.append(
-                Slot(item, at, (at[0] + KEY_OUT * size * c, at[1] - KEY_OUT * size * s), key)
-            )
+            at, _ = on_rim(rim[k - turn])
+            out.append(Slot(item, at, key))
             continue
         before = k < turn  # piled under the first end, or under the last
         depth = turn - k if before else k - turn - ON_RIM + 1
         back = math.degrees(depth * PILE * ICON / RADIUS)  # set back along the circle
         at, _ = on_rim(rim[0] + back if before else rim[-1] - back)
-        out.append(Slot(item, at, at, key, depth))  # drawn empty, its key unwritten
+        out.append(Slot(item, at, key, depth))  # drawn empty
     return out
 
 
@@ -173,9 +170,9 @@ def pile_at(
 
 def centre_in(view: tuple[int, int, int, int]) -> tuple[float, float]:
     """Where a drawer draws the focused cell in its picture `view` (x, y, width, height [px]):
-    across the middle, the Wheel's top key just under its top."""
+    across the middle, the Wheel's top icon just under its top."""
     x, y, w, _ = view
-    return (x + w / 2, y + HEADROOM + (RADIUS + KEY_OUT) * WHEEL_HEX)
+    return (x + w / 2, y + HEADROOM + (RADIUS + ICON) * WHEEL_HEX)
 
 
 def slot_at(wheel: Sequence[Slot], point: tuple[float, float], size: float) -> Slot | None:

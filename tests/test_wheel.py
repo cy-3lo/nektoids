@@ -4,11 +4,10 @@ import math
 
 import pytest
 
-from nektoids.editor.layout import ACTION_WIDTH, Drawer, Tool, make_layout
+from nektoids.editor.layout import Drawer, Tool, make_layout
 from nektoids.editor.wheel import (
     ACTIONS,
     ICON,
-    KEY_OUT,
     LINE_BELOW,
     ON_RIM,
     PILE,
@@ -80,7 +79,6 @@ def test_up_to_five_icons_sit_beyond_the_cells_corners_the_gap_at_the_foot():
     for slot in wheel:
         assert math.dist(slot.at, CENTRE) == pytest.approx(RADIUS * SIZE) and slot.depth == 0
         assert slot_at(wheel, slot.at, SIZE) is slot
-        assert math.dist(slot.key_at, CENTRE) > math.dist(slot.at, CENTRE)  # outside it
     assert [s.key for s in wheel] == ["1", "2"]
     assert slot_at(wheel, CENTRE, SIZE) is None  # the cell itself
     for slot in slots(ACTIONS, CENTRE, SIZE, frozenset(Kind)):  # clear of the cell's picture
@@ -118,10 +116,6 @@ def test_the_mouse_resting_past_an_end_on_its_pile_turns_the_wheel_that_way():
     assert pile_at(5, 0, CENTRE, SIZE, at(last - past)) == 0  # five: no pile at all
 
 
-def test_the_action_atop_the_main_screen_is_as_wide_as_a_wheel_icon():
-    assert ACTION_WIDTH == round(2 * ICON * WHEEL_HEX)
-
-
 def test_the_wheel_turns_just_enough_for_the_choice_to_be_on_the_rim():
     assert turned(0, 4, 7) == 0 and turned(0, 5, 7) == 1 and turned(0, 6, 7) == 2
     assert turned(2, 0, 7) == 0 and turned(2, 3, 7) == 2  # back, or already there
@@ -136,17 +130,6 @@ def test_the_arrows_go_round_the_wheel_and_through_nothing_when_it_is_a_stop():
     assert cycled(wheel, 0, -1, blank=True) is None
 
 
-def test_the_sandboxs_seven_parts_fit_in_tools_wheel_and_piles_included():
-    x, y, w, h = make_layout(Drawer.TOOLS).wheel_view
-    centre = (x + w / 2, y + 14 + (RADIUS + KEY_OUT) * WHEEL_HEX)  # as the scene puts it
-    for turn in (0, 2):
-        for slot in slots(list(Kind), centre, WHEEL_HEX, frozenset(Kind), turn):
-            sx, sy = slot.at
-            r = ICON * WHEEL_HEX
-            assert x <= sx - r and sx + r <= x + w and y <= sy - r and sy + r <= y + h - 24
-            assert x <= slot.key_at[0] <= x + w and y <= slot.key_at[1] <= y + h
-
-
 def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
     view = make_layout(Drawer.PARTS).wheel_view  # Tools' is the same (D-069)
     assert make_layout(Drawer.TOOLS).wheel_view == view
@@ -159,6 +142,6 @@ def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
             r = ICON * WHEEL_HEX
             for slot in wheel:
                 assert x <= slot.at[0] - r and slot.at[0] + r <= x + w
-                assert y <= slot.key_at[1] - 10 and slot.at[1] - r >= y
+                assert slot.at[1] - r >= y
             lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + r for slot in wheel])
             assert lowest + LINE_BELOW + line <= y + h
