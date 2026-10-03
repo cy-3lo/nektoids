@@ -41,6 +41,11 @@ ROW_HEIGHT = 40  # a drawer's row [px]
 OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
 ZOOM_BUTTON = 28  # zoom out and in, either end of the zoom bar, under the overview [px]
 FOOT_MARGIN = 6  # under the objectives, at the drawer's foot [px]
+CELL_HEIGHT = 232  # the drawer's picture of the focused cell: its ring, piles and all, its line
+CELL_TITLE = "The cell"  # its title, at the foot of Tools and of Parts; a click folds it (D-069)
+SCROLL_WIDTH = 5  # Parts' scroll bar, in the drawer's right margin [px]
+SCROLL_STEP = 23  # what a notch of the mouse wheel scrolls Parts' list by: half a row [px]
+SCROLL_THUMB = 24  # the scroll bar's thumb, at its shortest [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
@@ -224,7 +229,12 @@ class Layout:
     section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
     group_titles: tuple[tuple[str, Rect], ...]  # Parts: click one to fold or unfold its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
-    cell_view: Rect | None  # Tools: the focused cell, drawn large, its ring round it (D-068)
+    cell_view: Rect | None  # Tools, Parts: the focused cell, drawn large, its ring round it
+    cell_fold: Rect | None  # Tools, Parts: The cell's title; a click folds or unfolds it (D-069)
+    list_area: Rect | None  # Parts: where its list shows, scrolled; its rows answer only there
+    scroll: int  # how far Parts' list is scrolled [px]
+    scroll_max: int  # ... at most: how much of it does not fit [px]
+    scroll_bar: Rect | None  # its track, while the list does not fit
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo
     action_at: Rect | None  # the editor's: what a click does now, atop the main screen
@@ -262,12 +272,16 @@ def make_layout(
     env: Env = Env.EDITOR,
     goals: int = 0,
     wins: int = 0,
+    cell_folded: bool = False,
+    scroll: int = 0,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     Parts' groups shown closed; kinds: the parts the level hands out, the only ones Parts shows
     (D-039); chapter: how many levels Chapters lists, before the sandbox; goals: how many
     objectives the level has, at the foot of each of the run's drawers, before the time left;
-    wins: how many wins of the level Files lists."""
+    wins: how many wins of the level Files lists; cell_folded: the picture of the cell folded, at
+    the foot of Tools and of Parts; scroll: how far Parts' list is scrolled, kept within what it
+    needs (D-069)."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -283,9 +297,9 @@ def make_layout(
     left = BAR_WIDTH + (DRAWER_WIDTH if drawer is not None else 0)  # the board's left edge
     rows = _Rows()
     if drawer is Drawer.TOOLS:
-        rows.tools(height)
+        rows.tools(height, cell_folded)
     elif drawer is Drawer.PARTS:
-        rows.parts(folded, kinds)
+        rows.parts(folded, kinds, height, cell_folded, scroll)
     elif drawer is Drawer.NAVIGATOR:
         rows.view(env)
     elif drawer is Drawer.DIAGNOSTIC:
@@ -338,6 +352,11 @@ def make_layout(
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
         cell_view=rows.cell_view,
+        cell_fold=rows.cell_fold,
+        list_area=rows.list_area,
+        scroll=rows.scroll,
+        scroll_max=rows.scroll_max,
+        scroll_bar=rows.scroll_bar,
         mode_buttons=tuple(rows.of(Mode)),
         edit_buttons=tuple(rows.of(EditButton)),
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
@@ -368,6 +387,10 @@ class _Rows:
     def __init__(self) -> None:
         self.y = DRAWER_TOP
         self.cell_view: Rect | None = None
+        self.cell_fold: Rect | None = None
+        self.list_area: Rect | None = None
+        self.scroll, self.scroll_max = 0, 0
+        self.scroll_bar: Rect | None = None
         self.items: list[tuple[object, Rect]] = []
         self.sections: list[tuple[str, Rect]] = []
         self.groups: list[tuple[str, Rect]] = []
@@ -387,27 +410,57 @@ class _Rows:
         self.items.append((what, (BAR_WIDTH + ROW_INSET, self.y, width, height)))
         self.y += height + ROW_PITCH - ROW_HEIGHT
 
-    def parts(self, folded: frozenset[str], kinds: frozenset[Kind]) -> None:
-        for title, group in MENU_GROUPS:
-            shown = [kind for kind in group if kind in kinds]
-            if not shown:
-                continue  # a group with nothing in this level: no title either
+    def parts(
+        self,
+        folded: frozenset[str],
+        kinds: frozenset[Kind],
+        height: int,
+        cell_folded: bool,
+        scroll: int,
+    ) -> None:
+        """The groups that fold, scrolled by `scroll` within the list's area; under it, down to
+        the drawer's foot, the cell (D-069)."""
+        room = self._cell(height, cell_folded) - SECTION_GAP - DRAWER_TOP
+        self.list_area = (BAR_WIDTH, DRAWER_TOP, DRAWER_WIDTH, room)
+        groups = [
+            (title, [kind for kind in group if kind in kinds]) for title, group in MENU_GROUPS
+        ]
+        groups = [(title, shown) for title, shown in groups if shown]  # no title for nothing
+        whole = sum(
+            TITLE_HEIGHT + SECTION_GAP + (0 if title in folded else len(shown) * ROW_PITCH)
+            for title, shown in groups
+        )
+        self.scroll_max = max(0, whole - room)
+        self.scroll = min(max(scroll, 0), self.scroll_max)
+        if self.scroll_max:  # between the rows' right ends and the drawer's edge
+            x = BAR_WIDTH + DRAWER_WIDTH - (ROW_INSET + SCROLL_WIDTH) // 2
+            self.scroll_bar = (x, DRAWER_TOP, SCROLL_WIDTH, room)
+        self.y = DRAWER_TOP - self.scroll
+        for title, shown in groups:
             self._title(title, self.groups)
             for kind in () if title in folded else shown:
                 self._row(kind)
             self.y += SECTION_GAP
 
-    def tools(self, height: int) -> None:
-        """Write and Delete, then undo and redo, as rows; under them, down to the drawer's foot,
-        the focused cell drawn large with its ring (D-068)."""
+    def tools(self, height: int, cell_folded: bool) -> None:
+        """Write and Delete, then undo and redo, as rows; at the drawer's foot, the cell, as in
+        Parts (D-068, D-069)."""
         for title, rows in (("Mode", Mode), ("Edit", EditButton)):
             self._title(title, self.sections)
             for what in rows:
                 self._row(what)
             self.y += SECTION_GAP
-        self._title("The cell", self.sections)
-        foot = height - FOOT_MARGIN
-        self.cell_view = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, foot - self.y)
+        self._cell(height, cell_folded)
+
+    def _cell(self, height: int, folded: bool) -> int:
+        """At the drawer's foot, The cell's title, which folds, then, unless folded, the focused
+        cell drawn large with its ring (D-069); the title's top [px]."""
+        width = DRAWER_WIDTH - 2 * MARGIN
+        top = height - FOOT_MARGIN - TITLE_HEIGHT - (0 if folded else CELL_HEIGHT)
+        self.cell_fold = (BAR_WIDTH + MARGIN, top, width, TITLE_HEIGHT)
+        if not folded:
+            self.cell_view = (BAR_WIDTH + MARGIN, top + TITLE_HEIGHT, width, CELL_HEIGHT)
+        return top
 
     def view(self, env: Env) -> None:
         """The view's options as rows, the rays in the run; then the overview and, under it,
@@ -511,17 +564,60 @@ def contains(rect: Rect, point: tuple[int, int]) -> bool:
     return x <= point[0] < x + w and y <= point[1] < y + h
 
 
+def _listed(layout: Layout, point: tuple[int, int]) -> bool:
+    """Whether `point` may fall on a row of the drawer's list: anywhere, unless the list
+    scrolls within an area, as Parts' does (D-069)."""
+    return layout.list_area is None or contains(layout.list_area, point)
+
+
 def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
+    if not _listed(layout, point):
+        return None
     return next((title for title, rect in layout.group_titles if contains(rect, point)), None)
 
 
 def info_at(layout: Layout, point: tuple[int, int]) -> object | None:
     """The row whose info disc is under `point`, if any: a part, a tool, a button."""
+    if not _listed(layout, point):
+        return None
     return next((kind for kind, rect in layout.info_buttons if contains(rect, point)), None)
 
 
 def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
+    if not _listed(layout, point):
+        return None
     return next((kind for kind, rect in layout.menu_items if contains(rect, point)), None)
+
+
+def cell_fold_at(layout: Layout, point: tuple[int, int]) -> bool:
+    """Whether `point` is on The cell's title, which folds its picture (D-069)."""
+    return layout.cell_fold is not None and contains(layout.cell_fold, point)
+
+
+def scroll_bar_at(layout: Layout, point: tuple[int, int], grab: int = 4) -> bool:
+    """Whether a press at `point` falls on Parts' scroll bar, `grab` px either side of it."""
+    if layout.scroll_bar is None:
+        return False
+    x, y, w, h = layout.scroll_bar
+    return contains((x - grab, y, w + 2 * grab, h), point)
+
+
+def scroll_thumb(layout: Layout) -> Rect | None:
+    """The scroll bar's thumb: as long against its track as the list's area against the
+    whole list, at least SCROLL_THUMB; as far down it as the list is scrolled."""
+    if layout.scroll_bar is None:
+        return None
+    x, y, w, h = layout.scroll_bar
+    length = max(SCROLL_THUMB, round(h * h / (h + layout.scroll_max)))
+    return (x, y + round((h - length) * layout.scroll / layout.scroll_max), w, length)
+
+
+def scroll_for(layout: Layout, y: int) -> int:
+    """The scroll that puts the thumb's middle at height `y`: a press on the track, or a drag."""
+    _, _, _, length = scroll_thumb(layout)
+    _, track, _, h = layout.scroll_bar
+    level = (y - length / 2 - track) / (h - length)
+    return round(min(1.0, max(0.0, level)) * layout.scroll_max)
 
 
 def view_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:

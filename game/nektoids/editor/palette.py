@@ -141,6 +141,7 @@ BUTTON = P.raised
 HOVER = mix(P.raised, P.line, 0.5)
 ACTIVE = P.accent1.dark  # the tool in hand, the menu row picked, a toggle that is on
 RULE = P.line  # separators between columns and between sets of buttons
+SCROLL_THUMB = P.dim  # a scroll bar's thumb, over its track in RULE (D-069)
 SWATCH_OFF = P.raised  # colour picker, not active yet
 TEXT = P.text
 DIM_TEXT = P.dim

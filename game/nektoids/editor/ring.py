@@ -1,5 +1,5 @@
-"""The ring of icons round the focused cell, what can be done there (D-068), as Tools draws it:
-round a picture of the cell, large, where the icons have room.
+"""The ring of icons round the focused cell, what can be done there (D-068), as Tools and Parts
+draw it: round a picture of the cell, large, where the icons have room (D-069).
 
 An empty cell of the zone offers the parts the level still hands out; a part offers turn left,
 move, wire, swap when another part of its group is left, turn right (eyes and thrusters only)
@@ -25,7 +25,9 @@ from nektoids.graph.board import Board, Kind
 RADIUS = 1.8  # from the cell's centre to an icon's, beyond a corner [hex sizes]
 ICON = 0.62  # an icon's disc, its radius: the part on it just smaller than the cell's [hex sizes]
 KEY_OUT = 0.95  # its key, this far past the icon's centre, outwards [hex sizes]
-RING_HEX = 40  # the cell's size in Tools' picture [px]
+RING_HEX = 40  # the cell's size in the drawer's picture [px]
+HEADROOM = 14  # over the ring's top key, in that picture [px]
+LINE_BELOW = 12  # from the ring's lowest icon to the line under it, saying what the cell holds [px]
 IN_RING = 5  # the most icons on the ring itself; more pile up below its ends
 CORNERS = (210.0, 150.0, 90.0, 30.0, -30.0)  # left to right over the top; the lowest is the gap
 PILE = 0.35  # from one icon of a pile to the next, further, along the circle [icon radii]
@@ -168,6 +170,13 @@ def pile_at(
         if math.dist(point, on_circle(end - way * halfway)) <= r:
             return way
     return 0
+
+
+def centre_in(view: tuple[int, int, int, int]) -> tuple[float, float]:
+    """Where a drawer draws the focused cell in its picture `view` (x, y, width, height [px]):
+    across the middle, the ring's top key just under its top."""
+    x, y, w, _ = view
+    return (x + w / 2, y + HEADROOM + (RADIUS + KEY_OUT) * RING_HEX)
 
 
 def slot_at(ring: Sequence[Slot], point: tuple[float, float], size: float) -> Slot | None:

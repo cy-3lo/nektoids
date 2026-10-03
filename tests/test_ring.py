@@ -10,10 +10,12 @@ from nektoids.editor.ring import (
     ICON,
     IN_RING,
     KEY_OUT,
+    LINE_BELOW,
     PILE,
     RADIUS,
     RING_HEX,
     angles,
+    centre_in,
     cycled,
     offer,
     part_key,
@@ -143,3 +145,20 @@ def test_the_sandboxs_seven_parts_fit_in_tools_wheel_and_piles_included():
             r = ICON * RING_HEX
             assert x <= sx - r and sx + r <= x + w and y <= sy - r and sy + r <= y + h - 24
             assert x <= slot.key_at[0] <= x + w and y <= slot.key_at[1] <= y + h
+
+
+def test_the_ring_fits_the_drawers_picture_of_the_cell_with_its_line_under_it():
+    view = make_layout(Drawer.PARTS).cell_view  # Tools' is the same (D-069)
+    assert make_layout(Drawer.TOOLS).cell_view == view
+    x, y, w, h = view
+    centre, line = centre_in(view), 20  # the line under it: Plex Mono at 15 px
+    items = list(Kind)  # the most a ring offers: every part, piled under its ends
+    for n in range(1, len(items) + 1):
+        for turn in range(max(1, n - IN_RING + 1)):
+            ring = slots(items[:n], centre, RING_HEX, frozenset(Kind), turn)
+            r = ICON * RING_HEX
+            for slot in ring:
+                assert x <= slot.at[0] - r and slot.at[0] + r <= x + w
+                assert y <= slot.key_at[1] - 10 and slot.at[1] - r >= y
+            lowest = max([centre[1] + RING_HEX] + [slot.at[1] + r for slot in ring])
+            assert lowest + LINE_BELOW + line <= y + h

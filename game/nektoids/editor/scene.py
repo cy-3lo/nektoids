@@ -50,6 +50,7 @@ from nektoids.editor.layout import (
     MAX_HEX,
     MENU_GROUPS,
     MODE_KEY,
+    SCROLL_STEP,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
@@ -66,6 +67,7 @@ from nektoids.editor.layout import (
     board_extent,
     board_view_of,
     cell_at,
+    cell_fold_at,
     centred_on,
     centred_view,
     contains,
@@ -80,6 +82,8 @@ from nektoids.editor.layout import (
     moved_view,
     overview_view,
     pan,
+    scroll_bar_at,
+    scroll_for,
     value_at,
     view_button_at,
     win_row_at,
@@ -89,10 +93,9 @@ from nektoids.editor.layout import (
 )
 from nektoids.editor.probe import Probe, level_view
 from nektoids.editor.ring import (
-    KEY_OUT,
-    RADIUS,
     RING_HEX,
     Slot,
+    centre_in,
     cycled,
     offer,
     part_key,
@@ -143,7 +146,6 @@ MAX_WINS = 10  # the wins Files lists, the best first
 PROBE_TURN = math.radians(15.0)  # the wheel, L or R, on the probe in Diagnostic
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
-HEADROOM = 14  # over the ring's top key, in Tools' picture of the cell [px]
 
 
 class EditorScene(Frame):
@@ -165,18 +167,21 @@ class EditorScene(Frame):
         self.holding: int | None = None  # the eye whose meter's knob the mouse holds
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
+        self.cell_folded = False  # the picture of the cell folded, in Tools and Parts (D-069)
+        self.scroll = 0  # how far Parts' list is scrolled [px]
+        self.scrolling = False  # Parts' scroll bar held: the list follows the mouse
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.focused: Cell | None = None  # the cell the ring is round, the keyboard's too (D-068)
         self.ring_open = False  # the ring shows round the focus
         self.ring_keys = False  # the keyboard opened it: the arrows go round it
         self.choice: int | None = None  # the ring's icon the keyboard is on; None: nothing
-        self.ring_hover: Slot | None = None  # the ring's icon under the mouse, in Tools
+        self.ring_hover: Slot | None = None  # the ring's icon under the mouse, in Tools or Parts
         self.press_cell: Cell | None = None  # a part pressed: a click or a drag, told on release
         self.keyboard = False  # the keyboard drives, until the mouse moves
         self.swapping = False  # Swap chosen: the ring offers the parts the focused one may become
         self.turn = 0  # the ring's wheel: its first icon on the ring, the others piled
         self.wire_chosen = False  # Wire chosen by its key or in the ring, not only at hand
-        self.piling = 0  # the mouse on a pile in Tools: the way it turns the wheel, -1 or 1
+        self.piling = 0  # the mouse on a pile of the ring: the way it turns the wheel, -1 or 1
         self.pile_frames = 0  # how long it has rested there
         self.onward = False  # the focus came unclicked, placed or wired to: it wires only forward
         self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
@@ -288,6 +293,8 @@ class EditorScene(Frame):
             self.turn = turned(self.turn - event.y, None, len(self.offered()))  # the wheel turns
         elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
+        elif event.type == pygame.MOUSEWHEEL and self._on_list(self.mouse):
+            self._scroll_to(self.layout.scroll - event.y * SCROLL_STEP)  # up: the list comes down
         elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
             event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
         ):
@@ -446,6 +453,8 @@ class EditorScene(Frame):
             self._overview_to(pos)
         if self.zooming:
             self._zoom_to(pos)
+        if self.scrolling:
+            self._scroll_to(scroll_for(self.layout, pos[1]))
         self._hold(pos)
         self.ring_hover = slot_at(self.ring(), pos, RING_HEX)
         piling = 0
@@ -503,6 +512,14 @@ class EditorScene(Frame):
         if button is not None:
             self._view_button(button)
             return
+        if cell_fold_at(self.layout, pos):  # The cell's title, in Tools or Parts (D-069)
+            self.cell_folded = not self.cell_folded
+            self.layout = self._relayout(self.layout.drawer)
+            return
+        if scroll_bar_at(self.layout, pos):
+            self.scrolling = True
+            self._scroll_to(scroll_for(self.layout, pos[1]))
+            return
         title = group_at(self.layout, pos)
         if title is not None:
             self.folded ^= {title}
@@ -513,7 +530,7 @@ class EditorScene(Frame):
             self._pick(kind)
             return
         slot = slot_at(self.ring(), pos, RING_HEX)
-        if slot is not None:  # an icon of the ring, in Tools
+        if slot is not None:  # an icon of the ring, in Tools or Parts
             self._use(slot.what)
             return
         if action_at(self.layout, pos) is not None:  # the action shown: Tools, to see it all
@@ -590,7 +607,7 @@ class EditorScene(Frame):
 
     def _release(self, pos: tuple[int, int]) -> None:
         self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
-        self.panning_from = None
+        self.panning_from, self.scrolling = None, False
         if self.press_cell is not None:  # a press on a part: a drag moved it, or a click
             cell, self.press_cell = self.press_cell, None
             if self.moving is not None:
@@ -617,8 +634,26 @@ class EditorScene(Frame):
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         """The layout with `drawer` open, the same parts handed out and the same chapter."""
-        kinds, chapter = self.layout.kinds, self.layout.chapter
-        return make_layout(drawer, frozenset(self.folded), kinds, chapter, wins=len(self.wins))
+        return make_layout(
+            drawer,
+            frozenset(self.folded),
+            self.layout.kinds,
+            self.layout.chapter,
+            wins=len(self.wins),
+            cell_folded=self.cell_folded,
+            scroll=self.scroll,
+        )
+
+    def _on_list(self, pos: tuple[int, int]) -> bool:
+        """Whether `pos` is on Parts' list, where the wheel scrolls it (D-069)."""
+        return self.layout.list_area is not None and contains(self.layout.list_area, pos)
+
+    def _scroll_to(self, scroll: int) -> None:
+        """Parts' list scrolled to `scroll`, as far as it goes; an info box open on a row
+        closes, as it would move."""
+        self.scroll = scroll
+        self.layout = self._relayout(self.layout.drawer)
+        self.scroll, self.info = self.layout.scroll, None
 
     def set_wins(self, wins: tuple[Won, ...]) -> None:
         """The level's wins this session, as Files lists them: at most MAX_WINS (D-059)."""
@@ -824,7 +859,7 @@ class EditorScene(Frame):
     # The focus and its ring (D-068)
 
     def offered(self) -> tuple[Kind | Tool, ...]:
-        """What the focused cell offers, its ring's icons in order, whether Tools shows them or
+        """What the focused cell offers, its ring's icons in order, whether a drawer shows them or
         not: none in Delete, or while the Run preview shows."""
         if self.focused is None or self.mode is not Mode.WRITE or self.main is not MainView.DIAGRAM:
             return ()
@@ -837,17 +872,15 @@ class EditorScene(Frame):
         return self.ring_keys and self.ring_open
 
     def ring(self) -> list[Slot]:
-        """The focused cell's ring as Tools draws it, round its picture of the cell; none while
-        Tools is folded."""
+        """The focused cell's ring as Tools and Parts draw it, round their picture of the cell;
+        none while neither shows the picture (D-069)."""
         if self.layout.cell_view is None:
             return []
         return slots(self.offered(), self.cell_centre(), RING_HEX, self.layout.kinds, self.turn)
 
     def cell_centre(self) -> tuple[float, float]:
-        """Where Tools draws the focused cell: across the middle, its ring's top key under the
-        title."""
-        x, y, w, _ = self.layout.cell_view
-        return (x + w / 2, y + HEADROOM + (RADIUS + KEY_OUT) * RING_HEX)
+        """Where Tools, or Parts, draws the focused cell (D-069)."""
+        return centre_in(self.layout.cell_view)
 
     def action(self) -> tuple[Kind | Tool | Mode, str]:
         """What the next click on the board, or Enter, does, and its key: shown atop the main
@@ -1128,12 +1161,12 @@ class EditorScene(Frame):
         if self.mode is Mode.DELETE:
             return "Click a part or a wire to delete it. E or Esc: back to Write."
         if self.swapping:
-            return "Pick what it becomes in Tools, or press its number. Esc: back."
+            return "Pick what it becomes in the ring, or press its number. Esc: back."
         node = self._focused_node()
         if node is not None:
             return "Click another part to wire it, or drag it to move it."
         if self.focused is not None:
-            return "Pick a part in Tools, or press its number."
+            return "Pick a part in the ring, or press its number."
         return "Click a cell, or drag a part from Parts onto the board."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:

@@ -4,8 +4,11 @@ import pytest
 
 from nektoids.editor.layout import (
     ACTION_WIDTH,
+    BAR_WIDTH,
     CAPTION_HEIGHT,
+    CELL_HEIGHT,
     DRAWER_KEYS,
+    DRAWER_WIDTH,
     DRAWERS,
     EDIT_KEYS,
     FOOT,
@@ -37,6 +40,7 @@ from nektoids.editor.layout import (
     board_extent,
     board_view_of,
     cell_at,
+    cell_fold_at,
     centred_on,
     centred_view,
     chapter_row_at,
@@ -58,6 +62,9 @@ from nektoids.editor.layout import (
     overview_view,
     palette_target_at,
     pan,
+    scroll_bar_at,
+    scroll_for,
+    scroll_thumb,
     setting_row_at,
     shown_frame,
     tab_at,
@@ -69,11 +76,14 @@ from nektoids.editor.layout import (
     zoom_bar_at,
     zoom_button_at,
 )
+from nektoids.editor.tutorial import guided
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
+from nektoids.levels.arenas import arenas
 from nektoids.levels.sandbox import free_board, tutorial_board
 
-LAYOUT = make_layout()  # Parts open, as the editor opens
+LAYOUT = make_layout()  # Parts open, every part handed out, the cell under the list
+LIST = make_layout(cell_folded=True)  # the same, the cell folded: the whole list shows
 VIEW = centred_view(LAYOUT)
 FILES = make_layout(Drawer.FILES, wins=2)
 NAVIGATOR = make_layout(Drawer.NAVIGATOR)
@@ -134,10 +144,55 @@ def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
 
 
 def test_parts_has_every_kind_once_and_a_click_on_a_row_picks_it():
-    kinds = [kind for kind, _ in LAYOUT.menu_items]
+    kinds = [kind for kind, _ in LIST.menu_items]
     assert sorted(kinds, key=lambda k: k.value) == sorted(Kind, key=lambda k: k.value)
-    for kind, rect in LAYOUT.menu_items:
-        assert menu_item_at(LAYOUT, (rect[0] + 20, rect[1] + rect[3] // 2)) == kind
+    for kind, rect in LIST.menu_items:
+        assert menu_item_at(LIST, (rect[0] + 20, rect[1] + rect[3] // 2)) == kind
+
+
+def test_parts_holds_the_cell_under_its_list_and_the_cells_title_folds_it():
+    _, ly, _, lh = LAYOUT.list_area  # D-069
+    _, fy, _, fh = LAYOUT.cell_fold
+    cx, cy, cw, ch = LAYOUT.cell_view
+    assert ly == LIST.list_area[1] and ly + lh < fy and fy + fh == cy and cy + ch <= SCREEN[1]
+    assert contains(LAYOUT.drawer_area, (cx, cy)) and cw >= 200 and ch == CELL_HEIGHT
+    assert cell_fold_at(LAYOUT, centre(LAYOUT.cell_fold))
+    assert group_at(LAYOUT, centre(LAYOUT.cell_fold)) is None  # not one of the list's groups
+    assert LIST.cell_view is None and LIST.cell_fold[1] + LIST.cell_fold[3] < SCREEN[1]
+    assert LIST.cell_fold[1] > fy and LIST.list_area[3] > lh  # at the foot: the list has the room
+    tools = make_layout(Drawer.TOOLS)  # its rows always fit: no list to scroll
+    assert tools.list_area is None and tools.scroll_bar is None
+    assert make_layout(Drawer.FILES).cell_fold is None and FILES.cell_view is None
+
+
+def test_parts_list_scrolls_when_it_does_not_fit_and_its_rows_answer_only_where_they_show():
+    assert LAYOUT.scroll_max > 0 and LAYOUT.scroll_bar is not None
+    assert LIST.scroll_max == 0 and LIST.scroll_bar is None and scroll_thumb(LIST) is None
+    bottom = make_layout(scroll=10_000)
+    assert bottom.scroll == LAYOUT.scroll_max and make_layout(scroll=-5).scroll == 0
+    eye_top = dict(LAYOUT.menu_items)[Kind.EYE][1]
+    assert eye_top - dict(bottom.menu_items)[Kind.EYE][1] == bottom.scroll
+    _, ly, _, lh = LAYOUT.list_area
+    last = dict(LAYOUT.menu_items)[Kind.THRUSTER]
+    assert last[1] + last[3] // 2 > ly + lh  # out of sight at first: it does not answer
+    assert menu_item_at(LAYOUT, centre(last)) is None
+    assert info_at(LAYOUT, centre(dict(LAYOUT.info_buttons)[Kind.THRUSTER])) is None
+    last = dict(bottom.menu_items)[Kind.THRUSTER]
+    assert menu_item_at(bottom, centre(last)) is Kind.THRUSTER  # in sight once scrolled
+    x, y, w, h = LAYOUT.scroll_bar  # beside the rows, inside the drawer's edge
+    assert x >= max(r[0] + r[2] for _, r in LAYOUT.menu_items) and x + w < BAR_WIDTH + DRAWER_WIDTH
+    assert scroll_bar_at(LAYOUT, (x + w // 2, y + h // 2)) and not scroll_bar_at(LIST, (x, y))
+    assert scroll_for(LAYOUT, y) == 0 and scroll_for(LAYOUT, y + h) == LAYOUT.scroll_max
+    _, top, _, length = scroll_thumb(LAYOUT)
+    assert top == y and scroll_thumb(bottom)[1] + length == y + h
+
+
+def test_a_guided_levels_parts_fit_with_the_cell_open_so_its_steps_rows_show():
+    for level in arenas():
+        if guided(level.tutorial):
+            board = level.new_board()
+            kinds = frozenset(kind for kind in Kind if board.total(kind) != 0)
+            assert make_layout(kinds=kinds).scroll_max == 0, level.title
 
 
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
@@ -155,12 +210,13 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
 def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_atop():
     tools = make_layout(Drawer.TOOLS)  # D-068: first in the bar
     assert DRAWERS[Env.EDITOR][0] is Drawer.TOOLS
-    assert [title for title, _ in tools.section_titles] == ["Mode", "Edit", "The cell"]
+    assert [title for title, _ in tools.section_titles] == ["Mode", "Edit"]
     rows = [*tools.mode_buttons, *tools.edit_buttons]
     assert [b for b, _ in rows] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
-    cx, cy, cw, ch = tools.cell_view
-    assert rows[-1][1][1] + rows[-1][1][3] < cy and cy + ch <= SCREEN[1]
-    assert contains(tools.drawer_area, (cx, cy)) and cw >= 200 and ch >= 240  # room for the ring
+    assert rows[-1][1][1] + rows[-1][1][3] < tools.cell_fold[1]  # the cell at the foot, as Parts'
+    assert tools.cell_fold == LAYOUT.cell_fold and tools.cell_view == LAYOUT.cell_view
+    folded = make_layout(Drawer.TOOLS, cell_folded=True)
+    assert folded.cell_view is None and folded.cell_fold == LIST.cell_fold
     for button, rect in rows:
         found = mode_button_at(tools, centre(rect)) or edit_button_at(tools, centre(rect))
         assert found is button
@@ -265,12 +321,12 @@ def test_the_fold_handle_sits_on_the_drawers_edge_and_the_view_keeps_its_centre(
 
 
 def test_each_menu_row_has_its_info_disc_inside_it_and_unfolding_moves_it_along():
-    rows = dict(LAYOUT.menu_items)
-    for kind, rect in LAYOUT.info_buttons:
+    rows = dict(LIST.menu_items)
+    for kind, rect in LIST.info_buttons:
         assert contains(rows[kind], rect[:2])
         assert contains(rows[kind], (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
-        assert info_at(LAYOUT, centre(rect)) is kind and menu_item_at(LAYOUT, centre(rect)) is kind
-    assert info_at(LAYOUT, centre(rows[Kind.EYE])[:1] + (0,)) is None
+        assert info_at(LIST, centre(rect)) is kind and menu_item_at(LIST, centre(rect)) is kind
+    assert info_at(LIST, centre(rows[Kind.EYE])[:1] + (0,)) is None
     folded = make_layout(folded=frozenset({"Sensors"}))
     assert Kind.EYE not in dict(folded.info_buttons)
 

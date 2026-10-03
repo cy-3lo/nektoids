@@ -42,6 +42,7 @@ from nektoids.editor.icons import (
 from nektoids.editor.layout import (
     BAR_WIDTH,
     CAPTION_HEIGHT,
+    CELL_TITLE,
     DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     EDIT_KEYS,
@@ -68,6 +69,7 @@ from nektoids.editor.layout import (
     WinRow,
     level_of,
     overview_view,
+    scroll_thumb,
     shown_frame,
     visible_cells,
 )
@@ -103,6 +105,7 @@ from nektoids.editor.palette import (
     REFUSED,
     RING,
     RULE,
+    SCROLL_THUMB,
     SHADOW,
     TEXT,
     THRUSTER_BACK,
@@ -112,7 +115,7 @@ from nektoids.editor.palette import (
 )
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.probe import level_view, ring_radii
-from nektoids.editor.ring import ICON, RING_HEX
+from nektoids.editor.ring import ICON, LINE_BELOW, RING_HEX
 from nektoids.editor.scene import EditorScene
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -133,8 +136,8 @@ TIP = {
     ViewButton.RAYS: "Show or hide the light's rays",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    Mode.WRITE: "Click a cell: Tools shows its ring. Click two parts to wire them; drag one to move"
-    " it.",
+    Mode.WRITE: "Click a cell: Tools and Parts show its ring. Click two parts to wire them; drag"
+    " one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
     FileButton.SAVE: "Save: not yet",
     FileButton.LOAD: "Load: not yet",
@@ -335,7 +338,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             pygame.draw.polygon(screen, GHOST_OK, outline, 2)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
         pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
-    if scene.focused is not None:  # the cell Tools shows (D-068)
+    if scene.focused is not None:  # the cell Tools and Parts show (D-068, D-069)
         pygame.draw.polygon(screen, LIT, _hexagon(view, scene.focused), 2)
     screen.set_clip(None)
 
@@ -397,10 +400,16 @@ def _action_icon(what: Tool | Mode) -> str:
     return VIEW_ICON[ViewButton.PAN] if what is Tool.PAN else TOOL_ICON[what]
 
 
-def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Tools (D-068): the focused cell, large, as the board has it, its ring round it, a line
-    under it saying what it holds; then Write and Delete, undo and redo, as rows."""
+def _draw_cell(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """At the foot of Tools and of Parts (D-068, D-069): a rule, The cell's title, which folds;
+    unless folded, the focused cell, large, as the board has it, its ring round it, a line under
+    it saying what it holds."""
     layout = scene.layout
+    fx, fy, fw, fh = layout.cell_fold
+    pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
+    draw_fold_title(screen, fonts, CELL_TITLE, layout.cell_fold, scene.cell_folded, DIM_TEXT)
+    if layout.cell_view is None:
+        return
     x, y, w, h = layout.cell_view
     centre = scene.cell_centre()
     corners = _small_hexagon(centre, RING_HEX)
@@ -433,7 +442,12 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
     lowest = max([centre[1] + RING_HEX] + [slot.at[1] + radius for slot in ring])
     line = fonts.small.render(_fitted(fonts.small, _cell_says(scene), w), True, DIM_TEXT)
-    screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + 12)))
+    screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
+
+
+def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Tools' rows (D-068): Write and Delete, undo and redo."""
+    layout = scene.layout
     for mode, rect in layout.mode_buttons:
         status = ("key", MODE_KEY)
         icon = MODE_ICON[mode]
@@ -459,7 +473,7 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
 
 
 def _cell_says(scene: EditorScene) -> str:
-    """The line under Tools' picture of the cell."""
+    """The line under the drawer's picture of the cell."""
     if scene.mode is Mode.DELETE:
         return "Click what goes"
     if scene.focused is None:
@@ -625,11 +639,10 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
     for title, (x, y, _, h) in layout.section_titles:  # lit with its drawer, or by its name
         shown = fonts.label.render(title.upper(), True, LIT if title.lower() in scene.lit else ink)
         screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
-    for title, (x, y, _, h) in layout.group_titles:
-        caret = "caret-right" if title in scene.folded else "caret-down"
-        fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
-        shown = fonts.label.render(title.upper(), True, ink)
-        screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
+    screen.set_clip(layout.list_area)  # Parts' list scrolls within it (D-069); None: no clip
+    for title, rect in layout.group_titles:
+        draw_fold_title(screen, fonts, title, rect, title in scene.folded, ink)
+    screen.set_clip(None)
     rows(screen, scene, fonts)
     _draw_settings(screen, scene, fonts)
     _draw_chapters(screen, scene, fonts)
@@ -638,6 +651,16 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
     pygame.draw.rect(screen, PANEL, handle, **corners)
     pygame.draw.rect(screen, RULE, handle, 1, **corners)
     fonts.icons.draw(screen, "chevron-left", handle.center, 11, DIM_TEXT)
+
+
+def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -> None:
+    """A title that folds what is under it, as Parts' groups and The cell (D-069): a caret, right
+    while folded, down while open, then the title in upper case."""
+    x, y, _, h = rect
+    caret = "caret-right" if folded else "caret-down"
+    fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
+    shown = fonts.label.render(title.upper(), True, ink)
+    screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
 
 
 def _draw_files(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
@@ -774,8 +797,11 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
 
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The editor's own drawers' rows: Tools, Parts, Files, Navigator; Diagnostic's map."""
+    """The editor's own drawers' rows: Tools, Parts, Files, Navigator; the cell at the foot of
+    Tools and Parts; Diagnostic's map."""
     layout, board = scene.layout, scene.board
+    if layout.cell_fold is not None:  # Tools, Parts
+        _draw_cell(screen, scene, fonts)
     if layout.drawer is Drawer.TOOLS:
         _draw_tools(screen, scene, fonts)
     if layout.drawer is Drawer.DIAGNOSTIC:
@@ -785,11 +811,16 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     if layout.overview is not None:
         _draw_overview(screen, scene, fonts)
         draw_zoom(screen, scene, fonts, level_of(scene.view.size, scene.least_zoom(), MAX_HEX))
+    screen.set_clip(layout.list_area)  # Parts' list, scrolled within its area (D-069)
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
         picked = kind == scene.picked
         draw_row(screen, scene, fonts, rect, kind, NAME[kind], status, picked, left == 0, part=kind)
+    screen.set_clip(None)
+    if layout.scroll_bar is not None:  # while the list does not fit
+        pygame.draw.rect(screen, RULE, layout.scroll_bar, border_radius=2)
+        pygame.draw.rect(screen, SCROLL_THUMB, scroll_thumb(layout), border_radius=2)
     for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
         draw_row(
             screen,
