@@ -3,6 +3,7 @@
 import pytest
 
 from nektoids.editor.layout import (
+    ACTION_WIDTH,
     CAPTION_HEIGHT,
     DRAWER_KEYS,
     DRAWERS,
@@ -164,10 +165,9 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
         found = mode_button_at(tools, centre(rect)) or edit_button_at(tools, centre(rect))
         assert found is button
     for layout in (tools, LAYOUT, make_layout(None)):  # the action, centred atop the main screen
-        x, y, w, _ = layout.action_at
-        bx, _, bw, _ = layout.board_area
-        (_, (vx, vy, _, _)), _ = layout.view_switch
-        assert abs(x + w / 2 - (bx + bw / 2)) <= 1 and y == vy and x + w < vx
+        x, y, w, h = layout.action_at  # as tall as the disc drawn there: its line clear of it
+        bx, by, bw, _ = layout.board_area
+        assert abs(x + w / 2 - (bx + bw / 2)) <= 1 and y > by and w == h == ACTION_WIDTH
         assert action_at(layout, (x + 5, y + 5)) is Shown.ACTION
     assert LAYOUT.mode_buttons == LAYOUT.edit_buttons == ()  # Parts open: Tools' rows are not
     assert make_layout(env=Env.RUN).action_at is None

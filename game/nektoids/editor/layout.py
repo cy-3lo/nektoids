@@ -34,7 +34,9 @@ BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]; the main view's buttons too
-ACTION_WIDTH = 50  # atop the editor's main screen, what a click does now: a ring's icon [px]
+ACTION_WIDTH = (
+    50  # atop the editor's main screen, what a click does now: a ring's icon, square [px]
+)
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
@@ -341,7 +343,7 @@ def make_layout(
         cell_view=rows.cell_view,
         mode_buttons=tuple(rows.of(Mode)),
         edit_buttons=tuple(rows.of(EditButton)),
-        action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, SWITCH)
+        action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
         if env is Env.EDITOR
         else None,
         file_buttons=tuple(rows.of(FileButton)),

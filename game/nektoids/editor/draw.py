@@ -355,7 +355,7 @@ def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
         shown = fonts.text.render(key, True, DIM_TEXT)
         screen.blit(shown, shown.get_rect(midleft=(box.right + 8, box.centery)))
     says = fonts.small.render(_action_says(scene, what), True, TEXT)
-    at = says.get_rect(midtop=(box.centerx, box.bottom + 6))
+    at = says.get_rect(midtop=(box.centerx, box.bottom + 8))  # its patch clear of the disc
     pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
     screen.blit(says, at)
 
