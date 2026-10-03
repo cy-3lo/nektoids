@@ -331,8 +331,6 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         angle = placed_angle(node.kind, node.facing)
         fill = DOOMED if node.id == doomed_node else None
         draw_part(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
-        if node.id == scene.source and scene.tool is Tool.WIRE:  # a wire starts here
-            pygame.draw.circle(screen, TEXT, centre, 0.8 * view.size, 2)
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
         if node is not None and node.kind is ghost.kind and node.facing != ghost.facing:
