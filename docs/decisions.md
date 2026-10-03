@@ -885,7 +885,10 @@ an eye's knob to drag. While
 a tutorial step leads, Diagnostic does not open. The ring of D-068, with the focused cell
 drawn large at its middle, is called the Wheel. Tools and Parts both have it at their foot, under
 a rule and its title, The Wheel, that folds as Parts' groups do, in both at once; folded, the
-title sits at the drawer's foot and the rows above take the room. Parts' list scrolls, by the wheel or its scroll bar, when it does not fit. On the board, the focused part loses its white circle: the lit
+title sits at the drawer's foot and the rows above take the room. Parts' list scrolls, by the wheel or its scroll bar, when it does not fit. The
+Wheel's icon under the mouse, or the one the keyboard has chosen going round, is named at once,
+with its key, in the accent, twice: beside the action atop the main screen, where its key was,
+and in the line under the Wheel. On the board, the focused part loses its white circle: the lit
 cell says it, and while the keyboard wires, the ghost wire shows where the wire starts. Over a
 part the wire cannot reach, its way still shows, dimmed, as over an empty cell, with the cell
 outlined in red and the reason in the status line. The line

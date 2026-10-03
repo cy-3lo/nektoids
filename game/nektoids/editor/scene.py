@@ -889,6 +889,16 @@ class EditorScene(Frame):
             return swaps(self.board, self.focused, self.layout.kinds)
         return offer(self.board, self.focused, self.layout.kinds)
 
+    def named_slot(self) -> Slot | None:
+        """The Wheel's icon named at once, in the accent, beside the action atop and under the
+        Wheel (D-069): the one under the mouse; while the keyboard drives, the one it has chosen
+        going round, if any."""
+        wheel = self.wheel()
+        if not self.keyboard:
+            return slot_at(wheel, self.mouse, WHEEL_HEX)
+        chosen = self.choice if self.going_round() else None
+        return wheel[chosen] if chosen is not None and chosen < len(wheel) else None
+
     def going_round(self) -> bool:
         """Whether the keyboard goes round the Wheel: opened with Enter, until an icon is taken."""
         return self.wheel_keys and self.wheel_open
