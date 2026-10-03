@@ -1198,3 +1198,12 @@ editor and in the run, a line says where to build it: "Go to Tools or Parts", ea
 icon before its name, as the bar draws it; in the run, the editor is a tab away. The picture
 gives up a line's room to it where room is short, in the run above the objectives, where it
 stays at least 140 px across.
+
+**D-089 — 2026-10-03 — The run's Inside is called Diagnostic, with the editor's stethoscope, and opens by D. Amends D-069.**
+The run's drawer that shows the swimmer's wiring live, its beads and meters, was Inside, a
+magnifying glass, opened by I. The editor's drawer where the board is tested is Diagnostic, a
+stethoscope, opened by D (D-069). Both show the board at work, so they now share the name, the
+icon and the key: in the run, Diagnostic, the stethoscope, D, its initial; I is free again. As
+D-069 allows, the key means the same drawer's place in each environment, never two things in
+one. In the code the run's drawer stays `Drawer.INSIDE`, the name the tutorials' data uses; the
+earlier decisions and the walkthrough keep calling it Inside.
