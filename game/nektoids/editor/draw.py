@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pygame
 
-from nektoids.editor.devdrive import DT
+from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import (
     DIAMOND,
@@ -85,6 +85,8 @@ from nektoids.editor.layout import (
     shown_frame,
     visible_cells,
 )
+from nektoids.editor.marks import AtWork, at_work
+from nektoids.editor.marks_draw import draw_over, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -710,11 +712,12 @@ def draw_level_map(
     pose: tuple[float, float, float],
     frame: pygame.Rect | None = None,
     view=None,
+    body: AtWork | None = None,
 ) -> None:
     """The level seen whole and small in `area`: its obstacles, its lights and their rings, and
     the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the main screen shows of it,
     outlined (Diagnostic's map, the run's overview, D-058, D-060); `view`, how it is seen, else the
-    level seen whole."""
+    level seen whole; `body`, the swimmer at work, drawn round it (Diagnostic's map, D-076)."""
     view, arena = view or level_view(level, tuple(area)), level.arena
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     screen.set_clip(area)
@@ -730,7 +733,11 @@ def draw_level_map(
             screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
         )
     x, y, heading = pose
+    if body is not None:
+        draw_under(screen, view, body)
     draw_symbol(screen, BODY, view.to_screen(x, y), BASE_RADIUS * view.scale, heading, 2)
+    if body is not None:
+        draw_over(screen, view, body)
     if frame is not None:
         pygame.draw.rect(screen, LIT, frame, 1)
     screen.set_clip(None)
@@ -776,10 +783,14 @@ def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> 
 
 def _draw_diagnostic(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Diagnostic (D-058, D-069): the level small, its obstacles, its lights and their rings,
-    and the probe, the swimmer the Run preview runs at, to drag and turn."""
+    and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076)."""
     area = pygame.Rect(DIAGNOSTIC_MAP)
-    if scene.level is not None and scene.probe is not None:
-        draw_level_map(screen, scene.level, area, scene.probe.pose)
+    probe = scene.probe
+    if scene.level is not None and probe is not None:
+        frame = probe.ticks // TICKS_PER_FRAME
+        cells = probe.circuit.board.cells
+        body = at_work(scene.level.arena, probe.net, cells, probe.y, probe.pose, BASE_RADIUS, frame)
+        draw_level_map(screen, scene.level, area, probe.pose, body=body)
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
