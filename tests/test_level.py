@@ -6,8 +6,8 @@ import pytest
 
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NE
-from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas
-from nektoids.levels.level import Item, ItemKind, Level, load, to_json
+from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas, sandbox
+from nektoids.levels.level import Item, ItemKind, Level, is_passkey, load, to_json
 from nektoids.levels.objectives import VisitLights
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import OBSTACLE_RADIUS
@@ -92,3 +92,13 @@ def test_each_new_board_is_the_levels_own_fresh_from_its_data():
 def test_data_no_level_could_hold_fails_when_it_is_loaded(changes, message):
     with pytest.raises(ValueError, match=message):
         Level.from_dict(a_level(**changes))
+
+
+def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
+    words = [level.passkey for level in arenas()]  # D-075
+    assert words == ["LOVE", "SWORD", "HEART", "DARK"] and len(set(words)) == len(words)
+    assert all(is_passkey(word) for word in words) and sandbox().passkey is None
+    assert not is_passkey("sword") and not is_passkey("SWÖRD") and not is_passkey("A" * 11)
+    data = a_level(passkey="lower")
+    with pytest.raises(ValueError):
+        Level.from_dict(data)

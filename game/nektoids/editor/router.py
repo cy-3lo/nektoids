@@ -41,6 +41,7 @@ class ChapterRow:
     state: str  # "won", "open", "locked", "sandbox"
     best: Score | None  # the fastest win this session
     current: bool  # the place open now
+    passkey: str = ""  # won: the word its win gave, which opens the next level (D-075)
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ class Router:
         self.index = 0  # the open place: a level of the chapter, or `sandbox_index`
         self.screen = Screen.TITLE
         self.won: set[int] = set()  # the chapter's levels won this session
+        self.opened: set[int] = set()  # the levels a passkey opened this session (D-075)
         self._boards: dict[int, Board] = {}
         self._scores: dict[int, set[Score]] = {}
         self._won_with: dict[int, dict[Score, BoardState]] = {}  # each score's first board
@@ -135,13 +137,41 @@ class Router:
                 self.state(k),
                 self.best(k),
                 k == self.index,
+                self._word_won(k),
             )
             for k, place in enumerate(places)
         )
 
+    def _word_won(self, index: int) -> str:
+        """A level's word, once won, if it opens a next level: Chapters shows it (D-075)."""
+        last = len(self.levels) - 1
+        if index not in self.won or index >= last or not self.levels[index].passkey:
+            return ""
+        return self.levels[index].passkey
+
     def unlocked(self, index: int) -> bool:
-        """The first level, any level after one won, and the sandbox are open."""
-        return index == 0 or index == self.sandbox_index or index - 1 in self.won
+        """The first level, any level after one won, any a passkey opened, and the sandbox are
+        open (D-075)."""
+        first = index == 0 or index == self.sandbox_index
+        return first or index - 1 in self.won or index in self.opened
+
+    def unlock(self, word: str) -> int | None:
+        """A passkey typed (D-075): the level after the one whose win gives `word`, in any case,
+        opens, with every level before it, none of them won; that level's index, or None if no
+        level's word opens one (the last level's opens nothing yet)."""
+        word = word.strip().upper()
+        for k, level in enumerate(self.levels[:-1]):
+            if level.passkey == word:
+                self.opened |= set(range(k + 2))
+                return k + 1
+        return None
+
+    def next_passkey(self) -> tuple[str, str] | None:
+        """The open level's word and the label of the level it opens, for its win card (D-075);
+        None in the sandbox, after the last level, or with no word."""
+        if self.in_sandbox or not self.has_next or not self.level.passkey:
+            return None
+        return self.level.passkey, level_label(self.index + 1)
 
     # Moving about
 

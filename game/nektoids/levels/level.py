@@ -72,6 +72,7 @@ class Level:
     time_limit: float  # the run is over after this long [s]
     objectives: tuple[Objective, ...] = ()
     tutorial: Mapping | None = field(default=None, repr=False)  # its ghosts and steps (D-039)
+    passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
 
     @cached_property
     def arena(self) -> Arena:
@@ -90,15 +91,19 @@ class Level:
 
     def to_dict(self) -> dict:
         x, y, heading = self.start
-        return {
-            "title": self.title,
-            "spec": self.spec,
-            "start": {"at": [x, y], "heading": heading},
-            "items": [item.to_dict() for item in self.items],
-            "board": self.board,
-            "time_limit": self.time_limit,
-            "objectives": [objective_to_dict(o) for o in self.objectives],
-        } | ({"tutorial": self.tutorial} if self.tutorial is not None else {})
+        return (
+            {
+                "title": self.title,
+                "spec": self.spec,
+                "start": {"at": [x, y], "heading": heading},
+                "items": [item.to_dict() for item in self.items],
+                "board": self.board,
+                "time_limit": self.time_limit,
+                "objectives": [objective_to_dict(o) for o in self.objectives],
+            }
+            | ({"passkey": self.passkey} if self.passkey else {})
+            | ({"tutorial": self.tutorial} if self.tutorial is not None else {})
+        )
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Level:
@@ -114,10 +119,21 @@ class Level:
             time_limit=float(data["time_limit"]),
             objectives=tuple(objective_from_dict(o) for o in data["objectives"]),
             tutorial=data.get("tutorial"),
+            passkey=data.get("passkey"),
         )
+        if level.passkey is not None and not is_passkey(level.passkey):
+            raise ValueError(f"a passkey is A to Z, at most {PASSKEY_LENGTH}: {level.passkey!r}")
         level.arena  # noqa: B018 - built now, so that bad items fail here, not mid-run
         level.new_board()
         return level
+
+
+PASSKEY_LENGTH = 10  # the most letters a passkey has (D-075)
+
+
+def is_passkey(word: str) -> bool:
+    """Whether `word` may be a passkey: A to Z, upper case, at most PASSKEY_LENGTH letters."""
+    return 0 < len(word) <= PASSKEY_LENGTH and all("A" <= c <= "Z" for c in word)
 
 
 def load(path: Path) -> Level:
