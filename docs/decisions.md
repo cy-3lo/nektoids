@@ -1179,14 +1179,13 @@ on, and only where it is let go are the wires routed round it. D-007's "routes n
 drawn" becomes: a route changes only when a part is put on a cell it crosses, placed or moved
 there, or when its own part moves (D-011); it never changes on its own.
 
-**D-087 — 2026-10-03 — The wire being drawn is white until it may connect, then accent1; every wire on the board has one width, 5 px at 40 px hexes, and larger arrows.**
+**D-087 — 2026-10-03 — The wire being drawn is white until it may connect, then accent1, drawn over every other; every wire on the board is 3 px.**
 While a wire was drawn, it was a mid grey until it could connect, then white; beside a shadow
 wire, a tutorial's or a hint's, drawn a paler grey, the two looked alike. Now the wire being
-drawn is white until it may connect, and accent1, what the player works with, once it may.
-Wires had two widths, 3 px and 2 px for the shadows, whatever the zoom. Now every wire on the
-board, made, darkened for Delete, a shadow or being drawn, may connect or not, has one width,
-an eighth of the hex size (5 px at the default 40 px, 3 px at the farthest zoom, 10 px at the
-nearest), with round joins where it bends; the arrowheads grow in step, from 0.14 to 0.23 of
-the hex size for their half-length. The hint's small picture of a shadow follows the same rule
-at its own scale. Inside's circuit and the parts' entries keep their 2 px wires, sized for
-their beads.
+drawn is white until it may connect, and accent1, what the player works with, once it may. It
+is drawn last, over the shadows and the wires made: building the shadow's own wire, on the same
+route, the shadow hid it. Wires had two widths, 3 px and 2 px for the shadows. Now every wire on
+the board, made, darkened for Delete, a shadow or being drawn, may connect or not, is 3 px,
+whatever the zoom, its arrowheads as before; the hint's small picture of a shadow too. 5 px,
+scaling with the zoom, was tried and found too heavy. Inside's circuit and the parts' entries
+keep their 2 px wires, sized for their beads.
