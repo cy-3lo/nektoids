@@ -490,8 +490,8 @@ def _named(scene: EditorScene, what: Kind | Tool | Mode, key: str) -> str:
 
 
 def _draw_wheel_tip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The Wheel's icon under the mouse, named at once in a tooltip as the bar's are (D-069),
-    centred over the icon, kept clear of the bar."""
+    """The Wheel's icon under the mouse, named in a tooltip as the bar's are, after the same
+    rest (D-069), centred over the icon, kept clear of the bar."""
     slot = scene.wheel_tip()
     if slot is None:
         return
@@ -1060,6 +1060,8 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
     rects = dict(scene.layout.drawer_buttons) | dict(scene.layout.level_buttons)
+    if target not in rects:  # the scene's own: the Wheel's icons draw theirs (D-069)
+        return
     _, y, _, h = rects[target]
     key = (LEVEL_KEYS | DRAWER_KEYS).get(target) if scene.settings.key_hints else None
     text = TIP[target] + (f" ({key})" if key else "")

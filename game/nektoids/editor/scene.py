@@ -889,10 +889,17 @@ class EditorScene(Frame):
             return swaps(self.board, self.focused, self.layout.kinds)
         return offer(self.board, self.focused, self.layout.kinds)
 
+    def _tip_target(self, pos: tuple[int, int]) -> object | None:
+        """As the frame's, and the Wheel's icon under the mouse (D-069)."""
+        return super()._tip_target(pos) or slot_at(self.wheel(), pos, WHEEL_HEX)
+
     def wheel_tip(self) -> Slot | None:
-        """The Wheel's icon under the mouse, which a tooltip names at once (D-069); none while the
-        keyboard drives."""
-        return None if self.keyboard else slot_at(self.wheel(), self.mouse, WHEEL_HEX)
+        """The Wheel's icon whose tooltip shows, after the bar's rest, or at once after another
+        tooltip (D-069): none while the keyboard drives, or once the Wheel has changed under it."""
+        tip = self.tooltip
+        if self.keyboard or not isinstance(tip, Slot):
+            return None
+        return tip if tip in self.wheel() else None
 
     def wheel_lit(self) -> Slot | None:
         """The Wheel's lit icon, which the line under it names in the accent (D-069): the

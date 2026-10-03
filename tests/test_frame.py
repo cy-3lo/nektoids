@@ -116,6 +116,22 @@ def test_once_a_tooltip_shows_the_next_icons_shows_at_once_across_the_gap_betwee
     assert scene.tooltip is None  # rested long enough off the bar: the wait again
 
 
+def test_a_scenes_own_tooltip_waits_as_the_bars_do():
+    class Wheel(Scene):  # a scene adding a target of its own, as the editor adds its Wheel's icons
+        def _tip_target(self, pos):
+            return super()._tip_target(pos) or ("icon" if pos == (600, 600) else None)
+
+    scene = Wheel()  # D-069
+    scene.frame_track((600, 600))
+    for _ in range(scene.settings.tooltip_frames - 1):
+        scene.frame_update()
+    assert scene.tooltip is None  # the same rest as the bar's
+    scene.frame_update()
+    assert scene.tooltip == "icon"
+    scene.frame_track(icon(scene, Drawer.FILES))
+    assert scene.tooltip is Drawer.FILES  # and the same warmth, from it to the bar
+
+
 def test_the_other_tab_says_what_the_switch_says_and_this_one_nothing():
     scene = Scene()
     tabs = dict(scene.layout.tabs)

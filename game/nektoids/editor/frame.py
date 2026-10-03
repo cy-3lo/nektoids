@@ -54,7 +54,7 @@ class Frame:
     @property
     def tooltip(self) -> object | None:
         """What a tooltip names now, once the mouse has rested on it long enough: an icon of the
-        bar, a main view's button, the other tab."""
+        bar, the other tab, or what the scene adds (`_tip_target`)."""
         return self.tip_target if self.tip_frames >= self.settings.tooltip_frames else None
 
     def frame_update(self) -> None:
@@ -65,7 +65,7 @@ class Frame:
     def frame_track(self, pos: tuple[int, int]) -> None:
         """The tooltip follows the mouse: after a rest on a new target; at once if one showed a
         moment ago, as the mouse goes from icon to icon across the gaps between them (D-069)."""
-        target = palette_target_at(self.layout, pos)
+        target = self._tip_target(pos)
         if target != self.tip_target:
             warm = target is not None and self.tip_warm > 0
             self.tip_target = target
@@ -152,6 +152,11 @@ class Frame:
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         raise NotImplementedError
+
+    def _tip_target(self, pos: tuple[int, int]) -> object | None:
+        """What a tooltip would name under `pos`: the bar's icon, the other tab; a scene may add
+        its own, as the editor adds the Wheel's icons (D-069)."""
+        return palette_target_at(self.layout, pos)
 
     def _slid(self, before: Layout, after: Layout) -> None:
         """What follows the main screen when it moves; nothing by default."""
