@@ -1127,3 +1127,20 @@ those coming in: a bead leaves as one arrives, and ×2 sends another halfway to 
 for every two. The entry is made when a part's box opens and dropped when it closes; the scene's
 update moves it once a frame (`Frame.frame_update`), so drawing changes nothing. Never read by
 the model. The entry stays in the box beside the drawer until it moves into the drawer (todo §8).
+
+**D-083 — 2026-10-03 — The Wheel is seen to turn: each step slides its icons in 0.1 s, eased out, and a step taken during a slide goes straight on; resting on a pile clicks every 0.5 s. Amends D-068.**
+With more than five icons the Wheel's turn jumped: the five on the rim changed in one frame, and
+the player could not see which way it had gone. Now each step, by the keys, the mouse wheel or
+the mouse resting on a pile, slides the icons along the rim and the piles in 6 frames (`SLIDE`),
+quick at first and slowing as they arrive (`wheel.slid`), then rests. Each icon runs along the
+circle between its two places: 60° from corner to corner on the rim, about 7° down a pile. A
+step taken during a slide goes straight on, from where the Wheel shows to the new turn, rather
+than waiting in a queue: what is drawn is never more than 0.1 s behind, and as the Wheel holds
+seven icons at most, a slide covers two steps at most. The turn itself is set at once, as
+before; only the drawing, and the clicks on what is drawn, follow the slide. An icon leaving the
+rim for a pile goes empty at once and passes under the icon sliding over its place; one coming
+off a pile shows its face as it lands. Half way between two corners an icon swings about 3 px
+past the Wheel's room, into the drawer's margin, never out of the drawer. Where the Wheel's
+icons change (a new focus, Swap, Esc out of Swap) it shows at its start at once, without a
+slide. Resting on a pile turns it after 0.25 s, then every 0.5 s (`PILE_FRAMES`, 24 frames
+before, now 30).

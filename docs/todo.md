@@ -34,11 +34,6 @@ From Camille's notes (`ebc4abb`). The Wheel (D-068, D-069) does the rest: a clic
 shows what can be done there, a click on a part arms Wire, a drag moves a part, or draws a
 wire with Wire chosen (D-072).
 
-- [ ] The Wheel seen to turn, when it holds more than five icons (D-068): each step slides the
-      icons along the rim and the piles in 0.1 s (6 frames), then rests, one click every 0.5 s
-      while the mouse rests on a pile. Today it jumps, once every 24 frames (`PILE_FRAMES`).
-      The keys and the mouse wheel turn it the same way.
-      - Several quick steps, by keys or the mouse wheel: queued, or the slide goes straight on?
 - [ ] Drag a part off the body, or onto Parts, to delete it.
       - How far must a finger move before a tap becomes a drag?
 - [ ] Touch: no hover and no keys. The tooltips (D-025) and L, R, Space, Esc and 0 need an
