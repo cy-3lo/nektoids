@@ -29,6 +29,7 @@ import pygame
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
+from nektoids.editor.entry import ENTRY_AREA
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import (
     DIAMOND,
@@ -1166,9 +1167,9 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
 
 
 def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callable) -> None:
-    """The open info box, beside the drawer at its row: the name, then what it does. A setting's
-    and a place's are told here; `about(scene, what)` tells the environment's own, as a name
-    and its lines."""
+    """The open info box, beside the drawer at its row: the name, then what it does; a part's
+    entry, then the part at work in its own circuit (D-082). A setting's and a place's are told
+    here; `about(scene, what)` tells the environment's own, as a name and its lines."""
     if scene.info is None:
         return
     what = scene.info
@@ -1189,8 +1190,12 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
         name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]
     rows += [fonts.small.render(line, True, TEXT) for line in lines]
-    width = max(row.get_width() for row in rows) + 2 * INFO_PAD
+    entry = scene.entry if scene.entry is not None and scene.entry.kind is what else None
+    _, _, circuit_w, circuit_h = ENTRY_AREA
+    widths = [row.get_width() for row in rows] + ([] if entry is None else [circuit_w])
+    width = max(widths) + 2 * INFO_PAD
     height = sum(row.get_height() + 4 for row in rows) + 2 * INFO_PAD
+    height += 0 if entry is None else circuit_h + INFO_PAD
     _, top, _, _ = dict(scene.layout.info_buttons)[what]
     top = min(top, screen.get_height() - height - 8)  # kept on screen
     area = scene.layout.drawer_area or scene.layout.bar_area
@@ -1201,6 +1206,10 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
     for row in rows:
         screen.blit(row, (box.left + INFO_PAD, y))
         y += row.get_height() + 4
+    if entry is not None:  # under the lines, across the box
+        place = pygame.Rect(box.centerx - circuit_w // 2, y + INFO_PAD - 4, circuit_w, circuit_h)
+        pygame.draw.rect(screen, PANEL, place, border_radius=6)
+        draw_circuit(screen.subsurface(place), entry.circuit, entry.y, fonts, plain=True)
 
 
 def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:

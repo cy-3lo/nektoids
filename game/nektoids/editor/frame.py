@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from nektoids.editor.entry import Entry
 from nektoids.editor.hints import HintView
 from nektoids.editor.layout import (
     PASSKEY_KEY,
@@ -35,6 +36,7 @@ from nektoids.editor.layout import (
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
+from nektoids.graph.board import Kind
 from nektoids.levels.level import PASSKEY_LENGTH
 
 LEAVE = {"editor": "edit", "run": "run"}  # what a tab asks for: the screen it names
@@ -51,6 +53,7 @@ class Frame:
         self.chosen: int | None = None  # a place picked in Chapters: main.py's to clear
         self.chapters: tuple[ChapterRow, ...] = ()  # what Chapters shows; main.py's
         self.info: object | None = None  # the row whose info box is open: a part, a tool...
+        self.entry: Entry | None = None  # ... a part's, at work in its own circuit (D-082)
         self.tip_target: object | None = None  # the bar's icon, or the other tab, under the mouse
         self.tip_frames = 0  # how long it has been there
         self.tip_warm = 0  # a tooltip showed lately: the next shows at once, for so long [frames]
@@ -70,6 +73,13 @@ class Frame:
         return self.tip_target if self.tip_frames >= self.settings.tooltip_frames else None
 
     def frame_update(self) -> None:
+        """Once a frame: the tooltip's rest, and a part's entry at work while its box is open."""
+        if not isinstance(self.info, Kind):
+            self.entry = None
+        elif self.entry is None or self.entry.kind is not self.info:
+            self.entry = Entry(self.info)
+        else:
+            self.entry.tick()
         if self.tip_target is not None:
             self.tip_frames += 1
         self.tip_warm = WARM_FRAMES if self.tooltip is not None else max(0, self.tip_warm - 1)
