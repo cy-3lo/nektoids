@@ -778,5 +778,27 @@ The objectives at the foot of every run drawer, and Navigator's zoom bar (D-065)
 `value_at`, the zoom on a log scale; `arena_draw._draw_rows` draws the objectives under any
 drawer.
 
+## 16. Hints, asked for in turn (D-078)
+
+Read D-078 first. Open Love, press ?, and take the Idea, the Parts, then the Shadow; go to the
+Editor, where the shadow lies on the board too, and click Shadow to hide it.
+
+- [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.from_dict` reads a level's
+  `hints`, its idea and its shadow (ghosts, as a tutorial writes them); `says` the lines under a
+  row; `parts_line` counts the shadow's parts; `build` makes the shadow for real on a board;
+  `Taken`, what the player has taken; `HintView`, what the drawer shows.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `Drawer.HINTS` in `FOOT`,
+  `_Rows.hints`, `HintRow`, `hint_row_at`; the picture's square shrinks to clear the run's
+  objectives.
+- [`editor/frame.py`](../game/nektoids/editor/frame.py): `set_hints`, `_take_hint`, which leaves
+  `asked_hint` for `main.py`; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_hints` and
+  `_draw_shadow`.
+- [`main.py`](../game/main.py): `hints()`, the open level's, its shadow built once; the ghosts
+  are the tutorial's while it leads, else the shadow's while shown.
+- Tests: [`test_hints.py`](../tests/test_hints.py), where each level's shadow wins its level.
+
+Questions: why is the Parts hint counted from the shadow rather than written in the level's
+file? Why is the shadow built once per level, and not every frame?
+
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

@@ -1028,3 +1028,24 @@ thing to art, is drawing only.
 **D-077 — 2026-10-03 — LEVEL 1.4 is Shadows, not In the shadow.**
 One word, as the chapter's other titles are: Fear, Aggression, Love. Its file is `shadows.json`;
 its passkey, DARK, stands. Earlier entries keep the old name.
+
+**D-078 — 2026-10-03 — Each level's three hints are asked for in turn in Hints, a drawer at the bar's foot in the editor and the run: an idea, the parts, the shadow. Amends D-039, D-051, D-054, D-069.**
+Love and Shadows opened with two boxes over the board (D-039), and nothing could be asked for: a
+player stuck, or past Skip, had no help. Hints (a life ring; ?, H being the hand's) sits at the
+bar's foot above Settings, in both environments. Its rows, in the common style: Idea, Parts,
+Shadow, each locked until the one before is taken. A click takes one, and its lines stay under
+its row, so every hint taken reads at once. Idea is a line of the level's, a bit cryptic. Parts
+counts the shadow's parts in Parts' order, each name as Parts writes it ("One Eye, one Source,
+one Thruster, one Diff."), so the two cannot disagree. Shadow is one winning board drawn as a
+tutorial draws its model (D-074), faint: in a picture under its row, and on the editor's board;
+its row is then a switch for both. Each shadow, built on its level's own board, wins it
+(`test_hints.py`). The ideas: Fear "Each eye its thruster.", Aggression "Cross the wires.",
+Love "The light softens the push.", Shadows "There is no light in the dark."; the shadows are
+the boards the tests pinned: Fear's and Aggression's models, D-044's smallest Love, and
+Shadows' crossed wiring with a Source on both thrusters. Taken hints last the session, level by
+level, and Chapters does not reset them. The score does not show them: it is the player's own,
+seen by no one else, and a mark would only tax asking for help. While a tutorial leads, the rows
+are locked and the drawer says to skip or finish it; the sandbox has none. Love's and Shadows'
+boxes go: only Fear and Aggression have a tutorial. Like the comma and Tab, ? is a drawer's key
+that is not its initial (D-069); in the run the comma now matches on the character typed,
+since AZERTY's ? is a shifted comma. Settings' "Key hints" keeps its name.
