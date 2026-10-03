@@ -10,9 +10,9 @@ It opens on the first level's board in the editor, under the title card. Run (Sp
 its arena; Edit (Esc) comes back to the board as it was left; once a level is won, Next level
 (Enter) opens the next one's board, and after the last, the end. Chapters (Tab), a drawer, lists
 the chapter's levels and the sandbox (`editor/router.py`, D-030, D-054). A level opened from it
-or by Next level comes up under its card, which says what it asks (D-042). A level's tutorial or
-hints show over the editor and the run, and follow what the player does (`editor/tutorial.py`,
-D-039).
+or by Next level comes up under its card, which says what it asks (D-042). A level's tutorial
+shows over the editor and the run, and follows what the player does (`editor/tutorial.py`,
+D-039); its hints are asked for in the Hints drawer, in turn (`editor/hints.py`, D-078).
 Developer tools, while DEV_VIEW is on:
 F1 goes to the editor of the open level, from any view or screen.
 F2 switches to the developer view (D-016): the board as a running circuit, with equations.
@@ -30,6 +30,7 @@ from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
 from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
+from nektoids.editor.hints import Hints, Taken, hint_view
 from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
 from nektoids.editor.preview_draw import draw_preview
 from nektoids.editor.router import Router, Screen, level_label
@@ -48,14 +49,13 @@ from nektoids.editor.tutorial import (
     box_rect,
     drawer_for,
     focus_cells,
-    guided,
     panels,
     shows_wheel,
     target_rects,
     target_spots,
 )
 from nektoids.editor.tutorial_draw import draw_tutorial
-from nektoids.graph.board import Kind
+from nektoids.graph.board import Board, Kind
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.scenarios import Scenario, scenarios
@@ -73,7 +73,9 @@ fonts = Fonts.load()
 levels = arenas()  # read from their files once, at startup (web.md: no file I/O in the loop)
 router = Router(levels, sandbox())
 editors: dict[int, EditorScene] = {}  # each level's editor, and its undo history with it
-tutorials: dict[int, Tutorial] = {}  # each level's tutorial or hints, where it has got to
+tutorials: dict[int, Tutorial] = {}  # each level's tutorial, where it has got to
+shadows: dict[int, tuple[Hints, Board]] = {}  # each level's hints, read, and its shadow built
+taken: dict[int, Taken] = {}  # what the player has taken of each level's hints (D-078)
 opened_for: dict[int, int] = {}  # the step whose drawer each level's editor last opened
 settings = Settings()  # what the player sets, for the session (D-054)
 
@@ -85,6 +87,17 @@ def tutorial() -> Tutorial | None:
         tutorials[router.index] = Tutorial.from_dict(data)
     guide = tutorials.get(router.index)
     return guide if guide is not None and guide.step is not None else None
+
+
+def hints() -> tuple[Hints, Board, Taken] | None:
+    """The open level's hints, its shadow built once, and what of them is taken this session;
+    None in the sandbox, which has none (D-078)."""
+    if router.in_sandbox or router.level.hints is None:
+        return None
+    if router.index not in shadows:
+        read = Hints.from_dict(router.level.hints)
+        shadows[router.index] = (read, read.build(router.level.new_board()))
+    return (*shadows[router.index], taken.setdefault(router.index, Taken()))
 
 
 def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
@@ -103,27 +116,39 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
 
 
 def choose_place(index: int) -> None:
-    """A place picked in Chapters, under its card. A guided level starts afresh, its board, its
-    undo history and its tutorial; the others keep their boards, and their hints start again
-    (D-048, D-050, D-054). The editor left goes back to Tools, as an editor opens (D-068)."""
+    """A place picked in Chapters, under its card. Every level keeps its board, its undo history,
+    the hints taken (D-078) and where its tutorial has got to: Fear's shows once a session
+    (D-079). The editor left goes back to Tools, as an editor opens (D-068)."""
     if router.index in editors:
         editors[router.index].open_drawer(Drawer.TOOLS)
-    for index_, level in enumerate(levels):
-        if guided(level.tutorial):
-            router.reset(index_)
-            editors.pop(index_, None)
-            tutorials.pop(index_, None)
-            opened_for.pop(index_, None)
-    for guide in tutorials.values():
-        guide.restart()
     router.open(index)
+
+
+def replay_tutorial() -> None:
+    """Settings' Tutorial: Fear's introduction again, from its first step, on Fear as the player
+    left it (D-079)."""
+    tutorials.pop(0, None)
+    opened_for.pop(0, None)
+    choose_place(0)
+
+
+MODIFIERS = {  # alone, they close no card: Cmd+Tab to another window, Shift before a letter
+    pygame.K_LSHIFT,
+    pygame.K_RSHIFT,
+    pygame.K_LCTRL,
+    pygame.K_RCTRL,
+    pygame.K_LALT,
+    pygame.K_RALT,
+    pygame.K_LMETA,
+    pygame.K_RMETA,
+    pygame.K_CAPSLOCK,
+}
 
 
 def tutorial_press(guide: Tutorial, event: pygame.event.Event, scene) -> str | None:
     """ "next" or "skip" if this key or click is the tutorial's (`tutorial.answer`), else None."""
-    if event.type == pygame.KEYDOWN:
-        enter = event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
-        return answer(guide, tutorial_box(guide, scene)[1], None, enter)
+    if event.type == pygame.KEYDOWN and event.key not in MODIFIERS:
+        return answer(guide, tutorial_box(guide, scene)[1], None)
     if event.type == pygame.MOUSEBUTTONDOWN and 1 <= event.button <= 3:  # not the wheel
         return answer(guide, tutorial_box(guide, scene)[1], event.pos)
     return None
@@ -198,7 +223,9 @@ async def main() -> None:
         return playing if playing is not None else editor()
 
     pointer = (0, 0)  # where the mouse is, for the end's button [px]
+    frame = 0  # frames drawn: what the tutorial's sparks move by (D-080), drawing only
     while running:
+        frame += 1
         for event in pygame.event.get():
             if event.type == pygame.MOUSEMOTION:
                 pointer = event.pos
@@ -223,7 +250,10 @@ async def main() -> None:
                 and (button := tutorial_press(guide, event, on_screen())) is not None
             ):
                 if button == "next":
-                    guide.next()  # and nothing else
+                    last = guide.index == len(guide.steps) - 1
+                    guide.next()  # and nothing else, but on the last step: a click there
+                    if last and event.type == pygame.MOUSEBUTTONDOWN:  # does what it does too
+                        on_screen().handle_event(event)  # Hints opens by its icon (D-079)
                 else:
                     guide.skip()
                 editor().message = ""  # a refusal from the step before no longer holds
@@ -250,7 +280,7 @@ async def main() -> None:
             elif playing.request == "edit":
                 router.edit()
             elif playing.request == "tutorial":  # Settings: Fear's tutorial again
-                choose_place(0)
+                replay_tutorial()
             if playing.chosen is not None:  # a place picked in Chapters
                 choose_place(playing.chosen)
             if playing.request is not None or playing.chosen is not None:
@@ -261,7 +291,7 @@ async def main() -> None:
                 router.run()
                 playing = play(run_drawer)
             elif asked == "tutorial":  # Settings: Fear's tutorial again
-                choose_place(0)
+                replay_tutorial()
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
                 choose_place(chosen)
@@ -280,6 +310,14 @@ async def main() -> None:
                         f"{word} opens {level_label(opened)}, {title}: it is open in Chapters"
                     )
 
+        given, built, took = hints() or (None, None, None)  # the level's, its shadow, the taken
+        for scene in (editor(), playing):  # a row of Hints clicked (D-078)
+            if scene is not None and scene.asked_hint is not None:
+                index, scene.asked_hint = scene.asked_hint, None
+                refused = took.take(index) if took is not None else None
+                if refused is not None:
+                    scene.message = refused
+
         guide = tutorial()
         if guide is not None:  # on past what the player has done
             ended = playing.outcome if playing is not None else None
@@ -287,8 +325,14 @@ async def main() -> None:
             drawer = on_screen().layout.drawer  # one a step may wait for (D-074)
             guide.follow(Context(router.board, editor().tool, router.screen, ended, time, drawer))
             guide = tutorial()
-        editor().ghosts = guide.ghosts if guide is not None else ()
-        editor().ghost_wires = guide.ghost_wires if guide is not None else ()  # D-074
+        hinted = None if given is None else hint_view(given, took, guide is not None, built)
+        for scene in (editor(), playing):  # what Hints shows; locked while a tutorial leads
+            if scene is not None:
+                scene.set_hints(hinted)
+        shadow = given if took is not None and took.shown else None
+        model = guide if guide is not None else shadow  # the tutorial's, else the hint's shadow
+        editor().ghosts = model.ghosts if model is not None else ()
+        editor().ghost_wires = model.ghost_wires if model is not None else ()  # D-074
         editor().chapters = router.rows()  # what Chapters shows
         editor().set_wins(router.wins(router.index))  # what Files shows (D-059)
         if playing is not None:
@@ -335,7 +379,7 @@ async def main() -> None:
         elif developer is None and router.screen is Screen.SPEC:
             draw_level_card(screen, router, fonts)
         if developer is None and guide is not None and router.screen in (Screen.EDIT, Screen.RUN):
-            draw_tutorial(screen, fonts, guide, *tutorial_box(guide, on_screen()), pointer)
+            draw_tutorial(screen, fonts, guide, *tutorial_box(guide, on_screen()), pointer, frame)
         pygame.display.flip()
         clock.tick(FPS)
 

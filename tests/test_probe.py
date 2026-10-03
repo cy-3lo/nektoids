@@ -63,7 +63,7 @@ def test_an_eye_held_at_a_level_sends_it_until_the_probe_moves_or_turns():
 
 
 def test_the_probe_stays_out_of_the_obstacles():
-    level = LEVELS["In the shadow"]
+    level = LEVELS["Shadows"]
     probe = Probe(level.new_board(), level, VIEW)
     disc = level.arena.obstacles[0]
     probe.place(disc.x, disc.y)

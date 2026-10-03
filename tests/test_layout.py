@@ -13,6 +13,7 @@ from nektoids.editor.layout import (
     EDIT_KEYS,
     FOOT,
     HEX_SIZE,
+    HINT_LINE,
     LEVEL_KEYS,
     MAX_HEX,
     MIN_HEX,
@@ -30,6 +31,7 @@ from nektoids.editor.layout import (
     Env,
     FileButton,
     Goal,
+    HintRow,
     LevelButton,
     MainView,
     Mode,
@@ -51,6 +53,7 @@ from nektoids.editor.layout import (
     edit_button_at,
     goal_row_at,
     group_at,
+    hint_row_at,
     info_at,
     kept_on_board,
     level_button_at,
@@ -79,7 +82,6 @@ from nektoids.editor.layout import (
     zoom_bar_at,
     zoom_button_at,
 )
-from nektoids.editor.tutorial import guided
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
 from nektoids.levels.arenas import arenas
@@ -190,12 +192,11 @@ def test_parts_list_scrolls_when_it_does_not_fit_and_its_rows_answer_only_where_
     assert top == y and scroll_thumb(bottom)[1] + length == y + h
 
 
-def test_a_guided_levels_parts_fit_with_the_cell_open_so_its_steps_rows_show():
-    for level in arenas():
-        if guided(level.tutorial):
-            board = level.new_board()
-            kinds = frozenset(kind for kind in Kind if board.total(kind) != 0)
-            assert make_layout(kinds=kinds).scroll_max == 0, level.title
+def test_the_first_levels_parts_fit_with_the_cell_open_so_a_steps_rows_would_show():
+    for level in arenas()[:2]:  # Fear and Aggression, whose old tutorials showed Parts' rows
+        board = level.new_board()
+        kinds = frozenset(kind for kind in Kind if board.total(kind) != 0)
+        assert make_layout(kinds=kinds).scroll_max == 0, level.title
 
 
 def test_parts_lists_sensors_then_actuators_then_operators_and_the_numbers_follow():
@@ -305,7 +306,7 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
     # D-069: a letter may mean one thing in the editor and another in the run, never two in one
     assert set(DRAWER_KEYS) == {*DRAWERS[Env.EDITOR], *DRAWERS[Env.RUN], *FOOT} == set(Drawer)
     for drawer, key in DRAWER_KEYS.items():
-        assert key == drawer.value[0].upper() or drawer in (Drawer.SETTINGS, Drawer.CHAPTERS)
+        assert key == drawer.value[0].upper() or drawer in (Drawer.HINTS, *FOOT[1:])
     views = [VIEW_KEYS[b] for b in ViewButton if b not in RUN_VIEWS]  # rays, motion: the run's
     editor = [*(TOOL_KEYS[t] for t in PALETTE_TOOLS), *views, MODE_KEY, LEVEL_KEYS[LevelButton.RUN]]
     editor += [DRAWER_KEYS[d] for d in (*DRAWERS[Env.EDITOR], *FOOT)]
@@ -316,21 +317,23 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
     assert drawer_key(Env.RUN, "S") is Drawer.SCORE and drawer_key(Env.EDITOR, "S") is None
     assert drawer_key(Env.EDITOR, "D") is Drawer.DIAGNOSTIC and drawer_key(Env.RUN, "I")
     assert drawer_key(Env.EDITOR, ",") is drawer_key(Env.RUN, ",") is Drawer.SETTINGS
+    assert drawer_key(Env.EDITOR, "?") is drawer_key(Env.RUN, "?") is Drawer.HINTS  # H: the hand
 
 
-def test_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_keys():
+def test_hints_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_their_keys():
     ((run, switch),) = LAYOUT.level_buttons
     assert run is LevelButton.RUN and switch[1] + switch[3] <= SCREEN[1] - 8
     icons = dict(LAYOUT.drawer_buttons)
-    settings, chapters = icons[Drawer.SETTINGS], icons[Drawer.CHAPTERS]
-    assert settings[1] + settings[3] <= chapters[1] and chapters[1] + chapters[3] <= switch[1]
+    hints, settings, chapters = (icons[d] for d in (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS))
+    assert hints[1] + hints[3] <= settings[1] and settings[1] + settings[3] <= chapters[1]
+    assert chapters[1] + chapters[3] <= switch[1]
     lowest_top = max(icons[d][1] + icons[d][3] for d in DRAWERS[Env.EDITOR])
-    assert lowest_top < settings[1]  # at the foot, apart from the drawers above
+    assert lowest_top < hints[1]  # at the foot, apart from the drawers above
     assert level_button_at(LAYOUT, centre(switch)) is run
     assert palette_target_at(LAYOUT, centre(switch)) is run
     assert contains(LAYOUT.bar_area, switch[:2])
     assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
-    assert (DRAWER_KEYS[Drawer.SETTINGS], DRAWER_KEYS[Drawer.CHAPTERS]) == (",", "Tab")
+    assert [DRAWER_KEYS[d] for d in FOOT] == ["?", ",", "Tab"]
     assert [name for name, _ in LAYOUT.tabs] == ["run", "editor"]  # Run first (D-069)
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name
@@ -383,6 +386,27 @@ def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_sec
             assert row_at(LAYOUT, centre(rect)) is None  # rows only in the open drawer
             assert info_at(layout, centre(dict(layout.info_buttons)[what])) == what
     assert chapters.setting_rows == () and settings.chapter_rows == ()
+
+
+def test_hints_lists_its_rows_each_taken_ones_lines_under_it_and_the_shadow_last():
+    assert make_layout(Drawer.HINTS).hint_rows == ()  # a level with none: a note only (D-078)
+    fresh = make_layout(Drawer.HINTS, hint_lines=())
+    assert [row for row, _ in fresh.hint_rows] == [HintRow(0), HintRow(1), HintRow(2)]
+    assert fresh.hint_texts == () and fresh.shadow_picture is None
+    for row, rect in fresh.hint_rows:
+        assert hint_row_at(fresh, centre(rect)) == row and hint_row_at(LAYOUT, centre(rect)) is None
+        assert info_at(fresh, centre(dict(fresh.info_buttons)[row])) == row
+    taken = make_layout(Drawer.HINTS, hint_lines=(1, 2, 0), shadow=True)
+    rows, texts = [rect for _, rect in taken.hint_rows], dict(taken.hint_texts)
+    assert list(texts) == [0, 1]  # the shadow's says nothing: its picture does
+    for k, lines in ((0, 1), (1, 2)):
+        x, y, w, h = texts[k]
+        assert rows[k][1] + rows[k][3] <= y and y + h < rows[k + 1][1] and h == lines * HINT_LINE
+        assert contains(taken.drawer_area, (x, y)) and contains(taken.drawer_area, (x + w - 1, y))
+    x, y, w, h = taken.shadow_picture
+    assert w == h == DRAWER_WIDTH - 32 and rows[2][1] + rows[2][3] < y  # a square, under it
+    assert y + h < SCREEN[1] and contains(taken.drawer_area, (x, y))
+    assert make_layout(Drawer.HINTS, hint_lines=(1, 2, 0)).shadow_picture is None  # hidden
 
 
 def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_arena():

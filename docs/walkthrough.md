@@ -490,7 +490,7 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 - **In a crevice narrower than a body,** the swimmer overlaps the obstacle by up to one tick's
   travel (under 0.02 u, less than a pixel).
 - **No momentum:** an eye crossing the hard edge of a shadow stops the swimmer within a few ticks,
-  since TAU = 1/60 s barely smooths it. Look for it in "In the shadow", where the swimmer starts
+  since TAU = 1/60 s barely smooths it. Look for it in "Shadows", where the swimmer starts
   behind the obstacle at (19, 19).
 - **`arena.py`'s tick has no automated test,** like the rest of the scene; `world.step` has. A
   headless script ran both arenas for 10 s and 20 s before the PR.
@@ -533,7 +533,7 @@ un-ends the run.
   by id, since ids have gaps after a delete.
 - Tests: [`test_objectives.py`](../tests/test_objectives.py), the round trip in
   [`test_board.py`](../tests/test_board.py), and in
-  [`test_determinism.py`](../tests/test_determinism.py) a board that wins "In the shadow": the
+  [`test_determinism.py`](../tests/test_determinism.py) a board that wins "Shadows": the
   crossed wiring with a Source on both thrusters, so the level is known to be winnable.
 
 ### 9.3 Questions to answer after reading
@@ -611,21 +611,24 @@ would a player see in Chapters if the mark were only set when Next level is pres
 
 ## 12. Tutorials and hints (D-038, D-039, D-048, D-050)
 
-Read D-038, D-039 and D-048 first. `python game/main.py` now opens on Fear, whose tutorial walks
-the player through the board, placing, turning and wiring; only what each step asks works, and
-Skip ends it.
+Read D-038, D-039 and D-048 first. `python game/main.py` now opens on Fear, whose tutorial
+introduces the objective, the tabs, the bar and Hints, once a session (D-079); only what each
+step asks works, and Skip ends it. Until D-079 it walked the player through placing, turning and
+wiring; the machinery for that stays, used by no level, and the tests walk the old tutorials,
+kept in [`tests/data`](../tests/data).
 
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py), pure: `Tutorial.from_dict` reads
   a level's `tutorial` (its `ghosts` and `steps`); `follow(Context)` moves past every step whose
   wait is over (`met`); `next` and `skip` are the box's buttons, `answer` what a key or click
-  does to the tutorial, `restart` what choosing a place in Chapters does.
+  does to the tutorial, `restart` from the first step again.
   `allows(step, Action)` says what a leading step lets through; `explains` whether it holds the
-  run and outlines its `panels`; `guided` whether a level starts afresh when a place is chosen.
+  run and outlines its `panels`.
   `target_spots` finds what a step
   shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
   (`_crosses`) and the step `before`.
-- [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) dims everything but the
-  targets, through holes with no frame, and draws the box; the ghosts are drawn by `draw.py`,
+- [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) draws the sparks out of
+  each target (`tutorial.sparks`, D-080) and the box; the targets themselves are drawn in the
+  accent by what draws them, from `panels`, set as the scene's `lit`; the ghosts by `draw.py`,
   from `EditorScene.ghosts`, which `main.py` sets every frame, with `gate`, which the editor
   and the run ask before each action that changes something (`_allowed`, `_ask`).
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
@@ -777,6 +780,29 @@ The objectives at the foot of every run drawer, and Navigator's zoom bar (D-065)
 [`layout.py`](../game/nektoids/editor/layout.py)'s `goal_area` and `zoom_bar`, `level_of` and
 `value_at`, the zoom on a log scale; `arena_draw._draw_rows` draws the objectives under any
 drawer.
+
+## 16. Hints, asked for in turn (D-078)
+
+Read D-078 first. Open Love, press ?, and take Hint 1, the idea, Hint 2, the parts, then Hint
+3, the shadow; go to the Editor, where the shadow lies on the board too, and click Hint 3 to
+hide it.
+
+- [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.from_dict` reads a level's
+  `hints`, its idea and its shadow (ghosts, as a tutorial writes them); `says` the lines under a
+  row; `parts_line` counts the shadow's parts; `build` makes the shadow for real on a board;
+  `Taken`, what the player has taken; `HintView`, what the drawer shows.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `Drawer.HINTS` in `FOOT`,
+  `_Rows.hints`, `HintRow`, `hint_row_at`; the picture's square shrinks to clear the run's
+  objectives.
+- [`editor/frame.py`](../game/nektoids/editor/frame.py): `set_hints`, `_take_hint`, which leaves
+  `asked_hint` for `main.py`; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_hints` and
+  `_draw_shadow`.
+- [`main.py`](../game/main.py): `hints()`, the open level's, its shadow built once; the ghosts
+  are the tutorial's while it leads, else the shadow's while shown.
+- Tests: [`test_hints.py`](../tests/test_hints.py), where each level's shadow wins its level.
+
+Questions: why is the Parts hint counted from the shadow rather than written in the level's
+file? Why is the shadow built once per level, and not every frame?
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
 explains every rule above (D-007 to D-014 cover the editor).

@@ -230,7 +230,7 @@ class ArenaScene(Frame):
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         goals, chapter = len(self.level.objectives), self.layout.chapter
-        return make_layout(drawer, env=Env.RUN, goals=goals, chapter=chapter)
+        return make_layout(drawer, env=Env.RUN, goals=goals, chapter=chapter, **self._hint_layout())
 
     def _slid(self, before: Layout, after: Layout) -> None:
         """The arena moved: the view slides with its centre, so nothing jumps."""
@@ -578,7 +578,9 @@ class ArenaScene(Frame):
         elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
             self.press(ArenaButton.NEXT)
         elif not self.developer:
-            drawer = Drawer.SETTINGS if event.key == pygame.K_COMMA else drawer_key(Env.RUN, typed)
+            drawer = drawer_key(Env.RUN, typed)  # the character first: AZERTY's ? is on the comma
+            if drawer is None and event.key == pygame.K_COMMA:  # with Ctrl or Cmd, none is typed
+                drawer = Drawer.SETTINGS
             if event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS], as in the editor
                 self.toggle_drawer(Drawer.CHAPTERS)
             elif self.start_passkey(typed):  # P in Chapters: a passkey (D-075)

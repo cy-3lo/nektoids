@@ -1,5 +1,10 @@
 """Tutorials and hints (D-039). tutorial.py imports no pygame."""
 
+import json
+from pathlib import Path
+
+import pytest
+
 from nektoids.editor.layout import (
     SCREEN,
     Drawer,
@@ -13,6 +18,9 @@ from nektoids.editor.layout import (
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     GAP,
+    HALO,
+    SPARK_PITCH,
+    SPARK_REACH,
     Action,
     Context,
     Docked,
@@ -24,7 +32,6 @@ from nektoids.editor.tutorial import (
     answer,
     box_rect,
     drawer_for,
-    guided,
     is_area,
     met,
     next_rect,
@@ -32,6 +39,7 @@ from nektoids.editor.tutorial import (
     panels,
     shows_wheel,
     skip_rect,
+    sparks,
     target_rects,
     target_spots,
 )
@@ -54,8 +62,15 @@ def layout_on(screen: Screen, step=None):
 
 
 LEVELS = {level.title: level for level in arenas()}
-FEAR = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
+# The tutorials Fear and Aggression had until D-079, which built the board: the machinery they
+# need stays in tutorial.py, used by no level now, and is tested on them.
+BUILT = {
+    name: json.loads((Path(__file__).parent / "data" / f"{name}-tutorial.json").read_text())
+    for name in ("fear", "aggression")
+}
+FEAR = Tutorial.from_dict(BUILT["fear"]).steps
 FEAR_KINDS = frozenset({Kind.EYE, Kind.THRUSTER})  # what Fear hands out
+HINT = Tutorial((), (Step(("A step with no target hints: it dims nothing.",)),))
 
 
 def fear(until=None, show=None) -> int:
@@ -108,10 +123,14 @@ def on_screen(rect):
     return 0 <= x and x + w <= SCREEN[0] and 0 <= y and y + h <= SCREEN[1]
 
 
-def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
-    for level in arenas():
-        assert level.tutorial is not None, level.title  # the first leads, the rest hint
-        tutorial = Tutorial.from_dict(level.tutorial)
+def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
+    fear, aggression = LEVELS["Fear"], LEVELS["Aggression"]
+    for level, data in (
+        (fear, fear.tutorial),
+        (fear, BUILT["fear"]),
+        (aggression, BUILT["aggression"]),
+    ):
+        tutorial = Tutorial.from_dict(data)
         context = Context(level.new_board(), Tool.ADD, Screen.EDIT)
         for step in tutorial.steps:
             assert step.say and all(len(line) <= 48 for line in step.say)
@@ -122,17 +141,41 @@ def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for
                 assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
 
 
-def test_the_first_two_levels_lead_the_later_ones_only_hint():
-    *first, love, shadow = arenas()  # Fear and Aggression lead (D-074)
-    for level in first:
-        assert any(step.show for step in Tutorial.from_dict(level.tutorial).steps)
-    for level in (love, shadow):
-        assert not any(step.show or step.until for step in Tutorial.from_dict(level.tutorial).steps)
+def test_only_fear_has_a_tutorial_an_introduction_that_builds_nothing():
+    assert [level.title for level in arenas() if level.tutorial is not None] == ["Fear"]  # D-079
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    assert tutorial.ghosts == () and tutorial.ghost_wires == ()
+    waits = [step.until for step in tutorial.steps if step.until]
+    assert waits == [{"screen": "edit"}]  # nothing placed, turned or wired
+
+
+def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_on_hints():
+    level = LEVELS["Fear"]
+    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+
+    def context(screen, drawer=None):
+        return Context(board, Tool.ADD, screen, None, 0.0, drawer)
+
+    for shown in ({"run": "swimmer"}, {"run": "objectives"}):  # in the run: any key goes on
+        tutorial.follow(context(Screen.RUN))
+        assert tutorial.step.show == shown and tutorial.waits_for_next
+        tutorial.next()
+    tutorial.follow(context(Screen.RUN))
+    assert {"tab": "editor"} in tutorial.step.show  # waits for the Editor
+    tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
+    assert tutorial.step.show is None and not tutorial.leads  # the board: its box out of the way
+    tutorial.next()
+    assert tutorial.step.show == {"area": "bar"} and tutorial.waits_for_next  # any key, D-081
+    tutorial.next()
+    assert tutorial.step.show == {"icon": "hints"} and drawer_for(tutorial.step) is None
+    assert tutorial.waits_for_next  # the last: any key or click closes it
+    tutorial.next()
+    assert tutorial.step is None  # over: the hints may be taken
 
 
 def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     level = LEVELS["Fear"]
-    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    tutorial, board = Tutorial.from_dict(BUILT["fear"]), level.new_board()
 
     def context(tool=Tool.ADD, screen=Screen.EDIT, outcome=None, time=0.0):
         return Context(board, tool, screen, outcome, time)
@@ -210,7 +253,7 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     assert contains(LAYOUT.board_area, hint[:2]) and on_screen(hint)
     nx, ny, nw, nh = next_rect(box)
     assert contains(box, (nx, ny)) and contains(box, (nx + nw - 1, ny + nh - 1))
-    for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:  # never over what it shows
+    for step in Tutorial.from_dict(BUILT["fear"]).steps:  # never over what it shows
         for screen in (Screen.EDIT, Screen.RUN):
             layout = layout_on(screen, step)
             targets = target_rects(step.show, screen, layout, VIEW, wheel_for(step, layout))
@@ -228,7 +271,7 @@ def overlap(a, b):
 
 def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds():
     level = LEVELS["Fear"]
-    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    tutorial, board = Tutorial.from_dict(BUILT["fear"]), level.new_board()
     tutorial.skip()
     assert tutorial.step is None
     board.place(Kind.EYE, (2, -1))  # built while the tutorial was off
@@ -295,7 +338,7 @@ def test_a_leading_step_lets_through_only_the_means_to_what_it_waits_for():
 def test_a_step_that_waits_for_next_lets_nothing_through_and_a_hint_lets_all():
     for waits_for_next in [step for step in FEAR if not step.until]:
         assert not any(allows(waits_for_next, action) for action in ANYTHING)
-    hint = Tutorial.from_dict(LEVELS["Love"].tutorial).steps[0]
+    hint = HINT.steps[0]
     assert all(allows(hint, action) for action in ANYTHING)
     assert all(allows(None, action) for action in ANYTHING)  # no tutorial, or over
 
@@ -318,9 +361,15 @@ def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
     assert [rect for rect, _ in spots] == target_rects(
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
-    panel = target_spots({"area": "bar"}, Screen.EDIT, layout, centred_view(layout))
+    panel = target_spots({"area": "board"}, Screen.EDIT, layout, centred_view(layout))
     run = target_spots([{"run": "play"}, {"run": "inside"}], Screen.RUN, RUN_LAYOUT, None)
     assert [shape for _, shape in panel + run] == ["panel", "spot", "panel"]
+    (upper, shape), (lower, _) = target_spots({"area": "bar"}, Screen.EDIT, layout, None)
+    assert shape == "spot" and upper[1] + upper[3] < lower[1]  # the bar's two groups (D-080)
+    icons = dict(layout.drawer_buttons)
+    assert contains(upper, icons[Drawer.TOOLS][:2]) and contains(lower, icons[Drawer.HINTS][:2])
+    switch = layout.level_buttons[0][1]
+    assert contains(lower, (switch[0] + switch[2] - 1, switch[1] + switch[3] - 1))
 
 
 def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_beside_it():
@@ -330,10 +379,10 @@ def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_besid
     assert not _crosses((700, 20, 100, 60), menu, cell)  # beyond the end
 
 
-def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_just_done():
-    level = LEVELS["Fear"]
+@pytest.mark.parametrize("data", [LEVELS["Fear"].tutorial, BUILT["fear"]])
+def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_just_done(data):
     view = centred_view(LAYOUT)
-    tutorial = Tutorial.from_dict(level.tutorial)
+    tutorial = Tutorial.from_dict(data)
     for index in range(len(tutorial.steps)):  # each step, as it shows once the one before is done
         tutorial.index = index
         step, done = tutorial.step, tutorial.before
@@ -360,7 +409,7 @@ def grown(rect, by):
 
 
 def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_left_undone():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     for _ in range(2):  # the swimmer, Objectives
         assert tutorial.waits_for_next
         tutorial.next()
@@ -374,43 +423,46 @@ def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_l
     assert tutorial.index == EYE == BOARD + 2
 
 
-def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+def test_a_step_that_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     box = (300, 300, 360, 100)
     skip, nxt = skip_rect(box), next_rect(box)
     centre = lambda r: (r[0] + r[2] // 2, r[1] + r[3] // 2)  # noqa: E731
-    assert answer(tutorial, box, None) == "next"  # the board: any key
-    assert answer(tutorial, box, (5, 5)) == "next"  # ... or a click anywhere
-    assert answer(tutorial, box, centre(skip)) == "skip"
-    tutorial.index = TOOLS  # after the Editor tab: only Next or Enter (D-060)
-    assert answer(tutorial, box, None) is None and answer(tutorial, box, (5, 5)) is None
-    assert answer(tutorial, box, None, enter=True) == "next"
-    assert answer(tutorial, box, centre(nxt)) == "next"
+    for index in (0, TOOLS):  # before the first action and after it alike (D-081)
+        tutorial.index = index
+        assert answer(tutorial, box, None) == "next"  # any key
+        assert answer(tutorial, box, (5, 5)) == answer(tutorial, box, centre(nxt)) == "next"
+        assert answer(tutorial, box, centre(skip)) == "skip"
     tutorial.index = EYE  # place an eye: the press is the editor's, but Skip
     assert answer(tutorial, box, None) is None and answer(tutorial, box, centre(nxt)) is None
     assert answer(tutorial, box, centre(skip)) == "skip"
     tutorial.index = len(tutorial.steps) - 1  # the last: Close, any key or click; no Skip
     assert answer(tutorial, box, centre(skip)) == "next"
-    hint = Tutorial.from_dict(LEVELS["Love"].tutorial)  # a hint takes only its own buttons
-    assert answer(hint, box, None) is None and answer(hint, box, (5, 5)) is None
-    assert answer(hint, box, centre(nxt)) == "next"
+    hint = Tutorial((), HINT.steps)  # a step with no target, as Fear's board (D-081)
+    assert answer(hint, box, None) == answer(hint, box, (5, 5)) == "next"
 
 
-def test_the_first_two_levels_are_guided_and_so_start_afresh_at_the_map():
-    fear, aggression, *later = arenas()  # D-074
-    assert guided(fear.tutorial) and guided(aggression.tutorial)
-    assert not any(guided(level.tutorial) for level in later) and not guided(None)
-
-
-def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    expected = {0: {"swimmer"}, 1: {"objectives"}, TAB: set(), BOARD: set(), TOOLS: {"tools"}}
-    expected |= {THRUSTER: set(), EYE: set(), RUN: set(), PLAY: set(), INSIDE: {"inside"}}
+def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
+    tutorial = Tutorial.from_dict(BUILT["fear"])  # D-080: every leading step, not only those
+    expected = {
+        0: {"swimmer"},
+        1: {"objectives"},
+        TAB: {"tab:editor"},
+        BOARD: set(),
+    }  # that explain
+    expected |= {TOOLS: {"tools"}, THRUSTER: {"parts"}, EYE: set(), RUN: {"tab:run"}}
+    expected |= {PLAY: {"play", "arena"}, INSIDE: {"inside"}}
     for index, names in expected.items():
         tutorial.index = index
         assert panels(tutorial) == names, index
     tutorial.index = len(tutorial.steps) - 1
     assert panels(tutorial) == {"score"} and panels(None) == frozenset()
+    intro = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    named = []
+    for index in range(len(intro.steps)):
+        intro.index = index
+        named.append(panels(intro))
+    assert named == [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}, {"icon:hints"}]
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
@@ -427,14 +479,14 @@ def test_a_step_opens_the_drawer_its_targets_are_in():
 
 
 def test_a_leading_step_keeps_the_board_on_screen():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     tutorial.index = EYE  # an Eye to place on its cell
     assert not allows(tutorial.step, Action("view"))  # no Run preview while it leads (D-058)
     assert allows(None, Action("view"))
 
 
 def test_fear_sends_the_player_from_the_run_to_the_editor_by_its_tab():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)  # every level opens on its run
+    tutorial = Tutorial.from_dict(BUILT["fear"])  # every level opens on its run
     ways = tutorial.steps[TAB].show  # the Editor tab and the switch at the bar's foot
     switch = dict(RUN_LAYOUT.level_buttons)[LevelButton.EDIT]
     assert target_rects(ways, Screen.RUN, RUN_LAYOUT, VIEW) == [
@@ -459,7 +511,7 @@ def test_the_runs_page_is_outlined_with_its_tab_and_the_box_keeps_under_its_head
 def test_a_step_that_asks_for_an_action_lights_its_cells_and_one_that_explains_none():
     from nektoids.editor.tutorial import focus_cells
 
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     tutorial.index = EYE  # an Eye onto (2, -1)
     assert focus_cells(tutorial) == {(2, -1)}  # filled in the accent, nothing dimmed (D-063)
     tutorial.index = WIRE  # the upper eye to the upper thruster
@@ -593,10 +645,10 @@ def test_a_tutorial_may_carry_its_models_wires():
         "steps": [{"say": ["x"]}],
     }
     assert Tutorial.from_dict(data).ghost_wires == (((-1, -1), (1, 1)),)  # D-074
-    assert Tutorial.from_dict(LEVELS["Fear"].tutorial).ghost_wires == ()
+    assert Tutorial.from_dict(BUILT["fear"]).ghost_wires == ()
 
 
-AGGRESSION = Tutorial.from_dict(LEVELS["Aggression"].tutorial)
+AGGRESSION = Tutorial.from_dict(BUILT["aggression"])
 
 
 def test_aggressions_model_is_the_crossed_board_that_wins_it():
@@ -614,7 +666,7 @@ def test_aggressions_model_is_the_crossed_board_that_wins_it():
 
 def test_the_aggression_tutorial_moves_on_as_the_player_builds_tries_and_runs_it():
     tutorial, board = (
-        Tutorial.from_dict(LEVELS["Aggression"].tutorial),
+        Tutorial.from_dict(BUILT["aggression"]),
         LEVELS["Aggression"].new_board(),
     )
 
@@ -672,3 +724,22 @@ def test_aggressions_boxes_keep_clear_of_what_they_show_on_screen():
             if narrow:
                 box = box_rect(targets, len(step.say), layout.board_area)
                 assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
+
+
+def test_sparks_drift_out_of_where_the_outline_was_as_many_as_its_edge_is_long():
+    button, cell = ((400, 300, 40, 40), "spot"), ((200, 200, 70, 80), "disc")  # D-080
+    assert sparks([button, cell], 7) == sparks([button, cell], 7)  # still while the frame is
+    counts = []
+    for frame in range(200):
+        for x, y in sparks([button], frame):
+            dx = max(400 - HALO - x, 0, x - (440 + HALO))
+            dy = max(300 - HALO - y, 0, y - (340 + HALO))
+            assert max(dx, dy) <= SPARK_REACH + 1e-9  # out of the edge, not beyond its reach
+            assert not (400 - HALO < x < 440 + HALO and 300 - HALO < y < 340 + HALO)
+        counts.append(len(sparks([button], frame)))
+    edge = 4 * (40 + 2 * HALO)
+    assert abs(sum(counts) / len(counts) - edge / SPARK_PITCH) < 0.25 * edge / SPARK_PITCH
+    for x, y in sparks([cell], 3):  # round a cell: out from its centre
+        r = ((x - 235) ** 2 + (y - 240) ** 2) ** 0.5
+        assert 40 + HALO - 1e-9 <= r <= 40 + HALO + SPARK_REACH
+    assert sparks([((0, 0, 10, 10), "none")], 3) == []

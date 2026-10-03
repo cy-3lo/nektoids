@@ -82,7 +82,7 @@ CROWD = ((2.0, 2.0, 0.0), (38.0, 36.0, 2 * math.pi))  # where and how the crowd 
 
 
 def crowd_hash(seed, seconds=5.0, n_swimmers=50):
-    title = "In the shadow"
+    title = "Shadows"
     rng = np.random.default_rng(seed)
     start = rng.uniform(*CROWD, (n_swimmers, 3))
     pos, heading, y = last(run(CROSSED, title, seconds, start))
@@ -118,15 +118,15 @@ def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
     assert np.all(y[:, UNCROSSED.eyes] < 0.01)  # still fading: it slows as it darkens
 
 
-def test_in_the_shadow_the_eyes_see_nothing_and_a_swimmer_without_a_drive_never_moves():
-    level = LEVELS["In the shadow"]
-    pos, _, y = last(run(CROSSED, "In the shadow", 5.0))
+def test_shadows_the_eyes_see_nothing_and_a_swimmer_without_a_drive_never_moves():
+    level = LEVELS["Shadows"]
+    pos, _, y = last(run(CROSSED, "Shadows", 5.0))
     assert pos.tolist() == [list(level.start[:2])]
     assert np.all(y[:, CROSSED.eyes] == 0.0)
 
 
-def test_in_the_shadow_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spare():
-    title = "In the shadow"
+def test_shadows_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spare():
+    title = "Shadows"
     ended, ticks, _ = play(DRIVEN, title)
     assert ended is Outcome.WON and ticks * DT < LEVELS[title].time_limit / 2
     assert play(DRIVEN, title)[1] == ticks  # the same tick, every run

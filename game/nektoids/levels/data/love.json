@@ -15,20 +15,20 @@
   "time_limit": 20.0,
   "objectives": [{"kind": "stay near", "radius": 6.0, "seconds": 5.0}, {"kind": "keep off"}],
   "passkey": "HEART",
-  "tutorial": {
-    "steps": [
-      {
-        "say": [
-          "Come to the light and stay by it: the closer",
-          "it is, the less the swimmer should push."
-        ]
-      },
-      {
-        "say": [
-          "A Source sends a steady 1. A Diff of a Source",
-          "and an eye sends 1 less what the eye reads."
-        ]
-      }
-    ]
+  "hints": {
+    "idea": "The light softens the push.",
+    "shadow": {
+      "ghosts": [
+        {"kind": "eye", "cell": [2, 0], "facing": "E"},
+        {"kind": "source", "cell": [0, -1]},
+        {"kind": "difference", "cell": [1, 0]},
+        {"kind": "thruster", "cell": [-2, 0], "facing": "E"}
+      ],
+      "ghost_wires": [
+        {"from": [0, -1], "to": [1, 0]},
+        {"from": [2, 0], "to": [1, 0]},
+        {"from": [1, 0], "to": [-2, 0]}
+      ]
+    }
   }
 }

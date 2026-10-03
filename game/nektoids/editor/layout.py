@@ -1,14 +1,15 @@
 """Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
 
 - Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
-  editor, Objectives, Inside, Score and Navigator in the run; Settings and Chapters at its foot,
-  over the accented switch to the other environment (`Env`).
+  editor, Objectives, Inside, Score and Navigator in the run; Hints, Settings and Chapters at
+  its foot, over the accented switch to the other environment (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: the tools, Edit (undo, redo),
-  File (save and load, inactive until saving exists); Navigator: the view's buttons; Settings:
-  what the player sets (D-054); Chapters: the levels, then the sandbox, which replaces the
-  full-screen map. An arrow on the drawer's edge folds it.
+  File (save and load, inactive until saving exists); Navigator: the view's buttons; Hints: the
+  level's, asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the
+  levels, then the sandbox, which replaces the full-screen map. An arrow on the drawer's edge
+  folds it.
 - The rest is the main screen: the tabs over it (Run, Editor), the level's caption under them,
   then the board's hex grid, or in the run the arena with its controls under it; one status
   line at its foot. A drawer opening pushes the main screen aside.
@@ -47,6 +48,8 @@ SCROLL_WIDTH = 5  # Parts' scroll bar, in the drawer's right margin [px]
 SCROLL_STEP = 23  # what a notch of the mouse wheel scrolls Parts' list by: half a row [px]
 SCROLL_THUMB = 24  # the scroll bar's thumb, at its shortest [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
+HINT_ROWS = 3  # Hints' rows: the idea, the parts, the shadow (D-078)
+HINT_LINE = 20  # a line of a hint under its row, as a note's [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
@@ -139,6 +142,7 @@ class Drawer(Enum):  # D-051
     INSIDE = "inside"  # the run's: the swimmer's wiring, live
     SCORE = "score"  # the run's: the level's wins this session
     NAVIGATOR = "navigator"  # zoom, hand, centre; the rays in the run
+    HINTS = "hints"  # at the bar's foot: the level's hints, asked for in turn (D-078)
     SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
 
@@ -163,13 +167,20 @@ DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
 }
-FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
+FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT}
 
 
 @dataclass(frozen=True)
 class WinRow:
     """A row of Files: the level's win `index` this session, the fastest first (D-059)."""
+
+    index: int
+
+
+@dataclass(frozen=True)
+class HintRow:
+    """A row of Hints: the level's hint `index`, the idea, the parts, then the shadow (D-078)."""
 
     index: int
 
@@ -219,7 +230,7 @@ LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
 # Each drawer's key, its initial (D-069): it opens the drawer, or folds it. A letter may mean
 # something else in the other environment, F Fast forward in the run, S Swap in the editor, since
 # the two never show together. Tab opens the levels, as it opened the map; the comma Settings,
-# with Ctrl or Cmd too.
+# with Ctrl or Cmd too; the question mark Hints, H being the hand's (D-078).
 PASSKEY_KEY = "P"  # with Chapters open, a passkey to type, not Parts (D-075)
 DRAWER_KEYS = {
     Drawer.TOOLS: "T",
@@ -229,6 +240,7 @@ DRAWER_KEYS = {
     Drawer.NAVIGATOR: "N",
     Drawer.INSIDE: "I",
     Drawer.SCORE: "S",
+    Drawer.HINTS: "?",
     Drawer.SETTINGS: ",",
     Drawer.CHAPTERS: "Tab",
 }
@@ -265,6 +277,9 @@ class Layout:
     goal_area: Rect | None  # ... at the foot of the open drawer, whichever it is (D-065)
     win_rows: tuple[tuple[WinRow, Rect], ...]  # Files' rows: this session's wins of the level
     setting_rows: tuple[tuple[Setting, Rect], ...]  # Settings' rows
+    hint_rows: tuple[tuple[HintRow, Rect], ...]  # Hints' rows, if the level has hints (D-078)
+    hint_texts: tuple[tuple[int, Rect], ...]  # ... under each taken one, its lines: its index
+    shadow_picture: Rect | None  # ... under the shadow's, while it shows: the board, small
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
     passkey_field: Rect | None  # Chapters' foot: a level's passkey typed there (D-075)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
@@ -296,6 +311,8 @@ def make_layout(
     wins: int = 0,
     wheel_folded: bool = False,
     scroll: int = 0,
+    hint_lines: tuple[int, ...] | None = None,
+    shadow: bool = False,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     Parts' groups shown closed; kinds: the parts the level hands out, the only ones Parts shows
@@ -303,7 +320,9 @@ def make_layout(
     objectives the level has, at the foot of each of the run's drawers, before the time left;
     wins: how many wins of the level Files lists; wheel_folded: the picture of the cell folded, at
     the foot of Tools and of Parts; scroll: how far Parts' list is scrolled, kept within what it
-    needs (D-069)."""
+    needs (D-069); hint_lines: how many lines each hint taken shows under its row, in Hints, or
+    None for a level with none to take; shadow: the shadow shows, in a picture under its row
+    (D-078)."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -312,7 +331,7 @@ def make_layout(
     drawer_buttons = tuple(
         (d, (side, BAR_PITCH // 2 + 6 + k * BAR_PITCH - BAR_BUTTON // 2, BAR_BUTTON, BAR_BUTTON))
         for k, d in enumerate(top)
-    ) + tuple(  # at the foot, over the switch, from the bottom up: Chapters, then Settings
+    ) + tuple(  # at the foot, over the switch, from the bottom up: Chapters, Settings, Hints
         (d, (side, switch[1] - (len(FOOT) - k) * BAR_PITCH, BAR_BUTTON, BAR_BUTTON))
         for k, d in enumerate(FOOT)
     )
@@ -338,6 +357,11 @@ def make_layout(
         rows.label("The swimmer's wiring")
     elif drawer is Drawer.SCORE:
         rows.label("Your wins")
+    elif drawer is Drawer.HINTS and hint_lines is not None:
+        floor = (
+            _goals_top(height, goals) - 16 if env is Env.RUN else height - FOOT_MARGIN
+        )  # 8 px clear
+        rows.hints(hint_lines, shadow, floor)
     elif drawer is Drawer.SETTINGS:
         rows.settings()
     elif drawer is Drawer.CHAPTERS:
@@ -345,8 +369,7 @@ def make_layout(
     goal_area = None
     if env is Env.RUN and drawer is not None:  # the objectives, at the foot of every drawer
         foot = _Rows()
-        height_needed = TITLE_HEIGHT + (goals + 1) * (GOAL_HEIGHT + ROW_PITCH - ROW_HEIGHT)
-        foot.y = height - FOOT_MARGIN - height_needed
+        foot.y = _goals_top(height, goals)
         goal_area = (BAR_WIDTH, foot.y - 8, DRAWER_WIDTH, height - foot.y + 8)
         foot.label("Objectives")
         foot.goals(goals)
@@ -390,6 +413,9 @@ def make_layout(
         goal_area=goal_area,
         win_rows=tuple(rows.of(WinRow)),
         setting_rows=tuple(rows.of(Setting)),
+        hint_rows=tuple(rows.of(HintRow)),
+        hint_texts=tuple(rows.hint_texts),
+        shadow_picture=rows.picture,
         chapter_rows=tuple(rows.of(int)),
         passkey_field=rows.passkey,
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
@@ -401,6 +427,13 @@ def make_layout(
         zoom_bar=rows.zoom_bar,
         caption_at=(left + MARGIN, TABS_HEIGHT + 5),
         status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
+    )
+
+
+def _goals_top(height: int, goals: int) -> int:
+    """Where the run's objectives start, at the foot of its drawers: their label (D-065) [px]."""
+    return (
+        height - FOOT_MARGIN - TITLE_HEIGHT - (goals + 1) * (GOAL_HEIGHT + ROW_PITCH - ROW_HEIGHT)
     )
 
 
@@ -421,6 +454,8 @@ class _Rows:
         self.zoom_buttons: list[tuple[ViewButton, Rect]] = []
         self.zoom_bar: Rect | None = None
         self.passkey: Rect | None = None
+        self.hint_texts: list[tuple[int, Rect]] = []
+        self.picture: Rect | None = None
 
     def of(self, kind: type) -> list:
         return [(what, rect) for what, rect in self.items if isinstance(what, kind)]
@@ -518,6 +553,22 @@ class _Rows:
         for what in Setting:
             self._row(what)
 
+    def hints(self, lines: tuple[int, ...], shadow: bool, floor: int) -> None:
+        """The hints' rows (D-078); under each taken one, its `lines`; under the shadow's, while
+        it shows, its picture: a square as wide as the drawer allows, smaller if what is left
+        above `floor`, the objectives in the run, is less."""
+        x, width = BAR_WIDTH + MARGIN, DRAWER_WIDTH - 2 * MARGIN
+        for k in range(HINT_ROWS):
+            self._row(HintRow(k))
+            if k < len(lines) and lines[k]:
+                top = self.y - (ROW_PITCH - ROW_HEIGHT) + 2
+                self.hint_texts.append((k, (x, top, width, lines[k] * HINT_LINE)))
+                self.y = top + lines[k] * HINT_LINE + ROW_PITCH - ROW_HEIGHT
+        if shadow:
+            side = min(width, floor - self.y)
+            self.picture = (x + (width - side) // 2, self.y, side, side)
+            self.y += side + ROW_PITCH - ROW_HEIGHT
+
     def chapters(self, levels: int) -> None:
         self._title("Chapter 1: light", self.sections)
         for k in range(levels):
@@ -585,6 +636,10 @@ def passkey_at(layout: Layout, point: tuple[int, int]) -> bool:
 def chapter_row_at(layout: Layout, point: tuple[int, int]) -> int | None:
     """The place whose row in Chapters is under `point`: a level's index, or the sandbox's."""
     return next((k for k, rect in layout.chapter_rows if contains(rect, point)), None)
+
+
+def hint_row_at(layout: Layout, point: tuple[int, int]) -> HintRow | None:
+    return next((h for h, rect in layout.hint_rows if contains(rect, point)), None)
 
 
 def setting_row_at(layout: Layout, point: tuple[int, int]) -> Setting | None:

@@ -73,6 +73,7 @@ class Level:
     objectives: tuple[Objective, ...] = ()
     tutorial: Mapping | None = field(default=None, repr=False)  # its ghosts and steps (D-039)
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
+    hints: Mapping | None = field(default=None, repr=False)  # its idea and shadow (D-078)
 
     @cached_property
     def arena(self) -> Arena:
@@ -102,6 +103,7 @@ class Level:
                 "objectives": [objective_to_dict(o) for o in self.objectives],
             }
             | ({"passkey": self.passkey} if self.passkey else {})
+            | ({"hints": self.hints} if self.hints is not None else {})
             | ({"tutorial": self.tutorial} if self.tutorial is not None else {})
         )
 
@@ -120,6 +122,7 @@ class Level:
             objectives=tuple(objective_from_dict(o) for o in data["objectives"]),
             tutorial=data.get("tutorial"),
             passkey=data.get("passkey"),
+            hints=data.get("hints"),
         )
         if level.passkey is not None and not is_passkey(level.passkey):
             raise ValueError(f"a passkey is A to Z, at most {PASSKEY_LENGTH}: {level.passkey!r}")

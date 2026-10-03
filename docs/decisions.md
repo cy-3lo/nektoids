@@ -1024,3 +1024,82 @@ bulb, 1.6 light radii high, not a sun; the Rays button's bulb now says the same.
 accent2 marks what goes wrong and, darker, the thrust. The scope lock has art out: these marks
 are legibility, each shows a quantity of the model, and the scatter of the specks, the nearest
 thing to art, is drawing only.
+
+**D-077 — 2026-10-03 — LEVEL 1.4 is Shadows, not In the shadow.**
+One word, as the chapter's other titles are: Fear, Aggression, Love. Its file is `shadows.json`;
+its passkey, DARK, stands. Earlier entries keep the old name.
+
+**D-078 — 2026-10-03 — Each level's three hints are asked for in turn in Hints, a drawer at the bar's foot in the editor and the run: an idea, the parts, the shadow. Amends D-039, D-051, D-054, D-069.**
+Love and Shadows opened with two boxes over the board (D-039), and nothing could be asked for: a
+player stuck, or past Skip, had no help. Hints (a life ring; ?, H being the hand's) sits at the
+bar's foot above Settings, in both environments. Its rows, in the common style: Hint 1, Hint 2,
+Hint 3, each locked until the one before is taken. A click takes one, and its lines stay under
+its row, so every hint taken reads at once. Hint 1, the idea, is a line of the level's, a bit
+cryptic. Hint 2, the parts, counts the shadow's parts in Parts' order, each name as Parts writes it ("One Eye, one Source,
+one Thruster, one Diff."), so the two cannot disagree. Hint 3, the shadow, is one winning board
+drawn as a tutorial draws its model (D-074), faint: in a picture under its row, and on the
+editor's board; its row is then a switch for both. The wire that follows the mouse while one is
+drawn is now as thick as a wire made, 3 px, whether or not it can connect. Each shadow, built on its level's own board, wins it
+(`test_hints.py`). The ideas: Fear "Each eye its thruster.", Aggression "Cross the wires.",
+Love "The light softens the push.", Shadows "There is no light in the dark."; the shadows are
+the boards the tests pinned: Fear's and Aggression's models, D-044's smallest Love, and
+Shadows' crossed wiring with a Source on both thrusters. Taken hints last the session, level by
+level, and Chapters does not reset them. The score does not show them: it is the player's own,
+seen by no one else, and a mark would only tax asking for help. While a tutorial leads, the rows
+are locked and the drawer says to skip or finish it; the sandbox has none. Love's and Shadows'
+boxes go: only Fear and Aggression have a tutorial. Like the comma and Tab, ? is a drawer's key
+that is not its initial (D-069); in the run the comma now matches on the character typed,
+since AZERTY's ? is a shifted comma. Settings' "Key hints" keeps its name.
+
+**D-079 — 2026-10-03 — Fear's tutorial is an introduction of six steps that builds nothing, shown once a session; Aggression's goes. Amends D-039, D-048, D-050, D-054, D-071, D-074.**
+With every level's hints (D-078), a tutorial that built the board showed again what Hint 3
+shows, and took sixteen cards to do it. Fear's tutorial now introduces what the hints do not:
+in the run, the swimmer and the light, then Objectives; the tabs, Run playing the level and the
+Editor building the swimmer, waiting for the Editor; there, the board as the body, a click on a
+cell and its Wheel, a step with no target, its box in the main screen's bottom left; the
+activity bar, its drawers each by its initial, and those at its foot; last, the Hints icon
+alone, `{"icon": "hints"}`, which opens nothing. Any key or click closes that last step, and a
+click there also does what it does, so a click on the icon closes it and opens Hints.
+Nothing is placed, turned or wired, and there are no ghosts; the steps on Run, Play, Inside and
+Score go, the controls' tooltips naming them. Aggression has no tutorial: it is a level like
+Love. The tutorial shows once a session: choosing a place in Chapters no longer starts Fear
+afresh, board and tutorial, nor restarts any tutorial (D-050, D-054); every level keeps its
+board. Settings' Tutorial plays the introduction again from its first step, on Fear as the
+player left it. What a tutorial that builds needs, the waits for a part placed, turned or wired,
+the ghosts, the Wheel's icons as targets, stays in `tutorial.py`, used by no level; the tests
+walk the tutorials Fear and Aggression had, kept in `tests/data`. `guided` goes with the rule it
+served. Nothing teaches placing, turning or wiring now: the action atop the board, the status
+line, the Wheel's tooltips, Parts' (i) and Hint 3 carry it, to be watched when Camille plays it
+cold.
+
+**D-080 — 2026-10-03 — A tutorial's target is drawn in accent 1, with sparks drifting out of where its outline was; no outline. Amends D-048, D-050, D-063, D-071.**
+An outline round a target said where to look, and nothing more; the outlines of the tab, the
+switch and an icon crowded the strip they sit in. Now what a step shows is drawn in accent 1 by
+what draws it: a drawer's icon, a tab's name, the titles of a panel or a drawer, as D-050 lit
+titles; the swimmer and the switch are accent 1 already. The activity bar keeps its colours and
+sparks round its two groups of icons, each on its own: the drawers at its top, and at its foot
+the drawers there with the switch. `panels`
+names them for every step that leads, not only those that explain: an area, a drawer or a part
+of the run by its name, a tab as "tab:editor", an icon as "icon:hints"; `main.py` sets them as
+the scene's `lit`. Colour alone cannot single a target out, since accent 1 already marks what
+the player works with (D-049), so it moves: specks of accent 1 dark drift out of the target's
+edge, where its outline was (6 px round a button, a row or the swimmer; a panel's own edges; a
+disc round a cell or a Wheel's icon), 14 px out in 24 frames (0.4 s), one alive per 24 px of
+edge on average, on the 3 px grid of the thrusters' flames and from the same table of draws,
+made once and read by the frame (D-076): still while nothing moves, the same each time. Their
+frame is `main.py`'s count of frames drawn, drawing only. Chosen over a glint sweeping across
+the target and a colour that breathes, from a preview in the game's own renderer. The box loses
+its accent border, now RULE, 1 px, as an info box's; the accent goes to Next or Close, filled in
+accent 1 dark as the tool in hand is, since that is what Enter, or on the opening and last steps
+any key, does. Skip stays plain.
+
+**D-081 — 2026-10-03 — Every tutorial card that waits for Next closes at any key or click, which does nothing else. Amends D-048, D-060, D-061.**
+Only the opening cards and the last closed at any key or click (D-061); the others waited for
+Next or Enter, so that a click to look round went to the screen (D-060), and a card with no
+target let everything through (D-048). In Fear's introduction that made cards 4 and 5 leak:
+Space on the board's card ran the level, a drawer's key on the bar's card opened it. Now a card
+that waits for Next takes every key and every click, Skip aside, and moves on; the key or click
+does nothing else. A modifier alone, Shift, Ctrl, Cmd, Alt or Caps Lock, closes nothing, so a
+player may switch windows. A step that waits for an action is unchanged: the press goes to the
+screen. On the last card a click that closes it still reaches the screen (D-079), so a click on
+the life ring opens Hints. `Tutorial.opening` goes with the rule it served.

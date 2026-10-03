@@ -4,18 +4,21 @@ the player has done what they ask, or presses Next (D-039).
 A level's data may carry one: its ghosts, the parts the tutorial builds drawn faintly in their
 cells, facing the way they should, and its steps. A step says a few short lines; shows a target,
 or a list of them, which the overlay leaves lit while it dims the rest: an area ("board",
-"parts", "bar"), a part's row, a tool, the switch, a cell, or a part of the run ("arena",
+"parts", "bar"), a part's row, a drawer's icon, the switch, a cell, or a part of the run ("arena",
 "controls", "play", "timeline", and the drawers "objectives", "inside", "score"); and waits,
 until a part is placed in a cell, a part faces a way, a tool is taken, a wire runs from one cell
 to another, the run starts, or the run is won. A step with no target is a hint: nothing is
 dimmed. A step with nothing to wait for waits for Next, and only such a step has a Next: one
-that waits for an action moves on when it is done, never before (D-048). The first level's
-tutorial leads; later levels only hint (D-039). Skip ends a tutorial; a place chosen in Chapters
-starts every tutorial again from its beginning (D-048). On a step that leads and waits for Next,
-any key or click moves on, but a click on Skip. While a step leads, only the means to what it
-waits for go through (`allows`); the editor and the run ask before they act. Pure Python, no
-pygame: what the step waits for is read from a `Context`, the screen's geometry from the
-layouts.
+that waits for an action moves on when it is done, never before (D-048). Only Fear has one, an
+introduction that builds nothing and shows once a session (D-079); every level's hints are asked
+for in the Hints drawer (`hints.py`, D-078). What a tutorial that builds needs, the waits for a
+part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, used by no level
+now and tested on the tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial;
+Settings' Tutorial starts Fear's again. On a step that waits for Next, any key or click moves
+on and does nothing else, but a click on Skip (D-081). While a step leads, only the means to
+what it waits for go through (`allows`); the editor and the run ask before they act. Pure
+Python, no pygame: what the step waits for is read from a `Context`, the screen's geometry from
+the layouts.
 """
 
 from __future__ import annotations
@@ -25,8 +28,22 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
 
+import numpy as np
+
 from nektoids.editor import arena_layout
-from nektoids.editor.layout import SCREEN, TURNS, Drawer, Env, Layout, LevelButton, Rect, Tool, View
+from nektoids.editor.layout import (
+    DRAWERS,
+    SCREEN,
+    TURNS,
+    Drawer,
+    Env,
+    Layout,
+    LevelButton,
+    Rect,
+    Tool,
+    View,
+)
+from nektoids.editor.marks import SPECKS, Specks
 from nektoids.editor.router import Screen
 from nektoids.editor.wheel import ICON, WHEEL_HEX, Slot
 from nektoids.graph.board import FACING_NAMES, Board, Kind
@@ -43,6 +60,11 @@ PATH_MARGIN = 20  # the hand's way from one target to the next, this wide on eit
 AREA = 400  # a target this wide, and half as tall, is an area: the box may lie over it [px]
 GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
 EDGE = 3  # an outline keeps this far inside the screen's edges [px] (D-071)
+HALO = 6  # where the outline was, round a target: this far out of it [px]
+SPARK_LIFE = 24  # [frames] a spark's way out, 0.4 s (D-080)
+SPARK_REACH = 14.0  # [px] how far out of the edge it goes
+SPARK_PITCH = 24.0  # [px] of edge per spark alive at once, on average
+SPARK_STREAMS = 128  # the sparks' streams in the specks' table, after the swimmer's
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 RUN_PANELS = {"arena", "controls", "objectives", "inside", "score"}  # the rest are buttons
 RUN_DRAWERS = {"inside": Drawer.INSIDE, "score": Drawer.SCORE}  # the objectives are in each
@@ -115,17 +137,8 @@ class Tutorial:
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
-        ghosts = tuple(
-            Ghost(
-                Kind(g["kind"]),
-                (int(g["cell"][0]), int(g["cell"][1])),
-                FACING_NAMES.index(g["facing"]) if g.get("facing") else None,
-            )
-            for g in data.get("ghosts", ())
-        )
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
-        wires = tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
-        return cls(ghosts, steps, wires)
+        return cls(ghosts_from(data), steps, ghost_wires_from(data))
 
     @property
     def step(self) -> Step | None:
@@ -150,14 +163,6 @@ class Tutorial:
         return self.leads and self.waits_for_next
 
     @property
-    def opening(self) -> bool:
-        """Whether this step comes before the first that asks for an action, or is the last:
-        such a step moves on at any key or click (D-048); a later one only by Next or Enter, so
-        that a click to look round, an info disc, a drawer, goes to the screen (D-060)."""
-        first = next((k for k, step in enumerate(self.steps) if step.until), len(self.steps))
-        return self.index < first or self.index == len(self.steps) - 1
-
-    @property
     def waits_for_next(self) -> bool:
         """Whether this step has a Next: it waits for nothing the player does."""
         return self.step is not None and not self.step.until
@@ -174,8 +179,8 @@ class Tutorial:
         self.index = len(self.steps)
 
     def restart(self) -> None:
-        """A place chosen in Chapters: from the first step again, finished or skipped, `follow`
-        passing over what the board already holds."""
+        """From the first step again, finished or skipped, `follow` passing over what the board
+        already holds."""
         self.index = 0
 
     def follow(self, context: Context) -> None:
@@ -185,14 +190,17 @@ class Tutorial:
 
 
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
-    """The panels a step explains, their titles lit (D-050): the areas, drawers and run parts it
-    shows, if it leads and waits for Next."""
-    if tutorial is None or not tutorial.explains:
+    """What a leading step shows, by name, drawn in the accent (D-050, D-080): an area, a drawer
+    or a part of the run by its own name, its titles lit; a tab as "tab:editor"; a drawer's icon
+    as "icon:hints"."""
+    if tutorial is None or not tutorial.leads:
         return frozenset()
-    names = (
-        one.get("area") or one.get("drawer") or one.get("run") for one in _shows(tutorial.step)
-    )
-    return frozenset(names) - {None}
+    names = set()
+    for one in _shows(tutorial.step):
+        names.add(one.get("area") or one.get("drawer") or one.get("run"))
+        names.add(f"tab:{one['tab']}" if "tab" in one else None)
+        names.add(f"icon:{one['icon']}" if "icon" in one else None)
+    return frozenset(names - {None})
 
 
 def focus_cells(tutorial: Tutorial | None) -> frozenset[Cell]:
@@ -235,12 +243,6 @@ def _conditions(step: Step | None) -> list:
 def _shows(step: Step | None) -> list:
     shows = [] if step is None or step.show is None else step.show
     return shows if isinstance(shows, list) else [shows]
-
-
-def guided(data: Mapping | None) -> bool:
-    """Whether a level's tutorial data leads somewhere, rather than only hinting: such a level
-    starts afresh, board and all, each time a place is chosen in Chapters (D-050, D-054)."""
-    return data is not None and any(step.get("show") for step in data["steps"])
 
 
 def allows(step: Step | None, action: Action) -> bool:
@@ -355,6 +357,9 @@ def target_spots(
             spots += _page(layout, Env.EDITOR) if editing and layout.env is Env.EDITOR else []
         elif one.get("run") == "swimmer":  # a box round it, nothing else (D-071)
             spots.append((live.swimmer if running else None, "spot"))
+        elif one.get("area") == "bar":  # its two groups of icons, each on its own (D-080)
+            on = running or editing
+            spots += [(group, "spot") for group in _bar_groups(layout)] if on else []
         elif "drawer" in one:  # the drawer joined to its icon in the bar (D-071)
             spots.append(_docked(layout, Drawer(one["drawer"])))
         elif "wheel" in one:
@@ -402,6 +407,22 @@ def _docked(layout: Layout, drawer: Drawer) -> tuple:
     return (layout.drawer_area, Docked(icon)) if layout.drawer is drawer else (icon, "spot")
 
 
+def _bar_groups(layout: Layout) -> tuple[Rect, Rect]:
+    """The activity bar's two groups of icons: the drawers at its top; at its foot, the drawers
+    there and the switch to the other environment."""
+    top = set(DRAWERS[layout.env])
+    upper = [rect for drawer, rect in layout.drawer_buttons if drawer in top]
+    lower = [rect for drawer, rect in layout.drawer_buttons if drawer not in top]
+    return _around(upper), _around([*lower, *(rect for _, rect in layout.level_buttons)])
+
+
+def _around(rects: list[Rect]) -> Rect:
+    """The smallest rectangle round `rects`."""
+    left, top = min(r[0] for r in rects), min(r[1] for r in rects)
+    right, bottom = max(r[0] + r[2] for r in rects), max(r[1] + r[3] for r in rects)
+    return (left, top, right - left, bottom - top)
+
+
 def _shape(show: Mapping) -> str:
     if "cell" in show:
         return "disc"
@@ -423,6 +444,9 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
     if "level" in show:  # the switch, Run in the editor, Editor in the run
         on = screen in (Screen.EDIT, Screen.RUN)
         return dict(layout.level_buttons).get(LevelButton(show["level"])) if on else None
+    if "icon" in show:  # a drawer's icon in the bar, alone: it opens nothing (D-079)
+        on = screen in (Screen.EDIT, Screen.RUN)
+        return dict(layout.drawer_buttons).get(Drawer(show["icon"])) if on else None
     if screen is not Screen.EDIT:
         return None
     if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)
@@ -592,22 +616,14 @@ def next_rect(box: Rect) -> Rect:
     return (x + w - PAD - bw, y + h - PAD - bh, bw, bh)
 
 
-def answer(
-    tutorial: Tutorial, box: Rect, click: tuple[int, int] | None, enter: bool = False
-) -> str | None:
-    """What a key (`click` None; `enter` if it is Enter) or a click at `click` does to the
-    tutorial, before the editor or the run sees it: "skip" on Skip; on a step that waits for
-    Next, "next" on Next or at Enter, and, on an opening step that leads, at any key or any
-    click (`Tutorial.opening`); otherwise None, and the press goes on."""
+def answer(tutorial: Tutorial, box: Rect, click: tuple[int, int] | None) -> str | None:
+    """What a key (`click` None) or a click at `click` does to the tutorial, before the editor or
+    the run sees it: "skip" on Skip; on a step that waits for Next, "next" at any other key or
+    click, which does nothing else (D-081); otherwise None, and the press goes on."""
     last = tutorial.index == len(tutorial.steps) - 1
     if click is not None and not last and _inside(skip_rect(box), click):
         return "skip"
-    if not tutorial.waits_for_next:
-        return None
-    on_next = click is not None and _inside(next_rect(box), click)
-    if (tutorial.leads and tutorial.opening) or on_next or (click is None and enter):
-        return "next"
-    return None
+    return "next" if tutorial.waits_for_next else None
 
 
 def _inside(rect: Rect, point: tuple[int, int]) -> bool:
@@ -629,6 +645,59 @@ def outline_kept(rect: Rect) -> Rect:
     left, top = max(x, EDGE), max(y, EDGE)
     right, bottom = min(x + w, SCREEN[0] - EDGE), min(y + h, SCREEN[1] - EDGE)
     return (left, top, right - left, bottom - top)
+
+
+def ghosts_from(data: Mapping) -> tuple[Ghost, ...]:
+    """The ghosts of a tutorial's data, or of a hint's shadow (D-078): each its kind, its cell
+    and the way it faces, if it turns."""
+    return tuple(
+        Ghost(
+            Kind(g["kind"]),
+            _cell(g["cell"]),
+            FACING_NAMES.index(g["facing"]) if g.get("facing") else None,
+        )
+        for g in data.get("ghosts", ())
+    )
+
+
+def ghost_wires_from(data: Mapping) -> tuple[tuple[Cell, Cell], ...]:
+    """The ghost wires of a tutorial's data, or of a hint's shadow: each from a cell to a cell."""
+    return tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
+
+
+def sparks(
+    spots: list[tuple[Rect, object]], frame: int, specks: Specks = SPECKS
+) -> list[tuple[float, float]]:
+    """Where the sparks round a step's targets are at `frame` [px] (D-080): specks drifting out
+    of each target's edge, where its outline was, SPARK_REACH px in SPARK_LIFE frames, as the
+    thrusters' flames drift out of their backs (D-076), as many as the edge is long. Round a
+    disc, a cell or a Wheel's icon, they go out from its centre; round anything else, square out
+    of each side. A place the box only keeps clear of ("none") has none."""
+    found, stream = [], SPARK_STREAMS
+    for rect, shape in spots:
+        if shape == "none":
+            continue
+        x, y, w, h = rect
+        if shape in ("disc", "icon"):
+            cx, cy, r = x + w / 2, y + h / 2, h / 2 + HALO
+            u, across = specks.stream(2 * math.pi * r / SPARK_PITCH, frame, SPARK_LIFE, stream)
+            stream += 1
+            out, angle = r + u * SPARK_REACH, math.pi * across
+            xs, ys = cx + out * np.cos(angle), cy + out * np.sin(angle)
+            found += zip(xs.tolist(), ys.tolist(), strict=True)
+            continue
+        if not isinstance(shape, (Page, Docked)) and shape != "panel":  # a button, a row...
+            x, y, w, h = x - HALO, y - HALO, w + 2 * HALO, h + 2 * HALO
+        x, y, w, h = outline_kept((x, y, w, h))
+        sides = ((x, y, w, 0, -1), (x, y + h, w, 0, 1), (x, y, h, -1, 0), (x + w, y, h, 1, 0))
+        for left, top, length, nx, ny in sides:  # each side: where along it, then how far out
+            u, across = specks.stream(length / SPARK_PITCH, frame, SPARK_LIFE, stream)
+            stream += 1
+            along = (across + 1.0) / 2.0 * length
+            xs = left + (along if nx == 0 else nx * u * SPARK_REACH)
+            ys = top + (along if ny == 0 else ny * u * SPARK_REACH)
+            found += zip(xs.tolist(), ys.tolist(), strict=True)
+    return found
 
 
 def _cell(data) -> Cell:
