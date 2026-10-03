@@ -500,8 +500,8 @@ class EditorScene(Frame):
                 self._draw_from(self.press_cell)
             else:
                 self._grab(self.press_cell)  # the press was the start of a drag: a move (D-068)
-        if moved_on and self.moving is not None and pointed is not None:
-            self._drag_to(pointed)
+        if moved_on and self.moving is not None and pointed in self.board.cells:
+            self._drag_to(pointed)  # off the body, it waits, to go if let go there (D-085)
 
     def _press(self, pos: tuple[int, int]) -> None:
         if self.frame_press(pos):
@@ -643,7 +643,9 @@ class EditorScene(Frame):
             if self.moving is not None:
                 node = self.board.nodes.get(self.moving)
                 self.moving = None
-                if node is not None:
+                if node is not None and self.pointed not in self.board.cells:
+                    self._drop_off(node)  # let go off the body (D-085)
+                elif node is not None:
                     self._focus(node.cell)  # where it landed
             elif self.drawing:
                 self.drawing = False
@@ -865,6 +867,24 @@ class EditorScene(Frame):
             return
         self.moving, self.message = node.id, ""
 
+    def _dropping(self) -> bool:
+        """Whether the part being dragged is off the body, the zone's cells, on the drawer or the
+        bar too, where letting it go deletes it, if the tutorial lets it (D-085)."""
+        if self.moving is None or self.pointed in self.board.cells:
+            return False
+        cell = self.board.nodes[self.moving].cell
+        return self.gate is None or self.gate(Action("delete", cell=cell))
+
+    def _drop_off(self, node: Node) -> None:
+        """A part let go off the body (D-085): it goes, with its wires, and nothing is focused;
+        if the tutorial's step does not let it, it stays where it waited, the reason said."""
+        if not self._allowed(Action("delete", cell=node.cell), node.cell):
+            self._focus(node.cell)
+            return
+        self.board.remove_node(node.id)  # never locked: a locked part is not grabbed
+        self.message = ""
+        self._focus(None)
+
     def _drag_to(self, cell: Cell) -> None:
         """One step of a move: the part stays at the last cell its wires could follow it to."""
         result = self.board.move_node(self.moving, cell)
@@ -876,7 +896,9 @@ class EditorScene(Frame):
     def doomed(self) -> tuple[int | None, list[Wire]]:
         """What a deletion would remove, darkened before it happens: in Delete, what is under the
         mouse, or on the keyboard's focus; in Write, the focused part and its wires, while the
-        mouse or the keyboard is on its Wheel's Delete."""
+        mouse or the keyboard is on its Wheel's Delete; a part dragged off the body (D-085)."""
+        if self._dropping():
+            return self.moving, [w for w in self.board.wires if self.moving in (w.source, w.target)]
         if self.mode is Mode.DELETE:
             if self.keyboard and self.focused is not None:
                 return self._under(self.focused, self._focus_pos())
@@ -991,6 +1013,8 @@ class EditorScene(Frame):
         items = self.offered()
         if self.tool is Tool.PAN:
             what: Kind | Tool | Mode = Tool.PAN
+        elif self._dropping():  # a part dragged off the body: letting go deletes it (D-085)
+            what = Tool.DELETE
         elif self.mode is Mode.DELETE:
             what = Mode.DELETE
         elif self.going_round() and self.choice is not None and self.choice < len(items):
@@ -1254,6 +1278,8 @@ class EditorScene(Frame):
             return "Drag the board to move the view. H or Esc puts the hand down."
         if self.main is MainView.PREVIEW:  # nothing to edit here (D-069)
             return "Drag an eye's knob to set what it reads. Tools or Parts to edit."
+        if self._dropping():
+            return "Let go and the part goes, with its wires; back on the body, it stays."
         if self.carrying:
             return "The arrows carry the part; Enter puts it down."
         if self.tool is Tool.WIRE and not self.wheel_open and self.source is not None:
