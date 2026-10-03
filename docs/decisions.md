@@ -1024,3 +1024,7 @@ bulb, 1.6 light radii high, not a sun; the Rays button's bulb now says the same.
 accent2 marks what goes wrong and, darker, the thrust. The scope lock has art out: these marks
 are legibility, each shows a quantity of the model, and the scatter of the specks, the nearest
 thing to art, is drawing only.
+
+**D-077 — 2026-10-03 — LEVEL 1.4 is Shadows, not In the shadow.**
+One word, as the chapter's other titles are: Fear, Aggression, Love. Its file is `shadows.json`;
+its passkey, DARK, stands. Earlier entries keep the old name.

@@ -6,7 +6,7 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 ## 2. The levels themselves
 
-The chapter is Fear, Aggression, Love, In the shadow (D-074); the first two lead, the others
+The chapter is Fear, Aggression, Love, Shadows (D-074, D-077); the first two lead, the others
 only hint.
 
 - [ ] Tutorial 3, ÷2 on one side (orbits), the brief's level 3: a level of its own, or Love's
