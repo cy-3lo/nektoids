@@ -182,6 +182,7 @@ class EditorScene(Frame):
         self.choice: int | None = None  # the Wheel's icon the keyboard is on; None: nothing
         self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse, in Tools or Parts
         self.press_cell: Cell | None = None  # a part pressed: a click or a drag, told on release
+        self.drawing = False  # Wire chosen, a drag from a part: it draws a wire (D-072)
         self.keyboard = False  # the keyboard drives, until the mouse moves
         self.swapping = False  # Swap chosen: the Wheel offers the parts the focused one may become
         self.turn = 0  # the Wheel's turn: its first icon on the rim, the others piled
@@ -483,7 +484,10 @@ class EditorScene(Frame):
             self.hover = hover
             self._update_ghost()
         if self.press_cell is not None and pointed != self.press_cell and self.moving is None:
-            self._grab(self.press_cell)  # the press was the start of a drag: a move (D-068)
+            if self.tool is Tool.WIRE and self.wire_chosen:  # Wire chosen: a wire (D-072)
+                self._draw_from(self.press_cell)
+            else:
+                self._grab(self.press_cell)  # the press was the start of a drag: a move (D-068)
         if moved_on and self.moving is not None and pointed is not None:
             self._drag_to(pointed)
 
@@ -622,13 +626,16 @@ class EditorScene(Frame):
     def _release(self, pos: tuple[int, int]) -> None:
         self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
         self.panning_from, self.scrolling = None, False
-        if self.press_cell is not None:  # a press on a part: a drag moved it, or a click
-            cell, self.press_cell = self.press_cell, None
+        if self.press_cell is not None:  # a press on a part: a drag moved it, or drew a wire,
+            cell, self.press_cell = self.press_cell, None  # or it was a click
             if self.moving is not None:
                 node = self.board.nodes.get(self.moving)
                 self.moving = None
                 if node is not None:
                     self._focus(node.cell)  # where it landed
+            elif self.drawing:
+                self.drawing = False
+                self._drawn_to(self.pointed)
             else:
                 self._click_part(cell)
             return
@@ -700,7 +707,7 @@ class EditorScene(Frame):
         """Whatever was under way, a part in hand, a wire or a move, given up."""
         self.picked, self.dragging = None, False
         self.source, self.ghost = None, None
-        self.moving, self.carrying, self.press_cell = None, False, None
+        self.moving, self.carrying, self.press_cell, self.drawing = None, False, None, False
         self.swapping = False
         if self.tool is not Tool.PAN:
             self.tool = Tool.ADD
@@ -806,6 +813,32 @@ class EditorScene(Frame):
             self._refuse(result.reason, cell)
         else:
             self.message = ""
+
+    def _draw_from(self, cell: Cell) -> None:
+        """A drag from a part with Wire chosen (D-072): a wire from that part, as a click on it
+        then on another would make; the ghost follows the mouse."""
+        node = self.board.node_at(cell)
+        if self.drawing or node is None:
+            return
+        self.drawing = True
+        if node.id != self.source:  # from the part pressed, which wires either way round
+            self.focused, self.source, self.selected = cell, node.id, node.id
+            self.onward, self.turn = False, 0
+        self._update_ghost()
+
+    def _drawn_to(self, cell: Cell | None) -> None:
+        """The drag released on `cell`: the wire made to the part there, the focus going on to it;
+        on an empty cell the attempt ends (D-068); back on its own part, or off the board,
+        nothing."""
+        source = self.board.nodes.get(self.source) if self.source is not None else None
+        if source is None or cell is None or cell not in self.board.cells:
+            return
+        target = self.board.node_at(cell)
+        if target is None:
+            self._refuse("a wire runs from a part to a part", cell)
+            self._focus(None)
+        elif target.id != source.id:
+            self._focus(cell if self._try_wire(source, target, cell) else None)
 
     def _grab(self, cell: Cell) -> None:
         """A drag from a part: it moves with the mouse (D-011, D-068), if it may."""

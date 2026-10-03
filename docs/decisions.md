@@ -944,3 +944,10 @@ the win; the last explains the score alone: time and parts, fewer is better, the
 unbeaten wins. The step on the run's controls goes: Play's own text and the controls' tooltips
 name them. An outline round a target at the screen's edge, a tab, the switch, a drawer, keeps 3
 px inside it.
+
+**D-072 — 2026-10-03 — With Wire chosen, a drag from a part draws a wire, not a move. Amends D-068.**
+With Wire chosen, by W or the Wheel's icon, a drag from a part moved it, as D-068 has any drag do.
+Now it draws a wire from that part, its ghost following the mouse, made to the part it is released
+on, the focus going on to that part, as a click on the one then on the other would; released on an
+empty cell, the attempt ends with the reason; back on its own part, or off the board, nothing. With
+Wire only at hand, after a click on a part, a drag still moves it.
