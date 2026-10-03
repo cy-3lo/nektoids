@@ -1144,3 +1144,11 @@ past the Wheel's room, into the drawer's margin, never out of the drawer. Where 
 icons change (a new focus, Swap, Esc out of Swap) it shows at its start at once, without a
 slide. Resting on a pile turns it after 0.25 s, then every 0.5 s (`PILE_FRAMES`, 24 frames
 before, now 30).
+
+**D-084 — 2026-10-03 — The arrows go along the Wheel's arc and stop at its ends; "nothing" is only where it opens. Amends D-068.**
+The Wheel is an arc, not a circle: a first icon on the left, a last on the right, the gap at
+the foot. The keyboard went round it as a circle, from the last icon on to the first, with
+"nothing" a stop between them round a part. Now → and ↓ go to the next icon and stop at the
+last, ← and ↑ to the one before and stop at the first. Round a part, the Wheel still opens on
+"nothing", where Enter closes it; from there → goes to the first icon, ← to the last, and
+"nothing" is not met again: Esc closes the Wheel. The Wheel turns with the choice, as before.
