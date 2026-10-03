@@ -66,13 +66,12 @@ def fear(until=None, show=None) -> int:
 
 TAB = fear({"screen": "edit"})  # from the run to the editor (D-060)
 BOARD, TOOLS = fear(show={"page": "editor"}), fear(show={"drawer": "tools"})
-PARTS = fear(show={"drawer": "parts"})
 EYE = fear({"placed": {"kind": "eye", "cell": [2, -1]}})  # from the Wheel
 TURN = fear({"facing": {"cell": [2, -1], "facing": "NW"}})
 SECOND = fear(  # the second eye, placed and turned on one card (D-071)
     [{"placed": {"kind": "eye", "cell": [1, 1]}}, {"facing": {"cell": [1, 1], "facing": "SW"}}]
 )
-THRUSTER = fear(  # both thrusters, from Parts, on one card
+THRUSTER = fear(  # Parts, and both thrusters dragged from it, on one card
     [
         {"placed": {"kind": "thruster", "cell": [1, -2]}},
         {"placed": {"kind": "thruster", "cell": [-1, 2]}},
@@ -80,7 +79,7 @@ THRUSTER = fear(  # both thrusters, from Parts, on one card
 )
 WIRE = fear({"wired": {"from": [2, -1], "to": [1, -2]}})
 RUN, PLAY = fear({"screen": "run"}), fear({"time": 1.0})  # Run, then Play: 1 s of it
-INSIDE, WIN = fear(show={"run": "inside"}), fear({"outcome": "won"})
+INSIDE, WIN = fear(show={"drawer": "inside"}), fear({"outcome": "won"})
 
 
 def conditions(step) -> list:
@@ -165,9 +164,8 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     board.rotate(lower.id, -1)
     board.rotate(lower.id, -1)  # SW
     tutorial.follow(context())
-    assert tutorial.step.show == {"drawer": "parts"} and tutorial.explains  # then Parts: Next
-    tutorial.next()
-    assert tutorial.index == THRUSTER  # both thrusters on one card
+    assert tutorial.index == THRUSTER and not tutorial.explains  # Parts, both thrusters
+    assert {"drawer": "parts"} in tutorial.step.show  # outlined with its icon
     left = board.place(Kind.THRUSTER, (1, -2))
     tutorial.follow(context())
     assert tutorial.index == THRUSTER  # one of the two
@@ -181,11 +179,11 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     tutorial.follow(context(screen=Screen.RUN, time=0.5))
     assert tutorial.index == PLAY
     tutorial.follow(context(screen=Screen.RUN, time=1.0))  # 1 s on: the run waits, Inside
-    assert tutorial.step.show == {"run": "inside"} and tutorial.explains
+    assert tutorial.step.show == {"drawer": "inside"} and tutorial.explains  # with its icon
     tutorial.next()  # Next: the run goes on to the win
     assert tutorial.step.until == {"outcome": "won"} and not tutorial.explains
     tutorial.follow(context(screen=Screen.RUN, outcome=Outcome.WON))
-    assert tutorial.step.show == {"run": "score"} and tutorial.explains  # the score, last
+    assert tutorial.step.show == {"drawer": "score"} and tutorial.explains  # the score, last
     tutorial.next()
     assert tutorial.step is None and not tutorial.leads
     assert [g.facing for g in tutorial.ghosts][:2] == [NW, SW]
@@ -314,7 +312,8 @@ def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
     step = FEAR[THRUSTER]  # the Thruster's row in Parts, its cell
     layout = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))
     spots = target_spots(step.show, Screen.EDIT, layout, centred_view(layout))
-    assert [shape for _, shape in spots] == ["spot", "disc", "disc"]  # the row, the two cells
+    parts = Docked(dict(layout.drawer_buttons)[Drawer.PARTS])  # Parts with its icon
+    assert [shape for _, shape in spots] == [parts, "spot", "disc", "disc"]  # row, two cells
     assert [rect for rect, _ in spots] == target_rects(
         step.show, Screen.EDIT, layout, centred_view(layout)
     )
@@ -405,7 +404,7 @@ def test_only_the_first_level_is_guided_and_so_starts_afresh_at_the_map():
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
     tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
     expected = {0: {"swimmer"}, 1: {"objectives"}, TAB: set(), BOARD: set(), TOOLS: {"tools"}}
-    expected |= {PARTS: {"parts"}, EYE: set(), RUN: set(), PLAY: set(), INSIDE: {"inside"}}
+    expected |= {THRUSTER: set(), EYE: set(), RUN: set(), PLAY: set(), INSIDE: {"inside"}}
     for index, names in expected.items():
         tutorial.index = index
         assert panels(tutorial) == names, index
@@ -415,14 +414,15 @@ def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_n
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
     steps = FEAR
-    assert drawer_for(steps[PARTS]) is Drawer.PARTS and drawer_for(steps[TOOLS]) is Drawer.TOOLS
+    assert drawer_for(steps[TOOLS]) is Drawer.TOOLS
     assert drawer_for(steps[THRUSTER]) is Drawer.PARTS  # its row, then its cell
     assert drawer_for(steps[EYE]) is Drawer.TOOLS  # the Wheel: Tools, or Parts if open (D-070)
     assert drawer_for(steps[EYE], Drawer.PARTS) is Drawer.PARTS
     assert drawer_for(steps[1]) is None  # the objectives, under any drawer (D-065)
     assert drawer_for(steps[BOARD]) is drawer_for(steps[RUN]) is drawer_for(None) is None
-    shown = {drawer_for(step) for step in steps if step.show and "run" in str(step.show)}
-    assert shown == {None, Drawer.INSIDE, Drawer.SCORE}  # the run's (D-057, D-065)
+    assert drawer_for(steps[INSIDE]) is Drawer.INSIDE  # the run's, with its icon (D-071)
+    assert drawer_for(steps[-1]) is Drawer.SCORE
+    assert drawer_for(steps[0]) is drawer_for(steps[PLAY]) is None  # under any drawer
 
 
 def test_a_leading_step_keeps_the_board_on_screen():
@@ -564,3 +564,9 @@ def test_an_outline_at_the_screens_edge_keeps_inside_it_clear_of_its_first_rows_
     assert foot[1] + foot[3] == SCREEN[1] - 3  # nor on its last row
     inside = (100, 100, 50, 40)
     assert outline_kept(inside) == inside  # away from the edges: as it is
+
+
+def test_a_run_drawer_a_step_explains_is_outlined_with_its_icon_too():
+    run = make_layout(Drawer.INSIDE, env=Env.RUN, goals=1)  # D-071: as Tools and Parts are
+    ((rect, shape),) = target_spots(FEAR[INSIDE].show, Screen.RUN, run, None)
+    assert rect == run.drawer_area and shape == Docked(dict(run.drawer_buttons)[Drawer.INSIDE])

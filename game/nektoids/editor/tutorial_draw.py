@@ -47,8 +47,9 @@ def draw_tutorial(
     if step is None:
         return
     for rect, shape in spots:  # nothing dimmed (D-063, D-071): what it shows outlined in the
-        if tutorial.explains or shape in ("spot", "icon"):  # accent; the cells a step asks
-            _outline(screen, LIT, rect, shape)  # for are lit by the board instead
+        asked = shape in ("spot", "icon") or isinstance(shape, Docked)  # accent; the cells a
+        if tutorial.explains or asked:  # step asks for are lit by the board instead
+            _outline(screen, LIT, rect, shape)
     frame = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, frame, border_radius=8)
     pygame.draw.rect(screen, LIT if spots else RULE, frame, 2, border_radius=8)

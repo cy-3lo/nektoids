@@ -90,22 +90,16 @@
         ]
       },
       {
-        "show": {"drawer": "parts"},
-        "say": [
-          "Parts lists what the level hands out; the (i)",
-          "on a row says what the part does. A part can",
-          "also be dragged from it onto the board."
-        ]
-      },
-      {
-        "show": [{"menu": "thruster"}, {"cell": [1, -2]}, {"cell": [-1, 2]}],
+        "show": [{"drawer": "parts"}, {"menu": "thruster"}, {"cell": [1, -2]}, {"cell": [-1, 2]}],
         "until": [
           {"placed": {"kind": "thruster", "cell": [1, -2]}},
           {"placed": {"kind": "thruster", "cell": [-1, 2]}}
         ],
         "say": [
-          "Thrusters push the way they point, forward",
-          "already. Drag one from Parts onto each of", "these two cells."
+          "Parts lists what the level hands out; the (i)",
+          "on a row says what the part does. Thrusters",
+          "push the way they point, forward already: drag",
+          "one from Parts onto each of these two cells."
         ]
       },
       {
@@ -135,7 +129,7 @@
         "say": ["Press Play, or Space, and watch the swimmer."]
       },
       {
-        "show": {"run": "inside"},
+        "show": {"drawer": "inside"},
         "say": [
           "The run waits. Inside: the swimmer's wiring,",
           "live. Beads flow along the wires, the faster",
@@ -151,7 +145,7 @@
         ]
       },
       {
-        "show": {"run": "score"},
+        "show": {"drawer": "score"},
         "say": [
           "Each win is scored on its time and its parts:",
           "a point in Score. Fewer of either is better;",
