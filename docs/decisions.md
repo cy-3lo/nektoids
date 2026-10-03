@@ -849,3 +849,47 @@ Settings is its rows one under the other, with no section titles: fast forward's
 hints, the tutorial again, Sound and Music (locked). The tooltips' delay is no longer set: a
 tooltip shows after 1 s. Shorter, Settings leaves room in the run for the objectives under it
 (D-065).
+
+**D-068 — 2026-10-02 — The editor's hand: a focused cell and the ring of what can be done there, in Tools; Write and Delete; Swap; the ring turns as a wheel. Written after PR #21, which cites it. Amends D-026, D-051, D-053.**
+A click focuses a cell, lit on the board. Tools, first in the bar and open when a level opens,
+draws it large, its part at its facing, with the ring round it: round an empty cell, the parts
+the level still hands out, each with its number; round a part, turn left, move, wire, swap, turn
+right and delete, the wire on top, the turns either side of the gap at the foot, the turns only
+for eyes and thrusters, Swap only while another part of its group is left; a part the level
+placed offers only Wire. Up to five icons sit beyond the cell's corners; more turn on a wheel,
+as cards on a rotary file: the others piled under the ring's two ends, drawn empty, set back
+along the circle so their edges show. The keyboard going round turns the wheel just enough for
+its choice to be on the ring; so do the mouse wheel over the picture and the mouse resting on a
+pile. Clicking a part arms Wire from it: the next part clicked is wired to it, and the focus
+goes on to that part; a drag from a part moves it. Only a part clicked wires either way round
+(D-026); a part focused otherwise, placed or just wired to, wires on only along the signal, so a
+chain goes on, eye to sum to thruster, but from a thruster a click on an eye only focuses the
+eye. A wire that cannot be made ends the attempt: nothing stays focused, and the status line
+says why. Swap (S) turns the part into another of its group, in its place, its facing kept where
+both turn, with every wire it can take; the status line says how many could not follow; one
+step for undo (`Board.replace`). Tools' rows above the picture: Write and Delete (E goes from one
+to the other, Esc back to Write), then Undo and Redo. In Delete there is no focus and no ring: a
+click removes the part under it with its wires, or the wire under it, darkened while the mouse
+is on it. The keyboard drives the same focus: the arrows, Enter, the ring's keys, Esc back one
+step. Atop the main screen, always, what the next click or Enter does: the action as a ring's
+icon, its key beside it, a line under it saying what it is; a click on it opens Tools.
+
+**D-069 — 2026-10-03 — The main view follows the drawer: the Run preview only in Diagnostic, Sense renamed. Parts has the cell and its ring under its list, which scrolls. A key for each drawer, its initial; Delete on Backspace; one key, one meaning within an environment. Amends D-021, D-058, D-068.**
+The switch between the Diagram view and the Run preview goes. The main screen shows the board,
+except while Diagnostic is open, where it shows the Run preview; Navigator keeps what was shown
+before it, so the preview can be zoomed and moved. Sense is called Diagnostic: it is where the
+board is tested. While the preview shows, a key that edits the board is refused, and the status
+line says to open Tools or Parts; undo and redo still work, and the preview follows them. While
+a tutorial step leads, Diagnostic does not open. Parts has, under its list, the focused cell and
+its ring as Tools draws them, under a title, The cell, that folds as Parts' groups do; folded, it
+sits at the drawer's foot and the list takes the room. The list scrolls, by the wheel or its
+scroll bar, when it does not fit. On the board, the focused part loses its white circle: the lit
+cell says it, and while the keyboard wires, the ghost wire shows where the wire starts. The line
+under the action atop the main screen sits under its disc. Each drawer opens, or folds, by a
+key, its initial: T Tools, P Parts, F Files, D Diagnostic, N Navigator in the editor; I Inside,
+S Score, N Navigator in the run; the comma Settings in both, with Ctrl or Cmd too (a Mac's
+browser keeps Cmd+comma for its own settings); Tab Chapters, as before. Delete takes Backspace
+and Delete, the keys that delete everywhere else, and frees D. D-021 becomes one key, one
+meaning within an environment: a letter may mean one thing in the editor and another in the
+run, as F is Files in the editor and Fast forward in the run, S Swap and Score, since the two
+never show together. X, the run's rays, no longer zooms out in the editor.
