@@ -885,23 +885,25 @@ status line says what the preview offers, an eye's knob to drag. The ring of D-0
 cell drawn large at its hub, is called the Wheel, in the code too (`wheel.py`, where the rim is
 its arc of up to five icons). Tools and Parts both have it at their foot, under a rule and its
 title, The Wheel, which folds as Parts' groups do, in both at once; folded, the title sits at
-the drawer's foot and the rows above take the room. Parts' list scrolls, by the mouse wheel or a
-scroll bar, when it does not fit. The Wheel's icon under the mouse is named in a tooltip, as the
-bar's are, after the same rest and as warm: its name, and its key while key hints are on; the
-keys no longer sit round the rim, and the Wheel takes the room they leave, its cell 46 px across
-instead of 40, its icons with it. The accent names what is chosen: beside the action atop the
-main screen, the action, with its key; in the line under the Wheel, its lit icon, the keyboard's
-choice or the tool in hand, else what the cell holds, dimmed. On the board, the focused part
-loses its white circle: the lit cell says it, and while the keyboard wires, the ghost wire shows
-where the wire starts. Over a part the wire cannot reach, its way still shows, dimmed, as over
-an empty cell, with the cell outlined in red and the reason in the status line. The line under
-the action atop the main screen sits under its disc. Each drawer opens, or folds, by a key, its
-initial: T Tools, P Parts, F Files, D Diagnostic, N Navigator in the editor; I Inside, S Score,
-N Navigator in the run; the comma Settings in both, with Ctrl or Cmd too (a Mac's browser keeps
-Cmd+comma for its own settings); Tab Chapters, as before. Delete takes Backspace and Delete, the
-keys that delete everywhere else, and frees D. D-021 becomes one key, one meaning within an
-environment: a letter may mean one thing in the editor and another in the run, as F is Files in
-the editor and Fast forward in the run, S Swap and Score, since the two never show together. X,
-the run's rays, no longer zooms out in the editor. Once a tooltip of the bar shows, the next
-icon's shows at once, for 0.3 s after the last one went, as the mouse crosses the gaps between
-icons. Every tooltip shows after 0.5 s, not 1 s (amends D-067).
+the drawer's foot and the rows above take the room. Parts lists its groups as sensors,
+actuators, operators, and the parts' numbers and the Wheel's order follow: with all seven handed
+out, the thruster is 3. Parts' list scrolls, by the mouse wheel or a scroll bar, when it does
+not fit. The Wheel's icon under the mouse is named in a tooltip, as the bar's are, after the
+same rest and as warm: its name, and its key while key hints are on; the keys no longer sit
+round the rim, and the Wheel takes the room they leave, its cell 46 px across instead of 40, its
+icons with it. The accent names what is chosen: beside the action atop the main screen, the
+action, with its key; in the line under the Wheel, its lit icon, the keyboard's choice or the
+tool in hand, else what the cell holds, dimmed. On the board, the focused part loses its white
+circle: the lit cell says it, and while the keyboard wires, the ghost wire shows where the wire
+starts. Over a part the wire cannot reach, its way still shows, dimmed, as over an empty cell,
+with the cell outlined in red and the reason in the status line. The line under the action atop
+the main screen sits under its disc. Each drawer opens, or folds, by a key, its initial: T
+Tools, P Parts, F Files, D Diagnostic, N Navigator in the editor; I Inside, S Score, N Navigator
+in the run; the comma Settings in both, with Ctrl or Cmd too (a Mac's browser keeps Cmd+comma
+for its own settings); Tab Chapters, as before. Delete takes Backspace and Delete, the keys that
+delete everywhere else, and frees D. D-021 becomes one key, one meaning within an environment: a
+letter may mean one thing in the editor and another in the run, as F is Files in the editor and
+Fast forward in the run, S Swap and Score, since the two never show together. X, the run's rays,
+no longer zooms out in the editor. Once a tooltip of the bar shows, the next icon's shows at
+once, for 0.3 s after the last one went, as the mouse crosses the gaps between icons. Every
+tooltip shows after 0.5 s, not 1 s (amends D-067).

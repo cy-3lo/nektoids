@@ -175,12 +175,12 @@ def test_parts_list_scrolls_when_it_does_not_fit_and_its_rows_answer_only_where_
     eye_top = dict(LAYOUT.menu_items)[Kind.EYE][1]
     assert eye_top - dict(bottom.menu_items)[Kind.EYE][1] == bottom.scroll
     _, ly, _, lh = LAYOUT.list_area
-    last = dict(LAYOUT.menu_items)[Kind.THRUSTER]
+    last = dict(LAYOUT.menu_items)[Kind.DIFFERENCE]
     assert last[1] + last[3] // 2 > ly + lh  # out of sight at first: it does not answer
     assert menu_item_at(LAYOUT, centre(last)) is None
-    assert info_at(LAYOUT, centre(dict(LAYOUT.info_buttons)[Kind.THRUSTER])) is None
-    last = dict(bottom.menu_items)[Kind.THRUSTER]
-    assert menu_item_at(bottom, centre(last)) is Kind.THRUSTER  # in sight once scrolled
+    assert info_at(LAYOUT, centre(dict(LAYOUT.info_buttons)[Kind.DIFFERENCE])) is None
+    last = dict(bottom.menu_items)[Kind.DIFFERENCE]
+    assert menu_item_at(bottom, centre(last)) is Kind.DIFFERENCE  # in sight once scrolled
     x, y, w, h = LAYOUT.scroll_bar  # beside the rows, inside the drawer's edge
     assert x >= max(r[0] + r[2] for _, r in LAYOUT.menu_items) and x + w < BAR_WIDTH + DRAWER_WIDTH
     assert scroll_bar_at(LAYOUT, (x + w // 2, y + h // 2)) and not scroll_bar_at(LIST, (x, y))
@@ -197,13 +197,19 @@ def test_a_guided_levels_parts_fit_with_the_cell_open_so_its_steps_rows_show():
             assert make_layout(kinds=kinds).scroll_max == 0, level.title
 
 
+def test_parts_lists_sensors_then_actuators_then_operators_and_the_numbers_follow():
+    assert [title for title, _ in LIST.group_titles] == ["Sensors", "Actuators", "Operators"]
+    kinds = [kind for kind, _ in LIST.menu_items]  # D-069: the thruster third, its key 3
+    assert kinds[:3] == [Kind.EYE, Kind.SOURCE, Kind.THRUSTER]
+
+
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
-    folded = make_layout(folded=frozenset({"Operators"}))
+    folded = make_layout(folded=frozenset({"Actuators"}))
     kinds = [kind for kind, _ in folded.menu_items]
-    assert Kind.DOUBLE not in kinds and Kind.HALVE not in kinds and Kind.EYE in kinds
+    assert Kind.THRUSTER not in kinds and Kind.EYE in kinds and Kind.DOUBLE in kinds
     titles_open, titles_folded = dict(LAYOUT.group_titles), dict(folded.group_titles)
     assert titles_folded["Sensors"] == titles_open["Sensors"]
-    assert titles_folded["Actuators"][1] < titles_open["Actuators"][1]
+    assert titles_folded["Operators"][1] < titles_open["Operators"][1]
     assert folded.board_area == LAYOUT.board_area
     for title, rect in folded.group_titles:
         assert group_at(folded, centre(rect)) == title

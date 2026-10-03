@@ -4,7 +4,7 @@
   editor, Objectives, Inside, Score and Navigator in the run; Settings and Chapters at its foot,
   over the accented switch to the other environment (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
-  info disc, then a count or a key). Parts: the groups (sensors, operators, actuators) that fold
+  info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: the tools, Edit (undo, redo),
   File (save and load, inactive until saving exists); Navigator: the view's buttons; Settings:
   what the player sets (D-054); Chapters: the levels, then the sandbox, which replaces the
@@ -69,8 +69,8 @@ ZOOM_STEP = 1.25  # hex size factor per click
 
 MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
     ("Sensors", (Kind.EYE, Kind.SOURCE)),
+    ("Actuators", (Kind.THRUSTER,)),  # before the operators (D-069): the numbers follow this order
     ("Operators", (Kind.DOUBLE, Kind.HALVE, Kind.SUM, Kind.DIFFERENCE)),
-    ("Actuators", (Kind.THRUSTER,)),
 )
 
 
