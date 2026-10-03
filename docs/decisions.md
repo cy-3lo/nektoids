@@ -910,3 +910,19 @@ tooltip shows after 0.5 s, not 1 s (amends D-067). The tabs read Run, then Edito
 level opens on its run, paused, as Fear's did (D-060): at the start, from Chapters, by Next
 level; its card, the title card or the level's, shows over that run, so only the card goes when
 it is dismissed; the editor is a tab or Esc away. The tutorial follows in its own PR.
+
+**D-070 — 2026-10-03 — Fear's tutorial follows the Wheel: the eyes from the Wheel, the thrusters from Parts, each wire by two clicks; a step may show a Wheel's icon, or Tools. Amends D-048, D-060.**
+After D-069 the tutorial still taught the old panel: its wiring step said to drag from the upper
+eye, which now moves the part, and a step refuses moves; its turns pointed at buttons that were
+gone. Fear's editor steps are now: the board, and atop it what a click does; Tools, with Write
+and Delete, Undo and Redo, and the Wheel at its foot; the bar, each drawer by its initial too;
+the first eye, by a click on its cell then the Eye on the Wheel, or 1, turned by Turn left on
+the Wheel, or L; the second eye the same way; then Parts, and the two thrusters dragged from it;
+each wire by a click on the eye, then on the thruster; Run, by its tab, the switch or Space.
+Fear has 20 steps. A step may show a Wheel's icon by its name, {"wheel": "eye"} or {"wheel":
+"turn left"}, outlined as a disc, and only while the step's own cell is focused, since the Wheel
+round another cell would act there; and the Tools drawer, {"area": "tools"}. A step that shows a
+Wheel's icon keeps Tools or Parts open, whichever is, else opens Tools, and unfolds the Wheel if
+it is folded. The {"tool": ...} target, which showed nothing since D-068, goes, and so does a
+tutorial's start screen: every level opens on its run (D-069). Diagnostic is only named, in the
+bar step; teaching it is for later.

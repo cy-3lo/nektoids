@@ -51,58 +51,67 @@
         "show": {"area": "board"},
         "say": [
           "The board is your swimmer's body, its front to",
-          "the right. Where you put a part is where it", "sits."
+          "the right. Where you put a part is where it", "sits. Atop it: what a click does now."
         ]
       },
       {
-        "show": {"area": "parts"},
+        "show": {"area": "tools"},
         "say": [
-          "Parts holds what you build with: eyes read",
-          "the light, thrusters push. The (i) on a row", "says what the part does."
+          "Tools: Write builds and Delete removes, with",
+          "Undo and Redo. At its foot, the Wheel: what", "can be done on the cell you click."
         ]
       },
       {
         "show": {"area": "bar"},
         "say": [
           "The bar on the left opens the drawers: Tools,",
-          "Parts, Files, Diagnostic, Navigator. At its",
-          "foot: Settings, Chapters, and Run, which sets", "the swimmer going."
+          "Parts, Files, Diagnostic, Navigator, or press",
+          "their initial. At its foot: Settings, Chapters,",
+          "and Run, which sets the swimmer going."
         ]
       },
       {
-        "show": [{"menu": "eye"}, {"cell": [2, -1]}],
+        "show": [{"cell": [2, -1]}, {"wheel": "eye"}],
         "until": {"placed": {"kind": "eye", "cell": [2, -1]}},
         "say": [
           "The faint shapes show where each part goes",
-          "and which way it points. Drag an Eye from", "Parts onto this cell."
+          "and which way it points. Click this cell, then", "the Eye on the Wheel, or press 1."
         ]
       },
       {
         "show": [{"wheel": "turn left"}, {"cell": [2, -1]}],
         "until": {"facing": {"cell": [2, -1], "facing": "NW"}},
         "say": [
-          "It looks forward, but this eye must look",
-          "back and to the left: press Turn left, or L,",
+          "It looks forward, but this eye must look back",
+          "and to the left: Turn left on the Wheel, or L,",
           "twice. It turns by 60 degrees each time."
         ]
       },
       {
-        "show": [{"menu": "eye"}, {"cell": [1, 1]}],
+        "show": [{"cell": [1, 1]}, {"wheel": "eye"}],
         "until": {"placed": {"kind": "eye", "cell": [1, 1]}},
-        "say": [
-          "Now the second eye, on this cell: pick the",
-          "Eye in Parts, or press 1, and click here."
-        ]
+        "say": ["Now the second eye: click this cell, then the", "Eye on the Wheel, or press 1."]
       },
       {
         "show": [{"wheel": "turn right"}, {"cell": [1, 1]}],
         "until": {"facing": {"cell": [1, 1], "facing": "SW"}},
-        "say": ["This one looks back and to the right:", "press Turn right, or R, twice."]
+        "say": ["This one looks back and to the right: Turn", "right on the Wheel, or R, twice."]
+      },
+      {
+        "show": {"area": "parts"},
+        "say": [
+          "Parts lists what the level hands out; the (i)",
+          "on a row says what the part does. A part can",
+          "also be dragged from it onto the board."
+        ]
       },
       {
         "show": [{"menu": "thruster"}, {"cell": [1, -2]}],
         "until": {"placed": {"kind": "thruster", "cell": [1, -2]}},
-        "say": ["Thrusters push the way they point, forward", "already. Put one on this cell..."]
+        "say": [
+          "Thrusters push the way they point, forward",
+          "already. Drag one from Parts onto this cell..."
+        ]
       },
       {
         "show": [{"menu": "thruster"}, {"cell": [-1, 2]}],
@@ -113,19 +122,22 @@
         "show": [{"cell": [2, -1]}, {"cell": [1, -2]}],
         "until": {"wired": {"from": [2, -1], "to": [1, -2]}},
         "say": [
-          "Wire each eye to the thruster on its own", "side: take Wire, or W, and drag from the",
-          "upper eye to the upper thruster."
+          "Wire each eye to the thruster on its own side:",
+          "click the upper eye, then the upper thruster."
         ]
       },
       {
         "show": [{"cell": [1, 1]}, {"cell": [-1, 2]}],
         "until": {"wired": {"from": [1, 1], "to": [-1, 2]}},
-        "say": ["Then from the lower eye to the lower", "thruster."]
+        "say": ["Then the lower eye, then the lower thruster."]
       },
       {
-        "show": {"level": "run"},
+        "show": [{"tab": "run"}, {"level": "run"}],
         "until": {"screen": "run"},
-        "say": ["The light is on the swimmer's right.", "Press Run, or Space, and watch."]
+        "say": [
+          "The light is on the swimmer's right. Click the",
+          "Run tab, or Run at the bottom left, or press", "Space, and watch."
+        ]
       },
       {
         "say": [

@@ -80,11 +80,10 @@ preview; in the Run it shows the level. Drawers never take the main screen.
 - [ ] Sound and Music in Settings, once there is sound (D-054).
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
-- [ ] Fear's tutorial: a step for Diagnostic and the Run preview; its bar step names
-      Diagnostic, and its editor and run steps follow the frame already (D-053, D-057, D-058,
-      D-069).
-- [ ] The tutorial's rework (after D-069): its steps should follow the Wheel, the drawer keys
-      and the Run tab first. (`Tutorial.start` went: every level opens on its run.)
+- [ ] Diagnostic and the Run preview taught, in Fear or a later level's hints: Fear's bar step
+      only names it (D-058, D-070).
+- [x] The tutorial's rework: Fear's steps follow the Wheel, the drawer keys and the Run tab
+      first (D-070).
 
 ## 9. A board as text (its own PR)
 
