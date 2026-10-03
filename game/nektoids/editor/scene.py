@@ -498,7 +498,9 @@ class EditorScene(Frame):
             self.hover = hover
             self._update_ghost()
         if self.press_cell is not None and pointed != self.press_cell and self.moving is None:
-            if self.tool is Tool.WIRE and self.wire_chosen:  # Wire chosen: a wire (D-072)
+            source = self.board.nodes.get(self.source) if self.source is not None else None
+            lit = source is not None and source.cell == self.press_cell  # Wire lit for it (D-090)
+            if self.tool is Tool.WIRE and (self.wire_chosen or lit):  # a wire (D-072)
                 self._draw_from(self.press_cell)
             else:
                 self._grab(self.press_cell)  # the press was the start of a drag: a move (D-068)
@@ -832,8 +834,9 @@ class EditorScene(Frame):
             self.message = ""
 
     def _draw_from(self, cell: Cell) -> None:
-        """A drag from a part with Wire chosen (D-072): a wire from that part, as a click on it
-        then on another would make; the ghost follows the mouse."""
+        """A drag from a part with Wire chosen (D-072), or from the part Wire is lit for, just
+        placed or clicked (D-090): a wire from that part, as a click on it then on another would
+        make; the ghost follows the mouse."""
         node = self.board.node_at(cell)
         if self.drawing or node is None:
             return
@@ -1311,7 +1314,7 @@ class EditorScene(Frame):
             return "Pick what it becomes in the Wheel, or press its number. Esc: back."
         node = self._focused_node()
         if node is not None:
-            return "Click another part to wire it, or drag it to move it."
+            return "Click or drag to another part to wire it; M moves it."
         if self.focused is not None:
             return "Pick a part in the Wheel, or press its number."
         return "Click a cell, or drag a part from Parts onto the board."
