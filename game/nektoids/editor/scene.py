@@ -99,6 +99,7 @@ from nektoids.editor.router import Won
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.editor.wheel import (
+    SLIDE,
     WHEEL_HEX,
     Slot,
     centre_in,
@@ -106,6 +107,7 @@ from nektoids.editor.wheel import (
     offer,
     part_key,
     pile_at,
+    slid,
     slot_at,
     slots,
     swaps,
@@ -125,7 +127,7 @@ from nektoids.graph.hexgrid import (
 from nektoids.levels.level import Level
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
-PILE_FRAMES = 24  # the mouse resting on a pile turns the Wheel one icon this often [frames]
+PILE_FRAMES = 30  # the mouse resting on a pile turns the Wheel one icon this often: 0.5 s [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
 KEY_VIEWS = {  # the rays, the motion and the streams are the run's: M and W are tools here
@@ -187,6 +189,8 @@ class EditorScene(Frame):
         self.keyboard = False  # the keyboard drives, until the mouse moves
         self.swapping = False  # Swap chosen: the Wheel offers the parts the focused one may become
         self.turn = 0  # the Wheel's turn: its first icon on the rim, the others piled
+        self.slide_from = 0.0  # the turn the Wheel showed when its slide to `turn` began
+        self.slide_left = 0  # the frames left in that slide (D-083)
         self.wire_chosen = False  # Wire chosen by its key or in the Wheel, not only at hand
         self.piling = 0  # the mouse on a pile of the Wheel: the way it turns the Wheel, -1 or 1
         self.pile_frames = 0  # how long it has rested there
@@ -225,7 +229,9 @@ class EditorScene(Frame):
         if self.piling:  # the Wheel turns slowly while the mouse rests on a pile (D-068)
             self.pile_frames += 1
             if self.pile_frames % PILE_FRAMES == PILE_FRAMES // 2:
-                self.turn = turned(self.turn + self.piling, None, len(self.offered()))
+                self._turn_wheel(turned(self.turn + self.piling, None, len(self.offered())))
+        if self.slide_left:  # after any step this frame: a slide shows SLIDE frames
+            self.slide_left -= 1
         self.view = kept_on_board(self.layout, self.view, self.extent())  # D-066
         if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.DIAGNOSTIC:
             self._probe_now()
@@ -299,7 +305,7 @@ class EditorScene(Frame):
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._release(event.pos)
         elif event.type == pygame.MOUSEWHEEL and self._on_wheel(self.mouse):
-            self.turn = turned(self.turn - event.y, None, len(self.offered()))  # the Wheel turns
+            self._turn_wheel(turned(self.turn - event.y, None, len(self.offered())))  # it turns
         elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif event.type == pygame.MOUSEWHEEL and self._on_list(self.mouse):
@@ -361,7 +367,7 @@ class EditorScene(Frame):
         if self.going_round() and items:
             step = 1 if key in (right, ARROWS[3]) else -1
             self.choice = cycled(items, self.choice, step, blank=self._blank())
-            self.turn = turned(self.turn, self.choice, len(items))  # the Wheel brings it round
+            self._turn_wheel(turned(self.turn, self.choice, len(items)))  # brought round
             return
         if self.focused is None:
             self._focus_key(self._start_cell())
@@ -830,7 +836,7 @@ class EditorScene(Frame):
         self.drawing = True
         if node.id != self.source:  # from the part pressed, which wires either way round
             self.focused, self.source, self.selected = cell, node.id, node.id
-            self.onward, self.turn = False, 0
+            self.onward, self.turn, self.slide_left = False, 0, 0
         self._update_ghost()
 
     def _drawn_to(self, cell: Cell | None) -> None:
@@ -965,7 +971,15 @@ class EditorScene(Frame):
         none while neither shows the picture (D-069)."""
         if self.layout.wheel_view is None:
             return []
-        return slots(self.offered(), self.cell_centre(), WHEEL_HEX, self.layout.kinds, self.turn)
+        turn = slid(self.slide_from, self.turn, self.slide_left)  # as it shows, sliding
+        return slots(self.offered(), self.cell_centre(), WHEEL_HEX, self.layout.kinds, turn)
+
+    def _turn_wheel(self, turn: int) -> None:
+        """The Wheel turned to `turn`, sliding there in SLIDE frames; a step taken during a
+        slide goes straight on, from where the Wheel shows (D-083)."""
+        if turn != self.turn:
+            self.slide_from = slid(self.slide_from, self.turn, self.slide_left)
+            self.turn, self.slide_left = turn, SLIDE
 
     def cell_centre(self) -> tuple[float, float]:
         """Where Tools, or Parts, draws the focused cell (D-069)."""
@@ -1011,7 +1025,7 @@ class EditorScene(Frame):
         self._drop_gesture()
         self.focused, self.onward = cell, True  # unless a click on the part brought it
         self.wire_chosen = False
-        self.turn = 0  # the Wheel at its start
+        self.turn, self.slide_left = 0, 0  # the Wheel at its start, at once
         self.wheel_open, self.wheel_keys = cell is not None, keys
         node = self._focused_node()
         self.selected = None if node is None else node.id
@@ -1090,13 +1104,13 @@ class EditorScene(Frame):
             if not swaps(self.board, node.cell, self.layout.kinds):
                 self._refuse("no other part of its group left", node.cell)
                 return
-            self.swapping, self.turn = True, 0  # the Wheel offers what it may become
+            self.swapping, self.turn, self.slide_left = True, 0, 0  # it offers what it may become
             self.choice = 0 if self.going_round() else None
             return
         if self.wheel_keys and self.wheel_open:
             items = self.offered()
             self.choice = next((k for k, what in enumerate(items) if what is tool), self.choice)
-            self.turn = turned(self.turn, self.choice, len(items))
+            self._turn_wheel(turned(self.turn, self.choice, len(items)))
 
     def _swap(self, kind: Kind) -> None:
         """The focused part swapped for one of `kind`, in its place (D-068); the wires it cannot
@@ -1226,7 +1240,7 @@ class EditorScene(Frame):
         if self.tool is Tool.PAN:
             self.tool = Tool.ADD
         elif self.swapping:
-            self.swapping, self.turn = False, 0  # back to the part's actions
+            self.swapping, self.turn, self.slide_left = False, 0, 0  # back to the part's actions
             self.choice = None
         elif self.mode is Mode.DELETE:
             self.mode = Mode.WRITE
