@@ -67,6 +67,7 @@ from nektoids.editor.draw import (
     draw_bar,
     draw_body,
     draw_button,
+    draw_circuit,
     draw_drawer,
     draw_info,
     draw_level_map,
@@ -105,7 +106,6 @@ from nektoids.editor.palette import (
     SHADOW,
     TEXT,
 )
-from nektoids.editor.schematic_draw import draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 from nektoids.levels.objectives import Outcome

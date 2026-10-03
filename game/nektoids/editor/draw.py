@@ -23,8 +23,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pygame
 
+from nektoids.editor.beads import BEAD_RATE_AT_FULL
+from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import (
@@ -33,6 +36,8 @@ from nektoids.editor.geometry import (
     EYE_DISC,
     SQUARE_POINT,
     body_circle,
+    cumulative_lengths,
+    point_at,
     symbol_corners,
     wire_arrows,
     wire_points,
@@ -96,6 +101,7 @@ from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
     BAR,
+    BEAD,
     BODY,
     BODY_OUTLINE,
     BUTTON,
@@ -117,6 +123,7 @@ from nektoids.editor.palette import (
     LIGHT,
     LIT,
     LOCK_RING,
+    METER,
     OBSTACLE,
     OUTSIDE,
     OUTSIDE_LINE,
@@ -138,7 +145,9 @@ from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
 from nektoids.graph.board import Board, Category, Kind, Refused
+from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.graph.network import label
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
 TIP = {
@@ -1226,3 +1235,81 @@ def draw_status_line(screen: pygame.Surface, scene: Frame, fonts: Fonts, text: s
     screen.blit(
         fonts.small.render(_fitted(fonts.small, text, room), True, colour), scene.layout.status_at
     )
+
+
+# The circuit, as Inside, Diagnostic, the developer view (F2) and a part's entry draw it
+
+METER_WIDTH = 10  # a part's level meter [px]
+_TEXT_CACHE: dict[tuple[int, str, tuple[int, int, int]], pygame.Surface] = {}
+_TEXT_CACHE_LIMIT = 2000
+
+
+def cached_text(font: pygame.font.Font, text: str, colour: tuple[int, int, int]) -> pygame.Surface:
+    """Rendered text, kept: the panel shows the same lines frame after frame."""
+    key = (id(font), text, colour)
+    if key not in _TEXT_CACHE:
+        if len(_TEXT_CACHE) >= _TEXT_CACHE_LIMIT:
+            _TEXT_CACHE.clear()
+        _TEXT_CACHE[key] = font.render(text, True, colour)
+    return _TEXT_CACHE[key]
+
+
+def draw_circuit(
+    screen: pygame.Surface,
+    circuit: Circuit,
+    y: np.ndarray,
+    fonts: Fonts,
+    belt: bool = False,
+    plain: bool = False,
+) -> None:
+    """Wires, beads and parts at the rates y (n,): the beads, and a level meter by each eye and
+    thruster, show the rates; the parts keep their colour (D-052). Unless `plain`,
+    every part has its name and its rate as a number, and every thruster a bar."""
+    _draw_wires(screen, circuit, belt)
+    _draw_parts(screen, circuit, y, fonts, plain)
+
+
+def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
+    view = circuit.view
+    radius = max(2, round(BEAD_RADIUS * view.size))
+    for k, path in enumerate(circuit.paths):
+        points = wire_points(path, view.size, view.origin)
+        flux = float(circuit.flux[k])
+        pygame.draw.lines(screen, WIRE, False, points, 2)  # one colour: the beads show the rate
+        along = cumulative_lengths(points)
+        for s in circuit.beads.positions(k, BEAD_RATE_AT_FULL / RATE_MAX * flux, belt=belt):
+            x, y = point_at(points, along, s * view.size)
+            pygame.draw.circle(screen, BEAD, (round(x), round(y)), radius)
+
+
+def _draw_parts(
+    screen: pygame.Surface, circuit: Circuit, y: np.ndarray, fonts: Fonts, plain: bool
+) -> None:
+    net, size = circuit.net, circuit.view.size
+    for i, node_id in enumerate(net.ids):
+        kind, rate = net.kinds[i], float(y[i])
+        cx, cy = circuit.centre(i)
+        facing = circuit.board.nodes[node_id].facing
+        draw_part(screen, fonts, kind, placed_angle(kind, facing), (cx, cy), size, False)
+        if kind in (Kind.EYE, Kind.THRUSTER):
+            _draw_meter(screen, (cx + METER_AT * size, cy), size, rate)
+        if plain:
+            continue
+        name = cached_text(fonts.small, label(net, i), DIM_TEXT)
+        screen.blit(name, name.get_rect(center=(cx, cy - 1.35 * size)))
+        number = cached_text(fonts.small, f"{rate:.2f}", TEXT)
+        screen.blit(number, number.get_rect(center=(cx, cy + 1.3 * size)))
+
+
+def _draw_meter(
+    screen: pygame.Surface, centre: tuple[float, float], size: float, rate: float
+) -> None:
+    """A part's level meter: filled from the foot up to its rate, in the colour of its face."""
+    outline = pygame.Rect(0, 0, METER_WIDTH, round(METER_HEIGHT * size))
+    outline.center = (round(centre[0]), round(centre[1]))
+    filled = outline.inflate(-4, -4)
+    foot = filled.bottom
+    filled.height = round(filled.height * min(1.0, rate / RATE_MAX))
+    filled.bottom = foot
+    pygame.draw.rect(screen, RULE, outline, 1)
+    pygame.draw.rect(screen, METER, filled)

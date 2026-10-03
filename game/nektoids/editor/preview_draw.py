@@ -9,10 +9,9 @@ from __future__ import annotations
 import pygame
 
 from nektoids.editor.circuit import BEAD_RADIUS
-from nektoids.editor.draw import Fonts, draw_body
+from nektoids.editor.draw import Fonts, draw_body, draw_circuit
 from nektoids.editor.palette import BACKGROUND, BEAD, DARK, DIM_TEXT, LIT
 from nektoids.editor.scene import EditorScene
-from nektoids.editor.schematic_draw import draw_circuit
 from nektoids.graph.dynamics import RATE_MAX
 
 
