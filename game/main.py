@@ -271,9 +271,11 @@ async def main() -> None:
         if guide is not None:  # on past what the player has done
             ended = playing.outcome if playing is not None else None
             time = playing.clock.tick * DT if playing is not None else 0.0  # the run's [s]
-            guide.follow(Context(router.board, editor().tool, router.screen, ended, time))
+            drawer = on_screen().layout.drawer  # one a step may wait for (D-074)
+            guide.follow(Context(router.board, editor().tool, router.screen, ended, time, drawer))
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
+        editor().ghost_wires = guide.ghost_wires if guide is not None else ()  # D-074
         editor().chapters = router.rows()  # what Chapters shows
         editor().set_wins(router.wins(router.index))  # what Files shows (D-059)
         if playing is not None:

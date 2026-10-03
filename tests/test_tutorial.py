@@ -494,7 +494,8 @@ def test_a_drawer_a_step_explains_is_outlined_with_its_icon_and_a_wheels_step_ke
     explain = {"drawer": "tools"}  # D-071: the drawer joined to its icon in the bar
     ((rect, shape),) = target_spots(explain, Screen.EDIT, tools, VIEW)
     assert rect == tools.drawer_area and shape == Docked(dict(tools.drawer_buttons)[Drawer.TOOLS])
-    assert target_rects(explain, Screen.EDIT, parts, VIEW) == []  # Tools is not open
+    icon = dict(parts.drawer_buttons)[Drawer.TOOLS]  # closed: its icon alone, to open it
+    assert target_spots(explain, Screen.EDIT, parts, VIEW) == [(icon, "spot")]  # D-074
     assert drawer_for(Step(("Tools",), explain)) is Drawer.TOOLS
     place = Step(("Place",), [{"cell": [2, -1]}, {"wheel": "eye"}], {"placed": {}})
     assert shows_wheel(place) and not shows_wheel(Step(("Tools",), explain))
@@ -570,3 +571,25 @@ def test_a_run_drawer_a_step_explains_is_outlined_with_its_icon_too():
     run = make_layout(Drawer.INSIDE, env=Env.RUN, goals=1)  # D-071: as Tools and Parts are
     ((rect, shape),) = target_spots(FEAR[INSIDE].show, Screen.RUN, run, None)
     assert rect == run.drawer_area and shape == Docked(dict(run.drawer_buttons)[Drawer.INSIDE])
+
+
+def test_a_step_may_wait_for_a_drawer_to_open_which_it_never_opens_itself():
+    # D-074: open Diagnostic; the step shows its icon and lets it open, refused otherwise
+    step = Step(("Open Diagnostic",), {"drawer": "diagnostic"}, {"drawer": "diagnostic"})
+    assert drawer_for(step) is None  # the player opens it
+    assert allows(step, Action("view")) and not allows(step, Action("run"))
+    board = LEVELS["Fear"].new_board()
+    assert not met(step.until, Context(board, Tool.ADD, Screen.EDIT, drawer=Drawer.TOOLS))
+    assert met(step.until, Context(board, Tool.ADD, Screen.EDIT, drawer=Drawer.DIAGNOSTIC))
+    icon = dict(LAYOUT.drawer_buttons)[Drawer.DIAGNOSTIC]
+    assert target_spots(step.show, Screen.EDIT, LAYOUT, VIEW) == [(icon, "spot")]
+
+
+def test_a_tutorial_may_carry_its_models_wires():
+    data = {
+        "ghosts": [],
+        "ghost_wires": [{"from": [-1, -1], "to": [1, 1]}],
+        "steps": [{"say": ["x"]}],
+    }
+    assert Tutorial.from_dict(data).ghost_wires == (((-1, -1), (1, 1)),)  # D-074
+    assert Tutorial.from_dict(LEVELS["Fear"].tutorial).ghost_wires == ()

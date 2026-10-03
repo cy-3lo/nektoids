@@ -86,6 +86,7 @@ class Context:
     screen: Screen
     outcome: Outcome | None = None
     time: float = 0.0  # the run's time [s] (D-071)
+    drawer: Drawer | None = None  # the drawer open on the screen shown (D-074)
 
 
 @dataclass(frozen=True)
@@ -102,8 +103,14 @@ NOTHING_LIVE = Live()  # a scene that shows nothing a step needs beyond its layo
 
 
 class Tutorial:
-    def __init__(self, ghosts: tuple[Ghost, ...], steps: tuple[Step, ...]) -> None:
+    def __init__(
+        self,
+        ghosts: tuple[Ghost, ...],
+        steps: tuple[Step, ...],
+        ghost_wires: tuple[tuple[Cell, Cell], ...] = (),
+    ) -> None:
         self.ghosts, self.steps = ghosts, steps
+        self.ghost_wires = ghost_wires  # the model's wires, from a cell to a cell (D-074)
         self.index = 0
 
     @classmethod
@@ -117,7 +124,8 @@ class Tutorial:
             for g in data.get("ghosts", ())
         )
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
-        return cls(ghosts, steps)
+        wires = tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
+        return cls(ghosts, steps, wires)
 
     @property
     def step(self) -> Step | None:
@@ -203,7 +211,8 @@ def drawer_for(step: Step | None, open_now: Drawer | None = None) -> Drawer | No
     else Tools; the run's drawer it explains; None if it needs none (D-051, D-057, D-070)."""
     shows = _shows(step)
     explained = next((Drawer(one["drawer"]) for one in shows if "drawer" in one), None)
-    if explained is not None:
+    awaited = {Drawer(u["drawer"]) for u in _conditions(step) if "drawer" in u}
+    if explained is not None and explained not in awaited:  # the player opens that one
         return explained
     if any("menu" in one or one.get("area") == "parts" for one in shows):
         return Drawer.PARTS
@@ -215,6 +224,12 @@ def drawer_for(step: Step | None, open_now: Drawer | None = None) -> Drawer | No
 def shows_wheel(step: Step | None) -> bool:
     """Whether a step shows one of the Wheel's icons: the Wheel, folded, unfolds for it."""
     return any("wheel" in one for one in _shows(step))
+
+
+def _conditions(step: Step | None) -> list:
+    """What a step waits for, one or several, as a list."""
+    until = None if step is None else step.until
+    return [] if not until else until if isinstance(until, list) else [until]
 
 
 def _shows(step: Step | None) -> list:
@@ -264,6 +279,8 @@ def _allows(until: Mapping, action: Action) -> bool:
         return wire or (verb == "tool" and action.tool is Tool.WIRE)
     if "screen" in until:  # the way there: Run, or back to the editor (D-060)
         return verb == {Screen.RUN: "run", Screen.EDIT: "edit"}.get(Screen(until["screen"]))
+    if "drawer" in until:  # a drawer to open: Diagnostic asks to (D-058, D-074)
+        return verb == "view"
     if "outcome" in until or "time" in until:  # the run and its controls, and back to the editor
         return verb in ("run", "edit", "play")
     return False
@@ -276,6 +293,8 @@ def met(until: Mapping | list, context: Context) -> bool:
     board = context.board
     if "time" in until:  # the run has played this long [s]
         return context.time >= until["time"]
+    if "drawer" in until:  # that drawer is open (D-074)
+        return context.drawer is Drawer(until["drawer"])
     if "placed" in until:
         node = board.node_at(_cell(until["placed"]["cell"]))
         return node is not None and node.kind is Kind(until["placed"]["kind"])
@@ -375,10 +394,12 @@ def _page(layout: Layout, env: Env) -> list:
 
 
 def _docked(layout: Layout, drawer: Drawer) -> tuple:
-    """The drawer, while it is open, with its icon in the bar: a `Docked` shape."""
+    """The drawer, while it is open, with its icon in the bar: a `Docked` shape; while it is
+    closed, its icon alone, to open it (D-074); not in this environment's bar, nothing."""
     icon = dict(layout.drawer_buttons).get(drawer)
-    rect = layout.drawer_area if layout.drawer is drawer and icon is not None else None
-    return (rect, Docked(icon))
+    if icon is None:
+        return (None, "spot")
+    return (layout.drawer_area, Docked(icon)) if layout.drawer is drawer else (icon, "spot")
 
 
 def _shape(show: Mapping) -> str:

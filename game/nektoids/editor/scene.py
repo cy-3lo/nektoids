@@ -214,6 +214,7 @@ class EditorScene(Frame):
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
+        self.ghost_wires: tuple = ()  # ... and its wires, cell to cell (D-074); main.py's too
 
     def update(self) -> None:
         """Once per frame."""
