@@ -61,6 +61,7 @@ class Specks:
 
     def __init__(self, seed: int = 0):
         self.table = np.random.default_rng(seed).random((TABLE_FRAMES, SLOTS, 3))
+        self.table.flags.writeable = False  # drawn once, read only
 
     def stream(
         self, density: float, frame: int, life: int, stream: int

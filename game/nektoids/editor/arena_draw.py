@@ -10,8 +10,8 @@ as big as a swimmer (`LIGHT_RADIUS`), their rays leaving from the rim, a ring ro
 visited, a dashed one where an objective draws a ring to leave or to stay in, lit once done, and
 a swimmer its body's circle round a wedge, its tip forward, bright when selected, at work
 (D-076, `marks`): its parts' faces and outlines, its flames, the light its eyes draw in, a
-segment for its velocity and an arc for its spin. When the run
-is over, a banner over the arena says how it ended: done, lost and why, or out of time.
+segment for its velocity and an arc for its spin. When the run is over, a banner over the arena
+says how it ended: done, lost and why, or out of time.
 
 Round the arena, the frame the editor has too (D-051, D-057, `draw.py`): the bar, the open
 drawer, the tabs with the level's line under them. Under the arena, the controls, each with a
@@ -240,9 +240,8 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
     """Each swimmer its body's circle round a wedge, its tip where it heads; the selected one
     bright, the others dimmer; each at work (D-076), its specks under it, its parts and motion
     over it, the specks moving with the run's frames; the specks and the motion as Navigator
-    sets them. The view keeps angles (y flips, heading
-    stays counter-clockwise). A swimmer out of view gets an arrow at the edge, pointing to where
-    it is."""
+    sets them. The view keeps angles (y flips, heading stays counter-clockwise). A swimmer out
+    of view gets an arrow at the edge, pointing to where it is."""
     view = scene.view
     frame = scene.clock.tick // TICKS_PER_FRAME
     for k in range(len(scene.pos)):
