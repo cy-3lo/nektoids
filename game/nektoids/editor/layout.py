@@ -33,7 +33,7 @@ SCREEN = (960, 640)  # [px]
 BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
-SWITCH = 36  # the accented switch at its foot, square [px]; the main view's buttons too
+SWITCH = 36  # the accented switch at its foot, square [px]
 ACTION_WIDTH = 50  # atop the editor's main screen, what a click does: a ring's icon, square [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
@@ -136,7 +136,7 @@ class Drawer(Enum):  # D-051
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
 
 
-class MainView(Enum):  # what the editor's main screen shows (D-051, D-058)
+class MainView(Enum):  # what the editor's main screen shows, by the drawer open (D-058, D-069)
     DIAGRAM = "diagram"  # the board on its hex grid, to edit
     PREVIEW = "preview"  # the Run preview: the board as it runs, where the probe stands
 
@@ -239,7 +239,6 @@ class Layout:
     tabs: tuple[tuple[str, Rect], ...]  # "editor", "run"
     board_area: Rect  # the main screen: the board, or in the run the arena
     controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
-    view_switch: tuple[tuple[MainView, Rect], ...]  # in the editor, over the main screen's corner
     overview: Rect | None  # Navigator's: the whole board, or level, small (D-060)
     zoom_buttons: tuple[tuple[ViewButton, Rect], ...]  # under it, out and in (D-065)
     zoom_bar: Rect | None  # between them: the zoom, from the farthest to the nearest
@@ -358,12 +357,6 @@ def make_layout(
         overview=rows.overview,
         zoom_buttons=tuple(rows.zoom_buttons),
         zoom_bar=rows.zoom_bar,
-        view_switch=tuple(
-            (view, (width - 8 - (2 - k) * (SWITCH + 6) + 6, TOP + 8, SWITCH, SWITCH))
-            for k, view in enumerate(MainView)
-        )
-        if env is Env.EDITOR
-        else (),
         caption_at=(left + MARGIN, TABS_HEIGHT + 5),
         status_at=(left + MARGIN, height - STATUS_HEIGHT + 6),
     )
@@ -472,22 +465,24 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
     return next((g for g, rect in layout.goal_rows if contains(rect, point)), None)
 
 
-def palette_target_at(
-    layout: Layout, point: tuple[int, int]
-) -> Drawer | LevelButton | MainView | str | None:
-    """What a tooltip would name under `point`: an icon of the bar, a main view's button, or the
-    other environment's tab, by its name, which says what the switch says (D-060)."""
+def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelButton | str | None:
+    """What a tooltip would name under `point`: an icon of the bar, or the other environment's
+    tab, by its name, which says what the switch says (D-060)."""
     tab = tab_at(layout, point)
     return (
         drawer_button_at(layout, point)
         or level_button_at(layout, point)
-        or main_view_at(layout, point)
         or (tab if tab is not None and tab != layout.env.value else None)
     )
 
 
-def main_view_at(layout: Layout, point: tuple[int, int]) -> MainView | None:
-    return next((v for v, rect in layout.view_switch if contains(rect, point)), None)
+def main_view_for(drawer: Drawer | None, last: MainView) -> MainView:
+    """What the editor's main screen shows with `drawer` open (D-069): the Run preview in
+    Diagnostic, what it showed before (`last`) in Navigator, which only moves the view; else the
+    board."""
+    if drawer is Drawer.DIAGNOSTIC:
+        return MainView.PREVIEW
+    return last if drawer is Drawer.NAVIGATOR else MainView.DIAGRAM
 
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:

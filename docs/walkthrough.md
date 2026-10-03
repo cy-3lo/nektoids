@@ -742,10 +742,11 @@ knob.
   run at a pose, its eyes reading the light once (nothing moves), `hold` for an eye's knob;
   `level_view`, the level seen whole in Diagnostic's map. Tested in
   [`test_probe.py`](../tests/test_probe.py).
-- [`editor/scene.py`](../game/nektoids/editor/scene.py): `main` (a `MainView`), `show`,
-  `open_drawer` (Diagnostic shows the preview), `_probe_now`, `_hold`.
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `main` (a `MainView`, which
+  `layout.main_view_for` reads off the drawer, D-069), `open_drawer` (Diagnostic shows the
+  preview), `_editing`, `_probe_now`, `_hold`.
 - [`editor/preview_draw.py`](../game/nektoids/editor/preview_draw.py): the preview and its
-  knobs; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_view_switch`, `_draw_diagnostic`.
+  knobs; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_diagnostic`.
 
 Questions: why does the probe read the light once, and not every tick? What would a held eye
 do to a run, and why can it not?

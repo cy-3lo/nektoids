@@ -49,7 +49,7 @@ from nektoids.editor.layout import (
     kept_on_board,
     level_button_at,
     level_of,
-    main_view_at,
+    main_view_for,
     make_layout,
     menu_item_at,
     mode_button_at,
@@ -332,16 +332,15 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]
 
 
-def test_the_editor_has_two_main_views_in_its_main_screens_corner_and_the_run_none():
-    rects = dict(LAYOUT.view_switch)  # the Diagram view and the Run preview (D-058)
-    assert list(rects) == list(MainView)
-    (x1, y1, w1, _), (x2, y2, _, _) = rects.values()
-    assert y1 == y2 and x1 + w1 < x2
-    for view, (x, y, w, h) in rects.items():
-        assert contains(LAYOUT.board_area, (x, y)) and contains(LAYOUT.board_area, (x + w, y + h))
-        assert main_view_at(LAYOUT, (x + w // 2, y + h // 2)) is view
-        assert palette_target_at(LAYOUT, (x + w // 2, y + h // 2)) is view  # its tooltip
-    assert make_layout(env=Env.RUN).view_switch == ()
+def test_the_main_screen_shows_the_run_preview_only_in_diagnostic_and_navigator_keeps_it():
+    # D-069: no switch; the drawer says what the editor's main screen shows
+    assert main_view_for(Drawer.DIAGNOSTIC, MainView.DIAGRAM) is MainView.PREVIEW
+    for last in MainView:
+        assert main_view_for(Drawer.NAVIGATOR, last) is last  # it only moves the view
+    for drawer in (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, *FOOT, None):
+        assert main_view_for(drawer, MainView.PREVIEW) is MainView.DIAGRAM
+    x, y, w, _ = LAYOUT.board_area  # nothing in the main screen's corner names a view any more
+    assert palette_target_at(LAYOUT, (x + w - 30, y + 26)) is None
 
 
 def test_files_has_a_row_per_win_under_its_label_in_the_editors_bar():

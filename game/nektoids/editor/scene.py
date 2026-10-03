@@ -73,7 +73,7 @@ from nektoids.editor.layout import (
     file_button_at,
     group_at,
     kept_on_board,
-    main_view_at,
+    main_view_for,
     make_layout,
     menu_item_at,
     mode_button_at,
@@ -158,7 +158,7 @@ class EditorScene(Frame):
         self._start_frame(layout, settings)
         self.board = board
         self.level = level  # where the Run preview's probe stands; None: no preview
-        self.main = MainView.DIAGRAM  # what the main screen shows (D-058)
+        self.main = MainView.DIAGRAM  # what the main screen shows, by the drawer (D-069)
         self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
         self._probed = None  # the board as the probe was made for it
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
@@ -231,19 +231,28 @@ class EditorScene(Frame):
             self.probe = Probe(self.board, self.level, self.view, pose)
             self._probed = now
 
-    def show(self, view: MainView) -> None:
-        """The main screen shows the Diagram view or the Run preview (D-058)."""
-        if view is MainView.PREVIEW and self.level is None:
-            self._refuse("there is no level to run the board in")
-        elif view is not self.main and self._allowed(Action("view")):
+    def open_drawer(self, drawer: Drawer | None) -> None:
+        """As the frame opens it; the main screen follows (D-069): the Run preview in Diagnostic,
+        what it showed before in Navigator, the board otherwise. Diagnostic stays shut while a
+        tutorial step leads, and with no level to run the board in."""
+        if drawer is Drawer.DIAGNOSTIC:
+            if self.level is None:
+                self._refuse("there is no level to run the board in")
+                return
+            if not self._allowed(Action("view")):
+                return
+        super().open_drawer(drawer)
+        view = main_view_for(drawer, self.main)
+        if view is not self.main:
             self._cancel()
             self.main = view
 
-    def open_drawer(self, drawer: Drawer | None) -> None:
-        """As the frame opens it; Diagnostic puts the Run preview on the main screen (D-058)."""
-        super().open_drawer(drawer)
-        if drawer is Drawer.DIAGNOSTIC and self.main is not MainView.PREVIEW:
-            self.show(MainView.PREVIEW)
+    def _editing(self) -> bool:
+        """Whether the board is on screen to edit; if the Run preview shows, say so (D-069)."""
+        if self.main is MainView.PREVIEW:
+            self._refuse("the Run preview shows: open Tools or Parts to edit")
+            return False
+        return True
 
     def _on_cell_view(self, pos: tuple[int, int]) -> bool:
         """Whether `pos` is on Tools' picture of the focused cell, its ring round it."""
@@ -299,12 +308,11 @@ class EditorScene(Frame):
             return  # no other shortcut with Ctrl or Cmd: they are the browser's
         self.keyboard = True
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
-        on_board = self.main is MainView.DIAGRAM  # the focus and Enter work on the board
         if arrow is not None:
-            if on_board:
+            if self.tool is Tool.PAN or self._editing():  # the hand moves the preview's view too
                 self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
-            if on_board:
+            if self._editing():
                 self._enter()
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
@@ -402,7 +410,7 @@ class EditorScene(Frame):
         """A number: on a focused empty cell, that part placed there (its key in the ring);
         elsewhere, that part picked, for a click to place (D-068)."""
         kinds = [kind for _, group in MENU_GROUPS for kind in group if kind in self.layout.kinds]
-        if k >= len(kinds):
+        if k >= len(kinds) or not self._editing():
             return
         cell = self.focused
         if self.swapping and kinds[k] in self.offered():
@@ -459,10 +467,6 @@ class EditorScene(Frame):
 
     def _press(self, pos: tuple[int, int]) -> None:
         if self.frame_press(pos):
-            return
-        view = main_view_at(self.layout, pos)
-        if view is not None:
-            self.show(view)
             return
         if self._on_map(pos):
             self.probing = True
@@ -628,7 +632,6 @@ class EditorScene(Frame):
         if self._allowed(Action("load")):
             self._cancel()
             self.board.restore(self.wins[index].board)
-            self.main = MainView.DIAGRAM
             self.selected = None
 
     def _allowed(self, action: Action, cell: Cell | None = None) -> bool:
@@ -702,7 +705,8 @@ class EditorScene(Frame):
             self._drop_gesture()
             self.tool = Tool.ADD if self.tool is Tool.PAN else Tool.PAN
             return
-        self.main = MainView.DIAGRAM  # a tool is for the board
+        if not self._editing():
+            return
         if tool is not Tool.DELETE:
             self.mode = Mode.WRITE  # writing again
         if tool is Tool.ADD:
@@ -720,7 +724,7 @@ class EditorScene(Frame):
         if not self._allowed(Action("pick", kind=kind)):
             return
         self._cancel()
-        self.main, self.mode = MainView.DIAGRAM, Mode.WRITE  # a part is for the board
+        self.mode = Mode.WRITE  # a part is for the board
         if self.board.remaining(kind) == 0:
             self._refuse("none left", None)
             return
@@ -902,13 +906,15 @@ class EditorScene(Frame):
     def _set_mode(self, mode: Mode) -> None:
         """Write or Delete (D-068): what a click on the board does. The hand is put down, the
         ring closes; the keyboard's focus stays where it is."""
+        if not self._editing():
+            return
         if mode is Mode.DELETE and not self._allowed(Action("tool", tool=Tool.DELETE)):
             return
         kept = self.focused if self.keyboard else None
         self._focus(None)
         if kept is not None:
             self._focus_key(kept)
-        self.mode, self.tool, self.main = mode, Tool.ADD, MainView.DIAGRAM
+        self.mode, self.tool = mode, Tool.ADD
         self.message = ""
 
     def _use(self, what: Kind | Tool) -> None:
