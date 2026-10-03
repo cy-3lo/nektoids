@@ -6,7 +6,6 @@ from nektoids.editor.layout import (
     ACTION_WIDTH,
     BAR_WIDTH,
     CAPTION_HEIGHT,
-    CELL_HEIGHT,
     DRAWER_KEYS,
     DRAWER_WIDTH,
     DRAWERS,
@@ -23,6 +22,7 @@ from nektoids.editor.layout import (
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
+    WHEEL_HEIGHT,
     Drawer,
     EditButton,
     Env,
@@ -40,7 +40,6 @@ from nektoids.editor.layout import (
     board_extent,
     board_view_of,
     cell_at,
-    cell_fold_at,
     centred_on,
     centred_view,
     chapter_row_at,
@@ -71,6 +70,7 @@ from nektoids.editor.layout import (
     value_at,
     view_button_at,
     visible_cells,
+    wheel_fold_at,
     win_row_at,
     zoom,
     zoom_bar_at,
@@ -83,7 +83,7 @@ from nektoids.levels.arenas import arenas
 from nektoids.levels.sandbox import free_board, tutorial_board
 
 LAYOUT = make_layout()  # Parts open, every part handed out, the cell under the list
-LIST = make_layout(cell_folded=True)  # the same, the cell folded: the whole list shows
+LIST = make_layout(wheel_folded=True)  # the same, the cell folded: the whole list shows
 VIEW = centred_view(LAYOUT)
 FILES = make_layout(Drawer.FILES, wins=2)
 NAVIGATOR = make_layout(Drawer.NAVIGATOR)
@@ -152,17 +152,17 @@ def test_parts_has_every_kind_once_and_a_click_on_a_row_picks_it():
 
 def test_parts_holds_the_cell_under_its_list_and_the_cells_title_folds_it():
     _, ly, _, lh = LAYOUT.list_area  # D-069
-    _, fy, _, fh = LAYOUT.cell_fold
-    cx, cy, cw, ch = LAYOUT.cell_view
+    _, fy, _, fh = LAYOUT.wheel_fold
+    cx, cy, cw, ch = LAYOUT.wheel_view
     assert ly == LIST.list_area[1] and ly + lh < fy and fy + fh == cy and cy + ch <= SCREEN[1]
-    assert contains(LAYOUT.drawer_area, (cx, cy)) and cw >= 200 and ch == CELL_HEIGHT
-    assert cell_fold_at(LAYOUT, centre(LAYOUT.cell_fold))
-    assert group_at(LAYOUT, centre(LAYOUT.cell_fold)) is None  # not one of the list's groups
-    assert LIST.cell_view is None and LIST.cell_fold[1] + LIST.cell_fold[3] < SCREEN[1]
-    assert LIST.cell_fold[1] > fy and LIST.list_area[3] > lh  # at the foot: the list has the room
+    assert contains(LAYOUT.drawer_area, (cx, cy)) and cw >= 200 and ch == WHEEL_HEIGHT
+    assert wheel_fold_at(LAYOUT, centre(LAYOUT.wheel_fold))
+    assert group_at(LAYOUT, centre(LAYOUT.wheel_fold)) is None  # not one of the list's groups
+    assert LIST.wheel_view is None and LIST.wheel_fold[1] + LIST.wheel_fold[3] < SCREEN[1]
+    assert LIST.wheel_fold[1] > fy and LIST.list_area[3] > lh  # at the foot: the list has the room
     tools = make_layout(Drawer.TOOLS)  # its rows always fit: no list to scroll
     assert tools.list_area is None and tools.scroll_bar is None
-    assert make_layout(Drawer.FILES).cell_fold is None and FILES.cell_view is None
+    assert make_layout(Drawer.FILES).wheel_fold is None and FILES.wheel_view is None
 
 
 def test_parts_list_scrolls_when_it_does_not_fit_and_its_rows_answer_only_where_they_show():
@@ -213,10 +213,10 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
     assert [title for title, _ in tools.section_titles] == ["Mode", "Edit"]
     rows = [*tools.mode_buttons, *tools.edit_buttons]
     assert [b for b, _ in rows] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
-    assert rows[-1][1][1] + rows[-1][1][3] < tools.cell_fold[1]  # the cell at the foot, as Parts'
-    assert tools.cell_fold == LAYOUT.cell_fold and tools.cell_view == LAYOUT.cell_view
-    folded = make_layout(Drawer.TOOLS, cell_folded=True)
-    assert folded.cell_view is None and folded.cell_fold == LIST.cell_fold
+    assert rows[-1][1][1] + rows[-1][1][3] < tools.wheel_fold[1]  # the cell at the foot, as Parts'
+    assert tools.wheel_fold == LAYOUT.wheel_fold and tools.wheel_view == LAYOUT.wheel_view
+    folded = make_layout(Drawer.TOOLS, wheel_folded=True)
+    assert folded.wheel_view is None and folded.wheel_fold == LIST.wheel_fold
     for button, rect in rows:
         found = mode_button_at(tools, centre(rect)) or edit_button_at(tools, centre(rect))
         assert found is button

@@ -34,15 +34,15 @@ BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]
-ACTION_WIDTH = 50  # atop the editor's main screen, what a click does: a ring's icon, square [px]
+ACTION_WIDTH = 50  # atop the editor's main screen, what a click does: a Wheel's icon, square [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
 OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
 ZOOM_BUTTON = 28  # zoom out and in, either end of the zoom bar, under the overview [px]
 FOOT_MARGIN = 6  # under the objectives, at the drawer's foot [px]
-CELL_HEIGHT = 232  # the drawer's picture of the focused cell: its ring, piles and all, its line
-CELL_TITLE = "The Wheel"  # its title, at the foot of Tools and of Parts; a click folds it (D-069)
+WHEEL_HEIGHT = 232  # the Wheel at a drawer's foot: the cell, its icons, piles and all, its line
+WHEEL_TITLE = "The Wheel"  # its title, at the foot of Tools and of Parts; a click folds it (D-069)
 SCROLL_WIDTH = 5  # Parts' scroll bar, in the drawer's right margin [px]
 SCROLL_STEP = 23  # what a notch of the mouse wheel scrolls Parts' list by: half a row [px]
 SCROLL_THUMB = 24  # the scroll bar's thumb, at its shortest [px]
@@ -107,7 +107,7 @@ class Shown(Enum):  # atop the editor's main screen (D-068)
 
 
 class Mode(Enum):  # what a click on the board does (D-068)
-    WRITE = "write"  # a cell focused, its ring: place, turn, wire, move
+    WRITE = "write"  # a cell focused, its Wheel: place, turn, wire, move
     DELETE = "delete"  # the part clicked removed with its wires, or the wire clicked
 
 
@@ -130,7 +130,7 @@ class ViewButton(Enum):
 
 
 class Drawer(Enum):  # D-051
-    TOOLS = "tools"  # the focused cell and its ring; Write and Delete; undo and redo (D-068)
+    TOOLS = "tools"  # Write and Delete; undo and redo; the Wheel (D-068, D-069)
     PARTS = "parts"  # the parts the level hands out, and what each does
     FILES = "files"  # this session's winning boards, to put one back (D-059)
     DIAGNOSTIC = "diagnostic"  # the level, small, with the probe the Run preview runs at (D-058)
@@ -229,8 +229,8 @@ class Layout:
     section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
     group_titles: tuple[tuple[str, Rect], ...]  # Parts: click one to fold or unfold its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
-    cell_view: Rect | None  # Tools, Parts: the focused cell, drawn large, its ring round it
-    cell_fold: Rect | None  # Tools, Parts: The cell's title; a click folds or unfolds it (D-069)
+    wheel_view: Rect | None  # Tools, Parts: the Wheel, the focused cell drawn large at its hub
+    wheel_fold: Rect | None  # Tools, Parts: The Wheel's title; a click folds or unfolds it (D-069)
     list_area: Rect | None  # Parts: where its list shows, scrolled; its rows answer only there
     scroll: int  # how far Parts' list is scrolled [px]
     scroll_max: int  # ... at most: how much of it does not fit [px]
@@ -272,14 +272,14 @@ def make_layout(
     env: Env = Env.EDITOR,
     goals: int = 0,
     wins: int = 0,
-    cell_folded: bool = False,
+    wheel_folded: bool = False,
     scroll: int = 0,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     Parts' groups shown closed; kinds: the parts the level hands out, the only ones Parts shows
     (D-039); chapter: how many levels Chapters lists, before the sandbox; goals: how many
     objectives the level has, at the foot of each of the run's drawers, before the time left;
-    wins: how many wins of the level Files lists; cell_folded: the picture of the cell folded, at
+    wins: how many wins of the level Files lists; wheel_folded: the picture of the cell folded, at
     the foot of Tools and of Parts; scroll: how far Parts' list is scrolled, kept within what it
     needs (D-069)."""
     width, height = SCREEN
@@ -297,9 +297,9 @@ def make_layout(
     left = BAR_WIDTH + (DRAWER_WIDTH if drawer is not None else 0)  # the board's left edge
     rows = _Rows()
     if drawer is Drawer.TOOLS:
-        rows.tools(height, cell_folded)
+        rows.tools(height, wheel_folded)
     elif drawer is Drawer.PARTS:
-        rows.parts(folded, kinds, height, cell_folded, scroll)
+        rows.parts(folded, kinds, height, wheel_folded, scroll)
     elif drawer is Drawer.NAVIGATOR:
         rows.view(env)
     elif drawer is Drawer.DIAGNOSTIC:
@@ -351,8 +351,8 @@ def make_layout(
         section_titles=tuple(rows.sections),
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
-        cell_view=rows.cell_view,
-        cell_fold=rows.cell_fold,
+        wheel_view=rows.wheel_view,
+        wheel_fold=rows.wheel_fold,
         list_area=rows.list_area,
         scroll=rows.scroll,
         scroll_max=rows.scroll_max,
@@ -386,8 +386,8 @@ class _Rows:
 
     def __init__(self) -> None:
         self.y = DRAWER_TOP
-        self.cell_view: Rect | None = None
-        self.cell_fold: Rect | None = None
+        self.wheel_view: Rect | None = None
+        self.wheel_fold: Rect | None = None
         self.list_area: Rect | None = None
         self.scroll, self.scroll_max = 0, 0
         self.scroll_bar: Rect | None = None
@@ -415,12 +415,12 @@ class _Rows:
         folded: frozenset[str],
         kinds: frozenset[Kind],
         height: int,
-        cell_folded: bool,
+        wheel_folded: bool,
         scroll: int,
     ) -> None:
         """The groups that fold, scrolled by `scroll` within the list's area; under it, down to
         the drawer's foot, the cell (D-069)."""
-        room = self._cell(height, cell_folded) - SECTION_GAP - DRAWER_TOP
+        room = self._wheel(height, wheel_folded) - SECTION_GAP - DRAWER_TOP
         self.list_area = (BAR_WIDTH, DRAWER_TOP, DRAWER_WIDTH, room)
         groups = [
             (title, [kind for kind in group if kind in kinds]) for title, group in MENU_GROUPS
@@ -442,7 +442,7 @@ class _Rows:
                 self._row(kind)
             self.y += SECTION_GAP
 
-    def tools(self, height: int, cell_folded: bool) -> None:
+    def tools(self, height: int, wheel_folded: bool) -> None:
         """Write and Delete, then undo and redo, as rows; at the drawer's foot, the cell, as in
         Parts (D-068, D-069)."""
         for title, rows in (("Mode", Mode), ("Edit", EditButton)):
@@ -450,16 +450,16 @@ class _Rows:
             for what in rows:
                 self._row(what)
             self.y += SECTION_GAP
-        self._cell(height, cell_folded)
+        self._wheel(height, wheel_folded)
 
-    def _cell(self, height: int, folded: bool) -> int:
-        """At the drawer's foot, The cell's title, which folds, then, unless folded, the focused
-        cell drawn large with its ring (D-069); the title's top [px]."""
+    def _wheel(self, height: int, folded: bool) -> int:
+        """At the drawer's foot, The Wheel's title, which folds, then, unless folded, the Wheel:
+        the focused cell drawn large, its icons round it (D-069); the title's top [px]."""
         width = DRAWER_WIDTH - 2 * MARGIN
-        top = height - FOOT_MARGIN - TITLE_HEIGHT - (0 if folded else CELL_HEIGHT)
-        self.cell_fold = (BAR_WIDTH + MARGIN, top, width, TITLE_HEIGHT)
+        top = height - FOOT_MARGIN - TITLE_HEIGHT - (0 if folded else WHEEL_HEIGHT)
+        self.wheel_fold = (BAR_WIDTH + MARGIN, top, width, TITLE_HEIGHT)
         if not folded:
-            self.cell_view = (BAR_WIDTH + MARGIN, top + TITLE_HEIGHT, width, CELL_HEIGHT)
+            self.wheel_view = (BAR_WIDTH + MARGIN, top + TITLE_HEIGHT, width, WHEEL_HEIGHT)
         return top
 
     def view(self, env: Env) -> None:
@@ -589,9 +589,9 @@ def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
     return next((kind for kind, rect in layout.menu_items if contains(rect, point)), None)
 
 
-def cell_fold_at(layout: Layout, point: tuple[int, int]) -> bool:
-    """Whether `point` is on The cell's title, which folds its picture (D-069)."""
-    return layout.cell_fold is not None and contains(layout.cell_fold, point)
+def wheel_fold_at(layout: Layout, point: tuple[int, int]) -> bool:
+    """Whether `point` is on The Wheel's title, which folds it (D-069)."""
+    return layout.wheel_fold is not None and contains(layout.wheel_fold, point)
 
 
 def scroll_bar_at(layout: Layout, point: tuple[int, int], grab: int = 4) -> bool:

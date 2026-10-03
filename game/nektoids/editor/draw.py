@@ -42,7 +42,6 @@ from nektoids.editor.icons import (
 from nektoids.editor.layout import (
     BAR_WIDTH,
     CAPTION_HEIGHT,
-    CELL_TITLE,
     DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     EDIT_KEYS,
@@ -57,6 +56,7 @@ from nektoids.editor.layout import (
     SWITCH_TO,
     TABS_HEIGHT,
     VIEW_KEYS,
+    WHEEL_TITLE,
     Drawer,
     EditButton,
     FileButton,
@@ -115,8 +115,8 @@ from nektoids.editor.palette import (
 )
 from nektoids.editor.parts import NAME, info
 from nektoids.editor.probe import level_view, ring_radii
-from nektoids.editor.ring import ICON, LINE_BELOW, RING_HEX
 from nektoids.editor.scene import EditorScene
+from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
 from nektoids.graph.board import Category, Kind, Refused
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
@@ -302,7 +302,7 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             pygame.draw.polygon(screen, FLASH, hexagon)
         elif cell not in zone:
             pygame.draw.polygon(screen, OUTSIDE, hexagon)
-        elif cell == scene.focused:  # the ring's cell, the keyboard's (D-068)
+        elif cell == scene.focused:  # the Wheel's cell, the keyboard's (D-068)
             pygame.draw.polygon(screen, ACTIVE, hexagon)
         elif cell in scene.guide_cells:  # a cell a tutorial's step acts on (D-063)
             pygame.draw.polygon(screen, FOCUS_CELL, hexagon)
@@ -350,7 +350,7 @@ def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
     opens Tools."""
     box = pygame.Rect(scene.layout.action_at)
     what, key = scene.action()
-    _draw_disc(screen, fonts, box.center, what, ACTIVE, LIT)  # as the ring draws its icons
+    _draw_disc(screen, fonts, box.center, what, ACTIVE, LIT)  # as the Wheel draws its icons
     if scene.settings.key_hints:
         shown = fonts.text.render(key, True, DIM_TEXT)
         screen.blit(shown, shown.get_rect(midleft=(box.right + 8, box.centery)))
@@ -384,9 +384,9 @@ def _action_says(scene: EditorScene, what: Kind | Tool | Mode) -> str:
 
 
 def _draw_disc(screen, fonts: Fonts, at, what: Kind | Tool | Mode | None, fill, edge) -> None:
-    """One of the ring's icons, or the action atop the main screen, alike (D-068): a disc, the
+    """One of the Wheel's icons, or the action atop the main screen, alike (D-068): a disc, the
     part on it just smaller than Tools' cell's, or the action's glyph; empty for None."""
-    radius = ICON * RING_HEX
+    radius = ICON * WHEEL_HEX
     pygame.draw.circle(screen, fill, at, radius)
     pygame.draw.circle(screen, edge, at, radius, 2)
     if isinstance(what, Kind):  # its tips well inside the disc, a diamond's too
@@ -401,19 +401,19 @@ def _action_icon(what: Tool | Mode) -> str:
     return VIEW_ICON[ViewButton.PAN] if what is Tool.PAN else TOOL_ICON[what]
 
 
-def _draw_cell(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """At the foot of Tools and of Parts (D-068, D-069): a rule, The cell's title, which folds;
-    unless folded, the focused cell, large, as the board has it, its ring round it, a line under
-    it saying what it holds."""
+def _draw_wheel(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """At the foot of Tools and of Parts (D-068, D-069): a rule, The Wheel's title, which folds;
+    unless folded, the Wheel: the focused cell, large, as the board has it, its icons round it, a
+    line under it saying what the cell holds."""
     layout = scene.layout
-    fx, fy, fw, fh = layout.cell_fold
+    fx, fy, fw, fh = layout.wheel_fold
     pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
-    draw_fold_title(screen, fonts, CELL_TITLE, layout.cell_fold, scene.cell_folded, DIM_TEXT)
-    if layout.cell_view is None:
+    draw_fold_title(screen, fonts, WHEEL_TITLE, layout.wheel_fold, scene.wheel_folded, DIM_TEXT)
+    if layout.wheel_view is None:
         return
-    x, y, w, h = layout.cell_view
+    x, y, w, h = layout.wheel_view
     centre = scene.cell_centre()
-    corners = _small_hexagon(centre, RING_HEX)
+    corners = _small_hexagon(centre, WHEEL_HEX)
     focused = scene.focused is not None
     if focused:
         pygame.draw.polygon(screen, ACTIVE, corners)
@@ -422,26 +422,26 @@ def _draw_cell(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         if node is not None:
             fill = DOOMED if node.id == scene.doomed()[0] else None
             angle = placed_angle(node.kind, node.facing)
-            draw_part(screen, fonts, node.kind, angle, centre, RING_HEX, node.locked, fill)
+            draw_part(screen, fonts, node.kind, angle, centre, WHEEL_HEX, node.locked, fill)
     else:
         pygame.draw.polygon(screen, RULE, corners, 1)
-    ring = scene.ring()
-    k = scene.choice if scene.going_round() and scene.choice is not None else len(ring)
-    chosen = ring[k] if k < len(ring) else None
+    wheel = scene.wheel()
+    k = scene.choice if scene.going_round() and scene.choice is not None else len(wheel)
+    chosen = wheel[k] if k < len(wheel) else None
     in_hand = scene.tool if scene.tool in (Tool.WIRE, Tool.MOVE) else None
-    radius = ICON * RING_HEX
-    for slot in sorted(ring, key=lambda s: -s.depth):  # down a pile, the further first, under
+    radius = ICON * WHEEL_HEX
+    for slot in sorted(wheel, key=lambda s: -s.depth):  # down a pile, the further first, under
         if slot.depth:  # piled: an empty disc, its edge showing past the one over it
             turning = (slot.at[0] > centre[0]) == (scene.piling > 0) and scene.piling != 0
             _draw_disc(screen, fonts, slot.at, None, BUTTON, LIT if turning else ICON_EDGE)
             continue
         lit = slot == chosen or slot.what is in_hand
-        fill = ACTIVE if lit else HOVER if slot == scene.ring_hover else BUTTON
+        fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
         _draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE)
         if scene.settings.key_hints:
             key = fonts.small.render(slot.key, True, LIT if lit else DIM_TEXT)
             screen.blit(key, key.get_rect(center=(round(slot.key_at[0]), round(slot.key_at[1]))))
-    lowest = max([centre[1] + RING_HEX] + [slot.at[1] + radius for slot in ring])
+    lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
     line = fonts.small.render(_fitted(fonts.small, _cell_says(scene), w), True, DIM_TEXT)
     screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
 
@@ -655,7 +655,7 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
 
 
 def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -> None:
-    """A title that folds what is under it, as Parts' groups and The cell (D-069): a caret, right
+    """A title that folds what is under it, as Parts' groups and The Wheel (D-069): a caret, right
     while folded, down while open, then the title in upper case."""
     x, y, _, h = rect
     caret = "caret-right" if folded else "caret-down"
@@ -769,7 +769,7 @@ def _draw_diagnostic(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
     note = (
-        "Drag the swimmer anywhere; the wheel, or L and R, turn it. The main screen runs your"
+        "Drag the swimmer anywhere; the mouse wheel, or L and R, turn it. The main screen runs your"
         " board there."
     )
     draw_note(screen, fonts, note, (area.left, area.bottom + 10), area.width)
@@ -801,8 +801,8 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     """The editor's own drawers' rows: Tools, Parts, Files, Navigator; the cell at the foot of
     Tools and Parts; Diagnostic's map."""
     layout, board = scene.layout, scene.board
-    if layout.cell_fold is not None:  # Tools, Parts
-        _draw_cell(screen, scene, fonts)
+    if layout.wheel_fold is not None:  # Tools, Parts
+        _draw_wheel(screen, scene, fonts)
     if layout.drawer is Drawer.TOOLS:
         _draw_tools(screen, scene, fonts)
     if layout.drawer is Drawer.DIAGNOSTIC:
