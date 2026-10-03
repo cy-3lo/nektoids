@@ -387,8 +387,7 @@ class Board:
         """A board from `to_dict`'s data: the parts placed in order, then the wires drawn in
         order, so the network is the one saved. A path comes back as saved unless the board had
         been edited with Move or Delete, or a part put on a wire; then it may take another route
-        as short. Raises
-        ValueError for data no board could hold."""
+        as short. Raises ValueError for data no board could hold."""
         stock = {Kind(name): left for name, left in data["stock"].items()}
         board = cls([tuple(cell) for cell in data["zone"]], stock)
         for part in data["parts"]:

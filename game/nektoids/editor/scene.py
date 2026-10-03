@@ -215,6 +215,7 @@ class EditorScene(Frame):
         self.hover: Cell | None = None  # the same, if it is in the zone
         self.carrying = False  # Move by keyboard: grabbed with Enter, not yet dropped
         self._grabbed: BoardState | None = None  # the board as the part being moved was picked up
+        self._landed: BoardState | None = None  # ... and as the move's last step left it
         self.flash_cell: Cell | None = None
         self.flash_frames = 0
         self.history = History()
@@ -867,15 +868,15 @@ class EditorScene(Frame):
             self.press_cell = None
             return
         self.moving, self.message = node.id, ""
-        self._grabbed = self.board.snapshot()
+        self._grabbed = self._landed = self.board.snapshot()
 
     def _dropping(self) -> bool:
         """Whether the part being dragged is off the body, the zone's cells, on the drawer or the
         bar too, where letting it go deletes it, if the tutorial lets it (D-085)."""
-        if self.moving is None or self.pointed in self.board.cells:
+        node = self.board.nodes.get(self.moving) if self.moving is not None else None
+        if node is None or self.pointed in self.board.cells:
             return False
-        cell = self.board.nodes[self.moving].cell
-        return self.gate is None or self.gate(Action("delete", cell=cell))
+        return self.gate is None or self.gate(Action("delete", cell=node.cell))
 
     def _drop_off(self, node: Node) -> None:
         """A part let go off the body (D-085): it goes, with its wires, and nothing is focused;
@@ -1117,7 +1118,7 @@ class EditorScene(Frame):
                 self.tool = Tool.MOVE
                 if self.wheel_keys:  # the keyboard: the arrows carry it, Enter puts it down
                     self.wheel_open, self.carrying = False, True
-                    self._grabbed = self.board.snapshot()
+                    self._grabbed = self._landed = self.board.snapshot()
         elif tool is Tool.DELETE:
             self._delete_part(node)
         elif tool is Tool.SWAP:
@@ -1228,13 +1229,18 @@ class EditorScene(Frame):
     def _step(self, node_id: int, cell: Cell) -> Node | Refused:
         """The part moved to `cell`; while a drag or the keyboard carries it, worked out from the
         board as it was picked up, so a wire it passed over, routed round it, goes back (D-086).
-        Refused, the board stays as it was."""
+        If the board was edited otherwise since the last step, a turn or a swap while carrying,
+        from the board as it is now. Refused, the board stays as it was."""
         before = self.board.snapshot()
-        if (self.moving is not None or self.carrying) and self._grabbed is not None:
-            self.board.restore(self._grabbed)
+        if self.moving is not None or self.carrying:
+            if self._grabbed is not None and before == self._landed:
+                self.board.restore(self._grabbed)
+            else:
+                self._grabbed = before  # edited since: the move goes on from here
         result = self.board.move_node(node_id, cell)
         if isinstance(result, Refused):
             self.board.restore(before)
+        self._landed = self.board.snapshot()
         return result
 
     def _delete_part(self, node: Node) -> None:
