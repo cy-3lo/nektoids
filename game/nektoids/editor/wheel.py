@@ -9,8 +9,10 @@ corner, an even one as many each side of it. More turn as cards on a rotary file
 rim, the others piled under its two ends, drawn empty, each set back a third of an icon's radius
 along the circle, those before the rim under its first end, those after it under its last. The
 keyboard going round turns the Wheel; so does the mouse wheel, or the mouse resting on a pile,
-past its end icon. An icon's key shows in its tooltip, not round the rim, which leaves the Wheel
-room to be larger (D-069). Pure numbers, no pygame.
+past its end icon. Each step slides the icons along the rim and the piles in 0.1 s; a step taken
+during a slide goes straight on, from where the Wheel shows (D-083). An icon's key shows in its
+tooltip, not round the rim, which leaves the Wheel room to be larger (D-069). Pure numbers, no
+pygame.
 """
 
 from __future__ import annotations
@@ -30,6 +32,7 @@ LINE_BELOW = 12  # from its lowest icon to the line under it, saying what the ce
 ON_RIM = 5  # the most icons on the rim, beyond the cell's corners; more pile up below its ends
 CORNERS = (210.0, 150.0, 90.0, 30.0, -30.0)  # left to right over the top; the lowest is the gap
 PILE = 0.35  # from one icon of a pile to the next, further, along the circle [icon radii]
+SLIDE = 6  # a step of the Wheel slides its icons this long: 0.1 s (D-083) [frames]
 ACTIONS = (  # the wire at the top, the turns either side of the gap, delete last
     Tool.TURN_LEFT,
     Tool.MOVE,
@@ -46,7 +49,7 @@ class Slot:
     what: Kind | Tool  # a part to place, or an action on the part
     at: tuple[float, float]  # the icon's centre [px]
     key: str
-    depth: int = 0  # 0 on the rim; 1, 2... down a pile, the further the lower
+    depth: float = 0  # 0 on the rim; 1, 2... down a pile, the further the lower; between, sliding
 
 
 def offer(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind | Tool, ...]:
@@ -108,36 +111,43 @@ def turned(turn: int, chosen: int | None, n: int) -> int:
     return min(max(turn, 0), max(0, n - ON_RIM))
 
 
+def slid(start: float, aim: int, left: int) -> float:
+    """The turn the Wheel shows `left` frames before its slide from `start` reaches `aim`: eased
+    out, quick at first and slowing as it arrives, as a card file clicks into place (D-083)."""
+    u = left / SLIDE
+    return aim + (start - aim) * u * u
+
+
 def slots(
     items: Sequence[Kind | Tool],
     centre: tuple[float, float],
     size: float,
     kinds: frozenset[Kind],
-    turn: int = 0,
+    turn: float = 0,
 ) -> list[Slot]:
     """The icons round a cell drawn at `centre` with hexes of `size` [px], the Wheel turned by
-    `turn`: the icons before it piled under the rim's first end, those after it under its last,
-    each further one set back along the circle, towards the gap."""
-    turn = turned(turn, None, len(items))
+    `turn`, a fraction while it slides from one turn to the next: the icons before it piled under
+    the rim's first end, those after it under its last, each further one set back along the
+    circle, towards the gap."""
+    turn = min(max(turn, 0), max(0, len(items) - ON_RIM))  # never past the last
     rim = angles(min(len(items), ON_RIM))
+    back = math.degrees(PILE * ICON / RADIUS)  # from one icon of a pile to the next [degrees]
     cx, cy = centre
-
-    def on_rim(angle: float) -> tuple[tuple[float, float], tuple[float, float]]:
-        c, s = math.cos(math.radians(angle)), math.sin(math.radians(angle))
-        return (cx + RADIUS * size * c, cy - RADIUS * size * s), (c, s)
-
     out = []
     for k, item in enumerate(items):
         key = TOOL_KEYS[item] if isinstance(item, Tool) else part_key(item, kinds)
-        if turn <= k < turn + ON_RIM:
-            at, _ = on_rim(rim[k - turn])
-            out.append(Slot(item, at, key))
-            continue
-        before = k < turn  # piled under the first end, or under the last
-        depth = turn - k if before else k - turn - ON_RIM + 1
-        back = math.degrees(depth * PILE * ICON / RADIUS)  # set back along the circle
-        at, _ = on_rim(rim[0] + back if before else rim[-1] - back)
-        out.append(Slot(item, at, key, depth))  # drawn empty
+        s = k - turn  # its place on the rim from the first end
+        depth = max(0, -s, s - len(rim) + 1)  # past an end: down its pile
+        if s < 0:
+            angle = rim[0] + depth * back
+        elif depth:
+            angle = rim[-1] - depth * back
+        else:  # on the rim; while it slides, between two corners
+            lo, hi = math.floor(s), math.ceil(s)
+            angle = rim[lo] + (s - lo) * (rim[hi] - rim[lo])
+        a = math.radians(angle)
+        at = (cx + RADIUS * size * math.cos(a), cy - RADIUS * size * math.sin(a))
+        out.append(Slot(item, at, key, depth))  # drawn empty while piled
     return out
 
 
