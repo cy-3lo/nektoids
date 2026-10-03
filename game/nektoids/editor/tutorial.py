@@ -115,17 +115,8 @@ class Tutorial:
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
-        ghosts = tuple(
-            Ghost(
-                Kind(g["kind"]),
-                (int(g["cell"][0]), int(g["cell"][1])),
-                FACING_NAMES.index(g["facing"]) if g.get("facing") else None,
-            )
-            for g in data.get("ghosts", ())
-        )
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
-        wires = tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
-        return cls(ghosts, steps, wires)
+        return cls(ghosts_from(data), steps, ghost_wires_from(data))
 
     @property
     def step(self) -> Step | None:
@@ -629,6 +620,24 @@ def outline_kept(rect: Rect) -> Rect:
     left, top = max(x, EDGE), max(y, EDGE)
     right, bottom = min(x + w, SCREEN[0] - EDGE), min(y + h, SCREEN[1] - EDGE)
     return (left, top, right - left, bottom - top)
+
+
+def ghosts_from(data: Mapping) -> tuple[Ghost, ...]:
+    """The ghosts of a tutorial's data, or of a hint's shadow (D-078): each its kind, its cell
+    and the way it faces, if it turns."""
+    return tuple(
+        Ghost(
+            Kind(g["kind"]),
+            _cell(g["cell"]),
+            FACING_NAMES.index(g["facing"]) if g.get("facing") else None,
+        )
+        for g in data.get("ghosts", ())
+    )
+
+
+def ghost_wires_from(data: Mapping) -> tuple[tuple[Cell, Cell], ...]:
+    """The ghost wires of a tutorial's data, or of a hint's shadow: each from a cell to a cell."""
+    return tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
 
 
 def _cell(data) -> Cell:

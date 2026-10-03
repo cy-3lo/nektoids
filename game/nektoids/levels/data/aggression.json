@@ -15,6 +15,18 @@
   "time_limit": 20.0,
   "objectives": [{"kind": "visit lights"}],
   "passkey": "SWORD",
+  "hints": {
+    "idea": "Cross the wires.",
+    "shadow": {
+      "ghosts": [
+        {"kind": "eye", "cell": [-1, -1], "facing": "NE"},
+        {"kind": "eye", "cell": [-2, 1], "facing": "SE"},
+        {"kind": "thruster", "cell": [2, -1], "facing": "E"},
+        {"kind": "thruster", "cell": [1, 1], "facing": "E"}
+      ],
+      "ghost_wires": [{"from": [-1, -1], "to": [1, 1]}, {"from": [-2, 1], "to": [2, -1]}]
+    }
+  },
   "tutorial": {
     "ghosts": [
       {"kind": "eye", "cell": [-1, -1], "facing": "NE"},

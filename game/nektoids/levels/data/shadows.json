@@ -28,6 +28,24 @@
   "time_limit": 15.0,
   "objectives": [{"kind": "visit lights"}],
   "passkey": "DARK",
+  "hints": {
+    "idea": "There is no light in the dark.",
+    "shadow": {
+      "ghosts": [
+        {"kind": "eye", "cell": [-1, -1], "facing": "NE"},
+        {"kind": "eye", "cell": [-2, 1], "facing": "SE"},
+        {"kind": "thruster", "cell": [2, -1], "facing": "E"},
+        {"kind": "thruster", "cell": [1, 1], "facing": "E"},
+        {"kind": "source", "cell": [0, 0]}
+      ],
+      "ghost_wires": [
+        {"from": [0, 0], "to": [2, -1]},
+        {"from": [0, 0], "to": [1, 1]},
+        {"from": [-1, -1], "to": [1, 1]},
+        {"from": [-2, 1], "to": [2, -1]}
+      ]
+    }
+  },
   "tutorial": {
     "steps": [
       {
