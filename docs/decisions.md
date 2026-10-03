@@ -874,7 +874,7 @@ is on it. The keyboard drives the same focus: the arrows, Enter, the ring's keys
 step. Atop the main screen, always, what the next click or Enter does: the action as a ring's
 icon, its key beside it, a line under it saying what it is; a click on it opens Tools.
 
-**D-069 — 2026-10-03 — The main view follows the drawer: the Run preview only in Diagnostic, Sense renamed. The ring is the Wheel, at the foot of Tools and of Parts. A key for each drawer, its initial; Delete on Backspace; one key, one meaning within an environment. Amends D-021, D-058, D-068.**
+**D-069 — 2026-10-03 — The main view follows the drawer: the Run preview only in Diagnostic, Sense renamed. The ring is the Wheel, at the foot of Tools and of Parts. A key for each drawer, its initial; Delete on Backspace; one key, one meaning within an environment; tooltips after 0.5 s. Amends D-021, D-058, D-067, D-068.**
 The switch between the Diagram view and the Run preview goes. The main screen shows the board,
 except while Diagnostic is open, where it shows the Run preview; Navigator keeps what was shown
 before it, so the preview can be zoomed and moved. Sense is called Diagnostic: it is where the
@@ -904,4 +904,4 @@ environment: a letter may mean one thing in the editor and another in the run, a
 the editor and Fast forward in the run, S Swap and Score, since the two never show together. X,
 the run's rays, no longer zooms out in the editor. Once a tooltip of the bar shows, the next
 icon's shows at once, for 0.3 s after the last one went, as the mouse crosses the gaps between
-icons.
+icons. Every tooltip shows after 0.5 s, not 1 s (amends D-067).

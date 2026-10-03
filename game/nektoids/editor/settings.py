@@ -15,7 +15,7 @@ FAST_CHOICES: tuple[int, ...] = 2, 4, 8
 class Settings:
     fast: int = 4
     key_hints: bool = True  # the keys shown on the drawers' rows and in the tooltips
-    tooltip_frames: int = 60  # a tooltip shows after the mouse rests this long: 1 s [frames]
+    tooltip_frames: int = 30  # a tooltip shows after the mouse rests this long: 0.5 s [frames]
 
     def next_fast(self) -> None:
         self.fast = _after(self.fast, FAST_CHOICES)
