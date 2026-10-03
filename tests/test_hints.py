@@ -51,7 +51,8 @@ def test_all_taken_in_the_run_they_fit_above_the_objectives_and_the_picture_stay
         Drawer.HINTS, env=Env.RUN, goals=len(level.objectives), hint_lines=lines, shadow=True
     )
     x, y, w, h = layout.shadow_picture
-    assert w == h >= 140 and y + h < layout.goal_area[1]
+    assert w == h >= 140 and y + h < layout.shadow_line[1]
+    assert layout.shadow_line[1] + layout.shadow_line[3] < layout.goal_area[1]  # D-088
     assert len(NAMES) == HINT_ROWS == len(layout.hint_rows)
 
 

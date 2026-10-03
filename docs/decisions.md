@@ -1127,3 +1127,108 @@ those coming in: a bead leaves as one arrives, and ×2 sends another halfway to 
 for every two. The entry is made when a part's box opens and dropped when it closes; the scene's
 update moves it once a frame (`Frame.frame_update`), so drawing changes nothing. Never read by
 the model. The entry stays in the box beside the drawer until it moves into the drawer (todo §8).
+
+**D-083 — 2026-10-03 — The Wheel is seen to turn: each step slides its icons in 0.1 s, eased out, and a step taken during a slide goes straight on; resting on a pile clicks every 0.5 s. Amends D-068.**
+With more than five icons the Wheel's turn jumped: the five on the rim changed in one frame, and
+the player could not see which way it had gone. Now each step, by the keys, the mouse wheel or
+the mouse resting on a pile, slides the icons along the rim and the piles in 6 frames (`SLIDE`),
+quick at first and slowing as they arrive (`wheel.slid`), then rests. Each icon runs along the
+circle between its two places: 60° from corner to corner on the rim, about 7° down a pile. A
+step taken during a slide goes straight on, from where the Wheel shows to the new turn, rather
+than waiting in a queue: what is drawn is never more than 0.1 s behind, and as the Wheel holds
+seven icons at most, a slide covers two steps at most. The turn itself is set at once, as
+before; only the drawing, and the clicks on what is drawn, follow the slide. An icon leaving the
+rim for a pile goes empty at once and passes under the icon sliding over its place; one coming
+off a pile shows its face as it lands. Half way between two corners an icon swings about 3 px
+past the Wheel's room, into the drawer's margin, never out of the drawer. Where the Wheel's
+icons change (a new focus, Swap, Esc out of Swap) it shows at its start at once, without a
+slide. Resting on a pile turns it after 0.25 s, then every 0.5 s (`PILE_FRAMES`, 24 frames
+before, now 30).
+
+**D-084 — 2026-10-03 — The arrows go along the Wheel's arc and stop at its ends; "nothing" is only where it opens. Amends D-068.**
+The Wheel is an arc, not a circle: a first icon on the left, a last on the right, the gap at
+the foot. The keyboard went round it as a circle, from the last icon on to the first, with
+"nothing" a stop between them round a part. Now → and ↓ go to the next icon and stop at the
+last, ← and ↑ to the one before and stop at the first. Round a part, the Wheel still opens on
+"nothing", where Enter closes it; from there → goes to the first icon, ← to the last, and
+"nothing" is not met again: Esc closes the Wheel. The Wheel turns with the choice, as before.
+
+**D-085 — 2026-10-03 — A part dragged off the body is deleted when let go there: off the zone's cells, on the drawer or the bar. Amends D-068.**
+A drag that moved a part off the zone flashed "outside the zone", and the part waited at the
+last cell that worked. Now, off the body, the part still waits there, but darkened with its
+wires, as Delete's preview darkens them, the action atop the main screen is Delete, and the
+status line says that letting go deletes it. Let go there, on the grid outside the zone, on the
+drawer, Parts or another, or on the bar, the part goes with its wires and nothing is focused;
+brought back on the body first, the move goes on. The drag and the deletion are one step for
+undo, which puts the part back where the drag began. A tutorial step that does not let a part be
+deleted leaves nothing darkened, and the part let go off the body stays, the status line saying
+why. A press still becomes a drag once the pointer leaves the part's cell; whether that suits a
+finger is the touch item's question (todo §7).
+
+**D-086 — 2026-10-03 — A part may go on a cell a wire crosses: placed or moved there, the wires crossing it are routed round it, and stay so. Amends D-007, D-011.**
+Dropping a part on a cell a wire used was refused (D-007), and so was moving one there (D-011): a
+wire drawn after a part went round it, but a part put after a wire could not go where the wire
+ran. Now the wires crossing that cell are routed again round the part, in the order they were
+drawn, each by D-007's rule (the shortest free path, then the fewest bends, then the direction
+order), round the parts and the wires already there; every other wire stays, and each keeps its
+place in the order. If one finds no way round, nothing changes and the status line says so. A
+part moved routes again its own wires and those crossing the cell it goes to, together, in the
+order they were drawn. A drag, or the keyboard carrying a part, works each step out from the
+board as it was when the part was picked up: a wire the part passed over goes back as it moves
+on, and only where it is let go are the wires routed round it. If the board is edited otherwise
+on the way, a turn while the keyboard carries the part, the move goes on from the board as it
+then is, and the turn stays. D-007's "routes never move once
+drawn" becomes: a route changes only when a part is put on a cell it crosses, placed or moved
+there, or when its own part moves (D-011); it never changes on its own.
+
+**D-087 — 2026-10-03 — The wire being drawn is white until it may connect, then accent1, drawn over every other; every wire on the board is 3 px.**
+While a wire was drawn, it was a mid grey until it could connect, then white; beside a shadow
+wire, a tutorial's or a hint's, drawn a paler grey, the two looked alike. Now the wire being
+drawn is white until it may connect, and accent1, what the player works with, once it may. It
+is drawn last, over the shadows and the wires made: building the shadow's own wire, on the same
+route, the shadow hid it. Wires had two widths, 3 px and 2 px for the shadows. Now every wire on
+the board, made, darkened for Delete, a shadow or being drawn, may connect or not, is 3 px,
+whatever the zoom, its arrowheads as before; the hint's small picture of a shadow too. 5 px,
+scaling with the zoom, was tried and found too heavy. Inside's circuit and the parts' entries
+keep their 2 px wires, sized for their beads.
+
+**D-088 — 2026-10-03 — Hints' rows are all speech bubbles; under the shadow's picture, "Go to Tools or Parts", with their icons. Amends D-078.**
+Hints' three rows had three icons: a speech bubble for the idea, a puzzle piece for the parts,
+which is Parts' own icon in the bar, and a ghost for the shadow. Each is now a speech bubble: a
+hint, whatever it says. The bar's Hints keeps its life ring. Under the shadow's picture, in the
+editor and in the run, a line says where to build it: "Go to Tools or Parts", each drawer's
+icon before its name, as the bar draws it; in the run, the editor is a tab away. The picture
+gives up a line's room to it where room is short, in the run above the objectives, where it
+stays at least 140 px across.
+
+**D-089 — 2026-10-03 — The run's Inside is called Diagnostic, with the editor's stethoscope, and opens by D. Amends D-069.**
+The run's drawer that shows the swimmer's wiring live, its beads and meters, was Inside, a
+magnifying glass, opened by I. The editor's drawer where the board is tested is Diagnostic, a
+stethoscope, opened by D (D-069). Both show the board at work, so they now share the name, the
+icon and the key: in the run, Diagnostic, the stethoscope, D, its initial; I is free again. As
+D-069 allows, the key means the same drawer's place in each environment, never two things in
+one. In the code the run's drawer stays `Drawer.INSIDE`, the name the tutorials' data uses; the
+earlier decisions and the walkthrough keep calling it Inside.
+
+**D-090 — 2026-10-03 — A drag from the part Wire is lit for draws its wire; a drag from any other part moves it. Amends D-068, D-072, D-085.**
+A click on a part, or a part just placed, focuses it and lights Wire in its Wheel: the next part
+clicked is wired to it. Yet a drag from it moved it, since only Wire chosen, by W or the Wheel's
+icon, made a drag draw a wire (D-072); the Wheel showed one thing and the drag did another. Now a
+drag from the part Wire is lit for draws its wire, as Wire chosen does, either way round (D-026),
+released on the part to wire to; released on an empty cell it ends the attempt, as D-072 has it,
+and off the body it does nothing: the lit part is not deleted by a drag, nor darkened as if.
+A drag from any other part still moves that part, and dropped off the body deletes it (D-085);
+the lit part moves by M or the Wheel's Move, or by a drag once the focus is elsewhere. Clicks do
+not change: a click that cannot wire focuses the cell or the part it falls on, so lighting Wire
+costs nothing. The status line says "Click or drag to another part to wire it; M moves it."
+
+**D-091 — 2026-10-03 — A part placed or moved with the mouse wires either way round, as a part clicked; only the part just wired to wires on only forward. Amends D-068.**
+D-068 had a part focused without a click on it, placed, moved or just wired to, wire on only
+along the signal: a click on a part it could not feed only focused that part. So an eye just
+placed was wired to the thruster clicked next, but a thruster just placed, Wire lit for it, was
+not wired to the eye clicked next: the eye was only focused. Now a part placed, from Parts or the
+Wheel, or moved, by a drag or Move, wires either way round, as a part clicked does (D-026): a
+click, or a drag (D-090), on any part their kinds let it be wired to makes the wire. Only the part
+the focus goes on to after a wire keeps D-068's rule, so that a chain goes on by clicks (eye, sum,
+thruster) and, from a thruster just wired to, a click on the other eye focuses that eye to start
+its own wire. A click that cannot wire still focuses what it falls on.

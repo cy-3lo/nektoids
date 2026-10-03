@@ -34,13 +34,6 @@ From Camille's notes (`ebc4abb`). The Wheel (D-068, D-069) does the rest: a clic
 shows what can be done there, a click on a part arms Wire, a drag moves a part, or draws a
 wire with Wire chosen (D-072).
 
-- [ ] The Wheel seen to turn, when it holds more than five icons (D-068): each step slides the
-      icons along the rim and the piles in 0.1 s (6 frames), then rests, one click every 0.5 s
-      while the mouse rests on a pile. Today it jumps, once every 24 frames (`PILE_FRAMES`).
-      The keys and the mouse wheel turn it the same way.
-      - Several quick steps, by keys or the mouse wheel: queued, or the slide goes straight on?
-- [ ] Drag a part off the body, or onto Parts, to delete it.
-      - How far must a finger move before a tap becomes a drag?
 - [ ] Touch: no hover and no keys. The tooltips (D-025) and L, R, Space, Esc and 0 need an
       on-screen form. One gesture stays one undo step (D-027).
       - Does a phone's keyboard come up for Chapters' passkey field (D-075)? If not, the field
@@ -49,9 +42,8 @@ wire with Wire chosen (D-072).
         24 px in landscape, where a finger wants about 44. Landscape only, larger hexes?
       - Under pygbag, do touches arrive as mouse events or as FINGERDOWN only? Try on a phone
         first.
-- [ ] Put a part on a cell a wire crosses, and have the wire route round it, as a wire drawn
-      after the part already does. Today `Board.place` refuses ("a wire runs here"). This
-      reopens D-007 and D-011 (routes never change on their own), so it needs a decision first.
+      - How far must a finger move before a tap becomes a drag? Today a press becomes a drag
+        once the pointer leaves the part's cell (D-085): enough for a finger on large hexes?
 
 ## 8. An activity bar, drawers and environments (D-051)
 

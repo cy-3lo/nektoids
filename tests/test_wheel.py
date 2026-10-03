@@ -1,10 +1,11 @@
 """The Wheel, the icons round a focused cell (D-068, D-069). wheel.py imports no pygame."""
 
 import math
+from itertools import pairwise
 
 import pytest
 
-from nektoids.editor.layout import Drawer, Tool, make_layout
+from nektoids.editor.layout import BAR_WIDTH, DRAWER_WIDTH, Drawer, Tool, make_layout
 from nektoids.editor.wheel import (
     ACTIONS,
     ICON,
@@ -12,6 +13,7 @@ from nektoids.editor.wheel import (
     ON_RIM,
     PILE,
     RADIUS,
+    SLIDE,
     WHEEL_HEX,
     angles,
     centre_in,
@@ -19,6 +21,7 @@ from nektoids.editor.wheel import (
     offer,
     part_key,
     pile_at,
+    slid,
     slot_at,
     slots,
     swaps,
@@ -122,12 +125,43 @@ def test_the_wheel_turns_just_enough_for_the_choice_to_be_on_the_rim():
     assert turned(9, None, 7) == 2 and turned(3, None, 4) == 0  # never past the last
 
 
-def test_the_arrows_go_round_the_wheel_and_through_nothing_when_it_is_a_stop():
-    wheel = slots([Kind.EYE, Kind.THRUSTER], CENTRE, SIZE, frozenset(Kind))
-    assert cycled(wheel, None, 1, blank=True) == 0
-    assert cycled(wheel, 1, 1, blank=True) is None  # nothing, then round again
-    assert cycled(wheel, 1, 1, blank=False) == 0
-    assert cycled(wheel, 0, -1, blank=True) is None
+def test_a_step_slides_in_six_frames_eased_and_a_new_one_goes_straight_on():
+    assert SLIDE == 6  # 0.1 s at 60 frames a second (D-083)
+    shown = [slid(0.0, 1, left) for left in range(SLIDE, -1, -1)]  # frame by frame
+    assert shown[0] == 0.0 and shown[-1] == 1.0
+    assert all(a < b for a, b in pairwise(shown))  # one way only
+    assert shown[SLIDE // 2] > 0.5  # eased out: past half way at half time
+    midway = slid(0.0, 1, SLIDE - 2)  # a second step, two frames in
+    assert slid(midway, 2, SLIDE) == midway and slid(midway, 2, 0) == 2.0  # on from there
+
+
+def test_while_the_wheel_slides_its_icons_run_along_the_circle_between_their_places():
+    def angle(slot):  # counter-clockwise from the right, the gap at the foot [degrees]
+        a = math.degrees(math.atan2(CENTRE[1] - slot.at[1], slot.at[0] - CENTRE[0]))
+        return a + 360.0 if a < -90.0 else a
+
+    seven = list(Kind)
+    for start in (0, 1):
+        before = slots(seven, CENTRE, SIZE, frozenset(Kind), start)
+        after = slots(seven, CENTRE, SIZE, frozenset(Kind), start + 1)
+        for frame in range(1, SLIDE):
+            now = slots(seven, CENTRE, SIZE, frozenset(Kind), start + frame / SLIDE)
+            for b, n, a in zip(before, now, after, strict=True):
+                assert math.dist(n.at, CENTRE) == pytest.approx(RADIUS * SIZE)
+                low, high = sorted((angle(b), angle(a)))
+                assert low < angle(n) < high or angle(b) == pytest.approx(angle(a))
+    # The icon going under a pile is drawn under the one sliding over its place: either way round.
+    half = slots(seven, CENTRE, SIZE, frozenset(Kind), 0.5)
+    assert 0 < half[0].depth < 1 and half[1].depth == 0  # 0 tucks under the first end, 1 over
+    assert 0 < half[5].depth < 1 and half[4].depth == 0  # back: 5 under the last end, 4 over
+
+
+def test_the_arrows_go_along_the_arc_and_stop_at_its_ends():
+    wheel = slots([Kind.EYE, Kind.THRUSTER, Kind.SUM], CENTRE, SIZE, frozenset(Kind))
+    assert cycled(wheel, None, 1) == 0 and cycled(wheel, None, -1) == 2  # from nothing: an end
+    assert cycled(wheel, 0, 1) == 1 and cycled(wheel, 2, -1) == 1
+    assert cycled(wheel, 2, 1) == 2 and cycled(wheel, 0, -1) == 0  # never round past an end
+    assert cycled([], None, 1) is None
 
 
 def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
@@ -137,11 +171,16 @@ def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
     centre, line = centre_in(view), 20  # the line under it: Plex Mono at 15 px
     items = list(Kind)  # the most a Wheel offers: every part, piled under its ends
     for n in range(1, len(items) + 1):
-        for turn in range(max(1, n - ON_RIM + 1)):
-            wheel = slots(items[:n], centre, WHEEL_HEX, frozenset(Kind), turn)
+        for frame in range(SLIDE * max(0, n - ON_RIM) + 1):  # in sixths: half way, the furthest
+            wheel = slots(items[:n], centre, WHEEL_HEX, frozenset(Kind), frame / SLIDE)
             r = ICON * WHEEL_HEX
+            # At rest in the room; sliding, an icon swings round past a corner, out of the room
+            # into the drawer's margin, never out of the drawer (D-083).
+            left, right = (
+                (x, x + w) if frame % SLIDE == 0 else (BAR_WIDTH, BAR_WIDTH + DRAWER_WIDTH)
+            )
             for slot in wheel:
-                assert x <= slot.at[0] - r and slot.at[0] + r <= x + w
+                assert left <= slot.at[0] - r and slot.at[0] + r <= right
                 assert slot.at[1] - r >= y
             lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + r for slot in wheel])
             assert lowest + LINE_BELOW + line <= y + h

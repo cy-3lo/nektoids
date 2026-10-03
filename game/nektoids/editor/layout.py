@@ -50,6 +50,7 @@ SCROLL_THUMB = 24  # the scroll bar's thumb, at its shortest [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 HINT_ROWS = 3  # Hints' rows: the idea, the parts, the shadow (D-078)
 HINT_LINE = 20  # a line of a hint under its row, as a note's [px]
+SHADOW_GAP = 6  # from the shadow's picture to the line under it [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
@@ -139,7 +140,7 @@ class Drawer(Enum):  # D-051
     PARTS = "parts"  # the parts the level hands out, and what each does
     FILES = "files"  # this session's winning boards, to put one back (D-059)
     DIAGNOSTIC = "diagnostic"  # the level, small, with the probe the Run preview runs at (D-058)
-    INSIDE = "inside"  # the run's: the swimmer's wiring, live
+    INSIDE = "inside"  # the run's: the swimmer's wiring, live; shown as Diagnostic (D-089)
     SCORE = "score"  # the run's: the level's wins this session
     NAVIGATOR = "navigator"  # zoom, hand, centre; the rays in the run
     HINTS = "hints"  # at the bar's foot: the level's hints, asked for in turn (D-078)
@@ -238,7 +239,7 @@ DRAWER_KEYS = {
     Drawer.FILES: "F",
     Drawer.DIAGNOSTIC: "D",
     Drawer.NAVIGATOR: "N",
-    Drawer.INSIDE: "I",
+    Drawer.INSIDE: "D",  # the run's Diagnostic (D-089)
     Drawer.SCORE: "S",
     Drawer.HINTS: "?",
     Drawer.SETTINGS: ",",
@@ -280,6 +281,7 @@ class Layout:
     hint_rows: tuple[tuple[HintRow, Rect], ...]  # Hints' rows, if the level has hints (D-078)
     hint_texts: tuple[tuple[int, Rect], ...]  # ... under each taken one, its lines: its index
     shadow_picture: Rect | None  # ... under the shadow's, while it shows: the board, small
+    shadow_line: Rect | None  # ... and under it, where to build it: Tools or Parts (D-088)
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
     passkey_field: Rect | None  # Chapters' foot: a level's passkey typed there (D-075)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
@@ -416,6 +418,7 @@ def make_layout(
         hint_rows=tuple(rows.of(HintRow)),
         hint_texts=tuple(rows.hint_texts),
         shadow_picture=rows.picture,
+        shadow_line=rows.line,
         chapter_rows=tuple(rows.of(int)),
         passkey_field=rows.passkey,
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
@@ -456,6 +459,7 @@ class _Rows:
         self.passkey: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
         self.picture: Rect | None = None
+        self.line: Rect | None = None
 
     def of(self, kind: type) -> list:
         return [(what, rect) for what, rect in self.items if isinstance(what, kind)]
@@ -556,7 +560,8 @@ class _Rows:
     def hints(self, lines: tuple[int, ...], shadow: bool, floor: int) -> None:
         """The hints' rows (D-078); under each taken one, its `lines`; under the shadow's, while
         it shows, its picture: a square as wide as the drawer allows, smaller if what is left
-        above `floor`, the objectives in the run, is less."""
+        above `floor`, the objectives in the run, is less; and under the picture, a line saying
+        where to build it (D-088)."""
         x, width = BAR_WIDTH + MARGIN, DRAWER_WIDTH - 2 * MARGIN
         for k in range(HINT_ROWS):
             self._row(HintRow(k))
@@ -565,9 +570,10 @@ class _Rows:
                 self.hint_texts.append((k, (x, top, width, lines[k] * HINT_LINE)))
                 self.y = top + lines[k] * HINT_LINE + ROW_PITCH - ROW_HEIGHT
         if shadow:
-            side = min(width, floor - self.y)
+            side = min(width, floor - self.y - SHADOW_GAP - HINT_LINE)
             self.picture = (x + (width - side) // 2, self.y, side, side)
-            self.y += side + ROW_PITCH - ROW_HEIGHT
+            self.line = (x, self.y + side + SHADOW_GAP, width, HINT_LINE)
+            self.y += side + SHADOW_GAP + HINT_LINE + ROW_PITCH - ROW_HEIGHT
 
     def chapters(self, levels: int) -> None:
         self._title("Chapter 1: light", self.sections)

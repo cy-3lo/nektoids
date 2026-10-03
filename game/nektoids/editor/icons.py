@@ -93,9 +93,8 @@ GLYPH = {
     "right-from-bracket": 0xF2F5,
     "location-dot": 0xF3C5,
     "stethoscope": 0xF0F1,
-    "life-ring": 0xF1CD,  # Hints, and its rows: the idea, the shadow (D-078)
-    "comment": 0xF075,
-    "ghost": 0xF6E2,
+    "life-ring": 0xF1CD,  # Hints (D-078)
+    "comment": 0xF075,  # each of its rows, a hint (D-088)
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.
@@ -128,7 +127,7 @@ DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.PARTS: "puzzle-piece",
     Drawer.FILES: "floppy-disk",
     Drawer.DIAGNOSTIC: "stethoscope",
-    Drawer.INSIDE: "magnifying-glass",
+    Drawer.INSIDE: "stethoscope",  # the run's Diagnostic, as the editor's (D-089)
     Drawer.SCORE: "trophy",
     Drawer.NAVIGATOR: "compass",
     Drawer.HINTS: "life-ring",
