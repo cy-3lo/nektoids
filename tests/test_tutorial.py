@@ -477,3 +477,40 @@ def test_the_editors_page_is_outlined_with_its_tab_and_the_swimmer_by_a_box_from
     swimmer = target_spots({"run": "swimmer"}, Screen.RUN, RUN_LAYOUT, None, Live(swimmer=box))
     assert swimmer == [(box, "spot")]
     assert target_rects({"run": "swimmer"}, Screen.EDIT, LAYOUT, VIEW, Live(swimmer=box)) == []
+
+
+def test_a_step_may_wait_for_several_things_and_for_the_run_to_have_played_a_while():
+    board = LEVELS["Fear"].new_board()  # D-071
+    both = [
+        {"placed": {"kind": "thruster", "cell": [1, -2]}},
+        {"placed": {"kind": "thruster", "cell": [-1, 2]}},
+    ]
+    step = Step(("Both thrusters",), [{"menu": "thruster"}], both)
+    for cell in ((1, -2), (-1, 2)):  # either cell, the thruster only
+        assert allows(step, Action("place", kind=Kind.THRUSTER, cell=cell))
+    assert allows(step, Action("pick", kind=Kind.THRUSTER))
+    assert not allows(step, Action("place", kind=Kind.EYE, cell=(1, -2)))
+    context = Context(board, Tool.ADD, Screen.EDIT)
+    board.place(Kind.THRUSTER, (1, -2))
+    assert not met(both, context)  # one of the two
+    board.place(Kind.THRUSTER, (-1, 2))
+    assert met(both, context)
+    eye = [
+        {"placed": {"kind": "eye", "cell": [1, 1]}},
+        {"facing": {"cell": [1, 1], "facing": "SW"}},
+    ]
+    card = Step(("The second eye",), [{"cell": [1, 1]}], eye)  # placed, then turned: one card
+    assert allows(card, Action("place", kind=Kind.EYE, cell=(1, 1)))
+    assert allows(card, Action("turn", cell=(1, 1))) and not allows(
+        card, Action("turn", cell=(2, -1))
+    )
+    lower = board.place(Kind.EYE, (1, 1))
+    assert not met(eye, context)  # placed, not turned yet
+    board.rotate(lower.id, -1)
+    board.rotate(lower.id, -1)
+    assert met(eye, context)
+    played = {"time": 1.0}  # the run has played 1 s
+    assert not met(played, Context(board, Tool.ADD, Screen.RUN, time=0.5))
+    assert met(played, Context(board, Tool.ADD, Screen.RUN, time=1.0))
+    waiting = Step(("Play",), [{"run": "play"}], played)
+    assert allows(waiting, Action("play")) and not allows(waiting, Action("pick", kind=Kind.EYE))

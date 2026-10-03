@@ -60,7 +60,7 @@ class Ghost:
 class Step:
     say: tuple[str, ...]
     show: Mapping | list | None = None  # a target or a list of them; None: a hint, nothing dimmed
-    until: Mapping | None = None  # None: Next only
+    until: Mapping | list | None = None  # None: Next only; a list: all of them (D-071)
 
 
 @dataclass(frozen=True)
@@ -77,12 +77,14 @@ class Action:
 
 @dataclass(frozen=True)
 class Context:
-    """What a step may wait for: the board, the tool in hand, the screen, the run's end."""
+    """What a step may wait for: the board, the tool in hand, the screen, the run's end, how
+    long the run has played."""
 
     board: Board
     tool: Tool
     screen: Screen
     outcome: Outcome | None = None
+    time: float = 0.0  # the run's time [s] (D-071)
 
 
 @dataclass(frozen=True)
@@ -229,12 +231,20 @@ def allows(step: Step | None, action: Action) -> bool:
     """Whether `step` lets `action` through (D-048). No step, or a hint, lets all through. A step
     that leads lets through only the means to what it waits for: picking that part (from the
     menu or by its key) and placing it on that cell; a turn tool, or L and R, on that part; that
-    tool; the Wire tool and that wire, either way round (D-026); Run. While it waits for a win,
-    running and going back to edit. A step that waits for Next lets nothing through. Zoom, the
-    view's centre, info boxes and folding the menu change none of this, and are not asked."""
+    tool; the Wire tool and that wire, either way round (D-026); Run. While it waits for a win, or
+    for the run to play a while, running, playing and going back to edit. A step that waits for
+    several things lets through the means to any of them (D-071). A step that waits for Next
+    lets nothing through. Zoom, the view's centre, info boxes and folding the menu change none
+    of this, and are not asked."""
     if step is None or step.show is None:
         return True
-    until, verb = step.until or {}, action.verb
+    if isinstance(step.until, list):
+        return any(_allows(until, action) for until in step.until)
+    return _allows(step.until or {}, action)
+
+
+def _allows(until: Mapping, action: Action) -> bool:
+    verb = action.verb
     if "placed" in until:
         kind, cell = Kind(until["placed"]["kind"]), _cell(until["placed"]["cell"])
         return (
@@ -253,14 +263,18 @@ def allows(step: Step | None, action: Action) -> bool:
         return wire or (verb == "tool" and action.tool is Tool.WIRE)
     if "screen" in until:  # the way there: Run, or back to the editor (D-060)
         return verb == {Screen.RUN: "run", Screen.EDIT: "edit"}.get(Screen(until["screen"]))
-    if "outcome" in until:  # the run and its controls, and back to the editor
+    if "outcome" in until or "time" in until:  # the run and its controls, and back to the editor
         return verb in ("run", "edit", "play")
     return False
 
 
-def met(until: Mapping, context: Context) -> bool:
-    """Whether what a step waits for has happened."""
+def met(until: Mapping | list, context: Context) -> bool:
+    """Whether what a step waits for has happened: each of them, for a list (D-071)."""
+    if isinstance(until, list):
+        return all(met(one, context) for one in until)
     board = context.board
+    if "time" in until:  # the run has played this long [s]
+        return context.time >= until["time"]
     if "placed" in until:
         node = board.node_at(_cell(until["placed"]["cell"]))
         return node is not None and node.kind is Kind(until["placed"]["kind"])

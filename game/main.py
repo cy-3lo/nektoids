@@ -28,7 +28,7 @@ import pygame
 
 from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
-from nektoids.editor.devdrive import SIM_HZ, TICKS_PER_FRAME
+from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
 from nektoids.editor.preview_draw import draw_preview
@@ -190,6 +190,7 @@ async def main() -> None:
     developer: SchematicScene | ArenaScene | None = None  # the F2 or F3 view, while open
     playing: ArenaScene | None = None  # the player's run, while it shows
     run_drawer: Drawer | None = Drawer.INSIDE  # the run's open drawer, from one run to the next
+    held: ArenaScene | None = None  # the run an explaining step paused while it played (D-071)
 
     def on_screen() -> EditorScene | ArenaScene:
         """The scene the player sees: the run, or the open level's editor."""
@@ -269,7 +270,8 @@ async def main() -> None:
         guide = tutorial()
         if guide is not None:  # on past what the player has done
             ended = playing.outcome if playing is not None else None
-            guide.follow(Context(router.board, editor().tool, router.screen, ended))
+            time = playing.clock.tick * DT if playing is not None else 0.0  # the run's [s]
+            guide.follow(Context(router.board, editor().tool, router.screen, ended, time))
             guide = tutorial()
         editor().ghosts = guide.ghosts if guide is not None else ()
         editor().chapters = router.rows()  # what Chapters shows
@@ -292,8 +294,11 @@ async def main() -> None:
         if playing is not None:
             playing.gate = gate
             playing.lit = panels(guide)
-            if guide is not None and guide.explains:
-                playing.clock.paused = True  # an explaining step holds the run still (D-050)
+            explaining = guide is not None and guide.explains
+            if explaining and not playing.clock.paused:  # it holds the run still (D-050)
+                playing.clock.paused, held = True, playing
+            elif not explaining and held is playing:  # and lets it go on once explained (D-071)
+                playing.clock.paused, held = False, None
 
         if isinstance(developer, SchematicScene):
             developer.update()
