@@ -5,10 +5,12 @@ as rays of one grey, from each light until the first obstacle or swimmer, or out
 (`Rays`): their density is the light's 1/r, and a shadow is where no ray goes; X hides them.
 With I (developer) the light is a map instead, grey, dark in shadow and white where an eye
 looking at a light saturates; the square root of the reading sets the grey (`tone`), and it is
-smoothed over a few cells (`smooth`). Obstacles are grey discs, lights white discs with a sun,
+smoothed over a few cells (`smooth`). Obstacles are grey discs, lights white discs with a bulb,
 as big as a swimmer (`LIGHT_RADIUS`), their rays leaving from the rim, a ring round the ones
 visited, a dashed one where an objective draws a ring to leave or to stay in, lit once done, and
-a swimmer its body's circle round a wedge, its tip forward, bright when selected. When the run
+a swimmer its body's circle round a wedge, its tip forward, bright when selected, at work
+(D-076, `marks`): its parts' faces and outlines, its flames, the light its eyes draw in, a
+segment for its velocity and an arc for its spin. When the run
 is over, a banner over the arena says how it ended: done, lost and why, or out of time.
 
 Round the arena, the frame the editor has too (D-051, D-057, `draw.py`): the bar, the open
@@ -56,7 +58,7 @@ from nektoids.editor.arena_view import (
     tone,
     view_of,
 )
-from nektoids.editor.devdrive import DT
+from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.draw import (
     INFO_ICON,
     ROW_NAME,
@@ -79,6 +81,8 @@ from nektoids.editor.draw import (
 )
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, ViewButton, level_of
+from nektoids.editor.marks import at_work
+from nektoids.editor.marks_draw import draw_over, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -110,7 +114,7 @@ from nektoids.sim.arena import LIGHT_RADIUS
 from nektoids.sim.optics import discs
 
 RAY_WIDTH = 2  # [px]
-SUN = 1.3  # the sun's height on a light, in light radii
+BULB = 1.6  # the bulb's height on a light, in light radii (D-076)
 SYMBOL_WIDTH = 2  # [px]
 MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
 PLAYHEAD = 6  # [px]
@@ -195,7 +199,7 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
         centre = view.to_screen(light.x, light.y)
         pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
         pygame.draw.aacircle(screen, DARK, centre, LIGHT_RADIUS * view.scale + 1, 1)
-        fonts.icons.draw(screen, "sun", centre, round(SUN * LIGHT_RADIUS * view.scale), DARK)
+        fonts.icons.draw(screen, "lightbulb", centre, round(BULB * LIGHT_RADIUS * view.scale), DARK)
     for radius, done in scene.rings:  # to leave or to stay in, dashed (D-038, D-040)
         for x, y in arena.light_xy:
             _dashed_circle(
@@ -234,15 +238,30 @@ def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:
 
 def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
     """Each swimmer its body's circle round a wedge, its tip where it heads; the selected one
-    bright, the others dimmer. The view keeps angles (y flips, heading stays counter-clockwise).
-    A swimmer out of view gets an arrow at the edge, pointing to where it is."""
+    bright, the others dimmer; each at work (D-076), its specks under it, its parts and motion
+    over it, the specks moving with the run's frames. The view keeps angles (y flips, heading
+    stays counter-clockwise). A swimmer out of view gets an arrow at the edge, pointing to where
+    it is."""
     view = scene.view
+    frame = scene.clock.tick // TICKS_PER_FRAME
     for k in range(len(scene.pos)):
         centre = view.to_screen(*scene.pos[k])
         colour = BODY if k == scene.selected else BODY_UNSELECTED
         radius, heading = float(scene.radius[k]) * view.scale, float(scene.heading[k])
+        pose = (float(scene.pos[k, 0]), float(scene.pos[k, 1]), heading)
+        body = at_work(
+            scene.arena,
+            scene.net,
+            scene.circuit.board.cells,
+            scene.state[k],
+            pose,
+            float(scene.radius[k]),
+            frame,
+        )
+        draw_under(screen, view, body)
         draw_symbol(screen, DARK, centre, radius + 1, heading, SYMBOL_WIDTH + 2)  # on a light map
         draw_symbol(screen, colour, centre, radius, heading, SYMBOL_WIDTH)
+        draw_over(screen, view, body)
         marker = edge_marker(view, scene.arena_area, tuple(scene.pos[k]))
         if marker is not None:
             _draw_marker(screen, *marker, colour)

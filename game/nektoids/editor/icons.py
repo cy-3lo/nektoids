@@ -53,7 +53,6 @@ GLYPH = {
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,
     "location-crosshairs": 0xF601,
-    "sun": 0xF185,
     "play": 0xF04B,
     "pause": 0xF04C,
     "forward-step": 0xF051,
