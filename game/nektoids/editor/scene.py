@@ -51,6 +51,7 @@ from nektoids.editor.layout import (
     MAX_HEX,
     MENU_GROUPS,
     MODE_KEY,
+    RUN_VIEWS,
     SCROLL_STEP,
     TOOL_KEYS,
     TURNS,
@@ -127,8 +128,8 @@ FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
 PILE_FRAMES = 24  # the mouse resting on a pile turns the Wheel one icon this often [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
-KEY_VIEWS = {  # the rays are the run's: X zoomed out here, as any button not handled
-    key: button for button, key in VIEW_KEYS.items() if button is not ViewButton.RAYS
+KEY_VIEWS = {  # the rays, the motion and the streams are the run's: M and W are tools here
+    key: button for button, key in VIEW_KEYS.items() if button not in RUN_VIEWS
 }
 # Arrows, Enter and digits are matched on their scancode, the physical key, which every platform
 # reports alike: Safari on macOS tags the arrows as keypad keys (its `key` for the right arrow is

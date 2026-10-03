@@ -82,7 +82,7 @@ from nektoids.editor.draw import (
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, ViewButton, level_of
 from nektoids.editor.marks import at_work
-from nektoids.editor.marks_draw import draw_over, draw_under
+from nektoids.editor.marks_draw import draw_motion, draw_parts, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -239,7 +239,8 @@ def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:
 def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
     """Each swimmer its body's circle round a wedge, its tip where it heads; the selected one
     bright, the others dimmer; each at work (D-076), its specks under it, its parts and motion
-    over it, the specks moving with the run's frames. The view keeps angles (y flips, heading
+    over it, the specks moving with the run's frames; the specks and the motion as Navigator
+    sets them. The view keeps angles (y flips, heading
     stays counter-clockwise). A swimmer out of view gets an arrow at the edge, pointing to where
     it is."""
     view = scene.view
@@ -258,10 +259,13 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
             float(scene.radius[k]),
             frame,
         )
-        draw_under(screen, view, body)
+        if scene.settings.streams:
+            draw_under(screen, view, body)
         draw_symbol(screen, DARK, centre, radius + 1, heading, SYMBOL_WIDTH + 2)  # on a light map
         draw_symbol(screen, colour, centre, radius, heading, SYMBOL_WIDTH)
-        draw_over(screen, view, body)
+        draw_parts(screen, view, body)
+        if scene.settings.motion:
+            draw_motion(screen, view, body.velocity, body.spin)
         marker = edge_marker(view, scene.arena_area, tuple(scene.pos[k]))
         if marker is not None:
             _draw_marker(screen, *marker, colour)
@@ -388,9 +392,12 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
         draw_level_map(screen, scene.level, area, pose, frame, small)
         draw_zoom(screen, scene, fonts, level_of(scene.view.scale, scene.least_zoom(), MAX_SCALE))
     for button, rect in scene.layout.view_buttons:
-        active = (button is ViewButton.PAN and scene.hand) or (
-            button is ViewButton.RAYS and scene.show_rays
-        )
+        active = {
+            ViewButton.PAN: scene.hand,
+            ViewButton.RAYS: scene.show_rays,
+            ViewButton.MOTION: scene.settings.motion,
+            ViewButton.STREAMS: scene.settings.streams,
+        }.get(button, False)
         key = ("key", VIEW_KEYS[button])
         draw_row(
             screen,

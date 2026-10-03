@@ -149,6 +149,8 @@ TIP = {
     ViewButton.PAN: "Move the view",
     ViewButton.CENTRE: "Centre the view",
     ViewButton.RAYS: "Show or hide the light's rays",
+    ViewButton.MOTION: "Show or hide the swimmer's velocity and spin",
+    ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
     Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them; drag"
@@ -198,6 +200,8 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.PAN: "Hand",
     ViewButton.CENTRE: "Centre",
     ViewButton.RAYS: "Rays",
+    ViewButton.MOTION: "Motion",
+    ViewButton.STREAMS: "Streams",
 }
 TAB_NAME = {"editor": "Editor", "run": "Run"}
 

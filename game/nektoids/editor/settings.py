@@ -1,5 +1,6 @@
 """What the player sets in the Settings drawer (D-051, D-054, D-067): fast forward's speed,
-whether the drawers show keys; how soon a tooltip shows, fixed for now. One object for the
+whether the drawers show keys; how soon a tooltip shows, fixed for now. And what the run's
+Navigator shows of the swimmer at work, its motion and its streams (D-076). One object for the
 session, shared by the editor and the run; nothing is kept after it. Pure Python, no pygame.
 """
 
@@ -16,6 +17,8 @@ class Settings:
     fast: int = 4
     key_hints: bool = True  # the keys shown on the drawers' rows and in the tooltips
     tooltip_frames: int = 30  # a tooltip shows after the mouse rests this long: 0.5 s [frames]
+    motion: bool = True  # the swimmer's velocity and spin, in the run (D-076)
+    streams: bool = True  # its flames and the light it draws in, in the run
 
     def next_fast(self) -> None:
         self.fast = _after(self.fast, FAST_CHOICES)

@@ -53,6 +53,8 @@ class ArenaButton(Enum):
     HAND = "hand"  # dragging moves the view, on or off
     CENTRE = "centre"  # on the swimmers and the lights, all in view
     LIGHT = "light"  # the light's rays, shown or not
+    MOTION = "motion"  # the swimmer's velocity and spin, shown or not (D-076)
+    STREAMS = "streams"  # its flames and the light it draws in, shown or not
 
 
 CONTROLS = (ArenaButton.RESTART, ArenaButton.PLAY, ArenaButton.STEP, ArenaButton.FAST)
@@ -62,10 +64,13 @@ VIEW_BUTTON = {  # Navigator's rows, as the run's buttons
     ViewButton.PAN: ArenaButton.HAND,
     ViewButton.CENTRE: ArenaButton.CENTRE,
     ViewButton.RAYS: ArenaButton.LIGHT,
+    ViewButton.MOTION: ArenaButton.MOTION,
+    ViewButton.STREAMS: ArenaButton.STREAMS,
 }
 # One key, one meaning, in the editor and here: the view's keys are the editor's own, and no key
 # the editor uses means anything else here (R rotates there, so starting again is 0: t = 0). The
-# drawers' keys alone may differ, each the initial of a drawer of its environment (D-069).
+# drawers' keys may differ, each the initial of a drawer of its environment (D-069), and so may
+# Navigator's Motion and Streams, M and W, Move and Wire in the editor, which never shows them.
 BUTTON_KEYS = {
     ArenaButton.EDIT: "Esc",  # leave the run, as Escape leaves a gesture in the editor
     ArenaButton.NEXT: "Enter",

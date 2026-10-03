@@ -1016,7 +1016,10 @@ as the angle turned in 2 s, at most 300°. Both come from the thrust now (D-022)
 tick does, so Diagnostic's probe, which stands still, shows where it would go, and a swimmer
 against an obstacle points into it while it slides. Nothing is cleared over the body: the marks
 cross it. Diagnostic's map shows all of them at its scale; its main screen, where the body is
-the board, none. Navigator's overview stays plain. A light in the run is a
+the board, none. Navigator's overview stays plain. In the run, Navigator's View shows two more
+rows under Rays, each on or off for the session: Motion, M, a gauge, the velocity and the spin;
+Streams, W, the wind, the flames and the light drawn in. M and W are Move and Wire in the editor,
+which never shows these rows (D-069). A light in the run is a
 bulb, 1.6 light radii high, not a sun; the Rays button's bulb now says the same. Amends D-049:
 accent2 marks what goes wrong and, darker, the thrust. The scope lock has art out: these marks
 are legibility, each shows a quantity of the model, and the scatter of the specks, the nearest

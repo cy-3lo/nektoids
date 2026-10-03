@@ -27,12 +27,17 @@ def draw_under(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
 
 def draw_over(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
     """The parts, the velocity and the spin, drawn after the swimmer."""
+    draw_parts(screen, view, body)
+    draw_motion(screen, view, body.velocity, body.spin)
+
+
+def draw_parts(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
+    """Each part's outline, and its face in its accent."""
     for outlines, colour in ((body.eyes, EYE_FACE), (body.thrusters, THRUSTER_BACK)):
         for outline in outlines:
             points = _on_screen(view, outline)
             pygame.draw.aalines(screen, PART_OUTLINE, False, points)
             pygame.draw.aaline(screen, colour, points[-1], points[0], FACE_WIDTH)
-    draw_motion(screen, view, body.velocity, body.spin)
 
 
 def draw_motion(
