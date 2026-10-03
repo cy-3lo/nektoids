@@ -1170,12 +1170,12 @@ class EditorScene(Frame):
         if self.mode is Mode.DELETE:
             return "Click a part or a wire to delete it. E or Esc: back to Write."
         if self.swapping:
-            return "Pick what it becomes in the ring, or press its number. Esc: back."
+            return "Pick what it becomes in the Wheel, or press its number. Esc: back."
         node = self._focused_node()
         if node is not None:
             return "Click another part to wire it, or drag it to move it."
         if self.focused is not None:
-            return "Pick a part in the ring, or press its number."
+            return "Pick a part in the Wheel, or press its number."
         return "Click a cell, or drag a part from Parts onto the board."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:

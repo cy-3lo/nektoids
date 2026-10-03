@@ -136,7 +136,7 @@ TIP = {
     ViewButton.RAYS: "Show or hide the light's rays",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    Mode.WRITE: "Click a cell: Tools and Parts show its ring. Click two parts to wire them; drag"
+    Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them; drag"
     " one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
     FileButton.SAVE: "Save: not yet",

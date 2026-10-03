@@ -880,10 +880,10 @@ except while Diagnostic is open, where it shows the Run preview; Navigator keeps
 before it, so the preview can be zoomed and moved. Sense is called Diagnostic: it is where the
 board is tested. While the preview shows, a key that edits the board is refused, and the status
 line says to open Tools or Parts; undo and redo still work, and the preview follows them. While
-a tutorial step leads, Diagnostic does not open. Tools and Parts both have, at their foot, the
-focused cell drawn large with its ring, under a rule and a title, The cell, that folds as Parts'
-groups do, in both at once; folded, the title sits at the drawer's foot and the rows above take
-the room. Parts' list scrolls, by the wheel or its scroll bar, when it does not fit. On the board, the focused part loses its white circle: the lit
+a tutorial step leads, Diagnostic does not open. The ring of D-068, with the focused cell
+drawn large at its middle, is called the Wheel. Tools and Parts both have it at their foot, under
+a rule and its title, The Wheel, that folds as Parts' groups do, in both at once; folded, the
+title sits at the drawer's foot and the rows above take the room. Parts' list scrolls, by the wheel or its scroll bar, when it does not fit. On the board, the focused part loses its white circle: the lit
 cell says it, and while the keyboard wires, the ghost wire shows where the wire starts. Over a
 part the wire cannot reach, its way still shows, dimmed, as over an empty cell, with the cell
 outlined in red and the reason in the status line. The line
