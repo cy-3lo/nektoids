@@ -1071,3 +1071,20 @@ walk the tutorials Fear and Aggression had, kept in `tests/data`. `guided` goes 
 served. Nothing teaches placing, turning or wiring now: the action atop the board, the status
 line, the Wheel's tooltips, Parts' (i) and Hint 3 carry it, to be watched when Camille plays it
 cold.
+
+**D-080 — 2026-10-03 — A tutorial's target is drawn in accent 1, with sparks drifting out of where its outline was; no outline. Amends D-048, D-050, D-063, D-071.**
+An outline round a target said where to look, and nothing more; the outlines of the tab, the
+switch and an icon crowded the strip they sit in. Now what a step shows is drawn in accent 1 by
+what draws it: the bar's icons for the bar, a drawer's icon, a tab's name, the titles of a panel
+or a drawer, as D-050 lit titles; the swimmer and the switch are accent 1 already. `panels`
+names them for every step that leads, not only those that explain: an area, a drawer or a part
+of the run by its name, a tab as "tab:editor", an icon as "icon:hints"; `main.py` sets them as
+the scene's `lit`. Colour alone cannot single a target out, since accent 1 already marks what
+the player works with (D-049), so it moves: specks of accent 1 dark drift out of the target's
+edge, where its outline was (6 px round a button, a row or the swimmer; a panel's own edges; a
+disc round a cell or a Wheel's icon), 14 px out in 24 frames (0.4 s), one alive per 24 px of
+edge on average, on the 3 px grid of the thrusters' flames and from the same table of draws,
+made once and read by the frame (D-076): still while nothing moves, the same each time. Their
+frame is `main.py`'s count of frames drawn, drawing only. Chosen over a glint sweeping across
+the target and a colour that breathes, from a preview in the game's own renderer. The box keeps
+its accent border.

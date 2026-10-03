@@ -648,7 +648,9 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         box = pygame.Rect(rect)
         if on:
             pygame.draw.rect(screen, LIT, (0, box.top + 2, 3, box.height - 4))
-        fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, TEXT if on else DIM_TEXT)
+        lit = "bar" in scene.lit or f"icon:{drawer.value}" in scene.lit  # a tutorial's (D-080)
+        ink = LIT if lit else TEXT if on else DIM_TEXT
+        fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, ink)
     for button, rect in layout.level_buttons:  # the switch
         box = pygame.Rect(rect)
         pygame.draw.rect(screen, ACTIVE, box, border_radius=8)
@@ -1078,7 +1080,8 @@ def draw_tabs(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         if on:
             pygame.draw.rect(screen, BACKGROUND, box)
             pygame.draw.rect(screen, LIT, (box.left, 0, box.width, 2))
-        label = fonts.label.render(TAB_NAME[name], True, TEXT if on else DIM_TEXT)
+        ink = LIT if f"tab:{name}" in scene.lit else TEXT if on else DIM_TEXT  # D-080
+        label = fonts.label.render(TAB_NAME[name], True, ink)
         screen.blit(label, label.get_rect(center=box.center))
         pygame.draw.line(screen, RULE, (box.right, 6), (box.right, TABS_HEIGHT - 6))
     strip = pygame.Rect(left, TABS_HEIGHT, SCREEN[0] - left, CAPTION_HEIGHT)

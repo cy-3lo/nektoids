@@ -18,6 +18,9 @@ from nektoids.editor.layout import (
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     GAP,
+    HALO,
+    SPARK_PITCH,
+    SPARK_REACH,
     Action,
     Context,
     Docked,
@@ -36,6 +39,7 @@ from nektoids.editor.tutorial import (
     panels,
     shows_wheel,
     skip_rect,
+    sparks,
     target_rects,
     target_spots,
 )
@@ -435,15 +439,27 @@ def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_o
     assert answer(hint, box, centre(nxt)) == "next"
 
 
-def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
-    tutorial = Tutorial.from_dict(BUILT["fear"])
-    expected = {0: {"swimmer"}, 1: {"objectives"}, TAB: set(), BOARD: set(), TOOLS: {"tools"}}
-    expected |= {THRUSTER: set(), EYE: set(), RUN: set(), PLAY: set(), INSIDE: {"inside"}}
+def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
+    tutorial = Tutorial.from_dict(BUILT["fear"])  # D-080: every leading step, not only those
+    expected = {
+        0: {"swimmer"},
+        1: {"objectives"},
+        TAB: {"tab:editor"},
+        BOARD: set(),
+    }  # that explain
+    expected |= {TOOLS: {"tools"}, THRUSTER: {"parts"}, EYE: set(), RUN: {"tab:run"}}
+    expected |= {PLAY: {"play", "arena"}, INSIDE: {"inside"}}
     for index, names in expected.items():
         tutorial.index = index
         assert panels(tutorial) == names, index
     tutorial.index = len(tutorial.steps) - 1
     assert panels(tutorial) == {"score"} and panels(None) == frozenset()
+    intro = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    named = []
+    for index in range(len(intro.steps)):
+        intro.index = index
+        named.append(panels(intro))
+    assert named == [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}, {"icon:hints"}]
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
@@ -705,3 +721,22 @@ def test_aggressions_boxes_keep_clear_of_what_they_show_on_screen():
             if narrow:
                 box = box_rect(targets, len(step.say), layout.board_area)
                 assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
+
+
+def test_sparks_drift_out_of_where_the_outline_was_as_many_as_its_edge_is_long():
+    button, cell = ((400, 300, 40, 40), "spot"), ((200, 200, 70, 80), "disc")  # D-080
+    assert sparks([button, cell], 7) == sparks([button, cell], 7)  # still while the frame is
+    counts = []
+    for frame in range(200):
+        for x, y in sparks([button], frame):
+            dx = max(400 - HALO - x, 0, x - (440 + HALO))
+            dy = max(300 - HALO - y, 0, y - (340 + HALO))
+            assert max(dx, dy) <= SPARK_REACH + 1e-9  # out of the edge, not beyond its reach
+            assert not (400 - HALO < x < 440 + HALO and 300 - HALO < y < 340 + HALO)
+        counts.append(len(sparks([button], frame)))
+    edge = 4 * (40 + 2 * HALO)
+    assert abs(sum(counts) / len(counts) - edge / SPARK_PITCH) < 0.25 * edge / SPARK_PITCH
+    for x, y in sparks([cell], 3):  # round a cell: out from its centre
+        r = ((x - 235) ** 2 + (y - 240) ** 2) ** 0.5
+        assert 40 + HALO - 1e-9 <= r <= 40 + HALO + SPARK_REACH
+    assert sparks([((0, 0, 10, 10), "none")], 3) == []

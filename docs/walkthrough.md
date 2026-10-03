@@ -626,8 +626,9 @@ kept in [`tests/data`](../tests/data).
   `target_spots` finds what a step
   shows on the screen now open; `box_rect` a spot clear of the targets, the way between them
   (`_crosses`) and the step `before`.
-- [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) dims everything but the
-  targets, through holes with no frame, and draws the box; the ghosts are drawn by `draw.py`,
+- [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) draws the sparks out of
+  each target (`tutorial.sparks`, D-080) and the box; the targets themselves are drawn in the
+  accent by what draws them, from `panels`, set as the scene's `lit`; the ghosts by `draw.py`,
   from `EditorScene.ghosts`, which `main.py` sets every frame, with `gate`, which the editor
   and the run ask before each action that changes something (`_allowed`, `_ask`).
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
