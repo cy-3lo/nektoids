@@ -45,11 +45,11 @@ from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.history import History
 from nektoids.editor.layout import (
+    DIAGNOSTIC_MAP,
     KEY_ALIASES,
     MAX_HEX,
     MENU_GROUPS,
     MODE_KEY,
-    SENSE_MAP,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
@@ -140,7 +140,7 @@ ENTER_SCANCODES = (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
 DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
 KEYPAD_SCANCODES = tuple(getattr(pygame, f"KSCAN_KP_{n}") for n in range(1, 10))
 MAX_WINS = 10  # the wins Files lists, the best first
-PROBE_TURN = math.radians(15.0)  # the wheel, L or R, on the probe in Sense
+PROBE_TURN = math.radians(15.0)  # the wheel, L or R, on the probe in Diagnostic
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 HEADROOM = 14  # over the ring's top key, in Tools' picture of the cell [px]
@@ -161,7 +161,7 @@ class EditorScene(Frame):
         self.main = MainView.DIAGRAM  # what the main screen shows (D-058)
         self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
         self._probed = None  # the board as the probe was made for it
-        self.probing = False  # the probe held in Sense's map, following the mouse
+        self.probing = False  # the probe held in Diagnostic's map, following the mouse
         self.holding: int | None = None  # the eye whose meter's knob the mouse holds
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
@@ -213,7 +213,7 @@ class EditorScene(Frame):
             if self.pile_frames % PILE_FRAMES == PILE_FRAMES // 2:
                 self.turn = turned(self.turn + self.piling, None, len(self.offered()))
         self.view = kept_on_board(self.layout, self.view, self.extent())  # D-066
-        if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.SENSE:
+        if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.DIAGNOSTIC:
             self._probe_now()
         if self.probe is not None:
             self.probe.see(self.view)  # the board's own scale and place, zoomed or panned
@@ -240,9 +240,9 @@ class EditorScene(Frame):
             self.main = view
 
     def open_drawer(self, drawer: Drawer | None) -> None:
-        """As the frame opens it; Sense puts the Run preview on the main screen (D-058)."""
+        """As the frame opens it; Diagnostic puts the Run preview on the main screen (D-058)."""
         super().open_drawer(drawer)
-        if drawer is Drawer.SENSE and self.main is not MainView.PREVIEW:
+        if drawer is Drawer.DIAGNOSTIC and self.main is not MainView.PREVIEW:
             self.show(MainView.PREVIEW)
 
     def _on_cell_view(self, pos: tuple[int, int]) -> bool:
@@ -250,13 +250,13 @@ class EditorScene(Frame):
         return self.layout.cell_view is not None and contains(self.layout.cell_view, pos)
 
     def _on_map(self, pos: tuple[int, int]) -> bool:
-        """Whether `pos` is on Sense's map of the level, with a probe to move."""
-        sense = self.layout.drawer is Drawer.SENSE and self.probe is not None
-        return sense and contains(SENSE_MAP, pos)
+        """Whether `pos` is on Diagnostic's map of the level, with a probe to move."""
+        shown = self.layout.drawer is Drawer.DIAGNOSTIC and self.probe is not None
+        return shown and contains(DIAGNOSTIC_MAP, pos)
 
     def _probe_to(self, pos: tuple[int, int]) -> None:
-        """The probe where the mouse is on Sense's map, outside the obstacles."""
-        self.probe.place(*level_view(self.level, SENSE_MAP).to_world(*pos))
+        """The probe where the mouse is on Diagnostic's map, outside the obstacles."""
+        self.probe.place(*level_view(self.level, DIAGNOSTIC_MAP).to_world(*pos))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION and self.keyboard and event.rel == (0, 0):
@@ -553,9 +553,9 @@ class EditorScene(Frame):
         return wire
 
     def _turns_probe(self, typed: str) -> bool:
-        """L and R turn the probe while Sense shows it with the Run preview; else the parts."""
+        """L and R turn the probe while Diagnostic shows it with the Run preview; else the parts."""
         turns = typed.upper() in (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
-        shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.SENSE
+        shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.DIAGNOSTIC
         return turns and shown and self.probe is not None
 
     def extent(self) -> Bounds:

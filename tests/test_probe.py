@@ -97,13 +97,13 @@ def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view(
     assert ring_radii(LEVELS["Fear"]) == [12.0] and ring_radii(LEVELS["Love"]) == [6.0]
 
 
-def test_senses_map_shows_the_whole_level_where_the_swimmer_starts():
-    from nektoids.editor.layout import SENSE_MAP, contains
+def test_diagnostics_map_shows_the_whole_level_where_the_swimmer_starts():
+    from nektoids.editor.layout import DIAGNOSTIC_MAP, contains
     from nektoids.editor.probe import level_view
 
     for level in LEVELS.values():
-        view = level_view(level, SENSE_MAP)
+        view = level_view(level, DIAGNOSTIC_MAP)
         x, y, _ = level.start
-        assert contains(SENSE_MAP, tuple(round(v) for v in view.to_screen(x, y)))
+        assert contains(DIAGNOSTIC_MAP, tuple(round(v) for v in view.to_screen(x, y)))
         for lx, ly in level.arena.light_xy:
-            assert contains(SENSE_MAP, tuple(round(v) for v in view.to_screen(lx, ly)))
+            assert contains(DIAGNOSTIC_MAP, tuple(round(v) for v in view.to_screen(lx, ly)))

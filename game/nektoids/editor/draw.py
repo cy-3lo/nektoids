@@ -42,6 +42,7 @@ from nektoids.editor.icons import (
 from nektoids.editor.layout import (
     BAR_WIDTH,
     CAPTION_HEIGHT,
+    DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     EDIT_KEYS,
     INFO_AT,
@@ -51,7 +52,6 @@ from nektoids.editor.layout import (
     MODE_KEY,
     PALETTE_TITLE,
     SCREEN,
-    SENSE_MAP,
     STATUS_HEIGHT,
     SWITCH_TO,
     TABS_HEIGHT,
@@ -146,7 +146,7 @@ TIP = {
     MainView.PREVIEW: "Run preview",
     Drawer.PARTS: "Parts",
     Drawer.FILES: "Files",
-    Drawer.SENSE: "Sense",
+    Drawer.DIAGNOSTIC: "Diagnostic",
     Drawer.INSIDE: "Inside",
     Drawer.SCORE: "Score",
     Drawer.NAVIGATOR: "Navigator",
@@ -680,14 +680,14 @@ def _draw_files(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
         active = won.board == now
         draw_row(screen, scene, fonts, rect, row, _win_name(won), status, active, icon="trophy")
     rows = scene.layout.win_rows
-    top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else SENSE_MAP[1]
+    top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else DIAGNOSTIC_MAP[1]
     note = (
         "Each win of this level is kept here for the session. A click puts its board back;"
         " Undo brings yours back."
         if rows
         else "No win yet. Each win of this level will be kept here for the session."
     )
-    draw_note(screen, fonts, note, (SENSE_MAP[0], top), SENSE_MAP[2])
+    draw_note(screen, fonts, note, (DIAGNOSTIC_MAP[0], top), DIAGNOSTIC_MAP[2])
 
 
 def _win_name(won) -> str:
@@ -704,7 +704,7 @@ def draw_level_map(
 ) -> None:
     """The level seen whole and small in `area`: its obstacles, its lights and their rings, and
     the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the main screen shows of it,
-    outlined (Sense's map, the run's overview, D-058, D-060); `view`, how it is seen, else the
+    outlined (Diagnostic's map, the run's overview, D-058, D-060); `view`, how it is seen, else the
     level seen whole."""
     view, arena = view or level_view(level, tuple(area)), level.arena
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
@@ -765,10 +765,10 @@ def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> 
     pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
 
 
-def _draw_sense(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Sense (D-058): the level small, its obstacles, its lights and their rings, and the probe,
-    the swimmer the Run preview runs at, to drag and turn."""
-    area = pygame.Rect(SENSE_MAP)
+def _draw_diagnostic(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Diagnostic (D-058, D-069): the level small, its obstacles, its lights and their rings,
+    and the probe, the swimmer the Run preview runs at, to drag and turn."""
+    area = pygame.Rect(DIAGNOSTIC_MAP)
     if scene.level is not None and scene.probe is not None:
         draw_level_map(screen, scene.level, area, scene.probe.pose)
     else:
@@ -804,12 +804,12 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
 
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The editor's own drawers' rows: Tools, Parts, Files, Navigator; Sense's map."""
+    """The editor's own drawers' rows: Tools, Parts, Files, Navigator; Diagnostic's map."""
     layout, board = scene.layout, scene.board
     if layout.drawer is Drawer.TOOLS:
         _draw_tools(screen, scene, fonts)
-    if layout.drawer is Drawer.SENSE:
-        _draw_sense(screen, scene, fonts)
+    if layout.drawer is Drawer.DIAGNOSTIC:
+        _draw_diagnostic(screen, scene, fonts)
     if layout.drawer is Drawer.FILES:
         _draw_files(screen, scene, fonts)
     if layout.overview is not None:

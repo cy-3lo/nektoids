@@ -65,9 +65,9 @@
       {
         "show": {"area": "bar"},
         "say": [
-          "The bar on the left opens the drawers: Parts,",
-          "Tools, Files, Sense, Navigator. At its foot:",
-          "Settings, Chapters, and Run, which sets the", "swimmer going."
+          "The bar on the left opens the drawers: Tools,",
+          "Parts, Files, Diagnostic, Navigator. At its",
+          "foot: Settings, Chapters, and Run, which sets", "the swimmer going."
         ]
       },
       {

@@ -34,9 +34,7 @@ BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]; the main view's buttons too
-ACTION_WIDTH = (
-    50  # atop the editor's main screen, what a click does now: a ring's icon, square [px]
-)
+ACTION_WIDTH = 50  # atop the editor's main screen, what a click does: a ring's icon, square [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
@@ -130,7 +128,7 @@ class Drawer(Enum):  # D-051
     TOOLS = "tools"  # the focused cell and its ring; Write and Delete; undo and redo (D-068)
     PARTS = "parts"  # the parts the level hands out, and what each does
     FILES = "files"  # this session's winning boards, to put one back (D-059)
-    SENSE = "sense"  # the level, small, with the probe the Run preview runs at (D-058)
+    DIAGNOSTIC = "diagnostic"  # the level, small, with the probe the Run preview runs at (D-058)
     INSIDE = "inside"  # the run's: the swimmer's wiring, live
     SCORE = "score"  # the run's: the level's wins this session
     NAVIGATOR = "navigator"  # zoom, hand, centre; the rays in the run
@@ -148,14 +146,14 @@ class Env(Enum):  # the environments, each a tab over the main screen (D-051)
     RUN = "run"
 
 
-SENSE_MAP: Rect = (  # the level, small, in Sense, under its label: a square [px]
+DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a square [px]
     BAR_WIDTH + MARGIN,
     DRAWER_TOP + TITLE_HEIGHT + 4,
     DRAWER_WIDTH - 2 * MARGIN,
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.SENSE, Drawer.NAVIGATOR),
+    Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
 }
 FOOT = (Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at the bar's foot
@@ -291,7 +289,7 @@ def make_layout(
         rows.parts(folded, kinds)
     elif drawer is Drawer.NAVIGATOR:
         rows.view(env)
-    elif drawer is Drawer.SENSE:
+    elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES:
         rows.label("Wins this session")
