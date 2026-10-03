@@ -884,7 +884,9 @@ a tutorial step leads, Diagnostic does not open. Tools and Parts both have, at t
 focused cell drawn large with its ring, under a rule and a title, The cell, that folds as Parts'
 groups do, in both at once; folded, the title sits at the drawer's foot and the rows above take
 the room. Parts' list scrolls, by the wheel or its scroll bar, when it does not fit. On the board, the focused part loses its white circle: the lit
-cell says it, and while the keyboard wires, the ghost wire shows where the wire starts. The line
+cell says it, and while the keyboard wires, the ghost wire shows where the wire starts. Over a
+part the wire cannot reach, its way still shows, dimmed, as over an empty cell, with the cell
+outlined in red and the reason in the status line. The line
 under the action atop the main screen sits under its disc. Each drawer opens, or folds, by a
 key, its initial: T Tools, P Parts, F Files, D Diagnostic, N Navigator in the editor; I Inside,
 S Score, N Navigator in the run; the comma Settings in both, with Ctrl or Cmd too (a Mac's

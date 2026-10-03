@@ -197,6 +197,7 @@ class EditorScene(Frame):
         self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered cell
         self.ghost_connects = False  # Wire: the ghost ends on a target it may connect to
+        self.ghost_way: tuple[Cell, ...] | None = None  # ... over a part it cannot: the way only
         self.folded: set[str] = set()  # menu groups shown closed
         self.mouse = (0, 0)
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
@@ -840,21 +841,29 @@ class EditorScene(Frame):
 
     def _update_ghost(self) -> None:
         """Where a wire from the focused part would run to the hovered cell, and whether it may
-        end there: over an empty cell it only shows the way; over a part it is the real preview.
-        None where a click would not wire, as from a part that wires on only forward (D-068)."""
-        self.ghost, self.ghost_connects = None, False
+        end there: over an empty cell it only shows the way; over a part it is the real preview,
+        where a click would wire (D-068). Over a part it cannot wire to, or would not, the way
+        still shows, dimmed, as over an empty cell, and the reason, if any (D-069)."""
+        self.ghost, self.ghost_connects, self.ghost_way = None, False, None
         start = self.source if self.tool is Tool.WIRE else None
         if start is None or self.hover is None or start not in self.board.nodes:
             return
         target, begin = self.board.node_at(self.hover), self.board.nodes[start]
+        way = None  # the way only, as over an empty cell
+        if begin.kind.emits:
+            way = self.board.route(begin.cell, self.hover)
+        elif not self.onward:  # a thruster: the way a wire into it would come
+            way = self.board.route(self.hover, begin.cell)
         if target is None:
-            if begin.kind.emits:
-                self.ghost = self.board.route(begin.cell, self.hover)
-            elif not self.onward:  # a thruster: the way a wire into it would come
-                self.ghost = self.board.route(self.hover, begin.cell)
-        elif target.id != start and (not self.onward or self._forward(begin, target)):
+            self.ghost = way
+            return
+        if target.id == start:
+            return
+        if not self.onward or self._forward(begin, target):
             self.ghost = self.board.preview(*self.board.orient(start, target.id))
             self.ghost_connects = isinstance(self.ghost, tuple)
+        if not self.ghost_connects:
+            self.ghost_way = way
 
     # The focus and its ring (D-068)
 
