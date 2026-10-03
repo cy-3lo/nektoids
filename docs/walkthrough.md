@@ -702,9 +702,14 @@ Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
   the tabs (D-056); `Fonts`, the fonts by their job (D-055).
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `drawer_for`, the drawer a step
   opens.
+- [`editor/entry.py`](../game/nektoids/editor/entry.py), pure: a part's entry at work (D-082),
+  its own small circuit (`DEMOS`), its light and flames (`light`, `flames`), run by
+  `Frame.frame_update` while its box is open and drawn by `draw_info` with `draw_circuit`, as
+  Inside draws a board; its beads are `beads.Travelling`. Open a part's (i) in Parts.
 
 Questions: why is an info disc asked before its row, in `_press`? What would the player see if
-`open_drawer` did not slide the view?
+`open_drawer` did not slide the view? Why do ×2's beads leave in step with those coming in
+(`Entry._keep_time`), when no other wire's beads keep time with another's?
 
 Settings and Chapters (D-054) sit at the bar's foot. Open Settings and click Fast forward, then
 Chapters (Tab) and a locked level.

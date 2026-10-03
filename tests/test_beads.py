@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from nektoids.editor.beads import BEAD_RATE_AT_FULL, BEAD_SPEED, Beads
+from nektoids.editor.beads import BEAD_RATE_AT_FULL, BEAD_SPEED, Beads, Travelling
 
 DT = 1 / 120
 
@@ -138,3 +138,27 @@ def test_reset_forgets_every_phase():
     beads.step([5.0, 5.0], 0.3)
     beads.reset()
     assert beads.phase == [0.0, 0.0]
+
+
+def test_travelling_beads_sit_where_beads_would_on_a_steady_wire():
+    steady, travelling = Beads([10.0]), Travelling([10.0])
+    travelling.fill([2.0])
+    for _ in range(100):
+        steady.step([2.0], DT)
+        travelling.step([2.0], DT)
+        assert travelling.positions(0, 2.0) == pytest.approx(steady.positions(0, 2.0))
+
+
+def test_travelling_beads_never_go_backwards_as_the_rate_rises():
+    beads = Travelling([10.0])  # D-082: Beads whip back as the rate climbs, these do not
+    beads.fill([0.5])
+    before = beads.positions(0, 0.5)
+    for k in range(240):
+        flux = 0.5 + 3.0 * k / 240  # a fast rise, from 0.5 to 3.5 beads/s in 2 s
+        beads.step([flux], DT)
+        now = beads.positions(0, flux)
+        assert now == sorted(now) and all(0.0 <= x < 10.0 for x in now)
+        for x in before:  # every bead moved on at its speed, or left the wire at its end
+            on = x + BEAD_SPEED * DT
+            assert on >= 10.0 or any(abs(y - on) < 1e-9 for y in now)
+        before = now

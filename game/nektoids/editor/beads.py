@@ -51,3 +51,34 @@ class Beads:
             found.append(x)
             k += 1
         return found
+
+
+class Travelling(Beads):
+    """Beads that, once out, keep going at `speed` whatever the rate does after (D-082): the
+    spacing along a wire is the rate when each bead left, so a change of rate runs down the wire
+    as a front, and no bead ever goes backwards. A part's entry runs them; on a steady wire they
+    sit where `Beads` would put them."""
+
+    def __init__(self, lengths: Sequence[float], speed: float = BEAD_SPEED):
+        super().__init__(lengths, speed)
+        self.out: list[list[float]] = [[] for _ in self.lengths]  # each wire's beads, in order
+
+    def fill(self, fluxes: Sequence[float]) -> None:
+        """The wires full, as if the fluxes [beads/s] had been steady all along."""
+        self.out = [Beads.positions(self, k, f) for k, f in enumerate(fluxes)]
+
+    def step(self, fluxes: Sequence[float], dt: float) -> None:
+        """The beads out move on by `speed` dt; a bead leaves each time a phase wraps, as far
+        along as it has gone since."""
+        for k, f in enumerate(fluxes):
+            moved = [x + self.speed * dt for x in self.out[k]]
+            phase, left = self.phase[k] + f * dt, []
+            while phase >= 1.0:
+                phase -= 1.0
+                left.append(self.speed * phase / f)
+            self.phase[k] = phase
+            self.out[k] = [x for x in (*reversed(left), *moved) if x < self.lengths[k]]
+
+    def positions(self, wire: int, flux: float, belt: bool = False) -> list[float]:
+        """Where the beads on `wire` are, nearest the source first, whatever the flux now."""
+        return self.out[wire]

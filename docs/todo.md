@@ -65,8 +65,6 @@ is open (D-069); in the Run it shows the level. Drawers never take the main scre
 - [ ] Sound and Music in Settings, once there is sound (D-054).
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
-- [ ] A part's entry, opened by its (i), shows the part at work: a small circuit of its own,
-      wires and beads running, ×2 taking one bead and giving two.
 
 ## 9. A board as text (its own PR)
 

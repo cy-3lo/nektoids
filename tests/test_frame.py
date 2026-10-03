@@ -4,6 +4,7 @@ from nektoids.editor.frame import WARM_FRAMES, Frame
 from nektoids.editor.layout import Drawer, Layout, LevelButton, Setting, make_layout
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.tutorial import REFUSAL
+from nektoids.graph.board import Kind
 
 
 class Scene(Frame):
@@ -166,3 +167,22 @@ def test_chapters_ends_with_a_passkey_field_typed_in_by_a_click_or_p():
     for _ in range(12):
         scene.type_key("a", "a")
     assert scene.typing == "A" * 10  # at most PASSKEY_LENGTH
+
+
+def test_a_parts_entry_runs_its_own_circuit_while_its_box_is_open():
+    scene = Scene()
+    scene.frame_update()
+    assert scene.entry is None  # no box open
+    scene.info = Kind.DOUBLE  # its info disc clicked
+    scene.frame_update()
+    entry = scene.entry
+    assert entry is not None and entry.kind is Kind.DOUBLE
+    before = list(entry.circuit.beads.phase)
+    scene.frame_update()
+    assert scene.entry is entry and entry.circuit.beads.phase != before  # it runs
+    scene.info = Kind.SUM
+    scene.frame_update()
+    assert scene.entry.kind is Kind.SUM
+    scene.info = Setting.FAST  # a row's box, not a part's
+    scene.frame_update()
+    assert scene.entry is None
