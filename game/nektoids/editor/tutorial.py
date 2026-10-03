@@ -85,11 +85,8 @@ class Context:
 
 
 class Tutorial:
-    def __init__(
-        self, ghosts: tuple[Ghost, ...], steps: tuple[Step, ...], start: Screen = Screen.EDIT
-    ) -> None:
+    def __init__(self, ghosts: tuple[Ghost, ...], steps: tuple[Step, ...]) -> None:
         self.ghosts, self.steps = ghosts, steps
-        self.start = start  # the screen its level opens on while it has not begun (D-060)
         self.index = 0
 
     @classmethod
@@ -103,7 +100,7 @@ class Tutorial:
             for g in data.get("ghosts", ())
         )
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
-        return cls(ghosts, steps, Screen(data.get("start", Screen.EDIT.value)))
+        return cls(ghosts, steps)
 
     @property
     def step(self) -> Step | None:

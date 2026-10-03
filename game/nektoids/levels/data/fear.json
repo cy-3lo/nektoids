@@ -15,7 +15,6 @@
   "time_limit": 10.0,
   "objectives": [{"kind": "leave ring", "radius": 12.0}],
   "tutorial": {
-    "start": "run",
     "ghosts": [
       {"kind": "eye", "cell": [2, -1], "facing": "NW"},
       {"kind": "eye", "cell": [1, 1], "facing": "SW"},

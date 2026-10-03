@@ -351,12 +351,8 @@ def test_a_leading_step_keeps_the_board_on_screen():
     assert allows(None, Action("view"))
 
 
-def test_fear_starts_in_the_run_and_sends_the_player_to_the_editor_by_its_tab():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    assert (
-        tutorial.start is Screen.RUN
-        and Tutorial.from_dict(LEVELS["Love"].tutorial).start is Screen.EDIT
-    )
+def test_fear_sends_the_player_from_the_run_to_the_editor_by_its_tab():
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)  # every level opens on its run
     ways = tutorial.steps[R - 1].show  # the Editor tab and the switch at the bar's foot
     switch = dict(RUN_LAYOUT.level_buttons)[LevelButton.EDIT]
     assert target_rects(ways, Screen.RUN, RUN_LAYOUT, VIEW) == [
