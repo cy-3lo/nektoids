@@ -211,3 +211,17 @@ def test_the_runs_extent_is_half_as_much_again_as_what_matters_and_the_view_stay
     near = ArenaView(whole.scale * 4, (whole.origin[0] + 9000, whole.origin[1]))
     sl, sb, sr, st = shown(kept_in(near, area, (left, bottom, right, top)), area)
     assert sl >= left - 1e-9 and sr <= right + 1e-9 and sb >= bottom - 1e-9 and st <= top + 1e-9
+
+
+def test_the_runs_extent_grows_by_union_and_a_frame_at_its_border_touches_it():
+    # D-073: the overview's extent kept frame to frame, never less than it may be
+    from nektoids.editor.arena_view import touches, union, widened
+
+    a, b = (0.0, 0.0, 10.0, 5.0), (5.0, -2.0, 12.0, 4.0)
+    assert union(a, b) == (0.0, -2.0, 12.0, 5.0) == union(b, a)
+    wide = widened((0.0, 0.0, 10.0, 10.0), 2.0)  # twice as wide as high: widened about its middle
+    assert wide == (-5.0, 0.0, 15.0, 10.0)
+    tall = widened((0.0, 0.0, 10.0, 1.0), 2.0)
+    assert tall == (0.0, -2.0, 10.0, 3.0)
+    assert touches((0.0, 1.0, 5.0, 4.0), a) and touches((1.0, 1.0, 10.0, 4.0), a)
+    assert not touches((1.0, 1.0, 9.0, 4.0), a)  # inside, clear of every side

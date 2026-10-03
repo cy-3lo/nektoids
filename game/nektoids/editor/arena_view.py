@@ -77,6 +77,15 @@ def extent(points: np.ndarray, reach: float, aspect: float) -> tuple[float, floa
     low, high = points.min(axis=0) - reach, points.max(axis=0) + reach
     middle, half = (low + high) / 2, ROOM * (high - low) / 2
     (left, bottom), (right, top) = middle - half, middle + half
+    return widened((float(left), float(bottom), float(right), float(top)), aspect)
+
+
+Bounds = tuple[float, float, float, float]  # (left, bottom, right, top) [u]
+
+
+def widened(bounds: Bounds, aspect: float) -> Bounds:
+    """`bounds` widened or heightened about their middle to `aspect`, width over height."""
+    left, bottom, right, top = bounds
     width, height = right - left, top - bottom
     if width < aspect * height:
         grow = (aspect * height - width) / 2
@@ -85,6 +94,17 @@ def extent(points: np.ndarray, reach: float, aspect: float) -> tuple[float, floa
         grow = (width / aspect - height) / 2
         bottom, top = bottom - grow, top + grow
     return (float(left), float(bottom), float(right), float(top))
+
+
+def union(a: Bounds, b: Bounds) -> Bounds:
+    """The least bounds holding both."""
+    return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
+
+
+def touches(inner: Bounds, outer: Bounds, eps: float = 1e-6) -> bool:
+    """Whether `inner`, inside `outer`, reaches any of its sides: the main screen's frame at
+    the overview's border (D-073)."""
+    return any(abs(i - o) <= eps for i, o in zip(inner, outer, strict=True))
 
 
 def view_of(area: Rect, bounds: tuple[float, float, float, float]) -> ArenaView:

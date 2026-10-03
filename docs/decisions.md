@@ -951,3 +951,11 @@ Now it draws a wire from that part, its ghost following the mouse, made to the p
 on, the focus going on to that part, as a click on the one then on the other would; released on an
 empty cell, the attempt ends with the reason; back on its own part, or off the board, nothing. With
 Wire only at hand, after a click on a part, a drag still moves it.
+
+**D-073 — 2026-10-03 — The run's overview never shrinks below its start, nor while the main screen's frame touches its border. Amends D-066.**
+The run's extent, what Navigator's overview shows and the most the arena may, followed what
+matters every frame (D-066), so in Love, as the swimmer came to the light, it shrank and the view,
+kept inside it, zoomed in on its own. Now the extent is kept from frame to frame: what matters
+now, never less than the extent at the run's start, and never less than it was while the main
+screen's frame touches its border, zoomed out or slid to an edge. Away from the border it may
+shrink back, as far as its start, once the swimmer has gone far and come back.

@@ -68,7 +68,10 @@ from nektoids.editor.arena_view import (
     map_points,
     pan_view,
     shown,
+    touches,
+    union,
     view_of,
+    widened,
     zoom_view,
 )
 from nektoids.editor.circuit import Circuit
@@ -260,6 +263,8 @@ class ArenaScene(Frame):
         self.kept = begin(self.level, self.pos, self.radius)  # each objective's
         self.clock.reset()
         self.circuit.beads.reset()
+        self._floor = self._needed()  # the overview's extent at the start: never less (D-073)
+        self._extent = self._floor
         self._moved()
         self.recording: Recording[Snapshot] = Recording(self._snapshot())
         self.seek_to = None
@@ -302,6 +307,7 @@ class ArenaScene(Frame):
 
     def update(self) -> None:
         self.frame_update()
+        self._follow_extent()
         kept = kept_in(self.view, self.arena_area, self.extent())  # D-066
         if kept != self.view:
             self._look(kept)
@@ -600,8 +606,23 @@ class ArenaScene(Frame):
         return (round(cx - r), round(cy - r), round(2 * r), round(2 * r))
 
     def extent(self) -> tuple[float, float, float, float]:
-        """What Navigator's overview shows, and the most the arena may (D-066): the lights and
-        their rings, the obstacles and the swimmer where it is now, with room to spare."""
+        """What Navigator's overview shows, and the most the arena may (D-066), as this frame
+        keeps it (D-073)."""
+        return self._extent
+
+    def _follow_extent(self) -> None:
+        """The overview's extent this frame: what matters now, never less than at the start, and
+        never less than it was while the main screen's frame touches its border, so the swimmer
+        coming closer to the light never zooms the view in (D-073)."""
+        bounds = union(self._needed(), self._floor)
+        if touches(shown(self.view, self.arena_area), self._extent):
+            bounds = union(bounds, self._extent)
+        _, _, w, h = self.arena_area
+        self._extent = widened(bounds, w / h)
+
+    def _needed(self) -> tuple[float, float, float, float]:
+        """What matters now (D-066): the lights and their rings, the obstacles and the swimmer
+        where it is, with room to spare."""
         arena = self.arena
         rims = [
             arena.light_xy + d for r, _ in self.rings for d in ((r, 0), (-r, 0), (0, r), (0, -r))
