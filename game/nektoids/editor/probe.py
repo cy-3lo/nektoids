@@ -31,7 +31,7 @@ from nektoids.sim.contact import confine
 from nektoids.sim.optics import eye_rates
 
 NO_AREA: Rect = (0, 0, 0, 0)  # the circuit is drawn through a given view: nothing to fit
-MAP_MARGIN = 2.0  # room round what Sense's map shows of the level [u]
+MAP_MARGIN = 2.0  # room round what Diagnostic's map shows of the level [u]
 HANDLE_GRAB = 10  # a press this close to an eye's meter takes it [px]
 
 

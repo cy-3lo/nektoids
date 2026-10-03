@@ -141,6 +141,7 @@ BUTTON = P.raised
 HOVER = mix(P.raised, P.line, 0.5)
 ACTIVE = P.accent1.dark  # the tool in hand, the menu row picked, a toggle that is on
 RULE = P.line  # separators between columns and between sets of buttons
+SCROLL_THUMB = P.dim  # a scroll bar's thumb, over its track in RULE (D-069)
 SWATCH_OFF = P.raised  # colour picker, not active yet
 TEXT = P.text
 DIM_TEXT = P.dim
@@ -167,7 +168,7 @@ GHOST_OK = P.bright  # ... and it may connect there
 FOCUS_CELL = mix(P.surface, P.accent1.mid, 0.55)  # a cell a tutorial's step acts on (D-063)
 GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part: a paler grey, no outline
 DOOMED = P.muted  # what a Delete click would remove
-ICON_EDGE = mix(P.muted, P.dim, 0.5)  # the edge of an icon of Tools' ring, and of a pile's (D-068)
+ICON_EDGE = mix(P.muted, P.dim, 0.5)  # the edge of an icon of the Wheel, and of a pile's (D-068)
 
 # The circuit: rates and beads, in the developer view and the run's column
 FULL = P.bright  # a rate at RATE_MAX: the developer's sliders, the timeline

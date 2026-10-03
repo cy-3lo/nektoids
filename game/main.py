@@ -150,19 +150,17 @@ def play(drawer: Drawer | None) -> ArenaScene:
     )
 
 
-def shell_event(event: pygame.event.Event) -> bool:
-    """The cards and the end take the event (D-035, D-042); True if a card went, the level
-    begun."""
+def shell_event(event: pygame.event.Event) -> None:
+    """The cards and the end take the event (D-035, D-042): a card goes, and the run under it
+    shows (D-069); the end's button goes back to the last level."""
     clicked = event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
     escape = event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
     if router.screen in (Screen.TITLE, Screen.SPEC):
         if clicked or event.type == pygame.KEYDOWN:
             router.begin()
-            return True
     elif escape or (clicked and contains(bottom_button(), event.pos)):  # the end
         router.edit()  # back to the last level, Chapters open (D-054)
         editor().open_drawer(Drawer.CHAPTERS)
-    return False
 
 
 def open_developer_view() -> SchematicScene:
@@ -193,7 +191,6 @@ async def main() -> None:
 
     pointer = (0, 0)  # where the mouse is, for the end's button [px]
     while running:
-        begun = False  # a card went this frame: the level begins
         for event in pygame.event.get():
             if event.type == pygame.MOUSEMOTION:
                 pointer = event.pos
@@ -223,16 +220,11 @@ async def main() -> None:
                     guide.skip()
                 editor().message = ""  # a refusal from the step before no longer holds
             elif router.screen in (Screen.TITLE, Screen.SPEC, Screen.END):
-                begun = shell_event(event) or begun
+                shell_event(event)
             elif playing is not None:
                 playing.handle_event(event)
             else:
                 editor().handle_event(event)
-
-        guide = tutorial()
-        if begun and guide is not None and guide.index == 0 and guide.start is Screen.RUN:
-            router.run()  # Fear's tutorial opens on the run, paused (D-060)
-            playing = play(Drawer.INSIDE)
 
         # What the scenes asked for this frame.
         if isinstance(developer, ArenaScene) and developer.request == "edit":
@@ -265,6 +257,8 @@ async def main() -> None:
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
                 choose_place(chosen)
+        if router.screen in (Screen.TITLE, Screen.SPEC) and playing is None:
+            playing = play(run_drawer)  # the run it opens on, paused, under its card (D-069)
 
         guide = tutorial()
         if guide is not None:  # on past what the player has done
@@ -308,10 +302,10 @@ async def main() -> None:
             editor().update()
             preview = editor().main is MainView.PREVIEW  # the Run preview, not the board (D-058)
             draw(screen, editor(), fonts, draw_preview if preview else None)
-            if router.screen is Screen.TITLE:
-                draw_title_card(screen, fonts)
-            elif router.screen is Screen.SPEC:
-                draw_level_card(screen, router, fonts)
+        if developer is None and router.screen is Screen.TITLE:  # over the run (D-069)
+            draw_title_card(screen, fonts)
+        elif developer is None and router.screen is Screen.SPEC:
+            draw_level_card(screen, router, fonts)
         if developer is None and guide is not None and router.screen in (Screen.EDIT, Screen.RUN):
             draw_tutorial(screen, fonts, guide, *tutorial_box(guide, on_screen()), pointer)
         pygame.display.flip()

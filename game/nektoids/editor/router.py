@@ -1,13 +1,14 @@
 """Where the player is: the title card, a level being built or watched, the end.
 
-The loop of the brief (§1): the spec and the board in the editor, Run, watch the run, back to the
-editor to change the mechanism, or on to the next level once won (D-030). Around it (D-035,
+The loop of the brief (§1): the spec and the board in the editor, Run, watch the run, back to
+the editor to change the mechanism, or on to the next level once won (D-030). Around it (D-035,
 D-054): the game opens on the first level under a title card; the Chapters drawer lists the
 chapter's levels and the sandbox, each level opening once the one before it is won; after the
 last level comes the end. A level opened from Chapters or by Next level comes up under its card,
-which says what it asks. Each level keeps its board for the session, so going back finds it as
-it was left, and the scores of its wins (D-028); nothing is kept after it. Pure Python, no
-pygame: `main.py` turns the state into scenes.
+which says what it asks, then on its run, paused, the board as it stands (D-069). Each level
+keeps its board for the session, so going back finds it as it was left, and the scores of its
+wins (D-028); nothing is kept after it. Pure Python, no pygame: `main.py` turns the state into
+scenes.
 """
 
 from __future__ import annotations
@@ -145,8 +146,9 @@ class Router:
     # Moving about
 
     def begin(self) -> None:
-        """The card goes, the title card or a level's; the level stays."""
-        self.screen = Screen.EDIT
+        """The card goes, the title card or a level's; the level opens on its run, paused
+        (D-069)."""
+        self.screen = Screen.RUN
 
     def open(self, index: int) -> None:
         """A place from Chapters, under its card; ValueError if it is still locked."""

@@ -734,17 +734,19 @@ The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc
 Questions: what does `_slid` do in the editor, and in the run? Why is the controls strip not an
 "area" for the tutorial's box (`tutorial.is_area`)?
 
-The Run preview and Sense (D-058). Open Sense: the main screen runs your board where the probe
-stands; drag the probe on the map, then drag an eye's knob.
+The Run preview and Diagnostic, called Sense until D-069 (D-058). Open Diagnostic: the main
+screen runs your board where the probe stands; drag the probe on the map, then drag an eye's
+knob.
 
 - [`editor/probe.py`](../game/nektoids/editor/probe.py), pure: `Probe`, the board as it would
   run at a pose, its eyes reading the light once (nothing moves), `hold` for an eye's knob;
-  `level_view`, the level seen whole in Sense's map. Tested in
+  `level_view`, the level seen whole in Diagnostic's map. Tested in
   [`test_probe.py`](../tests/test_probe.py).
-- [`editor/scene.py`](../game/nektoids/editor/scene.py): `main` (a `MainView`), `show`,
-  `open_drawer` (Sense shows the preview), `_probe_now`, `_hold`.
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `main` (a `MainView`, which
+  `layout.main_view_for` reads off the drawer, D-069), `open_drawer` (Diagnostic shows the
+  preview), `_editing`, `_probe_now`, `_hold`.
 - [`editor/preview_draw.py`](../game/nektoids/editor/preview_draw.py): the preview and its
-  knobs; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_view_switch`, `_draw_sense`.
+  knobs; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_diagnostic`.
 
 Questions: why does the probe read the light once, and not every tick? What would a held eye
 do to a run, and why can it not?

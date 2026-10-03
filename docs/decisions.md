@@ -849,3 +849,64 @@ Settings is its rows one under the other, with no section titles: fast forward's
 hints, the tutorial again, Sound and Music (locked). The tooltips' delay is no longer set: a
 tooltip shows after 1 s. Shorter, Settings leaves room in the run for the objectives under it
 (D-065).
+
+**D-068 — 2026-10-02 — The editor's hand: a focused cell and the ring of what can be done there, in Tools; Write and Delete; Swap; the ring turns as a wheel. Written after PR #21, which cites it. Amends D-026, D-051, D-053.**
+A click focuses a cell, lit on the board. Tools, first in the bar and open when a level opens,
+draws it large, its part at its facing, with the ring round it: round an empty cell, the parts
+the level still hands out, each with its number; round a part, turn left, move, wire, swap, turn
+right and delete, the wire on top, the turns either side of the gap at the foot, the turns only
+for eyes and thrusters, Swap only while another part of its group is left; a part the level
+placed offers only Wire. Up to five icons sit beyond the cell's corners; more turn on a wheel,
+as cards on a rotary file: the others piled under the ring's two ends, drawn empty, set back
+along the circle so their edges show. The keyboard going round turns the wheel just enough for
+its choice to be on the ring; so do the mouse wheel over the picture and the mouse resting on a
+pile. Clicking a part arms Wire from it: the next part clicked is wired to it, and the focus
+goes on to that part; a drag from a part moves it. Only a part clicked wires either way round
+(D-026); a part focused otherwise, placed or just wired to, wires on only along the signal, so a
+chain goes on, eye to sum to thruster, but from a thruster a click on an eye only focuses the
+eye. A wire that cannot be made ends the attempt: nothing stays focused, and the status line
+says why. Swap (S) turns the part into another of its group, in its place, its facing kept where
+both turn, with every wire it can take; the status line says how many could not follow; one
+step for undo (`Board.replace`). Tools' rows above the picture: Write and Delete (E goes from one
+to the other, Esc back to Write), then Undo and Redo. In Delete there is no focus and no ring: a
+click removes the part under it with its wires, or the wire under it, darkened while the mouse
+is on it. The keyboard drives the same focus: the arrows, Enter, the ring's keys, Esc back one
+step. Atop the main screen, always, what the next click or Enter does: the action as a ring's
+icon, its key beside it, a line under it saying what it is; a click on it opens Tools.
+
+**D-069 — 2026-10-03 — The main view follows the drawer: the Run preview only in Diagnostic, Sense renamed. The ring is the Wheel, at the foot of Tools and of Parts. A key for each drawer, its initial; Delete on Backspace; one key, one meaning within an environment; tooltips after 0.5 s; Run first, and a level opens on its run. Amends D-021, D-058, D-060, D-067, D-068.**
+The switch between the Diagram view and the Run preview goes. The main screen shows the board,
+except while Diagnostic is open, where it shows the Run preview; Navigator keeps what was shown
+before it, so the preview can be zoomed and moved. Sense is called Diagnostic: it is where the
+board is tested. While a tutorial step leads, Diagnostic does not open. While the preview shows,
+a key that edits the board is refused and the status line says to open Tools or Parts; undo and
+redo still work, and the preview follows them; the action atop the main screen hides, and the
+status line says what the preview offers, an eye's knob to drag. The ring of D-068, the focused
+cell drawn large at its hub, is called the Wheel, in the code too (`wheel.py`, where the rim is
+its arc of up to five icons). Tools and Parts both have it at their foot, under a rule and its
+title, The Wheel, which folds as Parts' groups do, in both at once; folded, the title sits at
+the drawer's foot and the rows above take the room. Parts lists its groups as sensors,
+actuators, operators, and the parts' numbers and the Wheel's order follow: with all seven handed
+out, the thruster is 3. Parts' list scrolls, by the mouse wheel or a scroll bar, when it does
+not fit. The Wheel's icon under the mouse is named in a tooltip, as the bar's are, after the
+same rest and as warm: its name, and its key while key hints are on; the keys no longer sit
+round the rim, and the Wheel takes the room they leave, its cell 46 px across instead of 40, its
+icons with it. The accent names what is chosen: beside the action atop the main screen, the
+action, with its key; in the line under the Wheel, its lit icon, the keyboard's choice or the
+tool in hand, else what the cell holds, dimmed. On the board, the focused part loses its white
+circle: the lit cell says it, and while the keyboard wires, the ghost wire shows where the wire
+starts. Over a part the wire cannot reach, its way still shows, dimmed, as over an empty cell,
+with the cell outlined in red and the reason in the status line. The line under the action atop
+the main screen sits under its disc. Each drawer opens, or folds, by a key, its initial: T
+Tools, P Parts, F Files, D Diagnostic, N Navigator in the editor; I Inside, S Score, N Navigator
+in the run; the comma Settings in both, with Ctrl or Cmd too (a Mac's browser keeps Cmd+comma
+for its own settings); Tab Chapters, as before. Delete takes Backspace and Delete, the keys that
+delete everywhere else, and frees D. D-021 becomes one key, one meaning within an environment: a
+letter may mean one thing in the editor and another in the run, as F is Files in the editor and
+Fast forward in the run, S Swap and Score, since the two never show together. X, the run's rays,
+no longer zooms out in the editor. Once a tooltip of the bar shows, the next icon's shows at
+once, for 0.3 s after the last one went, as the mouse crosses the gaps between icons. Every
+tooltip shows after 0.5 s, not 1 s (amends D-067). The tabs read Run, then Editor, and every
+level opens on its run, paused, as Fear's did (D-060): at the start, from Chapters, by Next
+level; its card, the title card or the level's, shows over that run, so only the card goes when
+it is dismissed; the editor is a tab or Esc away. The tutorial follows in its own PR.

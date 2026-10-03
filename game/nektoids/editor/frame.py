@@ -31,6 +31,7 @@ from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 
 LEAVE = {"editor": "edit", "run": "run"}  # what a tab asks for: the screen it names
+WARM_FRAMES = 18  # after a tooltip, the next one shows at once for this long: 0.3 s [frames]
 
 
 class Frame:
@@ -45,6 +46,7 @@ class Frame:
         self.info: object | None = None  # the row whose info box is open: a part, a tool...
         self.tip_target: object | None = None  # the bar's icon, or the other tab, under the mouse
         self.tip_frames = 0  # how long it has been there
+        self.tip_warm = 0  # a tooltip showed lately: the next shows at once, for so long [frames]
         self.message = ""  # the last refusal, until something succeeds
         self.lit: frozenset[str] = frozenset()  # what a tutorial step explains (D-050); main.py's
         self.gate: Callable[[Action], bool] | None = None  # what it lets through; main.py's
@@ -52,17 +54,22 @@ class Frame:
     @property
     def tooltip(self) -> object | None:
         """What a tooltip names now, once the mouse has rested on it long enough: an icon of the
-        bar, a main view's button, the other tab."""
+        bar, the other tab, or what the scene adds (`_tip_target`)."""
         return self.tip_target if self.tip_frames >= self.settings.tooltip_frames else None
 
     def frame_update(self) -> None:
         if self.tip_target is not None:
             self.tip_frames += 1
+        self.tip_warm = WARM_FRAMES if self.tooltip is not None else max(0, self.tip_warm - 1)
 
     def frame_track(self, pos: tuple[int, int]) -> None:
-        target = palette_target_at(self.layout, pos)
+        """The tooltip follows the mouse: after a rest on a new target; at once if one showed a
+        moment ago, as the mouse goes from icon to icon across the gaps between them (D-069)."""
+        target = self._tip_target(pos)
         if target != self.tip_target:
-            self.tip_target, self.tip_frames = target, 0
+            warm = target is not None and self.tip_warm > 0
+            self.tip_target = target
+            self.tip_frames = self.settings.tooltip_frames if warm else 0
 
     def frame_press(self, pos: tuple[int, int]) -> bool:
         """A click on the frame, taken: the fold arrow, the bar, a tab, an info disc, a row of
@@ -97,9 +104,9 @@ class Frame:
             return True
         return False
 
-    def toggle_chapters(self) -> None:
-        """Tab: Chapters opens, or folds if it is open (D-054)."""
-        self.open_drawer(None if self.layout.drawer is Drawer.CHAPTERS else Drawer.CHAPTERS)
+    def toggle_drawer(self, drawer: Drawer) -> None:
+        """A drawer's key: it opens, or folds if it is open (D-054, D-069)."""
+        self.open_drawer(None if self.layout.drawer is drawer else drawer)
 
     def open_drawer(self, drawer: Drawer | None) -> None:
         """Open a drawer, or fold the open one (None); what the main screen shows slides with it."""
@@ -145,6 +152,11 @@ class Frame:
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         raise NotImplementedError
+
+    def _tip_target(self, pos: tuple[int, int]) -> object | None:
+        """What a tooltip would name under `pos`: the bar's icon, the other tab; a scene may add
+        its own, as the editor adds the Wheel's icons (D-069)."""
+        return palette_target_at(self.layout, pos)
 
     def _slid(self, before: Layout, after: Layout) -> None:
         """What follows the main screen when it moves; nothing by default."""

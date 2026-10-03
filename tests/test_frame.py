@@ -1,6 +1,6 @@
 """The frame the editor and the run share (D-051, D-054). frame.py imports no pygame."""
 
-from nektoids.editor.frame import Frame
+from nektoids.editor.frame import WARM_FRAMES, Frame
 from nektoids.editor.layout import Drawer, Layout, LevelButton, Setting, make_layout
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.tutorial import REFUSAL
@@ -39,9 +39,9 @@ def test_an_icon_opens_its_drawer_and_folds_it_again_and_the_main_screen_follows
         (None, Drawer.PARTS),
         (Drawer.PARTS, None),
     ]
-    scene.toggle_chapters()
+    scene.toggle_drawer(Drawer.CHAPTERS)
     assert scene.layout.drawer is Drawer.CHAPTERS
-    scene.toggle_chapters()
+    scene.toggle_drawer(Drawer.CHAPTERS)
     assert scene.layout.drawer is None
     assert not scene.frame_press(centre(scene.layout.board_area))  # the scene's to take
 
@@ -96,6 +96,40 @@ def test_an_icons_tooltip_shows_once_the_mouse_has_rested_on_it():
     assert scene.tooltip is Drawer.NAVIGATOR
     scene.frame_track(centre(scene.layout.board_area))
     assert scene.tooltip is None and scene.tip_frames == 0
+
+
+def test_once_a_tooltip_shows_the_next_icons_shows_at_once_across_the_gap_between_them():
+    scene = Scene()  # D-069
+    scene.frame_track(icon(scene, Drawer.NAVIGATOR))
+    for _ in range(scene.settings.tooltip_frames):
+        scene.frame_update()
+    assert scene.tooltip is Drawer.NAVIGATOR
+    x, y = icon(scene, Drawer.NAVIGATOR)
+    scene.frame_track((x, y - 23))  # between two icons: nothing under the mouse
+    scene.frame_update()
+    scene.frame_track(icon(scene, Drawer.DIAGNOSTIC))
+    assert scene.tooltip is Drawer.DIAGNOSTIC  # at once
+    scene.frame_track(centre(scene.layout.board_area))
+    for _ in range(WARM_FRAMES):
+        scene.frame_update()
+    scene.frame_track(icon(scene, Drawer.FILES))
+    assert scene.tooltip is None  # rested long enough off the bar: the wait again
+
+
+def test_a_scenes_own_tooltip_waits_as_the_bars_do():
+    class Wheel(Scene):  # a scene adding a target of its own, as the editor adds its Wheel's icons
+        def _tip_target(self, pos):
+            return super()._tip_target(pos) or ("icon" if pos == (600, 600) else None)
+
+    scene = Wheel()  # D-069
+    scene.frame_track((600, 600))
+    for _ in range(scene.settings.tooltip_frames - 1):
+        scene.frame_update()
+    assert scene.tooltip is None  # the same rest as the bar's
+    scene.frame_update()
+    assert scene.tooltip == "icon"
+    scene.frame_track(icon(scene, Drawer.FILES))
+    assert scene.tooltip is Drawer.FILES  # and the same warmth, from it to the bar
 
 
 def test_the_other_tab_says_what_the_switch_says_and_this_one_nothing():

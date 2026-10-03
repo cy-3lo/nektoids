@@ -79,6 +79,7 @@ def _hole(surface: pygame.Surface, colour, rect: Rect, shape: str, width: int) -
         inset = width // 2
         tx, _, tw, th = shape.tab
         left, right, top, bottom = hole.left + inset, hole.right - 1 - inset, inset, hole.bottom - 1
+        tx = max(tx, left)  # the Run tab first, at the page's own left edge (D-069)
         points = [(tx, top), (tx + tw, top), (tx + tw, th), (right, th), (right, bottom)]
         points += [(left, bottom), (left, th), (tx, th)]
         if width:
