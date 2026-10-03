@@ -93,9 +93,8 @@ GLYPH = {
     "right-from-bracket": 0xF2F5,
     "location-dot": 0xF3C5,
     "stethoscope": 0xF0F1,
-    "life-ring": 0xF1CD,  # Hints, and its rows: the idea, the shadow (D-078)
-    "comment": 0xF075,
-    "ghost": 0xF6E2,
+    "life-ring": 0xF1CD,  # Hints (D-078)
+    "comment": 0xF075,  # each of its rows, a hint (D-088)
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.

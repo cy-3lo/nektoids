@@ -200,11 +200,12 @@ SETTING = {  # Settings' rows: their name, icon and what their info box says (D-
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),
 }
-HINT = (  # Hints' rows, in NAMES' order: their icon and what their info box says (D-078)
-    ("comment", "An idea to start from, a bit cryptic."),
-    ("puzzle-piece", "The parts one way to win takes."),
-    ("ghost", "One way to win, faint: here and on the board."),
+HINT = (  # Hints' rows, in NAMES' order: their icon, a speech bubble, and what their info box
+    ("comment", "An idea to start from, a bit cryptic."),  # says (D-078, D-088)
+    ("comment", "The parts one way to win takes."),
+    ("comment", "One way to win, faint: here and on the board."),
 )
+BUILD_IT = ("Go to", Drawer.TOOLS, "Tools or", Drawer.PARTS, "Parts")  # under the shadow (D-088)
 ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's name
     Tool.ADD: "Add",
     Tool.WIRE: "Wire",
@@ -931,6 +932,7 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
             screen.blit(fonts.small.render(line, True, TEXT), (x, y + n * HINT_LINE))
     if layout.shadow_picture is not None and hints.board is not None:
         _draw_shadow(screen, hints.board, layout.shadow_picture)
+        _draw_with_icons(screen, fonts, BUILD_IT, layout.shadow_line)
     note = None
     if hints is None:
         note = "No hints in the sandbox."
@@ -940,6 +942,26 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         rows = layout.hint_rows
         top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else DIAGNOSTIC_MAP[1]
         draw_note(screen, fonts, note, (DIAGNOSTIC_MAP[0], top), DIAGNOSTIC_MAP[2])
+
+
+def _draw_with_icons(
+    screen: pygame.Surface, fonts: Fonts, parts: tuple[str | Drawer, ...], rect
+) -> None:
+    """A line of words and drawers' icons, as the bar draws them, centred in `rect`."""
+    gap, size = 6, 14  # between the parts; an icon's height [px]
+    words = [fonts.small.render(p, True, TEXT) if isinstance(p, str) else None for p in parts]
+    width = sum(w.get_width() if w else size for w in words) + gap * (len(parts) - 1)
+    x, y, w, h = rect
+    left, middle = x + (w - width) / 2, y + h / 2
+    for part, word in zip(parts, words, strict=True):
+        if word is None:
+            fonts.icons.draw(
+                screen, DRAWER_ICON[part], (round(left + size / 2), round(middle)), size, TEXT
+            )
+            left += size + gap
+        else:
+            screen.blit(word, word.get_rect(midleft=(round(left), round(middle))))
+            left += word.get_width() + gap
 
 
 def _draw_shadow(screen: pygame.Surface, board: Board, rect) -> None:

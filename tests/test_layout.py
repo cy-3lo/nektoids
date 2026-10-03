@@ -406,7 +406,11 @@ def test_hints_lists_its_rows_each_taken_ones_lines_under_it_and_the_shadow_last
     x, y, w, h = taken.shadow_picture
     assert w == h == DRAWER_WIDTH - 32 and rows[2][1] + rows[2][3] < y  # a square, under it
     assert y + h < SCREEN[1] and contains(taken.drawer_area, (x, y))
-    assert make_layout(Drawer.HINTS, hint_lines=(1, 2, 0)).shadow_picture is None  # hidden
+    lx, ly, lw, lh = taken.shadow_line  # under the picture: where to build it (D-088)
+    assert y + h < ly and ly + lh < SCREEN[1] and lh == HINT_LINE
+    assert contains(taken.drawer_area, (lx, ly)) and contains(taken.drawer_area, (lx + lw - 1, ly))
+    hidden = make_layout(Drawer.HINTS, hint_lines=(1, 2, 0))
+    assert hidden.shadow_picture is None and hidden.shadow_line is None
 
 
 def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_arena():
