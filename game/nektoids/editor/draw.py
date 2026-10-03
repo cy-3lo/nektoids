@@ -182,7 +182,7 @@ SETTING = {  # Settings' rows: their name, icon and what their info box says (D-
     Setting.TUTORIAL: (
         "Tutorial",
         "graduation-cap",
-        "Fear again, from its first step, on a fresh board.",
+        "Fear's introduction again, from its first step.",
     ),
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),

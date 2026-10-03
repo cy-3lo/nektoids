@@ -82,7 +82,6 @@ from nektoids.editor.layout import (
     zoom_bar_at,
     zoom_button_at,
 )
-from nektoids.editor.tutorial import guided
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
 from nektoids.levels.arenas import arenas
@@ -193,12 +192,11 @@ def test_parts_list_scrolls_when_it_does_not_fit_and_its_rows_answer_only_where_
     assert top == y and scroll_thumb(bottom)[1] + length == y + h
 
 
-def test_a_guided_levels_parts_fit_with_the_cell_open_so_its_steps_rows_show():
-    for level in arenas():
-        if guided(level.tutorial):
-            board = level.new_board()
-            kinds = frozenset(kind for kind in Kind if board.total(kind) != 0)
-            assert make_layout(kinds=kinds).scroll_max == 0, level.title
+def test_the_first_levels_parts_fit_with_the_cell_open_so_a_steps_rows_would_show():
+    for level in arenas()[:2]:  # Fear and Aggression, whose old tutorials showed Parts' rows
+        board = level.new_board()
+        kinds = frozenset(kind for kind in Kind if board.total(kind) != 0)
+        assert make_layout(kinds=kinds).scroll_max == 0, level.title
 
 
 def test_parts_lists_sensors_then_actuators_then_operators_and_the_numbers_follow():

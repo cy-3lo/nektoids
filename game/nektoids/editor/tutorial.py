@@ -9,10 +9,12 @@ or a list of them, which the overlay leaves lit while it dims the rest: an area 
 until a part is placed in a cell, a part faces a way, a tool is taken, a wire runs from one cell
 to another, the run starts, or the run is won. A step with no target is a hint: nothing is
 dimmed. A step with nothing to wait for waits for Next, and only such a step has a Next: one
-that waits for an action moves on when it is done, never before (D-048). The first two levels'
-tutorials lead (D-074); the later levels have none, their hints asked for in the Hints drawer
-(`hints.py`, D-078). Skip ends a tutorial; a place chosen in Chapters
-starts every tutorial again from its beginning (D-048). On a step that leads and waits for Next,
+that waits for an action moves on when it is done, never before (D-048). Only Fear has one, an
+introduction that builds nothing and shows once a session (D-079); every level's hints are asked
+for in the Hints drawer (`hints.py`, D-078). What a tutorial that builds needs, the waits for a
+part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, used by no level
+now and tested on the tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial;
+Settings' Tutorial starts Fear's again. On a step that leads and waits for Next,
 any key or click moves on, but a click on Skip. While a step leads, only the means to what it
 waits for go through (`allows`); the editor and the run ask before they act. Pure Python, no
 pygame: what the step waits for is read from a `Context`, the screen's geometry from the
@@ -166,8 +168,8 @@ class Tutorial:
         self.index = len(self.steps)
 
     def restart(self) -> None:
-        """A place chosen in Chapters: from the first step again, finished or skipped, `follow`
-        passing over what the board already holds."""
+        """From the first step again, finished or skipped, `follow` passing over what the board
+        already holds."""
         self.index = 0
 
     def follow(self, context: Context) -> None:
@@ -227,12 +229,6 @@ def _conditions(step: Step | None) -> list:
 def _shows(step: Step | None) -> list:
     shows = [] if step is None or step.show is None else step.show
     return shows if isinstance(shows, list) else [shows]
-
-
-def guided(data: Mapping | None) -> bool:
-    """Whether a level's tutorial data leads somewhere, rather than only hinting: such a level
-    starts afresh, board and all, each time a place is chosen in Chapters (D-050, D-054)."""
-    return data is not None and any(step.get("show") for step in data["steps"])
 
 
 def allows(step: Step | None, action: Action) -> bool:

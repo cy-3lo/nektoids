@@ -1,5 +1,10 @@
 """Tutorials and hints (D-039). tutorial.py imports no pygame."""
 
+import json
+from pathlib import Path
+
+import pytest
+
 from nektoids.editor.layout import (
     SCREEN,
     Drawer,
@@ -24,7 +29,6 @@ from nektoids.editor.tutorial import (
     answer,
     box_rect,
     drawer_for,
-    guided,
     is_area,
     met,
     next_rect,
@@ -54,7 +58,13 @@ def layout_on(screen: Screen, step=None):
 
 
 LEVELS = {level.title: level for level in arenas()}
-FEAR = Tutorial.from_dict(LEVELS["Fear"].tutorial).steps
+# The tutorials Fear and Aggression had until D-079, which built the board: the machinery they
+# need stays in tutorial.py, used by no level now, and is tested on them.
+BUILT = {
+    name: json.loads((Path(__file__).parent / "data" / f"{name}-tutorial.json").read_text())
+    for name in ("fear", "aggression")
+}
+FEAR = Tutorial.from_dict(BUILT["fear"]).steps
 FEAR_KINDS = frozenset({Kind.EYE, Kind.THRUSTER})  # what Fear hands out
 HINT = Tutorial((), (Step(("A step with no target hints: it dims nothing.",)),))
 
@@ -109,9 +119,14 @@ def on_screen(rect):
     return 0 <= x and x + w <= SCREEN[0] and 0 <= y and y + h <= SCREEN[1]
 
 
-def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
-    for level in arenas()[:2]:  # Fear and Aggression; the others' hints are asked for (D-078)
-        tutorial = Tutorial.from_dict(level.tutorial)
+def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
+    fear, aggression = LEVELS["Fear"], LEVELS["Aggression"]
+    for level, data in (
+        (fear, fear.tutorial),
+        (fear, BUILT["fear"]),
+        (aggression, BUILT["aggression"]),
+    ):
+        tutorial = Tutorial.from_dict(data)
         context = Context(level.new_board(), Tool.ADD, Screen.EDIT)
         for step in tutorial.steps:
             assert step.say and all(len(line) <= 48 for line in step.say)
@@ -122,16 +137,41 @@ def test_every_shipped_tutorial_reads_and_every_step_can_be_shown_and_waited_for
                 assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
 
 
-def test_the_first_two_levels_lead_and_the_later_ones_have_no_tutorial():
-    *first, love, shadows = arenas()  # Fear and Aggression lead (D-074)
-    for level in first:
-        assert any(step.show for step in Tutorial.from_dict(level.tutorial).steps)
-    assert love.tutorial is None and shadows.tutorial is None  # their hints, in Hints (D-078)
+def test_only_fear_has_a_tutorial_an_introduction_that_builds_nothing():
+    assert [level.title for level in arenas() if level.tutorial is not None] == ["Fear"]  # D-079
+    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    assert tutorial.ghosts == () and tutorial.ghost_wires == ()
+    waits = [step.until for step in tutorial.steps if step.until]
+    assert waits == [{"screen": "edit"}, {"drawer": "hints"}]  # nothing placed, turned or wired
+
+
+def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_as_hints_opens():
+    level = LEVELS["Fear"]
+    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+
+    def context(screen, drawer=None):
+        return Context(board, Tool.ADD, screen, None, 0.0, drawer)
+
+    for shown in ({"run": "swimmer"}, {"run": "objectives"}):  # in the run: any key goes on
+        tutorial.follow(context(Screen.RUN))
+        assert tutorial.step.show == shown and tutorial.opening
+        tutorial.next()
+    tutorial.follow(context(Screen.RUN))
+    assert {"tab": "editor"} in tutorial.step.show  # waits for the Editor
+    tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
+    for shown in ({"page": "editor"}, {"area": "bar"}):  # Next, or Enter
+        assert tutorial.step.show == shown and not tutorial.opening
+        tutorial.next()
+    assert tutorial.step.show == {"drawer": "hints"} and drawer_for(tutorial.step) is None
+    tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
+    assert tutorial.step is not None  # the player opens Hints, by its icon or ?
+    tutorial.follow(context(Screen.EDIT, Drawer.HINTS))
+    assert tutorial.step is None  # over: the hints may be taken
 
 
 def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     level = LEVELS["Fear"]
-    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    tutorial, board = Tutorial.from_dict(BUILT["fear"]), level.new_board()
 
     def context(tool=Tool.ADD, screen=Screen.EDIT, outcome=None, time=0.0):
         return Context(board, tool, screen, outcome, time)
@@ -209,7 +249,7 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     assert contains(LAYOUT.board_area, hint[:2]) and on_screen(hint)
     nx, ny, nw, nh = next_rect(box)
     assert contains(box, (nx, ny)) and contains(box, (nx + nw - 1, ny + nh - 1))
-    for step in Tutorial.from_dict(LEVELS["Fear"].tutorial).steps:  # never over what it shows
+    for step in Tutorial.from_dict(BUILT["fear"]).steps:  # never over what it shows
         for screen in (Screen.EDIT, Screen.RUN):
             layout = layout_on(screen, step)
             targets = target_rects(step.show, screen, layout, VIEW, wheel_for(step, layout))
@@ -227,7 +267,7 @@ def overlap(a, b):
 
 def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds():
     level = LEVELS["Fear"]
-    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    tutorial, board = Tutorial.from_dict(BUILT["fear"]), level.new_board()
     tutorial.skip()
     assert tutorial.step is None
     board.place(Kind.EYE, (2, -1))  # built while the tutorial was off
@@ -329,10 +369,10 @@ def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_besid
     assert not _crosses((700, 20, 100, 60), menu, cell)  # beyond the end
 
 
-def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_just_done():
-    level = LEVELS["Fear"]
+@pytest.mark.parametrize("data", [LEVELS["Fear"].tutorial, BUILT["fear"]])
+def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_just_done(data):
     view = centred_view(LAYOUT)
-    tutorial = Tutorial.from_dict(level.tutorial)
+    tutorial = Tutorial.from_dict(data)
     for index in range(len(tutorial.steps)):  # each step, as it shows once the one before is done
         tutorial.index = index
         step, done = tutorial.step, tutorial.before
@@ -359,7 +399,7 @@ def grown(rect, by):
 
 
 def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_left_undone():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     for _ in range(2):  # the swimmer, Objectives
         assert tutorial.waits_for_next
         tutorial.next()
@@ -374,7 +414,7 @@ def test_next_moves_on_only_from_a_step_that_waits_for_it_never_past_an_action_l
 
 
 def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     box = (300, 300, 360, 100)
     skip, nxt = skip_rect(box), next_rect(box)
     centre = lambda r: (r[0] + r[2] // 2, r[1] + r[3] // 2)  # noqa: E731
@@ -395,14 +435,8 @@ def test_a_step_that_leads_and_waits_for_next_moves_on_at_any_key_or_click_but_o
     assert answer(hint, box, centre(nxt)) == "next"
 
 
-def test_the_first_two_levels_are_guided_and_so_start_afresh_at_the_map():
-    fear, aggression, *later = arenas()  # D-074
-    assert guided(fear.tutorial) and guided(aggression.tutorial)
-    assert not any(guided(level.tutorial) for level in later) and not guided(None)
-
-
 def test_a_step_that_explains_names_its_panels_and_one_that_asks_for_an_action_none():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     expected = {0: {"swimmer"}, 1: {"objectives"}, TAB: set(), BOARD: set(), TOOLS: {"tools"}}
     expected |= {THRUSTER: set(), EYE: set(), RUN: set(), PLAY: set(), INSIDE: {"inside"}}
     for index, names in expected.items():
@@ -426,14 +460,14 @@ def test_a_step_opens_the_drawer_its_targets_are_in():
 
 
 def test_a_leading_step_keeps_the_board_on_screen():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     tutorial.index = EYE  # an Eye to place on its cell
     assert not allows(tutorial.step, Action("view"))  # no Run preview while it leads (D-058)
     assert allows(None, Action("view"))
 
 
 def test_fear_sends_the_player_from_the_run_to_the_editor_by_its_tab():
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)  # every level opens on its run
+    tutorial = Tutorial.from_dict(BUILT["fear"])  # every level opens on its run
     ways = tutorial.steps[TAB].show  # the Editor tab and the switch at the bar's foot
     switch = dict(RUN_LAYOUT.level_buttons)[LevelButton.EDIT]
     assert target_rects(ways, Screen.RUN, RUN_LAYOUT, VIEW) == [
@@ -458,7 +492,7 @@ def test_the_runs_page_is_outlined_with_its_tab_and_the_box_keeps_under_its_head
 def test_a_step_that_asks_for_an_action_lights_its_cells_and_one_that_explains_none():
     from nektoids.editor.tutorial import focus_cells
 
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    tutorial = Tutorial.from_dict(BUILT["fear"])
     tutorial.index = EYE  # an Eye onto (2, -1)
     assert focus_cells(tutorial) == {(2, -1)}  # filled in the accent, nothing dimmed (D-063)
     tutorial.index = WIRE  # the upper eye to the upper thruster
@@ -592,10 +626,10 @@ def test_a_tutorial_may_carry_its_models_wires():
         "steps": [{"say": ["x"]}],
     }
     assert Tutorial.from_dict(data).ghost_wires == (((-1, -1), (1, 1)),)  # D-074
-    assert Tutorial.from_dict(LEVELS["Fear"].tutorial).ghost_wires == ()
+    assert Tutorial.from_dict(BUILT["fear"]).ghost_wires == ()
 
 
-AGGRESSION = Tutorial.from_dict(LEVELS["Aggression"].tutorial)
+AGGRESSION = Tutorial.from_dict(BUILT["aggression"])
 
 
 def test_aggressions_model_is_the_crossed_board_that_wins_it():
@@ -613,7 +647,7 @@ def test_aggressions_model_is_the_crossed_board_that_wins_it():
 
 def test_the_aggression_tutorial_moves_on_as_the_player_builds_tries_and_runs_it():
     tutorial, board = (
-        Tutorial.from_dict(LEVELS["Aggression"].tutorial),
+        Tutorial.from_dict(BUILT["aggression"]),
         LEVELS["Aggression"].new_board(),
     )
 

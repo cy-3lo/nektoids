@@ -1,0 +1,71 @@
+{
+  "ghosts": [
+    {"kind": "eye", "cell": [-1, -1], "facing": "NE"},
+    {"kind": "eye", "cell": [-2, 1], "facing": "SE"},
+    {"kind": "thruster", "cell": [2, -1], "facing": "E"},
+    {"kind": "thruster", "cell": [1, 1], "facing": "E"}
+  ],
+  "ghost_wires": [{"from": [-1, -1], "to": [1, 1]}, {"from": [-2, 1], "to": [2, -1]}],
+  "steps": [
+    {
+      "show": [{"run": "swimmer"}, {"run": "objectives"}],
+      "say": ["Here the swimmer must swim to the light and", "touch it, as Objectives says."]
+    },
+    {
+      "show": [{"tab": "editor"}, {"level": "edit"}],
+      "until": {"screen": "edit"},
+      "say": [
+        "Fear turned away from the light. To charge it,",
+        "the same parts are wired the other way round:", "click the Editor tab."
+      ]
+    },
+    {
+      "show": [{"cell": [-1, -1]}, {"cell": [-2, 1]}, {"cell": [2, -1]}, {"cell": [1, 1]}],
+      "until": [
+        {"placed": {"kind": "eye", "cell": [-1, -1]}},
+        {"facing": {"cell": [-1, -1], "facing": "NE"}},
+        {"placed": {"kind": "eye", "cell": [-2, 1]}},
+        {"facing": {"cell": [-2, 1], "facing": "SE"}},
+        {"placed": {"kind": "thruster", "cell": [2, -1]}},
+        {"placed": {"kind": "thruster", "cell": [1, 1]}},
+        {"wired": {"from": [-1, -1], "to": [1, 1]}},
+        {"wired": {"from": [-2, 1], "to": [2, -1]}}
+      ],
+      "say": [
+        "Build what the shadows show: two eyes looking",
+        "ahead, two thrusters, and each eye wired to the",
+        "thruster on the other side, the wires crossed."
+      ]
+    },
+    {
+      "show": {"drawer": "diagnostic"},
+      "until": {"drawer": "diagnostic"},
+      "say": ["Before you run it, try it: open Diagnostic, the", "stethoscope in the bar, or press D."]
+    },
+    {
+      "show": {"drawer": "diagnostic"},
+      "say": [
+        "The main screen runs your board where the",
+        "swimmer stands on the map. Drag it, the light",
+        "to one side: that eye reads more, drives the",
+        "thruster across, and the swimmer turns to it."
+      ]
+    },
+    {
+      "show": [{"tab": "run"}, {"level": "run"}],
+      "until": {"screen": "run"},
+      "say": ["Now run it: the Run tab, Run at the bottom", "left, or Space."]
+    },
+    {
+      "show": [{"run": "play"}, {"run": "arena"}],
+      "until": {"outcome": "won"},
+      "say": ["Press Play, or Space: it charges the light."]
+    },
+    {
+      "say": [
+        "Crossed, the wires turn the swimmer toward the",
+        "light: that is aggression. Next level when you", "are ready."
+      ]
+    }
+  ]
+}

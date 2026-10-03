@@ -49,7 +49,6 @@ from nektoids.editor.tutorial import (
     box_rect,
     drawer_for,
     focus_cells,
-    guided,
     panels,
     shows_wheel,
     target_rects,
@@ -117,20 +116,20 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
 
 
 def choose_place(index: int) -> None:
-    """A place picked in Chapters, under its card. A guided level starts afresh, its board, its
-    undo history and its tutorial; the others keep their boards (D-048, D-050, D-054). Hints
-    taken stay taken (D-078). The editor left goes back to Tools, as an editor opens (D-068)."""
+    """A place picked in Chapters, under its card. Every level keeps its board, its undo history,
+    the hints taken (D-078) and where its tutorial has got to: Fear's shows once a session
+    (D-079). The editor left goes back to Tools, as an editor opens (D-068)."""
     if router.index in editors:
         editors[router.index].open_drawer(Drawer.TOOLS)
-    for index_, level in enumerate(levels):
-        if guided(level.tutorial):
-            router.reset(index_)
-            editors.pop(index_, None)
-            tutorials.pop(index_, None)
-            opened_for.pop(index_, None)
-    for guide in tutorials.values():
-        guide.restart()
     router.open(index)
+
+
+def replay_tutorial() -> None:
+    """Settings' Tutorial: Fear's introduction again, from its first step, on Fear as the player
+    left it (D-079)."""
+    tutorials.pop(0, None)
+    opened_for.pop(0, None)
+    choose_place(0)
 
 
 def tutorial_press(guide: Tutorial, event: pygame.event.Event, scene) -> str | None:
@@ -264,7 +263,7 @@ async def main() -> None:
             elif playing.request == "edit":
                 router.edit()
             elif playing.request == "tutorial":  # Settings: Fear's tutorial again
-                choose_place(0)
+                replay_tutorial()
             if playing.chosen is not None:  # a place picked in Chapters
                 choose_place(playing.chosen)
             if playing.request is not None or playing.chosen is not None:
@@ -275,7 +274,7 @@ async def main() -> None:
                 router.run()
                 playing = play(run_drawer)
             elif asked == "tutorial":  # Settings: Fear's tutorial again
-                choose_place(0)
+                replay_tutorial()
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
                 choose_place(chosen)
