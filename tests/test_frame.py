@@ -62,8 +62,8 @@ def test_chapters_opens_a_place_that_is_open_and_says_why_one_is_locked():
     scene = Scene(Drawer.CHAPTERS)
     scene.chapters = (
         ChapterRow(0, "1.1", "Fear", "", "won", None, False),
-        ChapterRow(1, "1.2", "Love", "", "open", None, True),
-        ChapterRow(2, "1.3", "One light", "", "locked", None, False),
+        ChapterRow(1, "1.2", "Aggression", "", "open", None, True),
+        ChapterRow(2, "1.3", "Love", "", "locked", None, False),
     )
     rows = dict(scene.layout.chapter_rows)
     scene.frame_press(centre(rows[2]))
