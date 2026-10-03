@@ -13,6 +13,14 @@ only hint.
       place? Its objective is to be chosen: stay within a ring round the light for T s, or
       circle it N times.
 - [ ] The real level: to design, with a winner pinned with margin (D-004).
+- [ ] Simpler tutorials, and three hints for a level, each asked for in turn: an idea, a bit
+      cryptic ("cross the wires"); the parts it takes ("one eye, one thruster, one Source, one
+      Diff"); the shadow of one solution, its parts and wires outlined, as Aggression's tutorial
+      already draws them (D-074).
+      - Which level first? The examples mix Aggression's idea with the parts of Love's smallest
+        winner (D-044).
+      - Simpler how: fewer cards than Fear's 16 (D-071)?
+      - Where is a hint asked for, and does taking one show on the score?
 
 ## 5. Ship
 
@@ -23,12 +31,12 @@ only hint.
 
 ## 6. Small things
 
-- [ ] Click-to-inspect: draw the swimmer's steering vector (brief §1).
-- [ ] F2's W (waveform) clashes with the editor's Wire (D-021).
 - [ ] `eye_rates` timed natively only; measure it under WASM (D-019).
 - [ ] The names: itch.io search, Google and TMview (classes 9 and 41) to check by hand (D-006).
 - [ ] In headless Chrome the first click after a key press is lost: on Fear's first drag step,
       Skip takes two clicks there. Check it in a real browser (seen 2026-10-02).
+- [ ] The light's icon in the run, a sun today (`SUN`, `arena_draw.py`): a bulb, or another.
+      Options are on §10's art sheet. The bulb is already the run's Rays button.
 
 ## 7. The editor's hand, for a finger as for a mouse
 
@@ -36,6 +44,11 @@ From Camille's notes (`ebc4abb`). The Wheel (D-068, D-069) does the rest: a clic
 shows what can be done there, a click on a part arms Wire, a drag moves a part, or draws a
 wire with Wire chosen (D-072).
 
+- [ ] The Wheel seen to turn, when it holds more than five icons (D-068): each step slides the
+      icons along the rim and the piles in 0.1 s (6 frames), then rests, one click every 0.5 s
+      while the mouse rests on a pile. Today it jumps, once every 24 frames (`PILE_FRAMES`).
+      The keys and the mouse wheel turn it the same way.
+      - Several quick steps, by keys or the mouse wheel: queued, or the slide goes straight on?
 - [ ] Drag a part off the body, or onto Parts, to delete it.
       - How far must a finger move before a tap becomes a drag?
 - [ ] Touch: no hover and no keys. The tooltips (D-025) and L, R, Space, Esc and 0 need an
@@ -62,6 +75,8 @@ is open (D-069); in the Run it shows the level. Drawers never take the main scre
 - [ ] Sound and Music in Settings, once there is sound (D-054).
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
+- [ ] A part's entry, opened by its (i), shows the part at work: a small circuit of its own,
+      wires and beads running, ×2 taking one bead and giving two.
 
 ## 9. A board as text (its own PR)
 
@@ -75,4 +90,21 @@ is open (D-069); in the Run it shows the level. Drawers never take the main scre
         line is refused (or even corrected) rather than loading another board. A version mark.
       - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Wait
         and see on the web build.
-      - The same mechanism as the level passkeys (§0): a word that brings a state back.
+      - The same mechanism as the level passkeys (D-075): a word that brings a state back.
+
+## 10. The body at work, seen: what it reads, how it pushes, where it goes
+
+The brief's steering vector (§1), in the run and on Diagnostic's map. Colours, sizes and
+animation are chosen from an art sheet first; then a decision.
+
+- [ ] The parts on the swimmer in the run: each eye's face and each thruster's back, the
+      board's teal bands, at their mounts, turning with it.
+- [ ] Thrust as flames: each thruster's back throws out scrambled pixels, as many and as far
+      as its rate. Asked in accent2, which today marks only what goes wrong (D-049).
+      - Frozen while paused and the same on a replay: seeded at setup, a function of the
+        run's time, as the rays are.
+- [ ] Light as headlights: a cone out of each eye's face, as bright as its reading.
+- [ ] Motion: a segment along the velocity, as long as the speed, and an arc round the body,
+      as long as the spin. Both come from the thrust (D-022), so Diagnostic's held probe shows
+      where it would go.
+      - On Diagnostic's map the body is 7–10 px across: which marks survive there?
