@@ -148,9 +148,10 @@ from nektoids.editor.probe import level_view, ring_radii
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
-from nektoids.graph.board import Board, Category, Kind, Refused
+from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.graph.kinds import Category
 from nektoids.graph.network import label
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 

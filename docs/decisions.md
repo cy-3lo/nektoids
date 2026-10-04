@@ -1454,3 +1454,21 @@ to any part of the format, the board, hints and tutorial included, raises the ve
 `from_dict` then upgrades the older version instead of refusing it. The keys inside the board,
 hints and tutorial are not checked yet; saved boards get a version of their own with saving
 (todo §10).
+
+**D-202 — 2026-10-04 — One table of part kinds, `SPEC` in `graph/kinds.py`; each kind's dynamics is a law, a state equation and an output (`graph/laws.py`). Amends D-017.**
+A kind's facts were spread over a dozen tables and if-chains in `graph/` and `editor/`, and a
+kind left out of `GAIN` was taken for a sensor and held at 0. Each kind is now one entry:
+category, letter, name, info text, law, facing, wire limits; `tests/test_kinds.py` checks every
+entry whole, and the old tables are views of it. A kind's dynamics is no longer a gain and input
+signs, which spell only g·|Σ ±x|, but a law: a state equation dy/dt = f(x, y), x the rates on
+its wires in, and an output o = g(y), which its wires carry, shared. The output depends on the
+state alone, so a tick reads every output, then steps every state, and a loop needs no solve.
+Each law owns its explicit step, so its arithmetic is fixed, and says the longest tick it is
+stable for. Every jam part relaxes, τ dy/dt = F(x) − y, o = y, with D-017's τ and F a scaled sum
+or |a − b|: the run is bit-identical. A tank, T dh/dt = in − h, is the same law with τ = 4 s; a
+part whose output is not its state, a bucket with a hole, takes a law of its own; a part with
+two states is a decision. Wires come into a node sorted by the part that feeds them, so a valve's
+control needs ports first (stage 2). A tick costs about 1.8 times what it did, a few numpy calls
+per law; laws of one type can step together if a later stage needs it. Where a sensor's rate
+comes from and what an actuator does to the world stay outside the law: the todo's item on
+senses and actions.
