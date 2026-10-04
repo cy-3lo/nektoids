@@ -11,7 +11,7 @@ from nektoids.graph.board import (
     can_pass,
     complexity,
 )
-from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, offset_rect
+from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, hex_disc, offset_rect
 from nektoids.graph.kinds import Category
 
 RECT = offset_rect(9, 7)  # a 9 x 7 zone for most tests
@@ -510,6 +510,66 @@ def test_data_no_board_could_hold_is_an_error():
     data["parts"] = [{"kind": "eye", "cell": [99, 99], "facing": "E", "locked": False}]
     with pytest.raises(ValueError, match="outside the zone"):
         Board.from_dict(data)
+
+
+def detour():
+    """An eye and a thruster on row 3, their wire drawn round a Double then deleted: the wire
+    keeps its detour, which the router would not take now."""
+    board = Board(RECT)
+    eye, thruster = board.place(Kind.EYE, (0, 3)), board.place(Kind.THRUSTER, (4, 3))
+    block = board.place(Kind.DOUBLE, (2, 3))
+    wire = board.connect(eye.id, thruster.id)
+    board.remove_node(block.id)
+    assert wire.path != board.route(eye.cell, thruster.cell)  # straight along the row, now
+    return board, wire
+
+
+def test_a_board_comes_back_with_its_wires_on_their_saved_paths_even_off_the_router():
+    board, wire = detour()
+    loaded = Board.from_dict(json.loads(json.dumps(board.to_dict())))  # D-204
+    assert loaded.wires == board.wires and loaded.wires[0].path == wire.path
+
+
+def test_a_wire_saved_without_its_path_is_routed():
+    board, _ = detour()
+    data = board.to_dict()
+    del data["wires"][0]["path"]
+    loaded = Board.from_dict(data)
+    assert loaded.wires[0].path == board.route((0, 3), (4, 3))
+
+
+@pytest.mark.parametrize(
+    ("path", "reason"),
+    [
+        ([[0, 3], [1, 3], [2, 3], [3, 3]], "does not join its ends"),
+        ([[0, 3], [2, 3], [3, 3], [4, 3]], "jumps a cell"),
+        ([[0, 3], [1, 3], [2, 3], [3, 3], [4, 3]], None),  # the straight one: allowed
+    ],
+)
+def test_a_saved_path_is_checked_against_the_board(path, reason):
+    board, _ = detour()
+    data = board.to_dict()
+    data["wires"][0]["path"] = path
+    if reason is None:
+        assert Board.from_dict(data).wires[0].path == tuple(map(tuple, path))
+    else:
+        with pytest.raises(ValueError, match=reason):
+            Board.from_dict(data)
+
+
+def test_a_saved_path_may_not_cross_a_part_leave_the_zone_or_take_another_wires_edge():
+    board = Board(hex_disc(1))  # seven cells round (0, 0)
+    eye, other = board.place(Kind.EYE, (-1, 0)), board.place(Kind.EYE, (0, -1))
+    thruster = board.place(Kind.THRUSTER, (1, 0))
+    first = board.connect(eye.id, thruster.id)
+    assert first.path == ((-1, 0), (0, 0), (1, 0))  # through the centre, by its W and E edges
+    for path, reason in (
+        (((0, -1), (-1, 0), (0, 0), (1, 0)), "its path crosses a part"),
+        (((0, -1), (1, -2), (1, -1), (1, 0)), "its path leaves the zone"),
+        (((0, -1), (0, 0), (1, 0)), "its path takes an edge another wire has"),  # E of (0, 0)
+    ):
+        assert board.connect(other.id, thruster.id, path) == Refused(reason)
+    assert board.connect(other.id, thruster.id, ((0, -1), (1, -1), (1, 0))).path[1] == (1, -1)
 
 
 def a_vehicle(stock):
