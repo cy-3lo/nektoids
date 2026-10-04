@@ -69,6 +69,12 @@ DIAMOND = _to_area([(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)])
 # Thruster: a square, its front corners cut so the front is a point of 150° that ends on the
 # square's front edge: the outline stays square, 1:1. Its face is its back, where it pushes from.
 SQUARE_POINT = _to_area([(-_S, -_S), (_SHOULDER, -_S), (_S, 0.0), (_SHOULDER, _S), (-_S, _S)])
+SHAPES = {  # a part's outline by the name the table of kinds gives it (D-202)
+    "eye disc": EYE_DISC,
+    "disc": DISC,
+    "diamond": DIAMOND,
+    "square point": SQUARE_POINT,
+}
 
 
 def body_circle(zone: list[Cell], size: float, origin: Point) -> tuple[Point, float]:

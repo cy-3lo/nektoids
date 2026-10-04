@@ -1,6 +1,8 @@
 """The table of kinds (D-202): one entry per kind, each whole. kinds.py imports no pygame."""
 
 from nektoids.editor.devdrive import DT
+from nektoids.editor.geometry import SHAPES
+from nektoids.editor.glyphs import GLYPH, POINTS_TO
 from nektoids.editor.layout import Tool
 from nektoids.graph.board import Kind
 from nektoids.graph.kinds import SPEC, Category
@@ -42,3 +44,11 @@ def test_limits_on_wires_are_counts_and_only_parts_that_turn_have_a_facing():
 def test_no_kind_is_spelled_as_a_tool():
     # A tutorial's data names parts and tools alike (`editor/tutorial.py`): never the same word.
     assert not {kind.value for kind in Kind} & {tool.value for tool in Tool}
+
+
+def test_every_part_is_drawn_with_an_outline_and_an_icon_the_font_has():
+    for kind in Kind:
+        assert kind.spec.shape in SHAPES, kind
+        assert kind.spec.icon is None or kind.spec.icon in GLYPH, kind
+        if kind.spec.icon in POINTS_TO:  # an icon that points must belong to a part that turns
+            assert kind.default_facing is not None, kind

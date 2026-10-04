@@ -4,7 +4,8 @@ know of a part, in one table, `SPEC`, which a test checks whole.
 An entry says where the part stands (sensor, operator, actuator), how it is wired (inputs and
 outputs at most), where it points until turned (D-009), its law, what it does to the rates
 through it (`laws.py`; a sensor has none, its rate is given), and how the player reads it: a
-letter for the panels, a name and a paragraph for its info box (D-036, D-094). The table's order
+letter for the panels, a name and a paragraph for its info box (D-036, D-094), the icon on it
+and its outline, each by name, for the editor to draw. The table's order
 is the order of the parts within each group of the menu (D-069). Pure Python, no pygame.
 """
 
@@ -77,6 +78,8 @@ class KindSpec:
     facing: int | None = None  # where it points until turned; None: it has no direction
     max_inputs: int | None = None  # None: any number
     max_outputs: int | None = None  # None: any number
+    icon: str | None = None  # drawn on it, by its name in `editor/glyphs.py`; None: blank
+    shape: str = "diamond"  # its outline, by its name in `editor/geometry.py`'s SHAPES
 
 
 SPEC: dict[Kind, KindSpec] = {
@@ -87,15 +90,31 @@ SPEC: dict[Kind, KindSpec] = {
         "Senses the light that falls on its flat face: more from a light near it and in front "
         "of it.",
         facing=E,
+        icon="eye",
+        shape="eye disc",
     ),
     Kind.SOURCE: KindSpec(
-        Category.SENSOR, "S", "Source", "Senses nothing: it sends a steady signal."
+        Category.SENSOR,
+        "S",
+        "Source",
+        "Senses nothing: it sends a steady signal.",
+        shape="disc",  # a blank sensor: it senses nothing
     ),
     Kind.DOUBLE: KindSpec(
-        Category.OPERATOR, "D", "Double", "Sends twice what comes in.", Relax(Scaled(2.0))
+        Category.OPERATOR,
+        "D",
+        "Double",
+        "Sends twice what comes in.",
+        Relax(Scaled(2.0)),
+        icon="angles-up",
     ),
     Kind.HALVE: KindSpec(
-        Category.OPERATOR, "H", "Halve", "Sends half what comes in.", Relax(Scaled(0.5))
+        Category.OPERATOR,
+        "H",
+        "Halve",
+        "Sends half what comes in.",
+        Relax(Scaled(0.5)),
+        icon="angles-down",
     ),
     Kind.SUM: KindSpec(
         Category.OPERATOR,
@@ -105,6 +124,7 @@ SPEC: dict[Kind, KindSpec] = {
         Relax(Scaled(1.0)),
         max_inputs=2,
         max_outputs=1,
+        icon="plus",
     ),
     Kind.DIFFERENCE: KindSpec(
         Category.OPERATOR,
@@ -114,6 +134,7 @@ SPEC: dict[Kind, KindSpec] = {
         Relax(Difference()),
         max_inputs=2,
         max_outputs=1,
+        icon="minus",
     ),
     Kind.THRUSTER: KindSpec(
         Category.ACTUATOR,
@@ -122,5 +143,7 @@ SPEC: dict[Kind, KindSpec] = {
         "Pushes the body the way it points. Off centre, it turns the body too.",
         Relax(Scaled(1.0)),
         facing=E,
+        icon="rocket",
+        shape="square point",
     ),
 }

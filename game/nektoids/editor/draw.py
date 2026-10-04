@@ -34,10 +34,8 @@ from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.entry import ENTRY_AREA
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import (
-    DIAMOND,
-    DISC,
     EYE_DISC,
-    SQUARE_POINT,
+    SHAPES,
     body_circle,
     cumulative_lengths,
     point_at,
@@ -151,7 +149,6 @@ from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
-from nektoids.graph.kinds import Category
 from nektoids.graph.network import label
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
@@ -229,7 +226,7 @@ TAB_NAME = {"editor": "Editor", "run": "Run"}
 
 # How parts sit in the menu: eyes looking up (flat side up), thrusters pointing up
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.
-MENU_ANGLE = {Kind.EYE: 90.0, Kind.THRUSTER: 90.0}
+MENU_ANGLE = {kind: 90.0 for kind in Kind if kind.default_facing is not None}
 
 WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever the zoom [px]
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
@@ -609,13 +606,7 @@ def placed_angle(kind: Kind, facing: int | None) -> float | None:
 
 
 def _template(kind: Kind) -> list[tuple[float, float]]:
-    if kind is Kind.SOURCE:
-        return DISC
-    return {
-        Category.SENSOR: EYE_DISC,
-        Category.OPERATOR: DIAMOND,
-        Category.ACTUATOR: SQUARE_POINT,
-    }[kind.category]
+    return SHAPES[kind.spec.shape]
 
 
 def extent(kind: Kind) -> float:
