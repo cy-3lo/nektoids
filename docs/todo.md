@@ -18,9 +18,6 @@ jam build is uploaded (D-200).
 What every later stage needs; none of it shows to the player but Save and Load. In the order
 they are built.
 
-- [ ] **A level format with a version**: `Level.to_dict`, `from_dict` and `to_json` exist
-      (`levels/level.py`), items and objectives already typed by their `kind`. A version number,
-      and a loader that refuses one it does not know.
 - [ ] **One table of part kinds** (from a map of the code, 2026-10-04). A kind is spread today
       over `Kind` and its side dicts in `graph/board.py`, `GAIN` in `graph/network.py`, `NAME`
       and `WHAT` in `editor/parts.py`, and `editor/icons.py`, `layout.py` (`MENU_GROUPS`),
