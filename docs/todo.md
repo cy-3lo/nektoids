@@ -23,8 +23,7 @@ they are built.
       (D-092); until D-093 they sat there greyed (D-027). The format of D-024, with a version
       number, keeping wire paths exactly; a board as a short line of ASCII to copy, paste, keep
       in a text file and open again: that board packed into bits and spelled out. Its language
-      is a decision first. `Board.from_dict` never reads a saved path today: it draws every
-      wire again (`graph/board.py`).
+      is a decision first. Saved paths are kept exactly (D-204).
       - Letters (base 32, like a licence key) or words from a list (2048 words, 11 bits each)?
       - Length, roughly: six parts and six wires with their paths kept exactly come to under 200
         bits, about 35 letters or 17 words; less if the paths are drawn again in wire order,

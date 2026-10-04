@@ -1487,3 +1487,13 @@ eyes alone, the arena's eye columns after a drag and its polar plot, Diagnostic'
 schematic, the encyclopedia's demos and the intake specks, stay so until a second sense needs
 them. `dynamics.step` keeps taking the eyes and sources, for those views and the tests, around
 `step_given`, which takes every sensor's rate.
+
+**D-204 — 2026-10-04 — A saved board comes back with every wire on its saved path, checked against the board's rules; a wire saved without one is routed. Amends D-024.**
+`Board.from_dict` drew every wire again, so a wire left on a detour, after a Move, a Delete or a
+part put on a wire, came back on another route, and a board loaded was not the board saved. D-024
+left exact paths for when saving arrives; saving is stage 0's last item. `Board.connect` takes a
+path now: the wire is checked by the rules as before (ends, kinds, loops, counts), and its path
+must join its ends a step at a time, through free cells of the zone, by edges no other wire takes.
+`from_dict` lays each wire on its path in the order they were drawn, and refuses data no board
+could hold, naming why. A wire saved without a path, which no file has, is routed as before. The
+board as text (D-205) needs it too: a path the router would not take is written step by step.
