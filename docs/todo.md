@@ -18,10 +18,6 @@ jam build is uploaded (D-200).
 What every later stage needs; none of it shows to the player but Save and Load. In the order
 they are built.
 
-- [ ] **The editor's pictures from the table of kinds** (D-202): `KIND_ICON` and `GLYPH` in
-      `editor/icons.py`, `draw.py`'s shapes (`_template`) and `MENU_ANGLE`. `GLYPH` in a module
-      without pygame, so that a test checks every icon name, the objectives' too;
-      `test_wheel.py`'s seven kinds, which an eighth would break.
 - [ ] **Senses and actions in general**: `sim/world.py`'s `step` hands the graph the eyes' rates
       only, and reads the thrusters' rates as pushes; flow sensing (stage 3) is a second sense, a
       lamp (stage 4) a second action. The table of kinds names a sensor's sense and an actuator's

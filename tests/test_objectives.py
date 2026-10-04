@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from nektoids.editor.glyphs import GLYPH
 from nektoids.graph.board import Board
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.objectives import (
@@ -140,7 +141,7 @@ def test_an_objective_comes_back_from_its_data_with_its_settings():
 
 def test_every_objective_has_its_icon_and_an_info_text_that_reads_its_own_settings():
     for kind, objective in OBJECTIVES.items():
-        assert objective.icon, kind
+        assert objective.icon in GLYPH, kind  # a name the font has
         assert objective.about.format(**vars(objective())), kind  # KeyError on a field renamed
 
 
