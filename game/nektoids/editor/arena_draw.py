@@ -140,6 +140,7 @@ GOAL = {  # an objective's row, by its kind: its icon, and what its info box say
     "leave ring": ("right-from-bracket", "Get out of the dashed ring round the light."),
     "stay near": ("bullseye", "Stay inside the dashed ring for {seconds:g} s in a row."),
     "keep off": ("circle-xmark", "Touching a light loses the run at once."),
+    "circle light": ("rotate", "Go round the light {turns} times, either way."),  # D-097
 }
 
 _map_cache: dict[str, object] = {"key": None, "surface": None}

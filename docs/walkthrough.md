@@ -651,7 +651,8 @@ touching it, which needs a Diff on each side, Diff(Source, eye) = 1 - e.
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): an objective keeps whatever
   it needs, `start` then `keep` each tick (the module's `begin` and `follow` do it for a whole
   level). `Latched` is what most keep: their marks, ORed. `StayNear` keeps a timer per swimmer;
-  `KeepOff` loses the run (`lost`), and `outcome` checks that first.
+  `KeepOff` loses the run (`lost`), and `outcome` checks that first. `CircleLight` (Orbit, D-097)
+  keeps the angle swept round each light, each tick's change taken the short way round.
 - [`editor/arena.py`](../game/nektoids/editor/arena.py): `kept` replaces `marked`, in the run
   and in each `Snapshot`; `counts()` returns a `Count` per objective, with its bar and whether
   it lost; `lost_by` says which one did, for the banner.

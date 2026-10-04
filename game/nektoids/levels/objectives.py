@@ -1,15 +1,16 @@
 """What a level asks of its swimmers, counted, and when a run is over (D-023, D-038, D-040).
 
-Each objective says what counts at a tick, `marks`, a boolean array (N, K): which lights each
-swimmer reaches (a light is reached when their centres come within REACH times the sum of their
-radii, a little short of touching, D-029), whether it is out of the ring round the light, or in
-the ring it must stay in. The run keeps something for each objective, from `start` and then
-`keep` at every tick: latched marks for most (once marked, always marked), the time spent in the
-ring for `StayNear`. Each objective counts what it asks from what was kept, so many met out of
-so many needed (brief section 1: countable win conditions), and may lose the run (`KeepOff`: a
-light touched). A run is lost as soon as an objective loses it, won when every objective is met,
-over when its time is up. In a level's data an objective is its `kind` and its settings
-(D-028). Pure numbers, no pygame.
+Each objective says what counts at a tick, `marks`, an array (N, K): which lights each swimmer
+reaches (a light is reached when their centres come within REACH times the sum of their radii, a
+little short of touching, D-029), whether it is out of the ring round the light, or in the ring
+it must stay in; for `CircleLight`, the angle at which each light sees it. The run keeps
+something for each objective, from `start` and then `keep` at every tick: latched marks for most
+(once marked, always marked), the time spent in the ring for `StayNear`, the angle swept round
+each light for `CircleLight` (D-097). Each objective counts what it asks from what was kept, so
+many met out of so many needed (brief section 1: countable win conditions), and may lose the run
+(`KeepOff`: a light touched). A run is lost as soon as an objective loses it, won when every
+objective is met, over when its time is up. In a level's data an objective is its `kind` and its
+settings (D-028). Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -205,7 +206,55 @@ class KeepOff(Latched):
         return bool(kept.any())
 
 
-OBJECTIVES: dict[str, type] = {o.kind: o for o in (VisitLights, LeaveRing, StayNear, KeepOff)}
+@dataclass(frozen=True, kw_only=True)
+class CircleLight:
+    """Every swimmer goes round a light `turns` times, either way: an orbit (D-097). The run
+    keeps, for each swimmer and light, the angle the light last saw it at and the angle swept
+    since t = 0, each tick's change taken the short way round, so going back unwinds it; kept
+    once the turns are full. Shape (N, L, 2) [rad]."""
+
+    kind: ClassVar[str] = "circle light"
+    name: str = "Circle the light"
+    turns: int = 2
+    broken: ClassVar[str] = "Lost"
+
+    def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
+        dx = pos[:, None, 0] - arena.light_xy[None, :, 0]
+        dy = pos[:, None, 1] - arena.light_xy[None, :, 1]
+        return np.arctan2(dy, dx)  # (N, L): where each light sees the swimmer [rad]
+
+    def start(self, now: np.ndarray) -> np.ndarray:
+        return np.stack((now, np.zeros(now.shape)), axis=-1)
+
+    def keep(self, kept: np.ndarray, now: np.ndarray, dt: float) -> np.ndarray:
+        turned = np.mod(now - kept[..., 0] + np.pi, 2.0 * np.pi) - np.pi  # in [-pi, pi)
+        swept = np.stack((now, kept[..., 1] + turned), axis=-1)
+        full = np.abs(kept[..., 1]) >= self._sweep - EPS
+        return np.where(full[..., None], kept, swept)
+
+    def count(self, kept: np.ndarray) -> tuple[int, int]:
+        """Whole turns made round the light gone round most, at most `turns`, every swimmer's,
+        out of `turns` each: "1 of 2"."""
+        best = np.abs(kept[..., 1]).max(axis=1, initial=0.0)  # (N,)
+        whole = np.minimum(self.turns, np.floor((best + EPS) / (2.0 * np.pi)))
+        return int(whole.sum()), self.turns * int(kept.shape[0])
+
+    def progress(self, kept: np.ndarray) -> float:
+        best = float(np.abs(kept[..., 1]).max(initial=0.0))
+        return min(1.0, best / self._sweep)
+
+    def lost(self, kept: np.ndarray) -> bool:
+        return False
+
+    @property
+    def _sweep(self) -> float:
+        """The angle the turns take [rad]."""
+        return 2.0 * np.pi * self.turns
+
+
+OBJECTIVES: dict[str, type] = {
+    o.kind: o for o in (VisitLights, LeaveRing, StayNear, KeepOff, CircleLight)
+}
 
 
 def objective_to_dict(objective: Objective) -> dict:

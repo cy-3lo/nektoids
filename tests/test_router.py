@@ -182,8 +182,8 @@ def test_a_win_card_names_the_word_for_the_next_level_and_chapters_once_it_is_wo
     assert router.rows()[0].passkey == ""  # not won yet: not given away
     router.mark_won()
     assert router.rows()[0].passkey == "LOVE" and router.rows()[1].passkey == ""
-    router.unlock("HEART")
-    router.open(3)  # Shadows, the last: there is no next level to open
+    router.unlock(router.levels[-2].passkey)  # the word before the last opens it
+    router.open(len(router.levels) - 1)  # the last: there is no next level to open
     assert router.next_passkey() is None
     router.open(router.sandbox_index)
     assert router.next_passkey() is None

@@ -101,6 +101,7 @@ from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
 from nektoids.levels.objectives import (
+    CircleLight,
     Kept,
     LeaveRing,
     Objective,
@@ -251,11 +252,7 @@ class ArenaScene(Frame):
         self.rays = Rays(self.arena.light_power)
         self._restart()
         x, y, _ = self.level.start  # the open plane (D-028): frame what the level holds
-        rims = [
-            self.arena.light_xy + d
-            for r, _ in self.rings
-            for d in ((r, 0), (-r, 0), (0, r), (0, -r))
-        ]
+        rims = self._rims()
         points = np.concatenate(([[x, y]], self.arena.light_xy, self.arena.disc_xy, *rims))
         reach = float(np.concatenate(([LIGHT_RADIUS], self.arena.disc_radius, self.radius)).max())
         self._look(frame(self.arena_area, points, FRAME_MARGIN + reach))
@@ -625,6 +622,20 @@ class ArenaScene(Frame):
         (cx, cy), r = self.view.to_screen(*self.pos[0]), float(self.radius[0]) * self.view.scale + 8
         return (round(cx - r), round(cy - r), round(2 * r), round(2 * r))
 
+    def _rims(self) -> list[np.ndarray]:
+        """Points round the lights that the view frames, (L, 2) each: the rims of the rings an
+        objective draws, and, for Circle the light, a circle as far out as the swimmer starts,
+        which it goes round (D-097)."""
+        x, y, _ = self.level.start
+        far = np.hypot(self.arena.light_xy[:, 0] - x, self.arena.light_xy[:, 1] - y)
+        radii = [r for r, _ in self.rings]
+        radii += [far for o in self.level.objectives if isinstance(o, CircleLight)]
+        return [
+            self.arena.light_xy + np.stack((sx * r, sy * r), axis=-1).reshape(-1, 2)
+            for r in radii
+            for sx, sy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+        ]
+
     def extent(self) -> tuple[float, float, float, float]:
         """What Navigator's overview shows, and the most the arena may (D-066), as this frame
         keeps it (D-073)."""
@@ -644,10 +655,7 @@ class ArenaScene(Frame):
         """What matters now (D-066): the lights and their rings, the obstacles and the swimmer
         where it is, with room to spare."""
         arena = self.arena
-        rims = [
-            arena.light_xy + d for r, _ in self.rings for d in ((r, 0), (-r, 0), (0, r), (0, -r))
-        ]
-        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *rims))
+        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *self._rims()))
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
         return extent(points, reach, w / h)

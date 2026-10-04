@@ -1287,3 +1287,30 @@ Diagnostic, Inside and Score are drawings fitted to their room, not rows, and do
 Clips now nest (`clipped`), so a picture clipped to its frame inside a scrolled drawer, Navigator's
 overview, stays clipped to the drawer as well. Checked in the web build: the wheel scrolls Love's
 Navigator in the run.
+
+**D-097 — 2026-10-04 — The chapter is seven levels, one new idea each: Fear, Aggression, Love, Orbit, Shadows, Greed, Patience. LEVEL 1.4 is Orbit, the brief's level 3, won by circling the light twice; a new objective counts the turns. Changes the scope lock's level count in `CLAUDE.md`; Shadows moves to 1.5.**
+The brief's third tutorial puts ÷2 on one side for an orbit. In this physics it does not orbit:
+crossed with ÷2 on one wire, the swimmer still comes to the light and parks on it, as plain
+aggression does. A circuit was searched for by simulation, with boards built through `Board`
+and every result checked from seven perturbed starts (±0.1 u, ±0.2 u, ±2°, 1e-9): an orbit needs
+one side pushed all the time and the light pushing the other. The orbiter is four parts: an eye
+at the back left looking ahead drives the left thruster, a Source the right one; the Source turns
+the swimmer left until the light, ahead of the eye's face, straightens it, and it settles on a
+circle 5.2 u from a light of power 8. Orbit: that light at (25, 19), the swimmer 10 u from it on
+a tangent, (25, 9) heading E; Circle the light twice and Don't touch it, in 30 s; two eyes, a
+Source, two Halves, two thrusters handed out. The orbiter wins in 18.4 s; Shadows' board (crossed
+plus a Source on both, five parts) in 25.8 s; the brief's ÷2, eyes ahead, crossed, one halved,
+with a Source on one side (six parts), in 17.4 s, the fastest. Aggression and a halved drive
+touch the light and lose; a bare drive, fear with a drive, a blind circler run out of time.
+Its hints: "One side pushes always.", and the orbiter as the shadow. Its word is MOON.
+`CircleLight` (kind "circle light", `turns`) keeps for each swimmer and light the angle the light
+last saw it at and the angle swept since t = 0, each tick's change taken the short way round,
+so going back unwinds it; kept once full. It counts whole turns, at most `turns`, "1 of 2"; its
+row has the rotate icon and says "Go round the light twice, either way." A swimmer circling
+beside the light, not round it, counts nothing.
+The chapter, from the same search, each level adding one idea to the last and its model board
+growing by at most two parts (4, 4, 4, 4, 5, 6, 6): Orbit after Love, the four Braitenberg
+levels first; then Shadows (a drive, D-032); Greed, 1.6, two lights where plain aggression parks
+on the bright one and Shadows' drive overshoots, won by a Double on each crossed wire; Patience,
+1.7, the real level, three lights and two obstacles from a start in the dark, won by halving the
+drive. Their layouts and pins come with them (D-098). The existing words stay with their levels.
