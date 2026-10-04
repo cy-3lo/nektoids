@@ -57,6 +57,8 @@ from nektoids.editor.arena_layout import (
 )
 from nektoids.editor.arena_view import (
     MAX_SCALE,
+    OPENING,
+    ROOM,
     ZOOM_STEP,
     ArenaView,
     Rays,
@@ -250,12 +252,8 @@ class ArenaScene(Frame):
         self.title, self.arena = self.level.title, self.level.arena
         self.map_key: tuple | None = None  # the light map's grid: corner, cell, shape
         self.rays = Rays(self.arena.light_power)
-        self._restart()
-        x, y, _ = self.level.start  # the open plane (D-028): frame what the level holds
-        rims = self._rims()
-        points = np.concatenate(([[x, y]], self.arena.light_xy, self.arena.disc_xy, *rims))
-        reach = float(np.concatenate(([LIGHT_RADIUS], self.arena.disc_radius, self.radius)).max())
-        self._look(frame(self.arena_area, points, FRAME_MARGIN + reach))
+        self._restart()  # the swimmer at its start: the open plane (D-028), seen as it opens
+        self._look(view_of(self.arena_area, self._needed(OPENING)))  # D-101
 
     def _restart(self) -> None:
         x, y, heading = self.level.start
@@ -651,14 +649,14 @@ class ArenaScene(Frame):
         _, _, w, h = self.arena_area
         self._extent = widened(bounds, w / h)
 
-    def _needed(self) -> tuple[float, float, float, float]:
+    def _needed(self, room: float = ROOM) -> tuple[float, float, float, float]:
         """What matters now (D-066): the lights and their rings, the obstacles and the swimmer
-        where it is, with room to spare."""
+        where it is, `room` times over."""
         arena = self.arena
         points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *self._rims()))
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
-        return extent(points, reach, w / h)
+        return extent(points, reach, w / h, room)
 
     def least_zoom(self) -> float:
         """The farthest the zoom goes: the arena shows the overview's extent [px/u]."""

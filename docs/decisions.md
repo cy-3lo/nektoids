@@ -1361,3 +1361,14 @@ start, every click lands. The item goes.
 Searched by hand by the physicist, itch.io's search being closed to scripts. With TMview and the
 web search of D-099, nothing found clashes with Nektoids or Cy-3LO. A search is not legal
 clearance; nothing here needs more for a free jam build.
+
+**D-101 — 2026-10-04 — The run's overview shows 2.5 times what matters, and the run opens on twice it, one zoom click in from the farthest. Amends D-066.**
+The run opened on `frame()`, the points round their mean with 3 u to spare, then kept inside the
+overview, 1.5 times what matters. On Greed and Patience the frame was larger than the overview,
+so they opened at the farthest zoom, the zoom bar at its end: Greed at 32 px/u, twice as close
+as Fear's 16, with no room to zoom out. Now the overview shows 2.5 times what matters, and the
+run opens on twice it, centred on its middle, so the main screen's frame sits in the middle of
+the overview and one click of the zoom (1.25) reaches the farthest. The openings, Inside open:
+Fear 9.7 px/u, Aggression 16.6, Love 14.4, Orbit 11.5, Shadows 16.9, Greed 24.1, Patience 18.4.
+Fear's swimmer is about 20 px across, to be watched when Camille plays it. Centre keeps
+`frame()`, round the swimmer and the lights; the editor's extent stays 1.5 times the zone.

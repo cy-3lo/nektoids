@@ -67,15 +67,18 @@ def pan_view(view: ArenaView, dx: float, dy: float) -> ArenaView:
     return ArenaView(view.scale, (view.origin[0] + dx, view.origin[1] + dy))
 
 
-ROOM = 1.5  # the overview shows this many times what matters, each way, about its middle
+ROOM = 2.5  # the overview shows this many times what matters, each way, about its middle
+OPENING = 2.0  # the run opens on this many times it: a click of ZOOM_STEP in from ROOM (D-101)
 
 
-def extent(points: np.ndarray, reach: float, aspect: float) -> tuple[float, float, float, float]:
+def extent(
+    points: np.ndarray, reach: float, aspect: float, room: float = ROOM
+) -> tuple[float, float, float, float]:
     """(left, bottom, right, top) [u]: what matters, `points` (K, 2) each with `reach` [u] round
-    it, ROOM times over about its middle, then widened or heightened to `aspect`, width over
-    height: what the overview shows, and the most the main screen may (D-066)."""
+    it, `room` times over about its middle, then widened or heightened to `aspect`, width over
+    height: with ROOM, what the overview shows, and the most the main screen may (D-066)."""
     low, high = points.min(axis=0) - reach, points.max(axis=0) + reach
-    middle, half = (low + high) / 2, ROOM * (high - low) / 2
+    middle, half = (low + high) / 2, room * (high - low) / 2
     (left, bottom), (right, top) = middle - half, middle + half
     return widened((float(left), float(bottom), float(right), float(top)), aspect)
 
