@@ -24,6 +24,7 @@ the layouts.
 from __future__ import annotations
 
 import math
+import textwrap
 from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
@@ -50,7 +51,8 @@ from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
 from nektoids.levels.objectives import Outcome
 
-BOX_WIDTH = 464  # 48 characters of Plex Mono and the padding (D-055) [px]
+CHARS = 48  # a line of the box, at most: the paragraphs are wrapped to it (D-094)
+BOX_WIDTH = 464  # CHARS characters of Plex Mono and the padding (D-055) [px]
 LINE = 22  # a line of the box [px]
 PAD = 14  # inside the box [px]
 BUTTON = (84, 28)  # Next, and Skip left of it, at the box's foot [px]
@@ -81,9 +83,14 @@ class Ghost:
 
 @dataclass(frozen=True)
 class Step:
-    say: tuple[str, ...]
+    say: tuple[str, ...]  # its paragraphs, each on a new line (D-094)
     show: Mapping | list | None = None  # a target or a list of them; None: a hint, nothing dimmed
     until: Mapping | list | None = None  # None: Next only; a list: all of them (D-071)
+
+    @property
+    def lines(self) -> tuple[str, ...]:
+        """What the box shows: each paragraph wrapped to CHARS, ragged right (D-094)."""
+        return tuple(line for text in self.say for line in textwrap.wrap(text, CHARS))
 
 
 @dataclass(frozen=True)
@@ -191,15 +198,14 @@ class Tutorial:
 
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
     """What a leading step shows, by name, drawn in the accent (D-050, D-080): an area, a drawer
-    or a part of the run by its own name, its titles lit; a tab as "tab:editor"; a drawer's icon
-    as "icon:hints"."""
+    or a part of the run by its own name, its titles lit; a tab as "tab:editor". A drawer's icon
+    keeps its colour: its sparks are enough (D-095)."""
     if tutorial is None or not tutorial.leads:
         return frozenset()
     names = set()
     for one in _shows(tutorial.step):
         names.add(one.get("area") or one.get("drawer") or one.get("run"))
         names.add(f"tab:{one['tab']}" if "tab" in one else None)
-        names.add(f"icon:{one['icon']}" if "icon" in one else None)
     return frozenset(names - {None})
 
 

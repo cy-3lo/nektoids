@@ -3,7 +3,7 @@
 A component fills one cell. A wire is directed, from a component that emits to one that
 receives, and runs through free cells, entering and leaving each through one of its six edges.
 `orient` says which way a wire drawn between two components runs (D-026); `snapshot` and
-`restore` are for undo (D-027).
+`restore` are for undo (D-027); `adopt` puts on it a board built on another level's (D-092).
 Wires may cross or turn in the same cell as long as no edge is used twice (D-010), so a cell
 holds at most three. Wires are routed once, when drawn, and never move afterwards.
 
@@ -352,6 +352,35 @@ class Board:
         self.wires = list(state.wires)
         self._stock = dict(state.stock)
 
+    def adopt(self, state: BoardState) -> Refused | None:
+        """Put on this board a state built on another, a win of another level (D-092): its parts
+        and wires as built, the stock left counted again from what this level hands out. Refused,
+        and nothing changes, if a cell is off this zone, if the level's own locked parts differ,
+        or if it holds more of a kind than this level hands out."""
+        cells = {node.cell for node in state.nodes} | {c for w in state.wires for c in w.path}
+        if not cells <= self._on_board:
+            return Refused("the board goes outside this level's zone")
+        locked = [n for n in self.nodes.values() if n.locked]
+        if _placed(locked) != _placed(n for n in state.nodes if n.locked):
+            return Refused("this level places other parts")
+        free = [node.kind for node in state.nodes if not node.locked]
+        stock = dict(self._total)
+        for kind in Kind:
+            used, total = free.count(kind), self.total(kind)
+            if used and total == 0:
+                return Refused(f"this level hands out no {kind.value}s")
+            if total is not None and used > total:
+                plural = "" if total == 1 else "s"
+                return Refused(
+                    f"this level hands out {_count(total)} {kind.value}{plural};"
+                    f" the board has {_count(used)}"
+                )
+            if total is not None and kind in stock:
+                stock[kind] = total - used
+        self.restore(BoardState(state.nodes, state.wires, tuple(stock.items())))
+        self._next_id = max([self._next_id, *(node.id + 1 for node in state.nodes)])
+        return None
+
     # As plain data (D-024)
 
     def to_dict(self) -> dict:
@@ -495,6 +524,11 @@ def _uses_each_edge_once(path: tuple[Cell, ...]) -> bool:
                 return False
             seen.add((cell, edge))
     return True
+
+
+def _placed(nodes: Iterable[Node]) -> list[tuple[str, Cell, int | None]]:
+    """Parts as placed, whatever their ids: to tell whether two boards' locked parts agree."""
+    return sorted((n.kind.value, n.cell, n.facing) for n in nodes)
 
 
 def _count(n: int) -> str:

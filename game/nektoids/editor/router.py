@@ -54,6 +54,15 @@ class Won:
     best: bool
 
 
+@dataclass(frozen=True)
+class WinGroup:
+    """A level's wins this session, under its title in Files, a group that folds (D-092)."""
+
+    index: int  # the level's place in the chapter
+    title: str  # "1.2 Aggression"
+    wins: tuple[Won, ...]  # as `Router.wins` orders them
+
+
 class Screen(Enum):
     TITLE = "title"  # the card over the first level, gone at the first click
     SPEC = "spec"  # a level's card: its name and what it asks, gone at the first click
@@ -217,6 +226,15 @@ class Router:
         best = front(frozenset(boards))
         order = sorted(boards, key=lambda s: (s not in best, s.ticks, s.parts))
         return tuple(Won(score, boards[score], score in best) for score in order)
+
+    def files(self) -> tuple[WinGroup, ...]:
+        """What Files lists (D-092): the open level's wins, then each other level's, in the
+        chapter's order; a level with none has no group, nor has the sandbox."""
+        order = sorted(range(len(self.levels)), key=lambda k: k != self.index)
+        groups = (
+            WinGroup(k, f"{CHAPTER}.{k + 1} {self.levels[k].title}", self.wins(k)) for k in order
+        )
+        return tuple(group for group in groups if group.wins)
 
     def next(self) -> None:
         """On to the next level, under its card; ValueError after the last one."""

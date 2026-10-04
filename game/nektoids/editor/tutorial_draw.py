@@ -45,7 +45,7 @@ def draw_tutorial(
     pygame.draw.rect(screen, TOOLTIP_BG, card, border_radius=8)
     pygame.draw.rect(screen, RULE, card, 1, border_radius=8)  # as an info box's (D-080)
     y = card.top + PAD
-    for line in step.say:
+    for line in step.lines:
         screen.blit(fonts.small.render(line, True, TEXT), (card.left + PAD, y))
         y += LINE
     count = fonts.small.render(f"{tutorial.index + 1} / {len(tutorial.steps)}", True, DIM_TEXT)

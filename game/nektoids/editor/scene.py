@@ -38,6 +38,7 @@ puts the reason in the status line.
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import pygame
 
@@ -65,6 +66,7 @@ from nektoids.editor.layout import (
     Mode,
     Tool,
     ViewButton,
+    WinRow,
     action_at,
     board_extent,
     board_view_of,
@@ -74,7 +76,6 @@ from nektoids.editor.layout import (
     contains,
     drawer_key,
     edit_button_at,
-    file_button_at,
     group_at,
     kept_on_board,
     main_view_for,
@@ -95,7 +96,7 @@ from nektoids.editor.layout import (
     zoom_button_at,
 )
 from nektoids.editor.probe import Probe, level_view
-from nektoids.editor.router import Won
+from nektoids.editor.router import WinGroup
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.editor.wheel import (
@@ -150,7 +151,7 @@ ENTER_SCANCODES = (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER)
 DELETE_SCANCODES = (pygame.KSCAN_BACKSPACE, pygame.KSCAN_DELETE)  # Delete, as everywhere else
 DIGIT_SCANCODES = tuple(getattr(pygame, f"KSCAN_{n}") for n in range(1, 10))
 KEYPAD_SCANCODES = tuple(getattr(pygame, f"KSCAN_KP_{n}") for n in range(1, 10))
-MAX_WINS = 10  # the wins Files lists, the best first
+MAX_WINS = 10  # the wins Files lists of each level, the best first
 PROBE_TURN = math.radians(15.0)  # the mouse wheel, L or R, on the probe in Diagnostic
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
@@ -176,8 +177,8 @@ class EditorScene(Frame):
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.wheel_folded = False  # the picture of the cell folded, in Tools and Parts (D-069)
-        self.scroll = 0  # how far Parts' list is scrolled [px]
-        self.scrolling = False  # Parts' scroll bar held: the list follows the mouse
+        self.scrolls: dict[Drawer, int] = {}  # how far each drawer's list is scrolled [px]
+        self.scrolling = False  # a list's scroll bar held: the list follows the mouse
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.focused: Cell | None = None  # the cell the Wheel is round, the keyboard's too (D-068)
         self.wheel_open = False  # the Wheel shows round the focus
@@ -195,7 +196,7 @@ class EditorScene(Frame):
         self.piling = 0  # the mouse on a pile of the Wheel: the way it turns the Wheel, -1 or 1
         self.pile_frames = 0  # how long it has rested there
         self.onward = False  # the focus came on to the part just wired to: it wires only forward
-        self.wins: tuple[Won, ...] = ()  # this session's wins of the level, for Files; main.py's
+        self.wins: tuple[WinGroup, ...] = ()  # this session's wins, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = centred_view(layout)
         self.mode = Mode.WRITE  # what a click on the board does: Write, or Delete (D-068)
@@ -209,7 +210,7 @@ class EditorScene(Frame):
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered cell
         self.ghost_connects = False  # Wire: the ghost ends on a target it may connect to
         self.ghost_way: tuple[Cell, ...] | None = None  # ... over a part it cannot: the way only
-        self.folded: set[str] = set()  # menu groups shown closed
+        self.folded: set[str] = set()  # Parts' and Files' groups shown closed
         self.mouse = (0, 0)
         self.pointed: Cell | None = None  # grid cell under the mouse, in the zone or not
         self.hover: Cell | None = None  # the same, if it is in the zone
@@ -538,9 +539,6 @@ class EditorScene(Frame):
         if edit is not None:
             self._edit(edit)
             return
-        if file_button_at(self.layout, pos) is not None:
-            self._refuse("saving is not in the game yet", None)
-            return
         button = view_button_at(self.layout, pos)
         if button is not None:
             self._view_button(button)
@@ -672,15 +670,15 @@ class EditorScene(Frame):
             self.probe.see(self.view)
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
-        """The layout with `drawer` open, the same parts handed out, chapter and hints."""
+        """The layout with `drawer` open, the same parts handed out, chapter, wins and hints."""
         return make_layout(
             drawer,
             frozenset(self.folded),
             self.layout.kinds,
             self.layout.chapter,
-            wins=len(self.wins),
+            files=tuple((group.title, len(group.wins)) for group in self.wins),
             wheel_folded=self.wheel_folded,
-            scroll=self.scroll,
+            scroll=self.scrolls.get(drawer, 0),
             **self._hint_layout(),
         )
 
@@ -691,28 +689,35 @@ class EditorScene(Frame):
             self.layout = self._relayout(self.layout.drawer)
 
     def _on_list(self, pos: tuple[int, int]) -> bool:
-        """Whether `pos` is on Parts' list, where the mouse wheel scrolls it (D-069)."""
+        """Whether `pos` is on the drawer's list, Parts' or Files', where the mouse wheel scrolls
+        it (D-069)."""
         return self.layout.list_area is not None and contains(self.layout.list_area, pos)
 
     def _scroll_to(self, scroll: int) -> None:
-        """Parts' list scrolled to `scroll`, as far as it goes; an info box open on a row
+        """The drawer's list scrolled to `scroll`, as far as it goes; an info box open on a row
         closes, as it would move."""
-        self.scroll = scroll
-        self.layout = self._relayout(self.layout.drawer)
-        self.scroll, self.info = self.layout.scroll, None
+        drawer = self.layout.drawer
+        self.scrolls[drawer] = scroll
+        self.layout = self._relayout(drawer)
+        self.scrolls[drawer], self.info = self.layout.scroll, None
 
-    def set_wins(self, wins: tuple[Won, ...]) -> None:
-        """The level's wins this session, as Files lists them: at most MAX_WINS (D-059)."""
-        wins = wins[:MAX_WINS]
-        if wins != self.wins:
-            self.wins = wins
+    def set_wins(self, groups: tuple[WinGroup, ...]) -> None:
+        """Every level's wins this session, as Files lists them: at most MAX_WINS a level
+        (D-059, D-092)."""
+        groups = tuple(replace(group, wins=group.wins[:MAX_WINS]) for group in groups)
+        if groups != self.wins:
+            self.wins = groups
             self.layout = self._relayout(self.layout.drawer)
 
-    def _put_back(self, index: int) -> None:
-        """A win's board back on the board; the one left goes to Undo (D-059)."""
+    def _put_back(self, row: WinRow) -> None:
+        """A win's board on the board, this level's or another's that fits it; the one left
+        goes to Undo (D-059, D-092)."""
         if self._allowed(Action("load")):
             self._cancel()
-            self.board.restore(self.wins[index].board)
+            refused = self.board.adopt(self.wins[row.group].wins[row.index].board)
+            if refused is not None:
+                self._refuse(refused.reason, None)
+                return
             self.selected = None
 
     def _allowed(self, action: Action, cell: Cell | None = None) -> bool:

@@ -150,6 +150,20 @@ def test_files_lists_the_wins_with_their_boards_the_unbeaten_first_each_score_on
     assert router.wins(1) == ()
 
 
+def test_files_lists_every_levels_wins_the_open_ones_first_then_the_chapters_order():
+    router = a_router()  # D-092
+    assert router.files() == ()
+    for k, ticks in ((0, 900), (2, 800), (2, 700)):
+        router.index = k
+        router.record(Score(ticks=ticks, parts=4), router.board.snapshot())
+    router.index = 2
+    files = router.files()
+    assert [(group.index, group.title) for group in files] == [(2, "1.3 Love"), (0, "1.1 Fear")]
+    assert files[0].wins == router.wins(2) and len(files[1].wins) == 1
+    router.index = router.sandbox_index  # no wins of its own: the levels', in order
+    assert [group.index for group in router.files()] == [0, 2]
+
+
 def test_a_passkey_opens_the_level_after_the_one_whose_win_gives_it_and_those_before():
     router = a_router()  # D-075: LOVE is Fear's word, SWORD Aggression's, HEART Love's
     assert router.state(2) == "locked" and router.unlock("nothing") is None

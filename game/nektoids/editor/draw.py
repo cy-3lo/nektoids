@@ -19,6 +19,7 @@ it, a circle round a wedge, tip forward.
 from __future__ import annotations
 
 import math
+import textwrap
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,7 +49,6 @@ from nektoids.editor.hints import SHADOW as SHADOW_HINT
 from nektoids.editor.icons import (
     DRAWER_ICON,
     EDIT_ICON,
-    FILE_ICON,
     KIND_ICON,
     LEVEL_ICON,
     MODE_ICON,
@@ -79,7 +79,6 @@ from nektoids.editor.layout import (
     WHEEL_TITLE,
     Drawer,
     EditButton,
-    FileButton,
     HintRow,
     LevelButton,
     MainView,
@@ -143,7 +142,7 @@ from nektoids.editor.palette import (
     WIRING_OK,
     ZONE,
 )
-from nektoids.editor.parts import NAME, info
+from nektoids.editor.parts import NAME, info, ports
 from nektoids.editor.probe import level_view, ring_radii
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
@@ -171,11 +170,9 @@ TIP = {
     ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them; drag"
-    " one to move it.",
+    Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them, or"
+    " drag one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
-    FileButton.SAVE: "Save: not yet",
-    FileButton.LOAD: "Load: not yet",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     Drawer.TOOLS: "Tools",
@@ -191,11 +188,11 @@ TIP = {
 }
 SETTING = {  # Settings' rows: their name, icon and what their info box says (D-054)
     Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
-    Setting.HINTS: ("Key hints", "keyboard", "Show each row's key, and the bar's in its tooltip."),
+    Setting.HINTS: ("Key hints", "keyboard", "Keys on each row and in the bar's tooltips."),
     Setting.TUTORIAL: (
         "Tutorial",
         "graduation-cap",
-        "Fear's introduction again, from its first step.",
+        "Fear's tutorial again, from its first step.",
     ),
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),
@@ -218,8 +215,6 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     EditButton.REDO: "Redo",
     Mode.WRITE: "Write",
     Mode.DELETE: "Delete",
-    FileButton.SAVE: "Save",
-    FileButton.LOAD: "Load",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Hand",
@@ -238,7 +233,8 @@ WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
 FACE_WIDTH = 0.1  # [hex sizes]
-INFO_ICON = 12  # a menu row's info disc [px]
+INFO_ICON = 16  # a menu row's info disc [px]
+INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit under it (D-094)
 INFO_PAD = 12  # inside the info box [px]
 
 # Icon height as a fraction of the hex size.
@@ -662,8 +658,7 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         box = pygame.Rect(rect)
         if on:
             pygame.draw.rect(screen, LIT, (0, box.top + 2, 3, box.height - 4))
-        lit = f"icon:{drawer.value}" in scene.lit  # a tutorial's target (D-080)
-        ink = LIT if lit else TEXT if on else DIM_TEXT
+        ink = TEXT if on else DIM_TEXT  # a tutorial's target too: its sparks say it (D-095)
         fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, ink)
     for button, rect in layout.level_buttons:  # the switch
         box = pygame.Rect(rect)
@@ -714,23 +709,20 @@ def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -
 
 
 def _draw_files(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Files (D-059): this session's wins of the level, the best first, a tick on those no other
-    beats, the one on the board now lit; a click puts its board back."""
+    """Files (D-059, D-092): this session's wins, each level's under its title, which folds; the
+    best first, a tick on those no other beats, the one on the board now lit; a click puts its
+    board on this level's, if it fits. The list scrolls within its area, as Parts'."""
     now = scene.board.snapshot()
+    screen.set_clip(scene.layout.list_area)
     for row, rect in scene.layout.win_rows:
-        won = scene.wins[row.index]
+        won = scene.wins[row.group].wins[row.index]
         status = ("tick", "") if won.best else ("none", "")
-        active = won.board == now
+        active = (won.board.nodes, won.board.wires) == (now.nodes, now.wires)  # not the stock
         draw_row(screen, scene, fonts, rect, row, _win_name(won), status, active, icon="trophy")
-    rows = scene.layout.win_rows
-    top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else DIAGNOSTIC_MAP[1]
-    note = (
-        "Each win of this level is kept here for the session. A click puts its board back;"
-        " Undo brings yours back."
-        if rows
-        else "No win yet. Each win of this level will be kept here for the session."
-    )
-    draw_note(screen, fonts, note, (DIAGNOSTIC_MAP[0], top), DIAGNOSTIC_MAP[2])
+    screen.set_clip(None)
+    if not scene.wins:
+        note = "No win yet. Each win of each level will be kept here for the session."
+        draw_note(screen, fonts, note, DIAGNOSTIC_MAP[:2], DIAGNOSTIC_MAP[2])
 
 
 def _win_name(won) -> str:
@@ -880,19 +872,6 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     if layout.scroll_bar is not None:  # while the list does not fit
         pygame.draw.rect(screen, RULE, layout.scroll_bar, border_radius=2)
         pygame.draw.rect(screen, SCROLL_THUMB, scroll_thumb(layout), border_radius=2)
-    for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            ROW_NAME[button],
-            ("lock", ""),
-            False,
-            True,
-            icon=FILE_ICON[button],
-        )
     for button, rect in layout.view_buttons:
         active = button is ViewButton.PAN and scene.tool is Tool.PAN
         key = ("key", VIEW_KEYS[button])
@@ -1214,7 +1193,10 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
     else:
         name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]
-    rows += [fonts.small.render(line, True, TEXT) for line in lines]
+    dim = ports(what) if isinstance(what, Kind) else ()  # a part's In and Out, in grey
+    for text in lines:  # each a paragraph, wrapped to the box, ragged right (D-094)
+        ink = DIM_TEXT if text in dim else TEXT
+        rows += [fonts.small.render(line, True, ink) for line in textwrap.wrap(text, INFO_CHARS)]
     entry = scene.entry if scene.entry is not None and scene.entry.kind is what else None
     _, _, circuit_w, circuit_h = ENTRY_AREA
     widths = [row.get_width() for row in rows] + ([] if entry is None else [circuit_w])
@@ -1246,9 +1228,15 @@ def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
     if isinstance(what, Kind):
         return NAME[what], tuple(info(what))
     if isinstance(what, WinRow):
-        won = scene.wins[what.index]
+        group = scene.wins[what.group]
+        won = group.wins[what.index]
         beaten = "No other win beats it." if won.best else "Another win beats it."
-        return "A win", (f"This board won in {_win_name(won)}. {beaten}",)
+        title = group.title.split(" ", 1)[1]
+        return "A win", (
+            f"This board won {title} in {_win_name(won)}. {beaten}",
+            "A click puts it on the board, if the level hands out its parts.",
+            "Undo brings yours back.",
+        )
     return ROW_NAME[what], (TIP[what],)
 
 

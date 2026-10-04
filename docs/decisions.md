@@ -1232,3 +1232,42 @@ click, or a drag (D-090), on any part their kinds let it be wired to makes the w
 the focus goes on to after a wire keeps D-068's rule, so that a chain goes on by clicks (eye, sum,
 thruster) and, from a thruster just wired to, a click on the other eye focuses that eye to start
 its own wire. A click that cannot wire still focuses what it falls on.
+
+**D-092 — 2026-10-04 — Files lists every level's wins, each level's under its title, a group that folds as Parts' do; a win of another level goes on the open level's board if it fits. Amends D-059.**
+Files listed only the open level's wins, so a vehicle won in one level could not be carried into
+the next, though the levels build on each other: Aggression is Fear with its wires crossed. Now
+it lists this session's wins of every level of the chapter: the open level's first, then the
+others in the chapter's order, each under its number and title (`1.2 Aggression`), which folds
+and unfolds as Parts' groups do; a level with no win has no group, and the sandbox, which keeps
+none, has none. Each level keeps at most ten, as before, and the list scrolls, by the mouse
+wheel or its scroll bar, as Parts' does. A click on a win puts
+its board on the open level's (`Board.adopt`) when the level hands out its parts, as many as it
+has; the stock left is counted again from what the level hands out. Otherwise nothing changes
+and the status line says why: "this level hands out no sums". The board left goes to Undo, as
+before. A row is lit while its parts and wires are those on the grid, whatever the stock. With
+wins listed, the note under them goes into each win's info box.
+
+**D-093 — 2026-10-04 — Save and Load leave Files; saving and a board as text go together to ideas.md, out of the jam. Amends D-027, D-053, D-059; todo §9 goes.**
+Save and Load sat greyed at Files' foot since D-027, a promise the jam will not keep, and took
+room from the wins listed above them (D-092). They go: Files lists the wins down to its foot.
+Saving and a board as text (todo §9: a board packed into a short line of letters or words, with
+check symbols) are one piece of work, the same format of D-024 written to a file or to a line;
+they leave the todo for `ideas.md`, as one entry, and Save and Load come back with it. The
+scope lock's Out line says so. F4 still prints a board (D-024).
+
+**D-094 — 2026-10-04 — The tutorial's cards and the info boxes hold paragraphs, wrapped to the box, ragged right; a part's In and Out are grey. Amends D-036, D-039.**
+Their texts were lines broken by hand, so an edit left lines of every length. Now a card's "say"
+in a level's file is a list of paragraphs, each starting on a new line, and the card wraps them
+to 48 characters of Plex Mono, its width (`Step.lines`); the box's height follows the lines it
+makes. An info box wraps each of its paragraphs to 46 characters, the width of a part's circuit
+under them (D-082): a part's text is one paragraph (`parts.WHAT`), then In and Out, each its
+own, drawn in the dim grey that tells them from what the part does. Full justification was
+tried and set aside: in a mono font it opens uneven gaps in a line short of words. The (i) on
+every row is 16 px, from 12.
+
+**D-095 — 2026-10-04 — A drawer's icon that a tutorial step shows keeps its colour; its sparks say it. Amends D-080.**
+D-080 drew every target of a step in accent 1, with sparks drifting out of its edge. On a small
+icon of the bar, as Hints' on Fear's last card, the sparks already single it out, and the accent
+on the icon itself was one signal too many. A drawer's icon now keeps its colour, dim, or white
+while its drawer is open; its sparks stay. Areas, drawers' titles, the run's parts and the tabs
+keep the accent as before.

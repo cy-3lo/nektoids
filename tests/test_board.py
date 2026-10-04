@@ -510,3 +510,41 @@ def test_data_no_board_could_hold_is_an_error():
     data["parts"] = [{"kind": "eye", "cell": [99, 99], "facing": "E", "locked": False}]
     with pytest.raises(ValueError, match="outside the zone"):
         Board.from_dict(data)
+
+
+def a_vehicle(stock):
+    """Two eyes wired to two thrusters on a 9 x 7 board handing out `stock`."""
+    board = Board(RECT, stock)
+    left, right = board.place(Kind.EYE, (0, 2)), board.place(Kind.EYE, (0, 4))
+    back_left, back_right = board.place(Kind.THRUSTER, (4, 2)), board.place(Kind.THRUSTER, (4, 4))
+    board.connect(left.id, back_left.id)
+    board.connect(right.id, back_right.id)
+    return board
+
+
+def test_adopt_puts_another_levels_board_on_this_one_its_stock_counted_again():
+    fear = a_vehicle({Kind.EYE: 2, Kind.THRUSTER: 2}).snapshot()  # D-092
+    shadows = Board(RECT, {Kind.EYE: 2, Kind.SOURCE: 1, Kind.SUM: None, Kind.THRUSTER: 2})
+    assert shadows.adopt(fear) is None
+    assert (shadows.snapshot().nodes, shadows.snapshot().wires) == (fear.nodes, fear.wires)
+    assert shadows.remaining(Kind.EYE) == 0 and shadows.remaining(Kind.SOURCE) == 1
+    assert shadows.remaining(Kind.SUM) is None
+    source = shadows.place(Kind.SOURCE, (2, 0))  # a fresh id, past every adopted one
+    assert source.id not in {node.id for node in fear.nodes} and len(shadows.nodes) == 5
+
+
+def test_adopt_refuses_a_board_this_level_cannot_hold_and_changes_nothing():
+    love = a_vehicle({Kind.EYE: 2, Kind.SUM: 2, Kind.THRUSTER: 2})
+    love.place(Kind.SUM, (2, 0))
+    fear = Board(RECT, {Kind.EYE: 2, Kind.THRUSTER: 2})
+    before = fear.snapshot()
+    assert fear.adopt(love.snapshot()) == Refused("this level hands out no sums")
+    one_eye = Board(RECT, {Kind.EYE: 1, Kind.THRUSTER: 2})
+    reason = "this level hands out one eye; the board has two"
+    assert one_eye.adopt(a_vehicle(None).snapshot()) == Refused(reason)
+    small = Board(offset_rect(3, 7))  # the thrusters at column 4 are off its zone
+    assert small.adopt(a_vehicle(None).snapshot()).reason.startswith("the board goes outside")
+    locked = Board(RECT)
+    assert locked.place(Kind.EYE, (6, 3), locked=True).locked
+    assert locked.adopt(a_vehicle(None).snapshot()) == Refused("this level places other parts")
+    assert fear.snapshot() == before and small.nodes == {}

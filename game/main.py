@@ -112,7 +112,7 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = [] if done is None else target_rects(done.show, *where)
     beside = scene.layout.board_area  # the board, or the arena
-    return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
+    return spots, box_rect([rect for rect, _ in spots], len(guide.step.lines), beside, before)
 
 
 def choose_place(index: int) -> None:
@@ -334,7 +334,7 @@ async def main() -> None:
         editor().ghosts = model.ghosts if model is not None else ()
         editor().ghost_wires = model.ghost_wires if model is not None else ()  # D-074
         editor().chapters = router.rows()  # what Chapters shows
-        editor().set_wins(router.wins(router.index))  # what Files shows (D-059)
+        editor().set_wins(router.files())  # what Files shows: every level's wins (D-092)
         if playing is not None:
             playing.chapters = router.rows()
         scene = on_screen()

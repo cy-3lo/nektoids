@@ -17,8 +17,10 @@ from nektoids.editor.layout import (
 )
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
+    CHARS,
     GAP,
     HALO,
+    LINE,
     SPARK_PITCH,
     SPARK_REACH,
     Action,
@@ -133,7 +135,7 @@ def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
         tutorial = Tutorial.from_dict(data)
         context = Context(level.new_board(), Tool.ADD, Screen.EDIT)
         for step in tutorial.steps:
-            assert step.say and all(len(line) <= 48 for line in step.say)
+            assert step.say and all(len(line) <= CHARS for line in step.lines)
             if step.until:
                 met(step.until, context)  # a condition it knows
             for screen in (Screen.EDIT, Screen.RUN):
@@ -259,7 +261,7 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
             targets = target_rects(step.show, screen, layout, VIEW, wheel_for(step, layout))
             narrow = [t for t in targets if not is_area(t)]  # an area may lie under the box
             if narrow:
-                box = box_rect(targets, len(step.say), layout.board_area)
+                box = box_rect(targets, len(step.lines), layout.board_area)
                 assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
 
 
@@ -394,7 +396,7 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
             narrow = [t for t in targets if not is_area(t)]  # an area (board, arena) may lie under
             if not narrow:
                 continue
-            box = box_rect(targets, len(step.say), frame.board_area, before)
+            box = box_rect(targets, len(step.lines), frame.board_area, before)
             assert on_screen(box), step.say
             for rects in (narrow, [t for t in before if not is_area(t)]):
                 assert not any(overlap(box, grown(t, GAP)) for t in rects), step.say
@@ -462,7 +464,7 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
     for index in range(len(intro.steps)):
         intro.index = index
         named.append(panels(intro))
-    assert named == [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}, {"icon:hints"}]
+    assert named == [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}, set()]  # D-095
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
@@ -722,7 +724,7 @@ def test_aggressions_boxes_keep_clear_of_what_they_show_on_screen():
             targets = target_rects(step.show, screen, layout, VIEW)
             narrow = [t for t in targets if not is_area(t)]
             if narrow:
-                box = box_rect(targets, len(step.say), layout.board_area)
+                box = box_rect(targets, len(step.lines), layout.board_area)
                 assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
 
 
@@ -743,3 +745,14 @@ def test_sparks_drift_out_of_where_the_outline_was_as_many_as_its_edge_is_long()
         r = ((x - 235) ** 2 + (y - 240) ** 2) ** 0.5
         assert 40 + HALO - 1e-9 <= r <= 40 + HALO + SPARK_REACH
     assert sparks([((0, 0, 10, 10), "none")], 3) == []
+
+
+def test_a_steps_paragraphs_are_wrapped_to_the_box_each_on_a_new_line():
+    step = Step(("Short.", "A paragraph long enough to need two lines of the box, ragged right."))
+    assert step.lines == (
+        "Short.",
+        "A paragraph long enough to need two lines of the",
+        "box, ragged right.",
+    )  # D-094
+    assert all(len(line) <= CHARS for line in step.lines)
+    assert box_rect([], 3, (0, 0, 800, 600))[3] - box_rect([], 1, (0, 0, 800, 600))[3] == 2 * LINE
