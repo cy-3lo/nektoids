@@ -137,13 +137,6 @@ CONTROL_TIP = {
     ArenaButton.STEP: "A step (0.1 s)",
     ArenaButton.FAST: "Fast forward",
 }
-GOAL = {  # an objective's row, by its kind: its icon, and what its info box says
-    "visit lights": ("location-dot", "Reach every light, in any order."),
-    "leave ring": ("right-from-bracket", "Get out of the dashed ring round the light."),
-    "stay near": ("bullseye", "Stay inside the dashed ring for {seconds:g} s in a row."),
-    "keep off": ("circle-xmark", "Touching a light loses the run at once."),
-    "circle light": ("rotate", "Go round the light {turns} times, either way."),  # D-097
-}
 
 _map_cache: dict[str, object] = {"key": None, "surface": None}
 
@@ -424,8 +417,7 @@ def _about(scene: ArenaScene, what: object) -> tuple[str, tuple[str, ...]]:
         return "Time left", (f"The run ends after {scene.level.time_limit:g} s.",)
     if isinstance(what, Goal):
         objective = scene.level.objectives[what.index]
-        _, text = GOAL[objective.kind]
-        return objective.name, (text.format(**vars(objective)),)
+        return objective.name, (objective.about.format(**vars(objective)),)
     return ROW_NAME[what], (TIP[what],)
 
 
@@ -445,7 +437,7 @@ def _draw_goals(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
             done = count.met >= count.needed and not count.lost
             fraction = 0.0 if count.lost else count.progress
             value = f"{count.met} of {count.needed}"
-            row = (count.name, value, GOAL[objective.kind][0], fraction, done, count.lost)
+            row = (count.name, value, objective.icon, fraction, done, count.lost)
         _draw_goal(screen, scene, fonts, goal, rect, *row)
 
 

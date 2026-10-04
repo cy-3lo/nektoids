@@ -4,6 +4,7 @@ import pytest
 from nektoids.graph.board import Board
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.objectives import (
+    OBJECTIVES,
     REACH,
     CircleLight,
     KeepOff,
@@ -135,6 +136,12 @@ def test_an_objective_comes_back_from_its_data_with_its_settings():
     circle = CircleLight(turns=3)
     assert objective_to_dict(circle) == {"kind": "circle light", "turns": 3}
     assert objective_from_dict(objective_to_dict(circle)) == circle
+
+
+def test_every_objective_has_its_icon_and_an_info_text_that_reads_its_own_settings():
+    for kind, objective in OBJECTIVES.items():
+        assert objective.icon, kind
+        assert objective.about.format(**vars(objective())), kind  # KeyError on a field renamed
 
 
 def going_round(objective, angles, centre=(30.0, 20.0), radius=5.0):
