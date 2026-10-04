@@ -1444,3 +1444,13 @@ in `ideas.md`; nothing new for the player but Save and Load, no new part, sense,
 objective. `CLAUDE.md`'s scope section says so, and `/scope-check` reads it. Decisions taken on
 `main` meanwhile keep D-106 on and the stage's start at D-200, so no number is taken twice; a
 stage built beside another takes the next hundred.
+
+**D-201 — 2026-10-04 — A level file carries its format's version, 1; the loader refuses a file without it, of another version, or with a key it does not know.**
+A file from another game, or a key mistyped by hand, was read as far as it went: an unknown key
+was dropped, and a mistyped objective setting stopped the load with a TypeError. `Level.to_dict`
+now writes `"version": 1` first. `from_dict` refuses another version, and any key it does not
+know in the level, its start, an item or an objective, with a ValueError that names it. A change
+to any part of the format, the board, hints and tutorial included, raises the version, and
+`from_dict` then upgrades the older version instead of refusing it. The keys inside the board,
+hints and tutorial are not checked yet; saved boards get a version of their own with saving
+(todo §10).
