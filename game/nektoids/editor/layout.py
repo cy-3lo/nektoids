@@ -5,11 +5,11 @@
   its foot, over the accented switch to the other environment (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
-  under their title, only the parts the level hands out; Tools: the tools, Edit (undo, redo);
-  Files: each level's wins, groups that fold as Parts' do (D-092), then File (save and load,
-  inactive until saving exists); Navigator: the view's buttons; Hints: the level's, asked for
-  in turn (D-078); Settings: what the player sets (D-054); Chapters: the levels, then the
-  sandbox, which replaces the full-screen map. An arrow on the drawer's edge folds it.
+  under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
+  (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092); Navigator:
+  the view's buttons; Hints: the level's, asked for in turn (D-078); Settings: what the player
+  sets (D-054); Chapters: the levels, then the sandbox, which replaces the full-screen map. An
+  arrow on the drawer's edge folds it.
 - The rest is the main screen: the tabs over it (Run, Editor), the level's caption under them,
   then the board's hex grid, or in the run the arena with its controls under it; one status
   line at its foot. A drawer opening pushes the main screen aside.
@@ -118,11 +118,6 @@ class Mode(Enum):  # what a click on the board does (D-068)
 class LevelButton(Enum):  # the accented switch at the bar's foot, to the other environment
     RUN = "run"  # in the editor: the board, swimming in its arena
     EDIT = "edit"  # in the run: back to the board as it was left
-
-
-class FileButton(Enum):  # inactive: saving is not in the game yet
-    SAVE = "save"
-    LOAD = "load"
 
 
 class ViewButton(Enum):
@@ -274,7 +269,6 @@ class Layout:
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo
     action_at: Rect | None  # the editor's: what a click does now, atop the main screen
-    file_buttons: tuple[tuple[FileButton, Rect], ...]  # at Files' foot, inactive for now
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
     goal_area: Rect | None  # ... at the foot of the open drawer, whichever it is (D-065)
@@ -406,7 +400,6 @@ def make_layout(
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
         if env is Env.EDITOR
         else None,
-        file_buttons=tuple(rows.of(FileButton)),
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
         goal_area=goal_area,
@@ -489,16 +482,11 @@ class _Rows:
     def files(
         self, files: tuple[tuple[str, int], ...], folded: frozenset[str], height: int, scroll: int
     ) -> None:
-        """Under its label, each level's wins, a group that folds and scrolls as Parts' do
-        (D-092); at the drawer's foot, File."""
+        """Under its label, down to the drawer's foot, each level's wins, a group that folds and
+        scrolls as Parts' do (D-092)."""
         self.label("Wins this session")
-        foot = height - FOOT_MARGIN - TITLE_HEIGHT - len(FileButton) * ROW_PITCH
         groups = [(title, [WinRow(g, k) for k in range(n)]) for g, (title, n) in enumerate(files)]
-        self._folding(groups, folded, foot - SECTION_GAP, scroll)
-        self.y = foot
-        self.label("File")
-        for what in FileButton:
-            self._row(what)
+        self._folding(groups, folded, height - FOOT_MARGIN, scroll)
 
     def _folding(
         self,
@@ -704,17 +692,10 @@ def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
 
 
 def info_at(layout: Layout, point: tuple[int, int]) -> object | None:
-    """The row whose info disc is under `point`, if any: a part, a tool, a button, a win; a row
-    of a list that scrolls, only where the list shows (Files' File sits under its list)."""
-    listed = _listed(layout, point)
-    return next(
-        (
-            what
-            for what, rect in layout.info_buttons
-            if contains(rect, point) and (listed or not isinstance(what, (Kind, WinRow)))
-        ),
-        None,
-    )
+    """The row whose info disc is under `point`, if any: a part, a tool, a button, a win."""
+    if not _listed(layout, point):
+        return None
+    return next((kind for kind, rect in layout.info_buttons if contains(rect, point)), None)
 
 
 def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
@@ -770,10 +751,6 @@ def action_at(layout: Layout, point: tuple[int, int]) -> Shown | None:
 
 def mode_button_at(layout: Layout, point: tuple[int, int]) -> Mode | None:
     return next((m for m, rect in layout.mode_buttons if contains(rect, point)), None)
-
-
-def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
-    return next((b for b, rect in layout.file_buttons if contains(rect, point)), None)
 
 
 def level_button_at(layout: Layout, point: tuple[int, int]) -> LevelButton | None:

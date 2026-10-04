@@ -48,7 +48,6 @@ from nektoids.editor.hints import SHADOW as SHADOW_HINT
 from nektoids.editor.icons import (
     DRAWER_ICON,
     EDIT_ICON,
-    FILE_ICON,
     KIND_ICON,
     LEVEL_ICON,
     MODE_ICON,
@@ -79,7 +78,6 @@ from nektoids.editor.layout import (
     WHEEL_TITLE,
     Drawer,
     EditButton,
-    FileButton,
     HintRow,
     LevelButton,
     MainView,
@@ -174,8 +172,6 @@ TIP = {
     Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them; drag"
     " one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
-    FileButton.SAVE: "Save: not yet",
-    FileButton.LOAD: "Load: not yet",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     Drawer.TOOLS: "Tools",
@@ -218,8 +214,6 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     EditButton.REDO: "Redo",
     Mode.WRITE: "Write",
     Mode.DELETE: "Delete",
-    FileButton.SAVE: "Save",
-    FileButton.LOAD: "Load",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Hand",
@@ -877,19 +871,6 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     if layout.scroll_bar is not None:  # while the list does not fit
         pygame.draw.rect(screen, RULE, layout.scroll_bar, border_radius=2)
         pygame.draw.rect(screen, SCROLL_THUMB, scroll_thumb(layout), border_radius=2)
-    for button, rect in layout.file_buttons:  # in their place, inactive until saving exists
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            ROW_NAME[button],
-            ("lock", ""),
-            False,
-            True,
-            icon=FILE_ICON[button],
-        )
     for button, rect in layout.view_buttons:
         active = button is ViewButton.PAN and scene.tool is Tool.PAN
         key = ("key", VIEW_KEYS[button])

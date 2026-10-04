@@ -57,17 +57,3 @@ is open (D-069); in the Run it shows the level. Drawers never take the main scre
 - [ ] Sound and Music in Settings, once there is sound (D-054).
 - [ ] Parts as the encyclopedia: a row opens into its entry, in the drawer; today the entry
       opens in a box beside it.
-
-## 9. A board as text (its own PR)
-
-- [ ] A board as a short line of ASCII to copy, paste, keep in a text file and open again: the
-      board of D-024 packed into bits and spelled out. Its language is a decision first.
-      - Letters (base 32, like a licence key) or words from a list (2048 words, 11 bits each)?
-      - Length, roughly: six parts and six wires with their paths kept exactly come to under
-        200 bits, about 35 letters or 17 words; less if the paths are drawn again in wire order,
-        which gives the same routes unless Move or Delete was used (D-024).
-      - A check against typing mistakes, Shannon-like: redundant check symbols, so a mistyped
-        line is refused (or even corrected) rather than loading another board. A version mark.
-      - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Wait
-        and see on the web build.
-      - The same mechanism as the level passkeys (D-075): a word that brings a state back.

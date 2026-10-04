@@ -1247,3 +1247,11 @@ and the status line says why: "this level hands out no sums". The board left goe
 before. A row is lit while its parts and wires are those on the grid, whatever the stock. With
 wins listed, the note under them goes into each win's info box.
 
+**D-093 — 2026-10-04 — Save and Load leave Files; saving and a board as text go together to ideas.md, out of the jam. Amends D-027, D-053, D-059; todo §9 goes.**
+Save and Load sat greyed at Files' foot since D-027, a promise the jam will not keep, and took
+room from the wins listed above them (D-092). They go: Files lists the wins down to its foot.
+Saving and a board as text (todo §9: a board packed into a short line of letters or words, with
+check symbols) are one piece of work, the same format of D-024 written to a file or to a line;
+they leave the todo for `ideas.md`, as one entry, and Save and Load come back with it. The
+scope lock's Out line says so. F4 still prints a board (D-024).
+

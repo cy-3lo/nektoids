@@ -42,7 +42,7 @@ undo and redo in the editor (D-027).
 
 Out: flocking and multiple agents, flow sensing, chemical fields, optical flow, parts that move
 on the body during a run, threshold nodes, the generalisation pillar (multi-seed validation),
-sound, art, saving (F4 prints a board, D-024; Save and Load wait, greyed, D-027).
+sound, art, saving and a board as text (F4 prints a board, D-024; ideas.md, D-093).
 
 If a request touches something out of scope, say so plainly and offer the smallest in-scope
 version, and log the idea in `docs/ideas.md`. `/scope-check` does this formally.

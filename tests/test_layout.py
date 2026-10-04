@@ -12,6 +12,7 @@ from nektoids.editor.layout import (
     DRAWERS,
     EDIT_KEYS,
     FOOT,
+    FOOT_MARGIN,
     HEX_SIZE,
     HINT_LINE,
     LEVEL_KEYS,
@@ -29,7 +30,6 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     Env,
-    FileButton,
     Goal,
     HintRow,
     LevelButton,
@@ -132,10 +132,9 @@ def test_the_bar_the_drawer_and_the_board_side_by_side_the_tabs_over_the_board()
 
 
 def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
-    files_rows = [*FILES.win_rows, *FILES.file_buttons]
     for layout, rows in (
         (LAYOUT, LAYOUT.menu_items),
-        (FILES, files_rows),
+        (FILES, FILES.win_rows),
         (RUN_NAVIGATOR, (*RUN_NAVIGATOR.view_buttons, *RUN_NAVIGATOR.goal_rows)),
     ):
         assert len(layout.info_buttons) == len(rows) > 0
@@ -145,7 +144,7 @@ def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
             assert rect[1] + rect[3] <= SCREEN[1] - 8
         tops = [rect[1] for _, rect in rows]
         assert tops == sorted(tops) and len(set(tops)) == len(tops)  # one under the other
-    assert LAYOUT.file_buttons == () and FILES.menu_items == () and FOLDED.info_buttons == ()
+    assert LAYOUT.win_rows == () and FILES.menu_items == () and FOLDED.info_buttons == ()
 
 
 def test_parts_has_every_kind_once_and_a_click_on_a_row_picks_it():
@@ -237,10 +236,7 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
         assert action_at(layout, (x + 5, y + 5)) is Shown.ACTION
     assert LAYOUT.mode_buttons == LAYOUT.edit_buttons == ()  # Parts open: Tools' rows are not
     assert make_layout(env=Env.RUN).action_at is None
-    assert [title for title, _ in FILES.section_titles] == ["Wins this session", "File"]
-    assert [button for button, _ in FILES.file_buttons] == list(FileButton)
-    assert FILES.file_buttons[-1][1][1] + FILES.file_buttons[-1][1][3] <= SCREEN[1]  # its foot
-    assert FILES.win_rows[-1][1][1] < FILES.file_buttons[0][1][1]
+    assert [title for title, _ in FILES.section_titles] == ["Wins this session"]  # D-093
     assert [title for title, _ in NAVIGATOR.section_titles] == ["Overview"]  # no option yet
     assert NAVIGATOR.view_buttons == ()  # the editor's view has no option yet (D-065)
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
@@ -460,7 +456,6 @@ def test_the_main_screen_shows_the_run_preview_only_in_diagnostic_and_navigator_
 
 def test_files_has_each_levels_wins_under_its_title_a_group_that_folds():
     assert Drawer.FILES in DRAWERS[Env.EDITOR] and Drawer.FILES not in DRAWERS[Env.RUN]
-    assert [title for title, _ in FILES.section_titles] == ["Wins this session", "File"]
     assert [title for title, _ in FILES.group_titles] == ["1.2 Aggression", "1.1 Fear"]
     assert [(row.group, row.index) for row, _ in FILES.win_rows] == [(0, 0), (0, 1), (1, 0)]
     (_, aggression), (_, fear) = FILES.group_titles
@@ -477,19 +472,17 @@ def test_files_has_each_levels_wins_under_its_title_a_group_that_folds():
     assert make_layout(Drawer.FILES).group_titles == ()  # no title for a level with no win
 
 
-def test_files_list_scrolls_above_file_whose_rows_still_answer():
+def test_files_list_scrolls_down_to_the_drawers_foot_and_its_rows_answer_where_they_show():
     many = (("1.1 Fear", 10), ("1.2 Aggression", 10))
     files = make_layout(Drawer.FILES, files=many)
     _, ly, _, lh = files.list_area
     assert files.scroll_max > 0 and files.scroll_bar is not None
-    assert ly + lh < files.file_buttons[0][1][1]  # File, at the foot, is not in the list
+    assert ly + lh == SCREEN[1] - FOOT_MARGIN  # no File under it any more (D-093)
     hidden = files.win_rows[-1][1]
     assert hidden[1] > ly + lh and win_row_at(files, centre(hidden)) is None
     bottom = make_layout(Drawer.FILES, files=many, scroll=10_000)
     assert bottom.scroll == files.scroll_max
     assert win_row_at(bottom, centre(bottom.win_rows[-1][1])) == bottom.win_rows[-1][0]
-    for button, _ in files.file_buttons:  # under the list: a hidden row never takes them
-        assert info_at(files, centre(dict(files.info_buttons)[button])) == button
 
 
 def test_navigators_overview_frames_what_the_main_screen_shows_and_a_press_moves_it_there():

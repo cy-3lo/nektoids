@@ -76,7 +76,6 @@ from nektoids.editor.layout import (
     contains,
     drawer_key,
     edit_button_at,
-    file_button_at,
     group_at,
     kept_on_board,
     main_view_for,
@@ -539,9 +538,6 @@ class EditorScene(Frame):
         edit = edit_button_at(self.layout, pos)
         if edit is not None:
             self._edit(edit)
-            return
-        if file_button_at(self.layout, pos) is not None:
-            self._refuse("saving is not in the game yet", None)
             return
         button = view_button_at(self.layout, pos)
         if button is not None:
