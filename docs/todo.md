@@ -11,11 +11,6 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 - [ ] Check in Chrome and in Safari. Safari has never been checked: the keys (Cmd+Y opens its
       History window), the fonts, the canvas.
 
-## 6. Small things
-
-- [ ] The names: TMview and a web search found nothing close (D-099); itch.io's search, which
-      blocks scripts, is left to do by hand, and the whole check to confirm (D-006).
-
 ## 7. The editor's hand, for a finger as for a mouse
 
 From Camille's notes (`ebc4abb`). The Wheel (D-068, D-069) does the rest: a click on a cell

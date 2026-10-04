@@ -1356,3 +1356,8 @@ then one click on Chapters opens it; typed passkeys followed by a click on a row
 Clicks seemed lost once more while this was checked, because the script measured the canvas
 before pygbag resized it (640 × 640 while loading, 1280 × 853 once started); measured after the
 start, every click lands. The item goes.
+
+**D-100 — 2026-10-04 — The names stand: itch.io returns nothing for nektoid* or Cy-3LO. Completes D-099's search for D-006; todo §6 is done.**
+Searched by hand by the physicist, itch.io's search being closed to scripts. With TMview and the
+web search of D-099, nothing found clashes with Nektoids or Cy-3LO. A search is not legal
+clearance; nothing here needs more for a free jam build.
