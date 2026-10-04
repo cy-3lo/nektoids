@@ -27,6 +27,12 @@ window.nkField = (function () {
     ['autocapitalize', 'autocorrect', 'autocomplete'].forEach(function (name) {
       field.setAttribute(name, 'off'); });
     field.setAttribute('spellcheck', 'false');
+    // Writing aids and password managers attach to any field that gets focus; one of them
+    // failed in Safari on this one. These are the marks they read as "leave it alone".
+    [['data-gramm', 'false'], ['data-gramm_editor', 'false'], ['data-enable-grammarly', 'false'],
+     ['data-lt-active', 'false'], ['data-1p-ignore', 'true'], ['data-lpignore', 'true'],
+     ['data-bwignore', 'true'], ['data-form-type', 'other']].forEach(function (pair) {
+      field.setAttribute(pair[0], pair[1]); });
     field.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;'
       + 'border:0;padding:0;';
     ['keydown', 'keyup', 'keypress'].forEach(function (name) {
