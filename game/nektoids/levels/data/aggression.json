@@ -31,19 +31,12 @@
     }
   },
   "tutorial": {
+    "starts_in": "parts",
     "steps": [
-      {
-        "show": [{"tab": "editor"}, {"level": "edit"}],
-        "say": [
-          "This swimmer comes with one eye wired to one thruster, on the same side.",
-          "Before you run it, try it: click the Editor tab or the Editor button."
-        ],
-        "until": {"screen": "edit"}
-      },
       {
         "show": {"drawer": "diagnostic"},
         "say": [
-          "Diagnostic tries your board on the swimmer held still, wherever you put it. Open it: the stethoscope in the bar, or press D."
+          "This swimmer comes with one eye wired to one thruster, on the same side. Open Diagnostic by choosing the stethoscope, or pressing D."
         ],
         "until": {"drawer": "diagnostic"}
       },

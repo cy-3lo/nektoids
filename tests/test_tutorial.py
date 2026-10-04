@@ -148,11 +148,20 @@ def test_fear_and_aggression_have_tutorials_and_neither_builds_anything():
     assert tutored == ["Fear", "Aggression"]  # D-079, D-103
     for title, waits in (
         ("Fear", [{"screen": "edit"}]),
-        ("Aggression", [{"screen": "edit"}, {"drawer": "diagnostic"}]),
+        ("Aggression", [{"drawer": "diagnostic"}]),
     ):
         tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
         assert tutorial.ghosts == () and tutorial.ghost_wires == ()
         assert [step.until for step in tutorial.steps if step.until] == waits  # nothing built
+    assert Tutorial.from_dict(LEVELS["Fear"].tutorial).starts_in is None  # on the run (D-069)
+
+
+def test_a_box_keeps_clear_of_the_parts_on_the_board():
+    stethoscope = (4, 156, 40, 32)  # an icon of the bar, the step's target
+    eye = (489, 235, 70, 80)  # a part on the board, right of it
+    assert overlap(box_rect([stethoscope], 3, LAYOUT.board_area), eye)  # beside it, over the eye
+    box = box_rect([stethoscope], 3, LAYOUT.board_area, [], [eye])  # D-103
+    assert not overlap(box, eye) and not overlap(box, stethoscope)
 
 
 def test_aggressions_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it_be():
@@ -164,11 +173,10 @@ def test_aggressions_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it
         len(board.wires) == 1 and board.remaining(Kind.EYE) == board.remaining(Kind.THRUSTER) == 1
     )
 
-    def context(screen=Screen.EDIT, drawer=Drawer.TOOLS):
+    def context(screen=Screen.EDIT, drawer=Drawer.PARTS):
         return Context(board, Tool.ADD, screen, None, 0.0, drawer)
 
-    tutorial.follow(context(Screen.RUN, Drawer.INSIDE))  # the level opens on its run
-    assert tutorial.step.until == {"screen": "edit"}
+    assert tutorial.starts_in is Drawer.PARTS  # the editor, Parts open, not the run (D-103)
     tutorial.follow(context())
     assert tutorial.step.until == {"drawer": "diagnostic"}
     assert allows(tutorial.step, Action("view")) and drawer_for(tutorial.step) is None

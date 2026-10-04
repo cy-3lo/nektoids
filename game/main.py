@@ -89,6 +89,13 @@ def tutorial() -> Tutorial | None:
     return guide if guide is not None and guide.step is not None else None
 
 
+def tutorial_start() -> Drawer | None:
+    """The editor's drawer the open level's tutorial begins in, while it has not begun; None:
+    the level opens on its run (D-069, D-103)."""
+    guide = tutorial()
+    return guide.starts_in if guide is not None and guide.index == 0 else None
+
+
 def hints() -> tuple[Hints, Board, Taken] | None:
     """The open level's hints, its shadow built once, and what of them is taken this session;
     None in the sandbox, which has none (D-078)."""
@@ -112,7 +119,11 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = [] if done is None else target_rects(done.show, *where)
     beside = scene.layout.board_area  # the board, or the arena
-    return spots, box_rect([rect for rect, _ in spots], len(guide.step.lines), beside, before)
+    parts = []  # what the box must not hide: the parts on the editor's board (D-103)
+    if isinstance(scene, EditorScene):
+        parts = target_rects([{"cell": list(n.cell)} for n in scene.board.nodes.values()], *where)
+    lines = len(guide.step.lines)
+    return spots, box_rect([rect for rect, _ in spots], lines, beside, before, parts)
 
 
 def choose_place(index: int) -> None:
@@ -259,6 +270,11 @@ async def main() -> None:
                 editor().message = ""  # a refusal from the step before no longer holds
             elif router.screen in (Screen.TITLE, Screen.SPEC, Screen.END):
                 shell_event(event)
+                if router.screen is Screen.RUN and (start := tutorial_start()) is not None:
+                    router.edit()  # the card gives way to the editor, not the run (D-103)
+                    editor().open_drawer(start)
+                    if playing is not None:
+                        run_drawer, playing = playing.layout.drawer, None
             elif playing is not None:
                 playing.handle_event(event)
             else:

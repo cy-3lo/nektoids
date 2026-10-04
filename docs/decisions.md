@@ -1389,14 +1389,20 @@ that action and of the board's sides (`layout.opening_view`): the sandbox at 34 
 at 40 as before.
 
 **D-103 — 2026-10-04 — Aggression comes with one eye wired to its own side's thruster, and three cards take the player to Diagnostic to try it. Amends D-070 and D-079.**
+
+**D-103 — 2026-10-04 — Aggression comes with one eye wired to its own side's thruster; its tutorial opens in the editor, Parts open, and two cards take the player to Diagnostic to try it. Amends D-069, D-070 and D-079.**
 Nothing taught Diagnostic since D-079 took Aggression's tutorial away (D-070 had left it for
 later). Aggression's board now starts with two of its parts on the cells of its hint's shadow,
 unlocked: the eye at the back left looking NE, wired to the thruster at the front left, facing
 E. Uncrossed, it is half of Fear's swimmer, and turns from a light on its left; the level asks
-the player to cross it. Parts shows one eye and one thruster left. Its tutorial builds nothing,
-so D-079's objection, a tutorial repeating Hint 3, does not apply: in the run, a card names the
-board and waits for the Editor; there, a card waits for Diagnostic, its icon shown; with it
-open, a last card says what it shows and asks which way the swimmer would turn, then Close, and
-the player tries it with no card in the way, the drawer's own note under the map. A hint's
-shadow is built on `Level.blank_board()`, the level's zone and stock with none of its parts,
-so its picture is what it was. Hints stay locked until the tutorial ends or is skipped (D-078).
+the player to cross it. Parts shows one eye and one thruster left. A tutorial may name the
+editor's drawer it starts in, `starts_in`: while its first card is still to come, the level's
+card gives way to the editor with that drawer open, not to the run. D-069 stands for every
+other level; D-070 had dropped a tutorial's start screen. Aggression's starts in Parts. Its
+first card names the board and lights the stethoscope, waiting for Diagnostic; the second says
+what Diagnostic shows and asks which way the swimmer would turn, then Close, and the player
+tries it with no card in the way, the drawer's own note under the map. The tutorial builds
+nothing, so D-079's objection, a tutorial repeating Hint 3, does not apply. A card's box keeps
+clear of the parts on the editor's board, as it does of its targets (D-048). A hint's shadow is
+built on `Level.blank_board()`, the level's zone and stock with none of its parts, so its
+picture is what it was. Hints stay locked until the tutorial ends or is skipped (D-078).
