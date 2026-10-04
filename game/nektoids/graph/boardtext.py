@@ -58,7 +58,12 @@ def to_text(board: Board) -> str:
 def from_text(text: str) -> Board:
     """The board a text holds, on a bare body: its zone, every kind without limit. ValueError,
     with a reason a player can read, for a text that holds no board of this version."""
-    number = _read(text)
+    return read(text)[0]
+
+
+def read(text: str) -> tuple[Board, bool]:
+    """`from_text`'s board, and whether a wrong character was put right on the way."""
+    number, corrected = _read(text)
 
     def choose(tag: str, options: Sequence) -> object:
         nonlocal number
@@ -68,7 +73,7 @@ def from_text(text: str) -> Board:
     board = _replay(choose)
     if number:
         raise ValueError("this text holds more than a board")
-    return board
+    return board, corrected
 
 
 # The replay, the same for both ways
@@ -167,7 +172,7 @@ def _spell(number: int) -> str:
     return "".join(ALPHABET[s] for block in blocks for s in (*block, *_checks(block)))
 
 
-def _read(text: str) -> int:
+def _read(text: str) -> tuple[int, bool]:
     symbols = []
     for char in text:
         if char in IGNORED:
@@ -179,14 +184,15 @@ def _read(text: str) -> int:
     blocks = [symbols[i : i + size] for i in range(0, len(symbols), size)]
     if not blocks or len(blocks[-1]) <= CHECKS:
         raise ValueError("this text is too short to hold a board")
-    number = 0
+    number, corrected = 0, False
     for block in blocks:
         fixed = _corrected([VERSION, *block])
         if fixed is None:
             raise ValueError("this text holds no board: mistyped, or of another version")
+        corrected |= fixed[1:] != block
         for digit in fixed[1:-CHECKS]:
             number = number * P + digit
-    return number
+    return number, corrected
 
 
 def _generator() -> list[int]:

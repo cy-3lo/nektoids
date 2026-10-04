@@ -32,7 +32,8 @@ Ctrl+Y (Cmd on a Mac): one step is one gesture, from press to release, so a whol
 at once. Space asks `main.py` for a run, Tab opens Chapters: the scene sets `request` and
 `main.py` acts on it. A part's info disc in Parts opens a box that says what the part does; the
 next click or key closes it and does nothing else (D-036). Every refusal flashes the cell and
-puts the reason in the status line.
+puts the reason in the status line. At Files' foot, Save copies the board as text and Load's
+field takes one, pasted or typed, which Enter puts on the board (D-205, D-206).
 """
 
 from __future__ import annotations
@@ -42,6 +43,8 @@ from dataclasses import replace
 
 import pygame
 
+from nektoids.editor import clipboard
+from nektoids.editor.boardfield import BoardField, load
 from nektoids.editor.devdrive import TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
@@ -68,6 +71,7 @@ from nektoids.editor.layout import (
     WinRow,
     action_at,
     board_extent,
+    board_field_at,
     board_view_of,
     cell_at,
     centred_on,
@@ -75,6 +79,7 @@ from nektoids.editor.layout import (
     contains,
     drawer_key,
     edit_button_at,
+    file_button_at,
     group_at,
     kept_on_board,
     main_view_for,
@@ -113,6 +118,7 @@ from nektoids.editor.wheel import (
     swaps,
     turned,
 )
+from nektoids.graph import boardtext
 from nektoids.graph.board import Board, BoardState, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
     SQRT3,
@@ -218,11 +224,17 @@ class EditorScene(Frame):
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
+        self.loading: BoardField | None = None  # Load's field, open: a board's text (D-206)
+        self.field_pressed = False  # a press on it: it opens when the click is over
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
         self.ghost_wires: tuple = ()  # ... and its wires, cell to cell (D-074); main.py's too
 
     def update(self) -> None:
         """Once per frame."""
+        if self.loading is not None and clipboard.WEB:  # the page's field took the keys
+            self.loading.text, ended = clipboard.field()
+            if ended is not None:
+                self._field_done(ended)
         if self.flash_frames > 0:
             self.flash_frames -= 1
         self.frame_update()
@@ -310,6 +322,8 @@ class EditorScene(Frame):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif event.type == pygame.MOUSEWHEEL and self.frame_wheel(self.mouse, event.y):
             pass  # the drawer's rows scrolled (D-096)
+        elif event.type == pygame.KEYDOWN and self.loading is not None:  # natively (D-206)
+            self._field_key(event)
         elif event.type == pygame.KEYDOWN and self.typing is not None:  # a passkey (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
         elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
@@ -504,7 +518,15 @@ class EditorScene(Frame):
             self._drag_to(pointed)  # off the body, it waits, to go if let go there (D-085)
 
     def _press(self, pos: tuple[int, int]) -> None:
+        if self.loading is not None and not board_field_at(self.layout, pos):
+            self._close_field()  # a click elsewhere gives it up, as the passkey's (D-075)
         if self.frame_press(pos):
+            return
+        if board_field_at(self.layout, pos):
+            self.field_pressed = True  # it opens when the click is over: Safari wants it so
+            return
+        if file_button_at(self.layout, pos) is not None:
+            self._save()
             return
         if self._on_map(pos):
             self.probing = True
@@ -629,6 +651,10 @@ class EditorScene(Frame):
             self.probe.hold(self.holding, self.probe.level_at(self.holding, pos[1]))
 
     def _release(self, pos: tuple[int, int]) -> None:
+        if self.field_pressed:
+            self.field_pressed = False
+            if board_field_at(self.layout, pos):
+                self._open_field()
         self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
         self.panning_from = None
         self.frame_release()
@@ -698,6 +724,52 @@ class EditorScene(Frame):
                 self._refuse(refused.reason, None)
                 return
             self.selected = None
+
+    # The board as text (D-205, D-206)
+
+    def _save(self) -> None:
+        """Save: the board as text, on the clipboard and in the status line, to copy by hand if
+        the clipboard is out of reach."""
+        try:
+            text = boardtext.to_text(self.board)
+        except ValueError as error:
+            self._refuse(str(error), None)
+            return
+        clipboard.copy(text)
+        self.said = f"Copied: {text}"
+
+    def _open_field(self) -> None:
+        if self._allowed(Action("load")):  # as a win put back is (D-092)
+            self._cancel()
+            self.loading = BoardField()
+            clipboard.open_field()
+
+    def _close_field(self) -> None:
+        self.loading = None
+        clipboard.close_field()
+
+    def _field_key(self, event: pygame.event.Event) -> None:
+        """A key while Load's field is open, natively: Ctrl/Cmd+V pastes, Enter loads, Esc
+        gives up; the rest types."""
+        if event.key == pygame.K_v and event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
+            self.loading.paste(clipboard.paste())
+            return
+        ended = self.loading.type(pygame.key.name(event.key), event.unicode)
+        if ended is not None:
+            self._field_done(ended)
+
+    def _field_done(self, ended: str) -> None:
+        """Enter: the text's board on this one, or why not; Esc: the field closes, as it is."""
+        text = self.loading.text
+        self._close_field()
+        if ended != "enter":
+            return
+        loaded, said = load(self.board, text)
+        if not loaded:
+            self._refuse(said, None)
+            return
+        self.selected, self.said = None, said
+        self._keep()  # the board it replaced goes to Undo
 
     def _allowed(self, action: Action, cell: Cell | None = None) -> bool:
         """Whether the tutorial's step lets `action` through (D-048); if not, say so."""

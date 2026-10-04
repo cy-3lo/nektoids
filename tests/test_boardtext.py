@@ -90,6 +90,12 @@ def test_a_board_too_long_for_a_block_takes_several():
     assert parts_and_wires(from_text(typo)) == parts_and_wires(board)
 
 
+def test_reading_says_whether_a_character_was_put_right():
+    text = to_text(fear())
+    typo = ("Z" if text[3] != "Z" else "Y").join((text[:3], text[4:]))
+    assert boardtext.read(text)[1] is False and boardtext.read(typo)[1] is True
+
+
 def test_one_wrong_character_is_put_right_and_two_are_refused():
     text, rng = to_text(fear()), random.Random(3)
     board = parts_and_wires(fear())

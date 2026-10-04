@@ -1517,3 +1517,19 @@ With distance 5, one wrong character is put right and two are refused, never rea
 board. Fear's model board is `2Svbskor23U3aec`, 15 characters; Patience's, 26; F4's JSON for
 them, about 500 and 1,000. A change to the format, to a part's rules or to the router raises the
 version. Save and Load in Files, and the clipboard, come next.
+
+**D-206 — 2026-10-04 — Save and Load at Files' foot: Save copies the board as text, and Load's field takes a text and puts its board on the level. On the web the clipboard goes through the page. Amends D-093 and `.claude/rules/web.md`.**
+Save, a row, puts the board's text (D-205) on the clipboard and in the status line, to copy by
+hand where the clipboard is out of reach. Under it, Load is a field drawn as the passkey's
+(D-075): a click opens it, Cmd/Ctrl+V pastes, a board's characters may be typed, Enter loads, Esc
+or a click elsewhere gives up. The text's board goes on the level by `Board.adopt`, as a win of
+another level does (D-092), the level's locked parts being the text's parts on their cells;
+otherwise the status line says why ("this level hands out no doubles"), and a mistyped
+character put right is said. Undo takes a load back (D-027). On the web, pygame has no clipboard
+(pygbag ships no `pygame.scrap`), and Safari 26.6 sends no copy or paste event to a page where
+nothing is selected and refuses `navigator.clipboard.readText`. So a few lines of JavaScript, put
+in once at startup, write with `navigator.clipboard.writeText` on Save's click, and give Load a
+text field of the page's own, invisible. It is focused once the click is over, or Safari takes
+the focus back, and its keys are stopped before the game's listeners, which would cancel Cmd+V;
+the editor reads it once a frame. Tried in Chrome and in Safari 26.6, 2026-10-04; Firefox and
+phones are not. Natively, `pygame.scrap`. Only `editor/clipboard.py` talks to the page.

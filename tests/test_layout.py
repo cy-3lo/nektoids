@@ -31,6 +31,7 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     Env,
+    FileButton,
     Goal,
     HintRow,
     LevelButton,
@@ -43,6 +44,7 @@ from nektoids.editor.layout import (
     ViewButton,
     action_at,
     board_extent,
+    board_field_at,
     board_view_of,
     cell_at,
     centred_on,
@@ -52,6 +54,7 @@ from nektoids.editor.layout import (
     drawer_button_at,
     drawer_key,
     edit_button_at,
+    file_button_at,
     goal_row_at,
     group_at,
     hint_row_at,
@@ -137,7 +140,7 @@ def test_the_bar_the_drawer_and_the_board_side_by_side_the_tabs_over_the_board()
 def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
     for layout, rows in (
         (LAYOUT, LAYOUT.menu_items),
-        (FILES, FILES.win_rows),
+        (FILES, (*FILES.win_rows, *FILES.file_buttons)),
         (RUN_NAVIGATOR, (*RUN_NAVIGATOR.view_buttons, *RUN_NAVIGATOR.goal_rows)),
     ):
         assert len(layout.info_buttons) == len(rows) > 0
@@ -316,7 +319,7 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
         assert action_at(layout, (x + 5, y + 5)) is Shown.ACTION
     assert LAYOUT.mode_buttons == LAYOUT.edit_buttons == ()  # Parts open: Tools' rows are not
     assert make_layout(env=Env.RUN).action_at is None
-    assert [title for title, _ in FILES.section_titles] == ["Wins this session"]  # D-093
+    assert [title for title, _ in FILES.section_titles] == ["Wins this session", "Board as text"]
     assert [title for title, _ in NAVIGATOR.section_titles] == ["Overview"]  # no option yet
     assert NAVIGATOR.view_buttons == ()  # the editor's view has no option yet (D-065)
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
@@ -552,12 +555,17 @@ def test_files_has_each_levels_wins_under_its_title_a_group_that_folds():
     assert make_layout(Drawer.FILES).group_titles == ()  # no title for a level with no win
 
 
-def test_files_list_scrolls_down_to_the_drawers_foot_and_its_rows_answer_where_they_show():
+def test_files_list_scrolls_above_the_board_as_text_whose_save_and_field_still_answer():
     many = (("1.1 Fear", 10), ("1.2 Aggression", 10))
     files = make_layout(Drawer.FILES, files=many)
     _, ly, _, lh = files.list_area
     assert files.scroll_max > 0 and files.scroll_bar is not None
-    assert ly + lh == SCREEN[1] - FOOT_MARGIN  # no File under it any more (D-093)
+    (save, rect), field = files.file_buttons[0], files.board_field
+    assert save is FileButton.SAVE and ly + lh < rect[1] < field[1]  # under the list (D-206)
+    assert field[1] + field[3] <= SCREEN[1] - FOOT_MARGIN  # at the drawer's foot
+    assert file_button_at(files, centre(rect)) is save and board_field_at(files, centre(field))
+    assert info_at(files, centre(dict(files.info_buttons)[save])) is save  # never hidden
+    assert LAYOUT.board_field is None and LAYOUT.file_buttons == ()  # Parts: not there
     hidden = files.win_rows[-1][1]
     assert hidden[1] > ly + lh and win_row_at(files, centre(hidden)) is None
     bottom = make_layout(Drawer.FILES, files=many, scroll=10_000)

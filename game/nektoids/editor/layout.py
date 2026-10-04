@@ -6,9 +6,10 @@
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
-  (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092); Navigator:
-  the view's buttons; Hints: the level's, asked for in turn (D-078); Settings: what the player
-  sets (D-054); Chapters: the levels, then the sandbox, which replaces the full-screen map.
+  (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092), then the board
+  as text, Save and Load's field (D-206); Navigator: the view's buttons; Hints: the level's,
+  asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the levels, then
+  the sandbox, which replaces the full-screen map.
   Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
   the run (D-096). An arrow on the drawer's edge folds it.
 - The rest is the main screen: the tabs over it (Run, Editor), the level's caption under them,
@@ -127,6 +128,10 @@ class Mode(Enum):  # what a click on the board does (D-068)
 class LevelButton(Enum):  # the accented switch at the bar's foot, to the other environment
     RUN = "run"  # in the editor: the board, swimming in its arena
     EDIT = "edit"  # in the run: back to the board as it was left
+
+
+class FileButton(Enum):  # at Files' foot, under the wins (D-206)
+    SAVE = "save"  # copies the board as text; Load is the field under it
 
 
 class ViewButton(Enum):
@@ -289,6 +294,8 @@ class Layout:
     shadow_line: Rect | None  # ... and under it, where to build it: Tools or Parts (D-088)
     chapter_rows: tuple[tuple[int, Rect], ...]  # Chapters' rows: a level's index; the sandbox last
     passkey_field: Rect | None  # Chapters' foot: a level's passkey typed there (D-075)
+    file_buttons: tuple[tuple[FileButton, Rect], ...]  # Files' foot: Save (D-206)
+    board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "run", "editor"
     board_area: Rect  # the main screen: the board, or in the run the arena
@@ -422,6 +429,8 @@ def make_layout(
         shadow_line=rows.line,
         chapter_rows=tuple(rows.of(int)),
         passkey_field=rows.passkey,
+        file_buttons=tuple(rows.of(FileButton)),
+        board_field=rows.board_field,
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
@@ -458,6 +467,7 @@ class _Rows:
         self.zoom_buttons: list[tuple[ViewButton, Rect]] = []
         self.zoom_bar: Rect | None = None
         self.passkey: Rect | None = None
+        self.board_field: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
         self.picture: Rect | None = None
         self.line: Rect | None = None
@@ -493,11 +503,17 @@ class _Rows:
     def files(
         self, files: tuple[tuple[str, int], ...], folded: frozenset[str], height: int, scroll: int
     ) -> None:
-        """Under its label, down to the drawer's foot, each level's wins, a group that folds and
-        scrolls as Parts' do (D-092)."""
+        """Under its label, each level's wins, a group that folds and scrolls as Parts' do
+        (D-092); at the drawer's foot, the board as text: Save, then Load's field (D-206)."""
         self.label("Wins this session")
+        foot = height - FOOT_MARGIN - TITLE_HEIGHT - 2 * ROW_PITCH
         groups = [(title, [WinRow(g, k) for k in range(n)]) for g, (title, n) in enumerate(files)]
-        self._folding(groups, folded, height - FOOT_MARGIN, scroll)
+        self._folding(groups, folded, foot - SECTION_GAP, scroll)
+        self.y = foot
+        self.label("Board as text")
+        self._row(FileButton.SAVE)
+        self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
+        self.y += ROW_PITCH
 
     def _folding(
         self,
@@ -687,6 +703,15 @@ def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
     return next((d for d, rect in layout.drawer_buttons if contains(rect, point)), None)
 
 
+def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
+    return next((b for b, rect in layout.file_buttons if contains(rect, point)), None)
+
+
+def board_field_at(layout: Layout, point: tuple[int, int]) -> bool:
+    """Whether `point` is on Load's field, at Files' foot (D-206)."""
+    return layout.board_field is not None and contains(layout.board_field, point)
+
+
 def passkey_at(layout: Layout, point: tuple[int, int]) -> bool:
     """Whether `point` is on Chapters' passkey field (D-075), where it shows."""
     field = layout.passkey_field
@@ -746,13 +771,13 @@ def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
 
 def info_at(layout: Layout, point: tuple[int, int]) -> object | None:
     """The row whose info disc is under `point`, if any: a part, a tool, a button, a win; an
-    objective's, at the run's drawers' foot, which never scroll (D-065)."""
+    objective's, at the run's drawers' foot, and Save, at Files', which never scroll (D-065)."""
     listed = _listed(layout, point)
     return next(
         (
             what
             for what, rect in layout.info_buttons
-            if contains(rect, point) and (listed or isinstance(what, Goal))
+            if contains(rect, point) and (listed or isinstance(what, (Goal, FileButton)))
         ),
         None,
     )
