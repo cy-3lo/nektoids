@@ -1,0 +1,29 @@
+{
+  "title": "Greed",
+  "spec": "Touch both lights.",
+  "start": {"at": [8.0, 19.0], "heading": 0.0},
+  "items": [
+    {"kind": "light", "at": [18.0, 19.0], "power": 6.0},
+    {"kind": "light", "at": [13.0, 10.5], "power": 3.0}
+  ],
+  "board": {
+    "zone": [
+      [0, -2], [1, -2], [2, -2], [-1, -1], [0, -1], [1, -1], [2, -1], [-2, 0], [-1, 0], [0, 0],
+      [1, 0], [2, 0], [-2, 1], [-1, 1], [0, 1], [1, 1], [-2, 2], [-1, 2], [0, 2]
+    ],
+    "stock": {
+      "eye": 2,
+      "source": 1,
+      "double": null,
+      "halve": null,
+      "sum": null,
+      "difference": null,
+      "thruster": 2
+    },
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 20.0,
+  "objectives": [{"kind": "visit lights"}],
+  "passkey": "GOLD"
+}

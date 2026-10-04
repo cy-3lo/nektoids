@@ -4,14 +4,6 @@ What is left before the jam build ships, in the order it unblocks the rest. The 
 item removes it; what was done is in git and in [`decisions.md`](decisions.md). Sections keep
 their numbers, which the decision log cites. Ideas for after the jam go in [`ideas.md`](ideas.md).
 
-## 2. The levels themselves
-
-The chapter is Fear, Aggression, Love, Orbit, Shadows, Greed, Patience (D-097); Fear opens on an
-introduction (D-079), and the first five levels have their hints (D-078).
-
-- [ ] Greed and Patience, the real level, as D-097 designed them, each with its winner pinned
-      with margin (D-004).
-
 ## 5. Ship
 
 - [ ] `DEV_VIEW = False` for the build that is uploaded.

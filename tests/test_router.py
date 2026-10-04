@@ -171,7 +171,7 @@ def test_a_passkey_opens_the_level_after_the_one_whose_win_gives_it_and_those_be
     assert [router.state(k) for k in range(4)] == ["open", "open", "open", "locked"]
     assert not router.won  # opened, not won: no score
     router.open(2)  # Love opens
-    assert router.unlock("DARK") is None  # the last level's word opens nothing yet
+    assert router.unlock(router.levels[-1].passkey) is None  # the last's opens nothing yet
     assert router.unlock("heart") == 3 and router.state(3) == "open"
 
 

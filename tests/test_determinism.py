@@ -296,6 +296,63 @@ def test_orbit_aggression_touches_the_light_and_a_bare_drive_or_fear_never_go_ro
         assert play(net, "Orbit")[0] is Outcome.TIME_UP
 
 
+EYES = [(Kind.EYE, (-1, -1), NE), (Kind.EYE, (-2, 1), SE)]  # back left and right, looking out
+DOUBLES = [(Kind.DOUBLE, (0, -1), None), (Kind.DOUBLE, (0, 1), None)]
+DOUBLED = [(0, 4), (4, 3), (1, 5), (5, 2)]  # each eye through its Double to the other side
+
+
+def greedy():
+    """Greed's model (D-098): aggression with a Double on each crossed wire, six parts."""
+    return built("Greed", [*EYES, *THRUSTERS, *DOUBLES], DOUBLED)
+
+
+def patient(doubled=False):
+    """Patience's model (D-098): crossed eyes and a halved drive, a Source through a Halve on
+    both thrusters; six parts, or eight with the eyes doubled too."""
+    if not doubled:
+        parts = [*EYES, *THRUSTERS, (Kind.SOURCE, (0, 0), None), (Kind.HALVE, (-1, 0), None)]
+        return built("Patience", parts, [(0, 3), (1, 2), (4, 5), (5, 2), (5, 3)])
+    drive = [(Kind.SOURCE, (-1, 0), None), (Kind.HALVE, (1, 0), None)]
+    return built(
+        "Patience", [*EYES, *THRUSTERS, *DOUBLES, *drive], [*DOUBLED, (6, 7), (7, 2), (7, 3)]
+    )
+
+
+def test_greed_doubled_eyes_touch_the_bright_light_and_then_the_dim_one_in_time():
+    ended, ticks, _ = play(greedy(), "Greed")
+    assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Greed"].time_limit
+    assert play(greedy(), "Greed")[1] == ticks  # the same tick, every run
+
+
+def test_greed_plain_aggression_stays_on_the_bright_light_and_a_drive_overshoots():
+    ended, _, (visited,) = play(CROSSED, "Greed")
+    assert ended is Outcome.TIME_UP and visited.tolist() == [[True, False]]  # the bright one only
+    assert play(DRIVEN, "Greed")[0] is Outcome.TIME_UP
+
+
+def test_patience_a_halved_drive_gets_out_of_the_dark_and_touches_all_three_lights_in_time():
+    for doubled in (False, True):
+        ended, ticks, _ = play(patient(doubled), "Patience")
+        assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Patience"].time_limit
+        assert play(patient(doubled), "Patience")[1] == ticks  # the same tick, every run
+    assert (
+        play(patient(True), "Patience")[1] < play(patient(), "Patience")[1]
+    )  # eight parts, faster
+
+
+def test_patience_without_a_drive_nothing_moves_and_with_a_full_one_it_overshoots():
+    level = LEVELS["Patience"]
+    pos, _, y = last(run(CROSSED, "Patience", 5.0))
+    assert pos.tolist() == [list(level.start[:2])] and np.all(y[:, CROSSED.eyes] == 0.0)
+    doubled_drive = built(
+        "Patience",
+        [*EYES, *THRUSTERS, *DOUBLES, (Kind.SOURCE, (-1, 0), None)],
+        [*DOUBLED, (6, 2), (6, 3)],
+    )
+    for net in (DRIVEN, doubled_drive):  # Shadows' board, and doubled eyes with a full drive
+        assert play(net, "Patience")[0] is Outcome.TIME_UP
+
+
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
     arena = LEVELS["Aggression"].arena
     for pos, heading, y in run(CROSSED, "Aggression", 2.0):

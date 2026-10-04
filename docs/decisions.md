@@ -1314,3 +1314,25 @@ levels first; then Shadows (a drive, D-032); Greed, 1.6, two lights where plain 
 on the bright one and Shadows' drive overshoots, won by a Double on each crossed wire; Patience,
 1.7, the real level, three lights and two obstacles from a start in the dark, won by halving the
 drive. Their layouts and pins come with them (D-098). The existing words stay with their levels.
+
+**D-098 — 2026-10-04 — LEVEL 1.6 is Greed, two lights won by doubling the eyes; LEVEL 1.7 is Patience, the real level, three lights and two obstacles won by halving the drive. Only the first five levels have hints. Amends D-078; todo §2 is done.**
+Both come from D-097's search, each checked from seven perturbed starts. Greed: a bright light
+(power 6) 10 u ahead of the start, (18, 19), and a dim one (power 3) off to the side, (13, 10.5);
+no obstacle; touch both in 20 s. Plain aggression reaches the bright light and stays on it,
+where both eyes read full; Shadows' drive carries the swimmer past the dim one. A Double on each
+crossed wire, six parts, touches both in 9.8 s: steering twice as hard, it leaves the bright light
+and turns back for the dim one. A halved drive and the orbiter do not win; doubled eyes with a
+drive, halved or not, win from some starts only. Its word is GOLD.
+Patience, the real level: three lights of power 4 in a loop, (23, 18.5), (21, 8.5), (14.5, 18), the
+last just behind the obstacle the swimmer starts behind, as in Shadows, (12, 19) r 1.5, start
+(8, 18.4) heading E; a second obstacle, (18.5, 11) r 1.5, between the second light and the third;
+touch all three in 20 s. From the start no eye sees a light, so nothing without a drive moves
+(Shadows' lesson); with Shadows' full drive, doubled eyes or not, the swimmer flies past the
+lights. Halving the drive, a Source through a Halve on both thrusters with crossed eyes, six parts,
+touches all three in 10.9 s; doubling the eyes too, eight parts, in 10.3 s: the level's Pareto
+front. Its word is SNAIL and opens nothing yet.
+Hints: Greed and Patience have none; the drawer says "No hints here.", as it now says in the
+sandbox. A player who reaches them has the drive, the gain and the asymmetry from the five before,
+and the real level is the one the brief's success criterion asks strangers to finish on their
+own. `test_hints.py` checks that the first five have hints and the rest none;
+`test_determinism.py` pins both winners and the ways to fail.

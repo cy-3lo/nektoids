@@ -940,8 +940,8 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         _draw_shadow(screen, hints.board, layout.shadow_picture)
         _draw_with_icons(screen, fonts, BUILD_IT, layout.shadow_line)
     note = None
-    if hints is None:
-        note = "No hints in the sandbox."
+    if hints is None:  # the sandbox, and the levels after the first five (D-098)
+        note = "No hints here."
     elif hints.locked:
         note = "Skip or finish the tutorial for hints."
     if note is not None:
