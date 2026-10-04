@@ -1388,8 +1388,6 @@ the editor now opens a zone at the largest size, 40 px at most, that keeps its h
 that action and of the board's sides (`layout.opening_view`): the sandbox at 34 px, every level
 at 40 as before.
 
-**D-103 — 2026-10-04 — Aggression comes with one eye wired to its own side's thruster, and three cards take the player to Diagnostic to try it. Amends D-070 and D-079.**
-
 **D-103 — 2026-10-04 — Aggression comes with one eye wired to its own side's thruster; its tutorial opens in the editor, Parts open, and two cards take the player to Diagnostic to try it. Amends D-069, D-070 and D-079.**
 Nothing taught Diagnostic since D-079 took Aggression's tutorial away (D-070 had left it for
 later). Aggression's board now starts with two of its parts on the cells of its hint's shadow,
