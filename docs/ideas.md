@@ -12,8 +12,8 @@ Each opens with a decision that sets its scope, as the scope lock did for the ja
 brings its own levels.
 
 0. **Foundations**: one table of part kinds, sensors in general, a level format with a version,
-   saving and a board as text. Under way (D-200).
-1. **A level maker**, for us and Camille first, then for players.
+   saving and a board as text. Done (D-200 to D-206, #46).
+1. **A level maker**, for us and Camille first, then for players. Under way (D-300).
 2. **Memory**: tanks, valves, loops in the editor, lights that change in time.
 3. **Flows and flow sensing**: streams and vortices as items, a swimmer they carry, a sensor
    that reads them.
@@ -24,27 +24,11 @@ close the file.
 
 ## 0. Foundations
 
-In the todo, §10, since D-200: built on `stage/0-foundations`, then merged into
-`main` once the jam build is uploaded.
+Done: D-200 to D-206, built on `stage/0-foundations` and merged into `main` in #46.
 
 ## 1. A level maker
 
-- **A level editor**, Super Mario Maker-like: levels are data already (D-028). It comes first
-  after the foundations (D-105): Camille can make levels without programming (D-041), and every
-  later stage needs levels.
-  - The plane: lights, obstacles and the swimmer's start, placed, moved and turned; flow items
-    when stage 3 brings them. Values on a lattice, positions every 0.5 u and powers in whole
-    numbers: invariant 4 binds only the player's graph, but a lattice keeps a level's text short
-    and its layout legible.
-  - The board: zone, stock and locked parts, set with the board editor itself.
-  - Objectives from `OBJECTIVES`, with their settings, and the time allowed.
-  - A clear check, as in Mario Maker: a level is shared only once its maker has won it; the
-    winning board goes with it, as its proof and as the score to beat.
-  - Shared as text, with the board's encoder (stage 0); no server.
-- **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
-  2,603 random wirings, the fastest a one-eyed circler. Its file is in the history
-  (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
-- **Sharing levels and solutions.**
+In the todo, §11, since D-300: built on `stage/1-level-maker`.
 
 ## 2. Memory: the graph's vocabulary
 
