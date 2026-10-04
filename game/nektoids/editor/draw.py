@@ -141,7 +141,7 @@ from nektoids.editor.palette import (
     WIRING_OK,
     ZONE,
 )
-from nektoids.editor.parts import NAME, info
+from nektoids.editor.parts import NAME, info, ports
 from nektoids.editor.probe import level_view, ring_radii
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
@@ -232,7 +232,7 @@ WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
 FACE_WIDTH = 0.1  # [hex sizes]
-INFO_ICON = 12  # a menu row's info disc [px]
+INFO_ICON = 16  # a menu row's info disc [px]
 INFO_PAD = 12  # inside the info box [px]
 
 # Icon height as a fraction of the hex size.
@@ -1192,7 +1192,8 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
     else:
         name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]
-    rows += [fonts.small.render(line, True, TEXT) for line in lines]
+    dim = ports(what) if isinstance(what, Kind) else ()  # a part's In and Out, in grey
+    rows += [fonts.small.render(line, True, DIM_TEXT if line in dim else TEXT) for line in lines]
     entry = scene.entry if scene.entry is not None and scene.entry.kind is what else None
     _, _, circuit_w, circuit_h = ENTRY_AREA
     widths = [row.get_width() for row in rows] + ([] if entry is None else [circuit_w])
