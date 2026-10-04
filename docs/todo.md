@@ -18,18 +18,11 @@ jam build is uploaded (D-200).
 What every later stage needs; none of it shows to the player but Save and Load. In the order
 they are built.
 
-- [ ] **Saving and loading, and a board as text**, one piece of work (was todo §9; D-093). Save
-      and Load come back with it, as rows at the foot of Files, under this session's wins
-      (D-092); until D-093 they sat there greyed (D-027). The format of D-024, with a version
-      number, keeping wire paths exactly; a board as a short line of ASCII to copy, paste, keep
-      in a text file and open again: that board packed into bits and spelled out. Its language
-      is a decision first. Saved paths are kept exactly (D-204).
-      - Letters (base 32, like a licence key) or words from a list (2048 words, 11 bits each)?
-      - Length, roughly: six parts and six wires with their paths kept exactly come to under 200
-        bits, about 35 letters or 17 words; less if the paths are drawn again in wire order,
-        which gives the same routes unless Move or Delete was used (D-024).
-      - A check against typing mistakes, Shannon-like: redundant check symbols, so a mistyped
-        line is refused (or even corrected) rather than loading another board. A version mark.
-      - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Wait
-        and see on the web build.
-      - The same mechanism as the level passkeys (D-075): a word that brings a state back.
+- [ ] **Save and Load**, the last of saving (was todo §9; D-093). Saved paths are kept exactly
+      (D-204), and a board has its text (D-205, `graph/boardtext.py`). Save and Load come back
+      as rows at the foot of Files, under this session's wins (D-092); until D-093 they sat
+      there greyed (D-027). Loading a text puts its board on the open level by `Board.adopt`, or
+      says why not.
+      - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Try it
+        on the web build first; else the text shows in a box to select, and a field takes it.
+      - A level's locked parts: the text's parts on their cells are the level's own.

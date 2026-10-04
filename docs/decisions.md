@@ -1497,3 +1497,23 @@ must join its ends a step at a time, through free cells of the zone, by edges no
 `from_dict` lays each wire on its path in the order they were drawn, and refuses data no board
 could hold, naming why. A wire saved without a path, which no file has, is routed as before. The
 board as text (D-205) needs it too: a path the router would not take is written step by step.
+
+**D-205 — 2026-10-04 — A board as text holds only the decisions the rules leave open, as one integer in a mixed radix, written in base 59 with four check characters per block; it names no level, and its version is hidden in the checks.**
+A board is a diagram on a body: its zone, a disc; its parts in id order, each a cell, a kind and
+a facing if it turns; its wires in drawing order, each its ends and its path. No level: loading a
+text into one is `Board.adopt` (D-092), which says what the level does not hand out, as for a win
+of another level. Replayed on a bare body, each decision is a digit whose base is the number of
+choices the rules allow there, so a forced choice costs nothing; a path costs one binary digit
+when it is the router's, drawn after the wires before it, and its steps otherwise. The id order
+is kept, since a Thruster sums its wires in its nodes' order and the run must be bit-identical.
+A kind is one of 32 codes, `Kind`'s order, which only grows at its end: a text written today
+holds once tanks and valves exist. A zone is one of 16 codes, discs of radius 0 to 7 and room for
+other shapes. The integer is written in base 59, the alphanumerics without I, l and O, which are
+read as 1, 1 and 0; no symbol, since symbols break a double-click and chat apps read * and _ as
+Markdown. It goes in blocks of 53 characters, each followed by four check characters of a
+Reed-Solomon code over the integers mod 59, a field since 59 is prime. The format's version is a
+hidden first symbol of every block, never written: a text of another version fails its checks.
+With distance 5, one wrong character is put right and two are refused, never read as another
+board. Fear's model board is `2Svbskor23U3aec`, 15 characters; Patience's, 26; F4's JSON for
+them, about 500 and 1,000. A change to the format, to a part's rules or to the router raises the
+version. Save and Load in Files, and the clipboard, come next.

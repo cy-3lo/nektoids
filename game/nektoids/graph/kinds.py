@@ -26,6 +26,8 @@ class Category(Enum):
 
 
 class Kind(Enum):
+    # A kind's place here is its code in a board's text (D-205): new kinds go at the end, and
+    # none is ever moved or taken out.
     EYE = "eye"
     SOURCE = "source"  # produces a signal of its own; senses nothing
     DOUBLE = "double"
