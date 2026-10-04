@@ -37,6 +37,8 @@ class Objective(Protocol):
     kind: ClassVar[str]  # how a level's data names it; stays put if `name` is reworded
     name: str  # as the player reads it
     broken: ClassVar[str]  # what the run's end says if it loses the run
+    icon: ClassVar[str]  # its row's icon in the run, by its name in `editor/icons.py`
+    about: ClassVar[str]  # what its info box says, its settings put in by name
 
     def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
         """(N, K): what counts now, for swimmers at pos (N, 2) [u] of radius (N,) [u]."""
@@ -136,6 +138,8 @@ class VisitLights(Latched):
 
     kind: ClassVar[str] = "visit lights"
     name: str = "Visit every light"
+    icon: ClassVar[str] = "location-dot"
+    about: ClassVar[str] = "Reach every light, in any order."
 
     def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
         return reaching(arena, pos, radius)  # (N, L)
@@ -147,6 +151,8 @@ class LeaveRing(Latched):
 
     kind: ClassVar[str] = "leave ring"
     name: str = "Leave the ring"
+    icon: ClassVar[str] = "right-from-bracket"
+    about: ClassVar[str] = "Get out of the dashed ring round the light."
     radius: float = 12.0  # [u], from the light's centre to the swimmer's
 
     def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
@@ -162,6 +168,8 @@ class StayNear:
 
     kind: ClassVar[str] = "stay near"
     name: str = "Stay by the light"
+    icon: ClassVar[str] = "bullseye"
+    about: ClassVar[str] = "Stay inside the dashed ring for {seconds:g} s in a row."
     radius: float = 6.0  # [u], from the light's centre to the swimmer's
     seconds: float = 5.0  # [s]
     broken: ClassVar[str] = "Lost"
@@ -194,6 +202,8 @@ class KeepOff(Latched):
 
     kind: ClassVar[str] = "keep off"
     name: str = "Don't touch the light"
+    icon: ClassVar[str] = "circle-xmark"
+    about: ClassVar[str] = "Touching a light loses the run at once."
     broken: ClassVar[str] = "It touched the light"
 
     def marks(self, arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
@@ -215,6 +225,8 @@ class CircleLight:
 
     kind: ClassVar[str] = "circle light"
     name: str = "Circle the light"
+    icon: ClassVar[str] = "rotate"
+    about: ClassVar[str] = "Go round the light {turns} times, either way."  # D-097
     turns: int = 2
     broken: ClassVar[str] = "Lost"
 
