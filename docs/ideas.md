@@ -99,3 +99,10 @@ puts it in scope. Until D-028 these were logged in the decision log as "post-jam
 - **Sound, art.**
 - **Sound and Music in Settings**, once there is sound (D-054; todo §8 until D-104).
 - **GIF export of a run**: it made Opus Magnum's solutions a social object (brief §4).
+
+## Studio
+
+- **The domains nektoids.com and nektoids.io** (the physicist, 2026-10-04): both unregistered
+  that day (`whois`). The itch.io page makes the name public, and a .com costs about €10–15 a
+  year. A .io costs more, and its future has been uncertain since the 2025 UK–Mauritius treaty
+  on the Chagos, so the .com first.
