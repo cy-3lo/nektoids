@@ -6,10 +6,10 @@
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
-  (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092), then the board
-  as text, Save and Load's field (D-206); Navigator: the view's buttons; Hints: the level's,
-  asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the levels, then
-  the sandbox, which replaces the full-screen map.
+  (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092), then
+  Save/Load: Copy a board, Paste a board (D-206); Navigator: the view's buttons; Hints: the
+  level's, asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the
+  levels, then the sandbox, which replaces the full-screen map.
   Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
   the run (D-096). An arrow on the drawer's edge folds it.
 - The rest is the main screen: the tabs over it (Run, Editor), the level's caption under them,
@@ -131,7 +131,7 @@ class LevelButton(Enum):  # the accented switch at the bar's foot, to the other 
 
 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
-    SAVE = "save"  # copies the board as text; Load is the field under it
+    SAVE = "save"  # Copy a board: its text; the field to paste one is under it
 
 
 class ViewButton(Enum):
@@ -504,13 +504,14 @@ class _Rows:
         self, files: tuple[tuple[str, int], ...], folded: frozenset[str], height: int, scroll: int
     ) -> None:
         """Under its label, each level's wins, a group that folds and scrolls as Parts' do
-        (D-092); at the drawer's foot, the board as text: Save, then Load's field (D-206)."""
+        (D-092); at the drawer's foot, Save/Load: Copy a board, then a field to paste one into
+        (D-206)."""
         self.label("Wins this session")
         foot = height - FOOT_MARGIN - TITLE_HEIGHT - 2 * ROW_PITCH
         groups = [(title, [WinRow(g, k) for k in range(n)]) for g, (title, n) in enumerate(files)]
         self._folding(groups, folded, foot - SECTION_GAP, scroll)
         self.y = foot
-        self.label("Board as text")
+        self.label("Save/Load")
         self._row(FileButton.SAVE)
         self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH

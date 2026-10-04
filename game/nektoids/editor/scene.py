@@ -32,8 +32,8 @@ Ctrl+Y (Cmd on a Mac): one step is one gesture, from press to release, so a whol
 at once. Space asks `main.py` for a run, Tab opens Chapters: the scene sets `request` and
 `main.py` acts on it. A part's info disc in Parts opens a box that says what the part does; the
 next click or key closes it and does nothing else (D-036). Every refusal flashes the cell and
-puts the reason in the status line. At Files' foot, Save copies the board as text and Load's
-field takes one, pasted or typed, which Enter puts on the board (D-205, D-206).
+puts the reason in the status line. At Files' foot, Save/Load: Copy a board puts its text on the
+clipboard, and Paste a board, a field, takes one, which Enter puts on the board (D-205, D-206).
 """
 
 from __future__ import annotations

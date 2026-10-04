@@ -174,7 +174,7 @@ TIP = {
     " drag one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
-    " into Load's field, under Save, to bring the board back, on this level or another.",
+    " into Paste a board, under this row, to bring it back, on this level or another.",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     Drawer.TOOLS: "Tools",
@@ -217,7 +217,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     EditButton.REDO: "Redo",
     Mode.WRITE: "Write",
     Mode.DELETE: "Delete",
-    FileButton.SAVE: "Save",
+    FileButton.SAVE: "Copy a board",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Hand",
@@ -882,8 +882,8 @@ def _draw_foot(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
 
 
 def _draw_board_text(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Files' foot (D-206): its title, Save, then Load's field: what is pasted or typed, its
-    end showing, with a caret, lit while it is open; else what to do."""
+    """Files' foot (D-206): Save/Load, Copy a board, then the field to paste one: what is
+    pasted or typed, its end showing, with a caret, lit while it is open; else what to do."""
     layout = scene.layout
     _, top, _, room = layout.list_area
     for title, rect in layout.section_titles:

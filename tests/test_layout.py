@@ -319,7 +319,7 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
         assert action_at(layout, (x + 5, y + 5)) is Shown.ACTION
     assert LAYOUT.mode_buttons == LAYOUT.edit_buttons == ()  # Parts open: Tools' rows are not
     assert make_layout(env=Env.RUN).action_at is None
-    assert [title for title, _ in FILES.section_titles] == ["Wins this session", "Board as text"]
+    assert [title for title, _ in FILES.section_titles] == ["Wins this session", "Save/Load"]
     assert [title for title, _ in NAVIGATOR.section_titles] == ["Overview"]  # no option yet
     assert NAVIGATOR.view_buttons == ()  # the editor's view has no option yet (D-065)
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
