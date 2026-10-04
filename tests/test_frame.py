@@ -1,7 +1,15 @@
 """The frame the editor and the run share (D-051, D-054). frame.py imports no pygame."""
 
 from nektoids.editor.frame import WARM_FRAMES, Frame
-from nektoids.editor.layout import Drawer, Layout, LevelButton, Setting, make_layout
+from nektoids.editor.layout import (
+    SCROLL_STEP,
+    Drawer,
+    Env,
+    Layout,
+    LevelButton,
+    Setting,
+    make_layout,
+)
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.tutorial import REFUSAL
 from nektoids.graph.board import Kind
@@ -10,12 +18,25 @@ from nektoids.graph.board import Kind
 class Scene(Frame):
     """A frame and nothing else, as a scene would hold it."""
 
-    def __init__(self, drawer: Drawer | None = Drawer.PARTS):
-        self._start_frame(make_layout(drawer, chapter=3), None)
+    def __init__(
+        self,
+        drawer: Drawer | None = Drawer.PARTS,
+        env: Env = Env.EDITOR,
+        chapter: int = 3,
+        goals: int = 0,
+    ):
+        self.goals = goals  # the level's objectives, under the run's drawers
+        self._start_frame(make_layout(drawer, chapter=chapter, env=env, goals=goals), None)
         self.slid: list[tuple[Drawer | None, Drawer | None]] = []
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
-        return make_layout(drawer, chapter=self.layout.chapter, env=self.layout.env)
+        return make_layout(
+            drawer,
+            chapter=self.layout.chapter,
+            env=self.layout.env,
+            goals=self.goals,
+            scroll=self.scrolls.get(drawer, 0),
+        )
 
     def _slid(self, before: Layout, after: Layout) -> None:
         self.slid.append((before.drawer, after.drawer))
@@ -186,3 +207,29 @@ def test_a_parts_entry_runs_its_own_circuit_while_its_box_is_open():
     scene.info = Setting.FAST  # a row's box, not a part's
     scene.frame_update()
     assert scene.entry is None
+
+
+def test_the_mouse_wheel_scrolls_a_drawer_whose_rows_do_not_fit_in_the_run_too():
+    scene = Scene(Drawer.CHAPTERS, Env.RUN, chapter=7, goals=3)  # D-096
+    inside = centre(scene.layout.list_area)
+    assert scene.layout.scroll_max > 0 and scene.layout.scroll == 0
+    scene.info = 0  # a row's info box: it closes, as its row moves
+    assert scene.frame_wheel(inside, -2)  # down: the rows go up
+    assert scene.layout.scroll == 2 * SCROLL_STEP and scene.info is None
+    assert scene.frame_wheel(inside, 99) and scene.layout.scroll == 0  # no farther than the top
+    assert not scene.frame_wheel(centre(scene.layout.board_area), -1)  # the scene's to take
+    scene.toggle_drawer(Drawer.SETTINGS)  # its rows fit: nothing to scroll
+    assert not scene.frame_wheel(centre(scene.layout.list_area), -1)
+    scene.toggle_drawer(Drawer.CHAPTERS)
+    assert scene.layout.scroll == 0  # each drawer keeps its own scroll
+
+
+def test_the_scroll_bar_held_drags_the_rows_until_it_is_let_go():
+    scene = Scene(Drawer.CHAPTERS, Env.RUN, chapter=7, goals=3)
+    x, y, w, h = scene.layout.scroll_bar
+    assert scene.frame_press((x + w // 2, y + h // 2)) and scene.scrolling
+    scene.frame_track((x, y + h))
+    assert scene.layout.scroll == scene.layout.scroll_max
+    scene.frame_release()
+    scene.frame_track((x, y))
+    assert not scene.scrolling and scene.layout.scroll == scene.layout.scroll_max

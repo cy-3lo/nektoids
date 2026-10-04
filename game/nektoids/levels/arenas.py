@@ -16,8 +16,12 @@ ORDER = (
     "fear",
     "aggression",
     "love",
+    "orbit",
     "shadows",
-)  # the route's files, in the order the levels come: Braitenberg's 2a, 2b, 3a, then (D-074)
+    "greed",
+    "patience",
+)  # the route's files, in the order the levels come: Braitenberg's 2a, 2b, 3a, the brief's
+# orbit (D-097), then the levels with obstacles and more lights, the real level last (D-098)
 SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)
 
 

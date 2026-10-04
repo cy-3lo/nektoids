@@ -242,6 +242,117 @@ def test_without_a_diff_the_swimmer_touches_the_light_and_loses():
         assert play(love(upper, lower, wiring), "Love")[0] is Outcome.LOST, wiring
 
 
+def built(title, parts, wires):
+    """A board on the level's own stock: `parts`, (kind, cell, facing) each, placed in order,
+    then `wires` drawn between them by their places in `parts`."""
+    board = LEVELS[title].new_board()
+    nodes = [board.place(kind, cell, facing=facing) for kind, cell, facing in parts]
+    assert not any(isinstance(node, Refused) for node in nodes), nodes
+    for a, b in wires:
+        assert not isinstance(board.connect(nodes[a].id, nodes[b].id), Refused), (a, b)
+    return Network.from_board(board)
+
+
+THRUSTERS = [(Kind.THRUSTER, (2, -1), E), (Kind.THRUSTER, (1, 1), E)]  # front left, front right
+# The orbiter (D-097): an eye at the back left looking ahead pushes the left thruster; a Source
+# pushes the right one all the time, so the swimmer turns left until the light, seen ahead,
+# straightens it: it settles on a circle round the light, keeping it on its left.
+ORBITER = built(
+    "Orbit", [(Kind.EYE, (-1, -1), E), (Kind.SOURCE, (0, 0), None), *THRUSTERS], [(0, 2), (1, 3)]
+)
+# The brief's ÷2 on one side: eyes ahead, crossed, the left one halved; a Source on the right.
+HALVED = built(
+    "Orbit",
+    [
+        (Kind.EYE, (-1, -1), E),
+        (Kind.EYE, (-2, 1), E),
+        *THRUSTERS,
+        (Kind.SOURCE, (0, 0), None),
+        (Kind.HALVE, (0, -1), None),
+    ],
+    [(0, 5), (5, 3), (1, 2), (4, 3)],
+)
+
+
+def test_orbit_the_orbiter_circles_the_light_twice_well_clear_of_it_with_time_to_spare():
+    ended, ticks, _ = play(ORBITER, "Orbit")
+    assert ended is Outcome.WON and ticks * DT < 0.7 * LEVELS["Orbit"].time_limit
+    assert play(ORBITER, "Orbit")[1] == ticks  # the same tick, every run
+    light = LEVELS["Orbit"].arena.light_xy[0]
+    nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(ORBITER, "Orbit", ticks * DT))
+    assert nearest > 2 * TOUCH  # it orbits 5.2 u out: never near touching (D-004)
+
+
+def test_orbit_halving_one_crossed_eye_orbits_too_and_faster():
+    ended, ticks, _ = play(HALVED, "Orbit")
+    assert ended is Outcome.WON and ticks < play(ORBITER, "Orbit")[1]
+
+
+def test_orbit_aggression_touches_the_light_and_a_bare_drive_or_fear_never_go_round_it():
+    assert play(CROSSED, "Orbit")[0] is Outcome.LOST
+    drive = Network.from_edges([Kind.SOURCE, Kind.THRUSTER, Kind.THRUSTER], [(0, 1), (0, 2)])
+    fear_driven = driven((0, 2), (1, 3))
+    for net in (drive, fear_driven, UNCROSSED):
+        assert play(net, "Orbit")[0] is Outcome.TIME_UP
+
+
+EYES = [(Kind.EYE, (-1, -1), NE), (Kind.EYE, (-2, 1), SE)]  # back left and right, looking out
+DOUBLES = [(Kind.DOUBLE, (0, -1), None), (Kind.DOUBLE, (0, 1), None)]
+DOUBLED = [(0, 4), (4, 3), (1, 5), (5, 2)]  # each eye through its Double to the other side
+
+
+def greedy():
+    """Greed's model (D-098): aggression with a Double on each crossed wire, six parts."""
+    return built("Greed", [*EYES, *THRUSTERS, *DOUBLES], DOUBLED)
+
+
+def patient(doubled=False):
+    """Patience's model (D-098): crossed eyes and a halved drive, a Source through a Halve on
+    both thrusters; six parts, or eight with the eyes doubled too."""
+    if not doubled:
+        parts = [*EYES, *THRUSTERS, (Kind.SOURCE, (0, 0), None), (Kind.HALVE, (-1, 0), None)]
+        return built("Patience", parts, [(0, 3), (1, 2), (4, 5), (5, 2), (5, 3)])
+    drive = [(Kind.SOURCE, (-1, 0), None), (Kind.HALVE, (1, 0), None)]
+    return built(
+        "Patience", [*EYES, *THRUSTERS, *DOUBLES, *drive], [*DOUBLED, (6, 7), (7, 2), (7, 3)]
+    )
+
+
+def test_greed_doubled_eyes_touch_the_bright_light_and_then_the_dim_one_in_time():
+    ended, ticks, _ = play(greedy(), "Greed")
+    assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Greed"].time_limit
+    assert play(greedy(), "Greed")[1] == ticks  # the same tick, every run
+
+
+def test_greed_plain_aggression_stays_on_the_bright_light_and_a_drive_overshoots():
+    ended, _, (visited,) = play(CROSSED, "Greed")
+    assert ended is Outcome.TIME_UP and visited.tolist() == [[True, False]]  # the bright one only
+    assert play(DRIVEN, "Greed")[0] is Outcome.TIME_UP
+
+
+def test_patience_a_halved_drive_gets_out_of_the_dark_and_touches_all_three_lights_in_time():
+    for doubled in (False, True):
+        ended, ticks, _ = play(patient(doubled), "Patience")
+        assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Patience"].time_limit
+        assert play(patient(doubled), "Patience")[1] == ticks  # the same tick, every run
+    assert (
+        play(patient(True), "Patience")[1] < play(patient(), "Patience")[1]
+    )  # eight parts, faster
+
+
+def test_patience_without_a_drive_nothing_moves_and_with_a_full_one_it_overshoots():
+    level = LEVELS["Patience"]
+    pos, _, y = last(run(CROSSED, "Patience", 5.0))
+    assert pos.tolist() == [list(level.start[:2])] and np.all(y[:, CROSSED.eyes] == 0.0)
+    doubled_drive = built(
+        "Patience",
+        [*EYES, *THRUSTERS, *DOUBLES, (Kind.SOURCE, (-1, 0), None)],
+        [*DOUBLED, (6, 2), (6, 3)],
+    )
+    for net in (DRIVEN, doubled_drive):  # Shadows' board, and doubled eyes with a full drive
+        assert play(net, "Patience")[0] is Outcome.TIME_UP
+
+
 def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
     arena = LEVELS["Aggression"].arena
     for pos, heading, y in run(CROSSED, "Aggression", 2.0):

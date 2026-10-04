@@ -4,29 +4,12 @@ What is left before the jam build ships, in the order it unblocks the rest. The 
 item removes it; what was done is in git and in [`decisions.md`](decisions.md). Sections keep
 their numbers, which the decision log cites. Ideas for after the jam go in [`ideas.md`](ideas.md).
 
-## 2. The levels themselves
-
-The chapter is Fear, Aggression, Love, Shadows (D-074, D-077); Fear opens on an introduction
-(D-079), and every level has its hints (D-078).
-
-- [ ] Tutorial 3, ÷2 on one side (orbits), the brief's level 3: a level of its own, or Love's
-      place? Its objective is to be chosen: stay within a ring round the light for T s, or
-      circle it N times.
-- [ ] The real level: to design, with a winner pinned with margin (D-004).
-
 ## 5. Ship
 
 - [ ] `DEV_VIEW = False` for the build that is uploaded.
 - [ ] `pygbag --build --archive game`, upload to itch.io.
 - [ ] Check in Chrome and in Safari. Safari has never been checked: the keys (Cmd+Y opens its
       History window), the fonts, the canvas.
-
-## 6. Small things
-
-- [ ] `eye_rates` timed natively only; measure it under WASM (D-019).
-- [ ] The names: itch.io search, Google and TMview (classes 9 and 41) to check by hand (D-006).
-- [ ] In headless Chrome the first click after a key press is lost: on Fear's first drag step,
-      Skip takes two clicks there. Check it in a real browser (seen 2026-10-02).
 
 ## 7. The editor's hand, for a finger as for a mouse
 

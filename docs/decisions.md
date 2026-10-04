@@ -1271,3 +1271,93 @@ icon of the bar, as Hints' on Fear's last card, the sparks already single it out
 on the icon itself was one signal too many. A drawer's icon now keeps its colour, dim, or white
 while its drawer is open; its sparks stay. Areas, drawers' titles, the run's parts and the tabs
 keep the accent as before.
+
+**D-096 — 2026-10-04 — Every drawer of rows scrolls when its rows do not fit, in the editor and in the run. Amends D-069, D-092.**
+Only Parts and Files scrolled, and only in the editor. In the run, where the objectives take the
+drawer's foot (D-065), Navigator already ran 16 px under them on a level with two objectives,
+and Chapters will with the seven levels of D-097. Now Tools, Navigator, Hints, Settings and
+Chapters lay out their rows from the drawer's top and, if they run below its floor, scroll: the
+floor is 8 px over the objectives in the run, the drawer's foot in the editor, and the Wheel's
+title in Tools, as in Parts. They show within a list area, clipped, with the scroll bar of D-069
+while they do not fit; out of it, a row neither shows nor answers a click. The objectives and the
+Wheel stay put. The scrolling itself, the wheel, the bar held and dragged, each drawer's own
+scroll for the session, moves from the editor's scene into `Frame`, so the run has it too.
+Hints' shadow still shrinks to fit, but no smaller than 140 px; past that the drawer scrolls.
+Diagnostic, Inside and Score are drawings fitted to their room, not rows, and do not scroll.
+Clips now nest (`clipped`), so a picture clipped to its frame inside a scrolled drawer, Navigator's
+overview, stays clipped to the drawer as well. Checked in the web build: the wheel scrolls Love's
+Navigator in the run.
+
+**D-097 — 2026-10-04 — The chapter is seven levels, one new idea each: Fear, Aggression, Love, Orbit, Shadows, Greed, Patience. LEVEL 1.4 is Orbit, the brief's level 3, won by circling the light twice; a new objective counts the turns. Changes the scope lock's level count in `CLAUDE.md`; Shadows moves to 1.5.**
+The brief's third tutorial puts ÷2 on one side for an orbit. In this physics it does not orbit:
+crossed with ÷2 on one wire, the swimmer still comes to the light and parks on it, as plain
+aggression does. A circuit was searched for by simulation, with boards built through `Board`
+and every result checked from seven perturbed starts (±0.1 u, ±0.2 u, ±2°, 1e-9): an orbit needs
+one side pushed all the time and the light pushing the other. The orbiter is four parts: an eye
+at the back left looking ahead drives the left thruster, a Source the right one; the Source turns
+the swimmer left until the light, ahead of the eye's face, straightens it, and it settles on a
+circle 5.2 u from a light of power 8. Orbit: that light at (25, 19), the swimmer 10 u from it on
+a tangent, (25, 9) heading E; Circle the light twice and Don't touch it, in 30 s; two eyes, a
+Source, two Halves, two thrusters handed out. The orbiter wins in 18.4 s; Shadows' board (crossed
+plus a Source on both, five parts) in 25.8 s; the brief's ÷2, eyes ahead, crossed, one halved,
+with a Source on one side (six parts), in 17.4 s, the fastest. Aggression and a halved drive
+touch the light and lose; a bare drive, fear with a drive, a blind circler run out of time.
+Its hints: "One side pushes always.", and the orbiter as the shadow. Its word is MOON.
+`CircleLight` (kind "circle light", `turns`) keeps for each swimmer and light the angle the light
+last saw it at and the angle swept since t = 0, each tick's change taken the short way round,
+so going back unwinds it; kept once full. It counts whole turns, at most `turns`, "1 of 2"; its
+row has the rotate icon and says "Go round the light twice, either way." A swimmer circling
+beside the light, not round it, counts nothing.
+The chapter, from the same search, each level adding one idea to the last and its model board
+growing by at most two parts (4, 4, 4, 4, 5, 6, 6): Orbit after Love, the four Braitenberg
+levels first; then Shadows (a drive, D-032); Greed, 1.6, two lights where plain aggression parks
+on the bright one and Shadows' drive overshoots, won by a Double on each crossed wire; Patience,
+1.7, the real level, three lights and two obstacles from a start in the dark, won by halving the
+drive. Their layouts and pins come with them (D-098). The existing words stay with their levels.
+
+**D-098 — 2026-10-04 — LEVEL 1.6 is Greed, two lights won by doubling the eyes; LEVEL 1.7 is Patience, the real level, three lights and two obstacles won by halving the drive. Only the first five levels have hints. Amends D-078; todo §2 is done.**
+Both come from D-097's search, each checked from seven perturbed starts. Greed: a bright light
+(power 6) 10 u ahead of the start, (18, 19), and a dim one (power 3) off to the side, (13, 10.5);
+no obstacle; touch both in 20 s. Plain aggression reaches the bright light and stays on it,
+where both eyes read full; Shadows' drive carries the swimmer past the dim one. A Double on each
+crossed wire, six parts, touches both in 9.8 s: steering twice as hard, it leaves the bright light
+and turns back for the dim one. A halved drive and the orbiter do not win; doubled eyes with a
+drive, halved or not, win from some starts only. Its word is GOLD.
+Patience, the real level: three lights of power 4 in a loop, (23, 18.5), (21, 8.5), (14.5, 18), the
+last just behind the obstacle the swimmer starts behind, as in Shadows, (12, 19) r 1.5, start
+(8, 18.4) heading E; a second obstacle, (18.5, 11) r 1.5, between the second light and the third;
+touch all three in 20 s. From the start no eye sees a light, so nothing without a drive moves
+(Shadows' lesson); with Shadows' full drive, doubled eyes or not, the swimmer flies past the
+lights. Halving the drive, a Source through a Halve on both thrusters with crossed eyes, six parts,
+touches all three in 10.9 s; doubling the eyes too, eight parts, in 10.3 s: the level's Pareto
+front. Its word is SNAIL and opens nothing yet.
+Hints: Greed and Patience have none; the drawer says "No hints here.", as it now says in the
+sandbox. A player who reaches them has the drive, the gain and the asymmetry from the five before,
+and the real level is the one the brief's success criterion asks strangers to finish on their
+own. `test_hints.py` checks that the first five have hints and the rest none;
+`test_determinism.py` pins both winners and the ways to fail.
+
+**D-099 — 2026-10-04 — Under WASM `eye_rates` takes 0.07 ms a tick for the jam, about twice its native time; the names show no clash so far; the click lost after a key in headless Chrome no longer happens. Todo §6.**
+Measured in headless Chrome on the physicist's Mac, from a throwaway copy of the game whose
+`main.py` times the calls at startup (pygbag's CPython 3.12, numpy 2.0.2), against the same file
+run natively (CPython 3.11, numpy 2.4): `eye_rates` for the jam, one swimmer and two eyes in
+Shadows, 0.067 ms (0.036 natively); for 100 swimmers, 4 lights and 20 obstacles, D-019's case,
+0.92 ms (0.50); the light map, 80 × 76 cells, 0.62 ms (0.32); a whole `world.step` in Patience,
+0.25 ms (0.13). WASM is about 1.9 times slower, and the two ticks of a frame cost 0.5 ms of its
+16.7 ms: the physics leaves the frame to the drawing.
+The names (D-006): TMview finds no trade mark whose name contains NEKTOIDS, or even NEKTO; for
+CY-3LO its loose search returns 403 marks that share fragments (CYCLO 3, C3 CYCLONIC), none close.
+A web search finds only our own repository for either. itch.io's search sits behind a bot check
+that a script cannot pass, so it stays in the todo, to do by hand; none of this is legal
+clearance.
+The lost click (todo §6, seen 2026-10-02 on Fear's first drag step, which D-079 removed): in
+headless Chrome, two Enter presses then one click on Skip close the tutorial, and a drawer's key
+then one click on Chapters opens it; typed passkeys followed by a click on a row work too.
+Clicks seemed lost once more while this was checked, because the script measured the canvas
+before pygbag resized it (640 × 640 while loading, 1280 × 853 once started); measured after the
+start, every click lands. The item goes.
+
+**D-100 — 2026-10-04 — The names stand: itch.io returns nothing for nektoid* or Cy-3LO. Completes D-099's search for D-006; todo §6 is done.**
+Searched by hand by the physicist, itch.io's search being closed to scripts. With TMview and the
+web search of D-099, nothing found clashes with Nektoids or Cy-3LO. A search is not legal
+clearance; nothing here needs more for a free jam build.

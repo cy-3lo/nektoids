@@ -35,8 +35,9 @@ Changing this list requires an entry in `docs/decisions.md`.
 In: 2D top-down; one agent; two eyes that read light (1/r, shadows, D-019); two outputs (left
 and right thruster); the board is the body plan: eyes and thrusters sit where they are placed
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
-nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); three Braitenberg tutorial
-levels plus one real level with a countable win condition; fixed seed, fully deterministic;
+nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); four Braitenberg levels
+(Fear, Aggression, Love, Orbit), then Shadows, Greed and one real level, Patience, each with a
+countable win condition (D-097); fixed seed, fully deterministic;
 complexity, the number of parts, is scored and every body stays a sphere of radius 1 u (D-045);
 undo and redo in the editor (D-027).
 

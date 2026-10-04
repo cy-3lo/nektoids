@@ -20,9 +20,15 @@ from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome
 
 LEVELS = {level.title: level for level in arenas()}
+HINTED = [title for title, level in LEVELS.items() if level.hints is not None]
+HINTED_LEVELS = 5  # the first five have hints; the rest, Greed and Patience, none (D-098)
 
 
-@pytest.mark.parametrize("title", LEVELS)
+def test_the_first_five_levels_have_hints_and_the_rest_none():
+    assert HINTED == list(LEVELS)[:HINTED_LEVELS] and len(LEVELS) > HINTED_LEVELS
+
+
+@pytest.mark.parametrize("title", HINTED)
 def test_every_level_has_hints_and_its_shadow_wins_it(title):
     level = LEVELS[title]
     hints = Hints.from_dict(level.hints)
@@ -32,7 +38,7 @@ def test_every_level_has_hints_and_its_shadow_wins_it(title):
     assert play(net, title)[1] == ticks  # the same tick, every run
 
 
-@pytest.mark.parametrize("title", LEVELS)
+@pytest.mark.parametrize("title", HINTED)
 def test_each_hint_fits_the_drawer_and_the_shadow_says_nothing(title):
     hints = Hints.from_dict(LEVELS[title].hints)
     for index in (IDEA, PARTS):
@@ -41,7 +47,7 @@ def test_each_hint_fits_the_drawer_and_the_shadow_says_nothing(title):
     assert hints.says(SHADOW) == ()
 
 
-@pytest.mark.parametrize("title", LEVELS)
+@pytest.mark.parametrize("title", HINTED)
 def test_all_taken_in_the_run_they_fit_above_the_objectives_and_the_picture_stays_large(title):
     level = LEVELS[title]
     hints, taken = Hints.from_dict(level.hints), Taken(count=len(NAMES), shown=True)

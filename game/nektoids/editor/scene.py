@@ -53,7 +53,6 @@ from nektoids.editor.layout import (
     MENU_GROUPS,
     MODE_KEY,
     RUN_VIEWS,
-    SCROLL_STEP,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
@@ -83,10 +82,9 @@ from nektoids.editor.layout import (
     menu_item_at,
     mode_button_at,
     moved_view,
+    overview_at,
     overview_view,
     pan,
-    scroll_bar_at,
-    scroll_for,
     value_at,
     view_button_at,
     wheel_fold_at,
@@ -177,8 +175,6 @@ class EditorScene(Frame):
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.wheel_folded = False  # the picture of the cell folded, in Tools and Parts (D-069)
-        self.scrolls: dict[Drawer, int] = {}  # how far each drawer's list is scrolled [px]
-        self.scrolling = False  # a list's scroll bar held: the list follows the mouse
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.focused: Cell | None = None  # the cell the Wheel is round, the keyboard's too (D-068)
         self.wheel_open = False  # the Wheel shows round the focus
@@ -311,8 +307,8 @@ class EditorScene(Frame):
             self._turn_wheel(turned(self.turn - event.y, None, len(self.offered())))  # it turns
         elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
-        elif event.type == pygame.MOUSEWHEEL and self._on_list(self.mouse):
-            self._scroll_to(self.layout.scroll - event.y * SCROLL_STEP)  # up: the list comes down
+        elif event.type == pygame.MOUSEWHEEL and self.frame_wheel(self.mouse, event.y):
+            pass  # the drawer's rows scrolled (D-096)
         elif event.type == pygame.KEYDOWN and self.typing is not None:  # a passkey (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
         elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
@@ -482,8 +478,6 @@ class EditorScene(Frame):
             self._overview_to(pos)
         if self.zooming:
             self._zoom_to(pos)
-        if self.scrolling:
-            self._scroll_to(scroll_for(self.layout, pos[1]))
         self._hold(pos)
         self.wheel_hover = slot_at(self.wheel(), pos, WHEEL_HEX)
         piling = 0
@@ -515,7 +509,7 @@ class EditorScene(Frame):
             self.probing = True
             self._probe_to(pos)
             return
-        if self.layout.overview is not None and contains(self.layout.overview, pos):
+        if overview_at(self.layout, pos):
             self.overviewing = True
             self._overview_to(pos)
             return
@@ -546,10 +540,6 @@ class EditorScene(Frame):
         if wheel_fold_at(self.layout, pos):  # The Wheel's title, in Tools or Parts (D-069)
             self.wheel_folded = not self.wheel_folded
             self.layout = self._relayout(self.layout.drawer)
-            return
-        if scroll_bar_at(self.layout, pos):
-            self.scrolling = True
-            self._scroll_to(scroll_for(self.layout, pos[1]))
             return
         title = group_at(self.layout, pos)
         if title is not None:
@@ -639,7 +629,8 @@ class EditorScene(Frame):
 
     def _release(self, pos: tuple[int, int]) -> None:
         self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
-        self.panning_from, self.scrolling = None, False
+        self.panning_from = None
+        self.frame_release()
         if self.press_cell is not None:  # a press on a part: a drag moved it, or drew a wire,
             cell, self.press_cell = self.press_cell, None  # or it was a click
             if self.moving is not None:
@@ -687,19 +678,6 @@ class EditorScene(Frame):
         if self.wheel_folded:
             self.wheel_folded = False
             self.layout = self._relayout(self.layout.drawer)
-
-    def _on_list(self, pos: tuple[int, int]) -> bool:
-        """Whether `pos` is on the drawer's list, Parts' or Files', where the mouse wheel scrolls
-        it (D-069)."""
-        return self.layout.list_area is not None and contains(self.layout.list_area, pos)
-
-    def _scroll_to(self, scroll: int) -> None:
-        """The drawer's list scrolled to `scroll`, as far as it goes; an info box open on a row
-        closes, as it would move."""
-        drawer = self.layout.drawer
-        self.scrolls[drawer] = scroll
-        self.layout = self._relayout(drawer)
-        self.scrolls[drawer], self.info = self.layout.scroll, None
 
     def set_wins(self, groups: tuple[WinGroup, ...]) -> None:
         """Every level's wins this session, as Files lists them: at most MAX_WINS a level

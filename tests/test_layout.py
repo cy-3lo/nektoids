@@ -67,6 +67,7 @@ from nektoids.editor.layout import (
     overview_view,
     palette_target_at,
     pan,
+    passkey_at,
     scroll_bar_at,
     scroll_for,
     scroll_thumb,
@@ -164,8 +165,9 @@ def test_parts_holds_the_cell_under_its_list_and_the_cells_title_folds_it():
     assert group_at(LAYOUT, centre(LAYOUT.wheel_fold)) is None  # not one of the list's groups
     assert LIST.wheel_view is None and LIST.wheel_fold[1] + LIST.wheel_fold[3] < SCREEN[1]
     assert LIST.wheel_fold[1] > fy and LIST.list_area[3] > lh  # at the foot: the list has the room
-    tools = make_layout(Drawer.TOOLS)  # its rows always fit: no list to scroll
-    assert tools.list_area is None and tools.scroll_bar is None
+    tools = make_layout(Drawer.TOOLS)  # its rows fit above the Wheel: nothing to scroll (D-096)
+    _, ty, _, th = tools.list_area
+    assert ty + th < tools.wheel_fold[1] and tools.scroll_bar is None and tools.scroll_max == 0
     assert make_layout(Drawer.FILES).wheel_fold is None and FILES.wheel_view is None
 
 
@@ -189,6 +191,82 @@ def test_parts_list_scrolls_when_it_does_not_fit_and_its_rows_answer_only_where_
     assert scroll_for(LAYOUT, y) == 0 and scroll_for(LAYOUT, y + h) == LAYOUT.scroll_max
     _, top, _, length = scroll_thumb(LAYOUT)
     assert top == y and scroll_thumb(bottom)[1] + length == y + h
+
+
+def _shown_rows(layout):
+    """Every row the open drawer holds, and what else scrolls with them, as rects."""
+    rows = [
+        rect
+        for listed in (
+            layout.menu_items,
+            layout.mode_buttons,
+            layout.edit_buttons,
+            layout.view_buttons,
+            layout.win_rows,
+            layout.setting_rows,
+            layout.hint_rows,
+            layout.chapter_rows,
+        )
+        for _, rect in listed
+    ]
+    extra = (layout.passkey_field, layout.overview, layout.shadow_picture)
+    return rows + [rect for rect in extra if rect is not None]
+
+
+def _inside(rect, area):
+    x, y, w, h = rect
+    ax, ay, aw, ah = area
+    return ax <= x and x + w <= ax + aw and ay <= y and y + h <= ay + ah
+
+
+MOST = {  # each drawer with the most it may show: 7 levels, 3 objectives, every hint taken
+    "chapter": 7,
+    "hint_lines": (2, 2, 0),
+    "shadow": True,
+    "files": (("1.7", 5), ("1.6", 5), ("1.5", 5)),
+}
+
+
+@pytest.mark.parametrize("env", list(Env))
+def test_every_drawers_rows_show_within_it_scrolled_into_view_if_they_do_not_fit(env):
+    goals = 3 if env is Env.RUN else 0
+    for drawer in (*DRAWERS[env], *FOOT):
+        first = make_layout(drawer, env=env, goals=goals, **MOST)
+        rows = _shown_rows(first)
+        if not rows:
+            continue  # a drawing that fits its room: Diagnostic, Inside, Score (D-096)
+        area = first.list_area
+        assert area is not None and _inside(area, first.drawer_area), drawer
+        bottom = area[1] + area[3]
+        if first.goal_area is not None:
+            assert bottom <= first.goal_area[1], drawer  # above the objectives (D-065)
+        if first.wheel_fold is not None:
+            assert bottom <= first.wheel_fold[1], drawer  # above the Wheel (D-069)
+        assert bottom <= SCREEN[1] - FOOT_MARGIN, drawer
+        shown = set()
+        for scroll in [*range(0, first.scroll_max, 20), first.scroll_max]:
+            layout = make_layout(drawer, env=env, goals=goals, scroll=scroll, **MOST)
+            shown |= {k for k, rect in enumerate(_shown_rows(layout)) if _inside(rect, area)}
+        assert shown == set(range(len(rows))), drawer  # each row shows, scrolled far enough
+        assert (first.scroll_bar is None) == (first.scroll_max == 0), drawer
+
+
+def test_chapters_scrolls_in_the_run_and_its_rows_answer_only_where_they_show():
+    chapters = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapter=7)
+    assert chapters.scroll_max > 0 and scroll_bar_at(chapters, centre(chapters.scroll_bar))
+    _, ly, _, lh = chapters.list_area
+    hidden = [k for k, (_, y, _, h) in chapters.chapter_rows if y + h // 2 >= ly + lh]
+    assert hidden and not passkey_at(chapters, centre(chapters.passkey_field))
+    sandbox = dict(chapters.chapter_rows)[hidden[-1]]
+    assert chapter_row_at(chapters, centre(sandbox)) is None  # out of sight, it does not answer
+    end = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapter=7, scroll=10_000)
+    assert end.scroll == chapters.scroll_max
+    assert chapter_row_at(end, centre(dict(end.chapter_rows)[hidden[-1]])) == hidden[-1]
+    assert passkey_at(end, centre(end.passkey_field))
+    for goal, rect in end.goal_rows:  # the objectives stay put, and their info discs answer
+        assert rect == dict(chapters.goal_rows)[goal] and goal_row_at(end, centre(rect)) == goal
+    disc = dict(end.info_buttons)[Goal(0)]
+    assert info_at(end, centre(disc)) == Goal(0)
 
 
 def test_the_first_levels_parts_fit_with_the_cell_open_so_a_steps_rows_would_show():

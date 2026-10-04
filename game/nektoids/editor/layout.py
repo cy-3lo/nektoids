@@ -8,8 +8,9 @@
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
   (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092); Navigator:
   the view's buttons; Hints: the level's, asked for in turn (D-078); Settings: what the player
-  sets (D-054); Chapters: the levels, then the sandbox, which replaces the full-screen map. An
-  arrow on the drawer's edge folds it.
+  sets (D-054); Chapters: the levels, then the sandbox, which replaces the full-screen map.
+  Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
+  the run (D-096). An arrow on the drawer's edge folds it.
 - The rest is the main screen: the tabs over it (Run, Editor), the level's caption under them,
   then the board's hex grid, or in the run the arena with its controls under it; one status
   line at its foot. A drawer opening pushes the main screen aside.
@@ -44,13 +45,14 @@ ZOOM_BUTTON = 28  # zoom out and in, either end of the zoom bar, under the overv
 FOOT_MARGIN = 6  # under the objectives, at the drawer's foot [px]
 WHEEL_HEIGHT = 236  # the Wheel at a drawer's foot: the cell, its icons, piles and all, its line
 WHEEL_TITLE = "The Wheel"  # its title, at the foot of Tools and of Parts; a click folds it (D-069)
-SCROLL_WIDTH = 5  # a list's scroll bar, Parts' or Files', in the drawer's right margin [px]
+SCROLL_WIDTH = 5  # a drawer's scroll bar, in its right margin, while its rows do not fit [px]
 SCROLL_STEP = 23  # what a notch of the mouse wheel scrolls a list by: half a row [px]
 SCROLL_THUMB = 24  # the scroll bar's thumb, at its shortest [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 HINT_ROWS = 3  # Hints' rows: the idea, the parts, the shadow (D-078)
 HINT_LINE = 20  # a line of a hint under its row, as a note's [px]
 SHADOW_GAP = 6  # from the shadow's picture to the line under it [px]
+SHADOW_LEAST = 140  # the shadow's picture shrinks to fit Hints, no smaller: then it scrolls [px]
 ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
@@ -262,10 +264,10 @@ class Layout:
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
     wheel_view: Rect | None  # Tools, Parts: the Wheel, the focused cell drawn large at its hub
     wheel_fold: Rect | None  # Tools, Parts: The Wheel's title; a click folds or unfolds it (D-069)
-    list_area: Rect | None  # Parts, Files: where the list shows, scrolled; its rows answer there
+    list_area: Rect | None  # where the drawer's rows show, scrolled; they answer there (D-096)
     scroll: int  # how far the list is scrolled [px]
     scroll_max: int  # ... at most: how much of it does not fit [px]
-    scroll_bar: Rect | None  # its track, while the list does not fit
+    scroll_bar: Rect | None  # its track, while the rows do not fit
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo
     action_at: Rect | None  # the editor's: what a click does now, atop the main screen
@@ -318,10 +320,9 @@ def make_layout(
     how many objectives the level has, at the foot of each of the run's drawers, before the time
     left; files: Files' groups, each a level's title and how many of its wins it lists (D-092);
     wheel_folded: the picture of the cell folded, at the foot of Tools and of Parts; scroll: how
-    far the open drawer's list, Parts' or Files', is scrolled, kept within what it needs
-    (D-069); hint_lines: how many lines each hint taken shows under its row, in Hints, or
-    None for a level with none to take; shadow: the shadow shows, in a picture under its row
-    (D-078)."""
+    far the open drawer's rows are scrolled, kept within what they need (D-069, D-096);
+    hint_lines: how many lines each hint taken shows under its row, in Hints, or None for a
+    level with none to take; shadow: the shadow shows, in a picture under its row (D-078)."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -335,13 +336,13 @@ def make_layout(
         for k, d in enumerate(FOOT)
     )
     left = BAR_WIDTH + (DRAWER_WIDTH if drawer is not None else 0)  # the board's left edge
+    # The drawer's rows end here: 8 px clear of the objectives in the run, at its foot otherwise.
+    floor = _goals_top(height, goals) - 16 if env is Env.RUN else height - FOOT_MARGIN
     rows = _Rows()
     if drawer is Drawer.TOOLS:
-        rows.tools(height, wheel_folded)
+        rows.tools(height, wheel_folded, scroll)
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds, height, wheel_folded, scroll)
-    elif drawer is Drawer.NAVIGATOR:
-        rows.view(env)
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES:
@@ -350,15 +351,18 @@ def make_layout(
         rows.label("The swimmer's wiring")
     elif drawer is Drawer.SCORE:
         rows.label("Your wins")
-    elif drawer is Drawer.HINTS and hint_lines is not None:
-        floor = (
-            _goals_top(height, goals) - 16 if env is Env.RUN else height - FOOT_MARGIN
-        )  # 8 px clear
-        rows.hints(hint_lines, shadow, floor)
-    elif drawer is Drawer.SETTINGS:
-        rows.settings()
-    elif drawer is Drawer.CHAPTERS:
-        rows.chapters(chapter)
+    elif drawer in (Drawer.NAVIGATOR, Drawer.SETTINGS, Drawer.CHAPTERS) or (
+        drawer is Drawer.HINTS and hint_lines is not None
+    ):  # rows that scroll within the drawer if they do not fit (D-096)
+        if drawer is Drawer.NAVIGATOR:
+            rows.view(env)
+        elif drawer is Drawer.HINTS:
+            rows.hints(hint_lines, shadow, floor)
+        elif drawer is Drawer.SETTINGS:
+            rows.settings()
+        else:
+            rows.chapters(chapter)
+        rows.scrolled(floor, scroll)
     goal_area = None
     if env is Env.RUN and drawer is not None:  # the objectives, at the foot of every drawer
         foot = _Rows()
@@ -517,15 +521,34 @@ class _Rows:
                 self._row(what)
             self.y += SECTION_GAP
 
-    def tools(self, height: int, wheel_folded: bool) -> None:
-        """Write and Delete, then undo and redo, as rows; at the drawer's foot, the cell, as in
-        Parts (D-068, D-069)."""
+    def scrolled(self, bottom: int, scroll: int) -> None:
+        """What was laid out from DRAWER_TOP shows down to `bottom`, the list's area; if it runs
+        below, it is moved up by `scroll`, kept within what it needs, and a scroll bar shows
+        (D-096). Parts and Files scroll their groups by `_folding` instead."""
+        top = DRAWER_TOP
+        self.list_area = (BAR_WIDTH, top, DRAWER_WIDTH, bottom - top)
+        self.scroll_max = max(0, self.y - bottom)
+        self.scroll = min(max(scroll, 0), self.scroll_max)
+        if not self.scroll_max:
+            return
+        x = BAR_WIDTH + DRAWER_WIDTH - (ROW_INSET + SCROLL_WIDTH) // 2
+        self.scroll_bar = (x, top, SCROLL_WIDTH, bottom - top)
+        up = -self.scroll
+        for listed in (self.items, self.sections, self.groups, self.hint_texts, self.zoom_buttons):
+            listed[:] = [(what, _moved(rect, up)) for what, rect in listed]
+        self.picture, self.line = _moved(self.picture, up), _moved(self.line, up)
+        self.passkey, self.overview = _moved(self.passkey, up), _moved(self.overview, up)
+        self.zoom_bar = _moved(self.zoom_bar, up)
+
+    def tools(self, height: int, wheel_folded: bool, scroll: int) -> None:
+        """Write and Delete, then undo and redo, as rows, scrolled above the Wheel if they do not
+        fit; at the drawer's foot, the cell, as in Parts (D-068, D-069)."""
         for title, rows in (("Mode", Mode), ("Edit", EditButton)):
             self._title(title, self.sections)
             for what in rows:
                 self._row(what)
             self.y += SECTION_GAP
-        self._wheel(height, wheel_folded)
+        self.scrolled(self._wheel(height, wheel_folded) - SECTION_GAP, scroll)
 
     def _wheel(self, height: int, folded: bool) -> int:
         """At the drawer's foot, The Wheel's title, which folds, then, unless folded, the Wheel:
@@ -556,6 +579,7 @@ class _Rows:
         ]
         bar = width - 2 * (ZOOM_BUTTON + 8)
         self.zoom_bar = (x + ZOOM_BUTTON + 8, top + (ZOOM_BUTTON - 16) // 2, bar, 16)
+        self.y = top + ZOOM_BUTTON + ROW_PITCH - ROW_HEIGHT  # where the drawer's rows end
 
     def label(self, title: str) -> None:
         self._title(title, self.sections)
@@ -572,8 +596,8 @@ class _Rows:
     def hints(self, lines: tuple[int, ...], shadow: bool, floor: int) -> None:
         """The hints' rows (D-078); under each taken one, its `lines`; under the shadow's, while
         it shows, its picture: a square as wide as the drawer allows, smaller if what is left
-        above `floor`, the objectives in the run, is less; and under the picture, a line saying
-        where to build it (D-088)."""
+        above `floor`, the objectives in the run, is less, but not under SHADOW_LEAST, the drawer
+        scrolling then (D-096); and under the picture, a line saying where to build it (D-088)."""
         x, width = BAR_WIDTH + MARGIN, DRAWER_WIDTH - 2 * MARGIN
         for k in range(HINT_ROWS):
             self._row(HintRow(k))
@@ -582,7 +606,7 @@ class _Rows:
                 self.hint_texts.append((k, (x, top, width, lines[k] * HINT_LINE)))
                 self.y = top + lines[k] * HINT_LINE + ROW_PITCH - ROW_HEIGHT
         if shadow:
-            side = min(width, floor - self.y - SHADOW_GAP - HINT_LINE)
+            side = max(SHADOW_LEAST, min(width, floor - self.y - SHADOW_GAP - HINT_LINE))
             self.picture = (x + (width - side) // 2, self.y, side, side)
             self.line = (x, self.y + side + SHADOW_GAP, width, HINT_LINE)
             self.y += side + SHADOW_GAP + HINT_LINE + ROW_PITCH - ROW_HEIGHT
@@ -598,6 +622,14 @@ class _Rows:
         self._title("Passkey", self.sections)  # a level's word typed: it opens (D-075)
         self.passkey = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH
+
+
+def _moved(rect: Rect | None, dy: int) -> Rect | None:
+    """`rect` moved down by `dy` [px]; None stays None."""
+    if rect is None:
+        return None
+    x, y, w, h = rect
+    return (x, y + dy, w, h)
 
 
 def _info_disc(what: object, row: Rect) -> Rect:
@@ -649,21 +681,28 @@ def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
 
 
 def passkey_at(layout: Layout, point: tuple[int, int]) -> bool:
-    """Whether `point` is on Chapters' passkey field (D-075)."""
-    return layout.passkey_field is not None and contains(layout.passkey_field, point)
+    """Whether `point` is on Chapters' passkey field (D-075), where it shows."""
+    field = layout.passkey_field
+    return field is not None and contains(field, point) and _listed(layout, point)
 
 
 def chapter_row_at(layout: Layout, point: tuple[int, int]) -> int | None:
     """The place whose row in Chapters is under `point`: a level's index, or the sandbox's."""
-    return next((k for k, rect in layout.chapter_rows if contains(rect, point)), None)
+    return _row_at(layout, layout.chapter_rows, point)
 
 
 def hint_row_at(layout: Layout, point: tuple[int, int]) -> HintRow | None:
-    return next((h for h, rect in layout.hint_rows if contains(rect, point)), None)
+    return _row_at(layout, layout.hint_rows, point)
 
 
 def setting_row_at(layout: Layout, point: tuple[int, int]) -> Setting | None:
-    return next((s for s, rect in layout.setting_rows if contains(rect, point)), None)
+    return _row_at(layout, layout.setting_rows, point)
+
+
+def overview_at(layout: Layout, point: tuple[int, int]) -> bool:
+    """Whether `point` is on Navigator's overview, where it shows (D-060)."""
+    shown = layout.overview is not None and contains(layout.overview, point)
+    return shown and _listed(layout, point)
 
 
 def tab_at(layout: Layout, point: tuple[int, int]) -> str | None:
@@ -680,9 +719,16 @@ def contains(rect: Rect, point: tuple[int, int]) -> bool:
 
 
 def _listed(layout: Layout, point: tuple[int, int]) -> bool:
-    """Whether `point` may fall on a row of the drawer's list: anywhere, unless the list
-    scrolls within an area, as Parts' and Files' do (D-069, D-092)."""
+    """Whether `point` may fall on a row of the drawer: anywhere, unless its rows show within
+    an area, where they scroll (D-069, D-092, D-096)."""
     return layout.list_area is None or contains(layout.list_area, point)
+
+
+def _row_at(layout: Layout, rows: Sequence[tuple[object, Rect]], point: tuple[int, int]):
+    """What the row under `point` is for, of `rows`, where the drawer shows its rows."""
+    if not _listed(layout, point):
+        return None
+    return next((what for what, rect in rows if contains(rect, point)), None)
 
 
 def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
@@ -692,16 +738,21 @@ def group_at(layout: Layout, point: tuple[int, int]) -> str | None:
 
 
 def info_at(layout: Layout, point: tuple[int, int]) -> object | None:
-    """The row whose info disc is under `point`, if any: a part, a tool, a button, a win."""
-    if not _listed(layout, point):
-        return None
-    return next((kind for kind, rect in layout.info_buttons if contains(rect, point)), None)
+    """The row whose info disc is under `point`, if any: a part, a tool, a button, a win; an
+    objective's, at the run's drawers' foot, which never scroll (D-065)."""
+    listed = _listed(layout, point)
+    return next(
+        (
+            what
+            for what, rect in layout.info_buttons
+            if contains(rect, point) and (listed or isinstance(what, Goal))
+        ),
+        None,
+    )
 
 
 def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
-    if not _listed(layout, point):
-        return None
-    return next((kind for kind, rect in layout.menu_items if contains(rect, point)), None)
+    return _row_at(layout, layout.menu_items, point)
 
 
 def wheel_fold_at(layout: Layout, point: tuple[int, int]) -> bool:
@@ -736,11 +787,11 @@ def scroll_for(layout: Layout, y: int) -> int:
 
 
 def view_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:
-    return next((b for b, rect in layout.view_buttons if contains(rect, point)), None)
+    return _row_at(layout, layout.view_buttons, point)
 
 
 def edit_button_at(layout: Layout, point: tuple[int, int]) -> EditButton | None:
-    return next((b for b, rect in layout.edit_buttons if contains(rect, point)), None)
+    return _row_at(layout, layout.edit_buttons, point)
 
 
 def action_at(layout: Layout, point: tuple[int, int]) -> Shown | None:
@@ -750,7 +801,7 @@ def action_at(layout: Layout, point: tuple[int, int]) -> Shown | None:
 
 
 def mode_button_at(layout: Layout, point: tuple[int, int]) -> Mode | None:
-    return next((m for m, rect in layout.mode_buttons if contains(rect, point)), None)
+    return _row_at(layout, layout.mode_buttons, point)
 
 
 def level_button_at(layout: Layout, point: tuple[int, int]) -> LevelButton | None:
@@ -758,13 +809,13 @@ def level_button_at(layout: Layout, point: tuple[int, int]) -> LevelButton | Non
 
 
 def zoom_button_at(layout: Layout, point: tuple[int, int]) -> ViewButton | None:
-    return next((b for b, rect in layout.zoom_buttons if contains(rect, point)), None)
+    return _row_at(layout, layout.zoom_buttons, point)
 
 
 def zoom_bar_at(layout: Layout, point: tuple[int, int], grab: int = 6) -> float | None:
     """How far along the zoom bar a press at `point` falls, 0 the farthest, 1 the nearest;
-    None off it."""
-    if layout.zoom_bar is None:
+    None off it, or where the drawer does not show it."""
+    if layout.zoom_bar is None or not _listed(layout, point):
         return None
     x, y, w, h = layout.zoom_bar
     if not (x - grab <= point[0] <= x + w + grab and y - grab <= point[1] <= y + h + grab):

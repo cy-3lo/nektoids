@@ -651,7 +651,8 @@ touching it, which needs a Diff on each side, Diff(Source, eye) = 1 - e.
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): an objective keeps whatever
   it needs, `start` then `keep` each tick (the module's `begin` and `follow` do it for a whole
   level). `Latched` is what most keep: their marks, ORed. `StayNear` keeps a timer per swimmer;
-  `KeepOff` loses the run (`lost`), and `outcome` checks that first.
+  `KeepOff` loses the run (`lost`), and `outcome` checks that first. `CircleLight` (Orbit, D-097)
+  keeps the angle swept round each light, each tick's change taken the short way round.
 - [`editor/arena.py`](../game/nektoids/editor/arena.py): `kept` replaces `marked`, in the run
   and in each `Snapshot`; `counts()` returns a `Count` per objective, with its bar and whether
   it lost; `lost_by` says which one did, for the banner.
@@ -735,7 +736,8 @@ The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc
 
 - [`editor/frame.py`](../game/nektoids/editor/frame.py), pure: `Frame`, what both screens
   inherit: the bar, one drawer at a time, the tabs and the switch, info discs, Chapters and
-  Settings, tooltips. Each screen gives `_relayout` and `_slid`. Tested headless in
+  Settings, tooltips, and the scrolling of a drawer whose rows do not fit (`frame_wheel`, the
+  scroll bar, D-096). Each screen gives `_relayout` and `_slid`. Tested headless in
   [`test_frame.py`](../tests/test_frame.py).
 - [`editor/layout.py`](../game/nektoids/editor/layout.py): `make_layout(env=Env.RUN)`, the run's
   drawers (`DRAWERS`), its switch (`SWITCH_TO`), `Goal` rows, the controls strip.

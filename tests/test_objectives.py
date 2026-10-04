@@ -5,6 +5,7 @@ from nektoids.graph.board import Board
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.objectives import (
     REACH,
+    CircleLight,
     KeepOff,
     LeaveRing,
     Outcome,
@@ -131,3 +132,46 @@ def test_an_objective_comes_back_from_its_data_with_its_settings():
     assert objective_to_dict(stay) == {"kind": "stay near", "radius": 6.0, "seconds": 5.0}
     assert objective_from_dict(objective_to_dict(stay)) == stay
     assert objective_from_dict({"kind": "keep off"}) == KeepOff()
+    circle = CircleLight(turns=3)
+    assert objective_to_dict(circle) == {"kind": "circle light", "turns": 3}
+    assert objective_from_dict(objective_to_dict(circle)) == circle
+
+
+def going_round(objective, angles, centre=(30.0, 20.0), radius=5.0):
+    """What `objective` keeps for a swimmer taken round `centre` through `angles` [rad]."""
+    points = [at([centre[0] + radius * np.cos(a), centre[1] + radius * np.sin(a)]) for a in angles]
+    kept = objective.start(objective.marks(ARENA, points[0], ONE))
+    for point in points[1:]:
+        kept = objective.keep(kept, objective.marks(ARENA, point, ONE), DT)
+    return kept
+
+
+def test_circling_the_light_counts_whole_turns_either_way_and_going_back_unwinds_them():
+    circle = CircleLight(turns=2)  # D-097
+    step = 0.05  # [rad] a tick's turn, far less than half a turn
+    once = going_round(circle, np.arange(0.0, 2 * np.pi + step, step))
+    assert circle.count(once) == (1, 2) and 0.5 <= circle.progress(once) < 0.55
+    twice = going_round(circle, -np.arange(0.0, 4 * np.pi + step, step))  # clockwise
+    assert circle.count(twice) == (2, 2) and circle.progress(twice) == 1.0
+    there_and_back = np.concatenate((np.arange(0.0, 6.0, step), np.arange(6.0, 0.0, -step)))
+    back = going_round(circle, there_and_back)
+    assert circle.count(back) == (0, 2) and circle.progress(back) < 0.01
+    full = np.arange(0.0, 4 * np.pi + step, step)
+    then_back = going_round(circle, np.concatenate((full, full[-1] - np.arange(0.0, 3.0, step))))
+    assert circle.count(then_back) == (2, 2)  # once the turns are made, going back keeps them
+    beside = going_round(circle, np.arange(0.0, 4 * np.pi, step), centre=(15.0, 20.0), radius=3.0)
+    assert circle.count(beside) == (0, 2)  # round a point beside the lights: no turn of theirs
+    assert not circle.lost(twice)
+
+
+def test_circling_the_light_twice_wins_a_level_unless_it_touches_the_light():
+    level = Level("Orbit", "", (35.0, 20.0, 90.0), LIGHTS, EMPTY, 30.0, (CircleLight(), KeepOff()))
+    path = [(30.0 + 5.0 * np.cos(a), 20.0 + 5.0 * np.sin(a)) for a in np.arange(0.0, 13.0, 0.05)]
+    kept = begin(level, at(path[0]), ONE)
+    for tick, point in enumerate(path[1:], start=1):
+        kept = follow(level, kept, at(point), ONE, DT)
+        if outcome(level, kept, tick, DT) is not None:
+            break
+    assert outcome(level, kept, tick, DT) is Outcome.WON and tick * 0.05 >= 4 * np.pi
+    touched = follow(level, kept, at([30.0, 20.0]), ONE, DT)
+    assert outcome(level, touched, tick + 1, DT) is Outcome.LOST  # touching still loses
