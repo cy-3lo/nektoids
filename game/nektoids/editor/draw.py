@@ -714,23 +714,20 @@ def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -
 
 
 def _draw_files(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Files (D-059): this session's wins of the level, the best first, a tick on those no other
-    beats, the one on the board now lit; a click puts its board back."""
+    """Files (D-059, D-092): this session's wins, each level's under its title, which folds; the
+    best first, a tick on those no other beats, the one on the board now lit; a click puts its
+    board on this level's, if it fits. The list scrolls within its area, as Parts'."""
     now = scene.board.snapshot()
+    screen.set_clip(scene.layout.list_area)
     for row, rect in scene.layout.win_rows:
-        won = scene.wins[row.index]
+        won = scene.wins[row.group].wins[row.index]
         status = ("tick", "") if won.best else ("none", "")
-        active = won.board == now
+        active = (won.board.nodes, won.board.wires) == (now.nodes, now.wires)  # not the stock
         draw_row(screen, scene, fonts, rect, row, _win_name(won), status, active, icon="trophy")
-    rows = scene.layout.win_rows
-    top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else DIAGNOSTIC_MAP[1]
-    note = (
-        "Each win of this level is kept here for the session. A click puts its board back;"
-        " Undo brings yours back."
-        if rows
-        else "No win yet. Each win of this level will be kept here for the session."
-    )
-    draw_note(screen, fonts, note, (DIAGNOSTIC_MAP[0], top), DIAGNOSTIC_MAP[2])
+    screen.set_clip(None)
+    if not scene.wins:
+        note = "No win yet. Each win of each level will be kept here for the session."
+        draw_note(screen, fonts, note, DIAGNOSTIC_MAP[:2], DIAGNOSTIC_MAP[2])
 
 
 def _win_name(won) -> str:
@@ -1246,9 +1243,15 @@ def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
     if isinstance(what, Kind):
         return NAME[what], tuple(info(what))
     if isinstance(what, WinRow):
-        won = scene.wins[what.index]
+        group = scene.wins[what.group]
+        won = group.wins[what.index]
         beaten = "No other win beats it." if won.best else "Another win beats it."
-        return "A win", (f"This board won in {_win_name(won)}. {beaten}",)
+        title = group.title.split(" ", 1)[1]
+        return "A win", (
+            f"This board won {title} in {_win_name(won)}. {beaten}",
+            "A click puts it on the board, if the level hands out its parts.",
+            "Undo brings yours back.",
+        )
     return ROW_NAME[what], (TIP[what],)
 
 

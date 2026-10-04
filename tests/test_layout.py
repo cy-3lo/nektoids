@@ -90,7 +90,7 @@ from nektoids.levels.sandbox import free_board, tutorial_board
 LAYOUT = make_layout()  # Parts open, every part handed out, the cell under the list
 LIST = make_layout(wheel_folded=True)  # the same, the cell folded: the whole list shows
 VIEW = centred_view(LAYOUT)
-FILES = make_layout(Drawer.FILES, wins=2)
+FILES = make_layout(Drawer.FILES, files=(("1.2 Aggression", 2), ("1.1 Fear", 1)))
 NAVIGATOR = make_layout(Drawer.NAVIGATOR)
 FOLDED = make_layout(None)
 RUN_NAVIGATOR = make_layout(Drawer.NAVIGATOR, env=Env.RUN)  # its rays, its objectives
@@ -458,16 +458,38 @@ def test_the_main_screen_shows_the_run_preview_only_in_diagnostic_and_navigator_
     assert palette_target_at(LAYOUT, (x + w - 30, y + 26)) is None
 
 
-def test_files_has_a_row_per_win_under_its_label_in_the_editors_bar():
-    files = make_layout(Drawer.FILES, wins=3)
+def test_files_has_each_levels_wins_under_its_title_a_group_that_folds():
     assert Drawer.FILES in DRAWERS[Env.EDITOR] and Drawer.FILES not in DRAWERS[Env.RUN]
-    assert [title for title, _ in files.section_titles] == ["Wins this session", "File"]
-    assert [row.index for row, _ in files.win_rows] == [0, 1, 2]
-    for row, rect in files.win_rows:
-        assert win_row_at(files, centre(rect)) == row.index and contains(
-            files.drawer_area, rect[:2]
-        )
+    assert [title for title, _ in FILES.section_titles] == ["Wins this session", "File"]
+    assert [title for title, _ in FILES.group_titles] == ["1.2 Aggression", "1.1 Fear"]
+    assert [(row.group, row.index) for row, _ in FILES.win_rows] == [(0, 0), (0, 1), (1, 0)]
+    (_, aggression), (_, fear) = FILES.group_titles
+    assert aggression[1] < FILES.win_rows[0][1][1] < FILES.win_rows[1][1][1] < fear[1]
+    for row, rect in FILES.win_rows:
+        assert win_row_at(FILES, centre(rect)) == row and contains(FILES.drawer_area, rect[:2])
+        assert info_at(FILES, centre(dict(FILES.info_buttons)[row])) == row
+    assert group_at(FILES, centre(fear)) == "1.1 Fear"
+    folded = make_layout(
+        Drawer.FILES, frozenset({"1.2 Aggression"}), files=(("1.2 Aggression", 2), ("1.1 Fear", 1))
+    )
+    assert [(row.group, row.index) for row, _ in folded.win_rows] == [(1, 0)]
     assert make_layout(Drawer.FILES).win_rows == () and LAYOUT.win_rows == ()
+    assert make_layout(Drawer.FILES).group_titles == ()  # no title for a level with no win
+
+
+def test_files_list_scrolls_above_file_whose_rows_still_answer():
+    many = (("1.1 Fear", 10), ("1.2 Aggression", 10))
+    files = make_layout(Drawer.FILES, files=many)
+    _, ly, _, lh = files.list_area
+    assert files.scroll_max > 0 and files.scroll_bar is not None
+    assert ly + lh < files.file_buttons[0][1][1]  # File, at the foot, is not in the list
+    hidden = files.win_rows[-1][1]
+    assert hidden[1] > ly + lh and win_row_at(files, centre(hidden)) is None
+    bottom = make_layout(Drawer.FILES, files=many, scroll=10_000)
+    assert bottom.scroll == files.scroll_max
+    assert win_row_at(bottom, centre(bottom.win_rows[-1][1])) == bottom.win_rows[-1][0]
+    for button, _ in files.file_buttons:  # under the list: a hidden row never takes them
+        assert info_at(files, centre(dict(files.info_buttons)[button])) == button
 
 
 def test_navigators_overview_frames_what_the_main_screen_shows_and_a_press_moves_it_there():

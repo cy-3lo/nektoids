@@ -1232,3 +1232,18 @@ click, or a drag (D-090), on any part their kinds let it be wired to makes the w
 the focus goes on to after a wire keeps D-068's rule, so that a chain goes on by clicks (eye, sum,
 thruster) and, from a thruster just wired to, a click on the other eye focuses that eye to start
 its own wire. A click that cannot wire still focuses what it falls on.
+
+**D-092 — 2026-10-04 — Files lists every level's wins, each level's under its title, a group that folds as Parts' do; a win of another level goes on the open level's board if it fits. Amends D-059.**
+Files listed only the open level's wins, so a vehicle won in one level could not be carried into
+the next, though the levels build on each other: Aggression is Fear with its wires crossed. Now
+it lists this session's wins of every level of the chapter: the open level's first, then the
+others in the chapter's order, each under its number and title (`1.2 Aggression`), which folds
+and unfolds as Parts' groups do; a level with no win has no group, and the sandbox, which keeps
+none, has none. Each level keeps at most ten, as before, and the list scrolls, by the mouse
+wheel or its scroll bar, as Parts' does. A click on a win puts
+its board on the open level's (`Board.adopt`) when the level hands out its parts, as many as it
+has; the stock left is counted again from what the level hands out. Otherwise nothing changes
+and the status line says why: "this level hands out no sums". The board left goes to Undo, as
+before. A row is lit while its parts and wires are those on the grid, whatever the stock. With
+wins listed, the note under them goes into each win's info box.
+

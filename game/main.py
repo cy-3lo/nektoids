@@ -334,7 +334,7 @@ async def main() -> None:
         editor().ghosts = model.ghosts if model is not None else ()
         editor().ghost_wires = model.ghost_wires if model is not None else ()  # D-074
         editor().chapters = router.rows()  # what Chapters shows
-        editor().set_wins(router.wins(router.index))  # what Files shows (D-059)
+        editor().set_wins(router.files())  # what Files shows: every level's wins (D-092)
         if playing is not None:
             playing.chapters = router.rows()
         scene = on_screen()
