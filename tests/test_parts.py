@@ -1,6 +1,6 @@
 """The parts' names and info boxes (D-036). parts.py imports no pygame."""
 
-from nektoids.editor.parts import NAME, info, ports
+from nektoids.editor.parts import NAME, WHAT, info, ports
 from nektoids.graph.board import Kind
 
 
@@ -20,6 +20,6 @@ def test_the_info_box_says_what_the_board_allows_in_and_out():
     assert info(Kind.HALVE)[-2:] == ports(Kind.HALVE)
 
 
-def test_the_lines_are_short_enough_for_the_box():
-    for kind in Kind:
-        assert all(len(line) <= 52 for line in info(kind)), kind
+def test_the_info_box_holds_paragraphs_what_it_does_then_in_and_out():
+    for kind in Kind:  # each a paragraph the box wraps (D-094)
+        assert info(kind) == (WHAT[kind], *ports(kind)) and isinstance(WHAT[kind], str), kind

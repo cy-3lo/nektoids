@@ -19,6 +19,7 @@ it, a circle round a wedge, tip forward.
 from __future__ import annotations
 
 import math
+import textwrap
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -233,6 +234,7 @@ ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
 FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 16  # a menu row's info disc [px]
+INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit under it (D-094)
 INFO_PAD = 12  # inside the info box [px]
 
 # Icon height as a fraction of the hex size.
@@ -1193,7 +1195,9 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
         name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]
     dim = ports(what) if isinstance(what, Kind) else ()  # a part's In and Out, in grey
-    rows += [fonts.small.render(line, True, DIM_TEXT if line in dim else TEXT) for line in lines]
+    for text in lines:  # each a paragraph, wrapped to the box, ragged right (D-094)
+        ink = DIM_TEXT if text in dim else TEXT
+        rows += [fonts.small.render(line, True, ink) for line in textwrap.wrap(text, INFO_CHARS)]
     entry = scene.entry if scene.entry is not None and scene.entry.kind is what else None
     _, _, circuit_w, circuit_h = ENTRY_AREA
     widths = [row.get_width() for row in rows] + ([] if entry is None else [circuit_w])

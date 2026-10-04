@@ -112,7 +112,7 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = [] if done is None else target_rects(done.show, *where)
     beside = scene.layout.board_area  # the board, or the arena
-    return spots, box_rect([rect for rect, _ in spots], len(guide.step.say), beside, before)
+    return spots, box_rect([rect for rect, _ in spots], len(guide.step.lines), beside, before)
 
 
 def choose_place(index: int) -> None:

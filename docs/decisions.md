@@ -1255,3 +1255,13 @@ check symbols) are one piece of work, the same format of D-024 written to a file
 they leave the todo for `ideas.md`, as one entry, and Save and Load come back with it. The
 scope lock's Out line says so. F4 still prints a board (D-024).
 
+**D-094 — 2026-10-04 — The tutorial's cards and the info boxes hold paragraphs, wrapped to the box, ragged right; a part's In and Out are grey. Amends D-036, D-039.**
+Their texts were lines broken by hand, so an edit left lines of every length. Now a card's "say"
+in a level's file is a list of paragraphs, each starting on a new line, and the card wraps them
+to 48 characters of Plex Mono, its width (`Step.lines`); the box's height follows the lines it
+makes. An info box wraps each of its paragraphs to 46 characters, the width of a part's circuit
+under them (D-082): a part's text is one paragraph (`parts.WHAT`), then In and Out, each its
+own, drawn in the dim grey that tells them from what the part does. Full justification was
+tried and set aside: in a mono font it opens uneven gaps in a line short of words. The (i) on
+every row is 16 px, from 12.
+

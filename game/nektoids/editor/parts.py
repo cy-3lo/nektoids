@@ -17,29 +17,18 @@ NAME = {
     Kind.THRUSTER: "Thruster",
 }
 
-# What each part does, a line at a time, short enough for the box.
-WHAT: dict[Kind, tuple[str, ...]] = {
-    Kind.EYE: (
-        "Reads the light that falls on its flat face:",
-        "more from a light near it and in front of it,",
-        "nothing in a shadow; it sends 1 at most.",
-    ),
-    Kind.SOURCE: (
-        "Senses nothing: it sends a steady 1,",
-        "a drive of the swimmer's own.",
-    ),
-    Kind.DOUBLE: ("Sends twice what comes in, 1 at most.",),
-    Kind.HALVE: ("Sends half what comes in.",),
-    Kind.SUM: ("Sends the sum of its two inputs, 1 at most.",),
-    Kind.DIFFERENCE: (
-        "Sends the gap between its two inputs, |a - b|:",
-        "the same whichever way round they come.",
-    ),
-    Kind.THRUSTER: (
-        "Pushes the body the way it points, as hard",
-        "as what comes in. Off the centre, it turns",
-        "the body too: where it sits is its lever.",
-    ),
+# What each part does, a paragraph the box wraps to its width (D-094).
+WHAT = {
+    Kind.EYE: "Reads the light that falls on its flat face: more from a light near it and in front"
+    " of it, nothing in a shadow; it sends 1 at most.",
+    Kind.SOURCE: "Senses nothing: it sends a steady 1, a drive of the swimmer's own.",
+    Kind.DOUBLE: "Sends twice what comes in, 1 at most.",
+    Kind.HALVE: "Sends half what comes in.",
+    Kind.SUM: "Sends the sum of its two inputs, 1 at most.",
+    Kind.DIFFERENCE: "Sends the gap between its two inputs, |a - b|: the same whichever way round"
+    " they come.",
+    Kind.THRUSTER: "Pushes the body the way it points, as hard as what comes in. Off the centre, it"
+    " turns the body too: where it sits is its lever.",
 }
 
 
@@ -61,8 +50,8 @@ def ports(kind: Kind) -> tuple[str, str]:
 
 
 def info(kind: Kind) -> tuple[str, ...]:
-    """The lines of the part's info box, after its name."""
-    return (*WHAT[kind], *ports(kind))
+    """The paragraphs of the part's info box, after its name: what it does, In, Out."""
+    return (WHAT[kind], *ports(kind))
 
 
 def _count(n: int) -> str:
