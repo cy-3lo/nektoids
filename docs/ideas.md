@@ -77,9 +77,25 @@ puts it in scope. Until D-028 these were logged in the decision log as "post-jam
 
 ## Interface
 
-- **An activity bar**: decided (D-051), the work is todo §8.
+- **Touch**, from Camille's notes (`ebc4abb`; todo §7 until D-104): no hover and no keys. The
+  tooltips (D-025) and L, R, Space, Esc and 0 need an on-screen form. One gesture stays one undo
+  step (D-027). The Wheel (D-068, D-069) does the rest: a click on a cell shows what can be done
+  there, a click on a part arms Wire, a drag moves a part, or draws a wire with Wire chosen
+  (D-072).
+  - Does a phone's keyboard come up for Chapters' passkey field (D-075)? If not, the field
+    needs letters of its own on screen.
+  - The canvas is 960 × 640 px: on a phone a 40 px hex is about 16 px wide in portrait and
+    24 px in landscape, where a finger wants about 44. Landscape only, larger hexes?
+  - Under pygbag, do touches arrive as mouse events or as FINGERDOWN only? Try on a phone
+    first.
+  - How far must a finger move before a tap becomes a drag? Today a press becomes a drag
+    once the pointer leaves the part's cell (D-085): enough for a finger on large hexes?
+- **Parts as the encyclopedia** (todo §8 until D-104): a row opens into its entry, in the
+  drawer; today the entry opens in a box beside it. The rest of the activity bar is built
+  (D-053 to D-069).
 
 ## Presentation
 
 - **Sound, art.**
+- **Sound and Music in Settings**, once there is sound (D-054; todo §8 until D-104).
 - **GIF export of a run**: it made Opus Magnum's solutions a social object (brief §4).

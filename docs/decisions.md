@@ -1405,3 +1405,12 @@ nothing, so D-079's objection, a tutorial repeating Hint 3, does not apply. A ca
 clear of the parts on the editor's board, as it does of its targets (D-048). A hint's shadow is
 built on `Level.blank_board()`, the level's zone and stock with none of its parts, so its
 picture is what it was. Hints stay locked until the tutorial ends or is skipped (D-078).
+
+**D-104 — 2026-10-04 — Touch and the activity bar's last two items leave the todo for ideas.md; the todo keeps only the shipping. Amends D-051; todo §7 and §8 go.**
+The jam ships without them. Touch (§7, from Camille's notes) has to be tried on a phone before
+anything can be decided, and none of its questions has an answer yet. Of the activity bar (§8,
+D-051), the bar, its drawers and its environments are built (D-053 to D-069); what is left is
+Sound and Music in Settings, which wait for sound, and Parts as the encyclopedia opening in the
+drawer, which is polish. Each goes to `ideas.md` as one entry, its questions kept, saying where it
+came from. The todo keeps §5, the shipping. Camille's views on the jam build go to the todo if
+they must be fixed before it is uploaded, to `ideas.md` otherwise.
