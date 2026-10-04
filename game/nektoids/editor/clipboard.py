@@ -1,0 +1,114 @@
+"""The clipboard and Load's field: through the page on the web, through pygame natively (D-206).
+
+On the web pygame has no clipboard (pygbag ships no `pygame.scrap`), and a canvas is never
+pasted into: Safari sends no copy or paste event when nothing on the page is selected, and
+refuses `navigator.clipboard.readText`. So the page does it, with a few lines of JavaScript put
+in once at startup (`install`): Save writes the text with `navigator.clipboard.writeText` on a
+click; Load focuses a text field of the page's own, invisible, once the click is over, which
+Cmd/Ctrl+V pastes into and whose keys never reach the game; the editor reads it once a frame.
+Natively, `pygame.scrap` does both, and the editor hands the field pygame's keys.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+
+WEB = sys.platform == "emscripten"
+
+PAGE = r"""
+window.nkCopy = function (text) {
+  if (navigator.clipboard) { navigator.clipboard.writeText(text).catch(function () {}); }
+};
+window.nkField = (function () {
+  var field = null, ended = '';
+  function make() {
+    field = document.createElement('textarea');
+    ['autocapitalize', 'autocorrect', 'autocomplete'].forEach(function (name) {
+      field.setAttribute(name, 'off'); });
+    field.setAttribute('spellcheck', 'false');
+    // Writing aids and password managers attach to any field that gets focus; one of them
+    // failed in Safari on this one. These are the marks they read as "leave it alone".
+    [['data-gramm', 'false'], ['data-gramm_editor', 'false'], ['data-enable-grammarly', 'false'],
+     ['data-lt-active', 'false'], ['data-1p-ignore', 'true'], ['data-lpignore', 'true'],
+     ['data-bwignore', 'true'], ['data-form-type', 'other']].forEach(function (pair) {
+      field.setAttribute(pair[0], pair[1]); });
+    field.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;'
+      + 'border:0;padding:0;';
+    ['keydown', 'keyup', 'keypress'].forEach(function (name) {
+      field.addEventListener(name, function (e) { e.stopPropagation(); }); });
+    field.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); ended = 'enter'; }
+      else if (e.key === 'Escape') { e.preventDefault(); ended = 'escape'; }
+    });
+    document.body.appendChild(field);
+  }
+  return {
+    open: function () {
+      if (!field) { make(); }
+      field.value = ''; ended = '';
+      setTimeout(function () { field.focus(); }, 60);  // after the click, or Safari takes it back
+    },
+    close: function () { if (field) { field.blur(); } },
+    text: function () { return field ? field.value : ''; },
+    ended: function () { var was = ended; ended = ''; return was; }
+  };
+})();
+"""
+
+
+def _page(code: str):
+    import platform  # pygbag's: the page's window
+
+    return platform.window.eval(code)
+
+
+def install() -> None:
+    """Once, at startup: the page's side of it (web.md: no loading during the loop)."""
+    if WEB:
+        _page(PAGE)
+
+
+def copy(text: str) -> None:
+    """Put `text` on the clipboard, if the browser lets it; the status line shows it anyway."""
+    if WEB:
+        _page(f"nkCopy({json.dumps(text)})")
+        return
+    import pygame
+
+    try:
+        pygame.scrap.put_text(text)
+    except (NotImplementedError, pygame.error):
+        pass
+
+
+def paste() -> str:
+    """Natively: what the clipboard holds as text, or nothing. On the web the page pastes."""
+    if WEB:
+        return ""
+    import pygame
+
+    try:
+        return pygame.scrap.get_text() or ""
+    except (NotImplementedError, pygame.error):
+        return ""
+
+
+def open_field() -> None:
+    """On the web, the page's field takes the keys, once the click is over."""
+    if WEB:
+        _page("nkField.open()")
+
+
+def close_field() -> None:
+    if WEB:
+        _page("nkField.close()")
+
+
+def field() -> tuple[str, str | None]:
+    """On the web: what the page's field holds, and "enter" or "escape" if it was ended since
+    the last call, else None."""
+    if not WEB:
+        return "", None
+    ended = str(_page("nkField.ended()"))
+    return str(_page("nkField.text()")), ended or None

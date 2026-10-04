@@ -16,7 +16,6 @@ from enum import Enum
 
 import numpy as np
 
-from nektoids.graph.board import Kind
 from nektoids.graph.network import (
     Network,
     abs_coupling,
@@ -67,11 +66,11 @@ def problems(net: Network) -> tuple[str, ...]:
     for i in range(net.n):
         name, kind = label(net, i), net.kinds[i]
         inputs = int((net.slots[i] < net.n).sum())
-        if net.gain[i] > 0 and i not in fed:
+        if not net.given[i] and i not in fed:
             found.append(f"{name} is fed by no sensor: its rate stays 0")
-        elif kind in (Kind.SUM, Kind.DIFFERENCE) and inputs == 1:
+        elif kind.max_inputs == 2 and inputs == 1:
             found.append(f"{name} has one input and passes it through")
-        if kind is not Kind.THRUSTER and net.outdeg[i] == 0:
+        if kind.emits and net.outdeg[i] == 0:
             found.append(f"{name} sends its rate nowhere")
     return tuple(found)
 

@@ -18,75 +18,16 @@ import heapq
 import itertools
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
-from enum import Enum
 
 from nektoids.graph.hexgrid import (
+    DIRECTIONS,
     Cell,
-    E,
     direction_to,
     neighbour,
     opposite,
 )
+from nektoids.graph.kinds import Kind
 
-
-class Category(Enum):
-    SENSOR = "sensor"
-    OPERATOR = "operator"
-    ACTUATOR = "actuator"
-
-
-class Kind(Enum):
-    EYE = "eye"
-    SOURCE = "source"  # produces a signal of its own; senses nothing
-    DOUBLE = "double"
-    HALVE = "halve"
-    SUM = "sum"
-    DIFFERENCE = "difference"
-    THRUSTER = "thruster"
-
-    @property
-    def category(self) -> Category:
-        return _CATEGORY[self]
-
-    @property
-    def emits(self) -> bool:
-        return self.category is not Category.ACTUATOR
-
-    @property
-    def receives(self) -> bool:
-        return self.category is not Category.SENSOR
-
-    @property
-    def default_facing(self) -> int | None:
-        """Hex direction on the body until the player turns it (forward = E); None for operators.
-
-        Where an eye looks, or which way a thruster pushes (D-009).
-        """
-        return _DEFAULT_FACING.get(self)
-
-    @property
-    def max_inputs(self) -> int | None:
-        """How many wires may come in; None means no limit (D-014)."""
-        return _MAX_INPUTS.get(self)
-
-    @property
-    def max_outputs(self) -> int | None:
-        """How many wires may go out; None means no limit (D-014)."""
-        return _MAX_OUTPUTS.get(self)
-
-
-_CATEGORY = {
-    Kind.EYE: Category.SENSOR,
-    Kind.SOURCE: Category.SENSOR,
-    Kind.DOUBLE: Category.OPERATOR,
-    Kind.HALVE: Category.OPERATOR,
-    Kind.SUM: Category.OPERATOR,
-    Kind.DIFFERENCE: Category.OPERATOR,
-    Kind.THRUSTER: Category.ACTUATOR,
-}
-_DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward; the others have no direction
-_MAX_INPUTS = {Kind.SUM: 2, Kind.DIFFERENCE: 2}
-_MAX_OUTPUTS = {Kind.SUM: 1, Kind.DIFFERENCE: 1}
 FACING_NAMES = ("E", "NE", "NW", "W", "SW", "SE")  # hex directions 0..5, for `to_dict`
 
 
@@ -297,6 +238,15 @@ class Board:
 
     def preview(self, source_id: int, target_id: int) -> tuple[Cell, ...] | Refused:
         """The path a wire from source to target would take, without drawing it."""
+        refused = self.refusal(source_id, target_id)
+        if refused is not None:
+            return refused
+        source, target = self.nodes[source_id], self.nodes[target_id]
+        path = self.route(source.cell, target.cell)
+        return Refused("no free path") if path is None else path
+
+    def refusal(self, source_id: int, target_id: int) -> Refused | None:
+        """Why the rules forbid a wire from source to target, wherever it runs; None if not."""
         source, target = self.nodes[source_id], self.nodes[target_id]
         if source_id == target_id:
             return Refused("same component")
@@ -314,8 +264,7 @@ class Board:
         inputs = sum(wire.target == target_id for wire in self.wires)
         if target.kind.max_inputs is not None and inputs >= target.kind.max_inputs:
             return Refused(f"a {target.kind.value} takes {_count(target.kind.max_inputs)} inputs")
-        path = self.route(source.cell, target.cell)
-        return Refused("no free path") if path is None else path
+        return None
 
     def orient(self, first_id: int, second_id: int) -> tuple[int, int]:
         """(source, target) of a wire drawn from `first_id` to `second_id` (D-026): turned round
@@ -326,8 +275,15 @@ class Board:
         backward = second.emits and first.receives
         return (second_id, first_id) if backward and not forward else (first_id, second_id)
 
-    def connect(self, source_id: int, target_id: int) -> Wire | Refused:
-        path = self.preview(source_id, target_id)
+    def connect(
+        self, source_id: int, target_id: int, path: tuple[Cell, ...] | None = None
+    ) -> Wire | Refused:
+        """Draw a wire from source to target, routed; or along `path` if it is given, as a saved
+        board keeps it (D-204), checked against the rules as a route would be."""
+        if path is None:
+            path = self.preview(source_id, target_id)
+        else:
+            path = self.refusal(source_id, target_id) or self._laid(source_id, target_id, path)
         if isinstance(path, Refused):
             return path
         wire = Wire(source_id, target_id, path)
@@ -414,9 +370,8 @@ class Board:
     @classmethod
     def from_dict(cls, data: Mapping) -> Board:
         """A board from `to_dict`'s data: the parts placed in order, then the wires drawn in
-        order, so the network is the one saved. A path comes back as saved unless the board had
-        been edited with Move or Delete, or a part put on a wire; then it may take another route
-        as short. Raises ValueError for data no board could hold."""
+        order along their saved paths, so the board is the one saved, routes and all (D-204). A
+        wire saved without a path is routed. Raises ValueError for data no board could hold."""
         stock = {Kind(name): left for name, left in data["stock"].items()}
         board = cls([tuple(cell) for cell in data["zone"]], stock)
         for part in data["parts"]:
@@ -430,7 +385,8 @@ class Board:
             if isinstance(placed, Refused):
                 raise ValueError(f"part {part}: {placed.reason}")
         for wire in data["wires"]:
-            drawn = board.connect(wire["from"], wire["to"])
+            path = tuple(tuple(cell) for cell in wire["path"]) if "path" in wire else None
+            drawn = board.connect(wire["from"], wire["to"], path)
             if isinstance(drawn, Refused):
                 raise ValueError(f"wire {wire['from']} -> {wire['to']}: {drawn.reason}")
         return board
@@ -468,6 +424,46 @@ class Board:
         return None
 
     # Internals
+
+    def exits(self, cell: Cell, heading: int, goal: Cell) -> list[tuple[Cell, int]]:
+        """Where a wire at `cell`, heading `heading` (-1 at its source), may go next on its way to
+        `goal`: each cell of the zone it may enter, free or the goal, with the heading to it, in
+        direction order. A board as text writes a path the router would not take so (D-205)."""
+        used = self._edges_used().get(cell, set())
+        found = []
+        for out in range(6):
+            nxt = neighbour(cell, out)
+            if nxt not in self._on_board or (self.node_at(nxt) is not None and nxt != goal):
+                continue
+            if heading < 0 or can_pass(used, heading, out):
+                found.append((nxt, out))
+        return found
+
+    def _laid(
+        self, source_id: int, target_id: int, path: tuple[Cell, ...]
+    ) -> tuple[Cell, ...] | Refused:
+        """`path` if a wire from source to target may run along it: from one end to the other a
+        step at a time, through free cells of the zone, by edges no other wire takes."""
+        ends = (self.nodes[source_id].cell, self.nodes[target_id].cell)
+        if len(path) < 2 or (path[0], path[-1]) != ends:
+            return Refused("its path does not join its ends")
+        for a, b in zip(path, path[1:], strict=False):
+            if (b[0] - a[0], b[1] - a[1]) not in DIRECTIONS:
+                return Refused("its path jumps a cell")
+        for cell in path[1:-1]:
+            if cell not in self._on_board:
+                return Refused("its path leaves the zone")
+            if self.node_at(cell) is not None:
+                return Refused("its path crosses a part")
+        used = self._edges_used()
+        for before, cell, after in zip(path, path[1:], path[2:], strict=False):
+            if not can_pass(
+                used.get(cell, set()), direction_to(before, cell), direction_to(cell, after)
+            ):
+                return Refused("its path takes an edge another wire has")
+        if not _uses_each_edge_once(path):
+            return Refused("its path crosses itself by an edge")
+        return path
 
     def _route_again(self, saved: list[Wire], again: list[int]) -> Wire | None:
         """The wires at places `again` of `saved`, the wires as they were, routed again in the

@@ -1,18 +1,20 @@
-"""The graph as a system of ODEs from the sensors to the actuators (D-017).
+"""The graph as a system of ODEs from the sensors to the actuators (D-017, D-202).
 
-Every node has a rate y in [0, RATE_MAX] and relaxes towards what its inputs ask for:
+Every node has a rate y in [0, RATE_MAX], its state, and its kind's law (`laws.py`): an equation
+for the state, dy/dt = f(x, y), from x, the rates on its wires in, and what it sends out,
+o = g(y). A wire from j carries o_j / outdeg_j. Every part of the jam relaxes:
 
-    TAU dy_i/dt = F_i(y) - y_i,     F_i = min(RATE_MAX, gain_i * |sum of the wires into i|)
+    TAU dy_i/dt = F_i(x) - y_i,   o_i = y_i,   F_i = min(RATE_MAX, gain_i * |sum of x|)
 
-A wire from j carries y_j / outdeg_j; a Difference subtracts its second input. Eyes and sources
-are given, not computed. The system is one set of equations, so a loop is no special case: it
-is just a feedback that the state remembers, and it can settle, hold a value, latch or oscillate.
+or |x_1 - x_2| for a Difference. Eyes and sources are given, not computed. The system is one set
+of equations, so a loop is no special case: it is just a feedback that the state remembers, and
+it can settle, hold a value, latch or oscillate.
 
 The state is `y` of shape (N, n) for N agents: the caller keeps it from tick to tick, and it
-belongs in the hash of the run. One explicit Euler step of length dt is
-y + (dt / TAU) (F(y) - y), a weighted mean of y and F(y) when dt <= TAU, so every rate stays in
-[0, RATE_MAX] for any graph. With dt = TAU the step is y <- F(y): loops that settle in
-continuous time then flicker every tick, so keep dt well under TAU (dt <= TAU / 2).
+belongs in the hash of the run. A tick reads every output, then steps every state by its law,
+each from the same y, so the order in which kinds are stepped cannot change a result. The tick
+is at most the shortest `max_dt` of the network's laws: TAU for the jam's parts, whose step is
+then y <- F(y); keep it well under (dt <= TAU / 2, see `laws.Relax`).
 
 Inputs are gathered slot by slot, never with `@`, so a row does not depend on the batch it is
 in (invariant 1). Pure numpy, no pygame.
@@ -20,29 +22,40 @@ in (invariant 1). Pure numpy, no pygame.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
+from nektoids.graph.laws import RATE_MAX
+from nektoids.graph.laws import TAU as TAU  # re-exported: the lag of every part of the jam
 from nektoids.graph.network import Network
 
-RATE_MAX = 1.0  # what one wire can carry: the unit of every rate
 SOURCE_RATE = 1.0  # what a Source emits
-TAU = 1.0 / 60.0  # the lag of every node [s]
 
 
-def _flux(net: Network, y: np.ndarray) -> np.ndarray:
-    """(N, n + 1): rate on a wire leaving each node; the extra column is 0, for unused slots."""
-    flux = np.zeros((y.shape[0], net.n + 1))
-    flux[:, : net.n] = y / np.maximum(net.outdeg, 1)
-    return flux
+def outputs(net: Network, y: np.ndarray) -> np.ndarray:
+    """(N, n): what each node sends out, by its law from its state; a sensor its rate. `y`
+    itself when every law sends its state, as every part of the jam does."""
+    out = y
+    for law, nodes, _ in net.laws:
+        if not law.sends_state:
+            out = out.copy() if out is y else out
+            out[:, nodes] = law.output(y[:, nodes])
+    return out
 
 
-def targets(net: Network, y: np.ndarray) -> np.ndarray:
-    """F(y), shape (N, n): what each node's inputs ask for now (zero for sensors)."""
-    flux = _flux(net, y)
-    total = 0.0
-    for k in range(net.slots.shape[1]):
-        total = total + net.signs[:, k] * flux[:, net.slots[:, k]]
-    return np.minimum(RATE_MAX, net.gain * np.abs(total))
+def flux(net: Network, out: np.ndarray) -> np.ndarray:
+    """(N, n + 1): the rate on each wire leaving each node, from the outputs `out` (N, n): its
+    output shared among its wires; the extra column is 0, for unused slots, so that
+    `flux[:, slots]` is the rate on each input slot."""
+    wires = np.zeros((out.shape[0], net.n + 1))
+    wires[:, : net.n] = out / np.maximum(net.outdeg, 1)
+    return wires
+
+
+def max_dt(net: Network) -> float:
+    """The longest tick every law of the network is stable for [s]; no limit without one."""
+    return min((law.max_dt for law, _, _ in net.laws), default=math.inf)
 
 
 def given_rates(net: Network, eyes: np.ndarray, sources: np.ndarray | None = None) -> np.ndarray:
@@ -76,28 +89,38 @@ def step(
     dt: float,
     sources: np.ndarray | None = None,
 ) -> np.ndarray:
+    """`step_given` with the jam's two senses given as they are: eyes (N, n_eyes), and the
+    sources at SOURCE_RATE unless `sources` says otherwise (`given_rates`). The editor's demos,
+    its probe and the tests drive the graph so; a run reads every sense (`sim.world`, D-203)."""
+    return step_given(net, y, given_rates(net, eyes, sources), dt)
+
+
+def step_given(net: Network, y: np.ndarray, given: np.ndarray, dt: float) -> np.ndarray:
     """The rates one tick later: a new array, `y` is not changed.
 
-    y: (N, n) rates now. eyes: (N, n_eyes) sensor rates during this tick. dt: the tick [s],
-    with 0 < dt <= TAU (ValueError otherwise).
+    y: (N, n) rates now. given: (N, n) the sensors' rates during this tick, in [0, RATE_MAX],
+    in their columns; the other columns are not read. dt: the tick [s], with
+    0 < dt <= max_dt(net) (ValueError otherwise).
     """
-    h = dt / TAU
-    if not 0.0 < h <= 1.0:
-        raise ValueError(f"dt / TAU must be in (0, 1], got {h:g}")
-    given = given_rates(net, eyes, sources)
+    limit = max_dt(net)
+    if not 0.0 < dt <= limit:
+        raise ValueError(f"dt must be in (0, {limit:g}] s, what the laws allow, got {dt:g}")
     if y.shape != given.shape:
         raise ValueError(f"y must have shape {given.shape}, got {y.shape}")
-    seen = np.where(net.gain > 0, y, given)  # the sensors' rates of this tick drive this tick
-    moved = np.clip(y + h * (targets(net, seen) - y), 0.0, RATE_MAX)
-    return np.where(net.gain > 0, moved, given)
+    seen = np.where(net.given, given, y)  # the sensors' rates of this tick drive this tick
+    wires = flux(net, outputs(net, seen))
+    new = np.where(net.given, given, 0.0)  # a sensor's rate is given, already in [0, RATE_MAX]
+    for law, nodes, slots in net.laws:
+        new[:, nodes] = law.step(wires[:, slots], seen[:, nodes], dt)
+    return np.clip(new, 0.0, RATE_MAX, out=new)
 
 
 def wire_flux(net: Network, y: np.ndarray) -> np.ndarray:
     """(N, E): rate on each wire, in `net.edges` order."""
     sources = net.edges[:, 0]
-    return y[:, sources] / net.outdeg[sources]
+    return outputs(net, y)[:, sources] / net.outdeg[sources]
 
 
 def thrust_rates(net: Network, y: np.ndarray) -> np.ndarray:
     """(N, n_thrusters): the rate each thruster has; `net.facing` says where it pushes."""
-    return y[:, net.thrusters]
+    return outputs(net, y)[:, net.thrusters]

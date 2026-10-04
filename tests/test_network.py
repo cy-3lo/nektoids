@@ -78,10 +78,12 @@ def test_inputs_are_sorted_by_source_whatever_the_drawing_order():
     assert one.edges.tolist() != two.edges.tolist()
 
 
-def test_a_difference_subtracts_its_second_input_and_a_lone_input_passes():
+def test_a_difference_takes_its_inputs_in_slot_order_and_a_lone_input_passes():
     net = Network.from_edges([EYE, SRC, DIF, EYE, DIF], [(1, 2), (0, 2), (3, 4)])
-    assert net.slots[2].tolist() == [0, 1] and net.signs[2].tolist() == [1.0, -1.0]
-    assert net.signs[4].tolist() == [1.0, 0.0]
+    assert net.slots[2].tolist() == [0, 1] and net.slots[4].tolist() == [3, 5]  # 5: unused
+    assert net.given.tolist() == [True, True, False, True, False]
+    [(law, nodes, slots)] = net.laws
+    assert law is DIF.spec.law and nodes.tolist() == [2, 4] and slots.tolist() == [[0, 1], [3, 5]]
 
 
 def test_a_loop_drawn_by_hand_compiles():
@@ -93,7 +95,7 @@ def test_a_loop_drawn_by_hand_compiles():
 
 def test_arrays_cannot_be_written():
     net = Network.from_edges([EYE, THR], [(0, 1)])
-    for array in (net.edges, net.slots, net.signs, net.gain, net.outdeg, net.eyes, net.mount):
+    for array in (net.edges, net.slots, net.gain, net.given, net.outdeg, net.eyes, net.mount):
         with pytest.raises(ValueError, match="read-only"):
             array[...] = 0
 

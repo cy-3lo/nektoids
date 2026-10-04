@@ -26,6 +26,7 @@ import json
 
 import pygame
 
+from nektoids.editor import clipboard
 from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
 from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
@@ -70,6 +71,7 @@ screen = pygame.display.set_mode(SCREEN)
 pygame.display.set_caption("Nektoids")
 clock = pygame.time.Clock()
 fonts = Fonts.load()
+clipboard.install()  # the page's side of Save and Load, once (D-206)
 levels = arenas()  # read from their files once, at startup (web.md: no file I/O in the loop)
 router = Router(levels, sandbox())
 editors: dict[int, EditorScene] = {}  # each level's editor, and its undo history with it

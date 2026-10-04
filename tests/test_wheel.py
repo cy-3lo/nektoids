@@ -89,7 +89,7 @@ def test_up_to_five_icons_sit_beyond_the_cells_corners_the_gap_at_the_foot():
 
 
 def test_more_than_five_turn_on_a_wheel_the_others_piled_under_its_ends():
-    seven = list(Kind)  # the sandbox's seven parts
+    seven = list(Kind)[:7]  # the sandbox's seven parts: more kinds must not change the test
     wheel = slots(seven, CENTRE, SIZE, frozenset(Kind))
     assert [s.depth for s in wheel] == [0, 0, 0, 0, 0, 1, 2]  # piled under the last end
     last, first_pile, second = wheel[4], wheel[5], wheel[6]

@@ -1439,3 +1439,104 @@ Camille's review left nothing to fix before the upload. `DEV_VIEW` is off, so F1
 uploaded to itch.io. The physicist checked the itch.io page in Chrome and in Safari, where the keys,
 the fonts and the canvas had never been tried. The todo's §5 goes. As D-105 has it, the jam's scope
 lock now gives way to stage 0's (D-200): `stage/0-foundations` comes to `main` in one PR.
+
+**D-200 — 2026-10-04 — Stage 0, Foundations, is built on `stage/0-foundations`, and its scope replaces the jam's scope lock there. Its decisions are numbered from D-200. Applies D-105.**
+The jam build ships from `main`, with what Camille's review finds to fix, so Foundations is
+built beside it. Each item is a `feat/…` branch whose PR goes into the stage, and the stage goes
+into `main` in one PR once the build is uploaded; until then the lock stands on `main`, as D-105
+asks. In: the game as the jam shipped it, and the five items of `ideas.md` §0, which move to the
+todo's §10 in the order they will be built: the objectives in one list, a level format with a
+version, one table of part kinds, sensors in general, saving and a board as text. Out: all else
+in `ideas.md`; nothing new for the player but Save and Load, no new part, sense, item, level or
+objective. `CLAUDE.md`'s scope section says so, and `/scope-check` reads it. Decisions taken on
+`main` meanwhile keep D-106 on and the stage's start at D-200, so no number is taken twice; a
+stage built beside another takes the next hundred.
+
+**D-201 — 2026-10-04 — A level file carries its format's version, 1; the loader refuses a file without it, of another version, or with a key it does not know.**
+A file from another game, or a key mistyped by hand, was read as far as it went: an unknown key
+was dropped, and a mistyped objective setting stopped the load with a TypeError. `Level.to_dict`
+now writes `"version": 1` first. `from_dict` refuses another version, and any key it does not
+know in the level, its start, an item or an objective, with a ValueError that names it. A change
+to any part of the format, the board, hints and tutorial included, raises the version, and
+`from_dict` then upgrades the older version instead of refusing it. The keys inside the board,
+hints and tutorial are not checked yet; saved boards get a version of their own with saving
+(todo §10).
+
+**D-202 — 2026-10-04 — One table of part kinds, `SPEC` in `graph/kinds.py`; each kind's dynamics is a law, a state equation and an output (`graph/laws.py`). Amends D-017.**
+A kind's facts were spread over a dozen tables and if-chains in `graph/` and `editor/`, and a
+kind left out of `GAIN` was taken for a sensor and held at 0. Each kind is now one entry:
+category, letter, name, info text, law, facing, wire limits; `tests/test_kinds.py` checks every
+entry whole, and the old tables are views of it. A kind's dynamics is no longer a gain and input
+signs, which spell only g·|Σ ±x|, but a law: a state equation dy/dt = f(x, y), x the rates on
+its wires in, and an output o = g(y), which its wires carry, shared. The output depends on the
+state alone, so a tick reads every output, then steps every state, and a loop needs no solve.
+Each law owns its explicit step, so its arithmetic is fixed, and says the longest tick it is
+stable for. Every jam part relaxes, τ dy/dt = F(x) − y, o = y, with D-017's τ and F a scaled sum
+or |a − b|: the run is bit-identical. A tank, T dh/dt = in − h, is the same law with τ = 4 s; a
+part whose output is not its state, a bucket with a hole, takes a law of its own; a part with
+two states is a decision. Wires come into a node sorted by the part that feeds them, so a valve's
+control needs ports first (stage 2). A tick costs about 1.8 times what it did, a few numpy calls
+per law; laws of one type can step together if a later stage needs it. Where a sensor's rate
+comes from and what an actuator does to the world stay outside the law: the todo's item on
+senses and actions.
+
+**D-203 — 2026-10-04 — A sensor's rate comes from its kind's sense, an actuator's effect from its kind's action, each named in the table of kinds and mapped to its function in `sim/world.py`.**
+`world.step` read the eyes and pushed with the thrusters by name, and the Sources' rate was set in
+`dynamics.given_rates`: a sensor kind wired in nowhere would have read 0, an actuator would have
+done nothing, with no error. The table now names an Eye's sense, light, a Source's, steady, and a
+Thruster's action, push; `SENSES` and `ACTIONS` in `world.py` map each name to its function, with
+the signatures `eye_rates` and `thrust` already had. A tick takes every sensor's reading by its
+sense (`readings`) and sums every actuator's action (`push`; one action alone is not added to a
+zero), so the run is bit-identical, and the drawn motion (`marks.motion`) is the same sum. A test
+checks that every sensor has a sense and every actuator an action the simulation knows. Flow
+sensing (stage 3) is then a sense, a lamp (stage 4) an action. The editor's views that read the
+eyes alone, the arena's eye columns after a drag and its polar plot, Diagnostic's probe, the
+schematic, the encyclopedia's demos and the intake specks, stay so until a second sense needs
+them. `dynamics.step` keeps taking the eyes and sources, for those views and the tests, around
+`step_given`, which takes every sensor's rate.
+
+**D-204 — 2026-10-04 — A saved board comes back with every wire on its saved path, checked against the board's rules; a wire saved without one is routed. Amends D-024.**
+`Board.from_dict` drew every wire again, so a wire left on a detour, after a Move, a Delete or a
+part put on a wire, came back on another route, and a board loaded was not the board saved. D-024
+left exact paths for when saving arrives; saving is stage 0's last item. `Board.connect` takes a
+path now: the wire is checked by the rules as before (ends, kinds, loops, counts), and its path
+must join its ends a step at a time, through free cells of the zone, by edges no other wire takes.
+`from_dict` lays each wire on its path in the order they were drawn, and refuses data no board
+could hold, naming why. A wire saved without a path, which no file has, is routed as before. The
+board as text (D-205) needs it too: a path the router would not take is written step by step.
+
+**D-205 — 2026-10-04 — A board as text holds only the decisions the rules leave open, as one integer in a mixed radix, written in base 59 with four check characters per block; it names no level, and its version is hidden in the checks.**
+A board is a diagram on a body: its zone, a disc; its parts in id order, each a cell, a kind and
+a facing if it turns; its wires in drawing order, each its ends and its path. No level: loading a
+text into one is `Board.adopt` (D-092), which says what the level does not hand out, as for a win
+of another level. Replayed on a bare body, each decision is a digit whose base is the number of
+choices the rules allow there, so a forced choice costs nothing; a path costs one binary digit
+when it is the router's, drawn after the wires before it, and its steps otherwise. The id order
+is kept, since a Thruster sums its wires in its nodes' order and the run must be bit-identical.
+A kind is one of 32 codes, `Kind`'s order, which only grows at its end: a text written today
+holds once tanks and valves exist. A zone is one of 16 codes, discs of radius 0 to 7 and room for
+other shapes. The integer is written in base 59, the alphanumerics without I, l and O, which are
+read as 1, 1 and 0; no symbol, since symbols break a double-click and chat apps read * and _ as
+Markdown. It goes in blocks of 53 characters, each followed by four check characters of a
+Reed-Solomon code over the integers mod 59, a field since 59 is prime. The format's version is a
+hidden first symbol of every block, never written: a text of another version fails its checks.
+With distance 5, one wrong character is put right and two are refused, never read as another
+board. Fear's model board is `2Svbskor23U3aec`, 15 characters; Patience's, 26; F4's JSON for
+them, about 500 and 1,000. A change to the format, to a part's rules or to the router raises the
+version. Save and Load in Files, and the clipboard, come next.
+
+**D-206 — 2026-10-04 — Save/Load at Files' foot: Copy a board puts its text on the clipboard, and Paste a board, a field, takes a text and puts its board on the level. On the web the clipboard goes through the page. Amends D-093 and `.claude/rules/web.md`.**
+Copy a board, a row, puts the board's text (D-205) on the clipboard and in the status line, to
+copy by hand where the clipboard is out of reach. Under it, Paste a board is a field drawn as the
+passkey's (D-075): a click opens it, Cmd/Ctrl+V pastes, a board's characters may be typed, Enter loads, Esc
+or a click elsewhere gives up. The text's board goes on the level by `Board.adopt`, as a win of
+another level does (D-092), the level's locked parts being the text's parts on their cells;
+otherwise the status line says why ("this level hands out no doubles"), and a mistyped
+character put right is said. Undo takes a load back (D-027). On the web, pygame has no clipboard
+(pygbag ships no `pygame.scrap`), and Safari 26.6 sends no copy or paste event to a page where
+nothing is selected and refuses `navigator.clipboard.readText`. So a few lines of JavaScript, put
+in once at startup, write with `navigator.clipboard.writeText` on Copy's click, and give Paste a
+text field of the page's own, invisible. It is focused once the click is over, or Safari takes
+the focus back, and its keys are stopped before the game's listeners, which would cancel Cmd+V;
+the editor reads it once a frame. Tried in Chrome and in Safari 26.6, 2026-10-04; Firefox and
+phones are not. Natively, `pygame.scrap`. Only `editor/clipboard.py` talks to the page.

@@ -24,13 +24,13 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
-from nektoids.graph.dynamics import RATE_MAX, thrust_rates
+from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell
 from nektoids.graph.network import Network, body_disc
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
-from nektoids.sim.motion import stokes, thrust
+from nektoids.sim.motion import stokes
 from nektoids.sim.optics import FACING_STEP, TINY, discs, exposure, eye_poses, visible
-from nektoids.sim.world import parts
+from nektoids.sim.world import parts, push
 
 FLAME_LENGTH = 3.0  # [body radii] every flame, whatever its rate: the rate is its density
 FLAME_SPECKS = 12  # specks in a flame at once at RATE_MAX, on average
@@ -244,8 +244,7 @@ def motion(net: Network, y: np.ndarray, radius: float) -> tuple[np.ndarray, floa
     """The velocity (2,) in the body's frame [u/s] and the spin [rad/s] that the thrust of
     rates `y` (n,) gives a body of `radius` [u] (D-022): what the next tick does."""
     size = np.array([radius])
-    force, torque = thrust(thrust_rates(net, y[None, :]), size, *parts(net, net.thrusters))
-    vel, spin = stokes(force, torque, size)
+    vel, spin = stokes(*push(net, y[None, :], size), size)  # as the run sums it (D-203)
     return vel[0], float(spin[0])
 
 

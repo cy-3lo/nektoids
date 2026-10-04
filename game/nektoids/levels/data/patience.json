@@ -1,4 +1,5 @@
 {
+  "version": 1,
   "title": "Patience",
   "spec": "Touch all three lights.",
   "start": {"at": [8.0, 18.4], "heading": 0.0},

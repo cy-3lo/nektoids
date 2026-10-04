@@ -5,13 +5,15 @@ Items are to the plane what parts are to the board: each has a kind (`ItemKind`,
 its `Kind`), the point where it sits, and the one setting its kind takes, a light's power or an
 obstacle's radius. A level editor will place them as the board editor places parts. `to_dict`
 and `from_dict` turn a level into JSON-able data and back, as `Board.to_dict` does (D-024);
-the shipped levels are JSON files in `data/`. Pure Python, no pygame.
+the shipped levels are JSON files in `data/`. Each file says the version of its format,
+`FORMAT`; `from_dict` refuses another, and any key it does not know, so that a file from
+another game or a mistyped key fails as it is loaded (D-201). Pure Python, no pygame.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import cached_property
@@ -22,6 +24,20 @@ from nektoids.levels.objectives import Objective, objective_from_dict, objective
 from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
+FORMAT = 1  # the version of a level file's format: `to_dict` writes it, `from_dict` reads it
+KEYS = (  # what a level file may hold, in the order `to_dict` writes it
+    "version",
+    "title",
+    "spec",
+    "start",
+    "items",
+    "board",
+    "time_limit",
+    "objectives",
+    "passkey",
+    "hints",
+    "tutorial",
+)
 
 
 class ItemKind(Enum):
@@ -55,6 +71,7 @@ class Item:
     @classmethod
     def from_dict(cls, data: Mapping) -> Item:
         kind = ItemKind(data["kind"])
+        known(data, ("kind", "at", kind.setting), f"a {kind.value}")
         value = data.get(kind.setting, kind.default)
         if value is None:
             raise ValueError(f"a {kind.value} needs its {kind.setting}")
@@ -99,6 +116,7 @@ class Level:
         x, y, heading = self.start
         return (
             {
+                "version": FORMAT,
                 "title": self.title,
                 "spec": self.spec,
                 "start": {"at": [x, y], "heading": heading},
@@ -114,8 +132,18 @@ class Level:
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Level:
-        """ValueError for data no level could hold: an unknown kind, an item without its
-        setting, items that overlap as the arena refuses, a board that cannot be built."""
+        """ValueError for data no level could hold: another version than FORMAT, a key it
+        does not know, an unknown kind, an item without its setting, items that overlap as the
+        arena refuses, a board that cannot be built. The keys of `board`, `hints` and
+        `tutorial` are theirs to check."""
+        if "version" not in data:
+            raise ValueError(f"a level without its version: this game reads version {FORMAT}")
+        if data["version"] != FORMAT:
+            raise ValueError(
+                f"a level of version {data['version']}: this game reads version {FORMAT}"
+            )
+        known(data, KEYS, "a level")
+        known(data["start"], ("at", "heading"), "the start")
         x, y = data["start"]["at"]
         level = cls(
             title=data["title"],
@@ -142,6 +170,13 @@ PASSKEY_LENGTH = 10  # the most letters a passkey has (D-075)
 def is_passkey(word: str) -> bool:
     """Whether `word` may be a passkey: A to Z, upper case, at most PASSKEY_LENGTH letters."""
     return 0 < len(word) <= PASSKEY_LENGTH and all("A" <= c <= "Z" for c in word)
+
+
+def known(data: Mapping, keys: Iterable[str], what: str) -> None:
+    """ValueError if `data` holds a key not among `keys`: refused, not ignored (D-201)."""
+    unknown = [key for key in data if key not in keys]
+    if unknown:
+        raise ValueError(f"{what} takes no {', '.join(map(repr, unknown))}")
 
 
 def load(path: Path) -> Level:

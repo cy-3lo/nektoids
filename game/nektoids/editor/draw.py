@@ -34,10 +34,8 @@ from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.entry import ENTRY_AREA
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import (
-    DIAMOND,
-    DISC,
     EYE_DISC,
-    SQUARE_POINT,
+    SHAPES,
     body_circle,
     cumulative_lengths,
     point_at,
@@ -80,6 +78,7 @@ from nektoids.editor.layout import (
     WHEEL_TITLE,
     Drawer,
     EditButton,
+    FileButton,
     HintRow,
     LevelButton,
     MainView,
@@ -148,7 +147,7 @@ from nektoids.editor.probe import level_view, ring_radii
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
-from nektoids.graph.board import Board, Category, Kind, Refused
+from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
@@ -174,6 +173,8 @@ TIP = {
     Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them, or"
     " drag one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
+    FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
+    " into Paste a board, under this row, to bring it back, on this level or another.",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     Drawer.TOOLS: "Tools",
@@ -216,6 +217,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     EditButton.REDO: "Redo",
     Mode.WRITE: "Write",
     Mode.DELETE: "Delete",
+    FileButton.SAVE: "Copy a board",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Hand",
@@ -228,7 +230,7 @@ TAB_NAME = {"editor": "Editor", "run": "Run"}
 
 # How parts sit in the menu: eyes looking up (flat side up), thrusters pointing up
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.
-MENU_ANGLE = {Kind.EYE: 90.0, Kind.THRUSTER: 90.0}
+MENU_ANGLE = {kind: 90.0 for kind in Kind if kind.default_facing is not None}
 
 WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever the zoom [px]
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
@@ -608,13 +610,7 @@ def placed_angle(kind: Kind, facing: int | None) -> float | None:
 
 
 def _template(kind: Kind) -> list[tuple[float, float]]:
-    if kind is Kind.SOURCE:
-        return DISC
-    return {
-        Category.SENSOR: EYE_DISC,
-        Category.OPERATOR: DIAMOND,
-        Category.ACTUATOR: SQUARE_POINT,
-    }[kind.category]
+    return SHAPES[kind.spec.shape]
 
 
 def extent(kind: Kind) -> float:
@@ -877,9 +873,41 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
 
 
 def _draw_foot(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """What stays at the foot of the editor's drawers: the Wheel, in Tools and Parts."""
+    """What stays at the foot of the editor's drawers: the Wheel, in Tools and Parts; the board
+    as text, in Files."""
     if scene.layout.wheel_fold is not None:
         _draw_wheel(screen, scene, fonts)
+    if scene.layout.board_field is not None:
+        _draw_board_text(screen, scene, fonts)
+
+
+def _draw_board_text(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Files' foot (D-206): Save/Load, Copy a board, then the field to paste one: what is
+    pasted or typed, its end showing, with a caret, lit while it is open; else what to do."""
+    layout = scene.layout
+    _, top, _, room = layout.list_area
+    for title, rect in layout.section_titles:
+        if rect[1] >= top + room:  # under the wins' list, which is clipped: the foot's title
+            x, y, _, h = rect
+            shown = fonts.label.render(title.upper(), True, DIM_TEXT)
+            screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
+    for button, rect in layout.file_buttons:
+        draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="copy")
+    box, loading = pygame.Rect(layout.board_field), scene.loading
+    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
+    if loading is not None:
+        pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
+    ink = TEXT if loading is not None else DIM_TEXT
+    fonts.icons.draw(screen, "paste", (box.left + 20, box.centery), 16, ink)
+    room = box.width - 42 - 10
+    if loading is None:
+        shown = fonts.text.render("Paste a board", True, ink)
+    else:
+        typed = loading.text.replace(" ", "")
+        while typed and fonts.text.size(f"{typed}_")[0] > room:
+            typed = typed[1:]  # the end shows, where the caret is
+        shown = fonts.text.render(f"{typed}_", True, ink)
+    screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
 
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:

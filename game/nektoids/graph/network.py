@@ -19,17 +19,12 @@ import numpy as np
 
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.graph.kinds import Category
+from nektoids.graph.laws import Law
+
+SENSOR, ACTUATOR = Category.SENSOR, Category.ACTUATOR
 
 MARGIN = 1e-9  # a loop gain this close to 1 counts as 1
-
-# Factor from the sum of incoming rates to the node's rate. Sensors are not here: they are given.
-GAIN: dict[Kind, float] = {
-    Kind.DOUBLE: 2.0,
-    Kind.HALVE: 0.5,
-    Kind.SUM: 1.0,
-    Kind.DIFFERENCE: 1.0,
-    Kind.THRUSTER: 1.0,
-}
 
 
 def _frozen(array: np.ndarray) -> np.ndarray:
@@ -45,8 +40,11 @@ class Network:
     mount: np.ndarray  # (n, 2): where each node sits on the body, in body radii (D-018)
     edges: np.ndarray  # (E, 2) int: source index, target index, in the order wires were drawn
     slots: np.ndarray  # (n, K) int: source index feeding each input slot, sorted; n = unused
-    signs: np.ndarray  # (n, K): +1, except the second input of a Difference (-1); 0 = unused
-    gain: np.ndarray  # (n,): see GAIN; 0 for sensors
+    gain: np.ndarray  # (n,): its law's slope, how far it follows one input (D-202); 0 for sensors
+    given: np.ndarray  # (n,) bool: its rate is given, not computed: the sensors
+    laws: tuple[tuple[Law, np.ndarray, np.ndarray], ...]  # each law, its nodes, their slots
+    senses: tuple[tuple[Kind, np.ndarray], ...]  # each sensor kind, its nodes; table order
+    actions: tuple[tuple[Kind, np.ndarray], ...]  # each actuator kind, its nodes; table order
     outdeg: np.ndarray  # (n,) int: number of wires leaving each node
     eyes: np.ndarray  # indices of the eyes, ascending
     sources: np.ndarray  # indices of the sources, ascending
@@ -113,11 +111,9 @@ class Network:
             feeders.sort()
         width = max(1, max((len(feeders) for feeders in incoming), default=0))
         slots = np.full((n, width), n, dtype=np.int64)
-        signs = np.zeros((n, width))
         for b, feeders in enumerate(incoming):
             for k, a in enumerate(feeders):
                 slots[b, k] = a
-                signs[b, k] = -1.0 if kinds[b] is Kind.DIFFERENCE and k == 1 else 1.0
         if facing is None:
             facing = [kind.default_facing for kind in kinds]
         ids = tuple(range(n)) if ids is None else tuple(ids)
@@ -135,13 +131,40 @@ class Network:
             mount=_frozen(mount),
             edges=_frozen(np.array(pairs, dtype=np.int64).reshape(-1, 2)),
             slots=_frozen(slots),
-            signs=_frozen(signs),
-            gain=_frozen(np.array([GAIN.get(kind, 0.0) for kind in kinds])),
+            gain=_frozen(np.array([k.spec.law.slope if k.spec.law else 0.0 for k in kinds])),
+            given=_frozen(np.array([kind.spec.law is None for kind in kinds], dtype=bool)),
+            laws=_by_law(kinds, slots),
+            senses=tuple((k, indices(k)) for k in Kind if k.category is SENSOR and k in kinds),
+            actions=tuple((k, indices(k)) for k in Kind if k.category is ACTUATOR and k in kinds),
             outdeg=_frozen(outdeg),
             eyes=indices(Kind.EYE),
             sources=indices(Kind.SOURCE),
             thrusters=indices(Kind.THRUSTER),
         )
+
+
+def _by_law(
+    kinds: Sequence[Kind], slots: np.ndarray
+) -> tuple[tuple[Law, np.ndarray, np.ndarray], ...]:
+    """Each law of the nodes, with the nodes that follow it, ascending, and their rows of
+    `slots`; laws in the order of the table of kinds, kinds with equal laws together (a Sum and
+    a Thruster). Nodes step independently, each from the same state, so this order cannot change
+    a result; it is fixed all the same (invariant 1)."""
+    laws: list[Law] = []
+    members: list[list[int]] = []
+    for kind in Kind:
+        nodes = [i for i, k in enumerate(kinds) if k is kind]
+        if kind.spec.law is None or not nodes:
+            continue
+        if kind.spec.law not in laws:
+            laws.append(kind.spec.law)
+            members.append([])
+        members[laws.index(kind.spec.law)].extend(nodes)
+    found = []
+    for law, nodes in zip(laws, members, strict=True):
+        index = np.array(sorted(nodes), dtype=np.int64)
+        found.append((law, _frozen(index), _frozen(slots[index])))
+    return tuple(found)
 
 
 def body_disc(zone: Sequence[Cell]) -> tuple[tuple[float, float], float]:
@@ -218,20 +241,9 @@ def cyclic_components(net: Network) -> tuple[tuple[int, ...], ...]:
     return tuple(c for c in components(net) if len(c) > 1 or c[0] in selfloops)
 
 
-_LETTER = {
-    Kind.EYE: "E",
-    Kind.SOURCE: "S",
-    Kind.DOUBLE: "D",
-    Kind.HALVE: "H",
-    Kind.SUM: "P",
-    Kind.DIFFERENCE: "M",
-    Kind.THRUSTER: "T",
-}
-
-
 def label(net: Network, i: int) -> str:
     """Short name of node i for panels: E0 eye, S1 source, D2, H3, P4 sum, M5 difference, T6."""
-    return f"{_LETTER[net.kinds[i]]}{i}"
+    return f"{net.kinds[i].spec.letter}{i}"
 
 
 def abs_coupling(net: Network) -> np.ndarray:
@@ -247,7 +259,7 @@ def abs_coupling(net: Network) -> np.ndarray:
     for i in range(n):
         for k in range(net.slots.shape[1]):
             j = int(net.slots[i, k])
-            if j < n and net.gain[j] > 0:  # a sensor is given, so it is not a variable
+            if j < n and not net.given[j]:  # a sensor is given, so it is not a variable
                 w[i, j] = net.gain[i] / net.outdeg[j]
     return w
 

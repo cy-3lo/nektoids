@@ -12,7 +12,7 @@ Each opens with a decision that sets its scope, as the scope lock did for the ja
 brings its own levels.
 
 0. **Foundations**: one table of part kinds, sensors in general, a level format with a version,
-   saving and a board as text.
+   saving and a board as text. Under way (D-200).
 1. **A level maker**, for us and Camille first, then for players.
 2. **Memory**: tanks, valves, loops in the editor, lights that change in time.
 3. **Flows and flow sensing**: streams and vortices as items, a swimmer they carry, a sensor
@@ -24,35 +24,8 @@ close the file.
 
 ## 0. Foundations
 
-What every later stage needs; none of it shows to the player.
-
-- **One table of part kinds** (from a map of the code, 2026-10-04). A kind is spread today over
-  `Kind` and its side dicts in `graph/board.py`, `GAIN` in `graph/network.py`, `NAME` and `WHAT`
-  in `editor/parts.py`, and `editor/icons.py`, `layout.py` (`MENU_GROUPS`), `wheel.py`,
-  `draw.py`, `marks.py` and `entry.py`. A kind left out of `GAIN` is taken for a sensor and held
-  at 0 (`graph/dynamics.py`, `step`), with no error. Every stage after this adds parts: with one
-  table, checked by a test, a new part is one entry.
-- **Sensors in general**: `sim/world.py`'s `step` hands the graph the eyes' rates only; flow
-  sensing (stage 3) is a second sense.
-- **A level format with a version**: `Level.to_dict`, `from_dict` and `to_json` exist
-  (`levels/level.py`), items and objectives already typed by their `kind`. A version number, and
-  a loader that refuses one it does not know.
-- **The objectives in one list**: `GOAL` in `editor/arena_draw.py` repeats `OBJECTIVES` in
-  `levels/objectives.py`.
-- **Saving and loading, and a board as text**, one piece of work (was todo §9; D-093). Save
-  and Load come back with it, as rows at the foot of Files, under this session's wins (D-092);
-  until D-093 they sat there greyed (D-027). The format of D-024, with a version number, keeping
-  wire paths exactly; a board as a short line of ASCII to copy, paste, keep in a text file and
-  open again: that board packed into bits and spelled out. Its language is a decision first.
-  - Letters (base 32, like a licence key) or words from a list (2048 words, 11 bits each)?
-  - Length, roughly: six parts and six wires with their paths kept exactly come to under 200
-    bits, about 35 letters or 17 words; less if the paths are drawn again in wire order, which
-    gives the same routes unless Move or Delete was used (D-024).
-  - A check against typing mistakes, Shannon-like: redundant check symbols, so a mistyped line
-    is refused (or even corrected) rather than loading another board. A version mark.
-  - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Wait and
-    see on the web build.
-  - The same mechanism as the level passkeys (D-075): a word that brings a state back.
+In the todo, §10, since D-200: built on `stage/0-foundations`, then merged into
+`main` once the jam build is uploaded.
 
 ## 1. A level maker
 
@@ -204,12 +177,17 @@ What every later stage needs; none of it shows to the player.
   (D-072).
   - Does a phone's keyboard come up for Chapters' passkey field (D-075)? If not, the field
     needs letters of its own on screen.
+    Load's field is a text field of the page itself (D-206): on a phone it may bring the
+    keyboard up, and the passkey field could be made the same way.
   - The canvas is 960 × 640 px: on a phone a 40 px hex is about 16 px wide in portrait and
     24 px in landscape, where a finger wants about 44. Landscape only, larger hexes?
   - Under pygbag, do touches arrive as mouse events or as FINGERDOWN only? Try on a phone
     first.
   - How far must a finger move before a tap becomes a drag? Today a press becomes a drag
     once the pointer leaves the part's cell (D-085): enough for a finger on large hexes?
+- **A board that does not fit, shown in red** (the physicist, 2026-10-04): loading a text or a
+  win that a level cannot hold puts it on the board anyway, its surplus parts in red, instead of
+  refusing with a message (D-092, D-205).
 - **Parts as the encyclopedia** (todo §8 until D-104): a row opens into its entry, in the
   drawer; today the entry opens in a box beside it. The rest of the activity bar is built
   (D-053 to D-069).

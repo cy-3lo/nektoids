@@ -41,7 +41,6 @@ ACTIONS = (  # the wire at the top, the turns either side of the gap, delete las
     Tool.TURN_RIGHT,
     Tool.DELETE,
 )
-TURNING = (Kind.EYE, Kind.THRUSTER)  # the parts whose facing matters (D-009)
 
 
 @dataclass(frozen=True)
@@ -63,7 +62,7 @@ def offer(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind | Tool, ...]
         return tuple(k for k in ordered if board.remaining(k) != 0)
     if node.locked:  # placed by the level: it stays, it may still be wired
         return (Tool.WIRE,)
-    turns = node.kind in TURNING
+    turns = node.kind.default_facing is not None  # its facing matters (D-009)
     swap = bool(swaps(board, cell, kinds))
     return tuple(
         a
