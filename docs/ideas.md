@@ -177,6 +177,8 @@ In the todo, §10, since D-200: built on `stage/0-foundations`, then merged into
   (D-072).
   - Does a phone's keyboard come up for Chapters' passkey field (D-075)? If not, the field
     needs letters of its own on screen.
+    Load's field is a text field of the page itself (D-206): on a phone it may bring the
+    keyboard up, and the passkey field could be made the same way.
   - The canvas is 960 × 640 px: on a phone a 40 px hex is about 16 px wide in portrait and
     24 px in landscape, where a finger wants about 44. Landscape only, larger hexes?
   - Under pygbag, do touches arrive as mouse events or as FINGERDOWN only? Try on a phone

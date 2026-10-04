@@ -40,6 +40,8 @@ GLYPH = {
     "share": 0xF064,
     "floppy-disk": 0xF0C7,
     "folder-open": 0xF07C,
+    "copy": 0xF0C5,  # Save: the board as text (D-206)
+    "paste": 0xF0EA,  # Load's field
     "pen": 0xF304,
     "map": 0xF279,
     "lock": 0xF023,

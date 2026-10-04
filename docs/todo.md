@@ -18,11 +18,5 @@ jam build is uploaded (D-200).
 What every later stage needs; none of it shows to the player but Save and Load. In the order
 they are built.
 
-- [ ] **Save and Load**, the last of saving (was todo §9; D-093). Saved paths are kept exactly
-      (D-204), and a board has its text (D-205, `graph/boardtext.py`). Save and Load come back
-      as rows at the foot of Files, under this session's wins (D-092); until D-093 they sat
-      there greyed (D-027). Loading a text puts its board on the open level by `Board.adopt`, or
-      says why not.
-      - Copy and paste between the canvas and the page: does pygbag reach the clipboard? Try it
-        on the web build first; else the text shows in a box to select, and a field takes it.
-      - A level's locked parts: the text's parts on their cells are the level's own.
+All five items are built. The stage goes to `main` in one PR once the jam build is uploaded
+(D-200).

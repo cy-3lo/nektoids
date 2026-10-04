@@ -10,6 +10,8 @@ paths:
   no `pygame.quit()`.
 - Load every asset at startup. No file I/O, threads, subprocesses or network during the loop.
 - Web dependencies are declared in the `# /// script` header of `main.py`.
+- The page's JavaScript is reached only through `editor/clipboard.py`, its script put in once
+  at startup (D-206); nothing else talks to the page.
 - Drawing reads simulation state; it never mutates it.
 - Editor space is scarce by design: each level's zone is small and fixed, and the canvas is not
   infinite. Zoom and pan move the view only, never the zone (D-013).
