@@ -276,6 +276,13 @@ def objective_to_dict(objective: Objective) -> dict:
 
 
 def objective_from_dict(data: Mapping) -> Objective:
+    """ValueError for an unknown kind, or a setting its kind does not take (D-201)."""
     if data["kind"] not in OBJECTIVES:
         raise ValueError(f"no objective is called {data['kind']!r}")
-    return OBJECTIVES[data["kind"]](**{k: v for k, v in data.items() if k != "kind"})
+    objective = OBJECTIVES[data["kind"]]
+    settings = {k: v for k, v in data.items() if k != "kind"}
+    taken = [f.name for f in fields(objective) if f.name != "name"]  # the name is the code's
+    unknown = [key for key in settings if key not in taken]
+    if unknown:
+        raise ValueError(f"{data['kind']!r} takes no {', '.join(map(repr, unknown))}")
+    return objective(**settings)

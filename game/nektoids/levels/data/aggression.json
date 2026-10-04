@@ -1,4 +1,5 @@
 {
+  "version": 1,
   "title": "Aggression",
   "spec": "Swim to the light and touch it.",
   "start": {"at": [9.0, 15.0], "heading": 0.0},
