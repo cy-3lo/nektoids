@@ -464,7 +464,7 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
     for index in range(len(intro.steps)):
         intro.index = index
         named.append(panels(intro))
-    assert named == [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}, {"icon:hints"}]
+    assert named == [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}, set()]  # D-095
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():

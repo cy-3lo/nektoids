@@ -198,15 +198,14 @@ class Tutorial:
 
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
     """What a leading step shows, by name, drawn in the accent (D-050, D-080): an area, a drawer
-    or a part of the run by its own name, its titles lit; a tab as "tab:editor"; a drawer's icon
-    as "icon:hints"."""
+    or a part of the run by its own name, its titles lit; a tab as "tab:editor". A drawer's icon
+    keeps its colour: its sparks are enough (D-095)."""
     if tutorial is None or not tutorial.leads:
         return frozenset()
     names = set()
     for one in _shows(tutorial.step):
         names.add(one.get("area") or one.get("drawer") or one.get("run"))
         names.add(f"tab:{one['tab']}" if "tab" in one else None)
-        names.add(f"icon:{one['icon']}" if "icon" in one else None)
     return frozenset(names - {None})
 
 

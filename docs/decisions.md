@@ -1265,3 +1265,9 @@ own, drawn in the dim grey that tells them from what the part does. Full justifi
 tried and set aside: in a mono font it opens uneven gaps in a line short of words. The (i) on
 every row is 16 px, from 12.
 
+**D-095 — 2026-10-04 — A drawer's icon that a tutorial step shows keeps its colour; its sparks say it. Amends D-080.**
+D-080 drew every target of a step in accent 1, with sparks drifting out of its edge. On a small
+icon of the bar, as Hints' on Fear's last card, the sparks already single it out, and the accent
+on the icon itself was one signal too many. A drawer's icon now keeps its colour, dim, or white
+while its drawer is open; its sparks stay. Areas, drawers' titles, the run's parts and the tabs
+keep the accent as before.

@@ -658,8 +658,7 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         box = pygame.Rect(rect)
         if on:
             pygame.draw.rect(screen, LIT, (0, box.top + 2, 3, box.height - 4))
-        lit = f"icon:{drawer.value}" in scene.lit  # a tutorial's target (D-080)
-        ink = LIT if lit else TEXT if on else DIM_TEXT
+        ink = TEXT if on else DIM_TEXT  # a tutorial's target too: its sparks say it (D-095)
         fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, ink)
     for button, rect in layout.level_buttons:  # the switch
         box = pygame.Rect(rect)
