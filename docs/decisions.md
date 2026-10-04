@@ -1399,7 +1399,7 @@ card gives way to the editor with that drawer open, not to the run. D-069 stands
 other level; D-070 had dropped a tutorial's start screen. Aggression's starts in Parts. Its
 first card names the board and lights the stethoscope, waiting for Diagnostic; the second
 lights nothing, its box at the foot of the main screen: the main screen shows the board, the
-minimap the swimmer and the light, to drag and turn to see what it does. Then Close, and the
+map the swimmer and the light, to drag and turn to see what it does. Then Close, and the
 player tries it with no card in the way, the drawer's own note under the map. The tutorial builds
 nothing, so D-079's objection, a tutorial repeating Hint 3, does not apply. A card's box keeps
 clear of the parts on the editor's board, as it does of its targets (D-048). A hint's shadow is
