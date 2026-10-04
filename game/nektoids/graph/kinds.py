@@ -3,10 +3,11 @@ know of a part, in one table, `SPEC`, which a test checks whole.
 
 An entry says where the part stands (sensor, operator, actuator), how it is wired (inputs and
 outputs at most), where it points until turned (D-009), its law, what it does to the rates
-through it (`laws.py`; a sensor has none, its rate is given), and how the player reads it: a
-letter for the panels, a name and a paragraph for its info box (D-036, D-094), the icon on it
-and its outline, each by name, for the editor to draw. The table's order
-is the order of the parts within each group of the menu (D-069). Pure Python, no pygame.
+through it (`laws.py`; a sensor has none), a sensor's sense, which gives its rate, and an
+actuator's action, what it does to the body (`sim/world.py`, D-203), and how the player reads
+it: a letter for the panels, a name and a paragraph for its info box (D-036, D-094), the icon
+on it and its outline, each by name, for the editor to draw. The table's order is the order of
+the parts within each group of the menu (D-069). Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -80,6 +81,8 @@ class KindSpec:
     max_outputs: int | None = None  # None: any number
     icon: str | None = None  # drawn on it, by its name in `editor/glyphs.py`; None: blank
     shape: str = "diamond"  # its outline, by its name in `editor/geometry.py`'s SHAPES
+    sense: str | None = None  # a sensor's: what gives its rate, by name (`sim/world.py`, SENSES)
+    action: str | None = None  # an actuator's: what it does, by name (`sim/world.py`, ACTIONS)
 
 
 SPEC: dict[Kind, KindSpec] = {
@@ -92,6 +95,7 @@ SPEC: dict[Kind, KindSpec] = {
         facing=E,
         icon="eye",
         shape="eye disc",
+        sense="light",
     ),
     Kind.SOURCE: KindSpec(
         Category.SENSOR,
@@ -99,6 +103,7 @@ SPEC: dict[Kind, KindSpec] = {
         "Source",
         "Senses nothing: it sends a steady signal.",
         shape="disc",  # a blank sensor: it senses nothing
+        sense="steady",
     ),
     Kind.DOUBLE: KindSpec(
         Category.OPERATOR,
@@ -145,5 +150,6 @@ SPEC: dict[Kind, KindSpec] = {
         facing=E,
         icon="rocket",
         shape="square point",
+        action="push",
     ),
 }

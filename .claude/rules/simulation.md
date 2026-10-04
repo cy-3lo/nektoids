@@ -21,6 +21,9 @@ paths:
   Hence win conditions must be robust (counts, thresholds with margin), never "exact trajectory".
 - Every physics change keeps `tests/test_determinism.py` green and adds a behavioural test
   (e.g. symmetric sensor input gives a straight line; a free agent decelerates under drag).
+- A sensor's rate comes from its kind's sense, an actuator's effect from its kind's action, each
+  named in the table of kinds and mapped to its function in `world.py`, `SENSES` and `ACTIONS`
+  (D-203). A new sense or action is a function there and a name in the table, nothing else.
 - Sensors are physical. An eye reads light (D-019): point sources, 1/r, a cosine for where it
   looks, hard shadows cast by discs (obstacles and other bodies), no reflection, capped at
   `RATE_MAX`. It tells how much light, not what or where. A body is transparent to its own

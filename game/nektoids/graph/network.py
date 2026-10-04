@@ -19,7 +19,10 @@ import numpy as np
 
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.graph.kinds import Category
 from nektoids.graph.laws import Law
+
+SENSOR, ACTUATOR = Category.SENSOR, Category.ACTUATOR
 
 MARGIN = 1e-9  # a loop gain this close to 1 counts as 1
 
@@ -40,6 +43,8 @@ class Network:
     gain: np.ndarray  # (n,): its law's slope, how far it follows one input (D-202); 0 for sensors
     given: np.ndarray  # (n,) bool: its rate is given, not computed: the sensors
     laws: tuple[tuple[Law, np.ndarray, np.ndarray], ...]  # each law, its nodes, their slots
+    senses: tuple[tuple[Kind, np.ndarray], ...]  # each sensor kind, its nodes; table order
+    actions: tuple[tuple[Kind, np.ndarray], ...]  # each actuator kind, its nodes; table order
     outdeg: np.ndarray  # (n,) int: number of wires leaving each node
     eyes: np.ndarray  # indices of the eyes, ascending
     sources: np.ndarray  # indices of the sources, ascending
@@ -129,6 +134,8 @@ class Network:
             gain=_frozen(np.array([k.spec.law.slope if k.spec.law else 0.0 for k in kinds])),
             given=_frozen(np.array([kind.spec.law is None for kind in kinds], dtype=bool)),
             laws=_by_law(kinds, slots),
+            senses=tuple((k, indices(k)) for k in Kind if k.category is SENSOR and k in kinds),
+            actions=tuple((k, indices(k)) for k in Kind if k.category is ACTUATOR and k in kinds),
             outdeg=_frozen(outdeg),
             eyes=indices(Kind.EYE),
             sources=indices(Kind.SOURCE),
