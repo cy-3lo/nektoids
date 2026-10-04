@@ -28,12 +28,12 @@ Claude writes the code, whole features included, in any package.
 - The humans may write in French: answer in the language of the prompt.
   Code, comments, commit messages and docs stay in English.
 
-## Scope: stage 0, Foundations (D-200)
+## Scope: stage 1, a level maker (D-300)
 
 After the jam come five stages (D-105). Each opens with a decision that sets its scope here, as
 the scope lock did for the jam. Changing this list requires an entry in `docs/decisions.md`.
 
-In: the game as the jam shipped it. 2D top-down; one agent; two eyes that read light (1/r,
+In: the game as it is on `main`. 2D top-down; one agent; two eyes that read light (1/r,
 shadows, D-019); two outputs (left and right thruster), in the levels: the sandbox hands out any
 number (D-102); the board is the body plan: eyes and thrusters sit where they are placed
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
@@ -41,14 +41,15 @@ nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); four Brait
 (Fear, Aggression, Love, Orbit), then Shadows, Greed and one real level, Patience, each with a
 countable win condition (D-097); fixed seed, fully deterministic;
 complexity, the number of parts, is scored and every body stays a sphere of radius 1 u (D-045);
-undo and redo in the editor (D-027).
-And stage 0's groundwork, the todo's §10: the objectives in one list; a level format with a
-version; one table of part kinds; sensors in general; saving and loading, and a board as text,
-with Save and Load back in Files.
+undo and redo in the editor (D-027). Stage 0's foundations (D-200 to D-206): one table of part
+kinds and their laws, senses and actions, a level format with a version, saved boards with
+their paths, a board as text, Save/Load in Files.
+And stage 1, the todo's §11: a level maker, for us and Camille first (D-041), then for players:
+the plane's lights, obstacles and start, the board's zone, stock and locked parts, objectives
+and the time allowed, a clear check, levels and solutions shared as text, no server.
 
-Out: anything new for the player but Save and Load: no new part, sense, item, level or
-objective. The later stages, a level maker, memory, flows, actions other than moving, and all
-after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,
+Out: no new part, sense or item. The later stages, memory, flows, actions other than moving, and
+all after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,
 optical flow, parts that move on the body during a run, threshold nodes, the generalisation
 pillar (multi-seed validation), sound, art.
 
@@ -100,6 +101,6 @@ pygbag --build --archive game     # game/build/web.zip, ready for itch.io
 - Run `/pr-prep` before opening a PR; it fills `.github/pull_request_template.md`.
 - After the jam, a stage is built on `stage/<n>-<name>` (D-200): each item a `feat/…` branch
   whose PR goes into the stage, the stage into `main` in one PR. Merge `main` into a stage;
-  never rebase it. A stage's decisions take their own hundred (stage 0: D-200 on).
+  never rebase it. A stage's decisions take their own hundred (stage 0: D-200, stage 1: D-300).
 - Never push, force-push, rebase or rewrite history unless asked in this session.
 - Record design decisions (scope, physics model, API shape) in `docs/decisions.md`.

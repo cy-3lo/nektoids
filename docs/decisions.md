@@ -1540,3 +1540,16 @@ text field of the page's own, invisible. It is focused once the click is over, o
 the focus back, and its keys are stopped before the game's listeners, which would cancel Cmd+V;
 the editor reads it once a frame. Tried in Chrome and in Safari 26.6, 2026-10-04; Firefox and
 phones are not. Natively, `pygame.scrap`. Only `editor/clipboard.py` talks to the page.
+
+**D-300 — 2026-10-04 — Stage 1, a level maker, opens: built on `stage/1-level-maker`, its scope replaces stage 0's, and its decisions are numbered from D-300. Applies D-105.**
+Stage 0 is on `main` (#46), and the jam build is out as v1.0 (D-106). Stage 1 is built as stage
+0 was (D-200): each item a `feat/…` branch whose PR goes into the stage, and the stage into
+`main` in one PR, so that `main` can still ship a v1.x meanwhile. Unlike stage 0's, this opening
+goes on `main` itself, which is no longer the jam build, so the plan shows there. In: the game as
+it is on `main`, and the items of `ideas.md` §1, which move to the todo's §11 as they were
+written: a level editor, for us and Camille first (D-041), then for players, which places the
+plane's lights, obstacles and start on a lattice, sets the board's zone, stock and locked parts,
+the objectives and the time allowed, and shares a level as text only once its maker has won it;
+"Two lights, four obstacles" brought back; sharing levels and solutions, with no server. Out:
+all else in `ideas.md`; no new part, sense or item. Each item is planned when it starts, and its
+own decisions, a level's text first among them, are taken then, as the board's was (D-205).
