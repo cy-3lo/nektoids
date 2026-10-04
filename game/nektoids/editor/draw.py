@@ -20,7 +20,8 @@ from __future__ import annotations
 
 import math
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -289,7 +290,7 @@ def draw(
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
-    draw_drawer(screen, scene, fonts, _draw_rows)
+    draw_drawer(screen, scene, fonts, _draw_rows, _draw_foot)
     draw_tooltip(screen, scene, fonts)
     _draw_wheel_tip(screen, scene, fonts)
     draw_info(screen, scene, fonts, _about)
@@ -666,10 +667,28 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 18, TEXT)
 
 
-def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callable) -> None:
-    """The open drawer: its title, its sections or groups, its rows, the arrow that folds it.
-    `rows(screen, scene, fonts)` draws the environment's own rows; Settings' and Chapters' are
-    drawn here."""
+@contextmanager
+def clipped(screen: pygame.Surface, rect) -> Iterator[None]:
+    """Drawing kept inside `rect` and inside the clip already set, which is set again after;
+    None keeps the clip as it is. A drawer's rows, clipped to where they scroll, may hold a
+    picture clipped to its own frame (D-096)."""
+    before = screen.get_clip()
+    if rect is not None:
+        screen.set_clip(before.clip(pygame.Rect(rect)))
+    try:
+        yield
+    finally:
+        screen.set_clip(before)
+
+
+def draw_drawer(
+    screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callable, foot: Callable
+) -> None:
+    """The open drawer: its title, its sections or groups and its rows, which scroll within
+    their area if they do not fit, with a scroll bar then (D-096); what stays at its foot; the
+    arrow that folds it. `rows(screen, scene, fonts)` draws the environment's own rows, and
+    `foot(screen, scene, fonts)` its foot, the Wheel or the objectives; Hints', Settings' and
+    Chapters' rows are drawn here."""
     layout = scene.layout
     if layout.drawer is None:
         return
@@ -679,23 +698,37 @@ def draw_drawer(screen: pygame.Surface, scene: Frame, fonts: Fonts, rows: Callab
     lit = layout.drawer.value in scene.lit  # a tutorial step explains it (D-050)
     ink = LIT if lit else DIM_TEXT
     draw_title(screen, fonts, TIP[layout.drawer], layout.drawer_title_at, lit=lit)
-    for title, (x, y, _, h) in layout.section_titles:  # lit with its drawer, or by its name
-        shown = fonts.label.render(title.upper(), True, LIT if title.lower() in scene.lit else ink)
-        screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
-    screen.set_clip(layout.list_area)  # Parts' list scrolls within it (D-069); None: no clip
-    for title, rect in layout.group_titles:
-        draw_fold_title(screen, fonts, title, rect, title in scene.folded, ink)
-    screen.set_clip(None)
-    rows(screen, scene, fonts)
-    _draw_hints(screen, scene, fonts)
-    _draw_settings(screen, scene, fonts)
-    _draw_chapters(screen, scene, fonts)
-    _draw_passkey(screen, scene, fonts)
+    with clipped(screen, layout.list_area):  # None: the rows fit, or there are none
+        _draw_sections(screen, scene, fonts, ink, at_foot=False)
+        for title, rect in layout.group_titles:
+            draw_fold_title(screen, fonts, title, rect, title in scene.folded, ink)
+        rows(screen, scene, fonts)
+        _draw_hints(screen, scene, fonts)
+        _draw_settings(screen, scene, fonts)
+        _draw_chapters(screen, scene, fonts)
+        _draw_passkey(screen, scene, fonts)
+    _draw_sections(screen, scene, fonts, ink, at_foot=True)
+    foot(screen, scene, fonts)
+    if layout.scroll_bar is not None:  # while the rows do not fit
+        pygame.draw.rect(screen, RULE, layout.scroll_bar, border_radius=2)
+        pygame.draw.rect(screen, SCROLL_THUMB, scroll_thumb(layout), border_radius=2)
     handle = pygame.Rect(layout.fold_handle)
     corners = {"border_top_right_radius": 6, "border_bottom_right_radius": 6}
     pygame.draw.rect(screen, PANEL, handle, **corners)
     pygame.draw.rect(screen, RULE, handle, 1, **corners)
     fonts.icons.draw(screen, "chevron-left", handle.center, 11, DIM_TEXT)
+
+
+def _draw_sections(screen: pygame.Surface, scene: Frame, fonts: Fonts, ink, at_foot: bool) -> None:
+    """The drawer's section titles, lit with it or by their name: those over its rows, or with
+    `at_foot` those at its foot, over the run's objectives, which never scroll (D-065)."""
+    goals = scene.layout.goal_area
+    for title, rect in scene.layout.section_titles:
+        if (goals is not None and pygame.Rect(goals).collidepoint(rect[:2])) is not at_foot:
+            continue
+        x, y, _, h = rect
+        shown = fonts.label.render(title.upper(), True, LIT if title.lower() in scene.lit else ink)
+        screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
 
 
 def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -> None:
@@ -713,13 +746,11 @@ def _draw_files(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     best first, a tick on those no other beats, the one on the board now lit; a click puts its
     board on this level's, if it fits. The list scrolls within its area, as Parts'."""
     now = scene.board.snapshot()
-    screen.set_clip(scene.layout.list_area)
     for row, rect in scene.layout.win_rows:
         won = scene.wins[row.group].wins[row.index]
         status = ("tick", "") if won.best else ("none", "")
         active = (won.board.nodes, won.board.wires) == (now.nodes, now.wires)  # not the stock
         draw_row(screen, scene, fonts, rect, row, _win_name(won), status, active, icon="trophy")
-    screen.set_clip(None)
     if not scene.wins:
         note = "No win yet. Each win of each level will be kept here for the session."
         draw_note(screen, fonts, note, DIAGNOSTIC_MAP[:2], DIAGNOSTIC_MAP[2])
@@ -744,27 +775,26 @@ def draw_level_map(
     level seen whole; `body`, the swimmer at work, drawn round it (Diagnostic's map, D-076)."""
     view, arena = view or level_view(level, tuple(area)), level.arena
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
-    screen.set_clip(area)
-    for disc in arena.obstacles:
-        pygame.draw.circle(
-            screen, OBSTACLE, view.to_screen(disc.x, disc.y), disc.radius * view.scale
-        )
-    for radius in ring_radii(level):
-        for x, y in arena.light_xy:
-            pygame.draw.circle(screen, RING, view.to_screen(x, y), radius * view.scale, 1)
-    for light in arena.lights:
-        pygame.draw.circle(
-            screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
-        )
-    x, y, heading = pose
-    if body is not None:
-        draw_under(screen, view, body)
-    draw_symbol(screen, BODY, view.to_screen(x, y), BASE_RADIUS * view.scale, heading, 2)
-    if body is not None:
-        draw_over(screen, view, body)
-    if frame is not None:
-        pygame.draw.rect(screen, LIT, frame, 1)
-    screen.set_clip(None)
+    with clipped(screen, area):
+        for disc in arena.obstacles:
+            pygame.draw.circle(
+                screen, OBSTACLE, view.to_screen(disc.x, disc.y), disc.radius * view.scale
+            )
+        for radius in ring_radii(level):
+            for x, y in arena.light_xy:
+                pygame.draw.circle(screen, RING, view.to_screen(x, y), radius * view.scale, 1)
+        for light in arena.lights:
+            pygame.draw.circle(
+                screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
+            )
+        x, y, heading = pose
+        if body is not None:
+            draw_under(screen, view, body)
+        draw_symbol(screen, BODY, view.to_screen(x, y), BASE_RADIUS * view.scale, heading, 2)
+        if body is not None:
+            draw_over(screen, view, body)
+        if frame is not None:
+            pygame.draw.rect(screen, LIT, frame, 1)
     pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
 
 
@@ -795,13 +825,12 @@ def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> 
     area = pygame.Rect(scene.layout.overview)
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     small = overview_view(scene.layout, sorted(scene.board.cells))
-    screen.set_clip(area)
-    for cell in scene.board.cells:
-        pygame.draw.polygon(screen, ZONE, _hexagon(small, cell))
-    for node in scene.board.nodes.values():
-        pygame.draw.circle(screen, COMPONENT, _centre(small, node.cell), 0.45 * small.size)
-    pygame.draw.rect(screen, LIT, shown_frame(scene.layout, scene.view, small), 1)
-    screen.set_clip(None)
+    with clipped(screen, area):
+        for cell in scene.board.cells:
+            pygame.draw.polygon(screen, ZONE, _hexagon(small, cell))
+        for node in scene.board.nodes.values():
+            pygame.draw.circle(screen, COMPONENT, _centre(small, node.cell), 0.45 * small.size)
+        pygame.draw.rect(screen, LIT, shown_frame(scene.layout, scene.view, small), 1)
     pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
 
 
@@ -847,12 +876,15 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
     return [(centre[0] + radius * math.cos(a), centre[1] + radius * math.sin(a)) for a in angles]
 
 
-def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The editor's own drawers' rows: Tools, Parts, Files, Navigator; the cell at the foot of
-    Tools and Parts; Diagnostic's map."""
-    layout, board = scene.layout, scene.board
-    if layout.wheel_fold is not None:  # Tools, Parts
+def _draw_foot(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """What stays at the foot of the editor's drawers: the Wheel, in Tools and Parts."""
+    if scene.layout.wheel_fold is not None:
         _draw_wheel(screen, scene, fonts)
+
+
+def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The editor's own drawers' rows: Tools, Parts, Files, Navigator; Diagnostic's map."""
+    layout, board = scene.layout, scene.board
     if layout.drawer is Drawer.TOOLS:
         _draw_tools(screen, scene, fonts)
     if layout.drawer is Drawer.DIAGNOSTIC:
@@ -862,16 +894,11 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     if layout.overview is not None:
         _draw_overview(screen, scene, fonts)
         draw_zoom(screen, scene, fonts, level_of(scene.view.size, scene.least_zoom(), MAX_HEX))
-    screen.set_clip(layout.list_area)  # Parts' list, scrolled within its area (D-069)
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
         picked = kind == scene.picked
         draw_row(screen, scene, fonts, rect, kind, NAME[kind], status, picked, left == 0, part=kind)
-    screen.set_clip(None)
-    if layout.scroll_bar is not None:  # while the list does not fit
-        pygame.draw.rect(screen, RULE, layout.scroll_bar, border_radius=2)
-        pygame.draw.rect(screen, SCROLL_THUMB, scroll_thumb(layout), border_radius=2)
     for button, rect in layout.view_buttons:
         active = button is ViewButton.PAN and scene.tool is Tool.PAN
         key = ("key", VIEW_KEYS[button])

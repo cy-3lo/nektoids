@@ -1,11 +1,13 @@
 """What the editor and the run share (D-051): the activity bar, one drawer at a time, the tabs
 and the switch between them, the rows' info discs, Hints, Chapters and Settings, the bar's
-tooltips.
+tooltips, and the scrolling of a drawer whose rows do not fit (D-096).
 
 A scene inherits `Frame`, calls `_start_frame` once, `frame_track` as the mouse moves,
-`frame_press` first on a click, and `frame_update` once a frame; it gives `_relayout` (its
-layout with another drawer open), and may give `_slid` (what follows the main screen when a
-drawer opens or folds), `_cancel` (a gesture under way ends) and `_refuse` (says why not).
+`frame_press` first on a click, `frame_release` when it is let go, `frame_wheel` first on a turn
+of the mouse wheel, and `frame_update` once a frame; it gives `_relayout` (its layout with
+another drawer open, scrolled as `scrolls` says), and may give `_slid` (what follows the main
+screen when a drawer opens or folds), `_cancel` (a gesture under way ends) and `_refuse` (says
+why not).
 What the player asks of `main.py` is left in `request` ("run", "edit", "tutorial"), `chosen`
 (a place picked in Chapters) or `asked_hint` (a row of Hints), which `main.py` clears. Pure
 Python, no pygame.
@@ -19,10 +21,12 @@ from nektoids.editor.entry import Entry
 from nektoids.editor.hints import HintView
 from nektoids.editor.layout import (
     PASSKEY_KEY,
+    SCROLL_STEP,
     Drawer,
     Layout,
     Setting,
     chapter_row_at,
+    contains,
     drawer_button_at,
     hint_row_at,
     info_at,
@@ -30,6 +34,8 @@ from nektoids.editor.layout import (
     on_fold_handle,
     palette_target_at,
     passkey_at,
+    scroll_bar_at,
+    scroll_for,
     setting_row_at,
     tab_at,
 )
@@ -65,6 +71,8 @@ class Frame:
         self.said = ""  # what that passkey opened, in the status line until the next click
         self.hints: HintView | None = None  # what Hints shows; None, the level has none; main.py's
         self.asked_hint: int | None = None  # a row of Hints clicked: main.py's to take and clear
+        self.scrolls: dict[Drawer, int] = {}  # how far each drawer's rows are scrolled [px]
+        self.scrolling = False  # a drawer's scroll bar held: its rows follow the mouse
 
     @property
     def tooltip(self) -> object | None:
@@ -92,17 +100,37 @@ class Frame:
             warm = target is not None and self.tip_warm > 0
             self.tip_target = target
             self.tip_frames = self.settings.tooltip_frames if warm else 0
+        if self.scrolling:
+            self._scroll_to(scroll_for(self.layout, pos[1]))
+
+    def frame_release(self) -> None:
+        """The mouse let go: a scroll bar held is let go too."""
+        self.scrolling = False
+
+    def frame_wheel(self, pos: tuple[int, int], notches: int) -> bool:
+        """A turn of the mouse wheel at `pos`, taken if it is on the open drawer's rows and they
+        do not fit: up, they come down (D-069, D-096). False if it is not, for the scene."""
+        area = self.layout.list_area
+        if area is None or not contains(area, pos) or not self.layout.scroll_max:
+            return False
+        self._scroll_to(self.layout.scroll - notches * SCROLL_STEP)
+        return True
 
     def frame_press(self, pos: tuple[int, int]) -> bool:
-        """A click on the frame, taken: the fold arrow, the bar, a tab, an info disc, a row of
-        Hints, Chapters or Settings, the passkey field. False if it fell elsewhere, for the scene to
-        take. A passkey being typed is given up by a click anywhere but on its field."""
+        """A click on the frame, taken: the fold arrow, a scroll bar, the bar, a tab, an info
+        disc, a row of Hints, Chapters or Settings, the passkey field. False if it fell
+        elsewhere, for the scene to take. A passkey being typed is given up by a click anywhere
+        but on its field."""
         self.said, self.typing = "", None
         if passkey_at(self.layout, pos):
             self.typing = ""  # a word to type (D-075)
             return True
         if on_fold_handle(self.layout, pos):
             self.open_drawer(None)
+            return True
+        if scroll_bar_at(self.layout, pos):  # held, the rows follow the mouse (D-096)
+            self.scrolling = True
+            self._scroll_to(scroll_for(self.layout, pos[1]))
             return True
         drawer = drawer_button_at(self.layout, pos)
         if drawer is not None:  # the open drawer's icon folds it (D-051)
@@ -166,6 +194,14 @@ class Frame:
         self.layout = self._relayout(drawer)
         self._slid(before, self.layout)
         self.info = None
+
+    def _scroll_to(self, scroll: int) -> None:
+        """The open drawer's rows scrolled to `scroll`, as far as they go; an info box open on a
+        row closes, as it would move."""
+        drawer = self.layout.drawer
+        self.scrolls[drawer] = scroll
+        self.layout = self._relayout(drawer)
+        self.scrolls[drawer], self.info = self.layout.scroll, None
 
     def set_hints(self, hints: HintView | None) -> None:
         """What Hints shows of the level's hints (D-078); the drawer is laid out again if that

@@ -85,6 +85,7 @@ from nektoids.editor.layout import (
     contains,
     drawer_key,
     make_layout,
+    overview_at,
     value_at,
     view_button_at,
     zoom_bar_at,
@@ -230,7 +231,10 @@ class ArenaScene(Frame):
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         goals, chapter = len(self.level.objectives), self.layout.chapter
-        return make_layout(drawer, env=Env.RUN, goals=goals, chapter=chapter, **self._hint_layout())
+        scroll = self.scrolls.get(drawer, 0)  # D-096
+        return make_layout(
+            drawer, env=Env.RUN, goals=goals, chapter=chapter, scroll=scroll, **self._hint_layout()
+        )
 
     def _slid(self, before: Layout, after: Layout) -> None:
         """The arena moved: the view slides with its centre, so nothing jumps."""
@@ -473,6 +477,9 @@ class ArenaScene(Frame):
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = self.panning = None
             self.scrubbing = self.overviewing = self.zooming = False
+            self.frame_release()
+        elif event.type == pygame.MOUSEWHEEL and self.frame_wheel(self.pointer, event.y):
+            pass  # the drawer's rows scrolled (D-096)
         elif event.type == pygame.MOUSEWHEEL and self.developer:
             self._turn(float(event.y))
         elif event.type == pygame.KEYDOWN:
@@ -483,7 +490,7 @@ class ArenaScene(Frame):
         the arena: to inspect, or, for a developer, to drag the swimmer about."""
         if self.frame_press(pos):
             return
-        if self.layout.overview is not None and contains(self.layout.overview, pos):
+        if overview_at(self.layout, pos):
             self.overviewing = True
             self._overview_to(pos)
             return

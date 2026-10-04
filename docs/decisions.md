@@ -1271,3 +1271,19 @@ icon of the bar, as Hints' on Fear's last card, the sparks already single it out
 on the icon itself was one signal too many. A drawer's icon now keeps its colour, dim, or white
 while its drawer is open; its sparks stay. Areas, drawers' titles, the run's parts and the tabs
 keep the accent as before.
+
+**D-096 — 2026-10-04 — Every drawer of rows scrolls when its rows do not fit, in the editor and in the run. Amends D-069, D-092.**
+Only Parts and Files scrolled, and only in the editor. In the run, where the objectives take the
+drawer's foot (D-065), Navigator already ran 16 px under them on a level with two objectives,
+and Chapters will with the seven levels of D-097. Now Tools, Navigator, Hints, Settings and
+Chapters lay out their rows from the drawer's top and, if they run below its floor, scroll: the
+floor is 8 px over the objectives in the run, the drawer's foot in the editor, and the Wheel's
+title in Tools, as in Parts. They show within a list area, clipped, with the scroll bar of D-069
+while they do not fit; out of it, a row neither shows nor answers a click. The objectives and the
+Wheel stay put. The scrolling itself, the wheel, the bar held and dragged, each drawer's own
+scroll for the session, moves from the editor's scene into `Frame`, so the run has it too.
+Hints' shadow still shrinks to fit, but no smaller than 140 px; past that the drawer scrolls.
+Diagnostic, Inside and Score are drawings fitted to their room, not rows, and do not scroll.
+Clips now nest (`clipped`), so a picture clipped to its frame inside a scrolled drawer, Navigator's
+overview, stays clipped to the drawer as well. Checked in the web build: the wheel scrolls Love's
+Navigator in the run.

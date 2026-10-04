@@ -735,7 +735,8 @@ The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc
 
 - [`editor/frame.py`](../game/nektoids/editor/frame.py), pure: `Frame`, what both screens
   inherit: the bar, one drawer at a time, the tabs and the switch, info discs, Chapters and
-  Settings, tooltips. Each screen gives `_relayout` and `_slid`. Tested headless in
+  Settings, tooltips, and the scrolling of a drawer whose rows do not fit (`frame_wheel`, the
+  scroll bar, D-096). Each screen gives `_relayout` and `_slid`. Tested headless in
   [`test_frame.py`](../tests/test_frame.py).
 - [`editor/layout.py`](../game/nektoids/editor/layout.py): `make_layout(env=Env.RUN)`, the run's
   drawers (`DRAWERS`), its switch (`SWITCH_TO`), `Goal` rows, the controls strip.
