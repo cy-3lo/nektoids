@@ -183,6 +183,9 @@ In the todo, §10, since D-200: built on `stage/0-foundations`, then merged into
     first.
   - How far must a finger move before a tap becomes a drag? Today a press becomes a drag
     once the pointer leaves the part's cell (D-085): enough for a finger on large hexes?
+- **A board that does not fit, shown in red** (the physicist, 2026-10-04): loading a text or a
+  win that a level cannot hold puts it on the board anyway, its surplus parts in red, instead of
+  refusing with a message (D-092, D-205).
 - **Parts as the encyclopedia** (todo §8 until D-104): a row opens into its entry, in the
   drawer; today the entry opens in a box beside it. The rest of the activity bar is built
   (D-053 to D-069).

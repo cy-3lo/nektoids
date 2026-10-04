@@ -238,14 +238,14 @@ class Board:
 
     def preview(self, source_id: int, target_id: int) -> tuple[Cell, ...] | Refused:
         """The path a wire from source to target would take, without drawing it."""
-        refused = self._refusal(source_id, target_id)
+        refused = self.refusal(source_id, target_id)
         if refused is not None:
             return refused
         source, target = self.nodes[source_id], self.nodes[target_id]
         path = self.route(source.cell, target.cell)
         return Refused("no free path") if path is None else path
 
-    def _refusal(self, source_id: int, target_id: int) -> Refused | None:
+    def refusal(self, source_id: int, target_id: int) -> Refused | None:
         """Why the rules forbid a wire from source to target, wherever it runs; None if not."""
         source, target = self.nodes[source_id], self.nodes[target_id]
         if source_id == target_id:
@@ -283,7 +283,7 @@ class Board:
         if path is None:
             path = self.preview(source_id, target_id)
         else:
-            path = self._refusal(source_id, target_id) or self._laid(source_id, target_id, path)
+            path = self.refusal(source_id, target_id) or self._laid(source_id, target_id, path)
         if isinstance(path, Refused):
             return path
         wire = Wire(source_id, target_id, path)
@@ -424,6 +424,20 @@ class Board:
         return None
 
     # Internals
+
+    def exits(self, cell: Cell, heading: int, goal: Cell) -> list[tuple[Cell, int]]:
+        """Where a wire at `cell`, heading `heading` (-1 at its source), may go next on its way to
+        `goal`: each cell of the zone it may enter, free or the goal, with the heading to it, in
+        direction order. A board as text writes a path the router would not take so (D-205)."""
+        used = self._edges_used().get(cell, set())
+        found = []
+        for out in range(6):
+            nxt = neighbour(cell, out)
+            if nxt not in self._on_board or (self.node_at(nxt) is not None and nxt != goal):
+                continue
+            if heading < 0 or can_pass(used, heading, out):
+                found.append((nxt, out))
+        return found
 
     def _laid(
         self, source_id: int, target_id: int, path: tuple[Cell, ...]
