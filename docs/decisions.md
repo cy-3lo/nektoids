@@ -1432,3 +1432,10 @@ the step to Collectives.
 Shipping and its feedback come before all of it and may reorder it. Until the jam build is out,
 the scope lock in `CLAUDE.md` and the `scope-check` skill stand as they are; then the first
 stage's decision replaces the lock with that stage's scope.
+
+**D-106 — 2026-10-04 — The jam build ships as v1.0: a GitHub release on `main` with its web build, and an itch.io page, cy-3lo.itch.io/nektoids. Applies D-105.**
+Camille's review left nothing to fix before the upload. `DEV_VIEW` is off, so F1 to F4 do nothing;
+`main` at the merge of #43 is tagged v1.0, and the release carries `web.zip`, the HTML5 build
+uploaded to itch.io. The physicist checked the itch.io page in Chrome and in Safari, where the keys,
+the fonts and the canvas had never been tried. The todo's §5 goes. As D-105 has it, the jam's scope
+lock now gives way to stage 0's (D-200): `stage/0-foundations` comes to `main` in one PR.
