@@ -105,6 +105,7 @@ from nektoids.editor.palette import (
     RUN_SO_FAR,
     SHADOW,
     TEXT,
+    WIN,
 )
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
@@ -124,6 +125,7 @@ POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its cir
 GOAL_BAR = 3  # an objective's bar, along its row's foot [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
+WIN_DOT = 4  # a win on that plot; this run's ring sits 4 px round it [px]
 RING_DASHES = 72  # half of them drawn
 ICON = {
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
@@ -622,10 +624,10 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     stairs.append((plot.right, stairs[-1][1]))
     pygame.draw.lines(screen, LIGHT, False, stairs[1:])
     for score in sorted(scores):
-        colour = LIGHT if score in best else DIM_TEXT
-        pygame.draw.circle(screen, colour, at(score.parts, score.ticks), 3)
+        colour = WIN if score in best else DIM_TEXT
+        pygame.draw.circle(screen, colour, at(score.parts, score.ticks), WIN_DOT)
     if this is not None:
-        pygame.draw.circle(screen, TEXT, at(this.parts, this.ticks), 7, 1)
+        pygame.draw.circle(screen, TEXT, at(this.parts, this.ticks), WIN_DOT + 4, 1)
 
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:

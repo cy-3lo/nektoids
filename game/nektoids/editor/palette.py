@@ -189,6 +189,7 @@ BODY_UNSELECTED = P.dim
 RING = P.dim  # a ring to leave or to stay in, until that is done
 RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead of the playhead
 EYE_SHADES = (P.bright, P.dim)  # one per eye in the polar plot, in turn
+WIN = P.accent1.bright  # a win on Score's plot that no other beats: the Pareto front
 
 # The swimmer at work (D-076): its flames and the light it draws in, of one lightness (OKLab L
 # 0.56), dimmer than the swimmer
