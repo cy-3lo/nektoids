@@ -18,10 +18,6 @@ jam build is uploaded (D-200).
 What every later stage needs; none of it shows to the player but Save and Load. In the order
 they are built.
 
-- [ ] **Senses and actions in general**: `sim/world.py`'s `step` hands the graph the eyes' rates
-      only, and reads the thrusters' rates as pushes; flow sensing (stage 3) is a second sense, a
-      lamp (stage 4) a second action. The table of kinds names a sensor's sense and an actuator's
-      action, which `sim/` maps to its function (D-202).
 - [ ] **Saving and loading, and a board as text**, one piece of work (was todo §9; D-093). Save
       and Load come back with it, as rows at the foot of Files, under this session's wins
       (D-092); until D-093 they sat there greyed (D-027). The format of D-024, with a version

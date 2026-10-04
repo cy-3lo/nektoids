@@ -1472,3 +1472,18 @@ control needs ports first (stage 2). A tick costs about 1.8 times what it did, a
 per law; laws of one type can step together if a later stage needs it. Where a sensor's rate
 comes from and what an actuator does to the world stay outside the law: the todo's item on
 senses and actions.
+
+**D-203 — 2026-10-04 — A sensor's rate comes from its kind's sense, an actuator's effect from its kind's action, each named in the table of kinds and mapped to its function in `sim/world.py`.**
+`world.step` read the eyes and pushed with the thrusters by name, and the Sources' rate was set in
+`dynamics.given_rates`: a sensor kind wired in nowhere would have read 0, an actuator would have
+done nothing, with no error. The table now names an Eye's sense, light, a Source's, steady, and a
+Thruster's action, push; `SENSES` and `ACTIONS` in `world.py` map each name to its function, with
+the signatures `eye_rates` and `thrust` already had. A tick takes every sensor's reading by its
+sense (`readings`) and sums every actuator's action (`push`; one action alone is not added to a
+zero), so the run is bit-identical, and the drawn motion (`marks.motion`) is the same sum. A test
+checks that every sensor has a sense and every actuator an action the simulation knows. Flow
+sensing (stage 3) is then a sense, a lamp (stage 4) an action. The editor's views that read the
+eyes alone, the arena's eye columns after a drag and its polar plot, Diagnostic's probe, the
+schematic, the encyclopedia's demos and the intake specks, stay so until a second sense needs
+them. `dynamics.step` keeps taking the eyes and sources, for those views and the tests, around
+`step_given`, which takes every sensor's rate.

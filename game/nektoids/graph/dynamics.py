@@ -89,20 +89,27 @@ def step(
     dt: float,
     sources: np.ndarray | None = None,
 ) -> np.ndarray:
+    """`step_given` with the jam's two senses given as they are: eyes (N, n_eyes), and the
+    sources at SOURCE_RATE unless `sources` says otherwise (`given_rates`). The editor's demos,
+    its probe and the tests drive the graph so; a run reads every sense (`sim.world`, D-203)."""
+    return step_given(net, y, given_rates(net, eyes, sources), dt)
+
+
+def step_given(net: Network, y: np.ndarray, given: np.ndarray, dt: float) -> np.ndarray:
     """The rates one tick later: a new array, `y` is not changed.
 
-    y: (N, n) rates now. eyes: (N, n_eyes) sensor rates during this tick. dt: the tick [s],
-    with 0 < dt <= max_dt(net) (ValueError otherwise).
+    y: (N, n) rates now. given: (N, n) the sensors' rates during this tick, in [0, RATE_MAX],
+    in their columns; the other columns are not read. dt: the tick [s], with
+    0 < dt <= max_dt(net) (ValueError otherwise).
     """
     limit = max_dt(net)
     if not 0.0 < dt <= limit:
         raise ValueError(f"dt must be in (0, {limit:g}] s, what the laws allow, got {dt:g}")
-    given = given_rates(net, eyes, sources)
     if y.shape != given.shape:
         raise ValueError(f"y must have shape {given.shape}, got {y.shape}")
     seen = np.where(net.given, given, y)  # the sensors' rates of this tick drive this tick
     wires = flux(net, outputs(net, seen))
-    new = given.copy()  # a sensor's rate is given, already in [0, RATE_MAX]
+    new = np.where(net.given, given, 0.0)  # a sensor's rate is given, already in [0, RATE_MAX]
     for law, nodes, slots in net.laws:
         new[:, nodes] = law.step(wires[:, slots], seen[:, nodes], dt)
     return np.clip(new, 0.0, RATE_MAX, out=new)

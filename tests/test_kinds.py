@@ -6,6 +6,7 @@ from nektoids.editor.glyphs import GLYPH, POINTS_TO
 from nektoids.editor.layout import Tool
 from nektoids.graph.board import Kind
 from nektoids.graph.kinds import SPEC, Category
+from nektoids.sim.world import ACTIONS, SENSES
 
 
 def test_every_kind_has_one_entry_in_the_order_kinds_are_listed():
@@ -52,3 +53,10 @@ def test_every_part_is_drawn_with_an_outline_and_an_icon_the_font_has():
         assert kind.spec.icon is None or kind.spec.icon in GLYPH, kind
         if kind.spec.icon in POINTS_TO:  # an icon that points must belong to a part that turns
             assert kind.default_facing is not None, kind
+
+
+def test_every_sensor_has_a_sense_and_every_actuator_an_action_the_simulation_knows():
+    for kind in Kind:  # a sensor without its sense would read 0; an actuator would do nothing
+        sensor, actuator = kind.category is Category.SENSOR, kind.category is Category.ACTUATOR
+        assert (kind.spec.sense in SENSES) if sensor else kind.spec.sense is None, kind
+        assert (kind.spec.action in ACTIONS) if actuator else kind.spec.action is None, kind
