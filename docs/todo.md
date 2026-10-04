@@ -18,8 +18,6 @@ jam build is uploaded (D-200).
 What every later stage needs; none of it shows to the player but Save and Load. In the order
 they are built.
 
-- [ ] **The objectives in one list**: `GOAL` in `editor/arena_draw.py` repeats `OBJECTIVES` in
-      `levels/objectives.py`.
 - [ ] **A level format with a version**: `Level.to_dict`, `from_dict` and `to_json` exist
       (`levels/level.py`), items and objectives already typed by their `kind`. A version number,
       and a loader that refuses one it does not know.
