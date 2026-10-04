@@ -18,14 +18,14 @@ jam build is uploaded (D-200).
 What every later stage needs; none of it shows to the player but Save and Load. In the order
 they are built.
 
-- [ ] **One table of part kinds** (from a map of the code, 2026-10-04). A kind is spread today
-      over `Kind` and its side dicts in `graph/board.py`, `GAIN` in `graph/network.py`, `NAME`
-      and `WHAT` in `editor/parts.py`, and `editor/icons.py`, `layout.py` (`MENU_GROUPS`),
-      `wheel.py`, `draw.py`, `marks.py` and `entry.py`. A kind left out of `GAIN` is taken for a
-      sensor and held at 0 (`graph/dynamics.py`, `step`), with no error. Every stage after this
-      adds parts: with one table, checked by a test, a new part is one entry.
-- [ ] **Sensors in general**: `sim/world.py`'s `step` hands the graph the eyes' rates only; flow
-      sensing (stage 3) is a second sense.
+- [ ] **The editor's pictures from the table of kinds** (D-202): `KIND_ICON` and `GLYPH` in
+      `editor/icons.py`, `draw.py`'s shapes (`_template`) and `MENU_ANGLE`. `GLYPH` in a module
+      without pygame, so that a test checks every icon name, the objectives' too;
+      `test_wheel.py`'s seven kinds, which an eighth would break.
+- [ ] **Senses and actions in general**: `sim/world.py`'s `step` hands the graph the eyes' rates
+      only, and reads the thrusters' rates as pushes; flow sensing (stage 3) is a second sense, a
+      lamp (stage 4) a second action. The table of kinds names a sensor's sense and an actuator's
+      action, which `sim/` maps to its function (D-202).
 - [ ] **Saving and loading, and a board as text**, one piece of work (was todo §9; D-093). Save
       and Load come back with it, as rows at the foot of Files, under this session's wins
       (D-092); until D-093 they sat there greyed (D-027). The format of D-024, with a version
