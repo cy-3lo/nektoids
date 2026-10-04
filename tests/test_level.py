@@ -7,7 +7,7 @@ import pytest
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NE, hex_disc
 from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas, sandbox
-from nektoids.levels.level import Item, ItemKind, Level, is_passkey, load, to_json
+from nektoids.levels.level import FORMAT, Item, ItemKind, Level, is_passkey, load, to_json
 from nektoids.levels.objectives import VisitLights
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import OBSTACLE_RADIUS
@@ -16,6 +16,7 @@ from nektoids.sim.arena import OBSTACLE_RADIUS
 def a_level(**changes):
     """A small level as data, with `changes` to its top-level keys."""
     data = {
+        "version": 1,
         "title": "Test",
         "spec": "Touch the light.",
         "start": {"at": [5.0, 5.0], "heading": 90.0},
@@ -79,6 +80,10 @@ def test_each_new_board_is_the_levels_own_fresh_from_its_data():
         ({"items": [{"kind": "wall", "at": [0.0, 0.0]}]}, "wall"),
         ({"items": [{"kind": "light", "at": [0.0, 0.0]}]}, "needs its power"),
         ({"objectives": [{"kind": "survive"}]}, "survive"),
+        ({"extra": 1}, "a level takes no 'extra'"),  # D-201: refused, not ignored
+        ({"start": {"at": [5.0, 5.0], "heading": 90.0, "speed": 1.0}}, "start takes no 'speed'"),
+        ({"items": [{"kind": "light", "at": [0.0, 0.0], "power": 6.0, "colour": "red"}]}, "colour"),
+        ({"objectives": [{"kind": "leave ring", "radus": 10.0}]}, "'leave ring' takes no 'radus'"),
         (
             {
                 "items": [
@@ -99,6 +104,16 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
     board = sandbox().new_board()  # D-102
     assert all(board.total(kind) is None for kind in Kind)
     assert sorted(board.cells) == sorted(hex_disc(3))
+
+
+def test_a_level_without_its_version_or_of_another_is_refused():
+    data = a_level()
+    del data["version"]
+    with pytest.raises(ValueError, match="without its version: this game reads version 1"):
+        Level.from_dict(data)
+    with pytest.raises(ValueError, match="of version 2: this game reads version 1"):
+        Level.from_dict(a_level(version=2))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 1
 
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
