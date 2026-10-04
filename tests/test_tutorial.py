@@ -181,7 +181,7 @@ def test_aggressions_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it
     assert tutorial.step.until == {"drawer": "diagnostic"}
     assert allows(tutorial.step, Action("view")) and drawer_for(tutorial.step) is None
     tutorial.follow(context(drawer=Drawer.DIAGNOSTIC))
-    assert tutorial.explains and tutorial.waits_for_next  # what it shows, then Close
+    assert not tutorial.leads and tutorial.waits_for_next  # nothing lit, then Close
     tutorial.next()
     assert tutorial.step is None  # the player tries it with no card in the way
 
