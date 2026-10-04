@@ -37,6 +37,7 @@ BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]
 ACTION_WIDTH = 50  # atop the editor's main screen, what a click does: a Wheel's icon, square [px]
+ACTION_ROOM = 96  # from the board's top: the action, the line under it, a little more [px]
 DRAWER_WIDTH = 248  # [px]
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
@@ -902,6 +903,17 @@ def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
     """Cell (0, 0) at the centre of the board area."""
     x, y, w, h = layout.board_area
     return View(size, (x + w / 2, y + h / 2))
+
+
+def opening_view(layout: Layout, cells: Sequence[Cell]) -> View:
+    """How the editor first shows a zone: cell (0, 0) at the centre, at HEX_SIZE, or smaller if
+    the zone's hexes would reach under the action atop the board or past its sides (D-102)."""
+    _, _, w, h = layout.board_area
+    points = [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells] or [(0.0, 0.0)]
+    high = max(abs(y) for _, y in points) + 1.0  # to a hex's top corner [hex sizes]
+    wide = max(abs(x) for x, _ in points) + SQRT3 / 2  # to its side
+    size = min(HEX_SIZE, (h / 2 - ACTION_ROOM) / high, (w / 2 - MARGIN) / wide)
+    return centred_view(layout, size)
 
 
 def moved_view(view: View, before: Layout, after: Layout) -> View:

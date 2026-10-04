@@ -1374,3 +1374,16 @@ shows, one zoom click (1.25) out: every level's farthest is now 12.8 px/u. Fear'
 what it was, within 2 %; Orbit's shows 1.2 times more. A first try, the run opening on twice
 what matters and the overview 2.5 times, made Fear's swimmer 20 px across and left Greed at
 24 px/u. Centre keeps `frame()`, round the swimmer and the lights; the editor is unchanged.
+
+**D-102 — 2026-10-04 — The sandbox hands out every part without limit, on a zone one ring wider: 37 cells. The scope lock's two eyes and two thrusters are the levels'. The editor opens a zone too tall for its default size smaller.**
+The sandbox has no objective and scores nothing (D-046), so nothing in it needs the levels'
+counts; it is where to try what the levels do not ask. Its stock is null, unlimited, for every
+part, eyes, thrusters and the Source included, and its zone is `hex_disc(3)`, 37 cells instead
+of 19. The levels keep theirs; more eyes in a level stays in `ideas.md`. The body is still a
+sphere of radius 1 u (D-045): the zone's outermost cells lie on its rim (D-018), so the old
+rim's cells sit at about two thirds of the radius, and placing is finer. The code was already
+written for any number of eyes and thrusters: four of each, crossed, run at 0.43 ms a frame
+natively. At the default 40 px a hex, the zone's top row lay under the action atop the board;
+the editor now opens a zone at the largest size, 40 px at most, that keeps its hexes clear of
+that action and of the board's sides (`layout.opening_view`): the sandbox at 34 px, every level
+at 40 as before.

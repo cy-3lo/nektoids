@@ -4,6 +4,7 @@ import pytest
 
 from nektoids.editor.arena_layout import BUTTON_KEYS
 from nektoids.editor.layout import (
+    ACTION_ROOM,
     ACTION_WIDTH,
     BAR_WIDTH,
     CAPTION_HEIGHT,
@@ -64,6 +65,7 @@ from nektoids.editor.layout import (
     mode_button_at,
     moved_view,
     on_fold_handle,
+    opening_view,
     overview_view,
     palette_target_at,
     pan,
@@ -606,3 +608,11 @@ def test_the_overview_shows_the_zone_half_as_much_again_and_the_view_never_shows
     assert ox - 1 <= frame[0] and frame[0] + frame[2] <= ox + ow + 1  # its frame inside
     small_zone = board_extent(NAVIGATOR, list(hex_disc(1)))
     assert small_zone[2] == pytest.approx(w / HEX_SIZE / 2)  # at least what HEX_SIZE shows
+
+
+def test_the_editor_opens_a_zone_clear_of_the_action_atop_the_board():
+    layout = make_layout(Drawer.TOOLS)
+    assert opening_view(layout, hex_disc(2)).size == HEX_SIZE  # the levels' zone, as before
+    big = opening_view(layout, hex_disc(3))  # the sandbox's (D-102)
+    _, y, _, h = layout.board_area
+    assert big.size < HEX_SIZE and big.origin[1] - 5.5 * big.size >= y + ACTION_ROOM - 1e-9
