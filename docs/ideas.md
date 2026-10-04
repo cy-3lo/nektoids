@@ -100,6 +100,26 @@ What every later stage needs; none of it shows to the player.
 - **A threshold node**, as a deliberate, costed choice; never in the first levels (brief §1).
 - **Colours for signals**: beads coloured by identity (brief §1); the palette's colour picker
   is waiting for it (D-025).
+- **Signals in three colours** (the physicist, 2026-10-04): colour carried and changed by the
+  circuit, not only drawn. A signal becomes three rates, (r, g, b), each in [0, `RATE_MAX`].
+  - A bead has one colour, so a wire carries three streams of beads, each at its own rate. A
+    wire is never drawn in a blended hue: 0.3 red with 0.7 green read as one hue cannot be read
+    (invariant 6).
+  - Today's laws act channel by channel, unchanged: split, ×2, ÷2, Sum, Difference, the lag,
+    tanks, valves. New operators: a filter that passes one colour or stops one; a shifter that
+    turns colours round, r → g → b → r.
+  - Colours come from coloured lights, with eyes that send each colour as they receive it, and
+    from Sources of a colour. They go to thrusters, which push with all their channels or with
+    their own colour only, and to the lamp (stage 4), which shines the colour it is fed, so a
+    swimmer can signal.
+  - Levels: go to the red light and flee the blue one; two lights a colour-blind circuit cannot
+    tell apart.
+  - Cost: `y` goes from (N, n) to (N, n, 3), and numpy broadcasts every law.
+  - Today's levels must play as they do: white light is all three channels, so does a thruster
+    sum them or take their mean?
+  - The three hues join the one palette (D-047, D-049), not pure RGB: red against green is the
+    commonest colour-blind confusion. A bead shape for each colour as well?
+  - Colours come in a chapter of their own, never in the first levels.
 
 ## 3. Flows, and the other senses (brief §2)
 
