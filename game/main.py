@@ -62,7 +62,7 @@ from nektoids.levels.scenarios import Scenario, scenarios
 from nektoids.levels.score import Score
 
 FPS = 60
-DEV_VIEW = True  # F1 the editor, F2 the developer view, F3 the arena view, F4 prints the board
+DEV_VIEW = False  # True: F1 the editor, F2 the developer view, F3 the arena view, F4 prints
 assert SIM_HZ == FPS * TICKS_PER_FRAME  # the developer view runs a whole number of ticks a frame
 
 pygame.init()

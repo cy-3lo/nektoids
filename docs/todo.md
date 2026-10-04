@@ -6,7 +6,6 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 ## 5. Ship
 
-- [ ] `DEV_VIEW = False` for the build that is uploaded.
 - [ ] `pygbag --build --archive game`, upload to itch.io.
 - [ ] Check in Chrome and in Safari. Safari has never been checked: the keys (Cmd+Y opens its
       History window), the fonts, the canvas.
