@@ -1362,13 +1362,15 @@ Searched by hand by the physicist, itch.io's search being closed to scripts. Wit
 web search of D-099, nothing found clashes with Nektoids or Cy-3LO. A search is not legal
 clearance; nothing here needs more for a free jam build.
 
-**D-101 — 2026-10-04 — The run's overview shows 2.5 times what matters, and the run opens on twice it, one zoom click in from the farthest. Amends D-066.**
+**D-101 — 2026-10-04 — The run opens at 16 px/u, the swimmer's radius on screen, centred on what matters; the overview shows it 1.5 times over and at least a zoom click past the opening. Amends D-066.**
 The run opened on `frame()`, the points round their mean with 3 u to spare, then kept inside the
 overview, 1.5 times what matters. On Greed and Patience the frame was larger than the overview,
 so they opened at the farthest zoom, the zoom bar at its end: Greed at 32 px/u, twice as close
-as Fear's 16, with no room to zoom out. Now the overview shows 2.5 times what matters, and the
-run opens on twice it, centred on its middle, so the main screen's frame sits in the middle of
-the overview and one click of the zoom (1.25) reaches the farthest. The openings, Inside open:
-Fear 9.7 px/u, Aggression 16.6, Love 14.4, Orbit 11.5, Shadows 16.9, Greed 24.1, Patience 18.4.
-Fear's swimmer is about 20 px across, to be watched when Camille plays it. Centre keeps
-`frame()`, round the swimmer and the lights; the editor's extent stays 1.5 times the zone.
+as Fear's 16, with no room to zoom out. Fear and Orbit opened well, at 15.8 and 16.1 px/u. Now
+every level opens at 16 px/u, the swimmer 32 px across, centred on the middle of what matters,
+or farther out if what matters would not show whole, which no level needs. The overview, and
+the farthest zoom, is what matters 1.5 times over, as before, and at least what the opening
+shows, one zoom click (1.25) out: every level's farthest is now 12.8 px/u. Fear's overview is
+what it was, within 2 %; Orbit's shows 1.2 times more. A first try, the run opening on twice
+what matters and the overview 2.5 times, made Fear's swimmer 20 px across and left Greed at
+24 px/u. Centre keeps `frame()`, round the swimmer and the lights; the editor is unchanged.

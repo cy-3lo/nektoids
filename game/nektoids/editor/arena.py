@@ -57,7 +57,7 @@ from nektoids.editor.arena_layout import (
 )
 from nektoids.editor.arena_view import (
     MAX_SCALE,
-    OPENING,
+    OPENING_SCALE,
     ROOM,
     ZOOM_STEP,
     ArenaView,
@@ -65,6 +65,7 @@ from nektoids.editor.arena_view import (
     body_at,
     extent,
     frame,
+    grown,
     kept_in,
     map_grid,
     map_points,
@@ -253,7 +254,7 @@ class ArenaScene(Frame):
         self.map_key: tuple | None = None  # the light map's grid: corner, cell, shape
         self.rays = Rays(self.arena.light_power)
         self._restart()  # the swimmer at its start: the open plane (D-028), seen as it opens
-        self._look(view_of(self.arena_area, self._needed(OPENING)))  # D-101
+        self._look(self._opening())
 
     def _restart(self) -> None:
         x, y, heading = self.level.start
@@ -264,7 +265,9 @@ class ArenaScene(Frame):
         self.kept = begin(self.level, self.pos, self.radius)  # each objective's
         self.clock.reset()
         self.circuit.beads.reset()
-        self._floor = self._needed()  # the overview's extent at the start: never less (D-073)
+        _, _, w, h = self.arena_area  # the overview at the start, never less (D-073): what
+        opening = grown(shown(self._opening(), self.arena_area), ZOOM_STEP)  # matters, and a
+        self._floor = widened(union(self._needed(), opening), w / h)  # click out (D-101)
         self._extent = self._floor
         self._moved()
         self.recording: Recording[Snapshot] = Recording(self._snapshot())
@@ -657,6 +660,11 @@ class ArenaScene(Frame):
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
         return extent(points, reach, w / h, room)
+
+    def _opening(self) -> ArenaView:
+        """The view the run opens on (D-101): what matters, centred, the swimmer where it starts,
+        at OPENING_SCALE, or farther out if that would not show it all."""
+        return view_of(self.arena_area, self._needed(1.0), OPENING_SCALE)
 
     def least_zoom(self) -> float:
         """The farthest the zoom goes: the arena shows the overview's extent [px/u]."""

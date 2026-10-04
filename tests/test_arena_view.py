@@ -214,17 +214,31 @@ def test_the_runs_extent_is_room_times_what_matters_and_the_view_stays_in_it():
 
 
 @pytest.mark.parametrize("points", [[[0.0, 0.0], [20.0, 4.0]], [[0.0, 0.0], [3.0, 18.0]]])
-def test_the_run_opens_a_click_in_from_its_farthest_on_the_middle_of_what_matters(points):
-    from nektoids.editor.arena_view import OPENING, ROOM, ZOOM_STEP, extent, kept_in, view_of
+def test_the_run_opens_at_the_swimmers_size_with_a_click_out_to_spare(points):
+    from nektoids.editor.arena_view import (
+        OPENING_SCALE,
+        ZOOM_STEP,
+        extent,
+        grown,
+        kept_in,
+        union,
+        view_of,
+        widened,
+    )
 
     points, area = np.array(points), (0, 0, 664, 506)
     aspect = area[2] / area[3]
-    farthest = view_of(area, extent(points, 1.0, aspect))
-    opening = view_of(area, extent(points, 1.0, aspect, OPENING))
-    assert kept_in(opening, area, extent(points, 1.0, aspect)) == opening  # inside the overview
-    assert opening.scale / farthest.scale == pytest.approx(ROOM / OPENING) == ZOOM_STEP
-    middle = (points.min(axis=0) + points.max(axis=0)) / 2  # D-101
+    opening = view_of(area, extent(points, 1.0, aspect, 1.0), OPENING_SCALE)  # as arena.py
+    assert opening.scale == OPENING_SCALE  # D-101: what matters fits at 16 px/u
+    middle = (points.min(axis=0) + points.max(axis=0)) / 2
     assert opening.to_world(332, 253) == pytest.approx(tuple(middle))
+    out = grown(shown(opening, area), ZOOM_STEP)
+    overview = widened(union(extent(points, 1.0, aspect), out), aspect)
+    assert kept_in(opening, area, overview) == opening  # inside the overview
+    assert view_of(area, overview).scale == pytest.approx(OPENING_SCALE / ZOOM_STEP)
+    far = np.array([[0.0, 0.0], [100.0, 10.0]])  # too wide for 16 px/u: farther out, all shown
+    wide = view_of(area, extent(far, 1.0, aspect, 1.0), OPENING_SCALE)
+    assert wide.scale < OPENING_SCALE and shown(wide, area)[0] == pytest.approx(-1.0)
 
 
 def test_the_runs_extent_grows_by_union_and_a_frame_at_its_border_touches_it():
