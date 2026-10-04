@@ -5,7 +5,6 @@ import pytest
 from nektoids.graph.board import (
     FACING_NAMES,
     Board,
-    Category,
     Kind,
     Refused,
     Wire,
@@ -13,6 +12,7 @@ from nektoids.graph.board import (
     complexity,
 )
 from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, offset_rect
+from nektoids.graph.kinds import Category
 
 RECT = offset_rect(9, 7)  # a 9 x 7 zone for most tests
 

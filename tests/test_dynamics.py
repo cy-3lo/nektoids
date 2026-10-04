@@ -10,6 +10,7 @@ from nektoids.graph.dynamics import (
     TAU,
     given_rates,
     initial_state,
+    max_dt,
     step,
     thrust_rates,
     wire_flux,
@@ -170,11 +171,12 @@ def test_halving_the_step_halves_the_error_against_the_exact_exponential():
     assert 1.6 < errors[0] / errors[1] < 2.4
 
 
-def test_the_step_is_refused_when_it_is_not_a_fraction_of_tau():
+def test_the_step_is_refused_when_it_is_longer_than_its_laws_allow():
     net = Network.from_edges([EYE, THR], [(0, 1)])
     y = initial_state(net)
+    assert max_dt(net) == TAU  # a relaxing law takes dt <= tau (D-202)
     for dt in (0.0, -DT, TAU * 1.01):
-        with pytest.raises(ValueError, match="dt / TAU"):
+        with pytest.raises(ValueError, match="what the laws allow"):
             step(net, y, eyes_row(0.5), dt)
 
 

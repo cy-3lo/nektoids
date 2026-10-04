@@ -28,6 +28,7 @@ from enum import Enum
 
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel, to_pixel
+from nektoids.graph.kinds import Category
 
 Rect = tuple[int, int, int, int]  # x, y, width, height [px]
 
@@ -74,10 +75,15 @@ HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
 
-MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
-    ("Sensors", (Kind.EYE, Kind.SOURCE)),
-    ("Actuators", (Kind.THRUSTER,)),  # before the operators (D-069): the numbers follow this order
-    ("Operators", (Kind.DOUBLE, Kind.HALVE, Kind.SUM, Kind.DIFFERENCE)),
+# Parts' groups, actuators before operators (D-069): the number keys follow this order; within a
+# group, the parts in the table's order (D-202).
+MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = tuple(
+    (title, tuple(kind for kind in Kind if kind.category is category))
+    for title, category in (
+        ("Sensors", Category.SENSOR),
+        ("Actuators", Category.ACTUATOR),
+        ("Operators", Category.OPERATOR),
+    )
 )
 
 

@@ -1,33 +1,16 @@
 """The parts as the player reads them: each kind's name in the menu, and what its info box says
 (D-036): what it does, then what may come in and go out, from the board's own rules (D-014,
-D-016). Rates run from 0 to 1, what one wire carries. Pure Python, no pygame.
+D-016), the names and paragraphs from the table of kinds (`graph/kinds.py`, D-202). Rates run
+from 0 to 1, what one wire carries. Pure Python, no pygame.
 """
 
 from __future__ import annotations
 
-from nektoids.graph.board import Category, Kind
+from nektoids.graph.board import Kind
+from nektoids.graph.kinds import Category
 
-NAME = {
-    Kind.EYE: "Eye",
-    Kind.SOURCE: "Source",
-    Kind.DOUBLE: "Double",
-    Kind.HALVE: "Halve",
-    Kind.SUM: "Sum",
-    Kind.DIFFERENCE: "Diff",
-    Kind.THRUSTER: "Thruster",
-}
-
-# What each part does, a paragraph the box wraps to its width (D-094).
-WHAT = {
-    Kind.EYE: "Senses the light that falls on its flat face: more from a light near it and in "
-    "front of it.",
-    Kind.SOURCE: "Senses nothing: it sends a steady signal.",
-    Kind.DOUBLE: "Sends twice what comes in.",
-    Kind.HALVE: "Sends half what comes in.",
-    Kind.SUM: "Sums its two inputs.",
-    Kind.DIFFERENCE: "Difference of its two inputs.",
-    Kind.THRUSTER: "Pushes the body the way it points. Off centre, it turns the body too.",
-}
+NAME = {kind: kind.spec.name for kind in Kind}  # from the table of kinds (D-202)
+WHAT = {kind: kind.spec.what for kind in Kind}  # a paragraph the box wraps (D-094)
 
 
 def ports(kind: Kind) -> tuple[str, str]:

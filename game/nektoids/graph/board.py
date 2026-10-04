@@ -18,75 +18,15 @@ import heapq
 import itertools
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
-from enum import Enum
 
 from nektoids.graph.hexgrid import (
     Cell,
-    E,
     direction_to,
     neighbour,
     opposite,
 )
+from nektoids.graph.kinds import Kind
 
-
-class Category(Enum):
-    SENSOR = "sensor"
-    OPERATOR = "operator"
-    ACTUATOR = "actuator"
-
-
-class Kind(Enum):
-    EYE = "eye"
-    SOURCE = "source"  # produces a signal of its own; senses nothing
-    DOUBLE = "double"
-    HALVE = "halve"
-    SUM = "sum"
-    DIFFERENCE = "difference"
-    THRUSTER = "thruster"
-
-    @property
-    def category(self) -> Category:
-        return _CATEGORY[self]
-
-    @property
-    def emits(self) -> bool:
-        return self.category is not Category.ACTUATOR
-
-    @property
-    def receives(self) -> bool:
-        return self.category is not Category.SENSOR
-
-    @property
-    def default_facing(self) -> int | None:
-        """Hex direction on the body until the player turns it (forward = E); None for operators.
-
-        Where an eye looks, or which way a thruster pushes (D-009).
-        """
-        return _DEFAULT_FACING.get(self)
-
-    @property
-    def max_inputs(self) -> int | None:
-        """How many wires may come in; None means no limit (D-014)."""
-        return _MAX_INPUTS.get(self)
-
-    @property
-    def max_outputs(self) -> int | None:
-        """How many wires may go out; None means no limit (D-014)."""
-        return _MAX_OUTPUTS.get(self)
-
-
-_CATEGORY = {
-    Kind.EYE: Category.SENSOR,
-    Kind.SOURCE: Category.SENSOR,
-    Kind.DOUBLE: Category.OPERATOR,
-    Kind.HALVE: Category.OPERATOR,
-    Kind.SUM: Category.OPERATOR,
-    Kind.DIFFERENCE: Category.OPERATOR,
-    Kind.THRUSTER: Category.ACTUATOR,
-}
-_DEFAULT_FACING = {Kind.EYE: E, Kind.THRUSTER: E}  # forward; the others have no direction
-_MAX_INPUTS = {Kind.SUM: 2, Kind.DIFFERENCE: 2}
-_MAX_OUTPUTS = {Kind.SUM: 1, Kind.DIFFERENCE: 1}
 FACING_NAMES = ("E", "NE", "NW", "W", "SW", "SE")  # hex directions 0..5, for `to_dict`
 
 
