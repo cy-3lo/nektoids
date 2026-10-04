@@ -47,7 +47,7 @@ def test_next_goes_on_with_its_own_board_and_after_the_last_level_comes_the_end(
     first.place(Kind.EYE, (0, 0))
     router.next()
     assert (router.index, router.screen) == (1, Screen.SPEC) and 0 in router.won
-    assert router.board is not first and router.board.nodes == {}
+    assert router.board is not first and router.board.nodes == router.level.new_board().nodes
     while router.has_next:
         router.next()
     assert router.is_last and router.index == len(router.levels) - 1
@@ -106,7 +106,7 @@ def test_a_level_reset_opens_on_a_fresh_board_and_the_others_keep_theirs():
     second.place(Kind.EYE, (0, 0))
     router.reset(0)
     router.open(0)
-    assert router.board is not first and router.board.nodes == {}
+    assert router.board is not first and router.board.nodes == router.level.new_board().nodes
     router.open(1)
     assert router.board is second and second.nodes
 

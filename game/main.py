@@ -96,7 +96,7 @@ def hints() -> tuple[Hints, Board, Taken] | None:
         return None
     if router.index not in shadows:
         read = Hints.from_dict(router.level.hints)
-        shadows[router.index] = (read, read.build(router.level.new_board()))
+        shadows[router.index] = (read, read.build(router.level.blank_board()))
     return (*shadows[router.index], taken.setdefault(router.index, Taken()))
 
 

@@ -90,6 +90,11 @@ class Level:
         """The board the player starts the level from, built afresh each time."""
         return Board.from_dict(self.board)
 
+    def blank_board(self) -> Board:
+        """The level's zone and stock, none of the parts or wires it starts with: what a hint's
+        shadow is built on, from scratch (D-103)."""
+        return Board.from_dict({**self.board, "parts": [], "wires": []})
+
     def to_dict(self) -> dict:
         x, y, heading = self.start
         return (

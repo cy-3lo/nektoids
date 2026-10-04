@@ -9,8 +9,11 @@
       [1, 0], [2, 0], [-2, 1], [-1, 1], [0, 1], [1, 1], [-2, 2], [-1, 2], [0, 2]
     ],
     "stock": {"eye": 2, "thruster": 2},
-    "parts": [],
-    "wires": []
+    "parts": [
+      {"kind": "eye", "cell": [-1, -1], "facing": "NE", "locked": false},
+      {"kind": "thruster", "cell": [2, -1], "facing": "E", "locked": false}
+    ],
+    "wires": [{"from": 0, "to": 1, "path": [[-1, -1], [0, -1], [1, -1], [2, -1]]}]
   },
   "time_limit": 20.0,
   "objectives": [{"kind": "visit lights"}],
@@ -26,5 +29,31 @@
       ],
       "ghost_wires": [{"from": [-1, -1], "to": [1, 1]}, {"from": [-2, 1], "to": [2, -1]}]
     }
+  },
+  "tutorial": {
+    "steps": [
+      {
+        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "say": [
+          "This swimmer comes with one eye wired to one thruster, on the same side.",
+          "Before you run it, try it: click the Editor tab or the Editor button."
+        ],
+        "until": {"screen": "edit"}
+      },
+      {
+        "show": {"drawer": "diagnostic"},
+        "say": [
+          "Diagnostic tries your board on the swimmer held still, wherever you put it. Open it: the stethoscope in the bar, or press D."
+        ],
+        "until": {"drawer": "diagnostic"}
+      },
+      {
+        "show": {"drawer": "diagnostic"},
+        "say": [
+          "The main screen runs your board where the swimmer stands on the map.",
+          "Drag it round the light and turn it with the mouse wheel: which way would it turn? Aggression wants it to charge."
+        ]
+      }
+    ]
   }
 }

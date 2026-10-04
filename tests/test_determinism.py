@@ -106,6 +106,17 @@ def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
     assert play(CROSSED, "Aggression")[1] == ticks  # the same tick, every run
 
 
+def test_aggressions_board_comes_uncrossed_and_wins_once_the_player_crosses_it():
+    board = LEVELS["Aggression"].new_board()  # one eye wired to its own side's thruster (D-103)
+    assert play(Network.from_board(board), "Aggression")[0] is Outcome.TIME_UP
+    board.remove_wire(board.wires[0])
+    eye = board.place(Kind.EYE, (-2, 1), facing=SE)
+    thruster = board.place(Kind.THRUSTER, (1, 1), facing=E)
+    board.connect(board.node_at((-1, -1)).id, thruster.id)
+    board.connect(eye.id, board.node_at((2, -1)).id)
+    assert play(Network.from_board(board), "Aggression")[0] is Outcome.WON
+
+
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
     ended, _, (visited,) = play(UNCROSSED, "Aggression")
     assert ended is Outcome.TIME_UP and not visited.any()
