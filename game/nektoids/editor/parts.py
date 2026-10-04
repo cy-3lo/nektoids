@@ -19,16 +19,14 @@ NAME = {
 
 # What each part does, a paragraph the box wraps to its width (D-094).
 WHAT = {
-    Kind.EYE: "Reads the light that falls on its flat face: more from a light near it and in front"
-    " of it, nothing in a shadow; it sends 1 at most.",
-    Kind.SOURCE: "Senses nothing: it sends a steady 1, a drive of the swimmer's own.",
-    Kind.DOUBLE: "Sends twice what comes in, 1 at most.",
+    Kind.EYE: "Senses the light that falls on its flat face: more from a light near it and in "
+    "front of it.",
+    Kind.SOURCE: "Senses nothing: it sends a steady signal.",
+    Kind.DOUBLE: "Sends twice what comes in.",
     Kind.HALVE: "Sends half what comes in.",
-    Kind.SUM: "Sends the sum of its two inputs, 1 at most.",
-    Kind.DIFFERENCE: "Sends the gap between its two inputs, |a - b|: the same whichever way round"
-    " they come.",
-    Kind.THRUSTER: "Pushes the body the way it points, as hard as what comes in. Off the centre, it"
-    " turns the body too: where it sits is its lever.",
+    Kind.SUM: "Sums its two inputs.",
+    Kind.DIFFERENCE: "Difference of its two inputs.",
+    Kind.THRUSTER: "Pushes the body the way it points. Off centre, it turns the body too.",
 }
 
 
@@ -37,15 +35,15 @@ def ports(kind: Kind) -> tuple[str, str]:
     if kind.category is Category.SENSOR:
         inward = "nothing"
     elif kind.max_inputs is not None:
-        inward = f"{_count(kind.max_inputs)} wires at most; with one, it passes it on"
+        inward = f"{_count(kind.max_inputs)} wires at most"
     else:
-        inward = "any number of wires, added"
+        inward = "any number of wires"
     if not kind.emits:
         outward = "nothing"
     elif kind.max_outputs is not None:
         outward = f"{_count(kind.max_outputs)} wire"
     else:
-        outward = "any number of wires, sharing what it sends"
+        outward = "any number of wires"
     return f"In: {inward}.", f"Out: {outward}."
 
 

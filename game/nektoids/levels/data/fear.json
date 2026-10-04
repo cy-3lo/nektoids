@@ -32,37 +32,40 @@
       {
         "show": {"run": "swimmer"},
         "say": [
-          "This is your swimmer, seen from above: the tip of its triangle is the way it heads. On its right, a light, with a dashed ring round it."
+          "This is your tiny swimmer.",
+          "Your goal is to wire its control board to make it flee the light on its right."
         ]
       },
       {
         "show": {"run": "objectives"},
         "say": [
-          "At the foot of the drawer, Objectives: what the level asks, each with its bar. Here, get out of the ring round the light in time."
+          "Objectives are what the level asks. Here, get out of the ring before the 10 s are out."
         ]
       },
       {
         "show": [{"tab": "editor"}, {"level": "edit"}],
         "say": [
-          "Run plays the level; the Editor builds the swimmer. It has no eyes and no thrusters yet: click the Editor tab, or the Editor button at the bottom left, to build them."
+          "The window has two tabs: Run plays the level and the Editor builds the control board.",
+          "Click the Editor tab or the Editor button now."
         ],
         "until": {"screen": "edit"}
       },
       {
         "say": [
-          "The board is your swimmer's body, its front to the right: a part acts where it sits. Click a cell, and the Wheel, in Tools, shows what can go there."
+          "The board is your swimmer's body. Click a cell, and the Wheel, in Tools, shows what goes there."
         ]
       },
       {
         "show": {"area": "bar"},
         "say": [
-          "The bar opens the drawers, one at a time, each by its initial too: Tools, Parts, Files, Diagnostic, Navigator. At its foot: Hints, Settings, Chapters, and Run."
+          "The nav bar opens the drawers: Tools, Parts, Files, Diagnostic, Navigator. At its foot: Hints, Settings, Chapters, and Run."
         ]
       },
       {
         "show": {"icon": "hints"},
         "say": [
-          "Stuck? Hints, the life ring, or ?, gives three hints, one at a time; the last shows a swimmer that wins."
+          "Now it is time to wire sensors and actuators!",
+          "If you are stuck, try clicking Hints."
         ]
       }
     ]

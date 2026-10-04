@@ -170,8 +170,8 @@ TIP = {
     ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them; drag"
-    " one to move it.",
+    Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them, or"
+    " drag one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
@@ -188,11 +188,11 @@ TIP = {
 }
 SETTING = {  # Settings' rows: their name, icon and what their info box says (D-054)
     Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
-    Setting.HINTS: ("Key hints", "keyboard", "Show each row's key, and the bar's in its tooltip."),
+    Setting.HINTS: ("Key hints", "keyboard", "Keys on each row and in the bar's tooltips."),
     Setting.TUTORIAL: (
         "Tutorial",
         "graduation-cap",
-        "Fear's introduction again, from its first step.",
+        "Fear's tutorial again, from its first step.",
     ),
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),

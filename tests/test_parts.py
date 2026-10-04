@@ -11,12 +11,9 @@ def test_every_part_has_a_name_and_an_info_box():
 
 
 def test_the_info_box_says_what_the_board_allows_in_and_out():
-    assert ports(Kind.EYE) == ("In: nothing.", "Out: any number of wires, sharing what it sends.")
-    assert ports(Kind.SUM) == (
-        "In: two wires at most; with one, it passes it on.",
-        "Out: one wire.",
-    )
-    assert ports(Kind.THRUSTER) == ("In: any number of wires, added.", "Out: nothing.")
+    assert ports(Kind.EYE) == ("In: nothing.", "Out: any number of wires.")
+    assert ports(Kind.SUM) == ("In: two wires at most.", "Out: one wire.")
+    assert ports(Kind.THRUSTER) == ("In: any number of wires.", "Out: nothing.")
     assert info(Kind.HALVE)[-2:] == ports(Kind.HALVE)
 
 
