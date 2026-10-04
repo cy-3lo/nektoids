@@ -8,7 +8,7 @@ and watch a deterministic 2D simulation play out.
 
 - Design brief: `docs/brief.md` — read sections 1 and 3 before proposing any feature.
 - Decision log: `docs/decisions.md` — append-only; check it before re-opening a question.
-- What is left for the jam: `docs/todo.md`; ideas for after it: `docs/ideas.md` (D-028).
+- What is left to do: `docs/todo.md`; ideas for later: `docs/ideas.md` (D-028).
 
 ## Who works here
 
@@ -28,23 +28,29 @@ Claude writes the code, whole features included, in any package.
 - The humans may write in French: answer in the language of the prompt.
   Code, comments, commit messages and docs stay in English.
 
-## Scope lock (weekend jam)
+## Scope: stage 0, Foundations (D-200)
 
-Changing this list requires an entry in `docs/decisions.md`.
+After the jam come five stages (D-105). Each opens with a decision that sets its scope here, as
+the scope lock did for the jam. Changing this list requires an entry in `docs/decisions.md`.
 
-In: 2D top-down; one agent; two eyes that read light (1/r, shadows, D-019); two outputs (left
-and right thruster), in the levels: the sandbox hands out any number (D-102); the board is the
-body plan: eyes and thrusters sit where they are placed
+In: the game as the jam shipped it. 2D top-down; one agent; two eyes that read light (1/r,
+shadows, D-019); two outputs (left and right thruster), in the levels: the sandbox hands out any
+number (D-102); the board is the body plan: eyes and thrusters sit where they are placed
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
 nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); four Braitenberg levels
 (Fear, Aggression, Love, Orbit), then Shadows, Greed and one real level, Patience, each with a
 countable win condition (D-097); fixed seed, fully deterministic;
 complexity, the number of parts, is scored and every body stays a sphere of radius 1 u (D-045);
 undo and redo in the editor (D-027).
+And stage 0's groundwork, the todo's §10: the objectives in one list; a level format with a
+version; one table of part kinds; sensors in general; saving and loading, and a board as text,
+with Save and Load back in Files.
 
-Out: flocking and multiple agents, flow sensing, chemical fields, optical flow, parts that move
-on the body during a run, threshold nodes, the generalisation pillar (multi-seed validation),
-sound, art, saving and a board as text (F4 prints a board, D-024; ideas.md, D-093).
+Out: anything new for the player but Save and Load: no new part, sense, item, level or
+objective. The later stages, a level maker, memory, flows, actions other than moving, and all
+after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,
+optical flow, parts that move on the body during a run, threshold nodes, the generalisation
+pillar (multi-seed validation), sound, art.
 
 If a request touches something out of scope, say so plainly and offer the smallest in-scope
 version, and log the idea in `docs/ideas.md`. `/scope-check` does this formally.
@@ -92,5 +98,8 @@ pygbag --build --archive game     # game/build/web.zip, ready for itch.io
 
 - `main` is protected. Work on `feat/…`, `fix/…`, `chore/…` branches; one idea per PR.
 - Run `/pr-prep` before opening a PR; it fills `.github/pull_request_template.md`.
+- After the jam, a stage is built on `stage/<n>-<name>` (D-200): each item a `feat/…` branch
+  whose PR goes into the stage, the stage into `main` in one PR. Merge `main` into a stage;
+  never rebase it. A stage's decisions take their own hundred (stage 0: D-200 on).
 - Never push, force-push, rebase or rewrite history unless asked in this session.
 - Record design decisions (scope, physics model, API shape) in `docs/decisions.md`.

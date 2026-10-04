@@ -1432,3 +1432,15 @@ the step to Collectives.
 Shipping and its feedback come before all of it and may reorder it. Until the jam build is out,
 the scope lock in `CLAUDE.md` and the `scope-check` skill stand as they are; then the first
 stage's decision replaces the lock with that stage's scope.
+
+**D-200 — 2026-10-04 — Stage 0, Foundations, is built on `stage/0-foundations`, and its scope replaces the jam's scope lock there. Its decisions are numbered from D-200. Applies D-105.**
+The jam build ships from `main`, with what Camille's review finds to fix, so Foundations is
+built beside it. Each item is a `feat/…` branch whose PR goes into the stage, and the stage goes
+into `main` in one PR once the build is uploaded; until then the lock stands on `main`, as D-105
+asks. In: the game as the jam shipped it, and the five items of `ideas.md` §0, which move to the
+todo's §10 in the order they will be built: the objectives in one list, a level format with a
+version, one table of part kinds, sensors in general, saving and a board as text. Out: all else
+in `ideas.md`; nothing new for the player but Save and Load, no new part, sense, item, level or
+objective. `CLAUDE.md`'s scope section says so, and `/scope-check` reads it. Decisions taken on
+`main` meanwhile keep D-106 on and the stage's start at D-200, so no number is taken twice; a
+stage built beside another takes the next hundred.
