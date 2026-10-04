@@ -13,10 +13,8 @@ their numbers, which the decision log cites. Ideas for after the jam go in [`ide
 
 ## 6. Small things
 
-- [ ] `eye_rates` timed natively only; measure it under WASM (D-019).
-- [ ] The names: itch.io search, Google and TMview (classes 9 and 41) to check by hand (D-006).
-- [ ] In headless Chrome the first click after a key press is lost: on Fear's first drag step,
-      Skip takes two clicks there. Check it in a real browser (seen 2026-10-02).
+- [ ] The names: TMview and a web search found nothing close (D-099); itch.io's search, which
+      blocks scripts, is left to do by hand, and the whole check to confirm (D-006).
 
 ## 7. The editor's hand, for a finger as for a mouse
 

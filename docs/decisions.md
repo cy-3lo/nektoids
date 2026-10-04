@@ -1336,3 +1336,23 @@ sandbox. A player who reaches them has the drive, the gain and the asymmetry fro
 and the real level is the one the brief's success criterion asks strangers to finish on their
 own. `test_hints.py` checks that the first five have hints and the rest none;
 `test_determinism.py` pins both winners and the ways to fail.
+
+**D-099 — 2026-10-04 — Under WASM `eye_rates` takes 0.07 ms a tick for the jam, about twice its native time; the names show no clash so far; the click lost after a key in headless Chrome no longer happens. Todo §6.**
+Measured in headless Chrome on the physicist's Mac, from a throwaway copy of the game whose
+`main.py` times the calls at startup (pygbag's CPython 3.12, numpy 2.0.2), against the same file
+run natively (CPython 3.11, numpy 2.4): `eye_rates` for the jam, one swimmer and two eyes in
+Shadows, 0.067 ms (0.036 natively); for 100 swimmers, 4 lights and 20 obstacles, D-019's case,
+0.92 ms (0.50); the light map, 80 × 76 cells, 0.62 ms (0.32); a whole `world.step` in Patience,
+0.25 ms (0.13). WASM is about 1.9 times slower, and the two ticks of a frame cost 0.5 ms of its
+16.7 ms: the physics leaves the frame to the drawing.
+The names (D-006): TMview finds no trade mark whose name contains NEKTOIDS, or even NEKTO; for
+CY-3LO its loose search returns 403 marks that share fragments (CYCLO 3, C3 CYCLONIC), none close.
+A web search finds only our own repository for either. itch.io's search sits behind a bot check
+that a script cannot pass, so it stays in the todo, to do by hand; none of this is legal
+clearance.
+The lost click (todo §6, seen 2026-10-02 on Fear's first drag step, which D-079 removed): in
+headless Chrome, two Enter presses then one click on Skip close the tutorial, and a drawer's key
+then one click on Chapters opens it; typed passkeys followed by a click on a row work too.
+Clicks seemed lost once more while this was checked, because the script measured the canvas
+before pygbag resized it (640 × 640 while loading, 1280 × 853 once started); measured after the
+start, every click lands. The item goes.
