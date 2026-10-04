@@ -1414,3 +1414,21 @@ Sound and Music in Settings, which wait for sound, and Parts as the encyclopedia
 drawer, which is polish. Each goes to `ideas.md` as one entry, its questions kept, saying where it
 came from. The todo keeps §5, the shipping. Camille's views on the jam build go to the todo if
 they must be fixed before it is uploaded, to `ideas.md` otherwise.
+
+**D-105 — 2026-10-04 — After the jam, in stages: foundations, a level maker, memory, flows, actions other than moving. Each opens with a decision that sets its scope in place of the scope lock, once the jam build is out.**
+The physicist named four directions for after the jam: flows and flow sensing, a level maker,
+actions other than moving (light emission), memory (tanks, switches, diodes). `ideas.md` now
+opens with them in order, each idea filed under its stage. Foundations come first, since every
+stage adds parts or levels: one table of part kinds, sensors in general, a level format with a
+version, saving and a board as text. The level maker next: Camille can make levels without
+programming (D-041), and every later stage needs levels. Memory then, which changes only
+`graph/`: tanks, T dh/dt = in − h with T ≈ 4 s, the lag of D-017 with its own τ; valves,
+max(0, a − b), the physicist's "diode", since a wire is one-way already (D-016); loops in the
+editor; lights that change in time, for levels the present reading cannot win. Flows fourth, the
+largest change to `sim/`, whose levels want tanks: analytic streams and vortices as items, a
+sphere carried by Faxén's laws, a sensor of the flow relative to the body. Actions last: with
+one swimmer a lamp needs something that reads it, photo-targets or bodies with a fixed wiring,
+the step to Collectives.
+Shipping and its feedback come before all of it and may reorder it. Until the jam build is out,
+the scope lock in `CLAUDE.md` and the `scope-check` skill stand as they are; then the first
+stage's decision replaces the lock with that stage's scope.
