@@ -47,7 +47,7 @@ from nektoids.editor.tutorial import (
 )
 from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import NW, SW
+from nektoids.graph.hexgrid import NE, NW, SW, E
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome
 
@@ -143,12 +143,47 @@ def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
                 assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
 
 
-def test_only_fear_has_a_tutorial_an_introduction_that_builds_nothing():
-    assert [level.title for level in arenas() if level.tutorial is not None] == ["Fear"]  # D-079
-    tutorial = Tutorial.from_dict(LEVELS["Fear"].tutorial)
-    assert tutorial.ghosts == () and tutorial.ghost_wires == ()
-    waits = [step.until for step in tutorial.steps if step.until]
-    assert waits == [{"screen": "edit"}]  # nothing placed, turned or wired
+def test_fear_and_aggression_have_tutorials_and_neither_builds_anything():
+    tutored = [level.title for level in arenas() if level.tutorial is not None]
+    assert tutored == ["Fear", "Aggression"]  # D-079, D-103
+    for title, waits in (
+        ("Fear", [{"screen": "edit"}]),
+        ("Aggression", [{"drawer": "diagnostic"}]),
+    ):
+        tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
+        assert tutorial.ghosts == () and tutorial.ghost_wires == ()
+        assert [step.until for step in tutorial.steps if step.until] == waits  # nothing built
+    assert Tutorial.from_dict(LEVELS["Fear"].tutorial).starts_in is None  # on the run (D-069)
+
+
+def test_a_box_keeps_clear_of_the_parts_on_the_board():
+    stethoscope = (4, 156, 40, 32)  # an icon of the bar, the step's target
+    eye = (489, 235, 70, 80)  # a part on the board, right of it
+    assert overlap(box_rect([stethoscope], 3, LAYOUT.board_area), eye)  # beside it, over the eye
+    box = box_rect([stethoscope], 3, LAYOUT.board_area, [], [eye])  # D-103
+    assert not overlap(box, eye) and not overlap(box, stethoscope)
+
+
+def test_aggressions_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it_be():
+    level = LEVELS["Aggression"]
+    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    parts = [(n.kind, n.cell, n.facing, n.locked) for n in board.nodes.values()]
+    assert parts == [(Kind.EYE, (-1, -1), NE, False), (Kind.THRUSTER, (2, -1), E, False)]
+    assert (
+        len(board.wires) == 1 and board.remaining(Kind.EYE) == board.remaining(Kind.THRUSTER) == 1
+    )
+
+    def context(screen=Screen.EDIT, drawer=Drawer.PARTS):
+        return Context(board, Tool.ADD, screen, None, 0.0, drawer)
+
+    assert tutorial.starts_in is Drawer.PARTS  # the editor, Parts open, not the run (D-103)
+    tutorial.follow(context())
+    assert tutorial.step.until == {"drawer": "diagnostic"}
+    assert allows(tutorial.step, Action("view")) and drawer_for(tutorial.step) is None
+    tutorial.follow(context(drawer=Drawer.DIAGNOSTIC))
+    assert not tutorial.leads and tutorial.waits_for_next  # nothing lit, then Close
+    tutorial.next()
+    assert tutorial.step is None  # the player tries it with no card in the way
 
 
 def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_on_hints():
@@ -669,7 +704,7 @@ def test_aggressions_model_is_the_crossed_board_that_wins_it():
 def test_the_aggression_tutorial_moves_on_as_the_player_builds_tries_and_runs_it():
     tutorial, board = (
         Tutorial.from_dict(BUILT["aggression"]),
-        LEVELS["Aggression"].new_board(),
+        LEVELS["Aggression"].blank_board(),  # the board that tutorial built from, empty
     )
 
     def context(screen=Screen.EDIT, drawer=Drawer.TOOLS, outcome=None):

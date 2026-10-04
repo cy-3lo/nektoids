@@ -5,7 +5,7 @@ import json
 import pytest
 
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import NE
+from nektoids.graph.hexgrid import NE, hex_disc
 from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level, is_passkey, load, to_json
 from nektoids.levels.objectives import VisitLights
@@ -93,6 +93,12 @@ def test_each_new_board_is_the_levels_own_fresh_from_its_data():
 def test_data_no_level_could_hold_fails_when_it_is_loaded(changes, message):
     with pytest.raises(ValueError, match=message):
         Level.from_dict(a_level(**changes))
+
+
+def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider():
+    board = sandbox().new_board()  # D-102
+    assert all(board.total(kind) is None for kind in Kind)
+    assert sorted(board.cells) == sorted(hex_disc(3))
 
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():

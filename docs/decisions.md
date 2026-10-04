@@ -1361,3 +1361,47 @@ start, every click lands. The item goes.
 Searched by hand by the physicist, itch.io's search being closed to scripts. With TMview and the
 web search of D-099, nothing found clashes with Nektoids or Cy-3LO. A search is not legal
 clearance; nothing here needs more for a free jam build.
+
+**D-101 — 2026-10-04 — The run opens at 16 px/u, the swimmer's radius on screen, centred on what matters; the overview shows it 1.5 times over and at least a zoom click past the opening. Amends D-066.**
+The run opened on `frame()`, the points round their mean with 3 u to spare, then kept inside the
+overview, 1.5 times what matters. On Greed and Patience the frame was larger than the overview,
+so they opened at the farthest zoom, the zoom bar at its end: Greed at 32 px/u, twice as close
+as Fear's 16, with no room to zoom out. Fear and Orbit opened well, at 15.8 and 16.1 px/u. Now
+every level opens at 16 px/u, the swimmer 32 px across, centred on the middle of what matters,
+or farther out if what matters would not show whole, which no level needs. The overview, and
+the farthest zoom, is what matters 1.5 times over, as before, and at least what the opening
+shows, one zoom click (1.25) out: every level's farthest is now 12.8 px/u. Fear's overview is
+what it was, within 2 %; Orbit's shows 1.2 times more. A first try, the run opening on twice
+what matters and the overview 2.5 times, made Fear's swimmer 20 px across and left Greed at
+24 px/u. Centre keeps `frame()`, round the swimmer and the lights; the editor is unchanged.
+
+**D-102 — 2026-10-04 — The sandbox hands out every part without limit, on a zone one ring wider: 37 cells. The scope lock's two eyes and two thrusters are the levels'. The editor opens a zone too tall for its default size smaller.**
+The sandbox has no objective and scores nothing (D-046), so nothing in it needs the levels'
+counts; it is where to try what the levels do not ask. Its stock is null, unlimited, for every
+part, eyes, thrusters and the Source included, and its zone is `hex_disc(3)`, 37 cells instead
+of 19. The levels keep theirs; more eyes in a level stays in `ideas.md`. The body is still a
+sphere of radius 1 u (D-045): the zone's outermost cells lie on its rim (D-018), so the old
+rim's cells sit at about two thirds of the radius, and placing is finer. The code was already
+written for any number of eyes and thrusters: four of each, crossed, run at 0.43 ms a frame
+natively. At the default 40 px a hex, the zone's top row lay under the action atop the board;
+the editor now opens a zone at the largest size, 40 px at most, that keeps its hexes clear of
+that action and of the board's sides (`layout.opening_view`): the sandbox at 34 px, every level
+at 40 as before.
+
+**D-103 — 2026-10-04 — Aggression comes with one eye wired to its own side's thruster; its tutorial opens in the editor, Parts open, and two cards take the player to Diagnostic to try it. Amends D-069, D-070 and D-079.**
+Nothing taught Diagnostic since D-079 took Aggression's tutorial away (D-070 had left it for
+later). Aggression's board now starts with two of its parts on the cells of its hint's shadow,
+unlocked: the eye at the back left looking NE, wired to the thruster at the front left, facing
+E. Uncrossed, it is half of Fear's swimmer, and turns from a light on its left; the level asks
+the player to cross it. Parts shows one eye and one thruster left. A tutorial may name the
+editor's drawer it starts in, `starts_in`: while its first card is still to come, the level's
+card gives way to the editor with that drawer open, not to the run. D-069 stands for every
+other level; D-070 had dropped a tutorial's start screen. Aggression's starts in Parts. Its
+first card names the board and lights the stethoscope, waiting for Diagnostic; the second
+lights nothing, its box at the foot of the main screen: the main screen shows the board, the
+map the swimmer and the light, to drag and turn to see what it does. Then Close, and the
+player tries it with no card in the way, the drawer's own note under the map. The tutorial builds
+nothing, so D-079's objection, a tutorial repeating Hint 3, does not apply. A card's box keeps
+clear of the parts on the editor's board, as it does of its targets (D-048). A hint's shadow is
+built on `Level.blank_board()`, the level's zone and stock with none of its parts, so its
+picture is what it was. Hints stay locked until the tutorial ends or is skipped (D-078).

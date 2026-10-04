@@ -137,15 +137,18 @@ class Tutorial:
         ghosts: tuple[Ghost, ...],
         steps: tuple[Step, ...],
         ghost_wires: tuple[tuple[Cell, Cell], ...] = (),
+        starts_in: Drawer | None = None,
     ) -> None:
         self.ghosts, self.steps = ghosts, steps
         self.ghost_wires = ghost_wires  # the model's wires, from a cell to a cell (D-074)
+        self.starts_in = starts_in  # the editor's drawer it begins in; None: the run (D-103)
         self.index = 0
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
-        return cls(ghosts_from(data), steps, ghost_wires_from(data))
+        starts_in = Drawer(data["starts_in"]) if "starts_in" in data else None
+        return cls(ghosts_from(data), steps, ghost_wires_from(data), starts_in)
 
     @property
     def step(self) -> Step | None:
@@ -506,10 +509,13 @@ def _run_target(name: str, layout: Layout) -> Rect | None:
     return {"arena": layout.board_area, "controls": layout.controls_area}[name]
 
 
-def box_rect(targets: list, lines: int, hint_at: Rect, before: list = ()) -> Rect:
+def box_rect(
+    targets: list, lines: int, hint_at: Rect, before: list = (), clear_of: list = ()
+) -> Rect:
     """The step's box. A hint's, with no target, at the foot of `hint_at` (the board or the
     arena). A leading step's keeps clear of its targets, of the hand's way from each to the
-    next, and of the same for the step `before`, the work just done (D-048): beside a target,
+    next, of the same for the step `before`, the work just done (D-048), and of `clear_of`,
+    what it must not hide, the parts on the board (D-103): beside a target,
     the last first, trying its right, its left, under it, over it; else the clear spot of a
     grid over the screen nearest the last target. Each spot is brought onto the screen. An area
     (the board, the arena) is too big to keep clear of: the box may lie over part of it."""
@@ -517,13 +523,14 @@ def box_rect(targets: list, lines: int, hint_at: Rect, before: list = ()) -> Rec
     if not targets:
         x, y, w, h = hint_at
         return (x + 16, y + h - height - 16, BOX_WIDTH, height)
-    return _placed(tuple(map(tuple, targets)), tuple(map(tuple, before)), height)
+    parts = tuple(map(tuple, clear_of))
+    return _placed(tuple(map(tuple, targets)), tuple(map(tuple, before)), height, parts)
 
 
 @lru_cache(maxsize=32)  # drawn every frame; the grid is slow to search
-def _placed(targets: tuple, before: tuple, height: int) -> Rect:
+def _placed(targets: tuple, before: tuple, height: int, clear_of: tuple = ()) -> Rect:
     kept, kept_before = _narrow(targets), _narrow(before)  # an area cannot be cleared
-    rects, paths = (*kept, *kept_before), (*_paths(kept), *_paths(kept_before))
+    rects, paths = (*kept, *kept_before, *clear_of), (*_paths(kept), *_paths(kept_before))
 
     def clear(spot: Rect) -> bool:
         return not any(_meet(spot, r) for r in rects) and not any(_crosses(spot, *p) for p in paths)

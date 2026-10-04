@@ -57,12 +57,15 @@ from nektoids.editor.arena_layout import (
 )
 from nektoids.editor.arena_view import (
     MAX_SCALE,
+    OPENING_SCALE,
+    ROOM,
     ZOOM_STEP,
     ArenaView,
     Rays,
     body_at,
     extent,
     frame,
+    grown,
     kept_in,
     map_grid,
     map_points,
@@ -250,12 +253,8 @@ class ArenaScene(Frame):
         self.title, self.arena = self.level.title, self.level.arena
         self.map_key: tuple | None = None  # the light map's grid: corner, cell, shape
         self.rays = Rays(self.arena.light_power)
-        self._restart()
-        x, y, _ = self.level.start  # the open plane (D-028): frame what the level holds
-        rims = self._rims()
-        points = np.concatenate(([[x, y]], self.arena.light_xy, self.arena.disc_xy, *rims))
-        reach = float(np.concatenate(([LIGHT_RADIUS], self.arena.disc_radius, self.radius)).max())
-        self._look(frame(self.arena_area, points, FRAME_MARGIN + reach))
+        self._restart()  # the swimmer at its start: the open plane (D-028), seen as it opens
+        self._look(self._opening())
 
     def _restart(self) -> None:
         x, y, heading = self.level.start
@@ -266,7 +265,9 @@ class ArenaScene(Frame):
         self.kept = begin(self.level, self.pos, self.radius)  # each objective's
         self.clock.reset()
         self.circuit.beads.reset()
-        self._floor = self._needed()  # the overview's extent at the start: never less (D-073)
+        _, _, w, h = self.arena_area  # the overview at the start, never less (D-073): what
+        opening = grown(shown(self._opening(), self.arena_area), ZOOM_STEP)  # matters, and a
+        self._floor = widened(union(self._needed(), opening), w / h)  # click out (D-101)
         self._extent = self._floor
         self._moved()
         self.recording: Recording[Snapshot] = Recording(self._snapshot())
@@ -651,14 +652,19 @@ class ArenaScene(Frame):
         _, _, w, h = self.arena_area
         self._extent = widened(bounds, w / h)
 
-    def _needed(self) -> tuple[float, float, float, float]:
+    def _needed(self, room: float = ROOM) -> tuple[float, float, float, float]:
         """What matters now (D-066): the lights and their rings, the obstacles and the swimmer
-        where it is, with room to spare."""
+        where it is, `room` times over."""
         arena = self.arena
         points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *self._rims()))
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
-        return extent(points, reach, w / h)
+        return extent(points, reach, w / h, room)
+
+    def _opening(self) -> ArenaView:
+        """The view the run opens on (D-101): what matters, centred, the swimmer where it starts,
+        at OPENING_SCALE, or farther out if that would not show it all."""
+        return view_of(self.arena_area, self._needed(1.0), OPENING_SCALE)
 
     def least_zoom(self) -> float:
         """The farthest the zoom goes: the arena shows the overview's extent [px/u]."""

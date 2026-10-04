@@ -43,6 +43,8 @@ puts it in scope. Until D-028 these were logged in the decision log as "post-jam
 
 - **How many eyes, what aperture, where on the body**, each costing size; non-unique solutions.
 - **Icons for sensor types** inside the shapes, when there is more than one (D-008, D-012).
+- **Levels with more than two eyes or thrusters, on zones wider than 19 cells.** The sandbox
+  tries it first: every part without limit, on 37 cells (D-102; the physicist, 2026-10-04).
 
 ## Editor and levels
 

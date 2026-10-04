@@ -33,7 +33,8 @@ Claude writes the code, whole features included, in any package.
 Changing this list requires an entry in `docs/decisions.md`.
 
 In: 2D top-down; one agent; two eyes that read light (1/r, shadows, D-019); two outputs (left
-and right thruster); the board is the body plan: eyes and thrusters sit where they are placed
+and right thruster), in the levels: the sandbox hands out any number (D-102); the board is the
+body plan: eyes and thrusters sit where they are placed
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
 nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); four Braitenberg levels
 (Fear, Aggression, Love, Orbit), then Shadows, Greed and one real level, Patience, each with a

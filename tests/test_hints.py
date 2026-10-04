@@ -32,7 +32,7 @@ def test_the_first_five_levels_have_hints_and_the_rest_none():
 def test_every_level_has_hints_and_its_shadow_wins_it(title):
     level = LEVELS[title]
     hints = Hints.from_dict(level.hints)
-    net = Network.from_board(hints.build(level.new_board()))
+    net = Network.from_board(hints.build(level.blank_board()))
     ended, ticks, _ = play(net, title)
     assert ended is Outcome.WON
     assert play(net, title)[1] == ticks  # the same tick, every run
@@ -51,7 +51,7 @@ def test_each_hint_fits_the_drawer_and_the_shadow_says_nothing(title):
 def test_all_taken_in_the_run_they_fit_above_the_objectives_and_the_picture_stays_large(title):
     level = LEVELS[title]
     hints, taken = Hints.from_dict(level.hints), Taken(count=len(NAMES), shown=True)
-    view = hint_view(hints, taken, False, hints.build(level.new_board()))
+    view = hint_view(hints, taken, False, hints.build(level.blank_board()))
     lines = tuple(map(len, view.lines))
     layout = make_layout(
         Drawer.HINTS, env=Env.RUN, goals=len(level.objectives), hint_lines=lines, shadow=True

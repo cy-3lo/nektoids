@@ -82,6 +82,7 @@ from nektoids.editor.layout import (
     menu_item_at,
     mode_button_at,
     moved_view,
+    opening_view,
     overview_at,
     overview_view,
     pan,
@@ -194,7 +195,7 @@ class EditorScene(Frame):
         self.onward = False  # the focus came on to the part just wired to: it wires only forward
         self.wins: tuple[WinGroup, ...] = ()  # this session's wins, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
-        self.view = centred_view(layout)
+        self.view = opening_view(layout, sorted(board.cells))
         self.mode = Mode.WRITE  # what a click on the board does: Write, or Delete (D-068)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand

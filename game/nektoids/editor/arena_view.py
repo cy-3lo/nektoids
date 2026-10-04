@@ -68,14 +68,17 @@ def pan_view(view: ArenaView, dx: float, dy: float) -> ArenaView:
 
 
 ROOM = 1.5  # the overview shows this many times what matters, each way, about its middle
+OPENING_SCALE = 16.0  # the run opens at this zoom, the swimmer's radius on screen [px/u] (D-101)
 
 
-def extent(points: np.ndarray, reach: float, aspect: float) -> tuple[float, float, float, float]:
+def extent(
+    points: np.ndarray, reach: float, aspect: float, room: float = ROOM
+) -> tuple[float, float, float, float]:
     """(left, bottom, right, top) [u]: what matters, `points` (K, 2) each with `reach` [u] round
-    it, ROOM times over about its middle, then widened or heightened to `aspect`, width over
-    height: what the overview shows, and the most the main screen may (D-066)."""
+    it, `room` times over about its middle, then widened or heightened to `aspect`, width over
+    height: with ROOM, what the overview shows, and the most the main screen may (D-066)."""
     low, high = points.min(axis=0) - reach, points.max(axis=0) + reach
-    middle, half = (low + high) / 2, ROOM * (high - low) / 2
+    middle, half = (low + high) / 2, room * (high - low) / 2
     (left, bottom), (right, top) = middle - half, middle + half
     return widened((float(left), float(bottom), float(right), float(top)), aspect)
 
@@ -101,17 +104,28 @@ def union(a: Bounds, b: Bounds) -> Bounds:
     return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
 
 
+def grown(bounds: Bounds, factor: float) -> Bounds:
+    """`bounds` `factor` times over, each way, about their middle."""
+    left, bottom, right, top = bounds
+    cx, cy = (left + right) / 2, (bottom + top) / 2
+    half_w, half_h = factor * (right - left) / 2, factor * (top - bottom) / 2
+    return (cx - half_w, cy - half_h, cx + half_w, cy + half_h)
+
+
 def touches(inner: Bounds, outer: Bounds, eps: float = 1e-6) -> bool:
     """Whether `inner`, inside `outer`, reaches any of its sides: the main screen's frame at
     the overview's border (D-073)."""
     return any(abs(i - o) <= eps for i, o in zip(inner, outer, strict=True))
 
 
-def view_of(area: Rect, bounds: tuple[float, float, float, float]) -> ArenaView:
-    """The view that shows `bounds` (left, bottom, right, top) [u] whole in `area`, centred."""
+def view_of(
+    area: Rect, bounds: tuple[float, float, float, float], most: float = math.inf
+) -> ArenaView:
+    """The view that shows `bounds` (left, bottom, right, top) [u] whole in `area`, centred,
+    zoomed in no closer than `most` [px/u]."""
     x, y, w, h = area
     left, bottom, right, top = bounds
-    scale = min(w / (right - left), h / (top - bottom))
+    scale = min(most, w / (right - left), h / (top - bottom))
     cx, cy = (left + right) / 2, (bottom + top) / 2
     return ArenaView(scale, (x + w / 2 - scale * cx, y + h / 2 + scale * cy))
 
