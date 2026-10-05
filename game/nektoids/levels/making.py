@@ -140,6 +140,17 @@ def goal_worded(level: Level, index: int, word: Verb | Count | Target) -> Level:
     return _goal_with(level, index, goal)
 
 
+def number(text: str) -> float:
+    """What a slider's box holds once typed (D-308): a number, or Unmade."""
+    try:
+        value = float(text)
+    except ValueError:
+        raise Unmade("type a number") from None
+    if not math.isfinite(value):
+        raise Unmade("type a number")
+    return value
+
+
 def goal_set(level: Level, index: int, value: float) -> Level:
     """Goal `index`'s setting, a stay's seconds or a circle's turns, at `value`, on its range's
     steps and within it; ValueError for a goal whose verb takes none."""
