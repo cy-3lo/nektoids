@@ -36,7 +36,7 @@ SETTING = {  # what each item's setting may be (D-301)
     ItemKind.OBSTACLE: Range(1.0, 5.0, 1.0, "u"),  # its radius, whole u (D-311)
     ItemKind.MARK: Range(1.0, 30.0, 1.0, "u"),  # its radius: a zone as wide as Fear's ring
 }
-NEW = {ItemKind.LIGHT: 4.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 3.0}  # a new item's setting
+NEW = {ItemKind.LIGHT: 1.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 1.0}  # the least (D-314)
 TIME = Range(5.0, 120.0, 5.0, "s")  # the time allowed, which every level has (D-301, D-311)
 GOALS_MOST = 2  # goals a made level asks, besides its time (D-308)
 BLANK_TIME = 30.0  # a blank plane's time allowed [s] (D-310)

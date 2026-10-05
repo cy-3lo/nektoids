@@ -11,15 +11,20 @@ spec (D-305); Files, the level copied as text, another's text pasted, or a blank
 shipped level to start from (D-310); Navigator, with
 the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
 
-A click on an object focuses it, and its Wheel offers what can be done to it; a drag moves it,
-on the lattice. A click on the open plane, inside a mark too, focuses its nearest lattice point,
-whose Wheel offers a light, an obstacle and a mark to put there (D-306); a drag there moves the
-view, as do the arrows. A row of Objects picks what the next click puts on the plane, or is
-dragged there. The mouse wheel on an object makes it more or less, or turns the swimmer. Keys:
-1, 2, 3 a light, an obstacle, a mark; M Move, then the arrows move the focus 1 u at a time; L
-and R turn; < and > less and more; Delete; Ctrl+Z and Ctrl+Y undo and redo; Esc puts down what
-is in hand, then lets go of the focus, then opens Chapters (D-304); + and - zoom, C centres, X
-shows or hides the rays; Tab the next tab, Space the run. Each change is a new `Level`
+The Wheel works as the Editor's (D-314): atop the plane, what the next click or Enter does. A
+click on an object focuses it with Move in hand, so the next click on the open plane moves it
+there; a drag moves it too, on the lattice. An object just placed is focused with More lit,
+the least to begin with, so Enter makes it more. A click on the open plane, inside a mark too,
+focuses its nearest lattice point, whose Wheel offers a light, an obstacle and a mark to put
+there (D-306); a drag there moves the view. With something focused the arrows go round the
+Wheel, stopping at its ends, and Enter uses the icon lit: less and more and the turns at once,
+again at each Enter; Move in hand, when the arrows carry the object 1 u at a time until Enter
+or Esc puts it down; Delete. With nothing focused the arrows move the view. A row of Objects
+picks what the next click puts on the plane, or is dragged there. The mouse wheel on an object
+makes it more or less, or turns the swimmer. Keys: 1, 2, 3 a light, an obstacle, a mark; M
+Move; L and R turn; < and > less and more; Delete; Ctrl+Z and Ctrl+Y undo and redo; Esc puts
+down what is in hand, then lets go of the focus, then opens Chapters (D-304); + and - zoom, C
+centres, X shows or hides the rays; Tab the next tab, Space the run. Each change is a new `Level`
 (`making.py`), which `main.py` hands to the router, the editor and the next run.
 """
 
@@ -70,6 +75,7 @@ from nektoids.editor.layout import (
     Start,
     Tool,
     ViewButton,
+    action_at,
     along,
     bin_at,
     brief_field_at,
@@ -99,8 +105,10 @@ from nektoids.editor.objects import (
     POINT_PIECES,
     Focus,
     Point,
+    chosen,
     object_at,
     offer,
+    turned_to,
     where,
 )
 from nektoids.editor.scene import (
@@ -181,6 +189,7 @@ class MakerScene(Frame):
         self.picked: Piece | None = None  # a row of Objects picked: the next click puts it
         self.carrying = False  # ... the mouse still held since: let go on the plane, it lands
         self.moving = False  # Move in hand: a click on the plane, or an arrow, moves the focus
+        self.choice: int | None = None  # the Wheel's icon lit: what Enter does (D-314)
         self.press_at: tuple[int, int] | None = None  # a press on the plane: click, or drag?
         self.grab: tuple[float, float] | None = None  # ... on an object: from the mouse to it [u]
         self.dragged = False  # ... and the mouse has moved: the object follows it
@@ -236,7 +245,7 @@ class MakerScene(Frame):
         self.heading = math.radians(heading)  # [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (1,) [u]
         if isinstance(self.focus, int) and self.focus >= len(level.items):
-            self.focus = None
+            self.focus, self.choice, self.moving = None, None, False
         if self.layout.drawer is Drawer.GOALS:
             self.layout = self._relayout(Drawer.GOALS)
 
@@ -273,14 +282,12 @@ class MakerScene(Frame):
         if self.picked is not None:
             return f"Click the plane: {ONE[self.picked]} goes there.  Esc: put it back."
         if self.moving:
-            return "Click where it goes, or move it with the arrows.  Esc: done."
+            return "Click where it goes, or move it with the arrows.  Enter or Esc: done."
         if self.focus is None:
             return "Click an object, or the plane.  Drag an object to move it.  Space: run."
         if isinstance(self.focus, Point):
-            return "1: a light here.  2: an obstacle.  3: a mark.  Drag the plane: the view."
-        if self.focus is Piece.START:
-            return "Drag it, or M and the arrows.  L and R: turn it."
-        return "Drag it, or M and the arrows.  < and >: less, more.  Del: delete."
+            return "1, 2, 3: a light, an obstacle, a mark here.  Or the arrows, then Enter."
+        return "Arrows: round the Wheel.  Enter: what is lit.  Drag it to move it."
 
     # Making
 
@@ -298,10 +305,22 @@ class MakerScene(Frame):
             self._take(level)
         return True
 
+    def action(self) -> Piece | Tool | None:
+        """What the next click or Enter does, shown atop the plane (D-314): the object in hand,
+        Move while it is in hand, the Wheel's lit icon; else nothing."""
+        if self.picked is not None:
+            return self.picked
+        if self.moving:
+            return Tool.MOVE
+        offered = offer(self.focus)
+        return offered[self.choice] if self.choice is not None else None
+
     def _place(self, piece: Piece, at: tuple[float, float]) -> None:
-        """A light or an obstacle at the lattice point nearest `at` [u], focused once there."""
+        """A light, an obstacle or a mark at the lattice point nearest `at` [u], the least of
+        its kind, focused once there with More lit: Enter makes it more (D-314)."""
         if self._make(lambda level: placed(level, PLACED[piece], at)):
             self.focus, self.picked, self.moving = len(self.level.items) - 1, None, False
+            self.choice = chosen(self.focus, Tool.MORE)
 
     def _move_to(self, at: tuple[float, float], record: bool = True) -> None:
         """The focused object at the lattice point nearest `at` [u]."""
@@ -316,14 +335,16 @@ class MakerScene(Frame):
         focus = self.focus
         if what not in offer(focus):
             self._refuse(_why_not(focus, what))
-        elif isinstance(what, Piece):  # on an empty point
+            return
+        self.choice = chosen(focus, what)  # lit, as the Editor's Wheel lights it (D-314)
+        if isinstance(what, Piece):  # on an empty point
             self._place(what, focus.at)
         elif what is Tool.MOVE:
             self.moving = not self.moving
         elif what is Tool.DELETE:
             at = self.level.items[focus].at
-            if self._make(lambda level: removed(level, focus)):
-                self.focus, self.moving = Point(snapped(at)), False  # its point, to put another
+            if self._make(lambda level: removed(level, focus)):  # its point, to put another
+                self.focus, self.moving, self.choice = Point(snapped(at)), False, None
         elif what in (Tool.LESS, Tool.MORE):
             steps = 1 if what is Tool.MORE else -1
             self._make(lambda level: adjusted(level, focus, steps))
@@ -354,8 +375,9 @@ class MakerScene(Frame):
         """A row of Objects: the swimmer's start focused; a light or an obstacle in hand, for the
         next click on the plane, or put back if it was."""
         self.moving = False
-        if piece is Piece.START:
-            self.focus, self.picked = Piece.START, None
+        if piece is Piece.START:  # focused as a click on it focuses it: Move in hand (D-314)
+            self.focus, self.picked, self.moving = Piece.START, None, True
+            self.choice = chosen(Piece.START, Tool.MOVE)
         else:  # in hand, the Wheel has nothing to show
             self.picked = None if self.picked is piece else piece
             self.carrying = self.picked is not None
@@ -368,10 +390,20 @@ class MakerScene(Frame):
         elif self.moving:
             self.moving = False
         elif self.focus is not None:
-            self.focus = None
+            self.focus, self.choice = None, None
         else:
             return False
         return True
+
+    def _enter(self) -> None:
+        """Enter: Move put down while it is in hand; else the Wheel's lit icon used, or, with
+        none lit, the first lit (D-084, D-314)."""
+        if self.moving:
+            self.moving = False
+        elif self.focus is not None and self.choice is None:
+            self.choice = turned_to(self.focus, None, 1)
+        elif self.focus is not None:
+            self._do(offer(self.focus)[self.choice])
 
     # The view, as the run's (D-066, D-101)
 
@@ -512,20 +544,29 @@ class MakerScene(Frame):
         elif (knob := knob_at(self.layout, pos)) is not None:  # its track: followed while held
             self.sliding, self.before = knob[0], self.level
             self._slide(pos[0])
+        elif action_at(self.layout, pos) is not None:  # atop the plane: Objects, its Wheel
+            self.open_drawer(Drawer.OBJECTS)
         elif contains(self.arena_area, pos):
             self._press_plane(pos)
 
     def _press_plane(self, pos: tuple[int, int]) -> None:
+        """A press on the plane: what is in hand put down; an object focused, Move lit, and
+        grabbed, a drag moving it; with Move in hand, the open plane where it goes; else the
+        open plane, a click focusing its point and a drag moving the view (D-302, D-314)."""
         at = self.view.to_world(*pos)
+        target = object_at(self.level, self.view, pos)
         if self.picked is not None:
             self._place(self.picked, at)
-        elif self.moving:
-            self._move_to(at)
-        elif (target := object_at(self.level, self.view, pos)) is not None:
-            self.focus, self.press_at, self.before = target, pos, self.level
+        elif target is not None:
+            if target != self.focus:
+                self.moving = False
+            self.focus, self.choice = target, chosen(target, Tool.MOVE)
+            self.press_at, self.before = pos, self.level
             x, y = where(self.level, target)
             self.grab, self.dragged = (x - at[0], y - at[1]), False
-        else:  # the open plane: a click focuses its point, a drag moves the view
+        elif self.moving:
+            self._move_to(at)
+        else:
             self.press_at = self.panning = pos
 
     def _track(self, pos: tuple[int, int]) -> None:
@@ -562,8 +603,11 @@ class MakerScene(Frame):
         if held and self.before is not None and self.level != self.before:
             self.history.record(self.before)
         clicked = self.press_at is not None and math.dist(pos, self.press_at) < CLICK
-        if clicked and self.grab is None:
+        if clicked and self.grab is not None:  # a click on an object: Move in hand (D-314)
+            self.moving = True
+        elif clicked:
             self.focus, self.moving = Point(snapped(self.view.to_world(*self.press_at))), False
+            self.choice = None
         self.carrying = self.overviewing = self.zooming = False
         self.panning = self.press_at = self.grab = self.before = self.sliding = None
         self.frame_release()
@@ -688,7 +732,7 @@ class MakerScene(Frame):
         in hand, and the view opens on it as the Maker opens."""
         if not self._make(change):
             return False
-        self.focus, self.picked, self.moving = None, None, False
+        self.focus, self.picked, self.moving, self.choice = None, None, False, None
         self._open_view()
         return True
 
@@ -732,6 +776,8 @@ class MakerScene(Frame):
             self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
         elif event.key == pygame.K_ESCAPE and not self._escape():  # nothing left: the levels
             self.toggle_drawer(Drawer.CHAPTERS)
+        elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):  # the Wheel's lit icon (D-314)
+            self._enter()
         elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
             self._do(Tool.DELETE)
         elif event.scancode in digits and digits.index(event.scancode) % 9 < len(DIGITS):
@@ -751,12 +797,16 @@ class MakerScene(Frame):
 
     def _arrow(self, key: int) -> None:
         """With Move in hand, the focus moved 1 u the way of the arrow, a step for undo each;
-        else the view dragged a step, as the mouse would."""
-        left, right, up, _ = ARROWS
+        with something else focused, the Wheel's next icon lit, → and ↓ on, ← and ↑ back
+        (D-084, D-314); else the view dragged a step, as the mouse would."""
+        left, right, up, down = ARROWS
         if self.moving and self.focus is not None:
             dx, dy = {left: (-1, 0), right: (1, 0), up: (0, 1)}.get(key, (0, -1))  # y up
             x, y = where(self.level, self.focus)
             self._move_to((x + dx * POSITION, y + dy * POSITION))
+            return
+        if offer(self.focus):
+            self.choice = turned_to(self.focus, self.choice, 1 if key in (right, down) else -1)
             return
         step = ARROW_PAN * self.view.scale
         dx, dy = {left: (-step, 0.0), right: (step, 0.0), up: (0.0, -step)}.get(key, (0.0, step))

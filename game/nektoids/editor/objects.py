@@ -7,7 +7,9 @@ mark, as an empty cell offers the parts; round an item, less, move, delete, more
 the more either side of the gap, where a part's turns sit; round the swimmer, turn left, move,
 turn right. What is under the mouse: the swimmer, a light or an obstacle under it, else a mark
 by its rim or its centre, so that a click inside a zone still finds the point there (D-306).
-What the line under the Wheel says. Pure numbers, no pygame.
+Which of the Wheel's icons is lit, as the Editor's (D-314): Move on an object clicked, More on one
+just placed, none on a point until the arrows choose; the arrows go round, stopping at the ends
+(D-084). What the line under the Wheel says. Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -66,6 +68,34 @@ def offer(focus: Focus | None) -> tuple[Piece | Tool, ...]:
     if isinstance(focus, Point):
         return POINT_PIECES
     return START_ACTIONS if focus is Piece.START else ITEM_ACTIONS
+
+
+def piece_of(level: Level, focus: Focus | None) -> Piece | None:
+    """The object focused, as Objects' rows name it: Light, Obstacle, Mark or Swimmer; None for
+    a point or no focus."""
+    if focus is Piece.START:
+        return focus
+    if isinstance(focus, int):
+        return next(p for p, kind in PLACED.items() if kind is level.items[focus].kind)
+    return None
+
+
+def chosen(focus: Focus | None, what: Piece | Tool) -> int | None:
+    """Where `what` sits among the Wheel's icons round `focus`, or None if it is not offered:
+    the icon lit (D-314)."""
+    offered = offer(focus)
+    return offered.index(what) if what in offered else None
+
+
+def turned_to(focus: Focus | None, choice: int | None, step: int) -> int | None:
+    """The icon lit after an arrow: the next round the Wheel (step 1) or the one before,
+    stopping at the first and the last; from none, the first or the last (D-084, D-314)."""
+    n = len(offer(focus))
+    if not n:
+        return None
+    if choice is None:
+        return 0 if step > 0 else n - 1
+    return min(max(choice + step, 0), n - 1)
 
 
 def object_at(level: Level, view: ArenaView, point: tuple[float, float]) -> int | Piece | None:
