@@ -668,7 +668,7 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
     assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
     assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
     assert maker.overview is not None and maker.zoom_bar is not None
-    assert maker.controls_area is None and maker.action_at is None  # the plane, to the foot
+    assert maker.controls_area is None and maker.action_at is not None  # the plane, D-314
     assert maker.board_area[1] + maker.board_area[3] == maker.status_at[1] - 6
     tabs = dict(maker.tabs)
     assert palette_target_at(maker, centre(tabs["run"])) == "run"

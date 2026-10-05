@@ -5,7 +5,8 @@ every whole u, 2 px wide, none where they would crowd (`dot_step`); a line every
 coordinate: the grid is enough (D-311). Over the grid the light's rays, as they stand when the
 run starts, the obstacles, the lights, and the swimmer where it starts, its wedge where it
 heads; the focus lit, a ring round its object or a cross on its point; what is in hand, where a
-click would put it. Round it, the frame (`draw.py`): the
+click would put it; atop it, as in the Editor, what the next click or Enter does, or what is
+focused, its name and key beside it, a line under it (D-314). Round it, the frame (`draw.py`): the
 tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts draws
 its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and redo,
 then the Wheel round the focus, the focus large at its hub, the line under it saying what it is.
@@ -55,6 +56,7 @@ from nektoids.editor.draw import (
 )
 from nektoids.editor.icons import EDIT_ICON, PIECE_ICON, VIEW_ICON
 from nektoids.editor.layout import (
+    ACTION_WIDTH,
     BAR_WIDTH,
     EDIT_KEYS,
     FIELD_PAD,
@@ -73,10 +75,23 @@ from nektoids.editor.layout import (
     slider_parts,
 )
 from nektoids.editor.maker import MakerScene, Paste
-from nektoids.editor.objects import NAMES, PLACED, Point, name, reach, says, where
+from nektoids.editor.objects import (
+    KEYS,
+    NAMES,
+    ONE,
+    PLACED,
+    Point,
+    name,
+    offer,
+    piece_of,
+    reach,
+    says,
+    where,
+)
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
+    BAR,
     BODY,
     BUTTON,
     DARK,
@@ -145,6 +160,7 @@ def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     _draw_focus(screen, scene)
     _draw_in_hand(screen, scene, fonts)
     screen.set_clip(None)
+    _draw_action(screen, scene, fonts)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
@@ -152,6 +168,48 @@ def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     draw_tooltip(screen, scene, fonts)
     _draw_wheel_tip(screen, scene, fonts)
     draw_info(screen, scene, fonts, _about)
+
+
+def _draw_action(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+    """Atop the plane, as atop the Editor's board (D-068, D-314): what the next click or Enter
+    does, a lit disc, its name and key beside it, a line under it saying what it does; with no
+    action, the object focused, plain; nothing with nothing focused."""
+    if scene.layout.action_at is None:
+        return
+    action = scene.action()
+    what = action if action is not None else piece_of(scene.level, scene.focus)
+    if what is None:
+        return
+    box = pygame.Rect(scene.layout.action_at)
+    fill, edge = (ACTIVE, LIT) if action is not None else (BUTTON, ICON_EDGE)
+    draw_disc(screen, fonts, box.center, what, fill, edge, ACTION_WIDTH / 2)  # as the Wheel's
+    key = KEYS.get(what) if scene.settings.key_hints else None
+    named = name(scene.level, scene.focus, what) + (f" ({key})" if key else "")
+    shown = fonts.text.render(named, True, LIT if action is not None else TEXT)
+    at = shown.get_rect(midleft=(box.right + 10, box.centery))
+    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
+    screen.blit(shown, at)
+    line = _action_says(scene, action) if action is not None else says(scene.level, scene.focus)
+    under = fonts.small.render(line, True, TEXT)
+    at = under.get_rect(midtop=(box.centerx, box.bottom + 8))
+    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)
+    screen.blit(under, at)
+
+
+def _action_says(scene: MakerScene, action) -> str:
+    """What the action atop the plane does, in a line (D-314)."""
+    if isinstance(action, Piece) and scene.picked is action:
+        return f"A click on the plane puts {ONE[action]} there"
+    if isinstance(action, Piece):
+        return f"Enter puts {ONE[action]} on the point"
+    if action is Tool.MOVE:
+        return "A click on the plane, or the arrows, moves it; Enter or Esc puts it down"
+    if action is Tool.DELETE:
+        return "Enter takes it off the plane"
+    if action in (Tool.TURN_LEFT, Tool.TURN_RIGHT):
+        return f"Enter turns it 15°, {'left' if action is Tool.TURN_LEFT else 'right'}"
+    more = name(scene.level, scene.focus, action).lower()
+    return f"Enter makes it {more}, again and again; the arrows choose another"
 
 
 def _draw_focus(screen: pygame.Surface, scene: MakerScene) -> None:
@@ -364,8 +422,8 @@ def _draw_foot(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
 
 def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     """As Tools and Parts draw it (D-068, D-069): a rule, The Wheel's title, which folds; unless
-    folded, the focus large at its hub, the Wheel's icons round it, Move lit while in hand, a
-    line under it saying what is focused."""
+    folded, the focus large at its hub, the Wheel's icons round it, the one Enter uses lit, a
+    line under it naming it in the accent, else saying what is focused (D-314)."""
     layout = scene.layout
     fx, fy, fw, _ = layout.wheel_fold
     pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
@@ -380,12 +438,16 @@ def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None
         pygame.draw.circle(screen, LIT, centre, WHEEL_HEX, 2)
         _draw_hub(screen, scene, fonts, centre)
     wheel, radius = scene.wheel(), ICON * WHEEL_HEX
+    action = scene.action() if scene.action() in offer(scene.focus) else None
     for slot in wheel:
-        lit = slot.what is Tool.MOVE and scene.moving
+        lit = slot.what is action
         fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
         draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE, radius)
     lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
-    line = fonts.small.render(says(scene.level, scene.focus), True, DIM_TEXT)
+    if action is not None:
+        line = fonts.small.render(name(scene.level, scene.focus, action), True, LIT)
+    else:
+        line = fonts.small.render(says(scene.level, scene.focus), True, DIM_TEXT)
     screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
 
 

@@ -47,7 +47,7 @@ TOOL_ICON = {
 PIECE_ICON = {
     Piece.LIGHT: "lightbulb",
     Piece.OBSTACLE: "circle",
-    Piece.MARK: "circle-dot",  # D-306
+    Piece.MARK: "circle-plus",  # a + in a circle, as the plane draws a mark (D-306, D-314)
     Piece.START: "location-arrow",
 }
 # Hooked arrows for undo and redo: the round ones are the turn tools'.

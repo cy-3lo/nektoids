@@ -369,7 +369,7 @@ class Layout:
     scroll_bar: Rect | None  # its track, while the rows do not fit
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo; Objects' too
-    action_at: Rect | None  # the editor's: what a click does now, atop the main screen
+    action_at: Rect | None  # the editor's and the Maker's: what a click does, atop the main screen
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
     goal_area: Rect | None  # ... at the foot of the open drawer, whichever it is (D-065)
@@ -529,7 +529,7 @@ def make_layout(
         mode_buttons=tuple(rows.of(Mode)),
         edit_buttons=tuple(rows.of(EditButton)),
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
-        if env is Env.EDITOR
+        if env in (Env.EDITOR, Env.MAKER)  # the Maker's since D-314
         else None,
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),

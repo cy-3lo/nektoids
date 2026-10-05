@@ -1769,3 +1769,25 @@ winners still win and its losers still lose, the hints' shadows too; the pinned 
 Shadows', Greed's and Patience's winners again, a few ticks apart. Love's light of power 3.5 and
 the obstacles of radius 1.5 in Patience and Shadows are settings, not positions: they stay. The
 Maker's Parts drawer will set the zone's size (the todo's "The board").
+
+**D-314 — 2026-10-05 — The Maker's Wheel works as the Editor's: atop the plane, what the next click or Enter does; a click on an object puts Move in hand; an object placed starts at the least, 1, with More lit; the arrows go round the Wheel and Enter uses the icon lit, Move carrying the object with the arrows until Enter or Esc. Amends D-302.**
+The physicist, reviewing the Maker: the Wheel should behave as in the Editor, an icon at the top
+middle showing the current action, Move the default on an object clicked, + on one first placed,
+the arrows turning the Wheel's choice and Enter choosing or applying it; and a new object at the
+least, 1. Atop the plane, as atop the board (D-068), the action shows as a lit disc with its name
+and key beside it and a line under it: the object in hand, Move in hand, the Wheel's lit icon;
+with none, the object focused, plain. A click on an object focuses it with Move lit, in hand
+once the click is over: the next click on the open plane moves it there, a click on another
+object focuses that one, a drag moves it as before. A light, an obstacle or a mark placed is
+power 1 or radius 1 u, the least, and focused with More lit, so Enter, again and again, makes it
+more. With something focused, → and ↓ light the next icon, ← and ↑ the one before, stopping at
+the ends (D-084); on a point nothing is lit until they do, as the Editor's empty cell. Enter on
+the lit icon: less, more and the turns at once; Move in hand, the arrows then carrying the
+object 1 u at a time, a step for undo each, until Enter or Esc puts it down, as the physicist
+chose; Delete. With nothing focused the arrows move the view, as before. The keys of the icons,
+M, L, R, < and >, Delete, 1 to 3, still act at once, and light their icon. A click on the action
+opens Objects, as the Editor's opens Tools. Esc puts down what is in hand, then lets go of the
+focus, then opens Chapters (D-304). The physicist found the item's Wheel off, More at the lower
+right and the top empty: its four icons now sit side by side over the top, no corner left empty
+between them, Less, Move, More at the top, Delete, and the arrows go round in that order; the
+Editor's Wheel keeps its own. A mark's icon is a + in a circle, as the plane draws it.
