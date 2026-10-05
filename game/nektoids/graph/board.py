@@ -304,11 +304,28 @@ class Board:
         return BoardState(nodes, tuple(self.wires), stock)  # in fixed orders, not dict order
 
     def restore(self, state: BoardState) -> None:
-        """Put the board back as it was in `state`, in place, routes and all. Ids still never
-        come back: the next part placed gets a new one."""
+        """Put the board back as it was in `state`, in place, routes and all, the stock left
+        counted again from what the level hands out, which may have changed since (D-315). Ids
+        still never come back: the next part placed gets a new one."""
         self.nodes = {node.id: node for node in state.nodes}
         self.wires = list(state.wires)
-        self._stock = dict(state.stock)
+        free = [node.kind for node in state.nodes if not node.locked]
+        self._stock = {
+            kind: None if total is None else total - free.count(kind)
+            for kind, total in self._total.items()
+        }
+
+    def rehand(self, other: Board) -> Refused | None:
+        """This board's parts and wires kept, on `other`'s zone and with what `other` hands
+        out: the Maker's Parts (D-315). Refused, and nothing changes, if a part or a wire lies
+        off that zone, or the board holds more of a kind than it hands out."""
+        refused = _misfit(self.snapshot(), other._on_board, other.total)
+        if refused is not None:
+            return refused
+        self.cells, self._on_board = list(other.cells), set(other._on_board)
+        self._total = dict(other._total)
+        self.restore(self.snapshot())
+        return None
 
     def adopt(self, state: BoardState) -> Refused | None:
         """Put on this board a state built on another, a win of another level (D-092): its parts
@@ -321,21 +338,10 @@ class Board:
         locked = [n for n in self.nodes.values() if n.locked]
         if _placed(locked) != _placed(n for n in state.nodes if n.locked):
             return Refused("this level places other parts")
-        free = [node.kind for node in state.nodes if not node.locked]
-        stock = dict(self._total)
-        for kind in Kind:
-            used, total = free.count(kind), self.total(kind)
-            if used and total == 0:
-                return Refused(f"this level hands out no {kind.value}s")
-            if total is not None and used > total:
-                plural = "" if total == 1 else "s"
-                return Refused(
-                    f"this level hands out {_count(total)} {kind.value}{plural};"
-                    f" the board has {_count(used)}"
-                )
-            if total is not None and kind in stock:
-                stock[kind] = total - used
-        self.restore(BoardState(state.nodes, state.wires, tuple(stock.items())))
+        refused = _misfit(state, self._on_board, self.total)
+        if refused is not None:
+            return refused
+        self.restore(state)  # the stock left counted again from this level's
         self._next_id = max([self._next_id, *(node.id + 1 for node in state.nodes)])
         return None
 
@@ -546,3 +552,23 @@ def _zone(cells: Iterable[Cell]) -> int | list[list[int]]:
     except ValueError:  # no hexagon holds so many
         pass
     return [list(cell) for cell in cells]
+
+
+def _misfit(state: BoardState, zone: set[Cell], total) -> Refused | None:
+    """Why `state` could not stand on a board of `zone` handing out `total(kind)` of each kind:
+    a part or a wire off the zone, more of a kind than handed out; None if it could."""
+    cells = {node.cell for node in state.nodes} | {c for w in state.wires for c in w.path}
+    if not cells <= zone:
+        return Refused("the board goes outside this level's zone")
+    free = [node.kind for node in state.nodes if not node.locked]
+    for kind in Kind:
+        used, handed = free.count(kind), total(kind)
+        if used and handed == 0:
+            return Refused(f"this level hands out no {kind.value}s")
+        if handed is not None and used > handed:
+            plural = "" if handed == 1 else "s"
+            return Refused(
+                f"this level hands out {_count(handed)} {kind.value}{plural};"
+                f" the board has {_count(used)}"
+            )
+    return None

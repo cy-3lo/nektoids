@@ -191,7 +191,7 @@ def maker() -> MakerScene:
     if router.index not in makers:
         starts = (*((f"{CHAPTER}.{k + 1}", level) for k, level in enumerate(levels)), ("", free))
         makers[router.index] = MakerScene(
-            router.level, router.label, settings, len(levels), starts=starts
+            router.level, router.label, settings, len(levels), starts=starts, board=router.board
         )
     return makers[router.index]
 

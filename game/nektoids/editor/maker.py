@@ -8,7 +8,8 @@ is the board's: the objects as rows, undo and redo, and at its foot the Wheel ro
 focused (D-068, D-069, `objects.py`); Goals, the time allowed and the goals, each a sentence
 whose words are buttons, with a slider for its setting (D-308); Brief, the level's title and
 spec (D-305); Files, the level copied as text, another's text pasted, or a blank plane or a
-shipped level to start from (D-310); Navigator, with
+shipped level to start from (D-310); Parts, the board's size and how many of each part, which
+the Editor's board takes at once, or refuses while it has more (D-315); Navigator, with
 the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
 
 The Wheel works as the Editor's (D-314): atop the plane, what the next click or Enter does. A
@@ -73,6 +74,7 @@ from nektoids.editor.layout import (
     Piece,
     Rect,
     Start,
+    Stepper,
     Tool,
     ViewButton,
     action_at,
@@ -84,6 +86,7 @@ from nektoids.editor.layout import (
     edit_button_at,
     file_button_at,
     goal_button_at,
+    group_at,
     knob_at,
     level_field_at,
     make_layout,
@@ -91,6 +94,7 @@ from nektoids.editor.layout import (
     piece_row_at,
     slider_parts,
     start_row_at,
+    stepper_at,
     value_at,
     view_button_at,
     wheel_fold_at,
@@ -121,6 +125,7 @@ from nektoids.editor.scene import (
 from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
 from nektoids.editor.wheel import WHEEL_HEX, Slot, arc, centre_in, slot_at, slots
+from nektoids.graph.board import Board
 from nektoids.levels.lattice import POSITION, Range, snapped
 from nektoids.levels.level import Level, to_json
 from nektoids.levels.making import (
@@ -142,10 +147,12 @@ from nektoids.levels.making import (
     removed,
     specified,
     start_moved,
+    stocked,
     taken,
     timed,
     titled,
     turned,
+    zoned,
 )
 from nektoids.levels.objectives import settings
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
@@ -175,11 +182,13 @@ class MakerScene(Frame):
         chapter: int = 0,
         drawer: Drawer | None = Drawer.OBJECTS,
         starts: Sequence[tuple[str, Level]] = (),
+        board: Board | None = None,
     ):
         layout = make_layout(drawer, env=Env.MAKER, chapter=chapter, maker=True)
         self._start_frame(layout, settings)  # also `request`: "run", "edit"... for main.py
         self.label = label  # "SANDBOX", before its title in the caption
         self.starts = tuple(starts)  # Start from's levels, each with its label: "1.2", or ""
+        self.board = board  # the Editor's board, which takes what the level hands out (D-315)
         self.show_rays = True  # the light's rays, drawn or not
         self.pointer = (0, 0)  # where the mouse is [px]
         self.panning: tuple[int, int] | None = None  # where a drag on the plane last was
@@ -201,6 +210,7 @@ class MakerScene(Frame):
         self.field: TextField | None = None  # ... what it holds (D-305)
         self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
+        self.folded: set[str] = set()  # Parts' groups shown closed, as the Editor's (D-315)
         self._take(level)
         self._open_view()
 
@@ -217,6 +227,7 @@ class MakerScene(Frame):
     def _relayout(self, drawer: Drawer | None) -> Layout:
         return make_layout(
             drawer,
+            frozenset(self.folded),
             env=Env.MAKER,
             chapter=self.layout.chapter,
             maker=True,
@@ -269,6 +280,8 @@ class MakerScene(Frame):
             return f"Type {self._what(self.writing)}.  {kept}"
         if self.layout.drawer is Drawer.BRIEF:
             return "Click the title or the spec to write it.  The caption above follows."
+        if self.layout.drawer is Drawer.PARTS:
+            return "- and +: how big the board is, and how many of each part it hands out."
         if self.layout.drawer is Drawer.FILES:
             return (
                 "Copy level: the level as text.  Paste a level, or start from one or a blank plane."
@@ -300,9 +313,23 @@ class MakerScene(Frame):
             self._refuse(str(why))
             return False
         if level != self.level:
+            if not self._handed(level):
+                return False
             if record:
                 self.history.record(self.level)
             self._take(level)
+        return True
+
+    def _handed(self, level: Level) -> bool:
+        """The Editor's board handed out what `level` hands out, its zone and its parts, at once;
+        False, refused with its reason, while the board has more of a part or lies outside, which
+        is the player's to take off in the Editor (D-315)."""
+        if self.board is None or level.board == self.level.board:
+            return True
+        refused = self.board.rehand(level.blank_board())
+        if refused is not None:
+            self._refuse(f"{refused.reason}: take it off in the Editor first")
+            return False
         return True
 
     def action(self) -> Piece | Tool | None:
@@ -361,6 +388,9 @@ class MakerScene(Frame):
         self.said = ""  # "Pasted" no longer holds (D-310)
         if level is None:
             self._refuse(f"nothing to {button.value}")
+        elif not self._handed(level):  # the history put back as it was
+            back = self.history.redo if button is EditButton.UNDO else self.history.undo
+            back(level)
         else:
             self._take(level)
 
@@ -538,6 +568,11 @@ class MakerScene(Frame):
             self._copy_level()
         elif (start := start_row_at(self.layout, pos)) is not None:
             self._start_from(start)
+        elif (step := stepper_at(self.layout, pos)) is not None:  # Parts (D-315)
+            self._step(*step)
+        elif (group := group_at(self.layout, pos)) is not None:  # ... its groups fold (D-069)
+            self.folded ^= {group}
+            self.layout = self._relayout(self.layout.drawer)
         elif (word := word_at(self.layout, pos)) is not None:  # Goals (D-308)
             self._make(lambda level: goal_worded(level, word.goal, word.word))
         elif (index := bin_at(self.layout, pos)) is not None:
@@ -705,6 +740,16 @@ class MakerScene(Frame):
         else:
             write = titled if which is Brief.TITLE else specified
             self._make(lambda level: write(level, text))
+
+    # Parts (D-315)
+
+    def _step(self, what: Stepper, steps: int) -> None:
+        """A − or a + of Parts: the board a ring smaller or bigger, or a part handed out one
+        fewer or more, the Editor's board with it."""
+        if what.kind is None:
+            self._make(lambda level: zoned(level, steps))
+        else:
+            self._make(lambda level: stocked(level, what.kind, steps))
 
     # Files (D-310)
 

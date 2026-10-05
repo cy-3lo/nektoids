@@ -20,6 +20,7 @@ from nektoids.editor.layout import (
     LEVEL_KEYS,
     MAKER_VIEWS,
     MAX_HEX,
+    MENU_GROUPS,
     MIN_HEX,
     MODE_KEY,
     PALETTE_TOOLS,
@@ -49,6 +50,7 @@ from nektoids.editor.layout import (
     Setting,
     Shown,
     Start,
+    Stepper,
     Tool,
     View,
     ViewButton,
@@ -98,6 +100,8 @@ from nektoids.editor.layout import (
     shown_frame,
     slider_parts,
     start_row_at,
+    step_buttons,
+    stepper_at,
     tab_at,
     tab_beside,
     tab_key_to,
@@ -663,7 +667,8 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
             assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
     assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
     maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
-    objects = [Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.FILES, Drawer.NAVIGATOR]
+    objects = [Drawer.OBJECTS, Drawer.PARTS, Drawer.GOALS, Drawer.BRIEF, Drawer.FILES]
+    objects += [Drawer.NAVIGATOR]
     assert maker.maker and [d for d, _ in maker.drawer_buttons] == [*objects, *FOOT]
     assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
     assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
@@ -792,3 +797,23 @@ def test_start_from_lists_a_blank_plane_then_every_shipped_level_under_the_paste
     for start, rect in layout.start_rows:
         assert start_row_at(layout, centre(rect)) == start
     assert start_row_at(layout, centre(layout.level_field)) is None
+
+
+def test_the_makers_parts_gives_the_board_size_then_each_part_a_row_with_minus_and_plus():
+    layout = make_layout(Drawer.PARTS, env=Env.MAKER, maker=True)  # D-315
+    assert [t for t, _ in layout.section_titles] == ["Board"]
+    assert [t for t, _ in layout.group_titles] == ["Sensors", "Actuators", "Operators"]
+    order = [k for _, kinds in MENU_GROUPS for k in kinds]  # as the Editor's Parts groups them
+    assert [s for s, _ in layout.steppers] == [Stepper(None), *(Stepper(k) for k in order)]
+    assert not layout.menu_items and layout.scroll_max == 0  # not the Editor's, and it fits
+    for what, row in layout.steppers:
+        minus, plus = step_buttons(row)
+        assert row[0] < minus[0] < plus[0] and plus[0] + plus[2] < row[0] + row[2]
+        assert stepper_at(layout, centre(minus)) == (what, -1)
+        assert stepper_at(layout, centre(plus)) == (what, 1)
+        assert stepper_at(layout, (row[0] + 30, row[1] + 20)) is None  # its name: nothing
+    assert drawer_key(Env.MAKER, "P") is Drawer.PARTS
+    shut = make_layout(Drawer.PARTS, frozenset({"Operators"}), env=Env.MAKER, maker=True)
+    unfolded = [k for title, kinds in MENU_GROUPS if title != "Operators" for k in kinds]
+    assert [s.kind for s, _ in shut.steppers] == [None, *unfolded]  # the operators folded
+    assert group_at(shut, centre(shut.group_titles[2][1])) == "Operators"

@@ -1,7 +1,8 @@
 """A level made by hand, one change at a time (D-301): an item placed, moved, set or removed; the
 swimmer's start moved or turned; its title or its spec written (D-305); the time allowed set; a
 goal added, a word of it chosen, its setting set, or taken out (D-308); another level's text
-pasted, of which it takes all but the board (D-310). Each change returns a new `Level`, the old
+pasted, of which it takes all but the board's parts (D-310); how many of a part the board hands
+out, and its zone's size (D-315). Each change returns a new `Level`, the old
 one untouched, so the Maker's undo keeps whole levels (D-027), and each lands on the lattice
 (`lattice.py`). A change the level could not hold is refused with its reason, for the status
 line: a light touching an obstacle, as the arena refuses it, the swimmer starting inside one, a
@@ -16,6 +17,7 @@ import math
 from dataclasses import replace
 from itertools import product
 
+from nektoids.graph.board import Kind
 from nektoids.levels.lattice import HEADING, Range, snap, snapped
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.objectives import (
@@ -40,6 +42,10 @@ NEW = {ItemKind.LIGHT: 1.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 1.0}  # the l
 TIME = Range(5.0, 120.0, 5.0, "s")  # the time allowed, which every level has (D-301, D-311)
 GOALS_MOST = 2  # goals a made level asks, besides its time (D-308)
 BLANK_TIME = 30.0  # a blank plane's time allowed [s] (D-310)
+STOCK_MOST = 9  # a part handed out counted up to this, then unlimited (D-315)
+STOCK = (*range(STOCK_MOST + 1), None)  # ... the ladder − and + go along; None: unlimited
+BLANK_STOCK = 2  # of each part, on a blank plane (D-315)
+ZONES = (7, 19, 37)  # a zone's sizes: hexagons of 1 to 3 rings, the sandbox's the largest
 TITLE_LONGEST = 40  # characters: the caption's line holds it with a short spec beside it
 SPEC_LONGEST = 120  # a sentence or two, as the shipped levels' (D-305)
 
@@ -184,18 +190,23 @@ def pasted(level: Level, text: str) -> Level:
 
 
 def blank(level: Level) -> Level:
-    """A blank plane on `level`'s board: no item, the swimmer at the origin heading along x, no
-    goal, BLANK_TIME, a title and a spec to write (D-310)."""
+    """A blank plane: no item, the swimmer at the origin heading along x, no goal, BLANK_TIME,
+    BLANK_STOCK of each part on `level`'s zone, a title and a spec to write (D-310, D-315)."""
     words = replace(level, title="New level", spec="Say what the level asks.")
     plane = replace(words, start=(0.0, 0.0, 0.0), items=(), objectives=())
-    return taken(level, replace(plane, time_limit=BLANK_TIME))
+    stock = {kind.value: BLANK_STOCK for kind in Kind}
+    board = {**level.board, "stock": stock}
+    return taken(level, replace(plane, time_limit=BLANK_TIME, board=board))
 
 
 def taken(level: Level, other: Level) -> Level:
-    """`other`'s title, spec, plane, start, goals and time on `level`'s board, with no tutorial,
-    passkey or hints: the Maker sets no board yet, and a made level has none of those (D-310)."""
+    """`other`'s title, spec, plane, start, goals and time, and its board's zone and what it
+    hands out (D-315), on `level`'s board, its parts kept; no tutorial, passkey or hints, which a
+    made level has none of (D-310)."""
+    handout = {"zone": other.board["zone"], "stock": other.board["stock"]}
     made = replace(
         level,
+        board={**level.board, **handout},
         start=other.start,
         items=other.items,
         time_limit=other.time_limit,
@@ -205,6 +216,34 @@ def taken(level: Level, other: Level) -> Level:
         hints=None,
     )
     return _checked(specified(titled(made, other.title), other.spec))
+
+
+def stocked(level: Level, kind: Kind, steps: int) -> Level:
+    """The level handing out `steps` more or fewer of `kind`, along STOCK: none, 1 to
+    STOCK_MOST, then unlimited; a count off it, as a shipped level's may be, moves from the
+    nearest on it (D-315)."""
+    stock = dict(level.board["stock"])
+    now = stock.get(kind.value, 0)
+    at = len(STOCK) - 1 if now is None else min(range(len(STOCK) - 1), key=lambda k: abs(k - now))
+    stock[kind.value] = STOCK[min(max(at + steps, 0), len(STOCK) - 1)]
+    stock = {k.value: stock[k.value] for k in Kind if stock.get(k.value, 0) != 0}  # none: left out
+    return replace(level, board={**level.board, "stock": stock})
+
+
+def zoned(level: Level, steps: int) -> Level:
+    """The level's zone a hexagon of `steps` rings more or fewer: 7, 19 or 37 cells, a single
+    cell holding no swimmer (D-313, D-315); refused if a part the level places would be off it."""
+    zone = level.board["zone"]
+    size = zone if isinstance(zone, int) else len(zone)
+    at = min(range(len(ZONES)), key=lambda k: abs(ZONES[k] - size))
+    made = replace(
+        level, board={**level.board, "zone": ZONES[min(max(at + steps, 0), len(ZONES) - 1)]}
+    )
+    try:
+        made.new_board()
+    except ValueError as refused:  # one of its own parts off the zone
+        raise Unmade(str(refused)) from None
+    return made
 
 
 def _words(goal: Goal) -> tuple[Verb, Count, Target]:

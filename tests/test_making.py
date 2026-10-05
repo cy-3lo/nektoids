@@ -5,9 +5,11 @@ from dataclasses import replace
 
 import pytest
 
+from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level, to_json
 from nektoids.levels.making import (
+    BLANK_STOCK,
     BLANK_TIME,
     GOALS_MOST,
     NEW,
@@ -30,10 +32,12 @@ from nektoids.levels.making import (
     removed,
     specified,
     start_moved,
+    stocked,
     taken,
     timed,
     titled,
     turned,
+    zoned,
 )
 from nektoids.levels.objectives import Count, Goal, Target, Verb
 
@@ -200,7 +204,7 @@ def test_a_level_copied_as_text_is_pasted_back_as_it_was():
     assert pasted(made, to_json(LEVEL)) == LEVEL  # and back: one step for undo each way
 
 
-def test_a_shipped_level_pasted_brings_its_plane_goals_and_time_but_not_its_board():
+def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_parts():
     fear = arenas()[0]  # its tutorial, its passkey, its hints, a board of its own
     made = pasted(LEVEL, to_json(fear))
     assert (made.title, made.spec, made.start) == (fear.title, fear.spec, fear.start)
@@ -209,7 +213,8 @@ def test_a_shipped_level_pasted_brings_its_plane_goals_and_time_but_not_its_boar
         fear.objectives,
         fear.time_limit,
     )
-    assert made.board == LEVEL.board and made.board != fear.board  # the Maker sets no board yet
+    assert (made.board["zone"], made.board["stock"]) == (19, fear.board["stock"])  # D-315
+    assert made.board["parts"] == LEVEL.board["parts"]  # the board's own parts, none here
     assert made.tutorial is None and made.passkey is None and made.hints is None
     assert fear.tutorial is not None and fear.passkey is not None
 
@@ -231,14 +236,15 @@ def test_a_text_no_level_could_hold_is_refused_with_its_reason():
             pasted(LEVEL, given)
 
 
-def test_a_blank_plane_has_no_item_no_goal_and_the_swimmer_at_the_origin_on_the_same_board():
-    made = blank(goal_added(LEVEL))  # D-310
+def test_a_blank_plane_has_no_item_no_goal_the_swimmer_at_the_origin_two_of_each_part():
+    made = blank(goal_added(LEVEL))  # D-310, D-315
     assert (made.items, made.objectives, made.start) == ((), (), (0.0, 0.0, 0.0))
     assert made.time_limit == BLANK_TIME and made.title == "New level" and made.spec
-    assert made.board == LEVEL.board and pasted(LEVEL, to_json(made)) == made
+    assert made.board["stock"] == {kind.value: BLANK_STOCK for kind in Kind}
+    assert made.board["zone"] == LEVEL.board["zone"] and pasted(LEVEL, to_json(made)) == made
 
 
-def test_every_shipped_level_may_be_started_from_its_plane_goals_and_time_on_the_same_board():
+def test_every_shipped_level_may_be_started_from_its_plane_goals_time_and_handout():
     for level in (*arenas(), sandbox()):
         made = taken(blank(LEVEL), level)
         assert (made.title, made.items, made.objectives) == (
@@ -246,4 +252,24 @@ def test_every_shipped_level_may_be_started_from_its_plane_goals_and_time_on_the
             level.items,
             level.objectives,
         )
-        assert made.board == LEVEL.board and made.tutorial is None
+        assert made.board["stock"] == level.board["stock"] and made.tutorial is None
+        assert made.board["zone"] == level.board["zone"]
+
+
+def test_a_part_handed_out_goes_from_none_to_nine_then_unlimited_and_back():
+    made = blank(LEVEL)  # two of each (D-315)
+    assert stocked(made, Kind.EYE, 1).board["stock"]["eye"] == 3
+    assert "eye" not in stocked(made, Kind.EYE, -2).board["stock"]  # none: left out
+    assert stocked(made, Kind.EYE, -9).board["stock"].get("eye", 0) == 0  # no fewer
+    assert stocked(made, Kind.SUM, 7).board["stock"]["sum"] == 9
+    assert stocked(made, Kind.SUM, 8).board["stock"]["sum"] is None  # then unlimited
+    assert stocked(stocked(made, Kind.SUM, 9), Kind.SUM, -1).board["stock"]["sum"] == 9
+    assert stocked(LEVEL, Kind.THRUSTER, 5).board["stock"]["thruster"] is None  # stays so
+    assert list(stocked(made, Kind.EYE, 1).board["stock"]) == [k.value for k in Kind]
+
+
+def test_the_zone_is_a_hexagon_of_seven_to_thirty_seven_cells_one_ring_at_a_time():
+    assert LEVEL.board["zone"] == 37  # D-313, D-315: one cell holds nothing that swims
+    assert zoned(LEVEL, -1).board["zone"] == 19 and zoned(LEVEL, -2).board["zone"] == 7
+    assert zoned(LEVEL, 1).board["zone"] == 37 and zoned(LEVEL, -9).board["zone"] == 7
+    assert len(zoned(LEVEL, -2).new_board().cells) == 7

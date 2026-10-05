@@ -1791,3 +1791,25 @@ focus, then opens Chapters (D-304). The physicist found the item's Wheel off, Mo
 right and the top empty: its four icons now sit side by side over the top, no corner left empty
 between them, Less, Move, More at the top, Delete, and the arrows go round in that order; the
 Editor's Wheel keeps its own. A mark's icon is a + in a circle, as the plane draws it.
+
+**D-315 — 2026-10-05 — Parts, in the Maker: the board's size, 7, 19 or 37 cells, and how many of each part it hands out, none to 9 or unlimited, each with − and +. The Editor's board takes it at once, its parts kept, or the change is refused while the board has more of a part or lies outside. Paste and Start from bring the zone and the parts handed out; a blank plane hands out 2 of each. Applies D-313; amends D-310.**
+The physicist, reviewing the Maker: the number of each part allowed was missing, a Parts drawer
+with − and + round it; the board's size chosen there, from 7 cells to the sandbox's 37, a
+single cell holding nothing that could swim; every part from 0 to 9 or unlimited, as free as
+the sandbox; 2 of each by default; the parts grouped and folding as the Editor's Parts. Parts is
+the Maker's second drawer (P), under Objects: under Board, Cells, the zone's size, a hexagon of
+1 to 3 rings; then Sensors, Actuators and Operators, titles that fold their rows as the
+Editor's (D-069), each part's count between − and +, the infinity sign when unlimited, the
+buttons greyed at the ends. Each step is a change of the level, one for
+undo, and the Editor's board, the same one the run takes, is handed out anew at once
+(`Board.rehand`), its parts and wires kept: if it has more of a part than the level would hand
+out, or a part or a wire off the smaller zone, the change is refused, "this level hands out two
+eyes; the board has three: take it off in the Editor first", as the physicist chose; nothing on
+the board changes behind the player's back (invariant 6). Undo in the Maker and Paste and Start
+from are refused alike. The Editor's Parts then lists what is handed out, and its undo starts
+afresh, its steps having been taken on a board handing out other parts; a board put back by
+undo counts its stock left from what the level hands out now. A level copied takes its zone
+and its parts handed out with it, so Paste and Start from bring them, which D-310 left out;
+the board's own parts, a tutorial's locked ones, are not brought. A blank plane hands out 2 of
+each part on the zone it had. The sandbox itself still hands out every part without limit
+(D-102). Locked parts, the rest of the todo's "The board", come later.
