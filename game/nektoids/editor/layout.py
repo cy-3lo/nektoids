@@ -1,16 +1,17 @@
 """Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
 
 - Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
-  editor, Objectives, Inside, Score and Navigator in the run, Objects and Navigator in the
-  Maker; Hints, Settings and Chapters at its foot, over the accented switch to the run, or from
-  the run to the editor (`Env`).
+  editor, Objectives, Inside, Score and Navigator in the run, Objects, Goals, Brief and
+  Navigator in the Maker; Hints, Settings and Chapters at its foot, over the accented switch
+  to the run, or from the run to the editor (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
   (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092), then
   Save/Load: Copy a board, Paste a board (D-206); Navigator: the view's buttons; Hints: the
   level's, asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the
-  levels, then the sandbox, which replaces the full-screen map.
+  levels, then the sandbox, which replaces the full-screen map. Goals, in the Maker: the time
+  allowed, a slider, then each goal's name over three rows of buttons, its words (D-308).
   Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
   the run (D-096). An arrow on the drawer's edge folds it.
 - The rest is the main screen: the tabs over it (Run, Editor, and on the sandbox the Maker,
@@ -32,6 +33,7 @@ from enum import Enum
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel, to_pixel
 from nektoids.graph.kinds import Category
+from nektoids.levels.objectives import Count, Target, Verb
 
 Rect = tuple[int, int, int, int]  # x, y, width, height [px]
 
@@ -58,6 +60,13 @@ HINT_ROWS = 3  # Hints' rows: the idea, the parts, the shadow (D-078)
 HINT_LINE = 20  # a line of a hint under its row, as a note's [px]; of Brief's spec's field
 SPEC_LINES = 6  # Brief's spec's field: so many lines, enough for SPEC_LONGEST (D-305)
 FIELD_PAD = 10  # ... and so much over and under them [px]
+HEAD_HEIGHT = 28  # a goal's name in Goals, over its words, a bin at its right end (D-308) [px]
+BIN = 28  # ... the bin's square, where a click takes the goal out [px]
+WORD_HEIGHT = 26  # a word's button: a verb, how many, a target [px]
+WORD_GAP = 4  # ... between two, either way; under a slider [px]
+SLIDER_HEIGHT = 30  # a slider of Goals: its label, its track, its value [px]
+KNOB_LABEL = 64  # ... its label, at its left [px]
+KNOB_VALUE = 56  # ... its value's box, at its right [px]
 SHADOW_GAP = 6  # from the shadow's picture to the line under it [px]
 SHADOW_LEAST = 140  # the shadow's picture shrinks to fit Hints, no smaller: then it scrolls [px]
 ROW_PITCH = 46  # from one row to the next [px]
@@ -137,6 +146,10 @@ class EditButton(Enum):
     REDO = "redo"
 
 
+class GoalButton(Enum):  # Goals' last row, while the level asks fewer than two (D-308)
+    ADD = "add"
+
+
 class Shown(Enum):  # atop the editor's main screen (D-068)
     ACTION = "action"  # what the next click or Enter does, and its key; a click opens Tools
 
@@ -178,6 +191,7 @@ class Drawer(Enum):  # D-051
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
     OBJECTS = "objects"  # the Maker's: the plane's objects, undo and redo, the Wheel (D-301)
     BRIEF = "brief"  # the Maker's: the level's title and spec (D-305)
+    GOALS = "goals"  # the Maker's: the time allowed and the goals, as sentences (D-308)
 
 
 class MainView(Enum):  # what the editor's main screen shows, by the drawer open (D-058, D-069)
@@ -200,7 +214,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
-    Env.MAKER: (Drawer.OBJECTS, Drawer.BRIEF, Drawer.NAVIGATOR),
+    Env.MAKER: (Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.NAVIGATOR),
 }
 FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT, Env.MAKER: LevelButton.RUN}
@@ -227,6 +241,28 @@ class Goal:
     """A row of Objectives: the level's objective `index`, or, for None, the time left."""
 
     index: int | None
+
+
+@dataclass(frozen=True)
+class MadeGoal:
+    """A goal's name in the Maker's Goals, over its words: the level's objective `index`."""
+
+    index: int
+
+
+@dataclass(frozen=True)
+class Word:
+    """A word's button in Goals: objective `goal`'s verb, how many or target, `word` (D-308)."""
+
+    goal: int
+    word: Verb | Count | Target
+
+
+@dataclass(frozen=True)
+class Knob:
+    """A slider of Goals: objective `goal`'s setting, or, for None, the time allowed."""
+
+    goal: int | None
 
 
 class Setting(Enum):  # the Settings drawer's rows (D-054)
@@ -288,6 +324,7 @@ DRAWER_KEYS = {
     Drawer.CHAPTERS: "Esc",
     Drawer.OBJECTS: "O",
     Drawer.BRIEF: "B",
+    Drawer.GOALS: "G",
 }
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
@@ -310,6 +347,10 @@ class Layout:
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
     piece_rows: tuple[tuple[Piece, Rect], ...]  # Objects' rows, in the Maker (D-301)
     brief_fields: tuple[tuple[Brief, Rect], ...]  # Brief's: the title's, the spec's (D-305)
+    goal_heads: tuple[tuple[MadeGoal, Rect], ...]  # Goals': each goal's name and bin (D-308)
+    goal_words: tuple[tuple[Word, Rect], ...]  # ... under it, its words' buttons
+    knobs: tuple[tuple[Knob, Rect], ...]  # ... the sliders: the time allowed, each setting
+    goal_buttons: tuple[tuple[GoalButton, Rect], ...]  # ... Add a goal
     wheel_view: Rect | None  # Tools, Parts, Objects: the Wheel, what is focused large at its hub
     wheel_fold: Rect | None  # ... The Wheel's title; a click folds or unfolds it (D-069)
     list_area: Rect | None  # where the drawer's rows show, scrolled; they answer there (D-096)
@@ -364,6 +405,8 @@ def make_layout(
     hint_lines: tuple[int, ...] | None = None,
     shadow: bool = False,
     maker: bool = False,
+    made: tuple[bool, ...] = (),
+    addable: bool = False,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     the groups shown closed, Parts' or Files'; kinds: the parts the level hands out, the only
@@ -374,7 +417,8 @@ def make_layout(
     far the open drawer's rows are scrolled, kept within what they need (D-069, D-096);
     hint_lines: how many lines each hint taken shows under its row, in Hints, or None for a
     level with none to take; shadow: the shadow shows, in a picture under its row (D-078);
-    maker: the sandbox, whose tabs end with the Maker's (D-301)."""
+    maker: the sandbox, whose tabs end with the Maker's (D-301); made: in Goals, each goal, by
+    whether its verb takes a setting; addable: the level may ask one more (D-308)."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -399,6 +443,9 @@ def make_layout(
         rows.objects(height, wheel_folded, scroll)
     elif drawer is Drawer.BRIEF:
         rows.brief()
+    elif drawer is Drawer.GOALS:
+        rows.made_goals(made, addable)
+        rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES:
@@ -452,6 +499,10 @@ def make_layout(
         menu_items=tuple(rows.of(Kind)),
         piece_rows=tuple(rows.of(Piece)),
         brief_fields=tuple(rows.fields),
+        goal_heads=tuple(rows.heads),
+        goal_words=tuple(rows.words),
+        knobs=tuple(rows.knobs),
+        goal_buttons=tuple(rows.of(GoalButton)),
         wheel_view=rows.wheel_view,
         wheel_fold=rows.wheel_fold,
         list_area=rows.list_area,
@@ -515,6 +566,9 @@ class _Rows:
         self.board_field: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
         self.fields: list[tuple[Brief, Rect]] = []
+        self.heads: list[tuple[MadeGoal, Rect]] = []
+        self.words: list[tuple[Word, Rect]] = []
+        self.knobs: list[tuple[Knob, Rect]] = []
         self.picture: Rect | None = None
         self.line: Rect | None = None
 
@@ -604,7 +658,8 @@ class _Rows:
         x = BAR_WIDTH + DRAWER_WIDTH - (ROW_INSET + SCROLL_WIDTH) // 2
         self.scroll_bar = (x, top, SCROLL_WIDTH, bottom - top)
         up = -self.scroll
-        for listed in (self.items, self.sections, self.groups, self.hint_texts, self.zoom_buttons):
+        moving = (self.items, self.sections, self.groups, self.hint_texts, self.zoom_buttons)
+        for listed in (*moving, self.heads, self.words, self.knobs):
             listed[:] = [(what, _moved(rect, up)) for what, rect in listed]
         self.picture, self.line = _moved(self.picture, up), _moved(self.line, up)
         self.passkey, self.overview = _moved(self.passkey, up), _moved(self.overview, up)
@@ -630,6 +685,35 @@ class _Rows:
             width = DRAWER_WIDTH - 2 * ROW_INSET
             self.fields.append((field, (BAR_WIDTH + ROW_INSET, self.y, width, height)))
             self.y += height + ROW_PITCH - ROW_HEIGHT + SECTION_GAP
+
+    def made_goals(self, made: tuple[bool, ...], addable: bool) -> None:
+        """The time allowed, a slider; each goal, its name over three rows of buttons, the verbs,
+        how many and the targets, and a slider under them if its verb takes a setting; then Add
+        a goal, while the level may ask one more (D-308). The names title the goals: the drawer's
+        own title says Goals."""
+        x, width = BAR_WIDTH + ROW_INSET, DRAWER_WIDTH - 2 * ROW_INSET
+        self._title("Time allowed", self.sections)
+        self._knob(Knob(None))
+        self.y += SECTION_GAP
+        for k, setting in enumerate(made):
+            self.heads.append((MadeGoal(k), (x, self.y, width, HEAD_HEIGHT)))
+            self.y += HEAD_HEIGHT
+            for words in (Verb, Count, Target):  # side by side, filling the row, gaps between
+                n, pitch = len(words), width + WORD_GAP
+                for i, word in enumerate(words):
+                    left, right = x + i * pitch // n, x + (i + 1) * pitch // n - WORD_GAP
+                    self.words.append((Word(k, word), (left, self.y, right - left, WORD_HEIGHT)))
+                self.y += WORD_HEIGHT + WORD_GAP
+            if setting:
+                self._knob(Knob(k))
+            self.y += SECTION_GAP
+        if addable:
+            self._row(GoalButton.ADD)
+
+    def _knob(self, knob: Knob) -> None:
+        width = DRAWER_WIDTH - 2 * ROW_INSET
+        self.knobs.append((knob, (BAR_WIDTH + ROW_INSET, self.y, width, SLIDER_HEIGHT)))
+        self.y += SLIDER_HEIGHT + WORD_GAP
 
     def _over_wheel(self, sections: tuple, height: int, wheel_folded: bool, scroll: int) -> None:
         """Each section's title and rows, scrolled above the Wheel if they do not fit."""
@@ -873,6 +957,51 @@ def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
 def brief_field_at(layout: Layout, point: tuple[int, int]) -> Brief | None:
     """Brief's field under `point`: the title's or the spec's (D-305)."""
     return next((f for f, rect in layout.brief_fields if contains(rect, point)), None)
+
+
+def word_at(layout: Layout, point: tuple[int, int]) -> Word | None:
+    """The word's button of Goals under `point`, where the drawer shows its rows (D-308)."""
+    return _row_at(layout, layout.goal_words, point)
+
+
+def bin_rect(head: Rect) -> Rect:
+    """A goal's bin, at the right end of its name's row `head`."""
+    x, y, w, h = head
+    return (x + w - BIN, y + (h - BIN) // 2, BIN, BIN)
+
+
+def bin_at(layout: Layout, point: tuple[int, int]) -> int | None:
+    """The goal whose bin is under `point`: a click there takes it out."""
+    bins = [(head.index, bin_rect(rect)) for head, rect in layout.goal_heads]
+    return _row_at(layout, bins, point)
+
+
+def goal_button_at(layout: Layout, point: tuple[int, int]) -> GoalButton | None:
+    return _row_at(layout, layout.goal_buttons, point)
+
+
+def slider_parts(rect: Rect) -> tuple[Rect, Rect, Rect]:
+    """A slider's label, its track and its value's box, left to right, in its row `rect`."""
+    x, y, w, h = rect
+    label = (x, y, KNOB_LABEL, h)
+    track = (x + KNOB_LABEL + 8, y, w - KNOB_LABEL - KNOB_VALUE - 16, h)
+    value = (x + w - KNOB_VALUE, y + 3, KNOB_VALUE, h - 6)
+    return label, track, value
+
+
+def knob_at(layout: Layout, point: tuple[int, int]) -> tuple[Knob, bool] | None:
+    """The slider of Goals under `point`, where the drawer shows its rows, and whether `point`
+    is on its value's box rather than its label or its track (D-308)."""
+    knob = _row_at(layout, layout.knobs, point)
+    if knob is None:
+        return None
+    return knob, contains(slider_parts(dict(layout.knobs)[knob])[2], point)
+
+
+def along(track: Rect, x: float) -> float:
+    """How far along `track` the pixel column `x` is: 0 at its left end, 1 at its right."""
+    left, _, width, _ = track
+    return min(1.0, max(0.0, (x - left) / width))
 
 
 def piece_row_at(layout: Layout, point: tuple[int, int]) -> Piece | None:

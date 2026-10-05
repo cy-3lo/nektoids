@@ -5,8 +5,10 @@ The main screen shows the level's plane at large over its grid, the lattice its 
 on: its lights, obstacles, marks and rays, and the swimmer where it starts, facing where it
 heads. Round it, the frame the editor and the run have (`frame.Frame`, D-051): Objects, as Parts
 is the board's: the objects as rows, undo and redo, and at its foot the Wheel round what is
-focused (D-068, D-069, `objects.py`); Brief, the level's title and spec (D-305); Navigator, with
-the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
+focused (D-068, D-069, `objects.py`); Goals, the time allowed and the goals, each a sentence
+whose words are buttons, with a slider for its setting (D-308); Brief, the level's title and
+spec (D-305); Navigator, with the overview, the zoom and the rays; Hints, Settings and Chapters
+at the bar's foot.
 
 A click on an object focuses it, and its Wheel offers what can be done to it; a drag moves it,
 on the lattice. A click on the open plane, inside a mark too, focuses its nearest lattice point,
@@ -57,21 +59,29 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     Env,
+    GoalButton,
+    Knob,
     Layout,
     Piece,
     Rect,
     Tool,
     ViewButton,
+    along,
+    bin_at,
     brief_field_at,
     contains,
     drawer_key,
     edit_button_at,
+    goal_button_at,
+    knob_at,
     make_layout,
     overview_at,
     piece_row_at,
+    slider_parts,
     value_at,
     view_button_at,
     wheel_fold_at,
+    word_at,
     zoom_bar_at,
     zoom_button_at,
 )
@@ -96,21 +106,29 @@ from nektoids.editor.scene import (
 from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
 from nektoids.editor.wheel import WHEEL_HEX, Slot, centre_in, slot_at, slots
-from nektoids.levels.lattice import POSITION, snapped
+from nektoids.levels.lattice import POSITION, Range, snapped
 from nektoids.levels.level import Level
 from nektoids.levels.making import (
+    GOALS_MOST,
     SPEC_LONGEST,
+    TIME,
     TITLE_LONGEST,
     Unmade,
     adjusted,
+    goal_added,
+    goal_removed,
+    goal_set,
+    goal_worded,
     moved,
     placed,
     removed,
     specified,
     start_moved,
+    timed,
     titled,
     turned,
 )
+from nektoids.levels.objectives import settings
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
 ARROW_PAN = 2.0  # an arrow drags the view this far [u]
@@ -153,6 +171,7 @@ class MakerScene(Frame):
         self.writing: Brief | None = None  # Brief's field typed in, the title or the spec
         self.field: TextField | None = None  # ... what it holds (D-305)
         self.field_pressed: Brief | None = None  # a press on one: it opens once the click is over
+        self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
         self._take(level)
         self.view = self._opening()
         self._floor = union(self._needed(), grown(shown(self.view, self.arena_area), ZOOM_STEP))
@@ -175,6 +194,8 @@ class MakerScene(Frame):
             maker=True,
             wheel_folded=self.wheel_folded,
             scroll=self.scrolls.get(drawer, 0),  # D-096
+            made=tuple(bool(settings(goal)) for goal in self.level.objectives),  # D-308
+            addable=len(self.level.objectives) < GOALS_MOST,
             **self._hint_layout(),
         )
 
@@ -186,7 +207,7 @@ class MakerScene(Frame):
 
     def _take(self, level: Level) -> None:
         """The level as it now stands: its plane, its rays, the swimmer at its start; the focus
-        let go if its item is gone."""
+        let go if its item is gone; Goals' rows, as many as its goals and their settings."""
         self.level = level
         self.arena = level.arena
         self.rays = Rays(self.arena.light_power)
@@ -196,6 +217,8 @@ class MakerScene(Frame):
         self.radius = np.full(1, BASE_RADIUS)  # (1,) [u]
         if isinstance(self.focus, int) and self.focus >= len(level.items):
             self.focus = None
+        if self.layout.drawer is Drawer.GOALS:
+            self.layout = self._relayout(Drawer.GOALS)
 
     def update(self) -> None:
         """Once a frame: on the web, what the page's field holds (D-206); the tooltip's rest;
@@ -215,6 +238,12 @@ class MakerScene(Frame):
             return f"Type its {self.writing.value}.  {kept}"
         if self.layout.drawer is Drawer.BRIEF:
             return "Click the title or the spec to write it.  The caption above follows."
+        if self.sliding is not None:
+            return "Let go where it should stay."
+        if self.layout.drawer is Drawer.GOALS and not self.level.objectives:
+            return "No goal: a run ends only when its time is up.  Add one, two at most."
+        if self.layout.drawer is Drawer.GOALS:
+            return "Click a word to change a goal.  Drag a slider to set it.  Space: run."
         if self.picked is not None:
             return f"Click the plane: {ONE[self.picked]} goes there.  Esc: put it back."
         if self.moving:
@@ -436,6 +465,16 @@ class MakerScene(Frame):
             self._pick(piece)
         elif edit is not None:
             self._edit(edit)
+        elif (word := word_at(self.layout, pos)) is not None:  # Goals (D-308)
+            self._make(lambda level: goal_worded(level, word.goal, word.word))
+        elif (index := bin_at(self.layout, pos)) is not None:
+            self._make(lambda level: goal_removed(level, index))
+        elif goal_button_at(self.layout, pos) is GoalButton.ADD:
+            self._make(goal_added)
+        elif (knob := knob_at(self.layout, pos)) is not None:
+            if not knob[1]:  # its track or its label: the value follows the mouse while held
+                self.sliding, self.before = knob[0], self.level
+                self._slide(pos[0])
         elif contains(self.arena_area, pos):
             self._press_plane(pos)
 
@@ -461,6 +500,8 @@ class MakerScene(Frame):
             self._overview_to(pos)
         elif self.zooming:
             self._zoom_to(pos)
+        elif self.sliding is not None:
+            self._slide(pos[0])
         elif self.grab is not None:
             if self.dragged or math.dist(pos, self.press_at) >= CLICK:
                 self.dragged = True
@@ -473,21 +514,42 @@ class MakerScene(Frame):
 
     def _release(self, pos: tuple[int, int]) -> None:
         """The mouse let go: a row carried lands where it is let go on the plane; a dragged
-        object's move is one step for undo; a click on the open plane focuses its point; a
-        field pressed opens, now the click is over: Safari wants it so (D-206)."""
+        object's move, or a slider's, is one step for undo; a click on the open plane focuses
+        its point; a field pressed opens, now the click is over: Safari wants it so (D-206)."""
         if self.field_pressed is not None:
             self._open_field(self.field_pressed)
             self.field_pressed = None
         if self.carrying and contains(self.arena_area, pos):
             self._place(self.picked, self.view.to_world(*pos))
-        if self.grab is not None and self.before is not None and self.level != self.before:
+        held = self.grab is not None or self.sliding is not None
+        if held and self.before is not None and self.level != self.before:
             self.history.record(self.before)
         clicked = self.press_at is not None and math.dist(pos, self.press_at) < CLICK
         if clicked and self.grab is None:
             self.focus, self.moving = Point(snapped(self.view.to_world(*self.press_at))), False
         self.carrying = self.overviewing = self.zooming = False
-        self.panning = self.press_at = self.grab = self.before = None
+        self.panning = self.press_at = self.grab = self.before = self.sliding = None
         self.frame_release()
+
+    # Goals' sliders (D-308)
+
+    def scale(self, knob: Knob) -> Range:
+        """What a slider of Goals may be: the time allowed, or its goal's setting."""
+        return TIME if knob.goal is None else settings(self.level.objectives[knob.goal])[0][1]
+
+    def _slide(self, x: float) -> None:
+        """The slider held, set where the pixel column `x` falls along its track; one step for
+        undo once let go, as an object's drag."""
+        knob = self.sliding
+        rect = dict(self.layout.knobs).get(knob)
+        if rect is None:
+            return
+        scale = self.scale(knob)
+        value = scale.lo + along(slider_parts(rect)[1], x) * (scale.hi - scale.lo)
+        if knob.goal is None:
+            self._make(lambda level: timed(level, value), record=False)
+        else:
+            self._make(lambda level: goal_set(level, knob.goal, value), record=False)
 
     # Brief's fields (D-305)
 

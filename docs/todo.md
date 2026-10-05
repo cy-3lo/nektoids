@@ -28,7 +28,7 @@ taken, when it starts.
       - [ ] Goals: the time allowed, always, and at most two goals, each a sentence of three
         choosers (verb, how many, target) offering only what makes sense, a slider with a typed
         value for a stay's seconds or a circle's turns (D-308). Done: the changes, in
-        `making.py`; to come, the drawer, then the typed value.
+        `making.py` (#59), and the drawer, G (#60); to come, the slider's value typed.
       - [ ] Save: Copy level (its JSON, as `to_json` writes it), Paste a level, Start from a
         blank plane or a shipped level.
       - [ ] The board: zone, stock and locked parts, set with the board editor itself.
