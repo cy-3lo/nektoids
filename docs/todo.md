@@ -13,16 +13,29 @@ taken, when it starts.
 
 - [ ] **A level editor**, Super Mario Maker-like: levels are data already (D-028). It comes
       first after the foundations (D-105): Camille can make levels without programming (D-041),
-      and every later stage needs levels.
-      - The plane: lights, obstacles and the swimmer's start, placed, moved and turned; flow
-        items when stage 3 brings them. Values on a lattice, positions every 0.5 u and powers in
-        whole numbers: invariant 4 binds only the player's graph, but a lattice keeps a level's
-        text short and its layout legible.
-      - The board: zone, stock and locked parts, set with the board editor itself.
-      - Objectives from `OBJECTIVES`, with their settings, and the time allowed.
-      - A clear check, as in Mario Maker: a level is shared only once its maker has won it; the
-        winning board goes with it, as its proof and as the score to beat.
-      - Shared as text, as a board is (D-205, D-206); no server.
+      and every later stage needs levels. It is the Maker, a third tab on the sandbox (D-301).
+      Done, on `stage/1-level-maker`:
+      - [x] The Maker's tab: the plane at large over a grid of 0.5 u, Navigator (D-301, #50).
+      - [x] Objects, as Parts with its Wheel: lights, obstacles, marks and the swimmer's start,
+        placed, dragged, sized, turned, deleted; undo and redo (D-302, D-306, #51, #55).
+      - [x] The tabs: F1 to F3, Tab and Shift+Tab; Esc backs out, then opens Chapters (D-303,
+        D-304, #52, #53).
+      - [x] Brief: the level's title and spec, in fields of text with a caret (D-305, #54).
+      - [x] Marks, zones only the objectives read (D-306, #55); objectives as sentences: reach,
+        leave, stay or circle all, one or none of the lights, obstacles or marks; level format
+        version 3, every shipped run as it was (D-307, #56, #57).
+      To do, in this order:
+      - [ ] Goals: the time allowed, always, and at most two goals, each a sentence of three
+        choosers (verb, how many, target) offering only what makes sense, a slider with a typed
+        value for a stay's seconds or a circle's turns. Started: the slider, the time and the
+        cap of two exist on the physicist's machine, not yet in the repository.
+      - [ ] Save: Copy level (its JSON, as `to_json` writes it), Paste a level, Start from a
+        blank plane or a shipped level.
+      - [ ] The board: zone, stock and locked parts, set with the board editor itself.
+      - [ ] A clear check, as in Mario Maker: a level is shared only once its maker has won it;
+        the winning board goes with it, as its proof and as the score to beat.
+      - [ ] Shared as text, as a board is (D-205, D-206); no server.
+      - [ ] Perhaps: a slider in Objects for the focused item's power or radius, beside < and >.
 - [ ] **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
       2,603 random wirings, the fastest a one-eyed circler. Its plane lives on as the sandbox's,
       under that title (`levels/data/sandbox.json`); its file as a level is in the history
