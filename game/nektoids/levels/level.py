@@ -10,7 +10,9 @@ places parts (D-302). `to_dict` and `from_dict` turn a level into JSON-able data
 `Board.to_dict` does (D-024); the shipped levels are JSON files in `data/`. Each file says the
 version of its format; `to_dict` writes `FORMAT`, and `from_dict` upgrades an older version
 (`upgraded`), refuses a newer one, and refuses any key it does not know, so that a file from
-another game or a mistyped key fails as it is loaded (D-201). Pure Python, no pygame.
+another game or a mistyped key fails as it is loaded (D-201). A whole number is written as an
+integer, and a board's zone as its size when it is a hexagon round the centre (D-313). Pure
+Python, no pygame.
 """
 
 from __future__ import annotations
@@ -23,12 +25,14 @@ from functools import cached_property
 from pathlib import Path
 
 from nektoids.graph.board import Board
+from nektoids.graph.hexgrid import disc_radius, hex_disc
 from nektoids.levels import objectives as goals
 from nektoids.levels.objectives import Goal, objective_from_dict, objective_to_dict
 from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
-FORMAT = 3  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307)
+FORMAT = 4  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
+# 4 a zone written as its size (D-313)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "version",
     "title",
@@ -71,7 +75,8 @@ class Item:
     value: float  # its kind's setting: a light's power, an obstacle's radius [u]
 
     def to_dict(self) -> dict:
-        return {"kind": self.kind.value, "at": list(self.at), self.kind.setting: self.value}
+        at = [whole(v) for v in self.at]
+        return {"kind": self.kind.value, "at": at, self.kind.setting: whole(self.value)}
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Item:
@@ -129,10 +134,10 @@ class Level:
                 "version": FORMAT,
                 "title": self.title,
                 "spec": self.spec,
-                "start": {"at": [x, y], "heading": heading},
+                "start": {"at": [whole(x), whole(y)], "heading": whole(heading)},
                 "items": [item.to_dict() for item in self.items],
                 "board": self.board,
-                "time_limit": self.time_limit,
+                "time_limit": whole(self.time_limit),
                 "objectives": [objective_to_dict(o) for o in self.objectives],
             }
             | ({"passkey": self.passkey} if self.passkey else {})
@@ -177,8 +182,9 @@ class Level:
 def upgraded(data: Mapping) -> Mapping:
     """`data` in FORMAT, from the version it says (D-201): version 1 had no marks, and is
     version 2 as it is (D-306); version 2's objectives become sentences, its rings marks on its
-    lights (D-307, `objectives.upgraded`). ValueError for no version, one this game does not
-    know, or rings that would mix with the marks a level has."""
+    lights (D-307, `objectives.upgraded`); version 3's zone, a hexagon's cells, becomes its size
+    (D-313). ValueError for no version, one this game does not know, or rings that would mix
+    with the marks a level has."""
     if "version" not in data:
         raise ValueError(f"a level without its version: this game reads version {FORMAT}")
     version = data["version"]
@@ -193,7 +199,26 @@ def upgraded(data: Mapping) -> Mapping:
         if marks and any(item.get("kind") == "mark" for item in items):
             raise ValueError("its rings would count its marks: make it again in the Maker")
         data = {**data, "items": items + marks, "objectives": sentences}
+    if version < 4:
+        data = {**data, "board": {**data["board"], "zone": _sized(data["board"]["zone"])}}
     return {**data, "version": FORMAT}
+
+
+def _sized(zone: int | list) -> int | list:
+    """A zone's cells as version 4 writes them: its size if it is a hexagon round (0, 0), as
+    every shipped level's is, else the cells as they were; a size stays one."""
+    if isinstance(zone, int):
+        return zone
+    cells = {tuple(cell) for cell in zone}
+    try:
+        return len(zone) if cells == set(hex_disc(disc_radius(len(zone)))) else zone
+    except ValueError:  # no hexagon holds so many
+        return zone
+
+
+def whole(value: float) -> float | int:
+    """`value`, an integer if it is a whole number: a level's file writes 25, not 25.0 (D-313)."""
+    return int(value) if float(value).is_integer() else value
 
 
 PASSKEY_LENGTH = 10  # the most letters a passkey has (D-075)

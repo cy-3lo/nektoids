@@ -1,19 +1,16 @@
 {
-  "version": 3,
+  "version": 4,
   "title": "Shadows",
   "spec": "Reach the light from an obstacle's shadow.",
-  "start": {"at": [15.0, 18.4], "heading": 0.0},
+  "start": {"at": [15, 18], "heading": 0},
   "items": [
-    {"kind": "light", "at": [30.0, 19.0], "power": 8.0},
-    {"kind": "obstacle", "at": [19.0, 19.0], "radius": 1.5},
-    {"kind": "obstacle", "at": [25.0, 25.0], "radius": 1.0},
-    {"kind": "obstacle", "at": [24.0, 13.0], "radius": 1.0}
+    {"kind": "light", "at": [30, 19], "power": 8},
+    {"kind": "obstacle", "at": [19, 19], "radius": 1.5},
+    {"kind": "obstacle", "at": [25, 25], "radius": 1},
+    {"kind": "obstacle", "at": [24, 13], "radius": 1}
   ],
   "board": {
-    "zone": [
-      [0, -2], [1, -2], [2, -2], [-1, -1], [0, -1], [1, -1], [2, -1], [-2, 0], [-1, 0], [0, 0],
-      [1, 0], [2, 0], [-2, 1], [-1, 1], [0, 1], [1, 1], [-2, 2], [-1, 2], [0, 2]
-    ],
+    "zone": 19,
     "stock": {
       "eye": 2,
       "source": 1,
@@ -26,7 +23,7 @@
     "parts": [],
     "wires": []
   },
-  "time_limit": 15.0,
+  "time_limit": 15,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "DARK",
   "hints": {

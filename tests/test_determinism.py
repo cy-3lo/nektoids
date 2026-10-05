@@ -386,11 +386,13 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # 0.04652168032595756 on CI's Linux, for the old objectives as for the sentences (checked on
 # CI, the old code at 41ccb36). So the outcome, the tick and the counts are compared exactly,
 # a progress to 1e-12. Orbit's three were recorded again when circling went (D-312): its goals
-# are now to enter its four rings and touch no light, in 20 s.
+# are now to enter its four rings and touch no light, in 20 s. Shadows', Greed's and Patience's
+# winners were recorded again when every position went onto whole units (D-313): the same
+# outcomes, a few ticks apart.
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
-    ("Shadows", "DRIVEN"): (Outcome.WON, 451, ((1, 1, 1.0),)),
+    ("Shadows", "DRIVEN"): (Outcome.WON, 403, ((1, 1, 1.0),)),  # D-313
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
     ("Fear", "fear(NW, SW)"): (Outcome.WON, 388, ((1, 1, 1.0),)),
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
@@ -401,11 +403,11 @@ BEFORE_SENTENCES = {
     ("Orbit", "ORBITER"): (Outcome.WON, 1093, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312
     ("Orbit", "HALVED"): (Outcome.WON, 1038, ((4, 4, 1.0), (1, 1, 1.0))),
     ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
-    ("Greed", "greedy()"): (Outcome.WON, 1171, ((2, 2, 1.0),)),
+    ("Greed", "greedy()"): (Outcome.WON, 1202, ((2, 2, 1.0),)),  # D-313
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1312, ((3, 3, 1.0),)),
-    ("Patience", "patient(True)"): (Outcome.WON, 1237, ((3, 3, 1.0),)),
+    ("Patience", "patient()"): (Outcome.WON, 1143, ((3, 3, 1.0),)),  # D-313
+    ("Patience", "patient(True)"): (Outcome.WON, 1085, ((3, 3, 1.0),)),
 }
 
 

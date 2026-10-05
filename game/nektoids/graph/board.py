@@ -23,6 +23,8 @@ from nektoids.graph.hexgrid import (
     DIRECTIONS,
     Cell,
     direction_to,
+    disc_radius,
+    hex_disc,
     neighbour,
     opposite,
 )
@@ -340,13 +342,14 @@ class Board:
     # As plain data (D-024)
 
     def to_dict(self) -> dict:
-        """The board as JSON-able data: the zone, what the level handed out, the components in
-        id order and the wires in the order they were drawn, each naming its ends by their place
-        in that list."""
+        """The board as JSON-able data: the zone, its size if it is a hexagon round (0, 0), as
+        the levels' are (D-313), else its cells; what the level handed out; the components in id
+        order and the wires in the order they were drawn, each naming its ends by their place in
+        that list."""
         ids = sorted(self.nodes)
         index = {node_id: i for i, node_id in enumerate(ids)}
         return {
-            "zone": [list(cell) for cell in self.cells],
+            "zone": _zone(self.cells),
             "stock": {kind.value: self._total[kind] for kind in Kind if kind in self._total},
             "parts": [
                 {
@@ -373,7 +376,9 @@ class Board:
         order along their saved paths, so the board is the one saved, routes and all (D-204). A
         wire saved without a path is routed. Raises ValueError for data no board could hold."""
         stock = {Kind(name): left for name, left in data["stock"].items()}
-        board = cls([tuple(cell) for cell in data["zone"]], stock)
+        zone = data["zone"]
+        cells = hex_disc(disc_radius(zone)) if isinstance(zone, int) else map(tuple, zone)
+        board = cls(list(cells), stock)
         for part in data["parts"]:
             facing = part["facing"]
             placed = board.place(
@@ -529,3 +534,15 @@ def _placed(nodes: Iterable[Node]) -> list[tuple[str, Cell, int | None]]:
 
 def _count(n: int) -> str:
     return {1: "one", 2: "two", 3: "three"}.get(n, str(n))
+
+
+def _zone(cells: Iterable[Cell]) -> int | list[list[int]]:
+    """A zone as a board's data holds it: its size, if it is a hexagon round (0, 0) (D-313);
+    else its cells, as lists, in their order."""
+    cells = list(cells)
+    try:
+        if set(cells) == set(hex_disc(disc_radius(len(cells)))):
+            return len(cells)
+    except ValueError:  # no hexagon holds so many
+        pass
+    return [list(cell) for cell in cells]

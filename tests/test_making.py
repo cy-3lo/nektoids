@@ -90,7 +90,7 @@ def test_the_start_moves_on_the_lattice_and_turns_by_fifteen_degrees_within_a_tu
 
 
 def test_a_made_level_reads_back_as_written_by_to_json():
-    made = turned(placed(start_moved(LEVEL, (3.0, 4.5)), ItemKind.OBSTACLE, (9.0, 9.0)), -2)
+    made = turned(placed(start_moved(LEVEL, (3.0, 4.5)), ItemKind.OBSTACLE, (12.0, 4.0)), -2)
     text = to_json(made)
     again = Level.from_dict(json.loads(text))
     assert again == made and to_json(again) == text

@@ -1753,3 +1753,19 @@ reads "Go round the light through its four rings, without touching it." The pinn
 Orbit's three again. A level that still asks to circle, a version 3 file with "circle" or a
 version 2 one with "circle light", is refused, saying so; only Orbit asked it. The run no
 longer frames a circle round a circled light: Orbit's rings frame themselves.
+
+**D-313 — 2026-10-05 — A level's file writes every whole number as an integer, and its board's zone as its size, 1, 7, 19 or 37 cells, a hexagon round the centre: version 4. Every shipped position is on whole units. Amends D-201, D-306, D-307.**
+The physicist, reading a level copied from the Maker: the board's zone, a list of 37 cells, should
+be just its size, and every position an integer, the shipped levels' too. A zone that is a
+hexagon of r rings round (0, 0), 3r(r + 1) + 1 cells, is written as that number, as a board's
+text already gives its zone by its rings (D-205); a zone of any other shape keeps its cells,
+which no level has. A whole number is written without its ".0": [25, 19], 20 s. Version 3's
+zones are upgraded to their size; the files are version 4, each rewritten. Positions off whole
+units moved to the nearest, halves to the even one: Greed's dim light to (13, 10), Shadows' and
+Patience's starts to y = 18, Patience's lights to (23, 18) and (21, 8), its obstacle to
+(18, 11), the sandbox's lights to (28, 24) and (8, 8) and an obstacle to (14, 28); Patience's
+third light goes to (15, 18) rather than (14, 18), which would touch its obstacle. Every level's
+winners still win and its losers still lose, the hints' shadows too; the pinned runs record
+Shadows', Greed's and Patience's winners again, a few ticks apart. Love's light of power 3.5 and
+the obstacles of radius 1.5 in Patience and Shadows are settings, not positions: they stay. The
+Maker's Parts drawer will set the zone's size (the todo's "The board").
