@@ -381,7 +381,11 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 
 # Objectives as sentences (D-307): every level's runs end as they did, to the tick and the bit.
 # Recorded on 2026-10-05 from the objectives of version 1, before they became sentences: each
-# case's outcome, its last tick, and each objective's count and progress there, exactly.
+# case's outcome, its last tick, and each objective's count and progress there, on macOS. A
+# progress may differ in its last bit on another platform (D-004): Orbit's crossed run reads
+# 0.04652168032595756 on CI's Linux, for the old objectives as for the sentences (checked on
+# CI, the old code at 41ccb36). So the outcome, the tick and the counts are compared exactly,
+# a progress to 1e-12.
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
@@ -414,4 +418,7 @@ def test_every_level_ends_as_it_did_before_objectives_were_sentences(title, name
     ended, ticks, kept = play(_case(name), title)
     level = LEVELS[title]
     got = tuple((*o.count(k), o.progress(k)) for o, k in zip(level.objectives, kept, strict=True))
-    assert (ended, ticks, got) == BEFORE_SENTENCES[(title, name)]
+    then, at_tick, counted = BEFORE_SENTENCES[(title, name)]
+    assert (ended, ticks) == (then, at_tick)
+    assert [g[:2] for g in got] == [c[:2] for c in counted]  # met of needed, each objective
+    assert [g[2] for g in got] == pytest.approx([c[2] for c in counted], rel=1e-12, abs=0.0)
