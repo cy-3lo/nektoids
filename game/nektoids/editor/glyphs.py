@@ -70,7 +70,6 @@ GLYPH = {
     "bullseye": 0xF140,
     "circle-xmark": 0xF057,
     "right-from-bracket": 0xF2F5,
-    "rotate": 0xF2F1,  # Circle the light (D-097)
     "location-dot": 0xF3C5,
     "stethoscope": 0xF0F1,
     "life-ring": 0xF1CD,  # Hints (D-078)

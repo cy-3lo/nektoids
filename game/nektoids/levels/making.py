@@ -155,16 +155,14 @@ def number(text: str) -> float:
 
 
 def goal_set(level: Level, index: int, value: float) -> Level:
-    """Goal `index`'s setting, a stay's seconds or a circle's turns, at `value`, on its range's
-    steps and within it; ValueError for a goal whose verb takes none."""
+    """Goal `index`'s setting, a stay's seconds, at `value`, on its range's steps and within it;
+    ValueError for a goal whose verb takes none."""
     goal = level.objectives[index]
     taken = settings(goal)
     if not taken:
         raise ValueError(f"{goal.name(level)!r} has no setting")
     name, scale = taken[0]
-    value = scale.clamp(value)
-    whole = isinstance(getattr(goal, name), int)  # turns
-    return _goal_with(level, index, replace(goal, **{name: round(value) if whole else value}))
+    return _goal_with(level, index, replace(goal, **{name: scale.clamp(value)}))
 
 
 def pasted(level: Level, text: str) -> Level:

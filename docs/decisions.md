@@ -1737,3 +1737,19 @@ the headings every 15°, the time by 5 s, a stay's seconds and a circle's turns 
 already. The dots go where they would come closer than 8 px, the lines every 5 u stay. A shipped
 value off the lattice, the sandbox's lights at 27.5 u, Patience's obstacles of 1.5 u, stays as it
 is until the Maker changes it (D-302).
+
+**D-312 — 2026-10-05 — Circle leaves the objectives: a sentence is three words from three, reach, leave or stay; all, one or none; lights, obstacles or marks. Orbit asks to enter four rings round its light, 5 u out, and touch no light, in 20 s. Amends D-097, D-307, D-308.**
+The physicist, reviewing the Maker: remove circle, and make Orbit avoid the light and reach marks
+placed round it, so that every objective is three words, each chosen from three. Of the 27
+sentences, 14 say something a run can count, as before: leave and stay take marks alone, and
+stay takes no "none"; the Maker's choosers dim the rest (D-308). Going round is reaching the
+marks round the target: it needs no counting of its own, and the turns' slider goes with it.
+Orbit keeps its light at (25, 19) and its start at (25, 9) heading east; four marks of 2 u sit
+5 u from the light, east, north, west and south, on the circle its hint's board settles on
+(5.2 u, measured). Enter every ring and Don't touch the light: the orbiter wins in 9.1 s, the
+brief's ÷2 in 8.7 s, the crossed board touches the light, a bare drive and fear go nowhere, the
+hint's shadow wins; one lap is enough, so the time allowed is 20 s rather than 30. Its spec
+reads "Go round the light through its four rings, without touching it." The pinned runs record
+Orbit's three again. A level that still asks to circle, a version 3 file with "circle" or a
+version 2 one with "circle light", is refused, saying so; only Orbit asked it. The run no
+longer frames a circle round a circled light: Orbit's rings frame themselves.

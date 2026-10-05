@@ -1,5 +1,7 @@
 """Objectives as sentences (D-023, D-038, D-040, D-097, D-307). objectives.py imports no pygame."""
 
+from itertools import product
+
 import numpy as np
 import pytest
 
@@ -173,28 +175,29 @@ def test_a_sentence_must_say_something_a_run_can_count():
     assert "ring" in sensible(Verb.LEAVE, Count.ALL, Target.LIGHT)  # leave and stay: marks
     assert "ring" in sensible(Verb.STAY, Count.ONE, Target.OBSTACLE)
     assert "none" in sensible(Verb.STAY, Count.NONE, Target.MARK)  # a ban on staying: no
-    assert "none" in sensible(Verb.CIRCLE, Count.NONE, Target.LIGHT)
     with pytest.raises(ValueError, match="a ring, not a light"):
         Goal(Verb.LEAVE, Count.ALL, Target.LIGHT)
-    with pytest.raises(ValueError, match="takes no turns"):
-        Goal(Verb.STAY, Count.ONE, Target.MARK, turns=2)
+    with pytest.raises(ValueError, match="takes no seconds"):
+        Goal(Verb.REACH, Count.ONE, Target.MARK, seconds=2.0)
     assert Goal(Verb.STAY, Count.ONE, Target.MARK).seconds == 5.0  # its setting's default
-    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT).turns == 2 and VISIT.seconds is None
-    assert [n for n, _ in settings(Goal(Verb.CIRCLE, Count.ALL, Target.MARK))] == ["turns"]
+    assert VISIT.seconds is None and not settings(VISIT)
+    assert [n for n, _ in settings(Goal(Verb.STAY, Count.ALL, Target.MARK))] == ["seconds"]
+    assert len(Verb) == len(Count) == len(Target) == 3  # 27 sentences, 14 that say something
+    sentences = [w for w in product(Verb, Count, Target) if sensible(*w) is None]
+    assert len(sentences) == 14
 
 
 def test_a_word_chosen_moves_the_others_as_little_as_makes_the_sentence_say_something():
     stay = Goal(Verb.STAY, Count.ONE, Target.MARK, seconds=12.0)
     assert reworded(VISIT, Verb.LEAVE) == Goal(Verb.LEAVE, Count.ALL, Target.MARK)  # onto marks
     assert reworded(KEEP_OFF, Verb.STAY) == Goal(Verb.STAY, Count.ONE, Target.MARK)  # not none
-    assert reworded(KEEP_OFF, Verb.CIRCLE) == Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT)
     assert reworded(stay, Count.NONE) == Goal(Verb.REACH, Count.NONE, Target.MARK)  # to reach
     assert reworded(stay, Target.LIGHT) == Goal(Verb.REACH, Count.ONE, Target.LIGHT)
     assert reworded(stay, Count.ALL) == Goal(Verb.STAY, Count.ALL, Target.MARK, seconds=12.0)
-    assert reworded(stay, Verb.CIRCLE).turns == 2 and reworded(stay, Verb.STAY) == stay
+    assert reworded(stay, Verb.LEAVE).seconds is None and reworded(stay, Verb.STAY) == stay
     assert reworded(VISIT, Target.OBSTACLE) == Goal(Verb.REACH, Count.ALL, Target.OBSTACLE)
     for word in (*Verb, *Count, *Target):  # whatever the sentence, whatever the word
-        for goal in (VISIT, KEEP_OFF, stay, Goal(Verb.CIRCLE, Count.ALL, Target.OBSTACLE)):
+        for goal in (VISIT, KEEP_OFF, stay, Goal(Verb.LEAVE, Count.NONE, Target.MARK)):
             again = reworded(goal, word)
             assert word in (again.verb, again.many, again.target)
 
@@ -204,24 +207,16 @@ def test_version_1s_five_objectives_keep_their_names_but_the_stay_whose_ring_is_
     names = [g.name(alone) for g in (VISIT, KEEP_OFF)]
     assert names == ["Visit every light", "Don't touch the light"]
     assert Goal(Verb.LEAVE, Count.ALL, Target.MARK).name(alone) == "Leave the ring"
-    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT).name(alone) == "Circle the light"
     assert Goal(Verb.STAY, Count.ONE, Target.MARK).name(alone) == "Stay in a ring"
     assert KEEP_OFF.broken(alone) == "It touched the light" and VISIT.broken(alone) == "Lost"
-    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT, turns=3).about(alone) == (
-        "Go round the light 3 times, either way."
-    )
 
 
 def test_a_name_says_the_light_only_where_the_level_has_one():
     two = level(items=(*LIGHTS, mark(30.0, 20.0, 12.0), mark(5.0, 5.0, 6.0)))  # two of each
     assert KEEP_OFF.name(two) == "Touch no light" and VISIT.name(two) == "Visit every light"
     assert Goal(Verb.LEAVE, Count.ALL, Target.MARK).name(two) == "Leave every ring"
-    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT).name(two) == "Circle a light"
     assert Goal(Verb.LEAVE, Count.NONE, Target.MARK).name(two) == "Stay inside the rings"
     assert KEEP_OFF.broken(two) == "It touched a light"
-    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT, turns=1).about(two) == (
-        "Go round a light 1 time, either way."
-    )
     one_ring = level(items=(*LIGHTS, mark(30.0, 20.0, 12.0)))
     assert Goal(Verb.LEAVE, Count.NONE, Target.MARK).name(one_ring) == "Stay inside the ring"
     assert Goal(Verb.REACH, Count.NONE, Target.MARK).broken(one_ring) == "It went into a ring"
@@ -251,8 +246,11 @@ def test_an_objective_comes_back_from_its_data_with_its_setting():
         "seconds": 5.0,
     }
     assert objective_to_dict(VISIT) == {"verb": "reach", "count": "all", "target": "light"}
-    for goal in (stay, VISIT, KEEP_OFF, Goal(Verb.CIRCLE, Count.ALL, Target.OBSTACLE, turns=3)):
+    for goal in (stay, VISIT, KEEP_OFF, Goal(Verb.LEAVE, Count.ONE, Target.MARK)):
         assert objective_from_dict(objective_to_dict(goal)) == goal
+    for gone in ({"verb": "circle", "count": "one", "target": "light", "turns": 2}, {"turns": 1}):
+        with pytest.raises(ValueError, match="circling is gone"):  # D-312
+            objective_from_dict(gone)
     with pytest.raises(ValueError, match="takes no 'kind'"):
         objective_from_dict({"kind": "visit lights"})  # version 2's: upgraded, never read
     with pytest.raises(ValueError, match="needs its target"):
@@ -267,59 +265,28 @@ def test_version_2s_objectives_become_sentences_and_their_rings_marks_on_every_l
         {"verb": "reach", "count": "none", "target": "light"},
     ]
     assert marks == [{"kind": "mark", "at": at_, "radius": 12.0} for at_ in lights]
-    goals, marks = upgraded(
-        [{"kind": "stay near"}, {"kind": "circle light", "turns": 3}], lights[:1]
-    )
-    assert goals == [
-        {"verb": "stay", "count": "one", "target": "mark", "seconds": 5.0},
-        {"verb": "circle", "count": "one", "target": "light", "turns": 3},
-    ]
+    goals, marks = upgraded([{"kind": "stay near"}], lights[:1])
+    assert goals == [{"verb": "stay", "count": "one", "target": "mark", "seconds": 5.0}]
     assert marks == [{"kind": "mark", "at": [20.0, 19.0], "radius": 6.0}]  # its default ring
+    with pytest.raises(ValueError, match="circling is gone"):  # D-312
+        upgraded([{"kind": "circle light", "turns": 3}], lights)
     with pytest.raises(ValueError, match="two sizes"):
         upgraded([{"kind": "leave ring"}, {"kind": "stay near"}], lights)
     with pytest.raises(ValueError, match="takes no 'seconds'"):
         upgraded([{"kind": "visit lights", "seconds": 1.0}], lights)
 
 
-def going_round(goal, angles, where, centre=(30.0, 20.0), radius=5.0):
-    """What `goal` keeps for a swimmer taken round `centre` through `angles` [rad] in `where`."""
-    points = [at([centre[0] + radius * np.cos(a), centre[1] + radius * np.sin(a)]) for a in angles]
-    kept = goal.start(goal.marks(where, points[0], ONE))
-    for point in points[1:]:
-        kept = goal.keep(kept, goal.marks(where, point, ONE), DT)
-    return kept
-
-
-def test_circling_the_light_counts_whole_turns_either_way_and_going_back_unwinds_them():
-    circle = Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT, turns=2)  # D-097
-    step = 0.05  # [rad] a tick's turn, far less than half a turn
-    once = going_round(circle, np.arange(0.0, 2 * np.pi + step, step), LEVEL)
-    assert circle.count(once) == (1, 2) and 0.5 <= circle.progress(once) < 0.55
-    twice = going_round(circle, -np.arange(0.0, 4 * np.pi + step, step), LEVEL)  # clockwise
-    assert circle.count(twice) == (2, 2) and circle.progress(twice) == 1.0
-    there_and_back = np.concatenate((np.arange(0.0, 6.0, step), np.arange(6.0, 0.0, -step)))
-    back = going_round(circle, there_and_back, LEVEL)
-    assert circle.count(back) == (0, 2) and circle.progress(back) < 0.01
-    full = np.arange(0.0, 4 * np.pi + step, step)
-    then_back = going_round(
-        circle, np.concatenate((full, full[-1] - np.arange(0.0, 3.0, step))), LEVEL
-    )
-    assert circle.count(then_back) == (2, 2)  # once the turns are made, going back keeps them
-    beside = going_round(circle, np.arange(0.0, 4 * np.pi, step), LEVEL, (15.0, 20.0), 3.0)
-    assert circle.count(beside) == (0, 2)  # round a point beside the lights: no turn of theirs
-    assert not circle.lost(twice)
-    every = Goal(Verb.CIRCLE, Count.ALL, Target.LIGHT, turns=2)
-    assert every.count(going_round(every, full, LEVEL)) == (2, 4)  # one light gone round of two
-
-
-def test_circling_the_light_twice_wins_a_level_unless_it_touches_the_light():
-    orbit = level(Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT), KEEP_OFF, time=30.0)
-    path = [(30.0 + 5.0 * np.cos(a), 20.0 + 5.0 * np.sin(a)) for a in np.arange(0.0, 13.0, 0.05)]
+def test_going_round_the_light_through_its_rings_wins_unless_it_touches_the_light():
+    quarters = (0.0, 0.5 * np.pi, np.pi, 1.5 * np.pi)  # four rings 5 u from the light, 2 u wide
+    rings = [mark(30.0 + 5.0 * np.cos(a), 20.0 + 5.0 * np.sin(a), 2.0) for a in quarters]
+    orbit = level(Goal(Verb.REACH, Count.ALL, Target.MARK), KEEP_OFF, items=(LIGHTS[0], *rings))
+    path = [(30.0 + 5.0 * np.cos(a), 20.0 + 5.0 * np.sin(a)) for a in np.arange(0.0, 7.0, 0.05)]
     kept = begin(orbit, at(path[0]), ONE)
-    for tick, point in enumerate(path[1:], start=1):
+    for tick, point in enumerate(path[1:], start=1):  # D-312: Orbit's goals
         kept = follow(orbit, kept, at(point), ONE, DT)
         if outcome(orbit, kept, tick, DT) is not None:
             break
-    assert outcome(orbit, kept, tick, DT) is Outcome.WON and tick * 0.05 >= 4 * np.pi
+    assert outcome(orbit, kept, tick, DT) is Outcome.WON
+    assert tick * 0.05 > 1.5 * np.pi - 0.45  # into the last ring: round three quarters, near enough
     touched = follow(orbit, kept, at([30.0, 20.0]), ONE, DT)
     assert outcome(orbit, touched, tick + 1, DT) is Outcome.LOST  # touching still loses

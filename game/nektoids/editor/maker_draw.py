@@ -117,7 +117,6 @@ WORD_NAME = {  # Goals' buttons (D-308), the targets as Objects names them
     Verb.REACH: "Reach",
     Verb.LEAVE: "Leave",
     Verb.STAY: "Stay",
-    Verb.CIRCLE: "Circle",
     Count.ALL: "All",
     Count.ONE: "One",
     Count.NONE: "None",

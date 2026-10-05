@@ -1,9 +1,15 @@
 {
   "version": 3,
   "title": "Orbit",
-  "spec": "Circle the light twice without touching it.",
+  "spec": "Go round the light through its four rings, without touching it.",
   "start": {"at": [25.0, 9.0], "heading": 0.0},
-  "items": [{"kind": "light", "at": [25.0, 19.0], "power": 8.0}],
+  "items": [
+    {"kind": "light", "at": [25.0, 19.0], "power": 8.0},
+    {"kind": "mark", "at": [30.0, 19.0], "radius": 2.0},
+    {"kind": "mark", "at": [25.0, 24.0], "radius": 2.0},
+    {"kind": "mark", "at": [20.0, 19.0], "radius": 2.0},
+    {"kind": "mark", "at": [25.0, 14.0], "radius": 2.0}
+  ],
   "board": {
     "zone": [
       [0, -2], [1, -2], [2, -2], [-1, -1], [0, -1], [1, -1], [2, -1], [-2, 0], [-1, 0], [0, 0],
@@ -13,9 +19,9 @@
     "parts": [],
     "wires": []
   },
-  "time_limit": 30.0,
+  "time_limit": 20.0,
   "objectives": [
-    {"verb": "circle", "count": "one", "target": "light", "turns": 2},
+    {"verb": "reach", "count": "all", "target": "mark"},
     {"verb": "reach", "count": "none", "target": "light"}
   ],
   "passkey": "MOON",

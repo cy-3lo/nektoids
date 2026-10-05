@@ -735,7 +735,7 @@ def test_goals_shows_the_time_then_each_goals_name_over_its_words_and_a_slider_f
     assert [k for k, _ in two.knobs] == [Knob(None), Knob(0)]  # the second goal takes none
     assert [h for h, _ in two.goal_heads] == [MadeGoal(0), MadeGoal(1)] and not two.goal_buttons
     words = [w.word for w, _ in two.goal_words if w.goal == 0]
-    assert words == [*Verb, *Count, *Target] and len(two.goal_words) == 20
+    assert words == [*Verb, *Count, *Target] and len(two.goal_words) == 18
     tops = sorted({rect[1] for w, rect in two.goal_words if w.goal == 0})
     assert len(tops) == 3  # a row each: the verbs, how many, the targets
     for top in tops:  # each row fills the drawer's width, its buttons apart
