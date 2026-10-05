@@ -261,6 +261,14 @@ class Word:
 
 
 @dataclass(frozen=True)
+class Start:
+    """A row of the Maker's Start from: the shipped level `index`, or, for None, a blank plane
+    (D-310)."""
+
+    index: int | None
+
+
+@dataclass(frozen=True)
 class Knob:
     """A slider of Goals: objective `goal`'s setting, or, for None, the time allowed."""
 
@@ -376,6 +384,7 @@ class Layout:
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # Files' foot: Save (D-206)
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
     level_field: Rect | None  # the Maker's Files: a level's text pasted there (D-310)
+    start_rows: tuple[tuple[Start, Rect], ...]  # ... under it, Start from: a blank plane, a level
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "run", "editor", and on the sandbox "maker"
     board_area: Rect  # the main screen: the board, or in the run the arena
@@ -410,6 +419,7 @@ def make_layout(
     maker: bool = False,
     made: tuple[bool, ...] = (),
     addable: bool = False,
+    starts: int = 0,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     the groups shown closed, Parts' or Files'; kinds: the parts the level hands out, the only
@@ -421,7 +431,8 @@ def make_layout(
     hint_lines: how many lines each hint taken shows under its row, in Hints, or None for a
     level with none to take; shadow: the shadow shows, in a picture under its row (D-078);
     maker: the sandbox, whose tabs end with the Maker's (D-301); made: in Goals, each goal, by
-    whether its verb takes a setting; addable: the level may ask one more (D-308)."""
+    whether its verb takes a setting; addable: the level may ask one more (D-308); starts: in
+    the Maker's Files, how many shipped levels it may start from, after a blank plane (D-310)."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -452,7 +463,7 @@ def make_layout(
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES and env is Env.MAKER:
-        rows.maker_files()
+        rows.maker_files(starts)
         rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.FILES:
         rows.files(files, folded, height, scroll)
@@ -534,6 +545,7 @@ def make_layout(
         file_buttons=tuple(rows.of(FileButton)),
         board_field=rows.board_field,
         level_field=rows.level_field,
+        start_rows=tuple(rows.of(Start)),
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
@@ -624,13 +636,17 @@ class _Rows:
         self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH
 
-    def maker_files(self) -> None:
+    def maker_files(self, starts: int) -> None:
         """The Maker's Files (D-310): under Save/Load, Copy level, then a field to paste a
-        level's text into, as the editor's Files has for a board (D-206)."""
+        level's text into, as the editor's Files has for a board (D-206); under Start from, a
+        blank plane, then the `starts` shipped levels."""
         self._title("Save/Load", self.sections)
         self._row(FileButton.LEVEL)
         self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
-        self.y += ROW_PITCH
+        self.y += ROW_PITCH + SECTION_GAP
+        self._title("Start from", self.sections)
+        for index in (None, *range(starts)):
+            self._row(Start(index))
 
     def _folding(
         self,
@@ -883,6 +899,11 @@ def level_field_at(layout: Layout, point: tuple[int, int]) -> bool:
         and _listed(layout, point)
         and contains(layout.level_field, point)
     )
+
+
+def start_row_at(layout: Layout, point: tuple[int, int]) -> Start | None:
+    """The row of the Maker's Start from under `point`, where the drawer shows its rows."""
+    return _row_at(layout, layout.start_rows, point)
 
 
 def board_field_at(layout: Layout, point: tuple[int, int]) -> bool:

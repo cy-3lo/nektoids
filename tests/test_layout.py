@@ -48,6 +48,7 @@ from nektoids.editor.layout import (
     Piece,
     Setting,
     Shown,
+    Start,
     Tool,
     View,
     ViewButton,
@@ -96,6 +97,7 @@ from nektoids.editor.layout import (
     setting_row_at,
     shown_frame,
     slider_parts,
+    start_row_at,
     tab_at,
     tab_beside,
     tab_key_to,
@@ -769,7 +771,7 @@ def test_goals_finds_a_word_a_bin_add_and_a_sliders_track_apart_from_its_value()
 
 def test_the_makers_files_holds_copy_the_level_then_a_field_to_paste_one_into():
     layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True)  # D-310
-    assert [t for t, _ in layout.section_titles] == ["Save/Load"]
+    assert [t for t, _ in layout.section_titles] == ["Save/Load", "Start from"]
     (button, row), field = layout.file_buttons[0], layout.level_field
     assert button is FileButton.LEVEL and len(layout.file_buttons) == 1
     assert field[1] > row[1] + row[3] and field[3] == row[3] and not layout.win_rows
@@ -779,3 +781,14 @@ def test_the_makers_files_holds_copy_the_level_then_a_field_to_paste_one_into():
     editor = make_layout(Drawer.FILES, env=Env.EDITOR)
     assert editor.level_field is None and editor.board_field is not None
     assert drawer_key(Env.MAKER, "F") is Drawer.FILES
+
+
+def test_start_from_lists_a_blank_plane_then_every_shipped_level_under_the_paste_field():
+    layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8)  # D-310
+    starts = [s for s, _ in layout.start_rows]
+    assert starts == [Start(None), *(Start(k) for k in range(8))]
+    assert layout.start_rows[0][1][1] > layout.level_field[1] + layout.level_field[3]
+    assert layout.scroll_max == 0  # the nine fit, unscrolled
+    for start, rect in layout.start_rows:
+        assert start_row_at(layout, centre(rect)) == start
+    assert start_row_at(layout, centre(layout.level_field)) is None

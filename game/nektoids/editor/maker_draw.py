@@ -12,7 +12,9 @@ then the Wheel round the focus, the focus large at its hub, the line under it sa
 Goals: each goal's name and bin over its words' buttons, the words it says lit, those that would
 aim at nothing dimmed; the sliders, the time allowed's and each setting's (D-308). Brief: the
 title in a field, the spec in a taller one, wrapped (D-305). Files: Copy level, then the
-field a level's text is pasted into (D-310). Navigator: its rays' row, its overview and zoom.
+field a level's text is pasted into, then the levels to start from, a blank plane first, the
+chapter's under their numbers, the sandbox's last (D-310). Navigator: its rays' row, its
+overview and zoom.
 """
 
 from __future__ import annotations
@@ -65,6 +67,7 @@ from nektoids.editor.layout import (
     EditButton,
     Knob,
     Piece,
+    Start,
     Tool,
     bin_rect,
     contains,
@@ -96,7 +99,7 @@ from nektoids.editor.textfield import caret_at, wrapped
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX, centre_in
 from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
-from nektoids.levels.making import NEW, lacks
+from nektoids.levels.making import BLANK_TIME, NEW, lacks
 from nektoids.levels.objectives import Count, Target, Verb, settings
 from nektoids.sim.arena import LIGHT_RADIUS
 
@@ -124,6 +127,8 @@ WORD_NAME = {  # Goals' buttons (D-308), the targets as Objects names them
     Target.OBSTACLE: "Obstacles",
     Target.MARK: "Marks",
 }
+
+KEPT = "Its plane, goals and time replace the level's; the board stays as it is."  # D-310
 
 _dots_cache: dict[str, object] = {"key": None, "surface": None}
 
@@ -289,6 +294,14 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         pasting = scene.writing is Paste.LEVEL
         text, caret = (scene.field.text, scene.field.caret) if pasting else ("", None)
         draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level")
+    for start, rect in layout.start_rows:
+        label, level = scene.starts[start.index] if start.index is not None else ("", None)
+        name, icon = ("Blank plane", "file") if level is None else ("Sandbox", "border-all")
+        if label:
+            name, icon = level.title, None
+        draw_row(
+            screen, scene, fonts, rect, start, name, ("none", ""), icon=icon, badge=label or None
+        )
     for button, rect in scene.layout.view_buttons:
         key = ("key", VIEW_KEYS[button])
         icon = VIEW_ICON[button]
@@ -429,9 +442,18 @@ def _draw_wheel_tip(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> 
 
 
 def _about(scene: MakerScene, what: object) -> tuple[str, tuple[str, ...]]:
-    """What the Maker's info boxes say: an object's row, undo and redo, a view's button."""
+    """What the Maker's info boxes say: an object's row, undo and redo, a view's button, a row
+    of Start from."""
     if isinstance(what, Piece):
         return NAMES[what], (PIECE_ABOUT[what],)
+    if isinstance(what, Start) and what.index is None:
+        return "Blank plane", (
+            f"No item, the swimmer at the origin, no goal, {BLANK_TIME:g} s.",
+            KEPT,
+        )
+    if isinstance(what, Start):
+        level = scene.starts[what.index][1]
+        return level.title, (level.spec, KEPT)
     return ROW_NAME[what], (TIP[what],)
 
 

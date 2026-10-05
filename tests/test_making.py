@@ -8,6 +8,7 @@ import pytest
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level, to_json
 from nektoids.levels.making import (
+    BLANK_TIME,
     GOALS_MOST,
     NEW,
     SETTING,
@@ -16,6 +17,7 @@ from nektoids.levels.making import (
     TITLE_LONGEST,
     Unmade,
     adjusted,
+    blank,
     goal_added,
     goal_removed,
     goal_set,
@@ -28,6 +30,7 @@ from nektoids.levels.making import (
     removed,
     specified,
     start_moved,
+    taken,
     timed,
     titled,
     turned,
@@ -231,3 +234,21 @@ def test_a_text_no_level_could_hold_is_refused_with_its_reason():
     ):
         with pytest.raises(Unmade, match=why):
             pasted(LEVEL, given)
+
+
+def test_a_blank_plane_has_no_item_no_goal_and_the_swimmer_at_the_origin_on_the_same_board():
+    made = blank(goal_added(LEVEL))  # D-310
+    assert (made.items, made.objectives, made.start) == ((), (), (0.0, 0.0, 0.0))
+    assert made.time_limit == BLANK_TIME and made.title == "New level" and made.spec
+    assert made.board == LEVEL.board and pasted(LEVEL, to_json(made)) == made
+
+
+def test_every_shipped_level_may_be_started_from_its_plane_goals_and_time_on_the_same_board():
+    for level in (*arenas(), sandbox()):
+        made = taken(blank(LEVEL), level)
+        assert (made.title, made.items, made.objectives) == (
+            level.title,
+            level.items,
+            level.objectives,
+        )
+        assert made.board == LEVEL.board and made.tutorial is None
