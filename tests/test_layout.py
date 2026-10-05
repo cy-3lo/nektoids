@@ -20,6 +20,7 @@ from nektoids.editor.layout import (
     LEVEL_KEYS,
     MAKER_VIEWS,
     MAX_HEX,
+    MENU_GROUPS,
     MIN_HEX,
     MODE_KEY,
     PALETTE_TOOLS,
@@ -800,8 +801,10 @@ def test_start_from_lists_a_blank_plane_then_every_shipped_level_under_the_paste
 
 def test_the_makers_parts_gives_the_board_size_then_each_part_a_row_with_minus_and_plus():
     layout = make_layout(Drawer.PARTS, env=Env.MAKER, maker=True)  # D-315
-    assert [t for t, _ in layout.section_titles] == ["Board", "Parts"]
-    assert [s for s, _ in layout.steppers] == [Stepper(None), *(Stepper(k) for k in Kind)]
+    assert [t for t, _ in layout.section_titles] == ["Board"]
+    assert [t for t, _ in layout.group_titles] == ["Sensors", "Actuators", "Operators"]
+    order = [k for _, kinds in MENU_GROUPS for k in kinds]  # as the Editor's Parts groups them
+    assert [s for s, _ in layout.steppers] == [Stepper(None), *(Stepper(k) for k in order)]
     assert not layout.menu_items and layout.scroll_max == 0  # not the Editor's, and it fits
     for what, row in layout.steppers:
         minus, plus = step_buttons(row)
@@ -810,3 +813,7 @@ def test_the_makers_parts_gives_the_board_size_then_each_part_a_row_with_minus_a
         assert stepper_at(layout, centre(plus)) == (what, 1)
         assert stepper_at(layout, (row[0] + 30, row[1] + 20)) is None  # its name: nothing
     assert drawer_key(Env.MAKER, "P") is Drawer.PARTS
+    shut = make_layout(Drawer.PARTS, frozenset({"Operators"}), env=Env.MAKER, maker=True)
+    unfolded = [k for title, kinds in MENU_GROUPS if title != "Operators" for k in kinds]
+    assert [s.kind for s, _ in shut.steppers] == [None, *unfolded]  # the operators folded
+    assert group_at(shut, centre(shut.group_titles[2][1])) == "Operators"

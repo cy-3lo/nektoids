@@ -268,8 +268,8 @@ def test_a_part_handed_out_goes_from_none_to_nine_then_unlimited_and_back():
     assert list(stocked(made, Kind.EYE, 1).board["stock"]) == [k.value for k in Kind]
 
 
-def test_the_zone_is_a_hexagon_of_one_to_thirty_seven_cells_one_ring_at_a_time():
-    assert LEVEL.board["zone"] == 37  # D-313, D-315
-    assert zoned(LEVEL, -1).board["zone"] == 19 and zoned(LEVEL, -3).board["zone"] == 1
-    assert zoned(LEVEL, 1).board["zone"] == 37 and zoned(LEVEL, -9).board["zone"] == 1
+def test_the_zone_is_a_hexagon_of_seven_to_thirty_seven_cells_one_ring_at_a_time():
+    assert LEVEL.board["zone"] == 37  # D-313, D-315: one cell holds nothing that swims
+    assert zoned(LEVEL, -1).board["zone"] == 19 and zoned(LEVEL, -2).board["zone"] == 7
+    assert zoned(LEVEL, 1).board["zone"] == 37 and zoned(LEVEL, -9).board["zone"] == 7
     assert len(zoned(LEVEL, -2).new_board().cells) == 7

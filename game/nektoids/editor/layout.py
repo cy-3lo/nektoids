@@ -470,7 +470,7 @@ def make_layout(
     if drawer is Drawer.TOOLS:
         rows.tools(height, wheel_folded, scroll)
     elif drawer is Drawer.PARTS and env is Env.MAKER:
-        rows.maker_parts()
+        rows.maker_parts(folded)
         rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds, height, wheel_folded, scroll)
@@ -659,15 +659,18 @@ class _Rows:
         self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH
 
-    def maker_parts(self) -> None:
-        """The Maker's Parts (D-315): under Board, its size; under Parts, each part in the
-        table's order; a row each, with − and + at its right end."""
+    def maker_parts(self, folded: frozenset[str]) -> None:
+        """The Maker's Parts (D-315): under Board, its size; then the parts in the Editor's
+        groups, sensors, actuators, operators, each under a title that folds it (D-069); a row
+        each, with − and + at its right end."""
         self._title("Board", self.sections)
         self._stepper(Stepper(None))
         self.y += SECTION_GAP
-        self._title("Parts", self.sections)
-        for kind in Kind:
-            self._stepper(Stepper(kind))
+        for title, kinds in MENU_GROUPS:
+            self._title(title, self.groups)
+            for kind in () if title in folded else kinds:
+                self._stepper(Stepper(kind))
+            self.y += SECTION_GAP
 
     def _stepper(self, what: Stepper) -> None:
         width = DRAWER_WIDTH - 2 * ROW_INSET

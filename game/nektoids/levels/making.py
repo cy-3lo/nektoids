@@ -45,7 +45,7 @@ BLANK_TIME = 30.0  # a blank plane's time allowed [s] (D-310)
 STOCK_MOST = 9  # a part handed out counted up to this, then unlimited (D-315)
 STOCK = (*range(STOCK_MOST + 1), None)  # ... the ladder − and + go along; None: unlimited
 BLANK_STOCK = 2  # of each part, on a blank plane (D-315)
-ZONES = (1, 7, 19, 37)  # a zone's sizes: hexagons of 0 to 3 rings, the sandbox's the largest
+ZONES = (7, 19, 37)  # a zone's sizes: hexagons of 1 to 3 rings, the sandbox's the largest
 TITLE_LONGEST = 40  # characters: the caption's line holds it with a short spec beside it
 SPEC_LONGEST = 120  # a sentence or two, as the shipped levels' (D-305)
 
@@ -231,8 +231,8 @@ def stocked(level: Level, kind: Kind, steps: int) -> Level:
 
 
 def zoned(level: Level, steps: int) -> Level:
-    """The level's zone a hexagon of `steps` rings more or fewer: 1, 7, 19 or 37 cells
-    (D-313, D-315); refused if a part the level places would be off it."""
+    """The level's zone a hexagon of `steps` rings more or fewer: 7, 19 or 37 cells, a single
+    cell holding no swimmer (D-313, D-315); refused if a part the level places would be off it."""
     zone = level.board["zone"]
     size = zone if isinstance(zone, int) else len(zone)
     at = min(range(len(ZONES)), key=lambda k: abs(ZONES[k] - size))

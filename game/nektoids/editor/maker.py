@@ -86,6 +86,7 @@ from nektoids.editor.layout import (
     edit_button_at,
     file_button_at,
     goal_button_at,
+    group_at,
     knob_at,
     level_field_at,
     make_layout,
@@ -209,6 +210,7 @@ class MakerScene(Frame):
         self.field: TextField | None = None  # ... what it holds (D-305)
         self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
+        self.folded: set[str] = set()  # Parts' groups shown closed, as the Editor's (D-315)
         self._take(level)
         self._open_view()
 
@@ -225,6 +227,7 @@ class MakerScene(Frame):
     def _relayout(self, drawer: Drawer | None) -> Layout:
         return make_layout(
             drawer,
+            frozenset(self.folded),
             env=Env.MAKER,
             chapter=self.layout.chapter,
             maker=True,
@@ -567,6 +570,9 @@ class MakerScene(Frame):
             self._start_from(start)
         elif (step := stepper_at(self.layout, pos)) is not None:  # Parts (D-315)
             self._step(*step)
+        elif (group := group_at(self.layout, pos)) is not None:  # ... its groups fold (D-069)
+            self.folded ^= {group}
+            self.layout = self._relayout(self.layout.drawer)
         elif (word := word_at(self.layout, pos)) is not None:  # Goals (D-308)
             self._make(lambda level: goal_worded(level, word.goal, word.word))
         elif (index := bin_at(self.layout, pos)) is not None:
