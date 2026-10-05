@@ -120,7 +120,7 @@ from nektoids.editor.scene import (
 )
 from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
-from nektoids.editor.wheel import WHEEL_HEX, Slot, centre_in, slot_at, slots
+from nektoids.editor.wheel import WHEEL_HEX, Slot, arc, centre_in, slot_at, slots
 from nektoids.levels.lattice import POSITION, Range, snapped
 from nektoids.levels.level import Level, to_json
 from nektoids.levels.making import (
@@ -369,7 +369,10 @@ class MakerScene(Frame):
         view = self.layout.wheel_view
         if view is None:
             return []
-        return slots(offer(self.focus), centre_in(view), WHEEL_HEX, frozenset(), keys=KEYS)
+        offered = offer(self.focus)  # side by side over the top, no gap (D-314)
+        return slots(
+            offered, centre_in(view), WHEEL_HEX, frozenset(), keys=KEYS, rim=arc(len(offered))
+        )
 
     def _pick(self, piece: Piece) -> None:
         """A row of Objects: the swimmer's start focused; a light or an obstacle in hand, for the

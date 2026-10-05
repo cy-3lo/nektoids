@@ -1787,4 +1787,7 @@ object 1 u at a time, a step for undo each, until Enter or Esc puts it down, as 
 chose; Delete. With nothing focused the arrows move the view, as before. The keys of the icons,
 M, L, R, < and >, Delete, 1 to 3, still act at once, and light their icon. A click on the action
 opens Objects, as the Editor's opens Tools. Esc puts down what is in hand, then lets go of the
-focus, then opens Chapters (D-304).
+focus, then opens Chapters (D-304). The physicist found the item's Wheel off, More at the lower
+right and the top empty: its four icons now sit side by side over the top, no corner left empty
+between them, Less, Move, More at the top, Delete, and the arrows go round in that order; the
+Editor's Wheel keeps its own. A mark's icon is a + in a circle, as the plane draws it.

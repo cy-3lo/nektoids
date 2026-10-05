@@ -3,10 +3,10 @@
 
 What a click focuses on the plane: an empty point of the lattice, an item by its place in the
 level, or the swimmer's start. The Wheel round an empty point offers a light, an obstacle and a
-mark, as an empty cell offers the parts; round an item, less, move, delete, more, the less and
-the more either side of the gap, where a part's turns sit; round the swimmer, turn left, move,
-turn right. What is under the mouse: the swimmer, a light or an obstacle under it, else a mark
-by its rim or its centre, so that a click inside a zone still finds the point there (D-306).
+mark, as an empty cell offers the parts; round an item, less, move, more, delete, side by side
+over the top, More at its top (D-314); round the swimmer, turn left, move, turn right. What is
+under the mouse: the swimmer, a light or an obstacle under it, else a mark by its rim or its
+centre, so that a click inside a zone still finds the point there (D-306).
 Which of the Wheel's icons is lit, as the Editor's (D-314): Move on an object clicked, More on one
 just placed, none on a point until the arrows choose; the arrows go round, stopping at the ends
 (D-084). What the line under the Wheel says. Pure numbers, no pygame.
@@ -39,7 +39,7 @@ ONE = {Piece.LIGHT: "a light", Piece.OBSTACLE: "an obstacle", Piece.MARK: "a mar
 POINT_PIECES = (Piece.LIGHT, Piece.OBSTACLE, Piece.MARK)  # what an empty point's Wheel offers
 KEYS = {**TOOL_KEYS, **{p: str(k + 1) for k, p in enumerate(POINT_PIECES)}}  # 1 2 3; its tips'
 MARK_GRAB = 6.0  # a mark is grabbed this near its rim, or its centre [px]
-ITEM_ACTIONS = (Tool.LESS, Tool.MOVE, Tool.DELETE, Tool.MORE)  # less and more by the gap
+ITEM_ACTIONS = (Tool.LESS, Tool.MOVE, Tool.MORE, Tool.DELETE)  # More at the top (D-314)
 START_ACTIONS = (Tool.TURN_LEFT, Tool.MOVE, Tool.TURN_RIGHT)
 WORDS = {  # the less and the more, as each kind of item says them
     ItemKind.LIGHT: ("Dimmer", "Brighter", "A light, power {:g}"),
