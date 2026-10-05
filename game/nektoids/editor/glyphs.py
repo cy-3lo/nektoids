@@ -62,6 +62,7 @@ GLYPH = {
     "volume-high": 0xF028,
     "music": 0xF001,
     "border-all": 0xF84C,
+    "file": 0xF15B,  # a blank plane, in the Maker's Start from (D-310)
     "list-check": 0xF0AE,
     "magnifying-glass": 0xF002,
     "trophy": 0xF091,

@@ -7,7 +7,8 @@ heads. Round it, the frame the editor and the run have (`frame.Frame`, D-051): O
 is the board's: the objects as rows, undo and redo, and at its foot the Wheel round what is
 focused (D-068, D-069, `objects.py`); Goals, the time allowed and the goals, each a sentence
 whose words are buttons, with a slider for its setting (D-308); Brief, the level's title and
-spec (D-305); Files, the level copied as text, or another's text pasted (D-310); Navigator, with
+spec (D-305); Files, the level copied as text, another's text pasted, or a blank plane or a
+shipped level to start from (D-310); Navigator, with
 the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
 
 A click on an object focuses it, and its Wheel offers what can be done to it; a drag moves it,
@@ -25,7 +26,7 @@ shows or hides the rays; Tab the next tab, Space the run. Each change is a new `
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from enum import Enum
 
 import numpy as np
@@ -66,6 +67,7 @@ from nektoids.editor.layout import (
     Layout,
     Piece,
     Rect,
+    Start,
     Tool,
     ViewButton,
     along,
@@ -82,6 +84,7 @@ from nektoids.editor.layout import (
     overview_at,
     piece_row_at,
     slider_parts,
+    start_row_at,
     value_at,
     view_button_at,
     wheel_fold_at,
@@ -119,6 +122,7 @@ from nektoids.levels.making import (
     TITLE_LONGEST,
     Unmade,
     adjusted,
+    blank,
     goal_added,
     goal_removed,
     goal_set,
@@ -130,6 +134,7 @@ from nektoids.levels.making import (
     removed,
     specified,
     start_moved,
+    taken,
     timed,
     titled,
     turned,
@@ -161,10 +166,12 @@ class MakerScene(Frame):
         settings: Settings | None = None,
         chapter: int = 0,
         drawer: Drawer | None = Drawer.OBJECTS,
+        starts: Sequence[tuple[str, Level]] = (),
     ):
         layout = make_layout(drawer, env=Env.MAKER, chapter=chapter, maker=True)
         self._start_frame(layout, settings)  # also `request`: "run", "edit"... for main.py
         self.label = label  # "SANDBOX", before its title in the caption
+        self.starts = tuple(starts)  # Start from's levels, each with its label: "1.2", or ""
         self.show_rays = True  # the light's rays, drawn or not
         self.pointer = (0, 0)  # where the mouse is [px]
         self.panning: tuple[int, int] | None = None  # where a drag on the plane last was
@@ -186,8 +193,7 @@ class MakerScene(Frame):
         self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
         self._take(level)
-        self.view = self._opening()
-        self._floor = union(self._needed(), grown(shown(self.view, self.arena_area), ZOOM_STEP))
+        self._open_view()
 
     @property
     def caption(self) -> tuple[str, str]:
@@ -209,6 +215,7 @@ class MakerScene(Frame):
             scroll=self.scrolls.get(drawer, 0),  # D-096
             made=tuple(bool(settings(goal)) for goal in self.level.objectives),  # D-308
             addable=len(self.level.objectives) < GOALS_MOST,
+            starts=len(self.starts),  # D-310
             **self._hint_layout(),
         )
 
@@ -254,7 +261,9 @@ class MakerScene(Frame):
         if self.layout.drawer is Drawer.BRIEF:
             return "Click the title or the spec to write it.  The caption above follows."
         if self.layout.drawer is Drawer.FILES:
-            return "Copy level: the level as text, to keep.  Paste a level's text to make it here."
+            return (
+                "Copy level: the level as text.  Paste a level, or start from one or a blank plane."
+            )
         if self.sliding is not None:
             return "Let go where it should stay."
         if self.layout.drawer is Drawer.GOALS and not self.level.objectives:
@@ -385,6 +394,12 @@ class MakerScene(Frame):
         _, _, w, h = self.arena_area
         return extent(points, reach, w / h, room)
 
+    def _open_view(self) -> None:
+        """The view as the Maker opens on the level: what matters, centred; the overview never
+        less than that view, a step farther out."""
+        self.view = self._opening()
+        self._floor = union(self._needed(), grown(shown(self.view, self.arena_area), ZOOM_STEP))
+
     def _opening(self) -> ArenaView:
         """What matters, centred, at OPENING_SCALE, or farther out if that would not show it."""
         return view_of(self.arena_area, self._needed(1.0), OPENING_SCALE)
@@ -486,6 +501,8 @@ class MakerScene(Frame):
             self._edit(edit)
         elif file_button_at(self.layout, pos) is FileButton.LEVEL:  # Files (D-310)
             self._copy_level()
+        elif (start := start_row_at(self.layout, pos)) is not None:
+            self._start_from(start)
         elif (word := word_at(self.layout, pos)) is not None:  # Goals (D-308)
             self._make(lambda level: goal_worded(level, word.goal, word.word))
         elif (index := bin_at(self.layout, pos)) is not None:
@@ -654,10 +671,26 @@ class MakerScene(Frame):
     def _paste_level(self, text: str) -> None:
         """The level `text` holds, taken onto this one but its board, one step for undo, the
         view on it; or why not, in the status line."""
-        if self._make(lambda level: pasted(level, text)):
-            self.focus, self.picked, self.moving = None, None, False
-            self.view = self._opening()
+        if self._made_anew(lambda level: pasted(level, text)):
             self.said = f"Pasted: {self.level.title}."
+
+    def _start_from(self, start: Start) -> None:
+        """A blank plane, or a shipped level taken onto this one but its board, one step for
+        undo, the view on it."""
+        if start.index is None:
+            if self._made_anew(blank):
+                self.said = "Started from a blank plane."
+        elif self._made_anew(lambda level: taken(level, self.starts[start.index][1])):
+            self.said = f"Started from {self.level.title}."
+
+    def _made_anew(self, change: Callable[[Level], Level]) -> bool:
+        """`change`, a level made anew, as `_make` makes any; once made, nothing is focused or
+        in hand, and the view opens on it as the Maker opens."""
+        if not self._make(change):
+            return False
+        self.focus, self.picked, self.moving = None, None, False
+        self._open_view()
+        return True
 
     def _wheel_on(self, pos: tuple[int, int], steps: int) -> None:
         """The mouse wheel on an object: a light brighter or dimmer, an obstacle bigger or

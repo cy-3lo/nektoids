@@ -39,6 +39,7 @@ SETTING = {  # what each item's setting may be (D-301)
 NEW = {ItemKind.LIGHT: 4.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 3.0}  # a new item's setting
 TIME = Range(5.0, 300.0, 5.0, "s")  # the time allowed, which every level has (D-301)
 GOALS_MOST = 2  # goals a made level asks, besides its time (D-308)
+BLANK_TIME = 30.0  # a blank plane's time allowed [s] (D-310)
 TITLE_LONGEST = 40  # characters: the caption's line holds it with a short spec beside it
 SPEC_LONGEST = 120  # a sentence or two, as the shipped levels' (D-305)
 
@@ -182,6 +183,14 @@ def pasted(level: Level, text: str) -> Level:
     except ValueError as refused:  # a newer version, a key it does not know, items that overlap
         raise Unmade(str(refused)) from None
     return taken(level, other)
+
+
+def blank(level: Level) -> Level:
+    """A blank plane on `level`'s board: no item, the swimmer at the origin heading along x, no
+    goal, BLANK_TIME, a title and a spec to write (D-310)."""
+    words = replace(level, title="New level", spec="Say what the level asks.")
+    plane = replace(words, start=(0.0, 0.0, 0.0), items=(), objectives=())
+    return taken(level, replace(plane, time_limit=BLANK_TIME))
 
 
 def taken(level: Level, other: Level) -> Level:

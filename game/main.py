@@ -38,7 +38,7 @@ from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, cont
 from nektoids.editor.maker import MakerScene
 from nektoids.editor.maker_draw import draw_maker
 from nektoids.editor.preview_draw import draw_preview
-from nektoids.editor.router import Router, Screen, level_label
+from nektoids.editor.router import CHAPTER, Router, Screen, level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
@@ -77,7 +77,8 @@ clock = pygame.time.Clock()
 fonts = Fonts.load()
 clipboard.install()  # the page's side of Save and Load, once (D-206)
 levels = arenas()  # read from their files once, at startup (web.md: no file I/O in the loop)
-router = Router(levels, sandbox())
+free = sandbox()  # Free play's level as shipped: the Maker may start from it again (D-310)
+router = Router(levels, free)
 editors: dict[int, EditorScene] = {}  # each level's editor, and its undo history with it
 makers: dict[int, MakerScene] = {}  # the sandbox's Maker, made when first opened (D-301)
 tutorials: dict[int, Tutorial] = {}  # each level's tutorial, where it has got to
@@ -188,7 +189,10 @@ def editor() -> EditorScene:
 def maker() -> MakerScene:
     """The sandbox's Maker, made the first time it opens (D-301)."""
     if router.index not in makers:
-        makers[router.index] = MakerScene(router.level, router.label, settings, len(levels))
+        starts = (*((f"{CHAPTER}.{k + 1}", level) for k, level in enumerate(levels)), ("", free))
+        makers[router.index] = MakerScene(
+            router.level, router.label, settings, len(levels), starts=starts
+        )
     return makers[router.index]
 
 
