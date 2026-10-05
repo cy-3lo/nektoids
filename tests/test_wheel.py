@@ -5,7 +5,8 @@ from itertools import pairwise
 
 import pytest
 
-from nektoids.editor.layout import BAR_WIDTH, DRAWER_WIDTH, Drawer, Tool, make_layout
+from nektoids.editor.layout import BAR_WIDTH, DRAWER_WIDTH, Drawer, Piece, Tool, make_layout
+from nektoids.editor.objects import KEYS
 from nektoids.editor.wheel import (
     ACTIONS,
     ICON,
@@ -184,3 +185,12 @@ def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
                 assert slot.at[1] - r >= y
             lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + r for slot in wheel])
             assert lowest + LINE_BELOW + line <= y + h
+
+
+def test_the_wheel_takes_the_makers_keys_for_its_own_icons():
+    items = (Piece.LIGHT, Piece.OBSTACLE)  # an empty point of the plane (D-301)
+    shown = slots(items, (100.0, 100.0), WHEEL_HEX, frozenset(), keys=KEYS)
+    assert [(s.what, s.key) for s in shown] == [(Piece.LIGHT, "1"), (Piece.OBSTACLE, "2")]
+    assert [s.at for s in shown] == [
+        s.at for s in slots(list(Kind)[:2], (100.0, 100.0), WHEEL_HEX, frozenset(Kind))
+    ]

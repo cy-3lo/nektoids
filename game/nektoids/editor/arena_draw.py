@@ -222,10 +222,14 @@ def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Are
         centre = view.to_screen(disc.x, disc.y)
         pygame.draw.circle(screen, OBSTACLE, centre, disc.radius * view.scale)
     for light in arena.lights:
-        centre = view.to_screen(light.x, light.y)
-        pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
-        pygame.draw.aacircle(screen, DARK, centre, LIGHT_RADIUS * view.scale + 1, 1)
-        fonts.icons.draw(screen, "lightbulb", centre, round(BULB * LIGHT_RADIUS * view.scale), DARK)
+        draw_light(screen, fonts, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale)
+
+
+def draw_light(screen: pygame.Surface, fonts: Fonts, centre, radius: float) -> None:
+    """A light: a white disc of `radius` [px], outlined, a bulb on it (D-076)."""
+    pygame.draw.circle(screen, LIGHT, centre, radius)
+    pygame.draw.aacircle(screen, DARK, centre, radius + 1, 1)
+    fonts.icons.draw(screen, "lightbulb", centre, round(BULB * radius), DARK)
 
 
 def draw_rays(

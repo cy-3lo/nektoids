@@ -21,6 +21,9 @@ GLYPH = {
     "caret-right": 0xF0DA,
     "infinity": 0xF534,
     "minus": 0xF068,
+    "shapes": 0xF61F,  # the Maker's Objects (D-301)
+    "circle": 0xF111,  # an obstacle
+    "location-arrow": 0xF124,  # the swimmer's start
     "magnifying-glass-plus": 0xF00E,
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,

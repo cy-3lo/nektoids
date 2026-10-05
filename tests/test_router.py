@@ -1,5 +1,7 @@
 """Where the player is, and how they move about (D-030, D-035). router.py imports no pygame."""
 
+from dataclasses import replace
+
 import pytest
 
 from nektoids.editor.router import ChapterRow, Router, Screen, level_label
@@ -202,3 +204,16 @@ def test_the_maker_opens_on_the_sandbox_alone_and_the_editor_and_the_run_go_on_f
     router.make()
     router.edit()
     assert router.screen is Screen.EDIT
+
+
+def test_the_maker_revises_the_sandboxs_level_alone_and_its_board_stays():
+    router = a_router()  # D-301
+    with pytest.raises(ValueError, match="only the sandbox"):
+        router.revise(router.level)
+    router.open(router.sandbox_index)
+    board = router.board
+    eye = board.place(Kind.EYE, (0, 0))
+    made = replace(router.level, start=(3.0, 4.0, 90.0))
+    router.revise(made)
+    assert router.level is made and router.sandbox is made
+    assert router.board is board and eye.id in board.nodes  # the plane changed round it

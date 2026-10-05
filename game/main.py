@@ -334,6 +334,11 @@ async def main() -> None:
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
                 choose_place(chosen)
+        made = makers.get(router.index)
+        if made is not None and made.level is not router.level:  # changed in the Maker (D-301)
+            router.revise(made.level)
+            if router.index in editors:
+                editors[router.index].revise(made.level, made.caption)
         if router.screen is Screen.MAKE:
             asked, maker().request = maker().request, None
             if asked == "run":

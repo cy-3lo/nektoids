@@ -1,8 +1,11 @@
 """Undo and redo (D-027). history.py imports no pygame."""
 
+from dataclasses import replace
+
 from nektoids.editor.history import History
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.hexgrid import offset_rect
+from nektoids.levels.arenas import sandbox
 
 RECT = offset_rect(9, 7)
 
@@ -60,3 +63,11 @@ def test_only_the_last_states_are_kept():
         history.record(board.snapshot())
     undone = [history.undo(boards[-1].snapshot()) for _ in range(4)]
     assert undone[:3] == [boards[k].snapshot() for k in (4, 3, 2)] and undone[3] is None
+
+
+def test_the_makers_history_keeps_whole_levels_as_the_editors_keeps_boards():
+    level = sandbox()  # D-301: any frozen state
+    turned = replace(level, start=(15.0, 19.0, 30.0))
+    history: History = History()
+    history.record(level)
+    assert history.undo(turned) == level and history.redo(level) == turned
