@@ -264,6 +264,11 @@ class Goal:
         return self.many is Count.NONE and bool(kept.any())
 
 
+def _whole(value: float) -> float | int:
+    """`value`, an integer if it is a whole number, as a level's file writes it (D-313)."""
+    return int(value) if float(value).is_integer() else value
+
+
 def _touch(size: np.ndarray, radius: np.ndarray) -> np.ndarray:
     """(N, K): how near each swimmer's centre comes to each light's or obstacle's when it
     touches it, a little short: REACH (R + r), 2.1 u for a base body and a light [u]."""
@@ -329,7 +334,7 @@ GONE = "circling is gone: reach marks round the target instead (D-312)"
 def objective_to_dict(goal: Goal) -> dict:
     """The sentence and its setting, as a level's data holds it."""
     data = {"verb": goal.verb.value, "count": goal.many.value, "target": goal.target.value}
-    return data | {taken: getattr(goal, taken) for taken, _ in settings(goal)}
+    return data | {taken: _whole(getattr(goal, taken)) for taken, _ in settings(goal)}
 
 
 def objective_from_dict(data: Mapping) -> Goal:
@@ -344,7 +349,8 @@ def objective_from_dict(data: Mapping) -> Goal:
         words = (Verb(data["verb"]), Count(data["count"]), Target(data["target"]))
     except KeyError as missing:
         raise ValueError(f"an objective needs its {missing.args[0]}") from None
-    return Goal(*words, seconds=data.get("seconds"))
+    seconds = data.get("seconds")
+    return Goal(*words, seconds=None if seconds is None else float(seconds))
 
 
 V2_TAKES = {  # version 2's objectives, by kind, and the settings each took

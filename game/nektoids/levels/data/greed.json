@@ -1,17 +1,11 @@
 {
-  "version": 3,
+  "version": 4,
   "title": "Greed",
   "spec": "Touch both lights.",
-  "start": {"at": [8.0, 19.0], "heading": 0.0},
-  "items": [
-    {"kind": "light", "at": [18.0, 19.0], "power": 6.0},
-    {"kind": "light", "at": [13.0, 10.5], "power": 3.0}
-  ],
+  "start": {"at": [8, 19], "heading": 0},
+  "items": [{"kind": "light", "at": [18, 19], "power": 6}, {"kind": "light", "at": [13, 10], "power": 3}],
   "board": {
-    "zone": [
-      [0, -2], [1, -2], [2, -2], [-1, -1], [0, -1], [1, -1], [2, -1], [-2, 0], [-1, 0], [0, 0],
-      [1, 0], [2, 0], [-2, 1], [-1, 1], [0, 1], [1, 1], [-2, 2], [-1, 2], [0, 2]
-    ],
+    "zone": 19,
     "stock": {
       "eye": 2,
       "source": 1,
@@ -24,7 +18,7 @@
     "parts": [],
     "wires": []
   },
-  "time_limit": 20.0,
+  "time_limit": 20,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "GOLD"
 }

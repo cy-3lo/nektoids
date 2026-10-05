@@ -109,11 +109,11 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
 def test_a_level_without_its_version_or_of_another_is_refused():
     data = a_level()
     del data["version"]
-    with pytest.raises(ValueError, match="without its version: this game reads version 3"):
+    with pytest.raises(ValueError, match="without its version: this game reads version 4"):
         Level.from_dict(data)
-    with pytest.raises(ValueError, match="of version 4: this game reads version 3 and those"):
-        Level.from_dict(a_level(version=4))  # D-201
-    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 3  # 1 upgraded (D-307)
+    with pytest.raises(ValueError, match="of version 5: this game reads version 4 and those"):
+        Level.from_dict(a_level(version=5))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 4  # 1 upgraded (D-313)
 
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
@@ -158,3 +158,28 @@ def test_a_goal_must_aim_at_something_the_level_has():
     goal = {"verb": "leave", "count": "all", "target": "mark"}  # D-307: no mark to leave
     with pytest.raises(ValueError, match="'Leave every ring': the level has no rings"):
         Level.from_dict(a_level(version=3, objectives=[goal]))
+
+
+def test_version_4_writes_a_hexagons_zone_as_its_size_and_whole_numbers_as_integers():
+    old = a_level(version=3, objectives=[{"verb": "reach", "count": "all", "target": "light"}])
+    old["board"] = {**old["board"], "zone": [list(c) for c in hex_disc(2)]}  # its cells
+    data = Level.from_dict(old).to_dict()  # D-313
+    assert data["board"]["zone"] == 19 and data["start"] == {"at": [5, 5], "heading": 90}
+    assert data["items"][1] == {"kind": "light", "at": [20, 5], "power": 6}
+    assert data["time_limit"] == 30 and isinstance(data["time_limit"], int)
+    again = Level.from_dict(json.loads(json.dumps(data)))
+    assert again.start == (5.0, 5.0, 90.0) and isinstance(again.start[0], float)
+    assert again.new_board().cells == Level.from_dict(old).new_board().cells
+    halves = Level.from_dict({**data, "start": {"at": [5.5, 5], "heading": 90}}).to_dict()
+    assert halves["start"]["at"] == [5.5, 5]  # not whole: written as it is
+    bare = {**old["board"], "zone": [[0, 0], [1, 0]], "parts": [], "wires": []}
+    odd = Level.from_dict({**old, "board": bare})
+    assert odd.to_dict()["board"]["zone"] == [[0, 0], [1, 0]]  # no hexagon: its cells
+
+
+def test_every_shipped_levels_positions_are_whole_units_and_its_zone_a_size():
+    for path in sorted(DATA.glob("*.json")):  # D-313
+        data = json.loads(path.read_text())
+        points = [data["start"]["at"], *(item["at"] for item in data["items"])]
+        assert all(isinstance(v, int) for point in points for v in point), path.stem
+        assert data["version"] == 4 and data["board"]["zone"] in (19, 37), path.stem

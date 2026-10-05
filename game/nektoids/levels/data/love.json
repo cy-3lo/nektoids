@@ -1,24 +1,21 @@
 {
-  "version": 3,
+  "version": 4,
   "title": "Love",
   "spec": "Stay by the light for 5 s without touching it.",
-  "start": {"at": [10.0, 19.0], "heading": 0.0},
+  "start": {"at": [10, 19], "heading": 0},
   "items": [
-    {"kind": "light", "at": [25.0, 19.0], "power": 3.5},
-    {"kind": "mark", "at": [25.0, 19.0], "radius": 6.0}
+    {"kind": "light", "at": [25, 19], "power": 3.5},
+    {"kind": "mark", "at": [25, 19], "radius": 6}
   ],
   "board": {
-    "zone": [
-      [0, -2], [1, -2], [2, -2], [-1, -1], [0, -1], [1, -1], [2, -1], [-2, 0], [-1, 0], [0, 0],
-      [1, 0], [2, 0], [-2, 1], [-1, 1], [0, 1], [1, 1], [-2, 2], [-1, 2], [0, 2]
-    ],
+    "zone": 19,
     "stock": {"eye": 2, "source": 2, "sum": 2, "difference": 2, "thruster": 2},
     "parts": [],
     "wires": []
   },
-  "time_limit": 20.0,
+  "time_limit": 20,
   "objectives": [
-    {"verb": "stay", "count": "one", "target": "mark", "seconds": 5.0},
+    {"verb": "stay", "count": "one", "target": "mark", "seconds": 5},
     {"verb": "reach", "count": "none", "target": "light"}
   ],
   "passkey": "HEART",
