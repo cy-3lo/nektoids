@@ -8,7 +8,7 @@ from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NE, hex_disc
 from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas, sandbox
 from nektoids.levels.level import FORMAT, Item, ItemKind, Level, is_passkey, load, to_json
-from nektoids.levels.objectives import VisitLights
+from nektoids.levels.objectives import Count, Goal, Target, Verb
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import OBSTACLE_RADIUS
 
@@ -45,7 +45,7 @@ def test_a_level_comes_back_from_its_data_as_it_was_even_through_json():
     level = Level.from_dict(a_level())
     assert Level.from_dict(json.loads(json.dumps(level.to_dict()))) == level
     assert level.start == (5.0, 5.0, 90.0) and level.time_limit == 30.0
-    assert level.objectives == (VisitLights(),)
+    assert level.objectives == (Goal(Verb.REACH, Count.ALL, Target.LIGHT),)  # D-307
 
 
 def test_items_are_placed_as_parts_are_a_kind_a_point_and_their_kinds_setting():
@@ -109,11 +109,11 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
 def test_a_level_without_its_version_or_of_another_is_refused():
     data = a_level()
     del data["version"]
-    with pytest.raises(ValueError, match="without its version: this game reads version 2"):
+    with pytest.raises(ValueError, match="without its version: this game reads version 3"):
         Level.from_dict(data)
-    with pytest.raises(ValueError, match="of version 3: this game reads version 2 and those"):
-        Level.from_dict(a_level(version=3))  # D-201
-    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 2  # 1 upgraded (D-306)
+    with pytest.raises(ValueError, match="of version 4: this game reads version 3 and those"):
+        Level.from_dict(a_level(version=4))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 3  # 1 upgraded (D-307)
 
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
@@ -141,3 +141,20 @@ def test_a_mark_is_an_item_the_arena_never_has_so_the_run_is_what_it_was():
         Level.from_dict(a_level(items=[{"kind": "mark", "at": [1.0, 1.0]}]))
     with pytest.raises(ValueError, match="'zone' is not a valid ItemKind"):
         Level.from_dict(a_level(items=[{"kind": "zone", "at": [1.0, 1.0]}]))
+
+
+def test_version_2s_rings_become_marks_on_its_lights_and_its_objectives_sentences():
+    data = a_level(version=2, objectives=[{"kind": "leave ring", "radius": 12.0}])  # D-307
+    level = Level.from_dict(data)
+    assert level.marks == (Item(ItemKind.MARK, (20.0, 5.0), 12.0),)  # on its one light
+    assert level.objectives == (Goal(Verb.LEAVE, Count.ALL, Target.MARK),)
+    assert level.items[:3] == Level.from_dict(a_level()).items  # the rest as it was
+    marked = [*a_level()["items"], {"kind": "mark", "at": [1.0, 1.0], "radius": 2.0}]
+    with pytest.raises(ValueError, match="would count its marks"):
+        Level.from_dict(a_level(version=2, items=marked, objectives=data["objectives"]))
+
+
+def test_a_goal_must_aim_at_something_the_level_has():
+    goal = {"verb": "leave", "count": "all", "target": "mark"}  # D-307: no mark to leave
+    with pytest.raises(ValueError, match="'Leave the ring': the level has no rings"):
+        Level.from_dict(a_level(version=3, objectives=[goal]))

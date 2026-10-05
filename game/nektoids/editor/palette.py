@@ -186,7 +186,6 @@ RAY = mix(P.deep, P.line, 0.45)  # every ray, whatever its light
 OBSTACLE = mix(P.line, P.muted, 0.5)
 BODY = P.accent1.bright  # the selected swimmer
 BODY_UNSELECTED = P.dim
-RING = P.dim  # a ring to leave or to stay in, until that is done
 RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead of the playhead
 EYE_SHADES = (P.bright, P.dim)  # one per eye in the polar plot, in turn
 WIN = P.accent1.bright  # a win on Score's plot that no other beats: the Pareto front

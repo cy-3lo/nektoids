@@ -16,7 +16,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-from nektoids.editor.arena_view import ArenaView, frame
+from nektoids.editor.arena_view import ArenaView, frame, rims
 from nektoids.editor.circuit import METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT
 from nektoids.editor.layout import Rect, View
@@ -24,7 +24,6 @@ from nektoids.graph.board import Board
 from nektoids.graph.dynamics import RATE_MAX, initial_state, step
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
-from nektoids.levels.objectives import LeaveRing, StayNear
 from nektoids.sim import world
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 from nektoids.sim.contact import confine
@@ -144,18 +143,11 @@ class Probe:
 
 
 def level_view(level: Level, area: Rect) -> ArenaView:
-    """The level seen whole in `area`, as the run frames it at its start: its lights and their
-    rings, its obstacles, where the swimmer starts."""
+    """The level seen whole in `area`, as the run frames it at its start: its lights, its
+    marks whole (D-306), its obstacles, where the swimmer starts."""
     x, y, _ = level.start
-    arena = level.arena
-    rims = [
-        arena.light_xy + d for r in ring_radii(level) for d in ((r, 0), (-r, 0), (0, r), (0, -r))
-    ]
-    points = np.concatenate(([[x, y]], arena.light_xy, arena.disc_xy, *rims))
+    arena, marks = level.arena, level.marks
+    at, radii = np.array([m.at for m in marks]).reshape(-1, 2), np.array([m.value for m in marks])
+    points = np.concatenate(([[x, y]], arena.light_xy, arena.disc_xy, rims(at, radii)))
     reach = float(np.concatenate(([LIGHT_RADIUS, BASE_RADIUS], arena.disc_radius)).max())
     return frame(area, points, MAP_MARGIN + reach)
-
-
-def ring_radii(level: Level) -> list[float]:
-    """The rings the level's objectives draw round its lights, to leave or to stay in [u]."""
-    return [o.radius for o in level.objectives if isinstance(o, LeaveRing | StayNear)]

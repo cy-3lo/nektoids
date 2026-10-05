@@ -13,6 +13,7 @@ from dataclasses import replace
 
 from nektoids.levels.lattice import HEADING, Range, snap, snapped
 from nektoids.levels.level import Item, ItemKind, Level
+from nektoids.levels.objectives import THING, targets
 from nektoids.sim.arena import BASE_RADIUS
 
 SETTING = {  # what each item's setting may be (D-301)
@@ -47,8 +48,9 @@ def adjusted(level: Level, index: int, steps: int) -> Level:
 
 
 def removed(level: Level, index: int) -> Level:
-    """Item `index` gone; those after it move up in order."""
-    return replace(level, items=level.items[:index] + level.items[index + 1 :])
+    """Item `index` gone; those after it move up in order. The last of a kind a goal aims at
+    stays (D-307)."""
+    return _checked(replace(level, items=level.items[:index] + level.items[index + 1 :]))
 
 
 def start_moved(level: Level, at: tuple[float, float]) -> Level:
@@ -95,4 +97,7 @@ def _checked(level: Level) -> Level:
     for disc in arena.obstacles:
         if math.hypot(disc.x - x, disc.y - y) < disc.radius + BASE_RADIUS:
             raise Unmade("the swimmer would start inside an obstacle")
+    for goal in level.objectives:  # each aims at something the level has (D-307)
+        if not len(targets(level, goal.target)[0]):
+            raise Unmade(f"{goal.name} needs {THING[goal.target][2]}: take the goal out first")
     return level

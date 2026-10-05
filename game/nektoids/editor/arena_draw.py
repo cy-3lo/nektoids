@@ -7,7 +7,7 @@ With I (developer) the light is a map instead, grey, dark in shadow and white wh
 looking at a light saturates; the square root of the reading sets the grey (`tone`), and it is
 smoothed over a few cells (`smooth`). Obstacles are grey discs, lights white discs with a bulb,
 as big as a swimmer (`LIGHT_RADIUS`), their rays leaving from the rim, a ring round the ones
-visited, a dashed one where an objective draws a ring to leave or to stay in, lit once done, and
+visited, the marks empty grey circles, lit once the goal on them is met (D-306, D-307), and
 a swimmer its body's circle round a wedge, its tip forward, bright when selected, at work
 (D-076, `marks`): its parts' faces and outlines, its flames, the light its eyes draw in, a
 segment for its velocity and an arc for its spin. When the run is over, a banner over the arena
@@ -104,7 +104,6 @@ from nektoids.editor.palette import (
     PANEL,
     RAY,
     REFUSED,
-    RING,
     RULE,
     RUN_SO_FAR,
     SHADOW,
@@ -133,7 +132,6 @@ GOAL_BAR = 3  # an objective's bar, along its row's foot [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 WIN_DOT = 4  # a win on that plot; this run's ring sits 4 px round it [px]
-RING_DASHES = 72  # half of them drawn
 MARK_CROSS = 5  # the arms of the cross on a mark's centre [px]
 ICON = {
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
@@ -197,26 +195,11 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     elif scene.show_rays:
         t, area = scene.clock.seconds, scene.arena_area
         draw_rays(screen, view, area, arena, scene.rays, t, scene.pos, scene.radius)
-    draw_marks(screen, view, scene.level.marks)
+    draw_marks(screen, view, scene.level.marks, colour=LIGHT if scene.marks_met else MARK)
     draw_items(screen, fonts, view, arena)
-    for radius, done in scene.rings:  # to leave or to stay in, dashed (D-038, D-040)
-        for x, y in arena.light_xy:
-            _dashed_circle(
-                screen, view.to_screen(x, y), radius * view.scale, LIGHT if done else RING
-            )
     for light in np.flatnonzero(scene.lights_reached):  # by any swimmer
         centre = view.to_screen(*arena.light_xy[light])
         pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale + VISITED_GAP, 2)
-
-
-def _dashed_circle(screen: pygame.Surface, centre, radius: float, colour) -> None:
-    """A circle of `radius` [px] in RING_DASHES dashes, every other one drawn."""
-    step = 2.0 * math.pi / RING_DASHES
-    for k in range(0, RING_DASHES, 2):
-        a, b = k * step, (k + 1) * step
-        start = (centre[0] + radius * math.cos(a), centre[1] + radius * math.sin(a))
-        end = (centre[0] + radius * math.cos(b), centre[1] + radius * math.sin(b))
-        pygame.draw.line(screen, colour, start, end, 2)
 
 
 def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Arena) -> None:
@@ -228,20 +211,20 @@ def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Are
         draw_light(screen, fonts, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale)
 
 
-def draw_marks(screen: pygame.Surface, view: ArenaView, marks, width: int = 2) -> None:
-    """The level's marks (D-306): each an empty grey circle `width` [px] wide, a cross on its
-    centre, under the lights and the obstacles."""
+def draw_marks(screen: pygame.Surface, view: ArenaView, marks, colour=MARK, width: int = 2) -> None:
+    """The level's marks (D-306): each an empty circle `width` [px] wide, grey, or lit once their
+    goal is met (D-307), a cross on its centre, under the lights and the obstacles."""
     for mark in marks:
-        draw_mark(screen, view.to_screen(*mark.at), mark.value * view.scale, width)
+        draw_mark(screen, view.to_screen(*mark.at), mark.value * view.scale, width, colour)
 
 
-def draw_mark(screen: pygame.Surface, centre, radius: float, width: int = 2) -> None:
+def draw_mark(screen: pygame.Surface, centre, radius: float, width: int = 2, colour=MARK) -> None:
     """A mark of `radius` [px] at `centre` [px]: an empty circle, a small cross on its centre."""
     cx, cy = centre
-    pygame.draw.circle(screen, MARK, centre, radius, width)
+    pygame.draw.circle(screen, colour, centre, radius, width)
     arm = min(MARK_CROSS, radius / 2)
-    pygame.draw.line(screen, MARK, (cx - arm, cy), (cx + arm, cy), width)
-    pygame.draw.line(screen, MARK, (cx, cy - arm), (cx, cy + arm), width)
+    pygame.draw.line(screen, colour, (cx - arm, cy), (cx + arm, cy), width)
+    pygame.draw.line(screen, colour, (cx, cy - arm), (cx, cy + arm), width)
 
 
 def draw_light(screen: pygame.Surface, fonts: Fonts, centre, radius: float) -> None:
@@ -472,7 +455,7 @@ def _about(scene: ArenaScene, what: object) -> tuple[str, tuple[str, ...]]:
         return "Time left", (f"The run ends after {scene.level.time_limit:g} s.",)
     if isinstance(what, Goal):
         objective = scene.level.objectives[what.index]
-        return objective.name, (objective.about.format(**vars(objective)),)
+        return objective.name, (objective.about,)
     return ROW_NAME[what], (TIP[what],)
 
 

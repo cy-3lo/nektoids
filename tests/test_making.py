@@ -22,6 +22,7 @@ from nektoids.levels.making import (
     titled,
     turned,
 )
+from nektoids.levels.objectives import Count, Goal, Target, Verb
 
 LEVEL = sandbox()  # two lights, four obstacles; the start at (15, 19), heading 20°
 
@@ -100,3 +101,12 @@ def test_a_mark_goes_anywhere_its_radius_from_half_a_unit_to_thirty():
     assert adjusted(over, 6, 99).items[6].value == SETTING[ItemKind.MARK].hi == 30.0
     assert adjusted(over, 6, -99).items[6].value == 0.5
     assert (over.arena.lights, over.arena.obstacles) == (LEVEL.arena.lights, LEVEL.arena.obstacles)
+
+
+def test_the_last_of_a_kind_a_goal_aims_at_stays():
+    goal = Goal(Verb.LEAVE, Count.ALL, Target.MARK)  # D-307
+    ringed = replace(placed(LEVEL, ItemKind.MARK, (3.0, 3.0)), objectives=(goal,))
+    with pytest.raises(Unmade, match="Leave the ring needs a ring: take the goal out first"):
+        removed(ringed, 6)
+    two = placed(ringed, ItemKind.MARK, (9.0, 9.0))
+    assert len(removed(two, 6).marks) == 1  # one of two may go

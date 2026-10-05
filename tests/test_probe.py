@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from nektoids.editor.layout import View
-from nektoids.editor.probe import Probe, ring_radii
+from nektoids.editor.probe import Probe
 from nektoids.graph.board import Kind
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import to_pixel
@@ -94,7 +94,8 @@ def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view(
     probe.see(zoomed)
     assert probe.circuit.centre(int(eye)) == to_pixel(cell, zoomed.size, zoomed.origin)
     assert np.array_equal(probe.y, before)
-    assert ring_radii(LEVELS["Fear"]) == [12.0] and ring_radii(LEVELS["Love"]) == [6.0]
+    rings = [[m.value for m in LEVELS[t].marks] for t in ("Fear", "Love")]  # marks (D-307)
+    assert rings == [[12.0], [6.0]]
 
 
 def test_diagnostics_map_shows_the_whole_level_where_the_swimmer_starts():

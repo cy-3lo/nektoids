@@ -133,7 +133,6 @@ from nektoids.editor.palette import (
     OUTSIDE_LINE,
     PANEL,
     REFUSED,
-    RING,
     RULE,
     SCROLL_THUMB,
     SHADOW,
@@ -146,7 +145,7 @@ from nektoids.editor.palette import (
     ZONE,
 )
 from nektoids.editor.parts import NAME, info, ports
-from nektoids.editor.probe import level_view, ring_radii
+from nektoids.editor.probe import level_view
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
@@ -773,7 +772,7 @@ def draw_level_map(
     view=None,
     body: AtWork | None = None,
 ) -> None:
-    """The level seen whole and small in `area`: its obstacles, its lights and their rings, and
+    """The level seen whole and small in `area`: its obstacles, its marks, its lights, and
     the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the main screen shows of it,
     outlined (Diagnostic's map, the run's overview, D-058, D-060); `view`, how it is seen, else the
     level seen whole; `body`, the swimmer at work, drawn round it (Diagnostic's map, D-076)."""
@@ -787,9 +786,6 @@ def draw_level_map(
         for mark in level.marks:  # D-306
             centre = view.to_screen(*mark.at)
             pygame.draw.circle(screen, MARK, centre, max(2.0, mark.value * view.scale), 1)
-        for radius in ring_radii(level):
-            for x, y in arena.light_xy:
-                pygame.draw.circle(screen, RING, view.to_screen(x, y), radius * view.scale, 1)
         for light in arena.lights:
             pygame.draw.circle(
                 screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
@@ -842,7 +838,7 @@ def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> 
 
 
 def _draw_diagnostic(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Diagnostic (D-058, D-069): the level small, its obstacles, its lights and their rings,
+    """Diagnostic (D-058, D-069): the level small, its obstacles, its marks, its lights,
     and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076)."""
     area = pygame.Rect(DIAGNOSTIC_MAP)
     probe = scene.probe
