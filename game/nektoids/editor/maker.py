@@ -120,6 +120,7 @@ from nektoids.levels.making import (
     goal_set,
     goal_worded,
     moved,
+    number,
     placed,
     removed,
     specified,
@@ -138,6 +139,8 @@ VIEWS = {VIEW_KEYS[b]: b for b in MAKER_VIEW}  # the keys the Maker's view answe
 ACTIONS = (Tool.MOVE, Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.LESS, Tool.MORE)
 ACTION_KEYS = {TOOL_KEYS[a]: a for a in ACTIONS}  # M L R < >; Delete on its physical key
 DIGITS = POINT_PIECES  # 1, 2, 3, on their physical keys, as Parts' numbers
+NUMBER = frozenset("0123456789.")  # what a slider's box takes, typed (D-308)
+NUMBER_LONGEST = 5  # ... and how long it grows: 300, 12.5
 
 
 class MakerScene(Frame):
@@ -168,9 +171,9 @@ class MakerScene(Frame):
         self.history: History[Level] = History()  # D-027
         self.wheel_folded = False  # The Wheel's picture folded, as in Tools and Parts (D-069)
         self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse
-        self.writing: Brief | None = None  # Brief's field typed in, the title or the spec
+        self.writing: Brief | Knob | None = None  # a field typed in: Brief's, a slider's box
         self.field: TextField | None = None  # ... what it holds (D-305)
-        self.field_pressed: Brief | None = None  # a press on one: it opens once the click is over
+        self.field_pressed: Brief | Knob | None = None  # pressed: it opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
         self._take(level)
         self.view = self._opening()
@@ -235,7 +238,7 @@ class MakerScene(Frame):
         """The status line, while nothing was refused: what a click or a key does now."""
         if self.writing is not None:
             kept = "Enter or a click elsewhere keeps it.  Esc: no change."
-            return f"Type its {self.writing.value}.  {kept}"
+            return f"Type {self._what(self.writing)}.  {kept}"
         if self.layout.drawer is Drawer.BRIEF:
             return "Click the title or the spec to write it.  The caption above follows."
         if self.sliding is not None:
@@ -431,15 +434,16 @@ class MakerScene(Frame):
             self._key(event)
 
     def _press(self, pos: tuple[int, int]) -> None:
-        """A click: a field of Brief's, to open once the click is over, a field open kept if the
-        click falls elsewhere; then the frame's, Navigator's, the Wheel's icons, Objects' rows,
-        then the plane: an object focused and grabbed, or a piece in hand put down, or Move
-        done, or the open plane pressed, to focus a point or move the view."""
-        field = brief_field_at(self.layout, pos)
-        if self.field is not None and field is not self.writing:
+        """A click: a field, Brief's or a slider's box in Goals, to open once the click is over,
+        a field open kept if the click falls elsewhere; then the frame's, Navigator's, the
+        Wheel's icons, Objects' rows, Goals', then the plane: an object focused and grabbed, or
+        a piece in hand put down, or Move done, or the open plane pressed, to focus a point or
+        move the view."""
+        field = self._field_at(pos)
+        if self.field is not None and field != self.writing:
             self._field_done("enter")  # a click elsewhere keeps what was typed
         if field is not None:
-            self.field_pressed = None if field is self.writing else field
+            self.field_pressed = None if field == self.writing else field
             return
         if self.frame_press(pos):
             return
@@ -471,10 +475,9 @@ class MakerScene(Frame):
             self._make(lambda level: goal_removed(level, index))
         elif goal_button_at(self.layout, pos) is GoalButton.ADD:
             self._make(goal_added)
-        elif (knob := knob_at(self.layout, pos)) is not None:
-            if not knob[1]:  # its track or its label: the value follows the mouse while held
-                self.sliding, self.before = knob[0], self.level
-                self._slide(pos[0])
+        elif (knob := knob_at(self.layout, pos)) is not None:  # its track: followed while held
+            self.sliding, self.before = knob[0], self.level
+            self._slide(pos[0])
         elif contains(self.arena_area, pos):
             self._press_plane(pos)
 
@@ -537,6 +540,21 @@ class MakerScene(Frame):
         """What a slider of Goals may be: the time allowed, or its goal's setting."""
         return TIME if knob.goal is None else settings(self.level.objectives[knob.goal])[0][1]
 
+    def value(self, knob: Knob) -> float:
+        """Where a slider of Goals stands: the time allowed [s], or its goal's setting."""
+        if knob.goal is None:
+            return self.level.time_limit
+        goal = self.level.objectives[knob.goal]
+        return getattr(goal, settings(goal)[0][0])
+
+    def _set_knob(self, knob: Knob, value: Callable[[], float], record: bool = True) -> None:
+        """A slider of Goals at `value()`, on its range's steps and within it; refused, as any
+        change, if `value` raises Unmade: a box with no number typed in it."""
+        if knob.goal is None:
+            self._make(lambda level: timed(level, value()), record)
+        else:
+            self._make(lambda level: goal_set(level, knob.goal, value()), record)
+
     def _slide(self, x: float) -> None:
         """The slider held, set where the pixel column `x` falls along its track; one step for
         undo once let go, as an object's drag."""
@@ -546,18 +564,33 @@ class MakerScene(Frame):
             return
         scale = self.scale(knob)
         value = scale.lo + along(slider_parts(rect)[1], x) * (scale.hi - scale.lo)
-        if knob.goal is None:
-            self._make(lambda level: timed(level, value), record=False)
+        self._set_knob(knob, lambda: value, record=False)
+
+    # Fields: Brief's (D-305), a slider's box in Goals (D-308)
+
+    def _field_at(self, pos: tuple[int, int]) -> Brief | Knob | None:
+        """The field under `pos`: Brief's title or spec, or a slider's value box."""
+        knob = knob_at(self.layout, pos)
+        return knob[0] if knob is not None and knob[1] else brief_field_at(self.layout, pos)
+
+    def _what(self, which: Brief | Knob) -> str:
+        """What a field holds, as the status line asks for it."""
+        if isinstance(which, Brief):
+            return f"its {which.value}"
+        if which.goal is None:
+            return "the time allowed, in seconds"
+        return f"its {settings(self.level.objectives[which.goal])[0][0]}"
+
+    def _open_field(self, which: Brief | Knob) -> None:
+        """The title's field or the spec's, holding what the level says now, or a slider's box,
+        holding its number; the caret after it."""
+        if isinstance(which, Knob):
+            text, longest, taken = f"{self.value(which):g}", NUMBER_LONGEST, NUMBER
+        elif which is Brief.TITLE:
+            text, longest, taken = self.level.title, TITLE_LONGEST, None
         else:
-            self._make(lambda level: goal_set(level, knob.goal, value), record=False)
-
-    # Brief's fields (D-305)
-
-    def _open_field(self, which: Brief) -> None:
-        """The title's field or the spec's, holding what the level says now, the caret after it."""
-        text = self.level.title if which is Brief.TITLE else self.level.spec
-        longest = TITLE_LONGEST if which is Brief.TITLE else SPEC_LONGEST
-        self.writing, self.field = which, TextField(text, longest=longest)
+            text, longest, taken = self.level.spec, SPEC_LONGEST, None
+        self.writing, self.field = which, TextField(text, taken, longest)
         clipboard.open_field(text, longest)
 
     def _field_key(self, event: pygame.event.Event) -> None:
@@ -572,11 +605,15 @@ class MakerScene(Frame):
 
     def _field_done(self, ended: str) -> None:
         """Enter, or a click elsewhere: the level says what was typed, a step for undo, unless
-        there is nothing in it; Esc: as it was."""
+        there is nothing in it, or no number in a slider's box; Esc: as it was."""
         which, text = self.writing, self.field.text
         self.writing = self.field = None
         clipboard.close_field()
-        if ended == "enter":
+        if ended != "enter":
+            return
+        if isinstance(which, Knob):  # on its range's steps, within it
+            self._set_knob(which, lambda: number(text))
+        else:
             write = titled if which is Brief.TITLE else specified
             self._make(lambda level: write(level, text))
 

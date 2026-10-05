@@ -22,6 +22,7 @@ from nektoids.levels.making import (
     goal_worded,
     lacks,
     moved,
+    number,
     placed,
     removed,
     specified,
@@ -181,3 +182,11 @@ def test_a_level_with_goals_made_reads_back_as_written_by_to_json():
     text = to_json(made)
     again = Level.from_dict(json.loads(text))
     assert again == made and again.objectives[0].seconds == 8.0 and again.time_limit == 35.0
+
+
+def test_a_sliders_box_takes_a_number_typed_and_refuses_anything_else():
+    assert number("35") == 35.0 and number("12.5") == 12.5 and number("007") == 7.0
+    for text in ("", ".", "1.2.3", "inf"):
+        with pytest.raises(Unmade, match="type a number"):
+            number(text)
+    assert timed(LEVEL, number("42")).time_limit == 40.0  # then onto the slider's steps

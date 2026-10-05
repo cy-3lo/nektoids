@@ -24,11 +24,10 @@ taken, when it starts.
       - [x] Marks, zones only the objectives read (D-306, #55); objectives as sentences: reach,
         leave, stay or circle all, one or none of the lights, obstacles or marks; level format
         version 3, every shipped run as it was (D-307, #56, #57).
+      - [x] Goals: the time allowed, and at most two goals, each a sentence chosen in three rows
+        of buttons, the words that would aim at nothing dimmed; sliders for the time, a stay's
+        seconds and a circle's turns, their values typed too (D-308, #59, #60, #61).
       To do, in this order:
-      - [ ] Goals: the time allowed, always, and at most two goals, each a sentence of three
-        choosers (verb, how many, target) offering only what makes sense, a slider with a typed
-        value for a stay's seconds or a circle's turns (D-308). Done: the changes, in
-        `making.py` (#59), and the drawer, G (#60); to come, the slider's value typed.
       - [ ] Save: Copy level (its JSON, as `to_json` writes it), Paste a level, Start from a
         blank plane or a shipped level.
       - [ ] The board: zone, stock and locked parts, set with the board editor itself.

@@ -321,19 +321,17 @@ def _draw_goals(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None
 
 def _draw_knob(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, knob: Knob, rect) -> None:
     """A slider of Goals: what it sets, at its left; its track, as Navigator's zoom; its value,
-    in a box at its right."""
-    if knob.goal is None:
-        name, now = "Time", scene.level.time_limit
-    else:
-        goal = scene.level.objectives[knob.goal]
-        setting = settings(goal)[0][0]
-        name, now = setting.capitalize(), getattr(goal, setting)
-    scale = scene.scale(knob)
+    in a box at its right, a field with a caret while it is typed in."""
+    now, scale = scene.value(knob), scene.scale(knob)
+    name = "Time" if knob.goal is None else settings(scene.level.objectives[knob.goal])[0][0]
     label, track, value = slider_parts(rect)
-    shown = cached_text(fonts.label, name, DIM_TEXT)
+    shown = cached_text(fonts.label, name.capitalize(), DIM_TEXT)
     screen.blit(shown, (label[0], label[1] + (label[3] - shown.get_height()) // 2))
     level = (min(max(now, scale.lo), scale.hi) - scale.lo) / (scale.hi - scale.lo)
     draw_track(screen, track, level, held=scene.sliding == knob)
+    if scene.writing == knob:
+        draw_field(screen, fonts, value, scene.field.text, scene.field.caret)
+        return
     box = pygame.Rect(value)
     pygame.draw.rect(screen, BUTTON, box, border_radius=6)
     shown = cached_text(fonts.small, f"{now:g} {scale.unit}".strip(), TEXT)
