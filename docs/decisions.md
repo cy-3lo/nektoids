@@ -1824,3 +1824,19 @@ stays centred on the top. A Source's Wheel reads Move, Wire, Swap at the top, De
 cell offering two parts, Fear's, sets them at the upper left and the top. The lowest corner, the
 gap where piles end, stays clear. The tutorials, which name icons rather than places, play as
 they did.
+
+**D-317 — 2026-10-05 — The Maker reviewed again: a click on the plane opens Objects, whose Wheel never folds; the line under the Wheel says the setting; Move goes when another object or anything off the plane is clicked, leaving nothing lit; the Maker opens on a blank plane. Love's light is power 4 and its ring 7 u, Patience's and Shadows' obstacles 2 u: every setting shipped is whole. Amends D-314, D-315, D-313.**
+The physicist, reviewing the Maker. A click on the plane, a point or an object, opens Objects if
+another drawer is open, so its Wheel shows; a drag of the view does not. The Maker's Wheel never
+folds, its title without the Editor's arrow. The line under it says what is focused and its
+setting again, "A light, power 3", the action being named atop the plane. Move in hand goes, and
+nothing is lit, the Wheel's empty tool, when another object is clicked, which is focused, or
+anything off the plane is; a second click on that object puts Move in hand, as the first did.
+Esc puts nothing lit, then lets go of the focus. The key beside the action atop the plane is the
+action's, not the object's. The Maker, the first time it opens, makes a blank plane with two of
+each part, Free play's level one undo away; if the Editor's board holds more than two of a part,
+the blank plane keeps Free play's parts, and the status line says so. The physicist asked for
+whole settings too, 4 and 2: Love's light goes from 3.5 to power 4 and Patience's and Shadows'
+obstacles from 1.5 u to 2 u. Every level's winners still win and its losers lose; but Love's
+winner on the axis rests 5 u from its brighter light, its rim on the 6 u ring, so the ring is
+7 u, the body inside it again. The pinned runs record Love's, Shadows' and Patience's again.

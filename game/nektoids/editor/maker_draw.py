@@ -46,7 +46,6 @@ from nektoids.editor.draw import (
     draw_disc,
     draw_drawer,
     draw_field,
-    draw_fold_title,
     draw_info,
     draw_part,
     draw_row,
@@ -189,7 +188,7 @@ def _draw_action(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> Non
     box = pygame.Rect(scene.layout.action_at)
     fill, edge = (ACTIVE, LIT) if action is not None else (BUTTON, ICON_EDGE)
     draw_disc(screen, fonts, box.center, what, fill, edge, ACTION_WIDTH / 2)  # as the Wheel's
-    key = KEYS.get(what) if scene.settings.key_hints else None
+    key = KEYS.get(action) if scene.settings.key_hints else None  # an action's, not an object's
     named = name(scene.level, scene.focus, what) + (f" ({key})" if key else "")
     shown = fonts.text.render(named, True, LIT if action is not None else TEXT)
     at = shown.get_rect(midleft=(box.right + 10, box.centery))
@@ -463,11 +462,14 @@ def _draw_foot(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
 def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     """As Tools and Parts draw it (D-068, D-069): a rule, The Wheel's title, which folds; unless
     folded, the focus large at its hub, the Wheel's icons round it, the one Enter uses lit, a
-    line under it naming it in the accent, else saying what is focused (D-314)."""
+    line under it saying what is focused and its setting, the action being named atop the plane
+    (D-314, D-317). The Maker's Wheel never folds: its title has no arrow."""
     layout = scene.layout
     fx, fy, fw, _ = layout.wheel_fold
     pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
-    draw_fold_title(screen, fonts, WHEEL_TITLE, layout.wheel_fold, scene.wheel_folded, DIM_TEXT)
+    x, y, _, h = layout.wheel_fold
+    title = cached_text(fonts.label, WHEEL_TITLE.upper(), DIM_TEXT)
+    screen.blit(title, (x, y + (h - title.get_height()) // 2))
     if layout.wheel_view is None:
         return
     centre = centre_in(layout.wheel_view)
@@ -484,10 +486,7 @@ def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None
         fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
         draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE, radius)
     lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
-    if action is not None:
-        line = fonts.small.render(name(scene.level, scene.focus, action), True, LIT)
-    else:
-        line = fonts.small.render(says(scene.level, scene.focus), True, DIM_TEXT)
+    line = fonts.small.render(says(scene.level, scene.focus), True, DIM_TEXT)  # its setting
     screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
 
 
