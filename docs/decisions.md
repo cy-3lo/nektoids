@@ -1680,3 +1680,24 @@ Files are version 3, `{"verb", "count", "target"}` and the setting; version 2's 
 upgraded, their rings appended as marks on every light, and a level whose rings would mix with
 its marks, or with rings of another size, is refused. The goals' sliders (D-306's Goals) follow
 in their own pull request.
+
+**D-308 — 2026-10-05 — Goals, the Maker's second drawer: the time allowed, a slider, then at most two goals, each a sentence chosen in three rows of buttons, verb, how many, target, every option shown; a word chosen moves the others as little as makes sense, a word that would aim at nothing is dimmed. A stay's seconds or a circle's turns is a slider whose value may be typed. Applies D-301, D-307.**
+The todo's Goals, the plan's choice: rows of buttons rather than words that cycle or lists that
+drop down, so that every option shows and none hides behind a click (invariant 6). At the top,
+the time allowed, 5 to 300 s by 5. Under it, each goal under its name, as the run will say it,
+with a bin at the right to take it out; then Reach, Leave, Stay, Circle; All, One, None; Lights,
+Obstacles, Marks, as Objects names them; the words chosen lit; under them a slider for the
+setting its verb takes, seconds 1 to 60, turns 1 to 10. Add a goal shows while there are fewer
+than two, which the run's drawers fit and no shipped level exceeds; the goal added is the first
+sentence, in the order of the words, whose target the level has and which it does not ask yet,
+reach every light on most levels. A word chosen wins and the others follow
+(`objectives.reworded`): Leave or Stay takes the target to marks, Stay or Circle takes "none" to
+one; "none" or a light or an obstacle that the verb cannot take puts the verb back to Reach,
+which takes any; a setting stays with its verb. A word whose sentence would aim at something the
+level has none of, Marks or Leave or Stay on a level without a mark, is dimmed, and a click on it
+says "the level has no mark: place one in Objects". A sentence another goal asks, whatever its
+setting, is refused. A drag on a slider is one step for undo, as an object's; the mouse wheel
+there scrolls the drawer (D-096), not the value, which a click on its box types instead, as
+Brief's fields are typed (D-305). Goals that cannot both be met, reach every light and touch
+none, are not refused here: the clear check will find no winner. Three pull requests: the
+changes (`making.py`), the drawer, the typed value.

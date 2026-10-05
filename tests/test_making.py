@@ -6,19 +6,27 @@ from dataclasses import replace
 import pytest
 
 from nektoids.levels.arenas import sandbox
-from nektoids.levels.level import ItemKind, Level, to_json
+from nektoids.levels.level import Item, ItemKind, Level, to_json
 from nektoids.levels.making import (
+    GOALS_MOST,
     NEW,
     SETTING,
     SPEC_LONGEST,
+    TIME,
     TITLE_LONGEST,
     Unmade,
     adjusted,
+    goal_added,
+    goal_removed,
+    goal_set,
+    goal_worded,
+    lacks,
     moved,
     placed,
     removed,
     specified,
     start_moved,
+    timed,
     titled,
     turned,
 )
@@ -110,3 +118,66 @@ def test_the_last_of_a_kind_a_goal_aims_at_stays():
         removed(ringed, 6)
     two = placed(ringed, ItemKind.MARK, (9.0, 9.0))
     assert len(removed(two, 6).marks) == 1  # one of two may go
+
+
+def test_the_time_allowed_sits_on_five_second_steps_from_five_seconds_to_three_hundred():
+    assert LEVEL.time_limit == 120.0 and timed(LEVEL, 42.0).time_limit == 40.0
+    assert timed(LEVEL, 0.0).time_limit == TIME.lo == 5.0
+    assert timed(LEVEL, 999.0).time_limit == TIME.hi == 300.0
+
+
+def test_a_goal_added_is_the_first_sentence_the_level_can_hold_and_does_not_ask_two_at_most():
+    one = goal_added(LEVEL)  # the sandbox asks nothing; it has lights and obstacles, no mark
+    assert one.objectives == (Goal(Verb.REACH, Count.ALL, Target.LIGHT),) and not LEVEL.objectives
+    two = goal_added(one)
+    assert two.objectives[1] == Goal(Verb.REACH, Count.ALL, Target.OBSTACLE)
+    assert len(two.objectives) == GOALS_MOST
+    with pytest.raises(Unmade, match="2 goals at most"):
+        goal_added(two)
+    assert goal_removed(two, 0).objectives == two.objectives[1:]
+    marks_only = replace(LEVEL, items=(Item(ItemKind.MARK, (3.0, 3.0), 3.0),))
+    assert goal_added(marks_only).objectives[0] == Goal(Verb.REACH, Count.ALL, Target.MARK)
+    with pytest.raises(Unmade, match="place a light, an obstacle or a mark first"):
+        goal_added(replace(LEVEL, items=()))
+
+
+def test_a_word_chosen_rewords_the_goal_unless_it_would_aim_at_nothing_or_ask_twice():
+    two = goal_added(goal_added(LEVEL))  # reach every light, reach every obstacle
+    assert goal_worded(two, 0, Count.NONE).objectives[0] == Goal(
+        Verb.REACH, Count.NONE, Target.LIGHT
+    )
+    assert lacks(two, 0, Count.NONE) is None and lacks(two, 0, Target.MARK) is not None
+    for word in (Target.MARK, Verb.LEAVE, Verb.STAY):  # each would aim at marks: there are none
+        assert lacks(two, 0, word) == "the level has no mark: place one in Objects"
+        with pytest.raises(Unmade, match="no mark"):
+            goal_worded(two, 0, word)
+    with pytest.raises(Unmade, match="asks that already"):
+        goal_worded(two, 1, Target.LIGHT)
+    assert goal_worded(two, 1, Target.OBSTACLE) == two  # the word it has: nothing changes
+    ringed = placed(two, ItemKind.MARK, (3.0, 3.0))
+    assert goal_worded(ringed, 0, Verb.STAY).objectives[0] == Goal(
+        Verb.STAY, Count.ALL, Target.MARK
+    )
+
+
+def test_a_goals_setting_sits_on_its_range_whole_turns_and_a_verb_without_one_has_none():
+    ringed = placed(LEVEL, ItemKind.MARK, (3.0, 3.0))
+    stay = replace(ringed, objectives=(Goal(Verb.STAY, Count.ONE, Target.MARK),))
+    assert goal_set(stay, 0, 12.4).objectives[0].seconds == 12.0
+    assert goal_set(stay, 0, 99.0).objectives[0].seconds == 60.0
+    assert goal_set(stay, 0, 0.0).objectives[0].seconds == 1.0 and stay.objectives[0].seconds == 5
+    circle = replace(LEVEL, objectives=(Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT),))
+    turns = goal_set(circle, 0, 3.6).objectives[0].turns
+    assert (
+        turns == 4 and isinstance(turns, int) and goal_set(circle, 0, 50).objectives[0].turns == 10
+    )
+    with pytest.raises(ValueError, match="no setting"):
+        goal_set(goal_added(LEVEL), 0, 3.0)
+
+
+def test_a_level_with_goals_made_reads_back_as_written_by_to_json():
+    ringed = placed(goal_added(LEVEL), ItemKind.MARK, (3.0, 3.0))
+    made = goal_set(goal_worded(timed(ringed, 35.0), 0, Verb.STAY), 0, 8.0)
+    text = to_json(made)
+    again = Level.from_dict(json.loads(text))
+    assert again == made and again.objectives[0].seconds == 8.0 and again.time_limit == 35.0
