@@ -99,6 +99,7 @@ from nektoids.editor.palette import (
     FULL,
     LIGHT,
     LIT,
+    MARK,
     OBSTACLE,
     PANEL,
     RAY,
@@ -133,6 +134,7 @@ VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 WIN_DOT = 4  # a win on that plot; this run's ring sits 4 px round it [px]
 RING_DASHES = 72  # half of them drawn
+MARK_CROSS = 5  # the arms of the cross on a mark's centre [px]
 ICON = {
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
     ArenaButton.STEP: "forward-step",
@@ -195,6 +197,7 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     elif scene.show_rays:
         t, area = scene.clock.seconds, scene.arena_area
         draw_rays(screen, view, area, arena, scene.rays, t, scene.pos, scene.radius)
+    draw_marks(screen, view, scene.level.marks)
     draw_items(screen, fonts, view, arena)
     for radius, done in scene.rings:  # to leave or to stay in, dashed (D-038, D-040)
         for x, y in arena.light_xy:
@@ -223,6 +226,22 @@ def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Are
         pygame.draw.circle(screen, OBSTACLE, centre, disc.radius * view.scale)
     for light in arena.lights:
         draw_light(screen, fonts, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale)
+
+
+def draw_marks(screen: pygame.Surface, view: ArenaView, marks, width: int = 2) -> None:
+    """The level's marks (D-306): each an empty grey circle `width` [px] wide, a cross on its
+    centre, under the lights and the obstacles."""
+    for mark in marks:
+        draw_mark(screen, view.to_screen(*mark.at), mark.value * view.scale, width)
+
+
+def draw_mark(screen: pygame.Surface, centre, radius: float, width: int = 2) -> None:
+    """A mark of `radius` [px] at `centre` [px]: an empty circle, a small cross on its centre."""
+    cx, cy = centre
+    pygame.draw.circle(screen, MARK, centre, radius, width)
+    arm = min(MARK_CROSS, radius / 2)
+    pygame.draw.line(screen, MARK, (cx - arm, cy), (cx + arm, cy), width)
+    pygame.draw.line(screen, MARK, (cx, cy - arm), (cx, cy + arm), width)
 
 
 def draw_light(screen: pygame.Surface, fonts: Fonts, centre, radius: float) -> None:

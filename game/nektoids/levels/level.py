@@ -2,11 +2,13 @@
 placed in the open plane, the board the player builds on, the objectives and the time allowed.
 
 Items are to the plane what parts are to the board: each has a kind (`ItemKind`, as a part has
-its `Kind`), the point where it sits, and the one setting its kind takes, a light's power or an
-obstacle's radius. A level editor will place them as the board editor places parts. `to_dict`
-and `from_dict` turn a level into JSON-able data and back, as `Board.to_dict` does (D-024);
-the shipped levels are JSON files in `data/`. Each file says the version of its format,
-`FORMAT`; `from_dict` refuses another, and any key it does not know, so that a file from
+its `Kind`), the point where it sits, and the one setting its kind takes, a light's power, an
+obstacle's radius or a mark's. A mark is a zone, a circle that only the objectives read: the
+arena, and so the simulation, never has it (D-306). The Maker places items as the board editor
+places parts (D-302). `to_dict` and `from_dict` turn a level into JSON-able data and back, as
+`Board.to_dict` does (D-024); the shipped levels are JSON files in `data/`. Each file says the
+version of its format; `to_dict` writes `FORMAT`, and `from_dict` upgrades an older version
+(`upgraded`), refuses a newer one, and refuses any key it does not know, so that a file from
 another game or a mistyped key fails as it is loaded (D-201). Pure Python, no pygame.
 """
 
@@ -24,7 +26,7 @@ from nektoids.levels.objectives import Objective, objective_from_dict, objective
 from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
-FORMAT = 1  # the version of a level file's format: `to_dict` writes it, `from_dict` reads it
+FORMAT = 2  # the version of a level file's format: `to_dict` writes it; 2 has marks (D-306)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "version",
     "title",
@@ -43,6 +45,7 @@ KEYS = (  # what a level file may hold, in the order `to_dict` writes it
 class ItemKind(Enum):
     LIGHT = "light"
     OBSTACLE = "obstacle"
+    MARK = "mark"  # a zone the objectives read, nothing else (D-306)
 
     @property
     def setting(self) -> str:
@@ -55,7 +58,7 @@ class ItemKind(Enum):
         return _DEFAULT.get(self)
 
 
-_SETTING = {ItemKind.LIGHT: "power", ItemKind.OBSTACLE: "radius"}  # both in u
+_SETTING = {ItemKind.LIGHT: "power", ItemKind.OBSTACLE: "radius", ItemKind.MARK: "radius"}
 _DEFAULT = {ItemKind.OBSTACLE: OBSTACLE_RADIUS}
 
 
@@ -91,6 +94,11 @@ class Level:
     tutorial: Mapping | None = field(default=None, repr=False)  # its ghosts and steps (D-039)
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
     hints: Mapping | None = field(default=None, repr=False)  # its idea and shadow (D-078)
+
+    @cached_property
+    def marks(self) -> tuple[Item, ...]:
+        """The level's marks, in item order: zones the arena never has (D-306)."""
+        return tuple(item for item in self.items if item.kind is ItemKind.MARK)
 
     @cached_property
     def arena(self) -> Arena:
@@ -132,16 +140,11 @@ class Level:
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Level:
-        """ValueError for data no level could hold: another version than FORMAT, a key it
-        does not know, an unknown kind, an item without its setting, items that overlap as the
-        arena refuses, a board that cannot be built. The keys of `board`, `hints` and
-        `tutorial` are theirs to check."""
-        if "version" not in data:
-            raise ValueError(f"a level without its version: this game reads version {FORMAT}")
-        if data["version"] != FORMAT:
-            raise ValueError(
-                f"a level of version {data['version']}: this game reads version {FORMAT}"
-            )
+        """ValueError for data no level could hold: no version or a newer one than FORMAT, a
+        key it does not know, an unknown kind, an item without its setting, items that overlap
+        as the arena refuses, a board that cannot be built. The keys of `board`, `hints` and
+        `tutorial` are theirs to check. An older version is upgraded first."""
+        data = upgraded(data)
         known(data, KEYS, "a level")
         known(data["start"], ("at", "heading"), "the start")
         x, y = data["start"]["at"]
@@ -162,6 +165,19 @@ class Level:
         level.arena  # noqa: B018 - built now, so that bad items fail here, not mid-run
         level.new_board()
         return level
+
+
+def upgraded(data: Mapping) -> Mapping:
+    """`data` in FORMAT, from the version it says (D-201): version 1 had no marks, and is
+    version 2 as it is (D-306). ValueError for no version, or one this game does not know."""
+    if "version" not in data:
+        raise ValueError(f"a level without its version: this game reads version {FORMAT}")
+    version = data["version"]
+    if version not in range(1, FORMAT + 1):
+        raise ValueError(
+            f"a level of version {version}: this game reads version {FORMAT} and those before"
+        )
+    return {**data, "version": FORMAT}
 
 
 PASSKEY_LENGTH = 10  # the most letters a passkey has (D-075)

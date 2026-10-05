@@ -70,6 +70,7 @@ from nektoids.editor.arena_view import (
     map_grid,
     map_points,
     pan_view,
+    rims,
     shown,
     touches,
     union,
@@ -665,10 +666,15 @@ class ArenaScene(Frame):
         self._extent = widened(bounds, w / h)
 
     def _needed(self, room: float = ROOM) -> tuple[float, float, float, float]:
-        """What matters now (D-066): the lights and their rings, the obstacles and the swimmer
-        where it is, `room` times over."""
-        arena = self.arena
+        """What matters now (D-066): the lights and their rings, the obstacles, the marks
+        whole (D-306) and the swimmer where it is, `room` times over."""
+        arena, marks = self.arena, self.level.marks
+        at, radii = (
+            np.array([m.at for m in marks]).reshape(-1, 2),
+            np.array([m.value for m in marks]),
+        )
         points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *self._rims()))
+        points = np.concatenate((points, rims(at, radii)))
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
         return extent(points, reach, w / h, room)

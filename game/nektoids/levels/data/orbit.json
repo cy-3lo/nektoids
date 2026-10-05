@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "title": "Orbit",
   "spec": "Circle the light twice without touching it.",
   "start": {"at": [25.0, 9.0], "heading": 0.0},

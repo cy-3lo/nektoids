@@ -195,6 +195,7 @@ WIN = P.accent1.bright  # a win on Score's plot that no other beats: the Pareto 
 PLANE_DOT = mix(P.deep, P.dim, 0.35)  # where a position may fall, every 0.5 u
 PLANE_LINE = mix(P.deep, P.line, 0.6)  # a line every 5 u
 PLANE_LABEL = P.muted  # a line's coordinate, at the plane's edge
+MARK = mix(P.muted, P.dim, 0.5)  # a mark, an empty circle and its centre, in every view (D-306)
 
 # The swimmer at work (D-076): its flames and the light it draws in, of one lightness (OKLab L
 # 0.56), dimmer than the swimmer

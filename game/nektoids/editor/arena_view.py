@@ -121,6 +121,13 @@ def widened(bounds: Bounds, aspect: float) -> Bounds:
     return (float(left), float(bottom), float(right), float(top))
 
 
+def rims(centres: np.ndarray, radii: np.ndarray) -> np.ndarray:
+    """(4K, 2): the four points of each circle's rim along the axes, for circles at `centres`
+    (K, 2) [u] of `radii` (K,) [u]: what frames a circle as its centre frames a point."""
+    offsets = np.array([(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)])
+    return (centres[:, None, :] + radii[:, None, None] * offsets[None, :, :]).reshape(-1, 2)
+
+
 def union(a: Bounds, b: Bounds) -> Bounds:
     """The least bounds holding both."""
     return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))

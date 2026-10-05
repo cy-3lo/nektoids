@@ -665,9 +665,11 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
 
 def test_objects_lists_the_planes_objects_then_undo_and_redo_over_the_wheel_as_tools_does():
     layout = make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True)  # D-301
-    assert [p for p, _ in layout.piece_rows] == [Piece.LIGHT, Piece.OBSTACLE, Piece.START]
+    pieces = [Piece.LIGHT, Piece.OBSTACLE, Piece.MARK, Piece.START]  # D-306
+    assert [p for p, _ in layout.piece_rows] == pieces
     assert [b for b, _ in layout.edit_buttons] == [EditButton.UNDO, EditButton.REDO]
-    assert [t for t, _ in layout.section_titles] == ["Plane", "Edit"]
+    assert [t for t, _ in layout.section_titles] == ["Plane"]  # Undo and Redo need none
+    assert layout.scroll_max == 0  # all of them over the Wheel, no scroll bar
     lowest = max(r[1] + r[3] for _, r in (*layout.piece_rows, *layout.edit_buttons))
     assert layout.wheel_view is not None and lowest < layout.wheel_fold[1]  # all over the Wheel
     for piece, rect in layout.piece_rows:

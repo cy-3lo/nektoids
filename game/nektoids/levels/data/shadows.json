@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "title": "Shadows",
   "spec": "Reach the light from an obstacle's shadow.",
   "start": {"at": [15.0, 18.4], "heading": 0.0},

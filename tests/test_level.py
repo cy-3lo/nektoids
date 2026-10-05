@@ -109,11 +109,11 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
 def test_a_level_without_its_version_or_of_another_is_refused():
     data = a_level()
     del data["version"]
-    with pytest.raises(ValueError, match="without its version: this game reads version 1"):
+    with pytest.raises(ValueError, match="without its version: this game reads version 2"):
         Level.from_dict(data)
-    with pytest.raises(ValueError, match="of version 2: this game reads version 1"):
-        Level.from_dict(a_level(version=2))  # D-201
-    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 1
+    with pytest.raises(ValueError, match="of version 3: this game reads version 2 and those"):
+        Level.from_dict(a_level(version=3))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 2  # 1 upgraded (D-306)
 
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
@@ -125,3 +125,19 @@ def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
     data = a_level(passkey="lower")
     with pytest.raises(ValueError):
         Level.from_dict(data)
+
+
+def test_a_mark_is_an_item_the_arena_never_has_so_the_run_is_what_it_was():
+    marked = a_level(
+        version=2, items=[*a_level()["items"], {"kind": "mark", "at": [20.0, 5.0], "radius": 6.0}]
+    )
+    level, plain = Level.from_dict(marked), Level.from_dict(a_level())  # D-306
+    assert level.marks == (Item(ItemKind.MARK, (20.0, 5.0), 6.0),) and plain.marks == ()
+    seen = (level.arena.lights, level.arena.obstacles)  # on a light, of any size, unread
+    assert seen == (plain.arena.lights, plain.arena.obstacles)
+    assert ItemKind.MARK.setting == "radius" and ItemKind.MARK.default is None
+    assert Level.from_dict(json.loads(to_json(level))) == level
+    with pytest.raises(ValueError, match="a mark needs its radius"):
+        Level.from_dict(a_level(items=[{"kind": "mark", "at": [1.0, 1.0]}]))
+    with pytest.raises(ValueError, match="'zone' is not a valid ItemKind"):
+        Level.from_dict(a_level(items=[{"kind": "zone", "at": [1.0, 1.0]}]))

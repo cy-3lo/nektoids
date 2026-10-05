@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "title": "Greed",
   "spec": "Touch both lights.",
   "start": {"at": [8.0, 19.0], "heading": 0.0},

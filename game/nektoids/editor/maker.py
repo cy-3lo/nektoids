@@ -2,22 +2,22 @@
 the run try it.
 
 The main screen shows the level's plane at large over its grid, the lattice its positions fall
-on: its lights, obstacles and rays, and the swimmer where it starts, facing where it heads.
-Round it, the frame the editor and the run have (`frame.Frame`, D-051): Objects, as Parts is the
-board's: the objects as rows, undo and redo, and at its foot the Wheel round what is focused
-(D-068, D-069, `objects.py`); Navigator, with the overview, the zoom and the rays; Hints,
-Settings and Chapters at the bar's foot.
+on: its lights, obstacles, marks and rays, and the swimmer where it starts, facing where it
+heads. Round it, the frame the editor and the run have (`frame.Frame`, D-051): Objects, as Parts
+is the board's: the objects as rows, undo and redo, and at its foot the Wheel round what is
+focused (D-068, D-069, `objects.py`); Brief, the level's title and spec (D-305); Navigator, with
+the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
 
 A click on an object focuses it, and its Wheel offers what can be done to it; a drag moves it,
-on the lattice. A click on the open plane focuses its nearest lattice point, whose Wheel offers
-a light and an obstacle to put there; a drag there moves the view, as do the arrows. A row of
-Objects picks what the next click puts on the plane, or is dragged there. The mouse wheel on an
-object makes it more or less, or turns the swimmer. Keys: 1 and 2 a light and an obstacle, M
-Move (then the arrows move the focus 0.5 u at a time), L and R turn, < and > less and more,
-Delete; Ctrl+Z and Ctrl+Y undo and redo; Esc puts down what is in hand, then lets go of the
-focus; + and - zoom, C centres, X shows or hides the rays. Space, the switch and the Run tab
-run the level, the Editor tab wires its swimmer. Each change is a new `Level` (`making.py`),
-which `main.py` hands to the router, the editor and the next run.
+on the lattice. A click on the open plane, inside a mark too, focuses its nearest lattice point,
+whose Wheel offers a light, an obstacle and a mark to put there (D-306); a drag there moves the
+view, as do the arrows. A row of Objects picks what the next click puts on the plane, or is
+dragged there. The mouse wheel on an object makes it more or less, or turns the swimmer. Keys:
+1, 2, 3 a light, an obstacle, a mark; M Move, then the arrows move the focus 0.5 u at a time; L
+and R turn; < and > less and more; Delete; Ctrl+Z and Ctrl+Y undo and redo; Esc puts down what
+is in hand, then lets go of the focus, then opens Chapters (D-304); + and - zoom, C centres, X
+shows or hides the rays; Tab the next tab, Space the run. Each change is a new `Level`
+(`making.py`), which `main.py` hands to the router, the editor and the next run.
 """
 
 from __future__ import annotations
@@ -40,6 +40,7 @@ from nektoids.editor.arena_view import (
     grown,
     kept_in,
     pan_view,
+    rims,
     shown,
     union,
     view_of,
@@ -74,7 +75,17 @@ from nektoids.editor.layout import (
     zoom_bar_at,
     zoom_button_at,
 )
-from nektoids.editor.objects import KEYS, ONE, PLACED, Focus, Point, object_at, offer, where
+from nektoids.editor.objects import (
+    KEYS,
+    ONE,
+    PLACED,
+    POINT_PIECES,
+    Focus,
+    Point,
+    object_at,
+    offer,
+    where,
+)
 from nektoids.editor.scene import (
     ARROW_SCANCODES,
     ARROWS,
@@ -108,7 +119,7 @@ MAKER_VIEW = (ViewButton.ZOOM_IN, ViewButton.ZOOM_OUT, ViewButton.CENTRE, ViewBu
 VIEWS = {VIEW_KEYS[b]: b for b in MAKER_VIEW}  # the keys the Maker's view answers: + - C X
 ACTIONS = (Tool.MOVE, Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.LESS, Tool.MORE)
 ACTION_KEYS = {TOOL_KEYS[a]: a for a in ACTIONS}  # M L R < >; Delete on its physical key
-DIGITS = (Piece.LIGHT, Piece.OBSTACLE)  # 1 and 2, on their physical keys, as Parts' numbers
+DIGITS = POINT_PIECES  # 1, 2, 3, on their physical keys, as Parts' numbers
 
 
 class MakerScene(Frame):
@@ -211,7 +222,7 @@ class MakerScene(Frame):
         if self.focus is None:
             return "Click an object, or the plane.  Drag an object to move it.  Space: run."
         if isinstance(self.focus, Point):
-            return "1: a light here.  2: an obstacle here.  Drag the plane to move the view."
+            return "1: a light here.  2: an obstacle.  3: a mark.  Drag the plane: the view."
         if self.focus is Piece.START:
             return "Drag it, or M and the arrows.  L and R: turn it."
         return "Drag it, or M and the arrows.  < and >: less, more.  Del: delete."
@@ -315,9 +326,14 @@ class MakerScene(Frame):
         return widened(union(self._needed(), self._floor), w / h)
 
     def _needed(self, room: float = ROOM) -> tuple[float, float, float, float]:
-        """What matters: the lights, the obstacles and the swimmer, `room` times over."""
-        arena = self.arena
-        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy))
+        """What matters: the lights, the obstacles, the marks whole and the swimmer, `room`
+        times over."""
+        arena, marks = self.arena, self.level.marks
+        at, radii = (
+            np.array([m.at for m in marks]).reshape(-1, 2),
+            np.array([m.value for m in marks]),
+        )
+        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, rims(at, radii)))
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
         return extent(points, reach, w / h, room)

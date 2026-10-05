@@ -91,3 +91,12 @@ def test_a_title_and_a_spec_are_written_their_spaces_squeezed_and_never_left_emp
         titled(LEVEL, "   ")
     with pytest.raises(Unmade, match="what the level asks"):
         specified(LEVEL, "")
+
+
+def test_a_mark_goes_anywhere_its_radius_from_half_a_unit_to_thirty():
+    on_light = placed(LEVEL, ItemKind.MARK, LEVEL.items[0].at)  # D-306: no light refuses it
+    assert on_light.items[-1].value == NEW[ItemKind.MARK] == 3.0
+    over = placed(LEVEL, ItemKind.MARK, (15.0, 19.0))  # on the swimmer, on obstacles: a zone
+    assert adjusted(over, 6, 99).items[6].value == SETTING[ItemKind.MARK].hi == 30.0
+    assert adjusted(over, 6, -99).items[6].value == 0.5
+    assert (over.arena.lights, over.arena.obstacles) == (LEVEL.arena.lights, LEVEL.arena.obstacles)
