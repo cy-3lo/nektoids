@@ -20,7 +20,7 @@ from nektoids.editor.objects import (
     turned_to,
     where,
 )
-from nektoids.editor.wheel import angles, arc, slots
+from nektoids.editor.wheel import angles, slots
 from nektoids.levels.arenas import sandbox
 from nektoids.levels.level import ItemKind
 from nektoids.levels.making import adjusted, placed
@@ -101,8 +101,7 @@ def test_the_wheel_lights_move_on_an_object_more_on_a_new_one_and_the_arrows_go_
 
 
 def test_the_makers_wheel_sits_side_by_side_over_the_top_more_at_its_top():
-    assert arc(4) == [210.0, 150.0, 90.0, 30.0]  # D-314: no corner left empty between them
-    assert arc(3) == [150.0, 90.0, 30.0] == angles(3) and arc(1) == [90.0]
-    on_item = slots(offer(0), (0.0, 0.0), 10.0, frozenset(), keys=KEYS, rim=arc(4))
+    assert angles(4) == [210.0, 150.0, 90.0, 30.0]  # D-314, D-316: no corner left empty
+    on_item = slots(offer(0), (0.0, 0.0), 10.0, frozenset(), keys=KEYS)
     top = min(on_item, key=lambda slot: slot.at[1])  # the screen's y runs down
     assert top.what is Tool.MORE and top.at[0] == pytest.approx(0.0)

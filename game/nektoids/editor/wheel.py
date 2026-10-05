@@ -94,18 +94,9 @@ def part_key(kind: Kind, kinds: frozenset[Kind]) -> str:
 
 def angles(n: int) -> list[float]:
     """Where n <= ON_RIM icons sit round the cell, from the left clockwise, each beyond a
-    corner: an odd number centred on the top one, an even one as many each side of it
+    corner, side by side with no corner left empty between them, as near the middle as they can
+    be: an odd number centred on the top one, an even one a corner to its left (D-316)
     [degrees, counter-clockwise from the right]."""
-    if n % 2:
-        first = (ON_RIM - n) // 2
-        return list(CORNERS[first : first + n])
-    side = n // 2
-    return list(CORNERS[2 - side : 2] + CORNERS[3 : 3 + side])
-
-
-def arc(n: int) -> list[float]:
-    """Where n <= ON_RIM icons sit side by side over the top, no corner left empty between
-    them, as near the middle as they can be: the Maker's Wheel (D-314)."""
     first = (ON_RIM - n) // 2
     return list(CORNERS[first : first + n])
 
@@ -132,15 +123,13 @@ def slots(
     kinds: frozenset[Kind],
     turn: float = 0,
     keys: Mapping[Enum, str] | None = None,
-    rim: Sequence[float] | None = None,
 ) -> list[Slot]:
     """The icons round a cell drawn at `centre` with hexes of `size` [px], the Wheel turned by
     `turn`, a fraction while it slides from one turn to the next: the icons before it piled under
     the rim's first end, those after it under its last, each further one set back along the
-    circle, towards the gap. Each icon's key is the tool's or the part's number, or `keys`'s;
-    their places on the rim are `angles`', or `rim`'s [degrees]."""
+    circle, towards the gap. Each icon's key is the tool's or the part's number, or `keys`'s."""
     turn = min(max(turn, 0), max(0, len(items) - ON_RIM))  # never past the last
-    rim = angles(min(len(items), ON_RIM)) if rim is None else list(rim)
+    rim = angles(min(len(items), ON_RIM))
     back = math.degrees(PILE * ICON / RADIUS)  # from one icon of a pile to the next [degrees]
     cx, cy = centre
     out = []

@@ -1813,3 +1813,14 @@ and its parts handed out with it, so Paste and Start from bring them, which D-31
 the board's own parts, a tutorial's locked ones, are not brought. A blank plane hands out 2 of
 each part on the zone it had. The sandbox itself still hands out every part without limit
 (D-102). Locked parts, the rest of the todo's "The board", come later.
+
+**D-316 — 2026-10-05 — Every Wheel sets its icons side by side over the top, no corner left empty between them, the Editor's as the Maker's: an odd number centred on the top corner, an even one a corner to its left. Amends D-068, D-314.**
+The physicist found a gap at the top of the Editor's Wheel round a Source, whose four actions,
+Move, Wire, Swap and Delete, sat two each side of the top corner, as the rule for an even number
+of icons put them. D-314 had set the Maker's side by side and left the Editor's; one rule now
+serves both: n icons take n corners in a row, from the left, as near the middle as they can, so
+two take the upper left and the top, four the four left of the lower right, and an odd number
+stays centred on the top. A Source's Wheel reads Move, Wire, Swap at the top, Delete; an empty
+cell offering two parts, Fear's, sets them at the upper left and the top. The lowest corner, the
+gap where piles end, stays clear. The tutorials, which name icons rather than places, play as
+they did.
