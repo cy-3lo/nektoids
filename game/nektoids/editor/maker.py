@@ -7,8 +7,8 @@ heads. Round it, the frame the editor and the run have (`frame.Frame`, D-051): O
 is the board's: the objects as rows, undo and redo, and at its foot the Wheel round what is
 focused (D-068, D-069, `objects.py`); Goals, the time allowed and the goals, each a sentence
 whose words are buttons, with a slider for its setting (D-308); Brief, the level's title and
-spec (D-305); Navigator, with the overview, the zoom and the rays; Hints, Settings and Chapters
-at the bar's foot.
+spec (D-305); Files, the level copied as text, or another's text pasted (D-310); Navigator, with
+the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
 
 A click on an object focuses it, and its Wheel offers what can be done to it; a drag moves it,
 on the lattice. A click on the open plane, inside a mark too, focuses its nearest lattice point,
@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
+from enum import Enum
 
 import numpy as np
 import pygame
@@ -59,6 +60,7 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     Env,
+    FileButton,
     GoalButton,
     Knob,
     Layout,
@@ -72,8 +74,10 @@ from nektoids.editor.layout import (
     contains,
     drawer_key,
     edit_button_at,
+    file_button_at,
     goal_button_at,
     knob_at,
+    level_field_at,
     make_layout,
     overview_at,
     piece_row_at,
@@ -107,7 +111,7 @@ from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
 from nektoids.editor.wheel import WHEEL_HEX, Slot, centre_in, slot_at, slots
 from nektoids.levels.lattice import POSITION, Range, snapped
-from nektoids.levels.level import Level
+from nektoids.levels.level import Level, to_json
 from nektoids.levels.making import (
     GOALS_MOST,
     SPEC_LONGEST,
@@ -121,6 +125,7 @@ from nektoids.levels.making import (
     goal_worded,
     moved,
     number,
+    pasted,
     placed,
     removed,
     specified,
@@ -141,6 +146,11 @@ ACTION_KEYS = {TOOL_KEYS[a]: a for a in ACTIONS}  # M L R < >; Delete on its phy
 DIGITS = POINT_PIECES  # 1, 2, 3, on their physical keys, as Parts' numbers
 NUMBER = frozenset("0123456789.")  # what a slider's box takes, typed (D-308)
 NUMBER_LONGEST = 5  # ... and how long it grows: 300, 12.5
+LEVEL_LONGEST = 20_000  # what a level's text, pasted in Files, may run to (D-310)
+
+
+class Paste(Enum):  # the field of the Maker's Files: a level's text pasted there (D-310)
+    LEVEL = "level"
 
 
 class MakerScene(Frame):
@@ -171,9 +181,9 @@ class MakerScene(Frame):
         self.history: History[Level] = History()  # D-027
         self.wheel_folded = False  # The Wheel's picture folded, as in Tools and Parts (D-069)
         self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse
-        self.writing: Brief | Knob | None = None  # a field typed in: Brief's, a slider's box
+        self.writing: Brief | Knob | Paste | None = None  # a field typed in: Brief's, a box...
         self.field: TextField | None = None  # ... what it holds (D-305)
-        self.field_pressed: Brief | Knob | None = None  # pressed: it opens once the click is over
+        self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
         self._take(level)
         self.view = self._opening()
@@ -236,11 +246,15 @@ class MakerScene(Frame):
 
     def hint(self) -> str:
         """The status line, while nothing was refused: what a click or a key does now."""
+        if self.writing is Paste.LEVEL:
+            return "Paste a level's text: Ctrl+V, or Cmd+V.  Enter takes it.  Esc: no change."
         if self.writing is not None:
             kept = "Enter or a click elsewhere keeps it.  Esc: no change."
             return f"Type {self._what(self.writing)}.  {kept}"
         if self.layout.drawer is Drawer.BRIEF:
             return "Click the title or the spec to write it.  The caption above follows."
+        if self.layout.drawer is Drawer.FILES:
+            return "Copy level: the level as text, to keep.  Paste a level's text to make it here."
         if self.sliding is not None:
             return "Let go where it should stay."
         if self.layout.drawer is Drawer.GOALS and not self.level.objectives:
@@ -314,6 +328,7 @@ class MakerScene(Frame):
             level = self.history.undo(self.level)
         else:
             level = self.history.redo(self.level)
+        self.said = ""  # "Pasted" no longer holds (D-310)
         if level is None:
             self._refuse(f"nothing to {button.value}")
         else:
@@ -469,6 +484,8 @@ class MakerScene(Frame):
             self._pick(piece)
         elif edit is not None:
             self._edit(edit)
+        elif file_button_at(self.layout, pos) is FileButton.LEVEL:  # Files (D-310)
+            self._copy_level()
         elif (word := word_at(self.layout, pos)) is not None:  # Goals (D-308)
             self._make(lambda level: goal_worded(level, word.goal, word.word))
         elif (index := bin_at(self.layout, pos)) is not None:
@@ -566,10 +583,13 @@ class MakerScene(Frame):
         value = scale.lo + along(slider_parts(rect)[1], x) * (scale.hi - scale.lo)
         self._set_knob(knob, lambda: value, record=False)
 
-    # Fields: Brief's (D-305), a slider's box in Goals (D-308)
+    # Fields: Brief's (D-305), a slider's box in Goals (D-308), a level's text in Files (D-310)
 
-    def _field_at(self, pos: tuple[int, int]) -> Brief | Knob | None:
-        """The field under `pos`: Brief's title or spec, or a slider's value box."""
+    def _field_at(self, pos: tuple[int, int]) -> Brief | Knob | Paste | None:
+        """The field under `pos`: Brief's title or spec, a slider's value box, or Files' field
+        for a level's text."""
+        if level_field_at(self.layout, pos):
+            return Paste.LEVEL
         knob = knob_at(self.layout, pos)
         return knob[0] if knob is not None and knob[1] else brief_field_at(self.layout, pos)
 
@@ -581,10 +601,13 @@ class MakerScene(Frame):
             return "the time allowed, in seconds"
         return f"its {settings(self.level.objectives[which.goal])[0][0]}"
 
-    def _open_field(self, which: Brief | Knob) -> None:
-        """The title's field or the spec's, holding what the level says now, or a slider's box,
-        holding its number; the caret after it."""
-        if isinstance(which, Knob):
+    def _open_field(self, which: Brief | Knob | Paste) -> None:
+        """The title's field or the spec's, holding what the level says now, a slider's box,
+        holding its number, the caret after it; or Files' field, empty, for a level's text."""
+        self.said = ""  # what the status line said before gives way to how to fill it
+        if which is Paste.LEVEL:
+            text, longest, taken = "", LEVEL_LONGEST, None
+        elif isinstance(which, Knob):
             text, longest, taken = f"{self.value(which):g}", NUMBER_LONGEST, NUMBER
         elif which is Brief.TITLE:
             text, longest, taken = self.level.title, TITLE_LONGEST, None
@@ -611,11 +634,30 @@ class MakerScene(Frame):
         clipboard.close_field()
         if ended != "enter":
             return
-        if isinstance(which, Knob):  # on its range's steps, within it
+        if which is Paste.LEVEL:
+            self._paste_level(text)
+        elif isinstance(which, Knob):  # on its range's steps, within it
             self._set_knob(which, lambda: number(text))
         else:
             write = titled if which is Brief.TITLE else specified
             self._make(lambda level: write(level, text))
+
+    # Files (D-310)
+
+    def _copy_level(self) -> None:
+        """Copy level: its JSON, as the shipped levels' files hold it, on the clipboard;
+        too long for the status line, which says how long it is."""
+        text = to_json(self.level)
+        clipboard.copy(text)
+        self.said = f"Copied: the level's text, {len(text.splitlines())} lines of JSON."
+
+    def _paste_level(self, text: str) -> None:
+        """The level `text` holds, taken onto this one but its board, one step for undo, the
+        view on it; or why not, in the status line."""
+        if self._make(lambda level: pasted(level, text)):
+            self.focus, self.picked, self.moving = None, None, False
+            self.view = self._opening()
+            self.said = f"Pasted: {self.level.title}."
 
     def _wheel_on(self, pos: tuple[int, int], steps: int) -> None:
         """The mouse wheel on an object: a light brighter or dimmer, an obstacle bigger or

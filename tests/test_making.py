@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import pytest
 
-from nektoids.levels.arenas import sandbox
+from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level, to_json
 from nektoids.levels.making import (
     GOALS_MOST,
@@ -23,6 +23,7 @@ from nektoids.levels.making import (
     lacks,
     moved,
     number,
+    pasted,
     placed,
     removed,
     specified,
@@ -190,3 +191,43 @@ def test_a_sliders_box_takes_a_number_typed_and_refuses_anything_else():
         with pytest.raises(Unmade, match="type a number"):
             number(text)
     assert timed(LEVEL, number("42")).time_limit == 40.0  # then onto the slider's steps
+
+
+def test_a_level_copied_as_text_is_pasted_back_as_it_was():
+    made = goal_set(
+        goal_worded(placed(goal_added(LEVEL), ItemKind.MARK, (3.0, 3.0)), 0, Verb.STAY), 0, 8
+    )
+    made = titled(timed(turned(made, 2), 45.0), "Made")
+    assert pasted(LEVEL, to_json(made)) == made  # D-310
+    assert pasted(made, to_json(LEVEL)) == LEVEL  # and back: one step for undo each way
+
+
+def test_a_shipped_level_pasted_brings_its_plane_goals_and_time_but_not_its_board():
+    fear = arenas()[0]  # its tutorial, its passkey, its hints, a board of its own
+    made = pasted(LEVEL, to_json(fear))
+    assert (made.title, made.spec, made.start) == (fear.title, fear.spec, fear.start)
+    assert (made.items, made.objectives, made.time_limit) == (
+        fear.items,
+        fear.objectives,
+        fear.time_limit,
+    )
+    assert made.board == LEVEL.board and made.board != fear.board  # the Maker sets no board yet
+    assert made.tutorial is None and made.passkey is None and made.hints is None
+    assert fear.tutorial is not None and fear.passkey is not None
+
+
+def test_a_text_no_level_could_hold_is_refused_with_its_reason():
+    text = json.loads(to_json(LEVEL))
+    for given, why in (
+        ("  ", "paste a level's text into the field first"),
+        ("{", "not JSON"),
+        ("[1, 2]", "without its version"),
+        ("12", "not a level's text"),
+        (json.dumps({**text, "version": 9}), "version 9"),
+        (json.dumps({**text, "colour": "red"}), "takes no 'colour'"),
+        (json.dumps({k: v for k, v in text.items() if k != "title"}), "no 'title'"),
+        (json.dumps({**text, "title": "   "}), "needs a title"),
+        (json.dumps({**text, "start": {"at": [21.0, 21.0], "heading": 0}}), "inside an obstacle"),
+    ):
+        with pytest.raises(Unmade, match=why):
+            pasted(LEVEL, given)

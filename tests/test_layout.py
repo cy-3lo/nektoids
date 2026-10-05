@@ -76,6 +76,7 @@ from nektoids.editor.layout import (
     kept_on_board,
     knob_at,
     level_button_at,
+    level_field_at,
     level_of,
     main_view_for,
     make_layout,
@@ -660,7 +661,7 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
             assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
     assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
     maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
-    objects = [Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.NAVIGATOR]
+    objects = [Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.FILES, Drawer.NAVIGATOR]
     assert maker.maker and [d for d, _ in maker.drawer_buttons] == [*objects, *FOOT]
     assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
     assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
@@ -764,3 +765,17 @@ def test_goals_finds_a_word_a_bin_add_and_a_sliders_track_apart_from_its_value()
     assert along(track, track[0] - 9) == 0.0 and along(track, track[0] + track[2] + 9) == 1.0
     assert along(track, track[0] + track[2] / 2) == 0.5
     assert word_at(layout, centre(layout.board_area)) is None
+
+
+def test_the_makers_files_holds_copy_the_level_then_a_field_to_paste_one_into():
+    layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True)  # D-310
+    assert [t for t, _ in layout.section_titles] == ["Save/Load"]
+    (button, row), field = layout.file_buttons[0], layout.level_field
+    assert button is FileButton.LEVEL and len(layout.file_buttons) == 1
+    assert field[1] > row[1] + row[3] and field[3] == row[3] and not layout.win_rows
+    assert level_field_at(layout, centre(field)) and not level_field_at(layout, centre(row))
+    assert file_button_at(layout, centre(row)) is FileButton.LEVEL
+    assert layout.board_field is None  # the board's, the editor's alone
+    editor = make_layout(Drawer.FILES, env=Env.EDITOR)
+    assert editor.level_field is None and editor.board_field is not None
+    assert drawer_key(Env.MAKER, "F") is Drawer.FILES

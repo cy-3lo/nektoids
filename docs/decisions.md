@@ -1711,3 +1711,20 @@ words where it has more: "Touch no light", "Leave every ring", "Circle a light";
 becomes "the ring" where there is one, in "Keep out of", "Stay inside" and their info texts, and
 "It touched the light" becomes "It touched a light" where there are more. `Goal.name`, `about`
 and `broken` take the level. Every shipped level reads as it did, word for word.
+
+**D-310 — 2026-10-05 — Save, in the Maker's Files (F): Copy level puts its JSON on the clipboard, as `to_json` writes the shipped files; Paste a level, a field, takes a level's text. A level pasted, or started from, brings its title, spec, plane, start, goals and time, not its board, tutorial, passkey or hints. Start from offers a blank plane and every shipped level. Applies D-301, D-206.**
+The todo's Save, the plan the physicist agreed to. Files is the Maker's fourth drawer, between
+Brief and Navigator, as D-301 listed it. Under Save/Load, Copy level puts the level's text on the
+clipboard through D-206's path, which Chrome and Safari reach; the text, 35 lines for the
+sandbox's, is too long for the status line, which says that it was copied and how long it is.
+Under it, Paste a level is a field as Paste a board is: a click opens it, Cmd/Ctrl+V pastes, Enter
+takes the text, Esc gives up. Whatever no level could hold is refused, its reason in the status
+line: not JSON, no version or a newer one, a key it does not know (D-201), a light on an
+obstacle, a start inside one, a title with nothing in it. What it takes, the plane and the words,
+is one step for undo, and the view goes to it. The board stays the one being made: the Maker
+sets no board yet, which is the todo's next item, and a board it could neither show nor change
+would be a failure the player cannot see (invariant 6). A made level has no tutorial, passkey or
+hints. Copy level and Paste a level give the same level back. Start from, under them, offers a
+blank plane, no item, the swimmer at the origin, no goal, 30 s, titled "New level", and the
+shipped levels, the seven of the chapter and "Two lights, four obstacles", open or not: the Maker
+is for us and Camille first. It follows in its own pull request.

@@ -1,15 +1,17 @@
 """A level made by hand, one change at a time (D-301): an item placed, moved, set or removed; the
 swimmer's start moved or turned; its title or its spec written (D-305); the time allowed set; a
-goal added, a word of it chosen, its setting set, or taken out (D-308). Each change returns a
-new `Level`, the old one untouched, so the Maker's undo keeps whole levels (D-027), and each
-lands on the lattice (`lattice.py`). A change the level could not hold is refused with its
-reason, for the status line: a light touching an obstacle, as the arena refuses it, the swimmer
-starting inside one, a title or a spec with nothing in it, a goal aiming at something the level
-has none of, a sentence asked twice, a third goal. Pure Python, no pygame.
+goal added, a word of it chosen, its setting set, or taken out (D-308); another level's text
+pasted, of which it takes all but the board (D-310). Each change returns a new `Level`, the old
+one untouched, so the Maker's undo keeps whole levels (D-027), and each lands on the lattice
+(`lattice.py`). A change the level could not hold is refused with its reason, for the status
+line: a light touching an obstacle, as the arena refuses it, the swimmer starting inside one, a
+title or a spec with nothing in it, a goal aiming at something the level has none of, a
+sentence asked twice, a third goal, a text no level could hold. Pure Python, no pygame.
 """
 
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import replace
 from itertools import product
@@ -162,6 +164,40 @@ def goal_set(level: Level, index: int, value: float) -> Level:
     value = scale.clamp(value)
     whole = isinstance(getattr(goal, name), int)  # turns
     return _goal_with(level, index, replace(goal, **{name: round(value) if whole else value}))
+
+
+def pasted(level: Level, text: str) -> Level:
+    """The level that `text` holds, its JSON as `to_json` writes it, taken onto `level`
+    (`taken`); Unmade, saying why, for a text no level could hold (D-201, D-310)."""
+    if not text.strip():
+        raise Unmade("paste a level's text into the field first")
+    try:
+        other = Level.from_dict(json.loads(text))
+    except json.JSONDecodeError:
+        raise Unmade("that is not a level's text: it is not JSON") from None
+    except KeyError as missing:
+        raise Unmade(f"that is not a level's text: it has no {missing.args[0]!r}") from None
+    except (TypeError, AttributeError):
+        raise Unmade("that is not a level's text") from None
+    except ValueError as refused:  # a newer version, a key it does not know, items that overlap
+        raise Unmade(str(refused)) from None
+    return taken(level, other)
+
+
+def taken(level: Level, other: Level) -> Level:
+    """`other`'s title, spec, plane, start, goals and time on `level`'s board, with no tutorial,
+    passkey or hints: the Maker sets no board yet, and a made level has none of those (D-310)."""
+    made = replace(
+        level,
+        start=other.start,
+        items=other.items,
+        time_limit=other.time_limit,
+        objectives=other.objectives,
+        tutorial=None,
+        passkey=None,
+        hints=None,
+    )
+    return _checked(specified(titled(made, other.title), other.spec))
 
 
 def _words(goal: Goal) -> tuple[Verb, Count, Target]:
