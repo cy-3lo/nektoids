@@ -1,6 +1,6 @@
 """Load's field and loading a board's text (D-206). boardfield.py imports no pygame."""
 
-from nektoids.editor.boardfield import LONGEST, BoardField, load
+from nektoids.editor.boardfield import LONGEST, board_field, load
 from nektoids.graph.board import Kind
 from nektoids.graph.boardtext import to_text
 from nektoids.graph.hexgrid import NW, SW
@@ -26,7 +26,7 @@ def built(board):
 
 
 def test_the_field_takes_a_boards_characters_and_ends_on_enter_or_escape():
-    field = BoardField()
+    field = board_field()
     for char in "2Sv#b k":
         assert field.type(char, char) is None
     assert field.text == "2Svb k"  # no board has '#'; a space may be typed, and is read past

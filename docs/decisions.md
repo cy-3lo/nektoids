@@ -1623,3 +1623,19 @@ Tab. The tabs' tooltips, the switch's and Chapters' name Tab, Shift+Tab and Esc;
 still go to Run, Editor and the Maker, unnamed, for whoever knows them. Space still runs from
 the editor and the Maker, and plays in the run. The developer's arena (F7) keeps Tab for its
 levels and Esc for the editor.
+
+**D-305 — 2026-10-05 — Brief, the Maker's third drawer, holds the level's title and its spec, each in a field of text that a click opens with what the level says; Enter or a click elsewhere keeps what is typed, Esc gives it up. Every field of text is one `TextField`, with a caret. Applies D-301; amends D-206.**
+The plan's Brief: the level's words, as Objects is its plane. Its two fields sit under their
+labels, the title a row high, the spec six lines high and wrapped, enough for its longest. A
+field opens once the click on it is over, as Paste a board does for Safari (D-206), holding the
+level's title or spec with the caret after it; the arrows, Home and End move the caret natively,
+and on the web the page's own field moves it and says where it is, so the bar drawn is where the
+next character goes. Enter or a click anywhere else keeps the text, its spaces squeezed, one
+step for undo; Esc leaves the level as it was. A title or a spec with nothing in it is refused,
+"a level needs a title", "say what the level asks"; a title is at most 40 characters, a spec
+120. The caption over the main screen, Chapters' row, the level's card and the next run follow.
+Paste a board's field is the same class, taking only a board's characters (D-206), and it, the
+passkey's and the title's are drawn by one function, `draw_field`: the caret is now a bar in the
+accent, and a board's text shows its spaces. In the page's field Tab no longer takes the focus
+away. The run's status line drops F for fast forward, which its button's tooltip names, so that
+Tab and Esc fit (D-304).

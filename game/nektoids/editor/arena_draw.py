@@ -660,7 +660,7 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
 
 def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """Only the keys: the time is on the timeline and over it."""
-    keys = "Space: play or pause.  .: a step.  0: again.  F: fast."
+    keys = "Space: play.  .: a step.  0: again."  # F: fast, in its tooltip
     if scene.developer:
         cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
         text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F7: editor."
