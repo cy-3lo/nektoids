@@ -1597,3 +1597,15 @@ arena's own refusal, or the swimmer starting inside one. A value off the lattice
 level stays until it is changed: the sandbox's heading of 20°, turned, becomes 30°. Each change
 is a new `Level` (`levels/making.py`), handed to the router, the editor's caption and Run
 preview, and the next run.
+
+**D-303 — 2026-10-05 — F1, F2 and F3 are the tabs, Run, Editor and the Maker, in every environment, as a click on the tab. Space and Esc stay; the developer's F1 to F4 move to F5 to F8. Amends D-069; applies D-301.**
+With three tabs, Space (to the run) and Esc (from the run to the editor) no longer reach every
+tab, and Esc in the Maker puts down what is in hand. The physicist asked for one switch between
+the three: each tab has its key, in the tabs' order, the same everywhere, and its tooltip says
+it. F3 on a level of the chapter, which has no Maker, says the Maker is Free play's, in
+Chapters. A tutorial's step that holds a tab holds its key too. Space and Esc keep what they did,
+so the tutorials' words hold. The developer's keys, behind `DEV_VIEW`, move four on: F5 the
+editor, F6 the circuit view, F7 the arena view, F8 the board's JSON. In the browser, F1 is help
+and F3 is find: the page stops both, in `clipboard.py`'s script, and the game still gets them;
+tried in headless Chrome. On a Mac's own keyboard F1 to F3 work the screen and the windows
+unless fn is held, or the function keys are set as standard ones in the system's settings.

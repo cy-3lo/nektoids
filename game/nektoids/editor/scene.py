@@ -338,6 +338,8 @@ class EditorScene(Frame):
     # Keyboard
 
     def _key(self, event: pygame.event.Event) -> None:
+        if self.tab_key(pygame.key.name(event.key)):  # F1, F2, F3 (D-303)
+            return
         if event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
             if event.key == pygame.K_z:
                 self._edit(EditButton.REDO if event.mod & pygame.KMOD_SHIFT else EditButton.UNDO)

@@ -24,6 +24,7 @@ from nektoids.editor.layout import (
     PALETTE_TOOLS,
     RUN_VIEWS,
     SCREEN,
+    TAB_KEYS,
     TABS_HEIGHT,
     TOOL_KEYS,
     TURNS,
@@ -637,6 +638,7 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
     for env in Env:  # D-301: every environment of the sandbox shows the three tabs
         layout = make_layout(None, env=env, maker=True)
         assert [name for name, _ in layout.tabs] == ["run", "editor", "maker"]
+        assert [TAB_KEYS[name] for name, _ in layout.tabs] == ["F1", "F2", "F3"]  # D-303
         for name, rect in layout.tabs:
             assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
     assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]

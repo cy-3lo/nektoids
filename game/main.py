@@ -15,10 +15,11 @@ or by Next level comes up under its card, which says what it asks (D-042). A lev
 shows over the editor and the run, and follows what the player does (`editor/tutorial.py`,
 D-039); its hints are asked for in the Hints drawer, in turn (`editor/hints.py`, D-078).
 Developer tools, while DEV_VIEW is on:
-F1 goes to the editor of the open level, from any view or screen.
-F2 switches to the developer view (D-016): the board as a running circuit, with equations.
-F3 switches to the arena view (D-019, D-022): the board in every arena, with the tools.
-F4 prints the board as one line of JSON (D-024): in the terminal natively, in pygbag's
+F1, F2 and F3 are the tabs, Run, Editor and the Maker (D-303), so these moved four keys on:
+F5 goes to the editor of the open level, from any view or screen.
+F6 switches to the developer view (D-016): the board as a running circuit, with equations.
+F7 switches to the arena view (D-019, D-022): the board in every arena, with the tools.
+F8 prints the board as one line of JSON (D-024): in the terminal natively, in pygbag's
 terminal on the page in the browser. Nothing is written to a file.
 """
 
@@ -66,7 +67,7 @@ from nektoids.levels.scenarios import Scenario, scenarios
 from nektoids.levels.score import Score
 
 FPS = 60
-DEV_VIEW = False  # True: F1 the editor, F2 the developer view, F3 the arena view, F4 prints
+DEV_VIEW = False  # True: F5 the editor, F6 the developer view, F7 the arena view, F8 prints
 assert SIM_HZ == FPS * TICKS_PER_FRAME  # the developer view runs a whole number of ticks a frame
 
 pygame.init()
@@ -229,8 +230,8 @@ def open_developer_view() -> SchematicScene:
 def toggle(
     open_view: SchematicScene | ArenaScene | None, key: int
 ) -> SchematicScene | ArenaScene | None:
-    """F2 opens or closes the developer view, F3 the arena view; either replaces the other."""
-    if key == pygame.K_F2:
+    """F6 opens or closes the developer view, F7 the arena view; either replaces the other."""
+    if key == pygame.K_F6:
         return None if isinstance(open_view, SchematicScene) else open_developer_view()
     if isinstance(open_view, ArenaScene):
         return None
@@ -239,7 +240,7 @@ def toggle(
 
 async def main() -> None:
     running = True
-    developer: SchematicScene | ArenaScene | None = None  # the F2 or F3 view, while open
+    developer: SchematicScene | ArenaScene | None = None  # the F6 or F7 view, while open
     playing: ArenaScene | None = None  # the player's run, while it shows
     run_drawer: Drawer | None = Drawer.INSIDE  # the run's open drawer, from one run to the next
     held: ArenaScene | None = None  # the run an explaining step paused while it played (D-071)
@@ -262,13 +263,13 @@ async def main() -> None:
             elif (
                 DEV_VIEW
                 and event.type == pygame.KEYDOWN
-                and event.key in (pygame.K_F2, pygame.K_F3)
+                and event.key in (pygame.K_F6, pygame.K_F7)
             ):
                 developer = toggle(developer, event.key)
-            elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+            elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F5:
                 developer, playing = None, None  # straight to the editor, from anywhere
                 router.edit()
-            elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
+            elif DEV_VIEW and event.type == pygame.KEYDOWN and event.key == pygame.K_F8:
                 print(json.dumps(router.board.to_dict(), separators=(",", ":")), flush=True)
             elif developer is not None:
                 developer.handle_event(event)

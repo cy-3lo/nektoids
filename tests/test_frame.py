@@ -1,6 +1,6 @@
 """The frame the editor and the run share (D-051, D-054). frame.py imports no pygame."""
 
-from nektoids.editor.frame import WARM_FRAMES, Frame
+from nektoids.editor.frame import LEAVE, WARM_FRAMES, Frame
 from nektoids.editor.layout import (
     SCROLL_STEP,
     Drawer,
@@ -248,3 +248,17 @@ def test_on_the_sandbox_each_tab_asks_for_its_own_screen_and_shows_its_tooltip()
             assert scene.request == (None if name == here else asked)
             scene.frame_track(centre(tabs[name]))
             assert scene.tip_target == (None if name == here else name)
+
+
+def test_f1_f2_f3_ask_for_run_editor_and_the_maker_as_their_tabs_and_f3_off_the_sandbox_says_why():
+    for env, here in ((Env.EDITOR, "editor"), (Env.RUN, "run"), (Env.MAKER, "maker")):  # D-303
+        scene = Scene(None, env=env, maker=True)
+        for key, asked in (("f1", "run"), ("f2", "edit"), ("f3", "make")):
+            scene.request = None
+            assert scene.tab_key(key)
+            assert scene.request == (None if LEAVE[here] == asked else asked)
+    scene = Scene(None, env=Env.RUN)  # a level of the chapter: two tabs
+    assert scene.tab_key("f3") and scene.request is None and "Chapters" in scene.message
+    assert not scene.tab_key("f4") and not scene.tab_key("space")
+    scene.gate = lambda action: action.verb != "edit"  # a tutorial's step holds it
+    assert scene.tab_key("f2") and scene.request is None and scene.message == REFUSAL

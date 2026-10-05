@@ -523,7 +523,7 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     if scene.selected is None:
         note = "Click the swimmer to see its wiring"
     elif not scene.circuit.cells:
-        back = "F3" if scene.developer else BUTTON_KEYS[ArenaButton.EDIT]
+        back = "F7" if scene.developer else BUTTON_KEYS[ArenaButton.EDIT]
         note = f"Your board is empty: build one in the editor ({back})"
     else:
         circuit = scene.circuit
@@ -663,7 +663,7 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     keys = "Space: play or pause.  .: a step.  0: again.  F: fast."
     if scene.developer:
         cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
-        text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F3: editor."
+        text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F7: editor."
     else:
         text = f"{keys}  Esc: editor."
     text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
