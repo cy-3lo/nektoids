@@ -171,10 +171,12 @@ class ArenaScene(Frame):
         drawer: Drawer | None = Drawer.INSIDE,
         chapter: int = 0,
         passkey: tuple[str, str] | None = None,
+        maker: bool = False,
     ):
         self.levels = list(levels)
         self.index = 0
-        layout = make_layout(drawer, env=Env.RUN, goals=len(self.level.objectives), chapter=chapter)
+        goals = len(self.level.objectives)  # the sandbox's tabs end with the Maker's (D-301)
+        layout = make_layout(drawer, env=Env.RUN, goals=goals, chapter=chapter, maker=maker)
         self._start_frame(layout, settings)  # also `request`: "edit", "next"... for main.py
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
@@ -237,7 +239,13 @@ class ArenaScene(Frame):
         goals, chapter = len(self.level.objectives), self.layout.chapter
         scroll = self.scrolls.get(drawer, 0)  # D-096
         return make_layout(
-            drawer, env=Env.RUN, goals=goals, chapter=chapter, scroll=scroll, **self._hint_layout()
+            drawer,
+            env=Env.RUN,
+            goals=goals,
+            chapter=chapter,
+            scroll=scroll,
+            maker=self.layout.maker,
+            **self._hint_layout(),
         )
 
     def _slid(self, before: Layout, after: Layout) -> None:

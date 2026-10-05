@@ -191,6 +191,11 @@ RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead o
 EYE_SHADES = (P.bright, P.dim)  # one per eye in the polar plot, in turn
 WIN = P.accent1.bright  # a win on Score's plot that no other beats: the Pareto front
 
+# The Maker's plane (D-301): its grid, under the rays
+PLANE_DOT = mix(P.deep, P.dim, 0.35)  # where a position may fall, every 0.5 u
+PLANE_LINE = mix(P.deep, P.line, 0.6)  # a line every 5 u
+PLANE_LABEL = P.muted  # a line's coordinate, at the plane's edge
+
 # The swimmer at work (D-076): its flames and the light it draws in, of one lightness (OKLab L
 # 0.56), dimmer than the swimmer
 FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks drifting out

@@ -1553,3 +1553,26 @@ the objectives and the time allowed, and shares a level as text only once its ma
 "Two lights, four obstacles" brought back; sharing levels and solutions, with no server. Out:
 all else in `ideas.md`; no new part, sense or item. Each item is planned when it starts, and its
 own decisions, a level's text first among them, are taken then, as the board's was (D-205).
+
+**D-301 — 2026-10-05 — The level maker is the Maker, a third tab on the sandbox alone: the sandbox's level is the one made, and the Editor and the Run try it. Its drawers: Objects, Goals, Brief, Files, Navigator. Values sit on a lattice the plane shows as a grid; sliders and typed numbers set them; Save copies the level's JSON.**
+The physicist asked for a tab of its own, with drawers for the objects, the objectives with
+sliders and their values, the level's text and a save, and for the Editor and the Run to go on
+working on the level being made, as Mario Maker plays a course from where it is built. The
+sandbox is already a level with no goal and every part handed out (D-102), so it becomes the
+place where a level is made rather than a second place beside it: its tabs are Run, Editor,
+Maker; a level of the chapter keeps two. The Maker's drawers are Objects (O): the lights, the
+obstacles and the swimmer's start; Goals (G): the objectives with their settings, and the time
+allowed; Brief (B): the title and the spec; Files (F): Copy level, Paste a level, and a level to
+start from; Navigator (N): the run's, with the overview, the zoom and the rays. Space and the
+switch run the level. Values sit on the todo's lattice: positions every 0.5 u, powers whole,
+headings every 15°; each setting declares its range and step. The plane shows that lattice, a
+dot every 0.5 u and a line every 5 u with its coordinate at the edge, in the Maker only; the
+dots go to whole u, then away, as the view zooms out, before they crowd. Sliders and typed
+numbers are the maker's, not the player's graph: invariant 4 binds only the graph. Save copies
+the level's JSON as `to_json` writes it, the shipped files' layout, to the clipboard, which
+D-206 already reaches in Chrome and Safari; no file is written, so `web.md` stands. The level
+made lasts the session, as wins do; nothing is stored (D-075). Ranges proposed, to be settled
+when Goals is built: a light's power 1 to 16; an obstacle's radius 0.5 to 5 by 0.5; a ring's
+radius 2 to 30 by 0.5; seconds 1 to 60; turns 1 to 10; the time allowed 5 to 300 s by 5. The
+first step, the tab itself, shows the plane over its grid, read only; each drawer comes with its
+own pull request into `stage/1-level-maker`.

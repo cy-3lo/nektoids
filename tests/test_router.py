@@ -187,3 +187,18 @@ def test_a_win_card_names_the_word_for_the_next_level_and_chapters_once_it_is_wo
     assert router.next_passkey() is None
     router.open(router.sandbox_index)
     assert router.next_passkey() is None
+
+
+def test_the_maker_opens_on_the_sandbox_alone_and_the_editor_and_the_run_go_on_from_it():
+    router = a_router()  # D-301
+    with pytest.raises(ValueError, match="only the sandbox"):
+        router.make()
+    router.open(router.sandbox_index)
+    router.begin()
+    router.make()
+    assert router.screen is Screen.MAKE and router.label == "SANDBOX"
+    router.run()
+    assert router.screen is Screen.RUN
+    router.make()
+    router.edit()
+    assert router.screen is Screen.EDIT

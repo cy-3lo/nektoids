@@ -32,7 +32,7 @@ from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.entry import ENTRY_AREA
-from nektoids.editor.frame import Frame
+from nektoids.editor.frame import LEAVE, Frame
 from nektoids.editor.geometry import (
     EYE_DISC,
     SHAPES,
@@ -226,7 +226,8 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.MOTION: "Motion",
     ViewButton.STREAMS: "Streams",
 }
-TAB_NAME = {"editor": "Editor", "run": "Run"}
+TAB_NAME = {"editor": "Editor", "run": "Run", "maker": "Maker"}
+TAB_TIP = {"run": "Run", "editor": "Back to the editor", "maker": "Make the level"}  # D-301
 
 # How parts sit in the menu: eyes looking up (flat side up), thrusters pointing up
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.
@@ -1205,15 +1206,16 @@ def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
 
 def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     """The name of the bar's icon under the mouse, and its key if it has one, beside the bar;
-    the other tab's, under it."""
+    another tab's, under it, with the switch's key if the switch goes there too."""
     target = scene.tooltip
     if target is None:
         return
-    if isinstance(target, str):  # the other tab: what the switch to it says
+    if isinstance(target, str):  # another tab
         x, y, _, h = dict(scene.layout.tabs)[target]
         button = SWITCH_TO[scene.layout.env]
-        key = LEVEL_KEYS[button] if scene.settings.key_hints else None
-        text = TIP[button] + (f" ({key})" if key else "")
+        switch = LEAVE[target] == button.value
+        key = LEVEL_KEYS[button] if switch and scene.settings.key_hints else None
+        text = TAB_TIP[target] + (f" ({key})" if key else "")
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
     rects = dict(scene.layout.drawer_buttons) | dict(scene.layout.level_buttons)

@@ -624,3 +624,23 @@ def test_the_editor_opens_a_zone_clear_of_the_action_atop_the_board():
     big = opening_view(layout, hex_disc(3))  # the sandbox's (D-102)
     _, y, _, h = layout.board_area
     assert big.size < HEX_SIZE and big.origin[1] - 5.5 * big.size >= y + ACTION_ROOM - 1e-9
+
+
+def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_to_the_run():
+    for env in Env:  # D-301: every environment of the sandbox shows the three tabs
+        layout = make_layout(None, env=env, maker=True)
+        assert [name for name, _ in layout.tabs] == ["run", "editor", "maker"]
+        for name, rect in layout.tabs:
+            assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
+    assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
+    maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
+    assert maker.maker and [d for d, _ in maker.drawer_buttons] == [Drawer.NAVIGATOR, *FOOT]
+    assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
+    assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
+    assert maker.overview is not None and maker.zoom_bar is not None
+    assert maker.controls_area is None and maker.action_at is None  # the plane, to the foot
+    assert maker.board_area[1] + maker.board_area[3] == maker.status_at[1] - 6
+    tabs = dict(maker.tabs)
+    assert palette_target_at(maker, centre(tabs["run"])) == "run"
+    assert palette_target_at(maker, centre(tabs["maker"])) is None  # this one
+    assert drawer_key(Env.MAKER, "N") is Drawer.NAVIGATOR and drawer_key(Env.MAKER, "T") is None
