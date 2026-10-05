@@ -41,6 +41,9 @@ taken, when it starts.
       (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
 - [ ] **Sharing levels and solutions.** Solutions can be shared already, as a board's text
       (D-205, D-206); a level needs a text of its own, the stage's first decision.
+- [ ] **A first level, before Fear** (the physicist's): its parts already on the board, one eye
+      and one thruster, and the player just has to connect them; the goal is to go straight
+      (Drags). D-300's scope names the levels, so it takes a decision when it starts.
 
 ## 12. Checks and fixes on `main`
 
