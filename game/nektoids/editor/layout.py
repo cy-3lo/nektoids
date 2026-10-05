@@ -123,6 +123,7 @@ TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-c
 class Piece(Enum):  # Objects' rows: what the Maker puts on the plane (D-301)
     LIGHT = "light"
     OBSTACLE = "obstacle"
+    MARK = "mark"  # a zone, which only the objectives read (D-306)
     START = "start"  # the swimmer's start: always one, moved and turned, never placed
 
 
@@ -615,9 +616,10 @@ class _Rows:
         self._over_wheel((("Mode", Mode), ("Edit", EditButton)), height, wheel_folded, scroll)
 
     def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
-        """The Maker's objects, then undo and redo, as rows, scrolled above the Wheel if they do
-        not fit; at the drawer's foot, the Wheel round what is focused on the plane (D-301)."""
-        self._over_wheel((("Plane", Piece), ("Edit", EditButton)), height, wheel_folded, scroll)
+        """The Maker's objects under their title, then undo and redo, which need none, as rows,
+        scrolled above the Wheel if they do not fit; at the drawer's foot, the Wheel round what
+        is focused on the plane (D-301, D-306)."""
+        self._over_wheel((("Plane", Piece), ("", EditButton)), height, wheel_folded, scroll)
 
     def brief(self) -> None:
         """The level's title, a field a row high, then its spec, a field SPEC_LINES high, each
@@ -632,7 +634,8 @@ class _Rows:
     def _over_wheel(self, sections: tuple, height: int, wheel_folded: bool, scroll: int) -> None:
         """Each section's title and rows, scrolled above the Wheel if they do not fit."""
         for title, rows in sections:
-            self._title(title, self.sections)
+            if title:
+                self._title(title, self.sections)
             for what in rows:
                 self._row(what)
             self.y += SECTION_GAP

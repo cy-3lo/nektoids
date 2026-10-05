@@ -18,8 +18,9 @@ from nektoids.sim.arena import BASE_RADIUS
 SETTING = {  # what each item's setting may be (D-301)
     ItemKind.LIGHT: Range(1.0, 16.0, 1.0),  # its power
     ItemKind.OBSTACLE: Range(0.5, 5.0, 0.5, "u"),  # its radius
+    ItemKind.MARK: Range(0.5, 30.0, 0.5, "u"),  # its radius: a zone as wide as Fear's ring
 }
-NEW = {ItemKind.LIGHT: 4.0, ItemKind.OBSTACLE: 1.0}  # a new item's setting
+NEW = {ItemKind.LIGHT: 4.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 3.0}  # a new item's setting
 TITLE_LONGEST = 40  # characters: the caption's line holds it with a short spec beside it
 SPEC_LONGEST = 120  # a sentence or two, as the shipped levels' (D-305)
 

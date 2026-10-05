@@ -45,10 +45,11 @@ undo and redo in the editor (D-027). Stage 0's foundations (D-200 to D-206): one
 kinds and their laws, senses and actions, a level format with a version, saved boards with
 their paths, a board as text, Save/Load in Files.
 And stage 1, the todo's §11: a level maker, for us and Camille first (D-041), then for players:
-the plane's lights, obstacles and start, the board's zone, stock and locked parts, objectives
-and the time allowed, a clear check, levels and solutions shared as text, no server.
+the plane's lights, obstacles, marks (zones only the objectives read, D-306) and start, the
+board's zone, stock and locked parts, objectives and the time allowed, a clear check, levels
+and solutions shared as text, no server.
 
-Out: no new part, sense or item. The later stages, memory, flows, actions other than moving, and
+Out: no new part or sense, and no new item but marks (D-306). The later stages, memory, flows, actions other than moving, and
 all after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,
 optical flow, parts that move on the body during a run, threshold nodes, the generalisation
 pillar (multi-seed validation), sound, art.

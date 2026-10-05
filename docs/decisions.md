@@ -1639,3 +1639,20 @@ passkey's and the title's are drawn by one function, `draw_field`: the caret is 
 accent, and a board's text shows its spaces. In the page's field Tab no longer takes the focus
 away. The run's status line drops F for fast forward, which its button's tooltip names, so that
 Tab and Esc fit (D-304).
+
+**D-306 — 2026-10-05 — Marks, a third kind of item: a zone on the plane, a circle the swimmer neither sees nor touches, which only the objectives read. Placed, moved, sized and deleted in Objects; drawn as a grey empty circle with a cross on its centre, in every view. The level format is version 2; version 1 is read as it is. Widens D-300's "no new item" for marks alone.**
+The physicist's grammar for objectives (reach, leave, stay, circle; all, one, none; lights,
+obstacles, marks) needs zones to aim at, and Fear's and Love's rings are zones already, round
+their one light. A mark is `{"kind": "mark", "at": [x, y], "radius": r}`, radius 0.5 to 30 u
+by 0.5, 3 u when placed. `Level.arena` holds the lights and the obstacles only, as before, so the
+simulation and every shipped run are what they were; `Level.marks` holds the zones. In Objects
+a mark is a row and an empty point's third offer (3), its Wheel Smaller, Move, Delete, Bigger,
+as an obstacle's. A mark is grabbed by its rim or its centre, within 6 px: a click inside a zone
+finds the point there, so a light may still be put inside one; a light or an obstacle over a
+mark is found first. Marks are drawn under the lights and the obstacles, in the Maker, the run,
+Diagnostic's map and the overviews, and the run and the Maker frame them whole. Adding a kind of
+item changes the format (D-201): files are version 2, and version 1, which has no marks, is
+upgraded as it is; a newer version is refused. Every shipped file is rewritten, its version
+line alone changing. `CLAUDE.md`'s scope now says so. Until the next decision makes objectives
+sentences, no objective reads a mark. Objects' Undo and Redo lose their section title, so its
+four rows and theirs fit over the Wheel.

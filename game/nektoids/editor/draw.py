@@ -126,6 +126,7 @@ from nektoids.editor.palette import (
     LIGHT,
     LIT,
     LOCK_RING,
+    MARK,
     METER,
     OBSTACLE,
     OUTSIDE,
@@ -783,6 +784,9 @@ def draw_level_map(
             pygame.draw.circle(
                 screen, OBSTACLE, view.to_screen(disc.x, disc.y), disc.radius * view.scale
             )
+        for mark in level.marks:  # D-306
+            centre = view.to_screen(*mark.at)
+            pygame.draw.circle(screen, MARK, centre, max(2.0, mark.value * view.scale), 1)
         for radius in ring_radii(level):
             for x, y in arena.light_xy:
                 pygame.draw.circle(screen, RING, view.to_screen(x, y), radius * view.scale, 1)

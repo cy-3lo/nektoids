@@ -29,10 +29,11 @@ def px(x: float, y: float) -> tuple[float, float]:
 
 def test_the_wheel_offers_what_may_go_on_a_point_and_what_may_be_done_to_an_object():
     assert offer(None) == ()
-    assert offer(Point((3.0, 4.0))) == (Piece.LIGHT, Piece.OBSTACLE)  # as an empty cell
+    assert offer(Point((3.0, 4.0))) == (Piece.LIGHT, Piece.OBSTACLE, Piece.MARK)  # a cell's
     assert offer(0) == (Tool.LESS, Tool.MOVE, Tool.DELETE, Tool.MORE)  # less, more by the gap
     assert offer(Piece.START) == (Tool.TURN_LEFT, Tool.MOVE, Tool.TURN_RIGHT)  # it stays
-    assert [KEYS[w] for w in (Piece.LIGHT, Piece.OBSTACLE, Tool.LESS, Tool.MORE)] == list("12<>")
+    pieces = (Piece.LIGHT, Piece.OBSTACLE, Piece.MARK, Tool.LESS, Tool.MORE)
+    assert [KEYS[w] for w in pieces] == list("123<>")
 
 
 def test_a_click_finds_the_swimmer_first_then_the_nearest_item_else_the_open_plane():
@@ -67,3 +68,15 @@ def test_an_objects_place_and_reach():
         reach(LEVEL, Piece.START) == reach(LEVEL, 0) == 1.0
         and reach(adjusted(made, 6, 2), 6) == 2.0
     )
+
+
+def test_a_mark_is_grabbed_by_its_rim_or_its_centre_and_a_click_inside_finds_the_plane():
+    zone = placed(replace(LEVEL, items=()), ItemKind.MARK, (5.0, 30.0))  # D-306
+    zone = adjusted(zone, 0, 14)  # radius 3 + 14 x 0.5 = 10 u: 100 px at VIEW's 10 px/u
+    assert zone.items[0].value == 10.0 and reach(zone, 0) == 10.0
+    assert object_at(zone, VIEW, px(5.0, 30.0)) == 0  # its centre
+    assert object_at(zone, VIEW, px(15.0, 30.0)) == 0 and object_at(zone, VIEW, px(5.4, 20.0)) == 0
+    assert object_at(zone, VIEW, px(9.0, 30.0)) is None  # inside: the point there
+    lit = placed(zone, ItemKind.LIGHT, (5.0, 30.0))  # a light on its centre: the light first
+    assert object_at(lit, VIEW, px(5.0, 30.0)) == 1
+    assert says(zone, 0) == "A mark, radius 10 u" and name(zone, 0, Tool.MORE) == "Bigger"

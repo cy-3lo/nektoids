@@ -44,7 +44,12 @@ TOOL_ICON = {
     Tool.LESS: "minus",  # the Maker's (D-301)
     Tool.MORE: "plus",
 }
-PIECE_ICON = {Piece.LIGHT: "lightbulb", Piece.OBSTACLE: "circle", Piece.START: "location-arrow"}
+PIECE_ICON = {
+    Piece.LIGHT: "lightbulb",
+    Piece.OBSTACLE: "circle",
+    Piece.MARK: "circle-dot",  # D-306
+    Piece.START: "location-arrow",
+}
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
 MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser"}  # D-068

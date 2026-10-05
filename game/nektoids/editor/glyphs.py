@@ -24,6 +24,7 @@ GLYPH = {
     "shapes": 0xF61F,  # the Maker's Objects (D-301)
     "circle": 0xF111,  # an obstacle
     "location-arrow": 0xF124,  # the swimmer's start
+    "circle-dot": 0xF192,  # a mark (D-306)
     "magnifying-glass-plus": 0xF00E,
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,

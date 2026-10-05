@@ -24,6 +24,8 @@ from nektoids.editor.arena_draw import (
     SYMBOL_WIDTH,
     draw_items,
     draw_light,
+    draw_mark,
+    draw_marks,
     draw_overview,
     draw_rays,
 )
@@ -112,6 +114,7 @@ def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     if scene.show_rays:  # as they stand at the run's start
         view, area = scene.view, scene.arena_area
         draw_rays(screen, view, area, scene.arena, scene.rays, 0.0, scene.pos, scene.radius)
+    draw_marks(screen, scene.view, scene.level.marks)
     draw_items(screen, fonts, scene.view, scene.arena)
     centre, radius = scene.view.to_screen(*scene.pos[0]), float(scene.radius[0]) * scene.view.scale
     draw_symbol(screen, DARK, centre, radius + 1, scene.heading, SYMBOL_WIDTH + 2)
@@ -158,9 +161,11 @@ def _draw_in_hand(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> No
 
 
 def _draw_object(screen: pygame.Surface, fonts: Fonts, kind: ItemKind, centre, radius) -> None:
-    """A light or an obstacle of `radius` [px], as the plane draws them."""
+    """A light, an obstacle or a mark of `radius` [px], as the plane draws them."""
     if kind is ItemKind.LIGHT:
         draw_light(screen, fonts, centre, radius)
+    elif kind is ItemKind.MARK:
+        draw_mark(screen, centre, radius)
     else:
         pygame.draw.circle(screen, OBSTACLE, centre, radius)
 
@@ -328,7 +333,11 @@ def _draw_hub(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, centre) -
         draw_symbol(screen, BODY, centre, 0.6 * WHEEL_HEX, scene.heading, 3)
     else:
         item = scene.level.items[focus]
-        size = 0.45 if item.kind is ItemKind.LIGHT else 0.25 + 0.13 * item.value
+        size = {
+            ItemKind.LIGHT: 0.45,
+            ItemKind.OBSTACLE: 0.25 + 0.13 * item.value,  # 0.5 to 5 u
+            ItemKind.MARK: 0.3 + 0.02 * item.value,  # 0.5 to 30 u
+        }[item.kind]
         _draw_object(screen, fonts, item.kind, centre, size * WHEEL_HEX)
 
 
