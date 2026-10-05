@@ -30,7 +30,9 @@ taken, when it starts.
       - [x] Save, in the Maker's Files: Copy level, its JSON; Paste a level; Start from a blank
         plane or a shipped level; each taking all but the board (D-310, #64, #65).
       To do, in this order:
-      - [ ] The board: zone, stock and locked parts, set with the board editor itself.
+      - [ ] The board: zone, stock and locked parts, set with the board editor itself. Done:
+        the zone's size and the parts handed out, in the Maker's Parts (D-315); to come, the
+        locked parts.
       - [ ] A clear check, as in Mario Maker: a level is shared only once its maker has won it;
         the winning board goes with it, as its proof and as the score to beat.
       - [ ] Shared as text, as a board is (D-205, D-206); no server.

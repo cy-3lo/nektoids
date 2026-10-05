@@ -1,9 +1,9 @@
 """Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
 
 - Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
-  editor, Objectives, Inside, Score and Navigator in the run, Objects, Goals, Brief, Files and
-  Navigator in the Maker; Hints, Settings and Chapters at its foot, over the accented switch
-  to the run, or from the run to the editor (`Env`).
+  editor, Objectives, Inside, Score and Navigator in the run, Objects, Parts, Goals, Brief,
+  Files and Navigator in the Maker; Hints, Settings and Chapters at its foot, over the accented
+  switch to the run, or from the run to the editor (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
@@ -12,7 +12,8 @@
   level's, asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the
   levels, then the sandbox, which replaces the full-screen map. Goals, in the Maker: the time
   allowed, a slider, then each goal's name over three rows of buttons, its words (D-308);
-  Files, in the Maker: Copy level, then a field to paste a level's text into (D-310).
+  Files, in the Maker: Copy level, then a field to paste a level's text into (D-310); Parts,
+  in the Maker: the board's size and how many of each part, each with − and + (D-315).
   Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
   the run (D-096). An arrow on the drawer's edge folds it.
 - The rest is the main screen: the tabs over it (Run, Editor, and on the sandbox the Maker,
@@ -68,6 +69,7 @@ WORD_GAP = 4  # ... between two, either way; under a slider [px]
 SLIDER_HEIGHT = 30  # a slider of Goals: its label, its track, its value [px]
 KNOB_LABEL = 64  # ... its label, at its left [px]
 KNOB_VALUE = 56  # ... its value's box, at its right [px]
+STEP_BUTTON = 28  # a row of the Maker's Parts: its − and +, square, the count between [px]
 SHADOW_GAP = 6  # from the shadow's picture to the line under it [px]
 SHADOW_LEAST = 140  # the shadow's picture shrinks to fit Hints, no smaller: then it scrolls [px]
 ROW_PITCH = 46  # from one row to the next [px]
@@ -216,7 +218,14 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
-    Env.MAKER: (Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.FILES, Drawer.NAVIGATOR),
+    Env.MAKER: (
+        Drawer.OBJECTS,
+        Drawer.PARTS,  # the Maker's: the board's size, the parts handed out (D-315)
+        Drawer.GOALS,
+        Drawer.BRIEF,
+        Drawer.FILES,
+        Drawer.NAVIGATOR,
+    ),
 }
 FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT, Env.MAKER: LevelButton.RUN}
@@ -258,6 +267,14 @@ class Word:
 
     goal: int
     word: Verb | Count | Target
+
+
+@dataclass(frozen=True)
+class Stepper:
+    """A row of the Maker's Parts: how many of `kind` the level hands out, or, for None, its
+    board's size; − and + at its right end (D-315)."""
+
+    kind: Kind | None
 
 
 @dataclass(frozen=True)
@@ -385,6 +402,7 @@ class Layout:
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
     level_field: Rect | None  # the Maker's Files: a level's text pasted there (D-310)
     start_rows: tuple[tuple[Start, Rect], ...]  # ... under it, Start from: a blank plane, a level
+    steppers: tuple[tuple[Stepper, Rect], ...]  # the Maker's Parts: the zone, each part (D-315)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "run", "editor", and on the sandbox "maker"
     board_area: Rect  # the main screen: the board, or in the run the arena
@@ -451,6 +469,9 @@ def make_layout(
     rows = _Rows()
     if drawer is Drawer.TOOLS:
         rows.tools(height, wheel_folded, scroll)
+    elif drawer is Drawer.PARTS and env is Env.MAKER:
+        rows.maker_parts()
+        rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds, height, wheel_folded, scroll)
     elif drawer is Drawer.OBJECTS:
@@ -546,6 +567,7 @@ def make_layout(
         board_field=rows.board_field,
         level_field=rows.level_field,
         start_rows=tuple(rows.of(Start)),
+        steppers=tuple(rows.steppers),
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
@@ -589,6 +611,7 @@ class _Rows:
         self.heads: list[tuple[MadeGoal, Rect]] = []
         self.words: list[tuple[Word, Rect]] = []
         self.knobs: list[tuple[Knob, Rect]] = []
+        self.steppers: list[tuple[Stepper, Rect]] = []
         self.picture: Rect | None = None
         self.line: Rect | None = None
 
@@ -634,6 +657,21 @@ class _Rows:
         self.label("Save/Load")
         self._row(FileButton.SAVE)
         self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
+        self.y += ROW_PITCH
+
+    def maker_parts(self) -> None:
+        """The Maker's Parts (D-315): under Board, its size; under Parts, each part in the
+        table's order; a row each, with − and + at its right end."""
+        self._title("Board", self.sections)
+        self._stepper(Stepper(None))
+        self.y += SECTION_GAP
+        self._title("Parts", self.sections)
+        for kind in Kind:
+            self._stepper(Stepper(kind))
+
+    def _stepper(self, what: Stepper) -> None:
+        width = DRAWER_WIDTH - 2 * ROW_INSET
+        self.steppers.append((what, (BAR_WIDTH + ROW_INSET, self.y, width, ROW_HEIGHT)))
         self.y += ROW_PITCH
 
     def maker_files(self, starts: int) -> None:
@@ -691,7 +729,7 @@ class _Rows:
         self.scroll_bar = (x, top, SCROLL_WIDTH, bottom - top)
         up = -self.scroll
         moving = (self.items, self.sections, self.groups, self.hint_texts, self.zoom_buttons)
-        for listed in (*moving, self.heads, self.words, self.knobs):
+        for listed in (*moving, self.heads, self.words, self.knobs, self.steppers):
             listed[:] = [(what, _moved(rect, up)) for what, rect in listed]
         self.picture, self.line = _moved(self.picture, up), _moved(self.line, up)
         self.passkey, self.overview = _moved(self.passkey, up), _moved(self.overview, up)
@@ -899,6 +937,25 @@ def level_field_at(layout: Layout, point: tuple[int, int]) -> bool:
         and _listed(layout, point)
         and contains(layout.level_field, point)
     )
+
+
+def step_buttons(row: Rect) -> tuple[Rect, Rect]:
+    """A row of the Maker's Parts: its − and its +, at its right end, the count between them."""
+    x, y, w, h = row
+    top = y + (h - STEP_BUTTON) // 2
+    plus = (x + w - STEP_BUTTON - 6, top, STEP_BUTTON, STEP_BUTTON)
+    return (plus[0] - 2 * STEP_BUTTON, top, STEP_BUTTON, STEP_BUTTON), plus
+
+
+def stepper_at(layout: Layout, point: tuple[int, int]) -> tuple[Stepper, int] | None:
+    """The − or the + of the Maker's Parts under `point`: its row, and -1 or 1 (D-315)."""
+    if not _listed(layout, point):
+        return None
+    for what, rect in layout.steppers:
+        minus, plus = step_buttons(rect)
+        if contains(minus, point) or contains(plus, point):
+            return what, -1 if contains(minus, point) else 1
+    return None
 
 
 def start_row_at(layout: Layout, point: tuple[int, int]) -> Start | None:

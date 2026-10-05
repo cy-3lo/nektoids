@@ -6,16 +6,17 @@ coordinate: the grid is enough (D-311). Over the grid the light's rays, as they 
 run starts, the obstacles, the lights, and the swimmer where it starts, its wedge where it
 heads; the focus lit, a ring round its object or a cross on its point; what is in hand, where a
 click would put it; atop it, as in the Editor, what the next click or Enter does, or what is
-focused, its name and key beside it, a line under it (D-314). Round it, the frame (`draw.py`): the
-tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts draws
-its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and redo,
-then the Wheel round the focus, the focus large at its hub, the line under it saying what it is.
-Goals: each goal's name and bin over its words' buttons, the words it says lit, those that would
-aim at nothing dimmed; the sliders, the time allowed's and each setting's (D-308). Brief: the
-title in a field, the spec in a taller one, wrapped (D-305). Files: Copy level, then the
-field a level's text is pasted into, then the levels to start from, a blank plane first, the
-chapter's under their numbers, the sandbox's last (D-310). Navigator: its rays' row, its
-overview and zoom.
+focused, its name and key beside it, a line under it (D-314). Round it, the frame (`draw.py`):
+the tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts
+draws its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and
+redo, then the Wheel round the focus, the focus large at its hub, the line under it saying what
+it is. Parts: the board's size and each part handed out, − and + either side of the count,
+greyed at the ends (D-315). Goals: each goal's name and bin over its words' buttons, the words
+it says lit, those that would aim at nothing dimmed; the sliders, the time allowed's and each
+setting's (D-308). Brief: the title in a field, the spec in a taller one, wrapped (D-305).
+Files: Copy level, then the field a level's text is pasted into, then the levels to start from,
+a blank plane first, the chapter's under their numbers, the sandbox's last (D-310). Navigator:
+its rays' row, its overview and zoom.
 """
 
 from __future__ import annotations
@@ -36,6 +37,7 @@ from nektoids.editor.arena_draw import (
 )
 from nektoids.editor.arena_view import LINE_STEP, dot_step, lattice, shown
 from nektoids.editor.draw import (
+    MENU_ANGLE,
     ROW_NAME,
     TIP,
     Fonts,
@@ -46,6 +48,7 @@ from nektoids.editor.draw import (
     draw_field,
     draw_fold_title,
     draw_info,
+    draw_part,
     draw_row,
     draw_status_line,
     draw_symbol,
@@ -73,6 +76,7 @@ from nektoids.editor.layout import (
     bin_rect,
     contains,
     slider_parts,
+    step_buttons,
 )
 from nektoids.editor.maker import MakerScene, Paste
 from nektoids.editor.objects import (
@@ -101,6 +105,7 @@ from nektoids.editor.palette import (
     ICON_EDGE,
     LIT,
     OBSTACLE,
+    PANEL,
     PLANE_DOT,
     PLANE_LINE,
     REFUSED,
@@ -108,11 +113,12 @@ from nektoids.editor.palette import (
     SHADOW,
     TEXT,
 )
+from nektoids.editor.parts import NAME as PART_NAME
 from nektoids.editor.textfield import caret_at, wrapped
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX, centre_in
 from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
-from nektoids.levels.making import BLANK_TIME, NEW, lacks
+from nektoids.levels.making import BLANK_TIME, NEW, ZONES, lacks
 from nektoids.levels.objectives import Count, Target, Verb, settings
 from nektoids.sim.arena import LIGHT_RADIUS
 
@@ -325,6 +331,7 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         else:
             _draw_spec(screen, fonts, rect, text, caret)
     _draw_goals(screen, scene, fonts)
+    _draw_parts(screen, scene, fonts)
     for button, rect in layout.file_buttons:
         draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="copy")
     if layout.level_field is not None:
@@ -347,6 +354,39 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         )
     if scene.layout.overview is not None:
         draw_overview(screen, scene, fonts, (*scene.pos[0], scene.heading))
+
+
+def _draw_parts(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+    """Parts (D-315): the board's cells, then each part, its icon and name, then − and + either
+    side of how many, the infinity sign for unlimited, greyed at the ends of what it may be."""
+    board = scene.level.board
+    for what, rect in scene.layout.steppers:
+        box = pygame.Rect(rect)
+        pygame.draw.rect(screen, BUTTON, box, border_radius=6)
+        slot = (box.left + 20, box.centery)
+        if what.kind is None:
+            fonts.icons.draw(screen, "border-all", slot, 16, TEXT)
+            zone = board["zone"]
+            name, value = "Cells", zone if isinstance(zone, int) else len(zone)
+            low, high = value <= ZONES[0], value >= ZONES[-1]
+        else:
+            draw_part(screen, fonts, what.kind, MENU_ANGLE.get(what.kind), slot, 24, False)
+            name, value = PART_NAME[what.kind], board["stock"].get(what.kind.value, 0)
+            low, high = value == 0, value is None
+        shown = cached_text(fonts.name, name, TEXT)
+        screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
+        minus, plus = step_buttons(rect)
+        for button, icon, end in ((minus, "minus", low), (plus, "plus", high)):
+            centre, radius = pygame.Rect(button).center, button[2] // 2
+            pygame.draw.circle(screen, PANEL, centre, radius)
+            pygame.draw.circle(screen, RULE if end else ICON_EDGE, centre, radius, 1)
+            fonts.icons.draw(screen, icon, centre, 12, GREYED if end else TEXT)
+        middle = ((minus[0] + minus[2] + plus[0]) // 2, box.centery)
+        if value is None:
+            fonts.icons.draw(screen, "infinity", middle, 14, TEXT)
+        else:
+            count = cached_text(fonts.small, str(value), TEXT)
+            screen.blit(count, count.get_rect(center=middle))
 
 
 def _draw_goals(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:

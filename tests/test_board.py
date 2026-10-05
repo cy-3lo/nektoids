@@ -608,3 +608,21 @@ def test_adopt_refuses_a_board_this_level_cannot_hold_and_changes_nothing():
     assert locked.place(Kind.EYE, (6, 3), locked=True).locked
     assert locked.adopt(a_vehicle(None).snapshot()) == Refused("this level places other parts")
     assert fear.snapshot() == before and small.nodes == {}
+
+
+def test_a_board_handed_out_anew_keeps_its_parts_unless_they_no_longer_fit():
+    board = Board(hex_disc(2), {Kind.EYE: 2, Kind.THRUSTER: 2})  # D-315: the Maker's Parts
+    eye = board.place(Kind.EYE, (2, 0))
+    board.place(Kind.EYE, (0, 0))
+    board.connect(eye.id, board.place(Kind.THRUSTER, (1, 0)).id)
+    before = board.snapshot()
+    fewer = board.rehand(Board(hex_disc(2), {Kind.EYE: 1}))
+    assert fewer.reason == "this level hands out one eye; the board has two"
+    assert "outside" in board.rehand(Board(hex_disc(1), {Kind.EYE: 9, Kind.THRUSTER: 9})).reason
+    assert board.snapshot() == before  # refused: nothing changed
+    assert board.rehand(Board(hex_disc(3), {Kind.EYE: 3, Kind.THRUSTER: None})) is None
+    assert len(board.cells) == 37 and board.remaining(Kind.EYE) == 1
+    assert board.remaining(Kind.THRUSTER) is None and board.remaining(Kind.SUM) == 0
+    assert len(board.nodes) == 3 and len(board.wires) == 1
+    board.restore(before)  # a state from before: its stock left counted again from the new
+    assert board.remaining(Kind.EYE) == 1 and board.total(Kind.EYE) == 3

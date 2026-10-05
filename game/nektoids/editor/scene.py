@@ -709,9 +709,20 @@ class EditorScene(Frame):
 
     def revise(self, level: Level, caption: tuple[str, str]) -> None:
         """The level made again in the Maker (D-301): the caption follows, and the Run preview's
-        probe is made again on its plane, where it stood."""
+        probe is made again on its plane, where it stood. Handed out anew, the board's size or
+        its parts (D-315), Parts shows what it now hands out, and undo starts afresh: its steps
+        were taken on a board handing out other parts."""
+        handed = level.board != self.level.board
         self.level, self.caption = level, caption
         self._probed = None
+        if handed:
+            kinds = frozenset(kind for kind in Kind if self.board.total(kind) != 0)
+            self.layout = self._relayout_on(replace(self.layout, kinds=kinds))
+            self.history, self._kept = History(), self.board.snapshot()
+
+    def _relayout_on(self, layout: Layout) -> Layout:
+        self.layout = layout
+        return self._relayout(layout.drawer)
 
     def unfold_wheel(self) -> None:
         """The Wheel unfolded, if it was folded: a tutorial's step shows one of its icons."""
