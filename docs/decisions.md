@@ -1701,3 +1701,13 @@ there scrolls the drawer (D-096), not the value, which a click on its box types 
 Brief's fields are typed (D-305). Goals that cannot both be met, reach every light and touch
 none, are not refused here: the clear check will find no winner. Three pull requests: the
 changes (`making.py`), the drawer, the typed value.
+
+**D-309 — 2026-10-05 — A goal's name says "the light", "the ring", only where the level has one; where it has more, it says "a light", "every ring", "the rings". Its name, its info text and the run's last line read the level. Amends D-307.**
+D-307 kept version 1's names as players read them, "Don't touch the light", "Leave the ring",
+"Circle the light", true on the levels they came from, each with one light or one ring; on a level
+made with two lights they say what is not so. The physicist asked for the wording to be right.
+Those three names now hold where the level has one target of the kind, and the sentence's own
+words where it has more: "Touch no light", "Leave every ring", "Circle a light"; "the rings"
+becomes "the ring" where there is one, in "Keep out of", "Stay inside" and their info texts, and
+"It touched the light" becomes "It touched a light" where there are more. `Goal.name`, `about`
+and `broken` take the level. Every shipped level reads as it did, word for word.

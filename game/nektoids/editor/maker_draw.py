@@ -300,7 +300,7 @@ def _draw_goals(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None
     layout, level = scene.layout, scene.level
     for head, rect in layout.goal_heads:
         x, y, _, h = rect
-        shown = cached_text(fonts.name, level.objectives[head.index].name, TEXT)
+        shown = cached_text(fonts.name, level.objectives[head.index].name(level), TEXT)
         screen.blit(shown, (x + 2, y + (h - shown.get_height()) // 2))
         fonts.icons.draw(screen, "trash-can", pygame.Rect(bin_rect(rect)).center, 14, DIM_TEXT)
     for word, rect in layout.goal_words:

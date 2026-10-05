@@ -115,7 +115,7 @@ def test_a_mark_goes_anywhere_its_radius_from_half_a_unit_to_thirty():
 def test_the_last_of_a_kind_a_goal_aims_at_stays():
     goal = Goal(Verb.LEAVE, Count.ALL, Target.MARK)  # D-307
     ringed = replace(placed(LEVEL, ItemKind.MARK, (3.0, 3.0)), objectives=(goal,))
-    with pytest.raises(Unmade, match="Leave the ring needs a ring: take the goal out first"):
+    with pytest.raises(Unmade, match="Leave every ring needs a ring: take the goal out first"):
         removed(ringed, 6)
     two = placed(ringed, ItemKind.MARK, (9.0, 9.0))
     assert len(removed(two, 6).marks) == 1  # one of two may go

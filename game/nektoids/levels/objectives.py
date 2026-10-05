@@ -78,6 +78,8 @@ THING = {  # each target, as a sentence says it: one, many, one with its article
 }
 NAMES = {  # version 1's objectives, named as they were (D-038, D-040, D-097)
     (Verb.REACH, Count.ALL, Target.LIGHT): "Visit every light",
+}
+ALONE = {  # ... those that say "the", as true only where the level has one such target
     (Verb.REACH, Count.NONE, Target.LIGHT): "Don't touch the light",
     (Verb.LEAVE, Count.ALL, Target.MARK): "Leave the ring",
     (Verb.CIRCLE, Count.ONE, Target.LIGHT): "Circle the light",
@@ -141,37 +143,38 @@ class Goal:
         if taken is not None and getattr(self, taken) is None:
             object.__setattr__(self, taken, default)
 
-    # How it reads
+    # How it reads: "the light" where the level has one, "a light" or "the lights" where more
 
-    @property
-    def name(self) -> str:
-        """The sentence, as the run's rows say it."""
-        known = NAMES.get((self.verb, self.many, self.target))
+    def name(self, level: Level) -> str:
+        """The sentence, as the run's rows say it, in `level`."""
+        words = (self.verb, self.many, self.target)
+        alone = self._alone(level)
+        known = NAMES.get(words) or (ALONE.get(words) if alone else None)
         if known is not None:
             return known
         one, many, a_one = THING[self.target]
-        come = "Enter" if self.target is Target.MARK else "Reach"
+        come, the = "Enter" if self.target is Target.MARK else "Reach", self._the(alone)
         return {
             (Verb.REACH, Count.ALL): f"{come} every {one}",
             (Verb.REACH, Count.ONE): f"{come} {a_one}",
-            (Verb.REACH, Count.NONE): f"Keep out of the {many}"
+            (Verb.REACH, Count.NONE): f"Keep out of {the}"
             if self.target is Target.MARK
             else f"Touch no {one}",
             (Verb.LEAVE, Count.ALL): f"Leave every {one}",
             (Verb.LEAVE, Count.ONE): f"Leave {a_one}",
-            (Verb.LEAVE, Count.NONE): f"Stay inside the {many}",
+            (Verb.LEAVE, Count.NONE): f"Stay inside {the}",
             (Verb.STAY, Count.ALL): f"Stay in every {one}",
             (Verb.STAY, Count.ONE): f"Stay in {a_one}",
             (Verb.CIRCLE, Count.ALL): f"Circle every {one}",
             (Verb.CIRCLE, Count.ONE): f"Circle {a_one}",
         }[(self.verb, self.many)]
 
-    @property
-    def about(self) -> str:
-        """What its info box says, for one target or several."""
-        one, many, a_one = THING[self.target]
+    def about(self, level: Level) -> str:
+        """What its info box says, in `level`."""
+        one, _, a_one = THING[self.target]
+        alone = self._alone(level)
         if self.many is Count.NONE and self.verb is Verb.LEAVE:
-            return f"Getting out of the {many} loses the run at once."
+            return f"Getting out of {self._the(alone)} loses the run at once."
         if self.many is Count.NONE:
             done = "Coming into" if self.target is Target.MARK else "Touching"
             return f"{done} {a_one} loses the run at once."
@@ -188,7 +191,7 @@ class Goal:
         if self.verb is Verb.STAY:
             inside = f"every {one} at once" if each else a_one
             return f"Stay inside {inside} for {self.seconds:g} s in a row."
-        which = f"every {one}" if each else "the light" if self.target is Target.LIGHT else a_one
+        which = f"every {one}" if each else f"the {one}" if alone else a_one
         times = f"{self.turns} time{'s' * (self.turns != 1)}"
         return f"Go round {which} {times}, either way."
 
@@ -197,16 +200,27 @@ class Goal:
         """Its row's icon in the run, by its name in `editor/icons.py`."""
         return "circle-xmark" if self.many is Count.NONE else ICONS[self.verb]
 
-    @property
-    def broken(self) -> str:
-        """What the run's end says if it loses the run."""
+    def broken(self, level: Level) -> str:
+        """What the run's end says if it loses the run, in `level`."""
         if self.many is not Count.NONE:
             return "Lost"
+        alone = self._alone(level)
         if self.verb is Verb.LEAVE:
-            return f"It got out of the {THING[self.target][1]}"
+            return f"It got out of {self._the(alone)}"
         if self.target is Target.MARK:
             return "It went into a ring"
-        return "It touched the light" if self.target is Target.LIGHT else "It touched an obstacle"
+        if self.target is Target.LIGHT:
+            return "It touched the light" if alone else "It touched a light"
+        return "It touched an obstacle"
+
+    def _alone(self, level: Level) -> bool:
+        """Whether `level` has one target of the kind the goal aims at, and no more."""
+        return len(targets(level, self.target)[1]) == 1
+
+    def _the(self, alone: bool) -> str:
+        """Its targets taken together: "the ring" if there is one, "the rings" if more."""
+        one, many, _ = THING[self.target]
+        return f"the {one}" if alone else f"the {many}"
 
     # How it counts
 

@@ -455,7 +455,8 @@ def _about(scene: ArenaScene, what: object) -> tuple[str, tuple[str, ...]]:
         return "Time left", (f"The run ends after {scene.level.time_limit:g} s.",)
     if isinstance(what, Goal):
         objective = scene.level.objectives[what.index]
-        return objective.name, (objective.about,)
+        level = scene.level
+        return objective.name(level), (objective.about(level),)
     return ROW_NAME[what], (TIP[what],)
 
 
@@ -585,7 +586,7 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     if ended is Outcome.WON:
         head = f"Done in {scene.clock.seconds:.2f} s with {scene.parts} parts"
     elif ended is Outcome.LOST and scene.lost_by is not None:
-        head = f"{scene.lost_by.broken} at {scene.clock.seconds:.2f} s"
+        head = f"{scene.lost_by.broken(scene.level)} at {scene.clock.seconds:.2f} s"
     else:
         head = f"Time is up ({scene.level.time_limit:g} s)"
     rows = [f"{row.name}: {row.met} of {row.needed}" for row in scene.counts()]
