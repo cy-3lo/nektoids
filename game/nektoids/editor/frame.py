@@ -8,7 +8,7 @@ of the mouse wheel, and `frame_update` once a frame; it gives `_relayout` (its l
 another drawer open, scrolled as `scrolls` says), and may give `_slid` (what follows the main
 screen when a drawer opens or folds), `_cancel` (a gesture under way ends) and `_refuse` (says
 why not).
-What the player asks of `main.py` is left in `request` ("run", "edit", "tutorial"), `chosen`
+What the player asks of `main.py` is left in `request` ("run", "edit", "make", "tutorial"), `chosen`
 (a place picked in Chapters) or `asked_hint` (a row of Hints), which `main.py` clears. Pure
 Python, no pygame.
 """
@@ -45,7 +45,7 @@ from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Kind
 from nektoids.levels.level import PASSKEY_LENGTH
 
-LEAVE = {"editor": "edit", "run": "run"}  # what a tab asks for: the screen it names
+LEAVE = {"editor": "edit", "run": "run", "maker": "make"}  # what a tab asks for: its screen
 WARM_FRAMES = 18  # after a tooltip, the next one shows at once for this long: 0.3 s [frames]
 
 
@@ -55,12 +55,12 @@ class Frame:
     def _start_frame(self, layout: Layout, settings: Settings | None) -> None:
         self.layout = layout
         self.settings = settings if settings is not None else Settings()  # the session's
-        self.request: str | None = None  # "run", "edit" or "tutorial": main.py's to clear
+        self.request: str | None = None  # "run", "edit", "make", "tutorial": main.py's to clear
         self.chosen: int | None = None  # a place picked in Chapters: main.py's to clear
         self.chapters: tuple[ChapterRow, ...] = ()  # what Chapters shows; main.py's
         self.info: object | None = None  # the row whose info box is open: a part, a tool...
         self.entry: Entry | None = None  # ... a part's, at work in its own circuit (D-082)
-        self.tip_target: object | None = None  # the bar's icon, or the other tab, under the mouse
+        self.tip_target: object | None = None  # the bar's icon, or another tab, under the mouse
         self.tip_frames = 0  # how long it has been there
         self.tip_warm = 0  # a tooltip showed lately: the next shows at once, for so long [frames]
         self.message = ""  # the last refusal, until something succeeds
@@ -77,7 +77,7 @@ class Frame:
     @property
     def tooltip(self) -> object | None:
         """What a tooltip names now, once the mouse has rested on it long enough: an icon of the
-        bar, the other tab, or what the scene adds (`_tip_target`)."""
+        bar, another tab, or what the scene adds (`_tip_target`)."""
         return self.tip_target if self.tip_frames >= self.settings.tooltip_frames else None
 
     def frame_update(self) -> None:
@@ -262,7 +262,7 @@ class Frame:
         raise NotImplementedError
 
     def _tip_target(self, pos: tuple[int, int]) -> object | None:
-        """What a tooltip would name under `pos`: the bar's icon, the other tab; a scene may add
+        """What a tooltip would name under `pos`: the bar's icon, another tab; a scene may add
         its own, as the editor adds the Wheel's icons (D-069)."""
         return palette_target_at(self.layout, pos)
 

@@ -1,8 +1,9 @@
 """Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
 
 - Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
-  editor, Objectives, Inside, Score and Navigator in the run; Hints, Settings and Chapters at
-  its foot, over the accented switch to the other environment (`Env`).
+  editor, Objectives, Inside, Score and Navigator in the run, Navigator in the Maker; Hints,
+  Settings and Chapters at its foot, over the accented switch to the run, or from the run to the
+  editor (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
@@ -12,9 +13,10 @@
   levels, then the sandbox, which replaces the full-screen map.
   Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
   the run (D-096). An arrow on the drawer's edge folds it.
-- The rest is the main screen: the tabs over it (Run, Editor), the level's caption under them,
-  then the board's hex grid, or in the run the arena with its controls under it; one status
-  line at its foot. A drawer opening pushes the main screen aside.
+- The rest is the main screen: the tabs over it (Run, Editor, and on the sandbox the Maker,
+  D-301), the level's caption under them, then the board's hex grid, in the run the arena with
+  its controls under it, in the Maker the plane; one status line at its foot. A drawer opening
+  pushes the main screen aside.
 
 The View says how big a hex is and where the grid sits in the board's area; zoom and pan change
 only the View (D-013). Plain numbers and tuples, no pygame, so hit-testing is testable headless.
@@ -66,7 +68,9 @@ HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
 TABS_HEIGHT = 32  # the strip of tabs over the board [px]
 CAPTION_HEIGHT = 26  # under the tabs, inside the Editor's: the level's title and spec [px]
 TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
-TAB_WIDTHS = (64, 84)  # Run, then Editor (D-069) [px]
+TABS = ("run", "editor")  # a level's tabs, Run first (D-069)
+MAKER_TABS = (*TABS, "maker")  # the sandbox's: the Maker makes its level (D-301)
+TAB_WIDTHS = {"run": 64, "editor": 84, "maker": 80}  # [px]
 STATUS_HEIGHT = 28  # [px]
 CONTROLS_HEIGHT = 48  # the run's controls, a strip under the arena [px]
 MARGIN = 16  # [px]
@@ -165,6 +169,7 @@ class MainView(Enum):  # what the editor's main screen shows, by the drawer open
 class Env(Enum):  # the environments, each a tab over the main screen (D-051)
     EDITOR = "editor"
     RUN = "run"
+    MAKER = "maker"  # the sandbox's own: its level, made (D-301)
 
 
 DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a square [px]
@@ -176,9 +181,10 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
+    Env.MAKER: (Drawer.NAVIGATOR,),
 }
 FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
-SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT}
+SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT, Env.MAKER: LevelButton.RUN}
 
 
 @dataclass(frozen=True)
@@ -234,6 +240,7 @@ VIEW_KEYS = {
     ViewButton.STREAMS: "W",  # as in wind, its icon; Wire in the editor
 }
 RUN_VIEWS = (ViewButton.RAYS, ViewButton.MOTION, ViewButton.STREAMS)  # Navigator's, in the run
+MAKER_VIEWS = (ViewButton.RAYS,)  # ... in the Maker: the light, which the plane's shadows show
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
@@ -261,7 +268,8 @@ KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layou
 
 @dataclass(frozen=True)
 class Layout:
-    env: Env  # the editor's frame, or the run's
+    env: Env  # the editor's frame, the run's or the Maker's
+    maker: bool  # the sandbox: a third tab, the Maker, makes its level (D-301)
     kinds: frozenset[Kind]  # the parts the level hands out: the only ones Parts shows
     drawer: Drawer | None  # the drawer open, if one is
     chapter: int  # how many levels the chapter has: Chapters' rows, then the sandbox's
@@ -297,7 +305,7 @@ class Layout:
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # Files' foot: Save (D-206)
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
-    tabs: tuple[tuple[str, Rect], ...]  # "run", "editor"
+    tabs: tuple[tuple[str, Rect], ...]  # "run", "editor", and on the sandbox "maker"
     board_area: Rect  # the main screen: the board, or in the run the arena
     controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
     overview: Rect | None  # Navigator's: the whole board, or level, small (D-060)
@@ -327,6 +335,7 @@ def make_layout(
     scroll: int = 0,
     hint_lines: tuple[int, ...] | None = None,
     shadow: bool = False,
+    maker: bool = False,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
     the groups shown closed, Parts' or Files'; kinds: the parts the level hands out, the only
@@ -336,7 +345,8 @@ def make_layout(
     wheel_folded: the picture of the cell folded, at the foot of Tools and of Parts; scroll: how
     far the open drawer's rows are scrolled, kept within what they need (D-069, D-096);
     hint_lines: how many lines each hint taken shows under its row, in Hints, or None for a
-    level with none to take; shadow: the shadow shows, in a picture under its row (D-078)."""
+    level with none to take; shadow: the shadow shows, in a picture under its row (D-078);
+    maker: the sandbox, whose tabs end with the Maker's (D-301)."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -387,14 +397,15 @@ def make_layout(
         rows.items += foot.items
         rows.sections += foot.sections
     tabs, x = [], left
-    for name, w in zip(("run", "editor"), TAB_WIDTHS, strict=True):
-        tabs.append((name, (x, 0, w, TABS_HEIGHT)))
-        x += w
+    for name in MAKER_TABS if maker else TABS:
+        tabs.append((name, (x, 0, TAB_WIDTHS[name], TABS_HEIGHT)))
+        x += TAB_WIDTHS[name]
     open_ = drawer is not None
     centre = left + (width - left) // 2  # the main screen's
     main = height - STATUS_HEIGHT - (CONTROLS_HEIGHT if env is Env.RUN else 0)  # its foot
     return Layout(
         env=env,
+        maker=maker,
         kinds=kinds,
         drawer=drawer,
         chapter=chapter,
@@ -586,11 +597,12 @@ class _Rows:
 
     def view(self, env: Env) -> None:
         """The view's options as rows, in the run the rays, the swimmer's motion and its streams
-        (D-076); then the overview and, under it, the zoom: a bar between its two buttons
-        (D-065)."""
-        if env is Env.RUN:
+        (D-076), in the Maker the rays; then the overview and, under it, the zoom: a bar between
+        its two buttons (D-065)."""
+        options = {Env.RUN: RUN_VIEWS, Env.MAKER: MAKER_VIEWS}.get(env, ())
+        if options:
             self._title("View", self.sections)
-            for button in RUN_VIEWS:
+            for button in options:
                 self._row(button)
             self.y += SECTION_GAP
         self._title("Overview", self.sections)
@@ -676,8 +688,8 @@ def goal_row_at(layout: Layout, point: tuple[int, int]) -> Goal | None:
 
 
 def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelButton | str | None:
-    """What a tooltip would name under `point`: an icon of the bar, or the other environment's
-    tab, by its name, which says what the switch says (D-060)."""
+    """What a tooltip would name under `point`: an icon of the bar, or another environment's
+    tab, by its name (D-060)."""
     tab = tab_at(layout, point)
     return (
         drawer_button_at(layout, point)

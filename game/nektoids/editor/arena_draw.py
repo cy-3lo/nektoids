@@ -29,6 +29,7 @@ a tick along each eye's look as long as what it reads. The plot is exact; the ma
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pygame
@@ -50,6 +51,8 @@ from nektoids.editor.arena_layout import (
 )
 from nektoids.editor.arena_view import (
     MAX_SCALE,
+    ArenaView,
+    Rays,
     edge_marker,
     polar_scale,
     ray_ends,
@@ -81,7 +84,7 @@ from nektoids.editor.draw import (
     draw_zoom,
 )
 from nektoids.editor.icons import VIEW_ICON
-from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, ViewButton, level_of
+from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, Rect, ViewButton, level_of
 from nektoids.editor.marks import at_work
 from nektoids.editor.marks_draw import draw_motion, draw_parts, draw_under
 from nektoids.editor.palette import (
@@ -111,8 +114,11 @@ from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.score import Score, front
-from nektoids.sim.arena import LIGHT_RADIUS
+from nektoids.sim.arena import LIGHT_RADIUS, Arena
 from nektoids.sim.optics import discs
+
+if TYPE_CHECKING:
+    from nektoids.editor.maker import MakerScene
 
 RAY_WIDTH = 2  # [px]
 BULB = 1.6  # the bulb's height on a light, in light radii (D-076)
@@ -187,15 +193,9 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
         rect = _map_rect(scene)
         screen.blit(_map_surface(scene, rect.size), rect.topleft)
     elif scene.show_rays:
-        _draw_rays(screen, scene)
-    for disc in arena.obstacles:
-        centre = view.to_screen(disc.x, disc.y)
-        pygame.draw.circle(screen, OBSTACLE, centre, disc.radius * view.scale)
-    for light in arena.lights:
-        centre = view.to_screen(light.x, light.y)
-        pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
-        pygame.draw.aacircle(screen, DARK, centre, LIGHT_RADIUS * view.scale + 1, 1)
-        fonts.icons.draw(screen, "lightbulb", centre, round(BULB * LIGHT_RADIUS * view.scale), DARK)
+        t, area = scene.clock.seconds, scene.arena_area
+        draw_rays(screen, view, area, arena, scene.rays, t, scene.pos, scene.radius)
+    draw_items(screen, fonts, view, arena)
     for radius, done in scene.rings:  # to leave or to stay in, dashed (D-038, D-040)
         for x, y in arena.light_xy:
             _dashed_circle(
@@ -216,13 +216,34 @@ def _dashed_circle(screen: pygame.Surface, centre, radius: float, colour) -> Non
         pygame.draw.line(screen, colour, start, end, 2)
 
 
-def _draw_rays(screen: pygame.Surface, scene: ArenaScene) -> None:
-    view, arena = scene.view, scene.arena
-    centres, radii = discs(arena, scene.pos, scene.radius)
-    left, bottom, right, top = shown(view, scene.arena_area)
-    t = scene.clock.seconds
+def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Arena) -> None:
+    """The plane's items: the obstacles, grey discs; the lights, white discs with a bulb."""
+    for disc in arena.obstacles:
+        centre = view.to_screen(disc.x, disc.y)
+        pygame.draw.circle(screen, OBSTACLE, centre, disc.radius * view.scale)
+    for light in arena.lights:
+        centre = view.to_screen(light.x, light.y)
+        pygame.draw.circle(screen, LIGHT, centre, LIGHT_RADIUS * view.scale)
+        pygame.draw.aacircle(screen, DARK, centre, LIGHT_RADIUS * view.scale + 1, 1)
+        fonts.icons.draw(screen, "lightbulb", centre, round(BULB * LIGHT_RADIUS * view.scale), DARK)
+
+
+def draw_rays(
+    screen: pygame.Surface,
+    view: ArenaView,
+    area: Rect,
+    arena: Arena,
+    rays: Rays,
+    t: float,
+    pos: np.ndarray,
+    radius: np.ndarray,
+) -> None:
+    """Each light's rays at `t` [s], from its rim to the first disc they meet, the swimmers' at
+    `pos` (N, 2) [u] of `radius` (N,) [u] among them, or out of `area`."""
+    centres, radii = discs(arena, pos, radius)
+    left, bottom, right, top = shown(view, area)
     for light, (x, y) in enumerate(arena.light_xy):
-        angles = scene.rays.angles(light, t)
+        angles = rays.angles(light, t)
         length = max(math.hypot(cx - x, cy - y) for cx in (left, right) for cy in (bottom, top))
         ends = ray_ends((x, y), angles, centres, radii, length)  # out of view, or a disc
         for a, (ex, ey) in zip(angles, ends, strict=True):
@@ -382,14 +403,7 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     elif drawer is Drawer.SCORE:
         _draw_wins(screen, scene, fonts)
     if scene.layout.overview is not None:
-        area = pygame.Rect(scene.layout.overview)
-        small = view_of(scene.layout.overview, scene.extent())  # D-066
-        left, bottom, right, top = shown(scene.view, scene.arena_area)
-        (x0, y0), (x1, y1) = small.to_screen(left, top), small.to_screen(right, bottom)
-        frame = pygame.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
-        pose = (*scene.pos[0], float(scene.heading[0]))
-        draw_level_map(screen, scene.level, area, pose, frame, small)
-        draw_zoom(screen, scene, fonts, level_of(scene.view.scale, scene.least_zoom(), MAX_SCALE))
+        draw_overview(screen, scene, fonts, (*scene.pos[0], float(scene.heading[0])))
     for button, rect in scene.layout.view_buttons:
         active = {
             ViewButton.PAN: scene.hand,
@@ -409,6 +423,24 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
             active,
             icon=VIEW_ICON[button],
         )
+
+
+def draw_overview(
+    screen: pygame.Surface,
+    scene: ArenaScene | MakerScene,
+    fonts: Fonts,
+    pose: tuple[float, float, float],
+) -> None:
+    """Navigator's overview (D-060): the level small, as far as the overview's extent (D-066),
+    the swimmer at `pose` (x, y [u], heading [rad]), a frame round what the main screen shows;
+    under it, the zoom (D-065)."""
+    area = pygame.Rect(scene.layout.overview)
+    small = view_of(scene.layout.overview, scene.extent())
+    left, bottom, right, top = shown(scene.view, scene.arena_area)
+    (x0, y0), (x1, y1) = small.to_screen(left, top), small.to_screen(right, bottom)
+    frame = pygame.Rect(round(x0), round(y0), round(x1 - x0), round(y1 - y0))
+    draw_level_map(screen, scene.level, area, pose, frame, small)
+    draw_zoom(screen, scene, fonts, level_of(scene.view.scale, scene.least_zoom(), MAX_SCALE))
 
 
 def _about(scene: ArenaScene, what: object) -> tuple[str, tuple[str, ...]]:

@@ -5,10 +5,11 @@ the editor to change the mechanism, or on to the next level once won (D-030). Ar
 D-054): the game opens on the first level under a title card; the Chapters drawer lists the
 chapter's levels and the sandbox, each level opening once the one before it is won; after the
 last level comes the end. A level opened from Chapters or by Next level comes up under its card,
-which says what it asks, then on its run, paused, the board as it stands (D-069). Each level
-keeps its board for the session, so going back finds it as it was left, and the scores of its
-wins (D-028); nothing is kept after it. Pure Python, no pygame: `main.py` turns the state into
-scenes.
+which says what it asks, then on its run, paused, the board as it stands (D-069). On the
+sandbox, a third screen, the Maker, makes its level, which the editor and the run try (D-301).
+Each level keeps its board for the session, so going back finds it as it was left, and the
+scores of its wins (D-028); nothing is kept after it. Pure Python, no pygame: `main.py` turns
+the state into scenes.
 """
 
 from __future__ import annotations
@@ -68,6 +69,7 @@ class Screen(Enum):
     SPEC = "spec"  # a level's card: its name and what it asks, gone at the first click
     EDIT = "edit"  # a level's board in the editor
     RUN = "run"  # the level's board swimming in its arena
+    MAKE = "make"  # the sandbox's level, made in the Maker (D-301)
     END = "end"  # after the last level of the chapter
 
 
@@ -201,6 +203,12 @@ class Router:
 
     def edit(self) -> None:
         self.screen = Screen.EDIT
+
+    def make(self) -> None:
+        """The Maker, the sandbox's alone (D-301); ValueError on a level of the chapter."""
+        if not self.in_sandbox:
+            raise ValueError("only the sandbox's level is made in the Maker")
+        self.screen = Screen.MAKE
 
     def reset(self, index: int) -> None:
         """The level at `index` back to its fresh board, the next time it opens (D-050)."""

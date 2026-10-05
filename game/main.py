@@ -9,7 +9,8 @@ Runs natively (`python game/main.py`) and in the browser (`pygbag game`).
 It opens on the first level's board in the editor, under the title card. Run (Space) runs it in
 its arena; Edit (Esc) comes back to the board as it was left; once a level is won, Next level
 (Enter) opens the next one's board, and after the last, the end. Chapters (Tab), a drawer, lists
-the chapter's levels and the sandbox (`editor/router.py`, D-030, D-054). A level opened from it
+the chapter's levels and the sandbox (`editor/router.py`, D-030, D-054); on the sandbox, the
+Maker tab makes its level (`editor/maker.py`, D-301). A level opened from it
 or by Next level comes up under its card, which says what it asks (D-042). A level's tutorial
 shows over the editor and the run, and follows what the player does (`editor/tutorial.py`,
 D-039); its hints are asked for in the Hints drawer, in turn (`editor/hints.py`, D-078).
@@ -33,6 +34,8 @@ from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.hints import Hints, Taken, hint_view
 from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
+from nektoids.editor.maker import MakerScene
+from nektoids.editor.maker_draw import draw_maker
 from nektoids.editor.preview_draw import draw_preview
 from nektoids.editor.router import Router, Screen, level_label
 from nektoids.editor.scene import EditorScene
@@ -75,6 +78,7 @@ clipboard.install()  # the page's side of Save and Load, once (D-206)
 levels = arenas()  # read from their files once, at startup (web.md: no file I/O in the loop)
 router = Router(levels, sandbox())
 editors: dict[int, EditorScene] = {}  # each level's editor, and its undo history with it
+makers: dict[int, MakerScene] = {}  # the sandbox's Maker, made when first opened (D-301)
 tutorials: dict[int, Tutorial] = {}  # each level's tutorial, where it has got to
 shadows: dict[int, tuple[Hints, Board]] = {}  # each level's hints, read, and its shadow built
 taken: dict[int, Taken] = {}  # what the player has taken of each level's hints (D-078)
@@ -174,9 +178,17 @@ def editor() -> EditorScene:
         caption = (f"{router.label}. {level.title}", level.spec)
         board = router.board
         handed_out = frozenset(kind for kind in Kind if board.total(kind) != 0)
-        layout = make_layout(Drawer.TOOLS, kinds=handed_out, chapter=len(levels))
+        maker = router.in_sandbox  # its tabs end with the Maker's (D-301)
+        layout = make_layout(Drawer.TOOLS, kinds=handed_out, chapter=len(levels), maker=maker)
         editors[router.index] = EditorScene(board, layout, caption, settings, level)
     return editors[router.index]
+
+
+def maker() -> MakerScene:
+    """The sandbox's Maker, made the first time it opens (D-301)."""
+    if router.index not in makers:
+        makers[router.index] = MakerScene(router.level, router.label, settings, len(levels))
+    return makers[router.index]
 
 
 def play(drawer: Drawer | None) -> ArenaScene:
@@ -192,6 +204,7 @@ def play(drawer: Drawer | None) -> ArenaScene:
         drawer=drawer,
         chapter=len(levels),
         passkey=router.next_passkey(),  # on the win card (D-075)
+        maker=router.in_sandbox,  # the Maker's tab (D-301)
     )
 
 
@@ -231,9 +244,11 @@ async def main() -> None:
     run_drawer: Drawer | None = Drawer.INSIDE  # the run's open drawer, from one run to the next
     held: ArenaScene | None = None  # the run an explaining step paused while it played (D-071)
 
-    def on_screen() -> EditorScene | ArenaScene:
-        """The scene the player sees: the run, or the open level's editor."""
-        return playing if playing is not None else editor()
+    def on_screen() -> EditorScene | ArenaScene | MakerScene:
+        """The scene the player sees: the run, the sandbox's Maker, or the open level's editor."""
+        if playing is not None:
+            return playing
+        return maker() if router.screen is Screen.MAKE else editor()
 
     pointer = (0, 0)  # where the mouse is, for the end's button [px]
     frame = 0  # frames drawn: what the tutorial's sparks move by (D-080), drawing only
@@ -279,6 +294,8 @@ async def main() -> None:
                         run_drawer, playing = playing.layout.drawer, None
             elif playing is not None:
                 playing.handle_event(event)
+            elif router.screen is Screen.MAKE:
+                maker().handle_event(event)
             else:
                 editor().handle_event(event)
 
@@ -297,6 +314,8 @@ async def main() -> None:
                 router.finish()
             elif playing.request == "edit":
                 router.edit()
+            elif playing.request == "make":
+                router.make()
             elif playing.request == "tutorial":  # Settings: Fear's tutorial again
                 replay_tutorial()
             if playing.chosen is not None:  # a place picked in Chapters
@@ -308,15 +327,30 @@ async def main() -> None:
             if asked == "run":
                 router.run()
                 playing = play(run_drawer)
+            elif asked == "make":
+                router.make()
             elif asked == "tutorial":  # Settings: Fear's tutorial again
                 replay_tutorial()
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
                 choose_place(chosen)
+        if router.screen is Screen.MAKE:
+            asked, maker().request = maker().request, None
+            if asked == "run":
+                router.run()
+                playing = play(run_drawer)
+            elif asked == "edit":
+                router.edit()
+            elif asked == "tutorial":
+                replay_tutorial()
+            chosen, maker().chosen = maker().chosen, None
+            if chosen is not None:
+                choose_place(chosen)
         if router.screen in (Screen.TITLE, Screen.SPEC) and playing is None:
             playing = play(run_drawer)  # the run it opens on, paused, under its card (D-069)
 
-        for scene in (editor(), playing):  # a passkey typed in Chapters (D-075)
+        frames = (editor(), playing, makers.get(router.index))  # the scenes open on this place
+        for scene in frames:  # a passkey typed in Chapters (D-075)
             if scene is not None and scene.asked_passkey is not None:
                 word, scene.asked_passkey = scene.asked_passkey, None
                 opened = router.unlock(word)
@@ -329,7 +363,7 @@ async def main() -> None:
                     )
 
         given, built, took = hints() or (None, None, None)  # the level's, its shadow, the taken
-        for scene in (editor(), playing):  # a row of Hints clicked (D-078)
+        for scene in frames:  # a row of Hints clicked (D-078)
             if scene is not None and scene.asked_hint is not None:
                 index, scene.asked_hint = scene.asked_hint, None
                 refused = took.take(index) if took is not None else None
@@ -344,7 +378,7 @@ async def main() -> None:
             guide.follow(Context(router.board, editor().tool, router.screen, ended, time, drawer))
             guide = tutorial()
         hinted = None if given is None else hint_view(given, took, guide is not None, built)
-        for scene in (editor(), playing):  # what Hints shows; locked while a tutorial leads
+        for scene in frames:  # what Hints shows; locked while a tutorial leads
             if scene is not None:
                 scene.set_hints(hinted)
         shadow = given if took is not None and took.shown else None
@@ -353,8 +387,9 @@ async def main() -> None:
         editor().ghost_wires = model.ghost_wires if model is not None else ()  # D-074
         editor().chapters = router.rows()  # what Chapters shows
         editor().set_wins(router.files())  # what Files shows: every level's wins (D-092)
-        if playing is not None:
-            playing.chapters = router.rows()
+        for scene in frames[1:]:  # what Chapters shows, in the run and the Maker too
+            if scene is not None:
+                scene.chapters = router.rows()
         scene = on_screen()
         wanted = drawer_for(guide.step, scene.layout.drawer) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on
@@ -388,6 +423,9 @@ async def main() -> None:
         elif playing is not None:
             playing.update()
             draw_arena(screen, playing, fonts)
+        elif router.screen is Screen.MAKE:
+            maker().update()
+            draw_maker(screen, maker(), fonts)
         else:
             editor().update()
             preview = editor().main is MainView.PREVIEW  # the Run preview, not the board (D-058)

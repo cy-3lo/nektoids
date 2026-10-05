@@ -1,7 +1,8 @@
 """How the arena is seen: from the sim's u (y up) to screen pixels (y down), and back.
 
 Also the rays drawn from the lights, the grid of the light map (the other way to show the light)
-and the grey level of a reading, and which swimmer is under the mouse. The plane is open
+and the grey level of a reading, which swimmer is under the mouse, and the Maker's grid, the
+lattice a level's positions fall on (D-301). The plane is open
 (D-028): a view frames what a level holds, and shows as much of the plane as its area allows;
 rays and the light map go as far as it shows. Pure numbers, no pygame.
 """
@@ -65,6 +66,27 @@ def zoom_view(view: ArenaView, factor: float, about: tuple[float, float]) -> Are
 def pan_view(view: ArenaView, dx: float, dy: float) -> ArenaView:
     """Slide the view by (dx, dy) [px]."""
     return ArenaView(view.scale, (view.origin[0] + dx, view.origin[1] + dy))
+
+
+DOT_STEP = 0.5  # the Maker's grid: a dot wherever a position may fall (D-301) [u]
+LINE_STEP = 5.0  # ... and a line every so often, its coordinate at the edge [u]
+DOT_LEAST = 6.0  # dots closer than this on screen show every whole u instead, or none [px]
+LABEL_LEAST = 36.0  # lines closer than this on screen have every other one labelled [px]
+
+
+def grid_steps(scale: float) -> tuple[float | None, float]:
+    """The Maker's grid at `scale` [px/u]: the dots' step [u], DOT_STEP, or whole u where they
+    would crowd, None where even those would; and the labels' step [u], every line's, or every
+    other line's where they would crowd."""
+    dots = next((step for step in (DOT_STEP, 1.0) if step * scale >= DOT_LEAST), None)
+    labels = LINE_STEP if LINE_STEP * scale >= LABEL_LEAST else 2 * LINE_STEP
+    return dots, labels
+
+
+def lattice(low: float, high: float, step: float) -> np.ndarray:
+    """The multiples of `step` from `low` to `high`, both ends kept if they are ones [u]."""
+    first, last = math.ceil(low / step - 1e-9), math.floor(high / step + 1e-9)
+    return np.arange(first, last + 1) * step
 
 
 ROOM = 1.5  # the overview shows this many times what matters, each way, about its middle
