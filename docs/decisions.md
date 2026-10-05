@@ -1576,3 +1576,24 @@ when Goals is built: a light's power 1 to 16; an obstacle's radius 0.5 to 5 by 0
 radius 2 to 30 by 0.5; seconds 1 to 60; turns 1 to 10; the time allowed 5 to 300 s by 5. The
 first step, the tab itself, shows the plane over its grid, read only; each drawer comes with its
 own pull request into `stage/1-level-maker`.
+
+**D-302 — 2026-10-05 — The Maker's Objects is a copy of Parts: the objects as rows, undo and redo, the Wheel at its foot round what is focused on the plane. A click focuses, a drag moves; the Wheel offers a light and an obstacle on an empty point, less, move, delete and more on an item, the turns and Move on the swimmer. Applies D-301; amends D-068 for the Maker.**
+The physicist asked for Objects to work as Parts does in the editor, the Wheel offering what may
+be placed and what may be done, and asked whether moving or editing should come first. Both
+come by gesture, as on the board (D-090): a click on an object focuses it, and its Wheel shows
+what can be done to it; a drag moves it, on the lattice, one step for undo. A click on the open
+plane focuses its nearest lattice point, and the Wheel offers a light (1) and an obstacle (2)
+there, as an empty cell offers the parts; a drag there moves the view. Round a light, Dimmer,
+Move, Delete, Brighter; round an obstacle, Smaller, Move, Delete, Bigger: the less and the more
+either side of the gap, where a part's turns sit, on < and >, since + and - zoom. Round the
+swimmer, Turn left, Move, Turn right (L, R): it is never placed nor deleted. Move in hand, a
+click on the plane or an arrow, 0.5 u, moves the focus. The mouse wheel on an object makes it
+more or less, or turns the swimmer. Objects' rows are Light, Obstacle and Swimmer, each with how
+many are on the plane: a click on Light or Obstacle puts it in hand for the next click on the
+plane, a drag puts it where it is let go; Swimmer focuses it. Under them, Undo and Redo (Ctrl+Z,
+Ctrl+Y), over whole levels. A new light has power 4, a new obstacle radius 1 u. A change the
+level cannot hold is refused, its reason in the status line: a light touching an obstacle, the
+arena's own refusal, or the swimmer starting inside one. A value off the lattice in a shipped
+level stays until it is changed: the sandbox's heading of 20°, turned, becomes 30°. Each change
+is a new `Level` (`levels/making.py`), handed to the router, the editor's caption and Run
+preview, and the next run.

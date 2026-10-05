@@ -17,6 +17,7 @@ from nektoids.editor.layout import (
     HEX_SIZE,
     HINT_LINE,
     LEVEL_KEYS,
+    MAKER_VIEWS,
     MAX_HEX,
     MIN_HEX,
     MODE_KEY,
@@ -37,6 +38,7 @@ from nektoids.editor.layout import (
     LevelButton,
     MainView,
     Mode,
+    Piece,
     Setting,
     Shown,
     Tool,
@@ -73,6 +75,7 @@ from nektoids.editor.layout import (
     palette_target_at,
     pan,
     passkey_at,
+    piece_row_at,
     scroll_bar_at,
     scroll_for,
     scroll_thumb,
@@ -383,7 +386,7 @@ def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
 
 def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_environment():
     # D-069: a letter may mean one thing in the editor and another in the run, never two in one
-    assert set(DRAWER_KEYS) == {*DRAWERS[Env.EDITOR], *DRAWERS[Env.RUN], *FOOT} == set(Drawer)
+    assert set(DRAWER_KEYS) == {*(d for env in Env for d in DRAWERS[env]), *FOOT} == set(Drawer)
     for drawer, key in DRAWER_KEYS.items():
         named = Drawer.INSIDE  # shown as Diagnostic in the run: D, as the editor's (D-089)
         assert key == drawer.value[0].upper() or drawer in (Drawer.HINTS, named, *FOOT[1:])
@@ -391,7 +394,11 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
     editor = [*(TOOL_KEYS[t] for t in PALETTE_TOOLS), *views, MODE_KEY, LEVEL_KEYS[LevelButton.RUN]]
     editor += [DRAWER_KEYS[d] for d in (*DRAWERS[Env.EDITOR], *FOOT)]
     run = [*BUTTON_KEYS.values(), *(DRAWER_KEYS[d] for d in (*DRAWERS[Env.RUN], *FOOT))]
-    for keys in (editor, run):
+    maker = [TOOL_KEYS[t] for t in (Tool.MOVE, Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.LESS)]
+    maker += [TOOL_KEYS[Tool.MORE], TOOL_KEYS[Tool.DELETE], "1", "2", LEVEL_KEYS[LevelButton.RUN]]
+    maker += [VIEW_KEYS[b] for b in (*MAKER_VIEWS, ViewButton.ZOOM_IN, ViewButton.ZOOM_OUT)]
+    maker += [VIEW_KEYS[ViewButton.CENTRE], *(DRAWER_KEYS[d] for d in (*DRAWERS[Env.MAKER], *FOOT))]
+    for keys in (editor, run, maker):  # the Maker's: D-301
         assert len(set(keys)) == len(keys)
     assert drawer_key(Env.EDITOR, "F") is Drawer.FILES and drawer_key(Env.RUN, "F") is None
     assert drawer_key(Env.RUN, "S") is Drawer.SCORE and drawer_key(Env.EDITOR, "S") is None
@@ -634,7 +641,8 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
             assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
     assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
     maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
-    assert maker.maker and [d for d, _ in maker.drawer_buttons] == [Drawer.NAVIGATOR, *FOOT]
+    objects = [Drawer.OBJECTS, Drawer.NAVIGATOR]
+    assert maker.maker and [d for d, _ in maker.drawer_buttons] == [*objects, *FOOT]
     assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
     assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
     assert maker.overview is not None and maker.zoom_bar is not None
@@ -644,3 +652,21 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
     assert palette_target_at(maker, centre(tabs["run"])) == "run"
     assert palette_target_at(maker, centre(tabs["maker"])) is None  # this one
     assert drawer_key(Env.MAKER, "N") is Drawer.NAVIGATOR and drawer_key(Env.MAKER, "T") is None
+    assert drawer_key(Env.MAKER, "O") is Drawer.OBJECTS and drawer_key(Env.EDITOR, "O") is None
+
+
+def test_objects_lists_the_planes_objects_then_undo_and_redo_over_the_wheel_as_tools_does():
+    layout = make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True)  # D-301
+    assert [p for p, _ in layout.piece_rows] == [Piece.LIGHT, Piece.OBSTACLE, Piece.START]
+    assert [b for b, _ in layout.edit_buttons] == [EditButton.UNDO, EditButton.REDO]
+    assert [t for t, _ in layout.section_titles] == ["Plane", "Edit"]
+    lowest = max(r[1] + r[3] for _, r in (*layout.piece_rows, *layout.edit_buttons))
+    assert layout.wheel_view is not None and lowest < layout.wheel_fold[1]  # all over the Wheel
+    for piece, rect in layout.piece_rows:
+        assert piece_row_at(layout, centre(rect)) is piece and contains(
+            layout.drawer_area, rect[:2]
+        )
+    assert piece_row_at(layout, centre(layout.board_area)) is None
+    folded = make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True, wheel_folded=True)
+    assert folded.wheel_view is None and folded.wheel_fold[1] > layout.wheel_fold[1]
+    assert make_layout(Drawer.TOOLS).piece_rows == ()

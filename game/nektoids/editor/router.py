@@ -210,6 +210,13 @@ class Router:
             raise ValueError("only the sandbox's level is made in the Maker")
         self.screen = Screen.MAKE
 
+    def revise(self, level: Level) -> None:
+        """The sandbox's level as the Maker leaves it (D-301), for the editor and the next run;
+        its board stays as the player left it. ValueError on a level of the chapter."""
+        if not self.in_sandbox:
+            raise ValueError("only the sandbox's level is made in the Maker")
+        self.sandbox = level
+
     def reset(self, index: int) -> None:
         """The level at `index` back to its fresh board, the next time it opens (D-050)."""
         self._boards.pop(index, None)

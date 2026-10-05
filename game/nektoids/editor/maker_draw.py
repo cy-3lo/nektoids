@@ -4,16 +4,28 @@ The plane at large, as the run shows it, over its grid: a dot wherever a positio
 every 0.5 u, every whole u farther out, none farther still; a line every 5 u, its coordinate at
 the top and left edges, every other one's when they crowd (`grid_steps`). Over the grid the
 light's rays, as they stand when the run starts, the obstacles, the lights, and the swimmer
-where it starts, its wedge where it heads. Round it, the frame (`draw.py`): the tabs and the
-level's caption, the bar, the open drawer, Navigator's overview, zoom and rays, the status line.
+where it starts, its wedge where it heads; the focus lit, a ring round its object or a cross on
+its point; what is in hand, where a click would put it. Round it, the frame (`draw.py`): the
+tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts draws
+its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and redo,
+then the Wheel round the focus, the focus large at its hub, the line under it saying what it is.
+Navigator: its rays' row, its overview and zoom.
 """
 
 from __future__ import annotations
 
+from collections import Counter
+
 import numpy as np
 import pygame
 
-from nektoids.editor.arena_draw import SYMBOL_WIDTH, draw_items, draw_overview, draw_rays
+from nektoids.editor.arena_draw import (
+    SYMBOL_WIDTH,
+    draw_items,
+    draw_light,
+    draw_overview,
+    draw_rays,
+)
 from nektoids.editor.arena_view import LINE_STEP, grid_steps, lattice, shown
 from nektoids.editor.draw import (
     ROW_NAME,
@@ -21,31 +33,67 @@ from nektoids.editor.draw import (
     Fonts,
     cached_text,
     draw_bar,
+    draw_disc,
     draw_drawer,
+    draw_fold_title,
     draw_info,
     draw_row,
     draw_status_line,
     draw_symbol,
     draw_tabs,
+    draw_tip,
     draw_tooltip,
 )
-from nektoids.editor.icons import VIEW_ICON
-from nektoids.editor.layout import HANDLE, VIEW_KEYS
+from nektoids.editor.icons import EDIT_ICON, PIECE_ICON, VIEW_ICON
+from nektoids.editor.layout import (
+    BAR_WIDTH,
+    EDIT_KEYS,
+    HANDLE,
+    VIEW_KEYS,
+    WHEEL_TITLE,
+    EditButton,
+    Piece,
+    Tool,
+    contains,
+)
 from nektoids.editor.maker import MakerScene
+from nektoids.editor.objects import NAMES, PLACED, Point, name, reach, says, where
 from nektoids.editor.palette import (
+    ACTIVE,
     BACKGROUND,
     BODY,
+    BUTTON,
     DARK,
     DIM_TEXT,
+    HOVER,
+    ICON_EDGE,
     LIT,
+    OBSTACLE,
     PLANE_DOT,
     PLANE_LABEL,
     PLANE_LINE,
     REFUSED,
+    RULE,
     SHADOW,
+    TEXT,
 )
+from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX, centre_in
+from nektoids.levels.lattice import snapped
+from nektoids.levels.level import ItemKind
+from nektoids.levels.making import NEW
+from nektoids.sim.arena import LIGHT_RADIUS
 
 LABEL_INSET = 3  # a line's coordinate, from the line and from the plane's edge [px]
+FOCUS_GAP = 4  # from an object's rim to the ring round it when focused [px]
+FOCUS_DOT = 5  # a focused point's circle; its cross's arms reach 6 px past it [px]
+PIECE_ABOUT = {  # what Objects' rows' info boxes say
+    Piece.LIGHT: "Click it, then the plane, or drag it there. Its power, 1 to 16, is how much"
+    " light it gives: what an eye reads of it falls as 1/r.",
+    Piece.OBSTACLE: "Click it, then the plane, or drag it there. A disc the swimmer slides round"
+    " and the light does not cross: it casts a shadow. Its radius, 0.5 to 5 u.",
+    Piece.START: "Where the swimmer starts, and which way it heads. Drag it, or turn it with L"
+    " and R, or the mouse wheel on it.",
+}
 
 _dots_cache: dict[str, object] = {"key": None, "surface": None}
 
@@ -61,6 +109,8 @@ def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     centre, radius = scene.view.to_screen(*scene.pos[0]), float(scene.radius[0]) * scene.view.scale
     draw_symbol(screen, DARK, centre, radius + 1, scene.heading, SYMBOL_WIDTH + 2)
     draw_symbol(screen, BODY, centre, radius, scene.heading, SYMBOL_WIDTH)
+    _draw_focus(screen, scene)
+    _draw_in_hand(screen, scene, fonts)
     _draw_coordinates(screen, scene, fonts)
     screen.set_clip(None)
     draw_tabs(screen, scene, fonts)
@@ -68,7 +118,44 @@ def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     draw_bar(screen, scene, fonts)
     draw_drawer(screen, scene, fonts, _draw_rows, _draw_foot)
     draw_tooltip(screen, scene, fonts)
+    _draw_wheel_tip(screen, scene, fonts)
     draw_info(screen, scene, fonts, _about)
+
+
+def _draw_focus(screen: pygame.Surface, scene: MakerScene) -> None:
+    """The focus lit on the plane: a ring round its object, or a cross on its point."""
+    focus = scene.focus
+    if focus is None:
+        return
+    cx, cy = scene.view.to_screen(*where(scene.level, focus))
+    if isinstance(focus, Point):
+        pygame.draw.circle(screen, LIT, (cx, cy), FOCUS_DOT, 2)
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            near, far = FOCUS_DOT + 2, FOCUS_DOT + 8
+            start, end = (cx + dx * near, cy + dy * near), (cx + dx * far, cy + dy * far)
+            pygame.draw.line(screen, LIT, start, end, 2)
+        return
+    ring = reach(scene.level, focus) * scene.view.scale + FOCUS_GAP
+    pygame.draw.circle(screen, LIT, (cx, cy), ring, 2)
+
+
+def _draw_in_hand(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+    """A row of Objects picked: its object where a click would put it, under the mouse."""
+    if scene.picked is None or not contains(scene.arena_area, scene.pointer):
+        return
+    kind = PLACED[scene.picked]
+    centre = scene.view.to_screen(*snapped(scene.view.to_world(*scene.pointer)))
+    radius = (LIGHT_RADIUS if kind is ItemKind.LIGHT else NEW[kind]) * scene.view.scale
+    _draw_object(screen, fonts, kind, centre, radius)
+    pygame.draw.circle(screen, LIT, centre, radius + FOCUS_GAP, 2)
+
+
+def _draw_object(screen: pygame.Surface, fonts: Fonts, kind: ItemKind, centre, radius) -> None:
+    """A light or an obstacle of `radius` [px], as the plane draws them."""
+    if kind is ItemKind.LIGHT:
+        draw_light(screen, fonts, centre, radius)
+    else:
+        pygame.draw.circle(screen, OBSTACLE, centre, radius)
 
 
 def _draw_grid(screen: pygame.Surface, scene: MakerScene) -> None:
@@ -128,7 +215,31 @@ def _draw_coordinates(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -
 
 
 def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """The Maker's own drawer: Navigator, its rays' row, its overview and zoom."""
+    """The Maker's own drawers: Objects' rows, each object and how many are on the plane, lit if
+    in hand or focused, then undo and redo; Navigator's rays, overview and zoom."""
+    layout, level = scene.layout, scene.level
+    counts = Counter(item.kind for item in level.items)
+    for piece, rect in layout.piece_rows:
+        count = ("count", str(1 if piece is Piece.START else counts[PLACED[piece]]))
+        active = piece is scene.picked or (piece is Piece.START and scene.focus is Piece.START)
+        icon = PIECE_ICON[piece]
+        draw_row(screen, scene, fonts, rect, piece, NAMES[piece], count, active, icon=icon)
+    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
+    for button, rect in layout.edit_buttons:
+        key = ("key", EDIT_KEYS[button].replace("+", " "))
+        name_ = ROW_NAME[button]
+        draw_row(
+            screen,
+            scene,
+            fonts,
+            rect,
+            button,
+            name_,
+            key,
+            False,
+            not can[button],
+            EDIT_ICON[button],
+        )
     for button, rect in scene.layout.view_buttons:
         key = ("key", VIEW_KEYS[button])
         icon = VIEW_ICON[button]
@@ -140,20 +251,75 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
 
 
 def _draw_foot(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """Nothing stays at the foot of the Maker's drawers."""
+    """At the foot of Objects, the Wheel."""
+    if scene.layout.wheel_fold is not None:
+        _draw_wheel(screen, scene, fonts)
+
+
+def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+    """As Tools and Parts draw it (D-068, D-069): a rule, The Wheel's title, which folds; unless
+    folded, the focus large at its hub, the Wheel's icons round it, Move lit while in hand, a
+    line under it saying what is focused."""
+    layout = scene.layout
+    fx, fy, fw, _ = layout.wheel_fold
+    pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
+    draw_fold_title(screen, fonts, WHEEL_TITLE, layout.wheel_fold, scene.wheel_folded, DIM_TEXT)
+    if layout.wheel_view is None:
+        return
+    centre = centre_in(layout.wheel_view)
+    if scene.focus is None:
+        pygame.draw.circle(screen, RULE, centre, WHEEL_HEX, 1)
+    else:
+        pygame.draw.circle(screen, ACTIVE, centre, WHEEL_HEX)
+        pygame.draw.circle(screen, LIT, centre, WHEEL_HEX, 2)
+        _draw_hub(screen, scene, fonts, centre)
+    wheel, radius = scene.wheel(), ICON * WHEEL_HEX
+    for slot in wheel:
+        lit = slot.what is Tool.MOVE and scene.moving
+        fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
+        draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE, radius)
+    lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
+    line = fonts.small.render(says(scene.level, scene.focus), True, DIM_TEXT)
+    screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
+
+
+def _draw_hub(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, centre) -> None:
+    """The focus drawn large at the Wheel's hub: a point's cross, the swimmer, a light, an
+    obstacle as big as its radius says, within the hub."""
+    focus = scene.focus
+    if isinstance(focus, Point):
+        fonts.icons.draw(screen, "location-crosshairs", centre, 28, TEXT)
+    elif focus is Piece.START:
+        draw_symbol(screen, BODY, centre, 0.6 * WHEEL_HEX, scene.heading, 3)
+    else:
+        item = scene.level.items[focus]
+        size = 0.45 if item.kind is ItemKind.LIGHT else 0.25 + 0.13 * item.value
+        _draw_object(screen, fonts, item.kind, centre, size * WHEEL_HEX)
+
+
+def _draw_wheel_tip(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+    """The Wheel's icon under the mouse, named in a tooltip as the bar's are (D-069): the less
+    and the more as the focused item's kind says them, the key while key hints are on."""
+    slot = scene.tooltip
+    if slot not in scene.wheel():
+        return
+    text = name(scene.level, scene.focus, slot.what)
+    text += f" ({slot.key})" if scene.settings.key_hints else ""
+    half = fonts.text.size(text)[0] // 2 + 8  # the box's half width
+    x = max(round(slot.at[0]), BAR_WIDTH + 4 + half)
+    draw_tip(screen, fonts, text, midbottom=(x, round(slot.at[1] - ICON * WHEEL_HEX - 10)))
 
 
 def _about(scene: MakerScene, what: object) -> tuple[str, tuple[str, ...]]:
-    """What the Maker's info boxes say: a view's button."""
+    """What the Maker's info boxes say: an object's row, undo and redo, a view's button."""
+    if isinstance(what, Piece):
+        return NAMES[what], (PIECE_ABOUT[what],)
     return ROW_NAME[what], (TIP[what],)
 
 
 def _draw_status(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """The keys; why something was refused; what a passkey opened (D-075)."""
-    text, colour = (
-        "Space: run.  Drag or arrows: move the view.  + and -: zoom.  C: centre.",
-        DIM_TEXT,
-    )
+    """What a click or a key does now; why something was refused; what a passkey opened."""
+    text, colour = scene.hint(), DIM_TEXT
     if scene.message:
         text, colour = scene.message, REFUSED
     elif scene.said:

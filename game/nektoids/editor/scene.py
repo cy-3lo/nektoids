@@ -702,6 +702,12 @@ class EditorScene(Frame):
             **self._hint_layout(),
         )
 
+    def revise(self, level: Level, caption: tuple[str, str]) -> None:
+        """The level made again in the Maker (D-301): the caption follows, and the Run preview's
+        probe is made again on its plane, where it stood."""
+        self.level, self.caption = level, caption
+        self._probed = None
+
     def unfold_wheel(self) -> None:
         """The Wheel unfolded, if it was folded: a tutorial's step shows one of its icons."""
         if self.wheel_folded:

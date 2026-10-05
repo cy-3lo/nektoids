@@ -1,9 +1,9 @@
 """Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
 
 - Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
-  editor, Objectives, Inside, Score and Navigator in the run, Navigator in the Maker; Hints,
-  Settings and Chapters at its foot, over the accented switch to the run, or from the run to the
-  editor (`Env`).
+  editor, Objectives, Inside, Score and Navigator in the run, Objects and Navigator in the
+  Maker; Hints, Settings and Chapters at its foot, over the accented switch to the run, or from
+  the run to the editor (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
@@ -101,6 +101,8 @@ class Tool(Enum):
     TURN_RIGHT = "turn right"  # clockwise
     PAN = "pan"  # moves the view, not a component; the hand among the view buttons
     SWAP = "swap"  # the focused part for another of its group in Parts (D-068)
+    LESS = "less"  # the Maker's: the focused light dimmer, the obstacle smaller (D-301)
+    MORE = "more"  # ... brighter, bigger
 
 
 PALETTE_TOOLS = (
@@ -113,6 +115,12 @@ PALETTE_TOOLS = (
     Tool.SWAP,
 )
 TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-clockwise
+
+
+class Piece(Enum):  # Objects' rows: what the Maker puts on the plane (D-301)
+    LIGHT = "light"
+    OBSTACLE = "obstacle"
+    START = "start"  # the swimmer's start: always one, moved and turned, never placed
 
 
 class EditButton(Enum):
@@ -159,6 +167,7 @@ class Drawer(Enum):  # D-051
     HINTS = "hints"  # at the bar's foot: the level's hints, asked for in turn (D-078)
     SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
+    OBJECTS = "objects"  # the Maker's: the plane's objects, undo and redo, the Wheel (D-301)
 
 
 class MainView(Enum):  # what the editor's main screen shows, by the drawer open (D-058, D-069)
@@ -181,7 +190,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
-    Env.MAKER: (Drawer.NAVIGATOR,),
+    Env.MAKER: (Drawer.OBJECTS, Drawer.NAVIGATOR),
 }
 FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT, Env.MAKER: LevelButton.RUN}
@@ -229,6 +238,8 @@ TOOL_KEYS = {
     Tool.TURN_LEFT: "L",
     Tool.TURN_RIGHT: "R",
     Tool.SWAP: "S",
+    Tool.LESS: "<",  # the Maker's (D-301); + and - zoom
+    Tool.MORE: ">",
 }
 VIEW_KEYS = {
     ViewButton.ZOOM_IN: "+",
@@ -262,6 +273,7 @@ DRAWER_KEYS = {
     Drawer.HINTS: "?",
     Drawer.SETTINGS: ",",
     Drawer.CHAPTERS: "Tab",
+    Drawer.OBJECTS: "O",
 }
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
@@ -282,14 +294,15 @@ class Layout:
     section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
     group_titles: tuple[tuple[str, Rect], ...]  # Parts, Files: a click folds or unfolds its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
-    wheel_view: Rect | None  # Tools, Parts: the Wheel, the focused cell drawn large at its hub
-    wheel_fold: Rect | None  # Tools, Parts: The Wheel's title; a click folds or unfolds it (D-069)
+    piece_rows: tuple[tuple[Piece, Rect], ...]  # Objects' rows, in the Maker (D-301)
+    wheel_view: Rect | None  # Tools, Parts, Objects: the Wheel, what is focused large at its hub
+    wheel_fold: Rect | None  # ... The Wheel's title; a click folds or unfolds it (D-069)
     list_area: Rect | None  # where the drawer's rows show, scrolled; they answer there (D-096)
     scroll: int  # how far the list is scrolled [px]
     scroll_max: int  # ... at most: how much of it does not fit [px]
     scroll_bar: Rect | None  # its track, while the rows do not fit
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
-    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo
+    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo; Objects' too
     action_at: Rect | None  # the editor's: what a click does now, atop the main screen
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
@@ -367,6 +380,8 @@ def make_layout(
         rows.tools(height, wheel_folded, scroll)
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds, height, wheel_folded, scroll)
+    elif drawer is Drawer.OBJECTS:
+        rows.objects(height, wheel_folded, scroll)
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES:
@@ -418,6 +433,7 @@ def make_layout(
         section_titles=tuple(rows.sections),
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
+        piece_rows=tuple(rows.of(Piece)),
         wheel_view=rows.wheel_view,
         wheel_fold=rows.wheel_fold,
         list_area=rows.list_area,
@@ -578,7 +594,16 @@ class _Rows:
     def tools(self, height: int, wheel_folded: bool, scroll: int) -> None:
         """Write and Delete, then undo and redo, as rows, scrolled above the Wheel if they do not
         fit; at the drawer's foot, the cell, as in Parts (D-068, D-069)."""
-        for title, rows in (("Mode", Mode), ("Edit", EditButton)):
+        self._over_wheel((("Mode", Mode), ("Edit", EditButton)), height, wheel_folded, scroll)
+
+    def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
+        """The Maker's objects, then undo and redo, as rows, scrolled above the Wheel if they do
+        not fit; at the drawer's foot, the Wheel round what is focused on the plane (D-301)."""
+        self._over_wheel((("Plane", Piece), ("Edit", EditButton)), height, wheel_folded, scroll)
+
+    def _over_wheel(self, sections: tuple, height: int, wheel_folded: bool, scroll: int) -> None:
+        """Each section's title and rows, scrolled above the Wheel if they do not fit."""
+        for title, rows in sections:
             self._title(title, self.sections)
             for what in rows:
                 self._row(what)
@@ -798,6 +823,11 @@ def info_at(layout: Layout, point: tuple[int, int]) -> object | None:
 
 def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
     return _row_at(layout, layout.menu_items, point)
+
+
+def piece_row_at(layout: Layout, point: tuple[int, int]) -> Piece | None:
+    """The row of Objects under `point`, where the drawer shows its rows (D-301)."""
+    return _row_at(layout, layout.piece_rows, point)
 
 
 def wheel_fold_at(layout: Layout, point: tuple[int, int]) -> bool:
