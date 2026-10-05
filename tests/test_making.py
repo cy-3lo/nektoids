@@ -165,17 +165,12 @@ def test_a_word_chosen_rewords_the_goal_unless_it_would_aim_at_nothing_or_ask_tw
     )
 
 
-def test_a_goals_setting_sits_on_its_range_whole_turns_and_a_verb_without_one_has_none():
+def test_a_stays_seconds_sit_on_their_range_and_a_verb_without_a_setting_has_none():
     ringed = placed(LEVEL, ItemKind.MARK, (3.0, 3.0))
     stay = replace(ringed, objectives=(Goal(Verb.STAY, Count.ONE, Target.MARK),))
     assert goal_set(stay, 0, 12.4).objectives[0].seconds == 12.0
     assert goal_set(stay, 0, 99.0).objectives[0].seconds == 60.0
     assert goal_set(stay, 0, 0.0).objectives[0].seconds == 1.0 and stay.objectives[0].seconds == 5
-    circle = replace(LEVEL, objectives=(Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT),))
-    turns = goal_set(circle, 0, 3.6).objectives[0].turns
-    assert (
-        turns == 4 and isinstance(turns, int) and goal_set(circle, 0, 50).objectives[0].turns == 10
-    )
     with pytest.raises(ValueError, match="no setting"):
         goal_set(goal_added(LEVEL), 0, 3.0)
 

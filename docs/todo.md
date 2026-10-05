@@ -25,8 +25,8 @@ taken, when it starts.
         leave, stay or circle all, one or none of the lights, obstacles or marks; level format
         version 3, every shipped run as it was (D-307, #56, #57).
       - [x] Goals: the time allowed, and at most two goals, each a sentence chosen in three rows
-        of buttons, the words that would aim at nothing dimmed; sliders for the time, a stay's
-        seconds and a circle's turns, their values typed too (D-308, #59, #60, #61).
+        of buttons, the words that would aim at nothing dimmed; sliders for the time and a
+        stay's seconds, their values typed too (D-308, #59, #60, #61; circle gone, D-312).
       - [x] Save, in the Maker's Files: Copy level, its JSON; Paste a level; Start from a blank
         plane or a shipped level; each taking all but the board (D-310, #64, #65).
       To do, in this order:

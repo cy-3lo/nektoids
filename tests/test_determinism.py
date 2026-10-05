@@ -285,7 +285,7 @@ HALVED = built(
 )
 
 
-def test_orbit_the_orbiter_circles_the_light_twice_well_clear_of_it_with_time_to_spare():
+def test_orbit_the_orbiter_goes_round_the_light_through_its_rings_well_clear_of_it():
     ended, ticks, _ = play(ORBITER, "Orbit")
     assert ended is Outcome.WON and ticks * DT < 0.7 * LEVELS["Orbit"].time_limit
     assert play(ORBITER, "Orbit")[1] == ticks  # the same tick, every run
@@ -385,7 +385,8 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # progress may differ in its last bit on another platform (D-004): Orbit's crossed run reads
 # 0.04652168032595756 on CI's Linux, for the old objectives as for the sentences (checked on
 # CI, the old code at 41ccb36). So the outcome, the tick and the counts are compared exactly,
-# a progress to 1e-12.
+# a progress to 1e-12. Orbit's three were recorded again when circling went (D-312): its goals
+# are now to enter its four rings and touch no light, in 20 s.
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
@@ -397,9 +398,9 @@ BEFORE_SENTENCES = {
     ("Love", "love(E, E)"): (Outcome.WON, 907, ((1, 1, 1.0), (1, 1, 1.0))),
     ("Love", "love_on_the_axis()"): (Outcome.WON, 1233, ((1, 1, 1.0), (1, 1, 1.0))),
     ("Love", "love(NE, SE)"): (Outcome.LOST, 357, ((0, 1, 0.2249999999999997), (0, 1, 0.0))),
-    ("Orbit", "ORBITER"): (Outcome.WON, 2203, ((2, 2, 1.0), (1, 1, 1.0))),
-    ("Orbit", "HALVED"): (Outcome.WON, 2093, ((2, 2, 1.0), (1, 1, 1.0))),
-    ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 2, 0.04652168032595749), (0, 1, 0.0))),
+    ("Orbit", "ORBITER"): (Outcome.WON, 1093, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312
+    ("Orbit", "HALVED"): (Outcome.WON, 1038, ((4, 4, 1.0), (1, 1, 1.0))),
+    ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
     ("Greed", "greedy()"): (Outcome.WON, 1171, ((2, 2, 1.0),)),
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),

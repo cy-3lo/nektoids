@@ -115,7 +115,6 @@ from nektoids.levels.objectives import (
     follow,
     met,
     outcome,
-    targets,
 )
 from nektoids.levels.score import Score
 from nektoids.sim import world
@@ -639,18 +638,6 @@ class ArenaScene(Frame):
         (cx, cy), r = self.view.to_screen(*self.pos[0]), float(self.radius[0]) * self.view.scale + 8
         return (round(cx - r), round(cy - r), round(2 * r), round(2 * r))
 
-    def _rims(self) -> list[np.ndarray]:
-        """Points that the view frames for a circle goal: a circle round each of its targets,
-        as far out as the swimmer starts, which it goes round (D-097); the marks frame
-        themselves (`_needed`)."""
-        x, y, _ = self.level.start
-        out = []
-        for goal in self.level.objectives:
-            if goal.verb is Verb.CIRCLE:
-                centres, _ = targets(self.level, goal.target)
-                out.append(rims(centres, np.hypot(centres[:, 0] - x, centres[:, 1] - y)))
-        return out
-
     def extent(self) -> tuple[float, float, float, float]:
         """What Navigator's overview shows, and the most the arena may (D-066), as this frame
         keeps it (D-073)."""
@@ -674,7 +661,7 @@ class ArenaScene(Frame):
             np.array([m.at for m in marks]).reshape(-1, 2),
             np.array([m.value for m in marks]),
         )
-        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *self._rims()))
+        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy))
         points = np.concatenate((points, rims(at, radii)))
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
