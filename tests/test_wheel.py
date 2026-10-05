@@ -73,8 +73,10 @@ def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
 
 
 def test_up_to_five_icons_sit_beyond_the_cells_corners_the_gap_at_the_foot():
-    assert angles(1) == [90.0] and angles(2) == [150.0, 30.0]  # the top, or each side of it
-    assert angles(4) == [210.0, 150.0, 30.0, -30.0]
+    assert angles(1) == [90.0] and angles(2) == [150.0, 90.0]  # side by side, no gap (D-316)
+    assert angles(4) == [210.0, 150.0, 90.0, 30.0]  # a Source's actions: none left empty
+    for n in range(1, ON_RIM + 1):
+        assert all(b - a == -60.0 for a, b in zip(angles(n), angles(n)[1:], strict=False))
     assert angles(ON_RIM) == [210.0, 150.0, 90.0, 30.0, -30.0]  # the corners but the lowest
     for n in range(ON_RIM + 1):
         assert len(angles(n)) == n and all(a % 60.0 == 30.0 for a in angles(n))  # corners
