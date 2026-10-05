@@ -377,3 +377,41 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
     lag = SPEED * TAU  # the thrusters take TAU to reach their rate (D-017)
     assert pos[0, 0] == pytest.approx(9.0 + SPEED * 15.0 - lag, abs=1e-9)  # far past x = 40
     assert pos[0, 1] == 15.0 and heading.tolist() == [0.0]
+
+
+# Objectives as sentences (D-307): every level's runs end as they did, to the tick and the bit.
+# Recorded on 2026-10-05 from the objectives of version 1, before they became sentences: each
+# case's outcome, its last tick, and each objective's count and progress there, exactly.
+BEFORE_SENTENCES = {
+    ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
+    ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
+    ("Shadows", "DRIVEN"): (Outcome.WON, 451, ((1, 1, 1.0),)),
+    ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
+    ("Fear", "fear(NW, SW)"): (Outcome.WON, 388, ((1, 1, 1.0),)),
+    ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
+    ("Fear", "fear(NE, SE)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
+    ("Love", "love(E, E)"): (Outcome.WON, 907, ((1, 1, 1.0), (1, 1, 1.0))),
+    ("Love", "love_on_the_axis()"): (Outcome.WON, 1233, ((1, 1, 1.0), (1, 1, 1.0))),
+    ("Love", "love(NE, SE)"): (Outcome.LOST, 357, ((0, 1, 0.2249999999999997), (0, 1, 0.0))),
+    ("Orbit", "ORBITER"): (Outcome.WON, 2203, ((2, 2, 1.0), (1, 1, 1.0))),
+    ("Orbit", "HALVED"): (Outcome.WON, 2093, ((2, 2, 1.0), (1, 1, 1.0))),
+    ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 2, 0.04652168032595749), (0, 1, 0.0))),
+    ("Greed", "greedy()"): (Outcome.WON, 1171, ((2, 2, 1.0),)),
+    ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
+    ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
+    ("Patience", "patient()"): (Outcome.WON, 1312, ((3, 3, 1.0),)),
+    ("Patience", "patient(True)"): (Outcome.WON, 1237, ((3, 3, 1.0),)),
+}
+
+
+def _case(name: str):
+    """The board a case names, built as the tests above build it."""
+    return eval(name, globals())  # noqa: S307 - the names are this file's own
+
+
+@pytest.mark.parametrize(("title", "name"), list(BEFORE_SENTENCES))
+def test_every_level_ends_as_it_did_before_objectives_were_sentences(title, name):
+    ended, ticks, kept = play(_case(name), title)
+    level = LEVELS[title]
+    got = tuple((*o.count(k), o.progress(k)) for o, k in zip(level.objectives, kept, strict=True))
+    assert (ended, ticks, got) == BEFORE_SENTENCES[(title, name)]
