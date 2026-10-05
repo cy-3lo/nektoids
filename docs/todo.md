@@ -22,8 +22,16 @@ taken, when it starts.
       - Objectives from `OBJECTIVES`, with their settings, and the time allowed.
       - A clear check, as in Mario Maker: a level is shared only once its maker has won it; the
         winning board goes with it, as its proof and as the score to beat.
-      - Shared as text, with the board's encoder (stage 0); no server.
+      - Shared as text, as a board is (D-205, D-206); no server.
 - [ ] **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
-      2,603 random wirings, the fastest a one-eyed circler. Its file is in the history
+      2,603 random wirings, the fastest a one-eyed circler. Its plane lives on as the sandbox's,
+      under that title (`levels/data/sandbox.json`); its file as a level is in the history
       (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
-- [ ] **Sharing levels and solutions.**
+- [ ] **Sharing levels and solutions.** Solutions can be shared already, as a board's text
+      (D-205, D-206); a level needs a text of its own, the stage's first decision.
+
+## 12. Checks and fixes on `main`
+
+- [ ] Files' title, "Wins this session", is not drawn: it lies above the wins' list, and the
+      drawer's rows are clipped to that list (`editor/draw.py`, `draw_drawer`). Seen 2026-10-04.
+- [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
