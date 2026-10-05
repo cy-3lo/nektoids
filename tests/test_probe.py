@@ -95,7 +95,7 @@ def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view(
     assert probe.circuit.centre(int(eye)) == to_pixel(cell, zoomed.size, zoomed.origin)
     assert np.array_equal(probe.y, before)
     rings = [[m.value for m in LEVELS[t].marks] for t in ("Fear", "Love")]  # marks (D-307)
-    assert rings == [[12.0], [6.0]]
+    assert rings == [[8.0], [7.0]]  # Fear's ring, Love's (D-317, D-318)
 
 
 def test_diagnostics_map_shows_the_whole_level_where_the_swimmer_starts():

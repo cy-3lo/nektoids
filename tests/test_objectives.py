@@ -17,6 +17,7 @@ from nektoids.levels.objectives import (
     Verb,
     begin,
     follow,
+    lit_marks,
     objective_from_dict,
     objective_to_dict,
     outcome,
@@ -290,3 +291,22 @@ def test_going_round_the_light_through_its_rings_wins_unless_it_touches_the_ligh
     assert tick * 0.05 > 1.5 * np.pi - 0.45  # into the last ring: round three quarters, near enough
     touched = follow(orbit, kept, at([30.0, 20.0]), ONE, DT)
     assert outcome(orbit, touched, tick + 1, DT) is Outcome.LOST  # touching still loses
+
+
+def test_the_rings_light_one_by_one_as_they_are_entered_for_a_goal_to_enter_every_one():
+    rings = (mark(30.0, 10.0, 2.0), mark(40.0, 20.0, 2.0), mark(30.0, 30.0, 2.0))  # D-318
+    every = level(Goal(Verb.REACH, Count.ALL, Target.MARK), items=(LIGHTS[0], *rings))
+    kept = begin(every, at([10.0, 20.0]), ONE)
+    assert lit_marks(every, kept) == (False, False, False)
+    for point, then in (([30.0, 10.0], (True, False, False)), ([20.0, 20.0], (True, False, False))):
+        kept = follow(every, kept, at(point), ONE, DT)
+        assert lit_marks(every, kept) == then  # once entered, it stays lit
+    for point in ([40.0, 20.0], [30.0, 30.0]):
+        kept = follow(every, kept, at(point), ONE, DT)
+    assert lit_marks(every, kept) == (True, True, True)
+    one = level(Goal(Verb.REACH, Count.ONE, Target.MARK), items=(LIGHTS[0], *rings))
+    kept = follow(one, begin(one, at([10.0, 20.0]), ONE), at([30.0, 10.0]), ONE, DT)
+    assert lit_marks(one, kept) == (True, True, True)  # its goal met: all at once, as before
+    ban = level(Goal(Verb.REACH, Count.NONE, Target.MARK), items=(LIGHTS[0], *rings))
+    kept = follow(ban, begin(ban, at([10.0, 20.0]), ONE), at([30.0, 10.0]), ONE, DT)
+    assert lit_marks(ban, kept) == (False, False, False)  # a ban lights nothing

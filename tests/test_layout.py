@@ -667,7 +667,7 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
             assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
     assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
     maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
-    objects = [Drawer.OBJECTS, Drawer.PARTS, Drawer.GOALS, Drawer.BRIEF, Drawer.FILES]
+    objects = [Drawer.OBJECTS, Drawer.PARTS, Drawer.GOALS, Drawer.TEXT, Drawer.FILES]
     objects += [Drawer.NAVIGATOR]
     assert maker.maker and [d for d, _ in maker.drawer_buttons] == [*objects, *FOOT]
     assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
@@ -678,7 +678,7 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
     tabs = dict(maker.tabs)
     assert palette_target_at(maker, centre(tabs["run"])) == "run"
     assert palette_target_at(maker, centre(tabs["maker"])) is None  # this one
-    assert drawer_key(Env.MAKER, "N") is Drawer.NAVIGATOR and drawer_key(Env.MAKER, "T") is None
+    assert drawer_key(Env.MAKER, "N") is Drawer.NAVIGATOR and drawer_key(Env.MAKER, "W") is None
     assert drawer_key(Env.MAKER, "O") is Drawer.OBJECTS and drawer_key(Env.EDITOR, "O") is None
 
 
@@ -720,7 +720,7 @@ def test_tab_goes_round_the_tabs_and_their_tooltips_name_tab_or_shift_tab_to_rea
 
 
 def test_brief_holds_the_titles_field_a_row_high_then_the_specs_taller_under_their_labels():
-    layout = make_layout(Drawer.BRIEF, env=Env.MAKER, maker=True)  # D-305
+    layout = make_layout(Drawer.TEXT, env=Env.MAKER, maker=True)  # D-305
     (title, high), (spec, tall) = layout.brief_fields
     assert (title, spec) == (Brief.TITLE, Brief.SPEC)
     assert [t for t, _ in layout.section_titles] == ["Title", "Spec"]
@@ -731,7 +731,7 @@ def test_brief_holds_the_titles_field_a_row_high_then_the_specs_taller_under_the
             layout.drawer_area, rect[:2]
         )
     assert brief_field_at(layout, centre(layout.board_area)) is None
-    assert drawer_key(Env.MAKER, "B") is Drawer.BRIEF and drawer_key(Env.EDITOR, "B") is None
+    assert drawer_key(Env.MAKER, "T") is Drawer.TEXT and drawer_key(Env.EDITOR, "T") is Drawer.TOOLS
 
 
 def test_goals_shows_the_time_then_each_goals_name_over_its_words_and_a_slider_for_a_setting():

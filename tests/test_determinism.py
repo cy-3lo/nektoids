@@ -236,7 +236,7 @@ def test_love_with_one_eye_one_diff_and_one_thruster_on_the_axis_wins_too():
     ended, ticks, _ = play(love_on_the_axis(), "Love")
     assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Love"].time_limit
     nearest, last = nearest_and_last(love_on_the_axis())
-    assert nearest > TOUCH + 1.0 and last + 1.0 < LOVE_RING  # it rests 4.5 u out
+    assert nearest > TOUCH + 1.0 and last + 1.0 < LOVE_RING  # it rests 5 u out, in its 7 u ring
 
 
 def test_love_with_its_eyes_turned_out_loses_sight_of_the_light_and_touches_it():
@@ -387,27 +387,30 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # CI, the old code at 41ccb36). So the outcome, the tick and the counts are compared exactly,
 # a progress to 1e-12. Orbit's three were recorded again when circling went (D-312): its goals
 # are now to enter its four rings and touch no light, in 20 s. Shadows', Greed's and Patience's
-# winners were recorded again when every position went onto whole units (D-313): the same
-# outcomes, a few ticks apart.
+# winners were recorded again when every position went onto whole units (D-313), and Shadows',
+# Love's and Patience's again when every setting did, Love's light power 4 and its ring 7 u, the
+# obstacles of 1.5 u 2 u (D-317): the same outcomes, a few ticks apart; Fear's winner again
+# when its ring went from 12 u to 8 u, the most a mark may be, its light to power 4 and its start
+# 3 u from it (D-318): out of the ring in about the time it took before.
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
-    ("Shadows", "DRIVEN"): (Outcome.WON, 403, ((1, 1, 1.0),)),  # D-313
+    ("Shadows", "DRIVEN"): (Outcome.WON, 446, ((1, 1, 1.0),)),  # D-317
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
-    ("Fear", "fear(NW, SW)"): (Outcome.WON, 388, ((1, 1, 1.0),)),
+    ("Fear", "fear(NW, SW)"): (Outcome.WON, 382, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
     ("Fear", "fear(NE, SE)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
-    ("Love", "love(E, E)"): (Outcome.WON, 907, ((1, 1, 1.0), (1, 1, 1.0))),
-    ("Love", "love_on_the_axis()"): (Outcome.WON, 1233, ((1, 1, 1.0), (1, 1, 1.0))),
-    ("Love", "love(NE, SE)"): (Outcome.LOST, 357, ((0, 1, 0.2249999999999997), (0, 1, 0.0))),
+    ("Love", "love(E, E)"): (Outcome.WON, 882, ((1, 1, 1.0), (1, 1, 1.0))),  # D-317
+    ("Love", "love_on_the_axis()"): (Outcome.WON, 1178, ((1, 1, 1.0), (1, 1, 1.0))),
+    ("Love", "love(NE, SE)"): (Outcome.LOST, 381, ((0, 1, 0.29999999999999943), (0, 1, 0.0))),
     ("Orbit", "ORBITER"): (Outcome.WON, 1093, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312
     ("Orbit", "HALVED"): (Outcome.WON, 1038, ((4, 4, 1.0), (1, 1, 1.0))),
     ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
     ("Greed", "greedy()"): (Outcome.WON, 1202, ((2, 2, 1.0),)),  # D-313
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1143, ((3, 3, 1.0),)),  # D-313
-    ("Patience", "patient(True)"): (Outcome.WON, 1085, ((3, 3, 1.0),)),
+    ("Patience", "patient()"): (Outcome.WON, 1213, ((3, 3, 1.0),)),  # D-317
+    ("Patience", "patient(True)"): (Outcome.WON, 1188, ((3, 3, 1.0),)),
 }
 
 

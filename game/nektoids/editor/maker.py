@@ -6,7 +6,7 @@ on: its lights, obstacles, marks and rays, and the swimmer where it starts, faci
 heads. Round it, the frame the editor and the run have (`frame.Frame`, D-051): Objects, as Parts
 is the board's: the objects as rows, undo and redo, and at its foot the Wheel round what is
 focused (D-068, D-069, `objects.py`); Goals, the time allowed and the goals, each a sentence
-whose words are buttons, with a slider for its setting (D-308); Brief, the level's title and
+whose words are buttons, with a slider for its setting (D-308); Text, the level's title and
 spec (D-305); Files, the level copied as text, another's text pasted, or a blank plane or a
 shipped level to start from (D-310); Parts, the board's size and how many of each part, which
 the Editor's board takes at once, or refuses while it has more (D-315); Navigator, with
@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from enum import Enum
 
 import numpy as np
@@ -97,7 +98,6 @@ from nektoids.editor.layout import (
     stepper_at,
     value_at,
     view_button_at,
-    wheel_fold_at,
     word_at,
     zoom_bar_at,
     zoom_button_at,
@@ -199,12 +199,13 @@ class MakerScene(Frame):
         self.carrying = False  # ... the mouse still held since: let go on the plane, it lands
         self.moving = False  # Move in hand: a click on the plane, or an arrow, moves the focus
         self.choice: int | None = None  # the Wheel's icon lit: what Enter does (D-314)
+        self.arming = False  # a press on an object: Move in hand once the click is over
         self.press_at: tuple[int, int] | None = None  # a press on the plane: click, or drag?
         self.grab: tuple[float, float] | None = None  # ... on an object: from the mouse to it [u]
         self.dragged = False  # ... and the mouse has moved: the object follows it
         self.before: Level | None = None  # the level as the drag began: one step for undo
         self.history: History[Level] = History()  # D-027
-        self.wheel_folded = False  # The Wheel's picture folded, as in Tools and Parts (D-069)
+        self.wheel_folded = False  # the Maker's Wheel never folds, unlike the Editor's (D-317)
         self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse
         self.writing: Brief | Knob | Paste | None = None  # a field typed in: Brief's, a box...
         self.field: TextField | None = None  # ... what it holds (D-305)
@@ -278,7 +279,7 @@ class MakerScene(Frame):
         if self.writing is not None:
             kept = "Enter or a click elsewhere keeps it.  Esc: no change."
             return f"Type {self._what(self.writing)}.  {kept}"
-        if self.layout.drawer is Drawer.BRIEF:
+        if self.layout.drawer is Drawer.TEXT:
             return "Click the title or the spec to write it.  The caption above follows."
         if self.layout.drawer is Drawer.PARTS:
             return "- and +: how big the board is, and how many of each part it hands out."
@@ -417,8 +418,8 @@ class MakerScene(Frame):
         """Esc: what is in hand put down, then the focus let go; False if there was nothing."""
         if self.picked is not None:
             self.picked = None
-        elif self.moving:
-            self.moving = False
+        elif self.moving or self.choice is not None:  # nothing lit: the Wheel's empty tool
+            self.moving, self.choice = False, None
         elif self.focus is not None:
             self.focus, self.choice = None, None
         else:
@@ -537,9 +538,11 @@ class MakerScene(Frame):
         if field is not None:
             self.field_pressed = None if field == self.writing else field
             return
+        slot = slot_at(self.wheel(), pos, WHEEL_HEX)
+        if self.moving and slot is None and not contains(self.arena_area, pos):
+            self.moving, self.choice = False, None  # anything off the plane drops Move (D-317)
         if self.frame_press(pos):
             return
-        slot = slot_at(self.wheel(), pos, WHEEL_HEX)
         piece = piece_row_at(self.layout, pos)
         edit = edit_button_at(self.layout, pos)
         if overview_at(self.layout, pos):
@@ -554,9 +557,6 @@ class MakerScene(Frame):
             self._view(button)
         elif slot is not None:
             self._do(slot.what)
-        elif wheel_fold_at(self.layout, pos):  # in Objects as in Tools and Parts (D-069)
-            self.wheel_folded = not self.wheel_folded
-            self.layout = self._relayout(self.layout.drawer)
         elif piece is not None:
             self._pick(piece)
         elif edit is not None:
@@ -592,10 +592,10 @@ class MakerScene(Frame):
         target = object_at(self.level, self.view, pos)
         if self.picked is not None:
             self._place(self.picked, at)
-        elif target is not None:
-            if target != self.focus:
-                self.moving = False
-            self.focus, self.choice = target, chosen(target, Tool.MOVE)
+        elif target is not None:  # Move in hand once the click is over, unless it was already
+            self.arming = not (self.moving and target != self.focus)  # ... on another (D-317)
+            self.focus, self.moving = target, self.moving and target == self.focus
+            self.choice = chosen(target, Tool.MOVE) if self.arming else None
             self.press_at, self.before = pos, self.level
             x, y = where(self.level, target)
             self.grab, self.dragged = (x - at[0], y - at[1]), False
@@ -628,7 +628,8 @@ class MakerScene(Frame):
     def _release(self, pos: tuple[int, int]) -> None:
         """The mouse let go: a row carried lands where it is let go on the plane; a dragged
         object's move, or a slider's, is one step for undo; a click on the open plane focuses
-        its point; a field pressed opens, now the click is over: Safari wants it so (D-206)."""
+        its point; a point or an object chosen opens Objects, its Wheel showing (D-317); a field
+        pressed opens, now the click is over: Safari wants it so (D-206)."""
         if self.field_pressed is not None:
             self._open_field(self.field_pressed)
             self.field_pressed = None
@@ -639,10 +640,13 @@ class MakerScene(Frame):
             self.history.record(self.before)
         clicked = self.press_at is not None and math.dist(pos, self.press_at) < CLICK
         if clicked and self.grab is not None:  # a click on an object: Move in hand (D-314)
-            self.moving = True
+            self.moving = self.arming
         elif clicked:
             self.focus, self.moving = Point(snapped(self.view.to_world(*self.press_at))), False
             self.choice = None
+        chose = clicked or self.grab is not None  # a point or an object, not the view dragged
+        if chose and self.layout.drawer is not Drawer.OBJECTS:
+            self.open_drawer(Drawer.OBJECTS)  # the plane clicked: its Wheel shows (D-317)
         self.carrying = self.overviewing = self.zooming = False
         self.panning = self.press_at = self.grab = self.before = self.sliding = None
         self.frame_release()
@@ -771,6 +775,17 @@ class MakerScene(Frame):
                 self.said = "Started from a blank plane."
         elif self._made_anew(lambda level: taken(level, self.starts[start.index][1])):
             self.said = f"Started from {self.level.title}."
+
+    def open_blank(self) -> None:
+        """The Maker opened for the first time: a blank plane to make (D-317), two of each part
+        unless the Editor's board holds more, when the parts stay as they were; Free play's
+        level one undo away."""
+        if self._made_anew(blank):
+            self.said = "A blank plane to make.  Ctrl+Z: Free play's level."
+            return
+        self.message = ""  # refused for the board: the parts as they were, then
+        if self._made_anew(lambda level: replace(blank(level), board=level.board)):
+            self.said = "A blank plane, the parts as Free play's: the board holds more than two."
 
     def _made_anew(self, change: Callable[[Level], Level]) -> bool:
         """`change`, a level made anew, as `_make` makes any; once made, nothing is focused or

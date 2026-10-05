@@ -3,10 +3,7 @@
   "title": "Love",
   "spec": "Stay by the light for 5 s without touching it.",
   "start": {"at": [10, 19], "heading": 0},
-  "items": [
-    {"kind": "light", "at": [25, 19], "power": 3.5},
-    {"kind": "mark", "at": [25, 19], "radius": 6}
-  ],
+  "items": [{"kind": "light", "at": [25, 19], "power": 4}, {"kind": "mark", "at": [25, 19], "radius": 7}],
   "board": {
     "zone": 19,
     "stock": {"eye": 2, "source": 2, "sum": 2, "difference": 2, "thruster": 2},

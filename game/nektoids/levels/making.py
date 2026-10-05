@@ -33,10 +33,10 @@ from nektoids.levels.objectives import (
 )
 from nektoids.sim.arena import BASE_RADIUS
 
-SETTING = {  # what each item's setting may be (D-301)
-    ItemKind.LIGHT: Range(1.0, 16.0, 1.0),  # its power
-    ItemKind.OBSTACLE: Range(1.0, 5.0, 1.0, "u"),  # its radius, whole u (D-311)
-    ItemKind.MARK: Range(1.0, 30.0, 1.0, "u"),  # its radius: a zone as wide as Fear's ring
+SETTING = {  # what each item's setting may be: a whole number, 1 to 8 (D-301, D-311, D-318)
+    ItemKind.LIGHT: Range(1.0, 8.0, 1.0),  # its power
+    ItemKind.OBSTACLE: Range(1.0, 8.0, 1.0, "u"),  # its radius
+    ItemKind.MARK: Range(1.0, 8.0, 1.0, "u"),  # its radius: Fear's ring, the widest shipped
 }
 NEW = {ItemKind.LIGHT: 1.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 1.0}  # the least (D-314)
 TIME = Range(5.0, 120.0, 5.0, "s")  # the time allowed, which every level has (D-301, D-311)

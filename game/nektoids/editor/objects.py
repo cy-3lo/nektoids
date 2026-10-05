@@ -43,8 +43,8 @@ ITEM_ACTIONS = (Tool.LESS, Tool.MOVE, Tool.MORE, Tool.DELETE)  # More at the top
 START_ACTIONS = (Tool.TURN_LEFT, Tool.MOVE, Tool.TURN_RIGHT)
 WORDS = {  # the less and the more, as each kind of item says them
     ItemKind.LIGHT: ("Dimmer", "Brighter", "A light, power {:g}"),
-    ItemKind.OBSTACLE: ("Smaller", "Bigger", "An obstacle, radius {:g} u"),
-    ItemKind.MARK: ("Smaller", "Bigger", "A mark, radius {:g} u"),
+    ItemKind.OBSTACLE: ("Smaller", "Bigger", "An obstacle, radius {:g}"),  # no unit (D-318)
+    ItemKind.MARK: ("Smaller", "Bigger", "A mark, radius {:g}"),
 }
 NAMES = {
     Piece.LIGHT: "Light",

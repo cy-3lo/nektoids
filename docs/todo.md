@@ -12,43 +12,62 @@ For us and Camille first, then for players (D-105). Each item is planned, and it
 taken, when it starts.
 
 - [ ] **A level editor**, Super Mario Maker-like: levels are data already (D-028). It comes
-      first after the foundations (D-105): Camille can make levels without programming (D-041),
-      and every later stage needs levels. It is the Maker, a third tab on the sandbox (D-301).
-      Done, on `stage/1-level-maker`:
-      - [x] The Maker's tab: the plane at large over a grid of 0.5 u, Navigator (D-301, #50).
-      - [x] Objects, as Parts with its Wheel: lights, obstacles, marks and the swimmer's start,
-        placed, dragged, sized, turned, deleted; undo and redo (D-302, D-306, #51, #55).
-      - [x] The tabs: F1 to F3, Tab and Shift+Tab; Esc backs out, then opens Chapters (D-303,
-        D-304, #52, #53).
-      - [x] Brief: the level's title and spec, in fields of text with a caret (D-305, #54).
-      - [x] Marks, zones only the objectives read (D-306, #55); objectives as sentences: reach,
-        leave, stay or circle all, one or none of the lights, obstacles or marks; level format
-        version 3, every shipped run as it was (D-307, #56, #57).
-      - [x] Goals: the time allowed, and at most two goals, each a sentence chosen in three rows
-        of buttons, the words that would aim at nothing dimmed; sliders for the time and a
-        stay's seconds, their values typed too (D-308, #59, #60, #61; circle gone, D-312).
-      - [x] Save, in the Maker's Files: Copy level, its JSON; Paste a level; Start from a blank
-        plane or a shipped level; each taking all but the board (D-310, #64, #65).
-      To do, in this order:
-      - [ ] The board: zone, stock and locked parts, set with the board editor itself. Done:
-        the zone's size and the parts handed out, in the Maker's Parts (D-315); to come, the
-        locked parts.
-      - [ ] A clear check, as in Mario Maker: a level is shared only once its maker has won it;
-        the winning board goes with it, as its proof and as the score to beat.
-      - [ ] Shared as text, as a board is (D-205, D-206); no server.
-      - [ ] Perhaps: a slider in Objects for the focused item's power or radius, beside < and >.
+  first after the foundations (D-105): Camille can make levels without programming (D-041), and
+  every later stage needs levels. It is the Maker, a third tab on the sandbox (D-301).
+  Done, on `stage/1-level-maker`:
+  - [x] The Maker's tab: the plane at large over its grid, a dot every 1 u and a line every
+    5 u, no rulers; Navigator (D-301, D-311, #50).
+  - [x] Objects, as Parts with its Wheel: lights, obstacles, marks and the swimmer's start,
+    placed, dragged, sized, turned, deleted; undo and redo (D-302, D-306, #51, #55). The Wheel
+    works as the Editor's: the action atop the plane, Move on an object clicked, More on one
+    placed, the arrows and Enter, its icons side by side; a click on the plane opens it
+    (D-314, D-316, D-317).
+  - [x] The tabs: F1 to F3, Tab and Shift+Tab; Esc backs out, then opens Chapters (D-303,
+    D-304, #52, #53).
+  - [x] Text, once Brief: the level's title and spec, in fields with a caret (D-305, D-318,
+    #54).
+  - [x] Marks, zones only the objectives read (D-306, #55); objectives as sentences: reach,
+    leave or stay all, one or none of the lights, obstacles or marks (D-307, #56, #57); circle
+    gone, Orbit asking to enter four rings round its light (D-312); the rings lit one by one
+    as they are entered (D-318).
+  - [x] Goals: the time allowed, and at most two goals, each a sentence chosen in three rows of
+    buttons, the words that would aim at nothing dimmed; sliders for the time and a stay's
+    seconds, their values typed too (D-308, #59, #60, #61).
+  - [x] Save, in the Maker's Files: Copy level, its JSON; Paste a level; Start from a blank
+    plane or a shipped level (D-310, #64, #65).
+  - [x] Whole numbers: positions on whole units, settings from 1 to 8, the shipped levels too;
+    level files version 4, the zone written as its size (D-311, D-313, D-317, D-318).
+  - [x] Parts, in the Maker: the board's size, 7, 19 or 37 cells, and each part handed out,
+    none to 9 or unlimited, grouped and folding as the Editor's; the Editor's board takes it
+    at once or the change is refused; Paste and Start from bring it (D-315).
+  - [x] The Maker opens on a blank plane, two of each part (D-317).
+
+  To do, in this order:
+  - [ ] The board's locked parts, set with the board editor itself (its size and the parts
+    handed out are done, D-315).
+  - [ ] Share level, after the board, the physicist's plan (2026-10-05): Copy level stays a
+    draft, for us, with no proof; Share level is offered once the level, as it stands, has been
+    won, and copies its text with its proof, the winning board's text (D-205) and its score,
+    the one to beat. Paste a level replays the proof, the runs being deterministic, and marks
+    the level cleared if it wins, else pastes it as a draft, unproven. The check is the
+    outcome, not the tick: a run may differ in its last bit across platforms (D-004). Shared
+    as text, as a board is (D-206); no server.
+  - [ ] Perhaps: a slider in Objects for the focused item's power or radius, beside < and >.
 - [ ] **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
-      2,603 random wirings, the fastest a one-eyed circler. Its plane lives on as the sandbox's,
-      under that title (`levels/data/sandbox.json`); its file as a level is in the history
-      (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
+  2,603 random wirings, the fastest a one-eyed circler. Its plane lives on as the sandbox's,
+  under that title (`levels/data/sandbox.json`); its file as a level is in the history
+  (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
 - [ ] **Sharing levels and solutions.** Solutions can be shared already, as a board's text
-      (D-205, D-206); a level needs a text of its own, the stage's first decision.
+  (D-205, D-206); levels are copied as their JSON (D-310); sharing them with a proof is the
+  Share level above.
 - [ ] **A first level, before Fear** (the physicist's): its parts already on the board, one eye
-      and one thruster, and the player just has to connect them; the goal is to go straight
-      (Drags). D-300's scope names the levels, so it takes a decision when it starts.
+  and one thruster, and the player just has to connect them; the goal is to go straight
+  (Drags). D-300's scope names the levels, so it takes a decision when it starts.
 
 ## 12. Checks and fixes on `main`
 
 - [ ] Files' title, "Wins this session", is not drawn: it lies above the wins' list, and the
-      drawer's rows are clipped to that list (`editor/draw.py`, `draw_drawer`). Seen 2026-10-04.
+  drawer's rows are clipped to that list (`editor/draw.py`, `draw_drawer`). Seen 2026-10-04.
 - [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
+- [ ] The Maker in Safari: a slider's typed value, Paste a level (D-308, D-310); only Chrome was
+  tried.

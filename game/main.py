@@ -193,6 +193,7 @@ def maker() -> MakerScene:
         makers[router.index] = MakerScene(
             router.level, router.label, settings, len(levels), starts=starts, board=router.board
         )
+        makers[router.index].open_blank()  # a blank plane to make (D-317)
     return makers[router.index]
 
 

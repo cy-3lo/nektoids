@@ -194,7 +194,7 @@ class Drawer(Enum):  # D-051
     SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
     OBJECTS = "objects"  # the Maker's: the plane's objects, undo and redo, the Wheel (D-301)
-    BRIEF = "brief"  # the Maker's: the level's title and spec (D-305)
+    TEXT = "text"  # the Maker's: the level's title and spec, its Brief (D-305; named so, D-318)
     GOALS = "goals"  # the Maker's: the time allowed and the goals, as sentences (D-308)
 
 
@@ -222,7 +222,7 @@ DRAWERS = {  # each environment's drawers, in the bar's order from the top
         Drawer.OBJECTS,
         Drawer.PARTS,  # the Maker's: the board's size, the parts handed out (D-315)
         Drawer.GOALS,
-        Drawer.BRIEF,
+        Drawer.TEXT,
         Drawer.FILES,
         Drawer.NAVIGATOR,
     ),
@@ -350,7 +350,7 @@ DRAWER_KEYS = {
     Drawer.SETTINGS: ",",
     Drawer.CHAPTERS: "Esc",
     Drawer.OBJECTS: "O",
-    Drawer.BRIEF: "B",
+    Drawer.TEXT: "T",  # Tools' key in the Editor, which the Maker has not
     Drawer.GOALS: "G",
 }
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
@@ -476,7 +476,7 @@ def make_layout(
         rows.parts(folded, kinds, height, wheel_folded, scroll)
     elif drawer is Drawer.OBJECTS:
         rows.objects(height, wheel_folded, scroll)
-    elif drawer is Drawer.BRIEF:
+    elif drawer is Drawer.TEXT:
         rows.brief()
     elif drawer is Drawer.GOALS:
         rows.made_goals(made, addable)

@@ -66,7 +66,7 @@ DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.SETTINGS: "gear",
     Drawer.CHAPTERS: "map",
     Drawer.OBJECTS: "shapes",
-    Drawer.BRIEF: "pen",
+    Drawer.TEXT: "pen",
     Drawer.GOALS: "list-check",
 }
 VIEW_ICON = {

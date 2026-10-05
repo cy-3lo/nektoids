@@ -195,7 +195,7 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     elif scene.show_rays:
         t, area = scene.clock.seconds, scene.arena_area
         draw_rays(screen, view, area, arena, scene.rays, t, scene.pos, scene.radius)
-    draw_marks(screen, view, scene.level.marks, colour=LIGHT if scene.marks_met else MARK)
+    draw_marks(screen, view, scene.level.marks, lit=scene.marks_lit)
     draw_items(screen, fonts, view, arena)
     for light in np.flatnonzero(scene.lights_reached):  # by any swimmer
         centre = view.to_screen(*arena.light_xy[light])
@@ -211,11 +211,14 @@ def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Are
         draw_light(screen, fonts, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale)
 
 
-def draw_marks(screen: pygame.Surface, view: ArenaView, marks, colour=MARK, width: int = 2) -> None:
-    """The level's marks (D-306): each an empty circle `width` [px] wide, grey, or lit once their
-    goal is met (D-307), a cross on its centre, under the lights and the obstacles."""
-    for mark in marks:
-        draw_mark(screen, view.to_screen(*mark.at), mark.value * view.scale, width, colour)
+def draw_marks(
+    screen: pygame.Surface, view: ArenaView, marks, colour=MARK, width: int = 2, lit=()
+) -> None:
+    """The level's marks (D-306): each an empty circle `width` [px] wide, grey, or, where `lit`
+    says so, lit (D-307, D-318), a cross on its centre, under the lights and the obstacles."""
+    for k, mark in enumerate(marks):
+        ink = LIGHT if k < len(lit) and lit[k] else colour
+        draw_mark(screen, view.to_screen(*mark.at), mark.value * view.scale, width, ink)
 
 
 def draw_mark(screen: pygame.Surface, centre, radius: float, width: int = 2, colour=MARK) -> None:
