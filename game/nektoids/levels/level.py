@@ -164,7 +164,9 @@ class Level:
         )
         for goal in level.objectives:  # each aims at something the level has
             if not len(goals.targets(level, goal.target)[0]):
-                raise ValueError(f"{goal.name!r}: the level has no {goals.THING[goal.target][1]}")
+                raise ValueError(
+                    f"{goal.name(level)!r}: the level has no {goals.THING[goal.target][1]}"
+                )
         if level.passkey is not None and not is_passkey(level.passkey):
             raise ValueError(f"a passkey is A to Z, at most {PASSKEY_LENGTH}: {level.passkey!r}")
         level.arena  # noqa: B018 - built now, so that bad items fail here, not mid-run

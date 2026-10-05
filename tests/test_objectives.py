@@ -69,7 +69,7 @@ def test_every_light_counts_once_and_all_of_them_are_needed():
 def test_one_light_is_any_of_them_once():
     one = Goal(Verb.REACH, Count.ONE, Target.LIGHT)
     assert one.marks(LEVEL, at([5.0, 6.0], [20.0, 20.0]), np.ones(2)).tolist() == [[True], [False]]
-    assert one.count(np.array([[True], [False]])) == (1, 2) and one.name == "Reach a light"
+    assert one.count(np.array([[True], [False]])) == (1, 2) and one.name(LEVEL) == "Reach a light"
 
 
 def test_a_run_is_won_when_every_light_is_visited_and_over_when_its_time_is_up():
@@ -200,13 +200,33 @@ def test_a_word_chosen_moves_the_others_as_little_as_makes_the_sentence_say_some
 
 
 def test_version_1s_five_objectives_keep_their_names_but_the_stay_whose_ring_is_any_mark():
-    assert [g.name for g in (VISIT, KEEP_OFF)] == ["Visit every light", "Don't touch the light"]
-    assert Goal(Verb.LEAVE, Count.ALL, Target.MARK).name == "Leave the ring"
-    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT).name == "Circle the light"
-    assert Goal(Verb.STAY, Count.ONE, Target.MARK).name == "Stay in a ring"
-    assert KEEP_OFF.broken == "It touched the light" and VISIT.broken == "Lost"
-    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT, turns=3).about == (
+    alone = level(items=(LIGHTS[0], mark(30.0, 20.0, 12.0)))  # one light, one ring: as shipped
+    names = [g.name(alone) for g in (VISIT, KEEP_OFF)]
+    assert names == ["Visit every light", "Don't touch the light"]
+    assert Goal(Verb.LEAVE, Count.ALL, Target.MARK).name(alone) == "Leave the ring"
+    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT).name(alone) == "Circle the light"
+    assert Goal(Verb.STAY, Count.ONE, Target.MARK).name(alone) == "Stay in a ring"
+    assert KEEP_OFF.broken(alone) == "It touched the light" and VISIT.broken(alone) == "Lost"
+    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT, turns=3).about(alone) == (
         "Go round the light 3 times, either way."
+    )
+
+
+def test_a_name_says_the_light_only_where_the_level_has_one():
+    two = level(items=(*LIGHTS, mark(30.0, 20.0, 12.0), mark(5.0, 5.0, 6.0)))  # two of each
+    assert KEEP_OFF.name(two) == "Touch no light" and VISIT.name(two) == "Visit every light"
+    assert Goal(Verb.LEAVE, Count.ALL, Target.MARK).name(two) == "Leave every ring"
+    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT).name(two) == "Circle a light"
+    assert Goal(Verb.LEAVE, Count.NONE, Target.MARK).name(two) == "Stay inside the rings"
+    assert KEEP_OFF.broken(two) == "It touched a light"
+    assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT, turns=1).about(two) == (
+        "Go round a light 1 time, either way."
+    )
+    one_ring = level(items=(*LIGHTS, mark(30.0, 20.0, 12.0)))
+    assert Goal(Verb.LEAVE, Count.NONE, Target.MARK).name(one_ring) == "Stay inside the ring"
+    assert Goal(Verb.REACH, Count.NONE, Target.MARK).broken(one_ring) == "It went into a ring"
+    assert Goal(Verb.LEAVE, Count.NONE, Target.MARK).about(one_ring) == (
+        "Getting out of the ring loses the run at once."
     )
 
 
@@ -216,7 +236,9 @@ def test_every_sentence_has_a_name_an_icon_the_font_has_and_an_info_text():
             for target in Target:
                 if sensible(verb, many, target) is None:
                     goal = Goal(verb, many, target)
-                    assert goal.name and goal.about and goal.broken, goal
+                    for where in (LEVEL, level(items=(*LIGHTS, mark(0.0, 0.0, 3.0)))):
+                        assert goal.name(where) and goal.about(where), goal
+                        assert goal.broken(where), goal
                     assert goal.icon in GLYPH, goal
 
 

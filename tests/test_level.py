@@ -156,5 +156,5 @@ def test_version_2s_rings_become_marks_on_its_lights_and_its_objectives_sentence
 
 def test_a_goal_must_aim_at_something_the_level_has():
     goal = {"verb": "leave", "count": "all", "target": "mark"}  # D-307: no mark to leave
-    with pytest.raises(ValueError, match="'Leave the ring': the level has no rings"):
+    with pytest.raises(ValueError, match="'Leave every ring': the level has no rings"):
         Level.from_dict(a_level(version=3, objectives=[goal]))

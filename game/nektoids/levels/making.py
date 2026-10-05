@@ -157,7 +157,7 @@ def goal_set(level: Level, index: int, value: float) -> Level:
     goal = level.objectives[index]
     taken = settings(goal)
     if not taken:
-        raise ValueError(f"{goal.name!r} has no setting")
+        raise ValueError(f"{goal.name(level)!r} has no setting")
     name, scale = taken[0]
     value = scale.clamp(value)
     whole = isinstance(getattr(goal, name), int)  # turns
@@ -196,5 +196,7 @@ def _checked(level: Level) -> Level:
             raise Unmade("the swimmer would start inside an obstacle")
     for goal in level.objectives:  # each aims at something the level has (D-307)
         if not _has(level, goal.target):
-            raise Unmade(f"{goal.name} needs {THING[goal.target][2]}: take the goal out first")
+            raise Unmade(
+                f"{goal.name(level)} needs {THING[goal.target][2]}: take the goal out first"
+            )
     return level

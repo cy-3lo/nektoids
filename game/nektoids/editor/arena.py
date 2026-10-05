@@ -411,7 +411,7 @@ class ArenaScene(Frame):
     def counts(self) -> list[Count]:
         """Each objective of the level as the run stands now."""
         pairs = zip(self.level.objectives, self.kept, strict=True)
-        return [Count(o.name, *o.count(k), o.progress(k), o.lost(k)) for o, k in pairs]
+        return [Count(o.name(self.level), *o.count(k), o.progress(k), o.lost(k)) for o, k in pairs]
 
     @property
     def lost_by(self) -> Goal | None:
