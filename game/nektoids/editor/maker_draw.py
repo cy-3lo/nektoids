@@ -11,8 +11,8 @@ its rows and its Wheel (D-068, D-069): each object and how many are on the plane
 then the Wheel round the focus, the focus large at its hub, the line under it saying what it is.
 Goals: each goal's name and bin over its words' buttons, the words it says lit, those that would
 aim at nothing dimmed; the sliders, the time allowed's and each setting's (D-308). Brief: the
-title in a field, the spec in a taller one, wrapped (D-305). Navigator: its rays' row, its
-overview and zoom.
+title in a field, the spec in a taller one, wrapped (D-305). Files: Copy level, then the
+field a level's text is pasted into (D-310). Navigator: its rays' row, its overview and zoom.
 """
 
 from __future__ import annotations
@@ -70,7 +70,7 @@ from nektoids.editor.layout import (
     contains,
     slider_parts,
 )
-from nektoids.editor.maker import MakerScene
+from nektoids.editor.maker import MakerScene, Paste
 from nektoids.editor.objects import NAMES, PLACED, Point, name, reach, says, where
 from nektoids.editor.palette import (
     ACTIVE,
@@ -249,8 +249,8 @@ def _draw_coordinates(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -
 
 def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     """The Maker's own drawers: Objects' rows, each object and how many are on the plane, lit if
-    in hand or focused, then undo and redo; Goals'; Brief's fields; Navigator's rays, overview
-    and zoom."""
+    in hand or focused, then undo and redo; Goals'; Brief's fields; Files'; Navigator's rays,
+    overview and zoom."""
     layout, level = scene.layout, scene.level
     counts = Counter(item.kind for item in level.items)
     for piece, rect in layout.piece_rows:
@@ -283,6 +283,12 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         else:
             _draw_spec(screen, fonts, rect, text, caret)
     _draw_goals(screen, scene, fonts)
+    for button, rect in layout.file_buttons:
+        draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="copy")
+    if layout.level_field is not None:
+        pasting = scene.writing is Paste.LEVEL
+        text, caret = (scene.field.text, scene.field.caret) if pasting else ("", None)
+        draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level")
     for button, rect in scene.layout.view_buttons:
         key = ("key", VIEW_KEYS[button])
         icon = VIEW_ICON[button]

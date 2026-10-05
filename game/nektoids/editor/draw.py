@@ -178,6 +178,8 @@ TIP = {
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
     " into Paste a board, under this row, to bring it back, on this level or another.",
+    FileButton.LEVEL: "Copies the level as text, its JSON, as the game's own level files hold it:"
+    " to keep, or to paste into Paste a level, under this row, to make it again.",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     Drawer.TOOLS: "Tools",
@@ -226,6 +228,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Mode.WRITE: "Write",
     Mode.DELETE: "Delete",
     FileButton.SAVE: "Copy a board",
+    FileButton.LEVEL: "Copy level",
     GoalButton.ADD: "Add a goal",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",

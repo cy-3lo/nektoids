@@ -1,7 +1,7 @@
 """Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
 
 - Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
-  editor, Objectives, Inside, Score and Navigator in the run, Objects, Goals, Brief and
+  editor, Objectives, Inside, Score and Navigator in the run, Objects, Goals, Brief, Files and
   Navigator in the Maker; Hints, Settings and Chapters at its foot, over the accented switch
   to the run, or from the run to the editor (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
@@ -11,7 +11,8 @@
   Save/Load: Copy a board, Paste a board (D-206); Navigator: the view's buttons; Hints: the
   level's, asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the
   levels, then the sandbox, which replaces the full-screen map. Goals, in the Maker: the time
-  allowed, a slider, then each goal's name over three rows of buttons, its words (D-308).
+  allowed, a slider, then each goal's name over three rows of buttons, its words (D-308);
+  Files, in the Maker: Copy level, then a field to paste a level's text into (D-310).
   Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
   the run (D-096). An arrow on the drawer's edge folds it.
 - The rest is the main screen: the tabs over it (Run, Editor, and on the sandbox the Maker,
@@ -166,6 +167,7 @@ class LevelButton(Enum):  # the accented switch at the bar's foot, to the other 
 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
     SAVE = "save"  # Copy a board: its text; the field to paste one is under it
+    LEVEL = "level"  # the Maker's Files: Copy level, its JSON; a field under it (D-310)
 
 
 class ViewButton(Enum):
@@ -214,7 +216,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
-    Env.MAKER: (Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.NAVIGATOR),
+    Env.MAKER: (Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.FILES, Drawer.NAVIGATOR),
 }
 FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT, Env.MAKER: LevelButton.RUN}
@@ -373,6 +375,7 @@ class Layout:
     passkey_field: Rect | None  # Chapters' foot: a level's passkey typed there (D-075)
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # Files' foot: Save (D-206)
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
+    level_field: Rect | None  # the Maker's Files: a level's text pasted there (D-310)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
     tabs: tuple[tuple[str, Rect], ...]  # "run", "editor", and on the sandbox "maker"
     board_area: Rect  # the main screen: the board, or in the run the arena
@@ -448,6 +451,9 @@ def make_layout(
         rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
+    elif drawer is Drawer.FILES and env is Env.MAKER:
+        rows.maker_files()
+        rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.FILES:
         rows.files(files, folded, height, scroll)
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
@@ -527,6 +533,7 @@ def make_layout(
         passkey_field=rows.passkey,
         file_buttons=tuple(rows.of(FileButton)),
         board_field=rows.board_field,
+        level_field=rows.level_field,
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
@@ -564,6 +571,7 @@ class _Rows:
         self.zoom_bar: Rect | None = None
         self.passkey: Rect | None = None
         self.board_field: Rect | None = None
+        self.level_field: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
         self.fields: list[tuple[Brief, Rect]] = []
         self.heads: list[tuple[MadeGoal, Rect]] = []
@@ -616,6 +624,14 @@ class _Rows:
         self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH
 
+    def maker_files(self) -> None:
+        """The Maker's Files (D-310): under Save/Load, Copy level, then a field to paste a
+        level's text into, as the editor's Files has for a board (D-206)."""
+        self._title("Save/Load", self.sections)
+        self._row(FileButton.LEVEL)
+        self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
+        self.y += ROW_PITCH
+
     def _folding(
         self,
         groups: Sequence[tuple[str, Sequence[object]]],
@@ -663,7 +679,7 @@ class _Rows:
             listed[:] = [(what, _moved(rect, up)) for what, rect in listed]
         self.picture, self.line = _moved(self.picture, up), _moved(self.line, up)
         self.passkey, self.overview = _moved(self.passkey, up), _moved(self.overview, up)
-        self.zoom_bar = _moved(self.zoom_bar, up)
+        self.zoom_bar, self.level_field = _moved(self.zoom_bar, up), _moved(self.level_field, up)
 
     def tools(self, height: int, wheel_folded: bool, scroll: int) -> None:
         """Write and Delete, then undo and redo, as rows, scrolled above the Wheel if they do not
@@ -858,6 +874,15 @@ def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
 
 def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
     return next((b for b, rect in layout.file_buttons if contains(rect, point)), None)
+
+
+def level_field_at(layout: Layout, point: tuple[int, int]) -> bool:
+    """Whether `point` is on the Maker's field for a level's text, in its Files (D-310)."""
+    return (
+        layout.level_field is not None
+        and _listed(layout, point)
+        and contains(layout.level_field, point)
+    )
 
 
 def board_field_at(layout: Layout, point: tuple[int, int]) -> bool:

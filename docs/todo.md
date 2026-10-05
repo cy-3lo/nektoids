@@ -29,7 +29,8 @@ taken, when it starts.
         seconds and a circle's turns, their values typed too (D-308, #59, #60, #61).
       To do, in this order:
       - [ ] Save: Copy level (its JSON, as `to_json` writes it), Paste a level, Start from a
-        blank plane or a shipped level.
+        blank plane or a shipped level (D-310). Done: Copy level and Paste a level, in the
+        Maker's Files (#64); to come, Start from.
       - [ ] The board: zone, stock and locked parts, set with the board editor itself.
       - [ ] A clear check, as in Mario Maker: a level is shared only once its maker has won it;
         the winning board goes with it, as its proof and as the score to beat.
