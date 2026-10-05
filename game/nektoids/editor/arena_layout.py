@@ -72,7 +72,7 @@ VIEW_BUTTON = {  # Navigator's rows, as the run's buttons
 # drawers' keys may differ, each the initial of a drawer of its environment (D-069), and so may
 # Navigator's Motion and Streams, M and W, Move and Wire in the editor, which never shows them.
 BUTTON_KEYS = {
-    ArenaButton.EDIT: "Esc",  # leave the run, as Escape leaves a gesture in the editor
+    ArenaButton.EDIT: "Tab",  # on to the next tab, the editor's, as from every tab (D-304)
     ArenaButton.NEXT: "Enter",
     ArenaButton.RESTART: "0",
     ArenaButton.PLAY: "Space",
@@ -83,7 +83,7 @@ BUTTON_KEYS = {
 # Keys with no button, for developers: turn the swimmer, the light map, the polar plot.
 TURN_KEYS = (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])  # the editor's: L, R
 MAP_KEY, POLAR_KEY = "I", "P"
-# Typed characters that press a button; Space, 0, Esc and Enter are matched on the physical key.
+# Typed characters that press a button; Space, 0, Tab and Enter are matched on the physical key.
 KEY_BUTTONS = {key: b for b, key in BUTTON_KEYS.items() if len(key) == 1 and not key.isdigit()}
 
 

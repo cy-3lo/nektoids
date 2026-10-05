@@ -272,14 +272,17 @@ class MakerScene(Frame):
             self.carrying = self.picked is not None
             self.focus = None if self.picked is not None else self.focus
 
-    def _escape(self) -> None:
-        """Esc: what is in hand put down, then the focus let go."""
+    def _escape(self) -> bool:
+        """Esc: what is in hand put down, then the focus let go; False if there was nothing."""
         if self.picked is not None:
             self.picked = None
         elif self.moving:
             self.moving = False
-        else:
+        elif self.focus is not None:
             self.focus = None
+        else:
+            return False
+        return True
 
     # The view, as the run's (D-066, D-101)
 
@@ -471,10 +474,10 @@ class MakerScene(Frame):
             self._arrow(arrow)
         elif event.scancode == pygame.KSCAN_SPACE:  # the switch: the run (D-021)
             self._ask("run")
-        elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS], as elsewhere
+        elif event.scancode == pygame.KSCAN_TAB:  # the next tab, or the one before (D-304)
+            self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
+        elif event.key == pygame.K_ESCAPE and not self._escape():  # nothing left: the levels
             self.toggle_drawer(Drawer.CHAPTERS)
-        elif event.key == pygame.K_ESCAPE:
-            self._escape()
         elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
             self._do(Tool.DELETE)
         elif event.scancode in digits and digits.index(event.scancode) % 9 < len(DIGITS):

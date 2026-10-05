@@ -1,6 +1,6 @@
 """The arena view: a swimmer running your board in a lit arena (D-018, D-019).
 
-Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Esc)
+Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Tab)
 goes back to it, and once the level is won the banner's Next level (Enter) moves on. Nothing
 touches the programmed swimmer: no dragging or turning it, and none of the developer's tools.
 The developer's (F7): every level, Tab between them, and the tools below.
@@ -588,16 +588,18 @@ class ArenaScene(Frame):
             self.press(ArenaButton.PLAY)
         elif event.scancode in (pygame.KSCAN_0, pygame.KSCAN_KP_0):  # "à" on AZERTY, unshifted
             self.press(ArenaButton.RESTART)
-        elif event.key == pygame.K_ESCAPE:
-            self.press(ArenaButton.EDIT)
+        elif event.key == pygame.K_ESCAPE and self.developer:
+            self.press(ArenaButton.EDIT)  # back to the editor, as F7
+        elif event.key == pygame.K_ESCAPE:  # DRAWER_KEYS[CHAPTERS]: nothing to back out of here
+            self.toggle_drawer(Drawer.CHAPTERS)
         elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
             self.press(ArenaButton.NEXT)
         elif not self.developer:
             drawer = drawer_key(Env.RUN, typed)  # the character first: AZERTY's ? is on the comma
             if drawer is None and event.key == pygame.K_COMMA:  # with Ctrl or Cmd, none is typed
                 drawer = Drawer.SETTINGS
-            if event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS], as in the editor
-                self.toggle_drawer(Drawer.CHAPTERS)
+            if event.scancode == pygame.KSCAN_TAB:  # the next tab, the editor's (D-304)
+                self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
             elif self.start_passkey(typed):  # P in Chapters: a passkey (D-075)
                 pass
             elif drawer is not None:  # its initial, or the comma, with Ctrl or Cmd too (D-069)

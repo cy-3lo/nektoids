@@ -326,10 +326,11 @@ class EditorScene(Frame):
             self._field_key(event)
         elif event.type == pygame.KEYDOWN and self.typing is not None:  # a passkey (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
-        elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
-            event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
-        ):
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             self._escape()
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if not self._escape():  # nothing left to back out of: the levels (D-304)
+                self.toggle_drawer(Drawer.CHAPTERS)
         elif event.type == pygame.KEYDOWN:
             self._key(event)
         if self.moving is None and not self.carrying:  # between gestures
@@ -358,8 +359,8 @@ class EditorScene(Frame):
                 self._enter()
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
-        elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS]
-            self.toggle_drawer(Drawer.CHAPTERS)
+        elif event.scancode == pygame.KSCAN_TAB:  # the next tab, or the one before (D-304)
+            self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
         elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
             self._choose(Tool.DELETE)
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
@@ -1345,8 +1346,9 @@ class EditorScene(Frame):
         elif cell is not None and self.board.node_at(cell) is not None:
             self._refuse("placed by the level", cell)
 
-    def _escape(self) -> None:
-        """Esc, or a right click: back one step, from a gesture, to the Wheel, to nothing."""
+    def _escape(self) -> bool:
+        """Esc, or a right click: back one step, from a gesture, to the Wheel, to nothing; False
+        if there was nothing to back out of."""
         if self.tool is Tool.PAN:
             self.tool = Tool.ADD
         elif self.swapping:
@@ -1359,9 +1361,12 @@ class EditorScene(Frame):
             self._update_ghost()
         elif self.wheel_open and self.focused is not None and self.wheel_keys:
             self.wheel_open, self.wheel_keys = False, False
+        elif self.focused is not None or self.picked is not None or self.tool is not Tool.ADD:
+            self._focus(None)  # and whatever was in hand
         else:
-            self._focus(None)
+            return False
         self.message = ""
+        return True
 
     def hint(self) -> str:
         """What the status line says the player can do now."""

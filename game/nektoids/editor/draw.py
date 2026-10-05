@@ -73,7 +73,6 @@ from nektoids.editor.layout import (
     PASSKEY_KEY,
     SCREEN,
     STATUS_HEIGHT,
-    TAB_KEYS,
     TABS_HEIGHT,
     VIEW_KEYS,
     WHEEL_TITLE,
@@ -95,6 +94,7 @@ from nektoids.editor.layout import (
     overview_view,
     scroll_thumb,
     shown_frame,
+    tab_key_to,
     visible_cells,
 )
 from nektoids.editor.marks import AtWork, at_work
@@ -1211,13 +1211,13 @@ def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
 
 def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     """The name of the bar's icon under the mouse, and its key if it has one, beside the bar;
-    another tab's, under it, with its key (D-303)."""
+    another tab's, under it, with its key: Tab or Shift+Tab (D-304)."""
     target = scene.tooltip
     if target is None:
         return
     if isinstance(target, str):  # another tab
         x, y, _, h = dict(scene.layout.tabs)[target]
-        key = TAB_KEYS[target] if scene.settings.key_hints else None
+        key = tab_key_to(scene.layout, target) if scene.settings.key_hints else None
         text = TAB_TIP[target] + (f" ({key})" if key else "")
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
