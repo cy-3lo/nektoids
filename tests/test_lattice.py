@@ -3,10 +3,10 @@
 from nektoids.levels.lattice import HEADING, POSITION, Range, snap, snapped
 
 
-def test_positions_snap_to_half_units_and_headings_to_fifteen_degrees_never_to_minus_zero():
-    assert (POSITION, HEADING) == (0.5, 15.0)
+def test_positions_snap_to_whole_units_and_headings_to_fifteen_degrees_never_to_minus_zero():
+    assert (POSITION, HEADING) == (1.0, 15.0)  # D-311
     assert snapped((10.2, 13.9)) == (10.0, 14.0)
-    assert snapped((-0.2, 0.26)) == (0.0, 0.5) and str(snapped((-0.2, 0.0))[0]) == "0.0"
+    assert snapped((-0.2, 0.6)) == (0.0, 1.0) and str(snapped((-0.2, 0.0))[0]) == "0.0"
     assert snap(35.0, HEADING) == 30.0 and snap(-7.6, HEADING) == -15.0
 
 

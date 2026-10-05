@@ -68,19 +68,15 @@ def pan_view(view: ArenaView, dx: float, dy: float) -> ArenaView:
     return ArenaView(view.scale, (view.origin[0] + dx, view.origin[1] + dy))
 
 
-DOT_STEP = 0.5  # the Maker's grid: a dot wherever a position may fall (D-301) [u]
-LINE_STEP = 5.0  # ... and a line every so often, its coordinate at the edge [u]
-DOT_LEAST = 6.0  # dots closer than this on screen show every whole u instead, or none [px]
-LABEL_LEAST = 36.0  # lines closer than this on screen have every other one labelled [px]
+DOT_STEP = 1.0  # the Maker's grid: a dot wherever a position may fall, whole u (D-311) [u]
+LINE_STEP = 5.0  # ... and a line every so often; no coordinate, the grid is enough (D-311) [u]
+DOT_LEAST = 8.0  # dots closer than this on screen are not drawn [px]
 
 
-def grid_steps(scale: float) -> tuple[float | None, float]:
-    """The Maker's grid at `scale` [px/u]: the dots' step [u], DOT_STEP, or whole u where they
-    would crowd, None where even those would; and the labels' step [u], every line's, or every
-    other line's where they would crowd."""
-    dots = next((step for step in (DOT_STEP, 1.0) if step * scale >= DOT_LEAST), None)
-    labels = LINE_STEP if LINE_STEP * scale >= LABEL_LEAST else 2 * LINE_STEP
-    return dots, labels
+def dot_step(scale: float) -> float | None:
+    """The Maker's grid at `scale` [px/u]: the dots' step [u], DOT_STEP, or None where they
+    would crowd; the lines every LINE_STEP stay."""
+    return DOT_STEP if DOT_STEP * scale >= DOT_LEAST else None
 
 
 def lattice(low: float, high: float, step: float) -> np.ndarray:

@@ -66,13 +66,13 @@ def test_an_objects_place_and_reach():
     assert where(LEVEL, Point((1.0, 2.0))) == (1.0, 2.0)
     assert (
         reach(LEVEL, Piece.START) == reach(LEVEL, 0) == 1.0
-        and reach(adjusted(made, 6, 2), 6) == 2.0
+        and reach(adjusted(made, 6, 1), 6) == 2.0
     )
 
 
 def test_a_mark_is_grabbed_by_its_rim_or_its_centre_and_a_click_inside_finds_the_plane():
     zone = placed(replace(LEVEL, items=()), ItemKind.MARK, (5.0, 30.0))  # D-306
-    zone = adjusted(zone, 0, 14)  # radius 3 + 14 x 0.5 = 10 u: 100 px at VIEW's 10 px/u
+    zone = adjusted(zone, 0, 7)  # radius 3 + 7 x 1 = 10 u: 100 px at VIEW's 10 px/u
     assert zone.items[0].value == 10.0 and reach(zone, 0) == 10.0
     assert object_at(zone, VIEW, px(5.0, 30.0)) == 0  # its centre
     assert object_at(zone, VIEW, px(15.0, 30.0)) == 0 and object_at(zone, VIEW, px(5.4, 20.0)) == 0

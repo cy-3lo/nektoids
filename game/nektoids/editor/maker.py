@@ -16,7 +16,7 @@ on the lattice. A click on the open plane, inside a mark too, focuses its neares
 whose Wheel offers a light, an obstacle and a mark to put there (D-306); a drag there moves the
 view, as do the arrows. A row of Objects picks what the next click puts on the plane, or is
 dragged there. The mouse wheel on an object makes it more or less, or turns the swimmer. Keys:
-1, 2, 3 a light, an obstacle, a mark; M Move, then the arrows move the focus 0.5 u at a time; L
+1, 2, 3 a light, an obstacle, a mark; M Move, then the arrows move the focus 1 u at a time; L
 and R turn; < and > less and more; Delete; Ctrl+Z and Ctrl+Y undo and redo; Esc puts down what
 is in hand, then lets go of the focus, then opens Chapters (D-304); + and - zoom, C centres, X
 shows or hides the rays; Tab the next tab, Space the run. Each change is a new `Level`
@@ -750,7 +750,7 @@ class MakerScene(Frame):
             self._view(VIEWS[typed])
 
     def _arrow(self, key: int) -> None:
-        """With Move in hand, the focus moved 0.5 u the way of the arrow, a step for undo each;
+        """With Move in hand, the focus moved 1 u the way of the arrow, a step for undo each;
         else the view dragged a step, as the mouse would."""
         left, right, up, _ = ARROWS
         if self.moving and self.focus is not None:

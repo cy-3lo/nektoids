@@ -1,5 +1,6 @@
-"""The lattice a made level's values sit on (D-301): positions every 0.5 u, headings every 15°,
-and each setting within its range, by its step. A lattice keeps a level's text short and its
+"""The lattice a made level's values sit on (D-301, D-311): positions on whole u, headings every
+15°, and each setting within its range, by its step, all of them whole numbers. A lattice keeps a
+level's text short and its
 layout legible; invariant 4 binds only the player's graph. A shipped level's values may lie off
 it: they stay so until the Maker changes them. Pure numbers.
 """
@@ -8,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-POSITION = 0.5  # a position's step, each way [u]
+POSITION = 1.0  # a position's step, each way: whole u (D-311) [u]
 HEADING = 15.0  # a heading's step [degrees]
 
 

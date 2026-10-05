@@ -1728,3 +1728,12 @@ hints. Copy level and Paste a level give the same level back. Start from, under 
 blank plane, no item, the swimmer at the origin, no goal, 30 s, titled "New level", and the
 shipped levels, the seven of the chapter and "Two lights, four obstacles", open or not: the Maker
 is for us and Camille first. It follows in its own pull request.
+
+**D-311 — 2026-10-05 — The Maker's values are whole numbers: positions on whole u, an obstacle's radius 1 to 5 u and a mark's 1 to 30 u by 1. Its grid is a dot every 1 u, 2 px square, and a line every 5 u, with no coordinate at the edges. The time allowed is 5 to 120 s. Amends D-301, D-302, D-306, D-308.**
+The physicist, reviewing the Maker: no rulers, the grid is enough; dots every 1 u and bigger,
+2 px, so that all quantities are integers; the time allowed at most 120 s. Positions snap to
+whole u, and the arrows with Move in hand step 1 u; radii step by 1 u from 1. A light's power,
+the headings every 15°, the time by 5 s, a stay's seconds and a circle's turns were whole
+already. The dots go where they would come closer than 8 px, the lines every 5 u stay. A shipped
+value off the lattice, the sandbox's lights at 27.5 u, Patience's obstacles of 1.5 u, stays as it
+is until the Maker changes it (D-302).
