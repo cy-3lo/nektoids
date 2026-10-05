@@ -1,11 +1,11 @@
 """Drawing the Maker (D-301). Reads the scene; never changes it.
 
 The plane at large, as the run shows it, over its grid: a dot wherever a position may fall,
-every 0.5 u, every whole u farther out, none farther still; a line every 5 u, its coordinate at
-the top and left edges, every other one's when they crowd (`grid_steps`). Over the grid the
-light's rays, as they stand when the run starts, the obstacles, the lights, and the swimmer
-where it starts, its wedge where it heads; the focus lit, a ring round its object or a cross on
-its point; what is in hand, where a click would put it. Round it, the frame (`draw.py`): the
+every whole u, 2 px wide, none where they would crowd (`dot_step`); a line every 5 u, no
+coordinate: the grid is enough (D-311). Over the grid the light's rays, as they stand when the
+run starts, the obstacles, the lights, and the swimmer where it starts, its wedge where it
+heads; the focus lit, a ring round its object or a cross on its point; what is in hand, where a
+click would put it. Round it, the frame (`draw.py`): the
 tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts draws
 its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and redo,
 then the Wheel round the focus, the focus large at its hub, the line under it saying what it is.
@@ -33,7 +33,7 @@ from nektoids.editor.arena_draw import (
     draw_overview,
     draw_rays,
 )
-from nektoids.editor.arena_view import LINE_STEP, grid_steps, lattice, shown
+from nektoids.editor.arena_view import LINE_STEP, dot_step, lattice, shown
 from nektoids.editor.draw import (
     ROW_NAME,
     TIP,
@@ -58,7 +58,6 @@ from nektoids.editor.layout import (
     BAR_WIDTH,
     EDIT_KEYS,
     FIELD_PAD,
-    HANDLE,
     HINT_LINE,
     SPEC_LINES,
     VIEW_KEYS,
@@ -88,7 +87,6 @@ from nektoids.editor.palette import (
     LIT,
     OBSTACLE,
     PLANE_DOT,
-    PLANE_LABEL,
     PLANE_LINE,
     REFUSED,
     RULE,
@@ -103,14 +101,14 @@ from nektoids.levels.making import BLANK_TIME, NEW, lacks
 from nektoids.levels.objectives import Count, Target, Verb, settings
 from nektoids.sim.arena import LIGHT_RADIUS
 
-LABEL_INSET = 3  # a line's coordinate, from the line and from the plane's edge [px]
 FOCUS_GAP = 4  # from an object's rim to the ring round it when focused [px]
 FOCUS_DOT = 5  # a focused point's circle; its cross's arms reach 6 px past it [px]
+DOT_SIZE = 2  # a dot of the grid, square [px] (D-311)
 PIECE_ABOUT = {  # what Objects' rows' info boxes say
     Piece.LIGHT: "Click it, then the plane, or drag it there. Its power, 1 to 16, is how much"
     " light it gives: what an eye reads of it falls as 1/r.",
     Piece.OBSTACLE: "Click it, then the plane, or drag it there. A disc the swimmer slides round"
-    " and the light does not cross: it casts a shadow. Its radius, 0.5 to 5 u.",
+    " and the light does not cross: it casts a shadow. Its radius, 1 to 5 u.",
     Piece.START: "Where the swimmer starts, and which way it heads. Drag it, or turn it with L"
     " and R, or the mouse wheel on it.",
 }
@@ -147,7 +145,6 @@ def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     draw_symbol(screen, BODY, centre, radius, scene.heading, SYMBOL_WIDTH)
     _draw_focus(screen, scene)
     _draw_in_hand(screen, scene, fonts)
-    _draw_coordinates(screen, scene, fonts)
     screen.set_clip(None)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
@@ -199,7 +196,7 @@ def _draw_object(screen: pygame.Surface, fonts: Fonts, kind: ItemKind, centre, r
 def _draw_grid(screen: pygame.Surface, scene: MakerScene) -> None:
     """The plane as far as it shows: its dots, if they do not crowd, and a line every 5 u."""
     view, area = scene.view, pygame.Rect(scene.arena_area)
-    dots, _ = grid_steps(view.scale)
+    dots = dot_step(view.scale)
     if dots is None:
         pygame.draw.rect(screen, SHADOW, area)
     else:
@@ -226,30 +223,13 @@ def _dotted(scene: MakerScene, area: pygame.Rect, step: float) -> pygame.Surface
         xs, ys = xs[(xs >= 0) & (xs < area.w)], ys[(ys >= 0) & (ys < area.h)]
         pixels = np.empty((area.h, area.w, 3), dtype=np.uint8)
         pixels[...] = SHADOW
-        pixels[np.ix_(ys, xs)] = PLANE_DOT
+        for dy in range(DOT_SIZE):  # a square of DOT_SIZE pixels, from the point down and right
+            for dx in range(DOT_SIZE):
+                rows, cols = ys + dy, xs + dx
+                pixels[np.ix_(rows[rows < area.h], cols[cols < area.w])] = PLANE_DOT
         flat = pygame.image.frombuffer(pixels.tobytes(), area.size, "RGB")
         _dots_cache["surface"], _dots_cache["key"] = flat.copy(), key  # its own pixels
     return _dots_cache["surface"]
-
-
-def _draw_coordinates(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """Each labelled line's coordinate [u]: x along the plane's top edge, y down its left, clear
-    of the drawer's fold arrow."""
-    view, area = scene.view, pygame.Rect(scene.arena_area)
-    _, step = grid_steps(view.scale)
-    left, bottom, right, top = shown(view, tuple(area))
-    height = fonts.label.get_height()
-    edge = area.left + LABEL_INSET + (HANDLE[0] if scene.layout.fold_handle else 0)
-    for x in lattice(left, right, step):
-        px = round(view.to_screen(x, 0.0)[0])
-        shown_x = cached_text(fonts.label, f"{x + 0.0:g}", PLANE_LABEL)  # no "-0"
-        screen.blit(shown_x, (px + LABEL_INSET, area.top + LABEL_INSET))
-    for y in lattice(bottom, top, step):
-        py = round(view.to_screen(0.0, y)[1])
-        if py < area.top + LABEL_INSET + height:
-            continue  # among the x's
-        shown_y = cached_text(fonts.label, f"{y + 0.0:g}", PLANE_LABEL)
-        screen.blit(shown_y, (edge, py + LABEL_INSET))
 
 
 def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
@@ -422,8 +402,8 @@ def _draw_hub(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, centre) -
         item = scene.level.items[focus]
         size = {
             ItemKind.LIGHT: 0.45,
-            ItemKind.OBSTACLE: 0.25 + 0.13 * item.value,  # 0.5 to 5 u
-            ItemKind.MARK: 0.3 + 0.02 * item.value,  # 0.5 to 30 u
+            ItemKind.OBSTACLE: 0.25 + 0.13 * item.value,  # 1 to 5 u
+            ItemKind.MARK: 0.3 + 0.02 * item.value,  # 1 to 30 u
         }[item.kind]
         _draw_object(screen, fonts, item.kind, centre, size * WHEEL_HEX)
 

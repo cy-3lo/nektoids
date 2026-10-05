@@ -33,11 +33,11 @@ from nektoids.sim.arena import BASE_RADIUS
 
 SETTING = {  # what each item's setting may be (D-301)
     ItemKind.LIGHT: Range(1.0, 16.0, 1.0),  # its power
-    ItemKind.OBSTACLE: Range(0.5, 5.0, 0.5, "u"),  # its radius
-    ItemKind.MARK: Range(0.5, 30.0, 0.5, "u"),  # its radius: a zone as wide as Fear's ring
+    ItemKind.OBSTACLE: Range(1.0, 5.0, 1.0, "u"),  # its radius, whole u (D-311)
+    ItemKind.MARK: Range(1.0, 30.0, 1.0, "u"),  # its radius: a zone as wide as Fear's ring
 }
 NEW = {ItemKind.LIGHT: 4.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 3.0}  # a new item's setting
-TIME = Range(5.0, 300.0, 5.0, "s")  # the time allowed, which every level has (D-301)
+TIME = Range(5.0, 120.0, 5.0, "s")  # the time allowed, which every level has (D-301, D-311)
 GOALS_MOST = 2  # goals a made level asks, besides its time (D-308)
 BLANK_TIME = 30.0  # a blank plane's time allowed [s] (D-310)
 TITLE_LONGEST = 40  # characters: the caption's line holds it with a short spec beside it

@@ -9,7 +9,6 @@ from nektoids.editor.arena_view import (
     FAN_DRIFT,
     FAN_SWING,
     GRAB,
-    LABEL_LEAST,
     LINE_STEP,
     MAX_SCALE,
     MIN_SCALE,
@@ -18,9 +17,9 @@ from nektoids.editor.arena_view import (
     ArenaView,
     Rays,
     body_at,
+    dot_step,
     edge_marker,
     frame,
-    grid_steps,
     lattice,
     map_grid,
     map_points,
@@ -262,13 +261,10 @@ def test_the_runs_extent_grows_by_union_and_a_frame_at_its_border_touches_it():
 
 
 def test_the_makers_grid_shows_where_a_position_may_fall_unless_its_dots_would_crowd():
-    assert DOT_STEP == 0.5 and LINE_STEP == 5.0  # D-301, todo section 11's lattice
-    assert grid_steps(16.0) == (0.5, 5.0)  # the opening zoom (D-101): a dot every 8 px
-    assert grid_steps(DOT_LEAST / DOT_STEP) == (0.5, 5.0)
-    assert grid_steps(0.99 * DOT_LEAST / DOT_STEP)[0] == 1.0  # whole u, farther out
-    assert grid_steps(0.99 * DOT_LEAST)[0] is None  # and none farther still
-    assert grid_steps(MIN_SCALE) == (None, 10.0)  # every other line labelled
-    assert grid_steps(LABEL_LEAST / LINE_STEP)[1] == 5.0
+    assert DOT_STEP == 1.0 and LINE_STEP == 5.0  # D-311: whole u, a line every 5
+    assert dot_step(16.0) == 1.0  # the opening zoom (D-101): a dot every 16 px
+    assert dot_step(DOT_LEAST / DOT_STEP) == 1.0
+    assert dot_step(0.99 * DOT_LEAST) is None and dot_step(MIN_SCALE) is None  # none farther
 
 
 def test_the_lattice_holds_every_multiple_of_its_step_between_its_ends_and_the_ends_if_on_it():

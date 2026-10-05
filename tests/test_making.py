@@ -51,13 +51,13 @@ def test_an_item_placed_lands_on_the_lattice_last_in_order_set_as_new_and_the_ol
 
 def test_an_item_moved_or_set_stays_on_the_lattice_and_within_its_range():
     light = len(LEVEL.items) - 6  # the first light, power 8
-    assert moved(LEVEL, light, (12.74, 3.1)).items[light].at == (12.5, 3.0)
+    assert moved(LEVEL, light, (12.74, 3.1)).items[light].at == (13.0, 3.0)  # whole u, D-311
     assert adjusted(LEVEL, light, 3).items[light].value == 11.0
     assert adjusted(LEVEL, light, 99).items[light].value == SETTING[ItemKind.LIGHT].hi
     obstacle = 2  # radius 1
-    assert adjusted(LEVEL, obstacle, -1).items[obstacle].value == 0.5
-    assert adjusted(LEVEL, obstacle, -5).items[obstacle].value == 0.5  # no smaller
-    assert adjusted(LEVEL, obstacle, 2).items[obstacle].value == 2.0
+    assert adjusted(LEVEL, obstacle, -1).items[obstacle].value == 1.0  # no smaller
+    assert adjusted(LEVEL, obstacle, 2).items[obstacle].value == 3.0
+    assert adjusted(LEVEL, obstacle, 9).items[obstacle].value == 5.0  # no bigger
 
 
 def test_a_light_on_an_obstacle_and_a_start_inside_one_are_refused_with_their_reason():
@@ -82,7 +82,7 @@ def test_an_item_removed_takes_its_place_out_and_the_others_move_up():
 
 
 def test_the_start_moves_on_the_lattice_and_turns_by_fifteen_degrees_within_a_turn():
-    assert start_moved(LEVEL, (4.3, 4.8)).start == (4.5, 5.0, 20.0)
+    assert start_moved(LEVEL, (4.3, 4.8)).start == (4.0, 5.0, 20.0)
     assert turned(LEVEL, 1).start[2] == 30.0  # 35, onto the lattice: touched, it snaps
     assert turned(turned(LEVEL, 1), 1).start[2] == 45.0
     assert turned(turned(LEVEL, -1), -1).start[2] == 345.0  # 5, then -10: within [0, 360)
@@ -107,12 +107,12 @@ def test_a_title_and_a_spec_are_written_their_spaces_squeezed_and_never_left_emp
         specified(LEVEL, "")
 
 
-def test_a_mark_goes_anywhere_its_radius_from_half_a_unit_to_thirty():
+def test_a_mark_goes_anywhere_its_radius_from_one_unit_to_thirty():
     on_light = placed(LEVEL, ItemKind.MARK, LEVEL.items[0].at)  # D-306: no light refuses it
     assert on_light.items[-1].value == NEW[ItemKind.MARK] == 3.0
     over = placed(LEVEL, ItemKind.MARK, (15.0, 19.0))  # on the swimmer, on obstacles: a zone
     assert adjusted(over, 6, 99).items[6].value == SETTING[ItemKind.MARK].hi == 30.0
-    assert adjusted(over, 6, -99).items[6].value == 0.5
+    assert adjusted(over, 6, -99).items[6].value == 1.0
     assert (over.arena.lights, over.arena.obstacles) == (LEVEL.arena.lights, LEVEL.arena.obstacles)
 
 
@@ -125,10 +125,10 @@ def test_the_last_of_a_kind_a_goal_aims_at_stays():
     assert len(removed(two, 6).marks) == 1  # one of two may go
 
 
-def test_the_time_allowed_sits_on_five_second_steps_from_five_seconds_to_three_hundred():
+def test_the_time_allowed_sits_on_five_second_steps_from_five_seconds_to_two_minutes():
     assert LEVEL.time_limit == 120.0 and timed(LEVEL, 42.0).time_limit == 40.0
     assert timed(LEVEL, 0.0).time_limit == TIME.lo == 5.0
-    assert timed(LEVEL, 999.0).time_limit == TIME.hi == 300.0
+    assert timed(LEVEL, 999.0).time_limit == TIME.hi == 120.0  # D-311
 
 
 def test_a_goal_added_is_the_first_sentence_the_level_can_hold_and_does_not_ask_two_at_most():
