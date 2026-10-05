@@ -3,7 +3,7 @@
 Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Esc)
 goes back to it, and once the level is won the banner's Next level (Enter) moves on. Nothing
 touches the programmed swimmer: no dragging or turning it, and none of the developer's tools.
-The developer's (F3): every level, Tab between them, and the tools below.
+The developer's (F7): every level, Tab between them, and the tools below.
 
 Left, the arena: the light as rays (or, with I, as a map), the obstacles and the lights, and the
 swimmer as a circle round a wedge; its eyes and thrusters sit where the board puts them on it.
@@ -577,6 +577,8 @@ class ArenaScene(Frame):
     def _key(self, event: pygame.event.Event) -> None:
         if self.typing is not None:  # a passkey in Chapters takes every key (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
+            return
+        if not self.developer and self.tab_key(pygame.key.name(event.key)):  # F1 F2 F3, D-303
             return
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         typed = KEY_ALIASES.get(event.unicode, event.unicode).upper()

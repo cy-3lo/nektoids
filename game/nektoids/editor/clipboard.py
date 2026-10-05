@@ -6,7 +6,8 @@ refuses `navigator.clipboard.readText`. So the page does it, with a few lines of
 in once at startup (`install`): Save writes the text with `navigator.clipboard.writeText` on a
 click; Load focuses a text field of the page's own, invisible, once the click is over, which
 Cmd/Ctrl+V pastes into and whose keys never reach the game; the editor reads it once a frame.
-Natively, `pygame.scrap` does both, and the editor hands the field pygame's keys.
+Natively, `pygame.scrap` does both, and the editor hands the field pygame's keys. The page's
+own F1 and F3, help and find, are stopped: they are the Run's and the Maker's tabs (D-303).
 """
 
 from __future__ import annotations
@@ -17,6 +18,9 @@ import sys
 WEB = sys.platform == "emscripten"
 
 PAGE = r"""
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'F1' || e.key === 'F3') { e.preventDefault(); }  // the tabs', not help, find
+});
 window.nkCopy = function (text) {
   if (navigator.clipboard) { navigator.clipboard.writeText(text).catch(function () {}); }
 };

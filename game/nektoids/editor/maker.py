@@ -461,6 +461,8 @@ class MakerScene(Frame):
         if self.typing is not None:  # a passkey in Chapters takes every key (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
             return
+        if self.tab_key(pygame.key.name(event.key)):  # F1, F2, F3 (D-303)
+            return
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         typed = KEY_ALIASES.get(event.unicode, event.unicode).upper()
         drawer = drawer_key(Env.MAKER, typed)  # the character first: AZERTY's ? is on the comma

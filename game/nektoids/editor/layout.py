@@ -71,6 +71,7 @@ TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
 TABS = ("run", "editor")  # a level's tabs, Run first (D-069)
 MAKER_TABS = (*TABS, "maker")  # the sandbox's: the Maker makes its level (D-301)
 TAB_WIDTHS = {"run": 64, "editor": 84, "maker": 80}  # [px]
+TAB_KEYS = {"run": "F1", "editor": "F2", "maker": "F3"}  # each tab's key, in their order (D-303)
 STATUS_HEIGHT = 28  # [px]
 CONTROLS_HEIGHT = 48  # the run's controls, a strip under the arena [px]
 MARGIN = 16  # [px]
@@ -255,7 +256,7 @@ MAKER_VIEWS = (ViewButton.RAYS,)  # ... in the Maker: the light, which the plane
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
-# On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F3.
+# On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F7.
 LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
 # Each drawer's key, its initial (D-069): it opens the drawer, or folds it. A letter may mean
 # something else in the other environment, F Fast forward in the run, S Swap in the editor, since

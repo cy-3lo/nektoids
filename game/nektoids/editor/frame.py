@@ -22,6 +22,7 @@ from nektoids.editor.hints import HintView
 from nektoids.editor.layout import (
     PASSKEY_KEY,
     SCROLL_STEP,
+    TAB_KEYS,
     Drawer,
     Layout,
     Setting,
@@ -162,6 +163,18 @@ class Frame:
             self._set(setting)
             return True
         return False
+
+    def tab_key(self, name: str) -> bool:
+        """F1, F2 or F3, by pygame's name for the key: its tab, Run, Editor or the Maker, as a
+        click on it (D-303); off the sandbox, F3 says where the Maker is. False for any other."""
+        tab = next((tab for tab, key in TAB_KEYS.items() if key.lower() == name), None)
+        if tab is None:
+            return False
+        if tab not in dict(self.layout.tabs):
+            self._refuse("the Maker is Free play's: open it in Chapters")
+        elif tab != self.layout.env.value:
+            self._ask(LEAVE[tab])
+        return True
 
     def start_passkey(self, typed: str) -> bool:
         """P with Chapters open: a passkey to type, not Parts (D-075); False for any other key."""

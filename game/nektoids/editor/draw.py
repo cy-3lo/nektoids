@@ -32,7 +32,7 @@ from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.entry import ENTRY_AREA
-from nektoids.editor.frame import LEAVE, Frame
+from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import (
     EYE_DISC,
     SHAPES,
@@ -73,7 +73,7 @@ from nektoids.editor.layout import (
     PASSKEY_KEY,
     SCREEN,
     STATUS_HEIGHT,
-    SWITCH_TO,
+    TAB_KEYS,
     TABS_HEIGHT,
     VIEW_KEYS,
     WHEEL_TITLE,
@@ -1211,15 +1211,13 @@ def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
 
 def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     """The name of the bar's icon under the mouse, and its key if it has one, beside the bar;
-    another tab's, under it, with the switch's key if the switch goes there too."""
+    another tab's, under it, with its key (D-303)."""
     target = scene.tooltip
     if target is None:
         return
     if isinstance(target, str):  # another tab
         x, y, _, h = dict(scene.layout.tabs)[target]
-        button = SWITCH_TO[scene.layout.env]
-        switch = LEAVE[target] == button.value
-        key = LEVEL_KEYS[button] if switch and scene.settings.key_hints else None
+        key = TAB_KEYS[target] if scene.settings.key_hints else None
         text = TAB_TIP[target] + (f" ({key})" if key else "")
         draw_tip(screen, fonts, text, topleft=(x + 8, y + h + 8))
         return
