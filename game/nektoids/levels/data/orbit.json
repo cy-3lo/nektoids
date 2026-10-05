@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "title": "Orbit",
   "spec": "Circle the light twice without touching it.",
   "start": {"at": [25.0, 9.0], "heading": 0.0},
@@ -14,7 +14,10 @@
     "wires": []
   },
   "time_limit": 30.0,
-  "objectives": [{"kind": "circle light", "turns": 2}, {"kind": "keep off"}],
+  "objectives": [
+    {"verb": "circle", "count": "one", "target": "light", "turns": 2},
+    {"verb": "reach", "count": "none", "target": "light"}
+  ],
   "passkey": "MOON",
   "hints": {
     "idea": "One side pushes always.",

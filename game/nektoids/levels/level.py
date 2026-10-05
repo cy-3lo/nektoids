@@ -4,7 +4,8 @@ placed in the open plane, the board the player builds on, the objectives and the
 Items are to the plane what parts are to the board: each has a kind (`ItemKind`, as a part has
 its `Kind`), the point where it sits, and the one setting its kind takes, a light's power, an
 obstacle's radius or a mark's. A mark is a zone, a circle that only the objectives read: the
-arena, and so the simulation, never has it (D-306). The Maker places items as the board editor
+arena, and so the simulation, never has it (D-306). An objective is a sentence (D-307,
+`objectives.py`). The Maker places items as the board editor
 places parts (D-302). `to_dict` and `from_dict` turn a level into JSON-able data and back, as
 `Board.to_dict` does (D-024); the shipped levels are JSON files in `data/`. Each file says the
 version of its format; `to_dict` writes `FORMAT`, and `from_dict` upgrades an older version
@@ -22,11 +23,12 @@ from functools import cached_property
 from pathlib import Path
 
 from nektoids.graph.board import Board
-from nektoids.levels.objectives import Objective, objective_from_dict, objective_to_dict
+from nektoids.levels import objectives as goals
+from nektoids.levels.objectives import Goal, objective_from_dict, objective_to_dict
 from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
-FORMAT = 2  # the version of a level file's format: `to_dict` writes it; 2 has marks (D-306)
+FORMAT = 3  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "version",
     "title",
@@ -90,7 +92,7 @@ class Level:
     items: tuple[Item, ...]  # in the plane, in the order the arena's arrays take them
     board: Mapping = field(repr=False)  # `Board.to_dict`'s data: zone, stock, the parts it places
     time_limit: float  # the run is over after this long [s]
-    objectives: tuple[Objective, ...] = ()
+    objectives: tuple[Goal, ...] = ()  # each a sentence (D-307)
     tutorial: Mapping | None = field(default=None, repr=False)  # its ghosts and steps (D-039)
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
     hints: Mapping | None = field(default=None, repr=False)  # its idea and shadow (D-078)
@@ -160,6 +162,9 @@ class Level:
             passkey=data.get("passkey"),
             hints=data.get("hints"),
         )
+        for goal in level.objectives:  # each aims at something the level has
+            if not len(goals.targets(level, goal.target)[0]):
+                raise ValueError(f"{goal.name!r}: the level has no {goals.THING[goal.target][1]}")
         if level.passkey is not None and not is_passkey(level.passkey):
             raise ValueError(f"a passkey is A to Z, at most {PASSKEY_LENGTH}: {level.passkey!r}")
         level.arena  # noqa: B018 - built now, so that bad items fail here, not mid-run
@@ -169,7 +174,9 @@ class Level:
 
 def upgraded(data: Mapping) -> Mapping:
     """`data` in FORMAT, from the version it says (D-201): version 1 had no marks, and is
-    version 2 as it is (D-306). ValueError for no version, or one this game does not know."""
+    version 2 as it is (D-306); version 2's objectives become sentences, its rings marks on its
+    lights (D-307, `objectives.upgraded`). ValueError for no version, one this game does not
+    know, or rings that would mix with the marks a level has."""
     if "version" not in data:
         raise ValueError(f"a level without its version: this game reads version {FORMAT}")
     version = data["version"]
@@ -177,6 +184,13 @@ def upgraded(data: Mapping) -> Mapping:
         raise ValueError(
             f"a level of version {version}: this game reads version {FORMAT} and those before"
         )
+    if version < 3:
+        items = list(data["items"])
+        lights = [item["at"] for item in items if item.get("kind") == "light"]
+        sentences, marks = goals.upgraded(list(data["objectives"]), lights)
+        if marks and any(item.get("kind") == "mark" for item in items):
+            raise ValueError("its rings would count its marks: make it again in the Maker")
+        data = {**data, "items": items + marks, "objectives": sentences}
     return {**data, "version": FORMAT}
 
 

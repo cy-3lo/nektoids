@@ -219,7 +219,7 @@ def nearest_and_last(net):
     return min(far), far[-1]
 
 
-LOVE_RING = LEVELS["Love"].objectives[0].radius  # the swimmer's centre stays within it [u]
+LOVE_RING = LEVELS["Love"].marks[0].value  # the swimmer's centre stays within it [u] (D-307)
 TOUCH = REACH * (LIGHT_RADIUS + 1.0)  # a base body reaches the light this near [u]
 
 

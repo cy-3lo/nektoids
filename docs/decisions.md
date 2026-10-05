@@ -1656,3 +1656,27 @@ upgraded as it is; a newer version is refused. Every shipped file is rewritten, 
 line alone changing. `CLAUDE.md`'s scope now says so. Until the next decision makes objectives
 sentences, no objective reads a mark. Objects' Undo and Redo lose their section title, so its
 four rows and theirs fit over the Wheel.
+
+**D-307 — 2026-10-05 — An objective is a sentence: reach, leave, stay or circle; all, one or none; lights, obstacles or marks; with a stay's seconds or a circle's turns. "None" makes it a ban, lost the moment it happens. Version 1's five objectives are five sentences and run as they did, to the tick and the bit. The level format is version 3; version 2's rings become marks on its lights. Amends D-038, D-040, D-097; applies D-306.**
+The physicist proposed objectives that can be "programmed": avoid, reach or approach all, one or
+none of the lights, marks or obstacles. With marks as zones (D-306), "approach" is to reach a
+mark round the thing, and "avoid" is to reach none, so four verbs carry it: reach (touch a light
+or an obstacle, at 1.05 times touching distance, D-043; come into a mark, the swimmer's centre
+inside its circle), leave (get out of a mark), stay (be inside a mark for so many seconds in a
+row) and circle (go round a target so many turns, the angle swept the short way round, D-097).
+"All" is every target of the kind, "one" any of them, "none" a ban. Leave and stay take marks
+alone; stay and circle take no "none". "Leave all marks" means out of every mark at the same
+tick, "stay in one mark" inside any of them, the clock back to 0 only when out of all, as the
+rings were. Version 1's objectives are reach all lights, reach no light, leave all marks (Fear's
+ring, a 12 u mark on its light), stay in one mark for 5 s (Love's, 6 u) and circle one light
+twice; the same comparisons on the same numbers, so every shipped run is bit-identical. A test
+recorded eighteen runs before the change, each level's winners and losers, their outcome, last
+tick, and each objective's count and progress to the last digit, and pins them. Every
+objective of the kind of every target must find one in its level, or the level is refused, and
+the Maker keeps the last one. Names stay as players read them, but "Stay by the light", whose
+ring is now any mark, reads "Stay in a ring"; a mark is "a ring" to the player. The rings, once
+drawn dashed round the lights, are the marks: a grey circle, lit once the goal on them is met.
+Files are version 3, `{"verb", "count", "target"}` and the setting; version 2's objectives are
+upgraded, their rings appended as marks on every light, and a level whose rings would mix with
+its marks, or with rings of another size, is refused. The goals' sliders (D-306's Goals) follow
+in their own pull request.

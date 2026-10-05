@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "title": "Patience",
   "spec": "Touch all three lights.",
   "start": {"at": [8.0, 18.4], "heading": 0.0},
@@ -28,6 +28,6 @@
     "wires": []
   },
   "time_limit": 20.0,
-  "objectives": [{"kind": "visit lights"}],
+  "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "SNAIL"
 }

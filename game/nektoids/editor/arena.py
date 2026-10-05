@@ -104,18 +104,18 @@ from nektoids.graph.board import Board, complexity
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
+from nektoids.levels.objectives import Count as Many
 from nektoids.levels.objectives import (
-    CircleLight,
+    Goal,
     Kept,
-    LeaveRing,
-    Objective,
     Outcome,
-    StayNear,
-    VisitLights,
+    Target,
+    Verb,
     begin,
     follow,
     met,
     outcome,
+    targets,
 )
 from nektoids.levels.score import Score
 from nektoids.sim import world
@@ -414,25 +414,28 @@ class ArenaScene(Frame):
         return [Count(o.name, *o.count(k), o.progress(k), o.lost(k)) for o, k in pairs]
 
     @property
-    def lost_by(self) -> Objective | None:
+    def lost_by(self) -> Goal | None:
         """The objective that lost the run, if one did."""
         pairs = zip(self.level.objectives, self.kept, strict=True)
         return next((o for o, k in pairs if o.lost(k)), None)
 
     @property
     def lights_reached(self) -> np.ndarray:
-        """(L,): the lights a swimmer has reached, if the level asks for visits; else none."""
+        """(L,): the lights a swimmer has reached, if the level asks to reach every one; else
+        none."""
+        every = (Verb.REACH, Many.ALL, Target.LIGHT)
         for objective, kept in zip(self.level.objectives, self.kept, strict=True):
-            if isinstance(objective, VisitLights):
+            if (objective.verb, objective.many, objective.target) == every:
                 return kept.any(axis=0)
         return np.zeros(len(self.arena.lights), dtype=bool)
 
     @property
-    def rings(self) -> list[tuple[float, bool]]:
-        """Each ring an objective draws round the lights, to leave or to stay in: its radius [u],
-        and whether that is done."""
+    def marks_met(self) -> bool:
+        """Whether a goal on the marks, other than a ban, is met: they are drawn lit then, as
+        the rings were (D-307)."""
         pairs = zip(self.level.objectives, self.kept, strict=True)
-        return [(o.radius, met(o, k)) for o, k in pairs if isinstance(o, LeaveRing | StayNear)]
+        on_marks = [(o, k) for o, k in pairs if o.target is Target.MARK and o.many is not Many.NONE]
+        return bool(on_marks) and all(met(o, k) for o, k in on_marks)
 
     def eye_polar(self) -> np.ndarray:
         """(n_eyes, A): E(phi) at each eye of the selected swimmer, for POLAR_ANGLES, uncapped.
@@ -637,18 +640,16 @@ class ArenaScene(Frame):
         return (round(cx - r), round(cy - r), round(2 * r), round(2 * r))
 
     def _rims(self) -> list[np.ndarray]:
-        """Points round the lights that the view frames, (L, 2) each: the rims of the rings an
-        objective draws, and, for Circle the light, a circle as far out as the swimmer starts,
-        which it goes round (D-097)."""
+        """Points that the view frames for a circle goal: a circle round each of its targets,
+        as far out as the swimmer starts, which it goes round (D-097); the marks frame
+        themselves (`_needed`)."""
         x, y, _ = self.level.start
-        far = np.hypot(self.arena.light_xy[:, 0] - x, self.arena.light_xy[:, 1] - y)
-        radii = [r for r, _ in self.rings]
-        radii += [far for o in self.level.objectives if isinstance(o, CircleLight)]
-        return [
-            self.arena.light_xy + np.stack((sx * r, sy * r), axis=-1).reshape(-1, 2)
-            for r in radii
-            for sx, sy in ((1, 0), (-1, 0), (0, 1), (0, -1))
-        ]
+        out = []
+        for goal in self.level.objectives:
+            if goal.verb is Verb.CIRCLE:
+                centres, _ = targets(self.level, goal.target)
+                out.append(rims(centres, np.hypot(centres[:, 0] - x, centres[:, 1] - y)))
+        return out
 
     def extent(self) -> tuple[float, float, float, float]:
         """What Navigator's overview shows, and the most the arena may (D-066), as this frame

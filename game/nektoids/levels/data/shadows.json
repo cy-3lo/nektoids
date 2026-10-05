@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "title": "Shadows",
   "spec": "Reach the light from an obstacle's shadow.",
   "start": {"at": [15.0, 18.4], "heading": 0.0},
@@ -27,7 +27,7 @@
     "wires": []
   },
   "time_limit": 15.0,
-  "objectives": [{"kind": "visit lights"}],
+  "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "DARK",
   "hints": {
     "idea": "No light in the dark.",
