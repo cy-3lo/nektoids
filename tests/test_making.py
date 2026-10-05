@@ -10,12 +10,16 @@ from nektoids.levels.level import ItemKind, Level, to_json
 from nektoids.levels.making import (
     NEW,
     SETTING,
+    SPEC_LONGEST,
+    TITLE_LONGEST,
     Unmade,
     adjusted,
     moved,
     placed,
     removed,
+    specified,
     start_moved,
+    titled,
     turned,
 )
 
@@ -76,3 +80,14 @@ def test_a_made_level_reads_back_as_written_by_to_json():
     text = to_json(made)
     again = Level.from_dict(json.loads(text))
     assert again == made and to_json(again) == text
+
+
+def test_a_title_and_a_spec_are_written_their_spaces_squeezed_and_never_left_empty():
+    made = specified(titled(LEVEL, "  Two   lights "), "Touch\nboth lights.")
+    assert (made.title, made.spec) == ("Two lights", "Touch both lights.")
+    assert made.items == LEVEL.items and len(titled(LEVEL, "x" * 99).title) == TITLE_LONGEST
+    assert len(specified(LEVEL, "y" * 999).spec) == SPEC_LONGEST
+    with pytest.raises(Unmade, match="needs a title"):
+        titled(LEVEL, "   ")
+    with pytest.raises(Unmade, match="what the level asks"):
+        specified(LEVEL, "")

@@ -12,6 +12,7 @@ from nektoids.editor.layout import (
     DRAWER_WIDTH,
     DRAWERS,
     EDIT_KEYS,
+    FIELD_PAD,
     FOOT,
     FOOT_MARGIN,
     HEX_SIZE,
@@ -24,12 +25,14 @@ from nektoids.editor.layout import (
     PALETTE_TOOLS,
     RUN_VIEWS,
     SCREEN,
+    SPEC_LINES,
     TAB_KEYS,
     TABS_HEIGHT,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
     WHEEL_HEIGHT,
+    Brief,
     Drawer,
     EditButton,
     Env,
@@ -49,6 +52,7 @@ from nektoids.editor.layout import (
     board_extent,
     board_field_at,
     board_view_of,
+    brief_field_at,
     cell_at,
     centred_on,
     centred_view,
@@ -645,7 +649,7 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
             assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
     assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
     maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
-    objects = [Drawer.OBJECTS, Drawer.NAVIGATOR]
+    objects = [Drawer.OBJECTS, Drawer.BRIEF, Drawer.NAVIGATOR]
     assert maker.maker and [d for d, _ in maker.drawer_buttons] == [*objects, *FOOT]
     assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
     assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
@@ -692,3 +696,18 @@ def test_tab_goes_round_the_tabs_and_their_tooltips_name_tab_or_shift_tab_to_rea
     assert tab_beside(sandbox[Env.RUN], back=True) == "maker"
     assert tab_key_to(sandbox[Env.EDITOR], "maker") == "Tab"
     assert tab_key_to(sandbox[Env.EDITOR], "run") == "Shift+Tab"
+
+
+def test_brief_holds_the_titles_field_a_row_high_then_the_specs_taller_under_their_labels():
+    layout = make_layout(Drawer.BRIEF, env=Env.MAKER, maker=True)  # D-305
+    (title, high), (spec, tall) = layout.brief_fields
+    assert (title, spec) == (Brief.TITLE, Brief.SPEC)
+    assert [t for t, _ in layout.section_titles] == ["Title", "Spec"]
+    assert high[3] == make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True).piece_rows[0][1][3]
+    assert tall[3] == SPEC_LINES * HINT_LINE + 2 * FIELD_PAD and tall[1] > high[1] + high[3]
+    for field, rect in layout.brief_fields:
+        assert brief_field_at(layout, centre(rect)) is field and contains(
+            layout.drawer_area, rect[:2]
+        )
+    assert brief_field_at(layout, centre(layout.board_area)) is None
+    assert drawer_key(Env.MAKER, "B") is Drawer.BRIEF and drawer_key(Env.EDITOR, "B") is None

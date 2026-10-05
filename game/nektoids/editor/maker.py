@@ -28,6 +28,7 @@ from collections.abc import Callable
 import numpy as np
 import pygame
 
+from nektoids.editor import clipboard
 from nektoids.editor.arena_view import (
     MAX_SCALE,
     OPENING_SCALE,
@@ -51,6 +52,7 @@ from nektoids.editor.layout import (
     KEY_ALIASES,
     TOOL_KEYS,
     VIEW_KEYS,
+    Brief,
     Drawer,
     EditButton,
     Env,
@@ -59,6 +61,7 @@ from nektoids.editor.layout import (
     Rect,
     Tool,
     ViewButton,
+    brief_field_at,
     contains,
     drawer_key,
     edit_button_at,
@@ -80,16 +83,21 @@ from nektoids.editor.scene import (
     KEYPAD_SCANCODES,
 )
 from nektoids.editor.settings import Settings
+from nektoids.editor.textfield import TextField
 from nektoids.editor.wheel import WHEEL_HEX, Slot, centre_in, slot_at, slots
 from nektoids.levels.lattice import POSITION, snapped
 from nektoids.levels.level import Level
 from nektoids.levels.making import (
+    SPEC_LONGEST,
+    TITLE_LONGEST,
     Unmade,
     adjusted,
     moved,
     placed,
     removed,
+    specified,
     start_moved,
+    titled,
     turned,
 )
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
@@ -131,6 +139,9 @@ class MakerScene(Frame):
         self.history: History[Level] = History()  # D-027
         self.wheel_folded = False  # The Wheel's picture folded, as in Tools and Parts (D-069)
         self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse
+        self.writing: Brief | None = None  # Brief's field typed in, the title or the spec
+        self.field: TextField | None = None  # ... what it holds (D-305)
+        self.field_pressed: Brief | None = None  # a press on one: it opens once the click is over
         self._take(level)
         self.view = self._opening()
         self._floor = union(self._needed(), grown(shown(self.view, self.arena_area), ZOOM_STEP))
@@ -176,12 +187,23 @@ class MakerScene(Frame):
             self.focus = None
 
     def update(self) -> None:
-        """Once a frame: the tooltip's rest; the view kept inside the overview (D-066)."""
+        """Once a frame: on the web, what the page's field holds (D-206); the tooltip's rest;
+        the view kept inside the overview (D-066)."""
+        if self.field is not None and clipboard.WEB:  # the page's field took the keys
+            text, caret, ended = clipboard.field()
+            self.field.take(text, caret)
+            if ended is not None:
+                self._field_done(ended)
         self.frame_update()
         self.view = kept_in(self.view, self.arena_area, self.extent())
 
     def hint(self) -> str:
         """The status line, while nothing was refused: what a click or a key does now."""
+        if self.writing is not None:
+            kept = "Enter or a click elsewhere keeps it.  Esc: no change."
+            return f"Type its {self.writing.value}.  {kept}"
+        if self.layout.drawer is Drawer.BRIEF:
+            return "Click the title or the spec to write it.  The caption above follows."
         if self.picked is not None:
             return f"Click the plane: {ONE[self.picked]} goes there.  Esc: put it back."
         if self.moving:
@@ -358,13 +380,22 @@ class MakerScene(Frame):
         elif event.type == pygame.MOUSEWHEEL:
             if not self.frame_wheel(self.pointer, event.y):  # else the drawer's rows (D-096)
                 self._wheel_on(self.pointer, 1 if event.y > 0 else -1)
+        elif event.type == pygame.KEYDOWN and self.field is not None:  # natively (D-206)
+            self._field_key(event)
         elif event.type == pygame.KEYDOWN:
             self._key(event)
 
     def _press(self, pos: tuple[int, int]) -> None:
-        """A click: the frame's, Navigator's, the Wheel's icons, Objects' rows, then the plane:
-        an object focused and grabbed, or a piece in hand put down, or Move done, or the open
-        plane pressed, to focus a point or move the view."""
+        """A click: a field of Brief's, to open once the click is over, a field open kept if the
+        click falls elsewhere; then the frame's, Navigator's, the Wheel's icons, Objects' rows,
+        then the plane: an object focused and grabbed, or a piece in hand put down, or Move
+        done, or the open plane pressed, to focus a point or move the view."""
+        field = brief_field_at(self.layout, pos)
+        if self.field is not None and field is not self.writing:
+            self._field_done("enter")  # a click elsewhere keeps what was typed
+        if field is not None:
+            self.field_pressed = None if field is self.writing else field
+            return
         if self.frame_press(pos):
             return
         slot = slot_at(self.wheel(), pos, WHEEL_HEX)
@@ -426,7 +457,11 @@ class MakerScene(Frame):
 
     def _release(self, pos: tuple[int, int]) -> None:
         """The mouse let go: a row carried lands where it is let go on the plane; a dragged
-        object's move is one step for undo; a click on the open plane focuses its point."""
+        object's move is one step for undo; a click on the open plane focuses its point; a
+        field pressed opens, now the click is over: Safari wants it so (D-206)."""
+        if self.field_pressed is not None:
+            self._open_field(self.field_pressed)
+            self.field_pressed = None
         if self.carrying and contains(self.arena_area, pos):
             self._place(self.picked, self.view.to_world(*pos))
         if self.grab is not None and self.before is not None and self.level != self.before:
@@ -437,6 +472,35 @@ class MakerScene(Frame):
         self.carrying = self.overviewing = self.zooming = False
         self.panning = self.press_at = self.grab = self.before = None
         self.frame_release()
+
+    # Brief's fields (D-305)
+
+    def _open_field(self, which: Brief) -> None:
+        """The title's field or the spec's, holding what the level says now, the caret after it."""
+        text = self.level.title if which is Brief.TITLE else self.level.spec
+        longest = TITLE_LONGEST if which is Brief.TITLE else SPEC_LONGEST
+        self.writing, self.field = which, TextField(text, longest=longest)
+        clipboard.open_field(text, longest)
+
+    def _field_key(self, event: pygame.event.Event) -> None:
+        """A key while a field is open, natively: Ctrl/Cmd+V pastes, Enter keeps it, Esc gives
+        it up; the rest types or moves the caret."""
+        if event.key == pygame.K_v and event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
+            self.field.paste(clipboard.paste())
+            return
+        ended = self.field.type(pygame.key.name(event.key), event.unicode)
+        if ended is not None:
+            self._field_done(ended)
+
+    def _field_done(self, ended: str) -> None:
+        """Enter, or a click elsewhere: the level says what was typed, a step for undo, unless
+        there is nothing in it; Esc: as it was."""
+        which, text = self.writing, self.field.text
+        self.writing = self.field = None
+        clipboard.close_field()
+        if ended == "enter":
+            write = titled if which is Brief.TITLE else specified
+            self._make(lambda level: write(level, text))
 
     def _wheel_on(self, pos: tuple[int, int], steps: int) -> None:
         """The mouse wheel on an object: a light brighter or dimmer, an obstacle bigger or

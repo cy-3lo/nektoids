@@ -1,8 +1,9 @@
 """A level made by hand, one change at a time (D-301): an item placed, moved, set or removed; the
-swimmer's start moved or turned. Each change returns a new `Level`, the old one untouched, so the
-Maker's undo keeps whole levels (D-027), and each lands on the lattice (`lattice.py`). A change
-the level could not hold is refused with its reason, for the status line: a light touching an
-obstacle, as the arena refuses it, or the swimmer starting inside one. Pure Python, no pygame.
+swimmer's start moved or turned; its title or its spec written (D-305). Each change returns a
+new `Level`, the old one untouched, so the Maker's undo keeps whole levels (D-027), and each
+lands on the lattice (`lattice.py`). A change the level could not hold is refused with its
+reason, for the status line: a light touching an obstacle, as the arena refuses it, the swimmer
+starting inside one, a title or a spec with nothing in it. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -19,6 +20,8 @@ SETTING = {  # what each item's setting may be (D-301)
     ItemKind.OBSTACLE: Range(0.5, 5.0, 0.5, "u"),  # its radius
 }
 NEW = {ItemKind.LIGHT: 4.0, ItemKind.OBSTACLE: 1.0}  # a new item's setting
+TITLE_LONGEST = 40  # characters: the caption's line holds it with a short spec beside it
+SPEC_LONGEST = 120  # a sentence or two, as the shipped levels' (D-305)
 
 
 class Unmade(ValueError):
@@ -57,6 +60,22 @@ def turned(level: Level, steps: int) -> Level:
     lattice of headings, in [0, 360)."""
     x, y, heading = level.start
     return replace(level, start=(x, y, snap(heading + steps * HEADING, HEADING) % 360.0))
+
+
+def titled(level: Level, title: str) -> Level:
+    """The level called `title`, its spaces squeezed to one between words."""
+    title = " ".join(title.split())
+    if not title:
+        raise Unmade("a level needs a title")
+    return replace(level, title=title[:TITLE_LONGEST])
+
+
+def specified(level: Level, spec: str) -> Level:
+    """The level asking what `spec` says, its spaces squeezed to one between words."""
+    spec = " ".join(spec.split())
+    if not spec:
+        raise Unmade("say what the level asks")
+    return replace(level, spec=spec[:SPEC_LONGEST])
 
 
 def _with(level: Level, index: int, item: Item) -> Level:

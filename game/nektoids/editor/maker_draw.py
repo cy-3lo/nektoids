@@ -9,7 +9,8 @@ its point; what is in hand, where a click would put it. Round it, the frame (`dr
 tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts draws
 its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and redo,
 then the Wheel round the focus, the focus large at its hub, the line under it saying what it is.
-Navigator: its rays' row, its overview and zoom.
+Brief: the title in a field, the spec in a taller one, wrapped (D-305). Navigator: its rays' row,
+its overview and zoom.
 """
 
 from __future__ import annotations
@@ -35,6 +36,7 @@ from nektoids.editor.draw import (
     draw_bar,
     draw_disc,
     draw_drawer,
+    draw_field,
     draw_fold_title,
     draw_info,
     draw_row,
@@ -48,9 +50,13 @@ from nektoids.editor.icons import EDIT_ICON, PIECE_ICON, VIEW_ICON
 from nektoids.editor.layout import (
     BAR_WIDTH,
     EDIT_KEYS,
+    FIELD_PAD,
     HANDLE,
+    HINT_LINE,
+    SPEC_LINES,
     VIEW_KEYS,
     WHEEL_TITLE,
+    Brief,
     EditButton,
     Piece,
     Tool,
@@ -77,6 +83,7 @@ from nektoids.editor.palette import (
     SHADOW,
     TEXT,
 )
+from nektoids.editor.textfield import caret_at, wrapped
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX, centre_in
 from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
@@ -240,6 +247,14 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
             not can[button],
             EDIT_ICON[button],
         )
+    for field, rect in layout.brief_fields:
+        writing = scene.writing is field
+        said = level.title if field is Brief.TITLE else level.spec
+        text, caret = (scene.field.text, scene.field.caret) if writing else (said, None)
+        if field is Brief.TITLE:
+            draw_field(screen, fonts, rect, text, caret)
+        else:
+            _draw_spec(screen, fonts, rect, text, caret)
     for button, rect in scene.layout.view_buttons:
         key = ("key", VIEW_KEYS[button])
         icon = VIEW_ICON[button]
@@ -248,6 +263,26 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         )
     if scene.layout.overview is not None:
         draw_overview(screen, scene, fonts, (*scene.pos[0], scene.heading))
+
+
+def _draw_spec(screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int | None) -> None:
+    """Brief's spec (D-305): its text wrapped to the box, SPEC_LINES lines of it, those round the
+    caret while it is typed in, the caret a bar; the box outlined in the accent then."""
+    box = pygame.Rect(rect)
+    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
+    if caret is not None:
+        pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
+    font, left, room = fonts.small, box.left + 12, box.width - 24
+    lines = wrapped(text, lambda line: font.size(line.rstrip())[0] <= room)
+    line, along = caret_at(lines, caret) if caret is not None else (0, 0)
+    first = max(0, line - SPEC_LINES + 1)
+    for n, (_, words) in enumerate(lines[first : first + SPEC_LINES]):
+        top = box.top + FIELD_PAD + n * HINT_LINE
+        screen.blit(font.render(words, True, TEXT), (left, top + 1))
+    if caret is not None:
+        x = left + font.size(lines[line][1][:along])[0]
+        top = box.top + FIELD_PAD + (line - first) * HINT_LINE
+        pygame.draw.line(screen, LIT, (x, top + 2), (x, top + HINT_LINE - 2), 2)
 
 
 def _draw_foot(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:

@@ -190,6 +190,7 @@ TIP = {
     Drawer.SETTINGS: "Settings",
     Drawer.CHAPTERS: "Chapters",
     Drawer.OBJECTS: "Objects",
+    Drawer.BRIEF: "Brief",
 }
 SETTING = {  # Settings' rows: their name, icon and what their info box says (D-054)
     Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
@@ -899,21 +900,9 @@ def _draw_board_text(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -
             screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
     for button, rect in layout.file_buttons:
         draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="copy")
-    box, loading = pygame.Rect(layout.board_field), scene.loading
-    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
-    if loading is not None:
-        pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
-    ink = TEXT if loading is not None else DIM_TEXT
-    fonts.icons.draw(screen, "paste", (box.left + 20, box.centery), 16, ink)
-    room = box.width - 42 - 10
-    if loading is None:
-        shown = fonts.text.render("Paste a board", True, ink)
-    else:
-        typed = loading.text.replace(" ", "")
-        while typed and fonts.text.size(f"{typed}_")[0] > room:
-            typed = typed[1:]  # the end shows, where the caret is
-        shown = fonts.text.render(f"{typed}_", True, ink)
-    screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
+    loading = scene.loading
+    text, caret = (loading.text, loading.caret) if loading is not None else ("", None)
+    draw_field(screen, fonts, layout.board_field, text, caret, "paste", "Paste a board")
 
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
@@ -1072,15 +1061,48 @@ def _draw_passkey(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     is typed; else what to do, its key hinted."""
     if scene.layout.passkey_field is None:
         return
-    box, typing = pygame.Rect(scene.layout.passkey_field), scene.typing
-    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
-    if typing is not None:
-        pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
-    ink = TEXT if typing is not None else DIM_TEXT
-    fonts.icons.draw(screen, "key", (box.left + 20, box.centery), 16, ink)
+    typing = scene.typing
     hint = f"Type a word ({PASSKEY_KEY})" if scene.settings.key_hints else "Type a word"
-    shown = fonts.text.render(f"{typing}_" if typing is not None else hint, True, ink)
-    screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
+    caret = None if typing is None else len(typing)
+    draw_field(screen, fonts, scene.layout.passkey_field, typing or "", caret, "key", hint)
+
+
+def draw_field(
+    screen: pygame.Surface,
+    fonts: Fonts,
+    rect,
+    text: str,
+    caret: int | None,
+    icon: str | None = None,
+    hint: str = "",
+) -> None:
+    """A field of text (D-075, D-206, D-305): a box, outlined in the accent while typed in, its
+    icon if it has one; the text, slid left as far as the caret needs to show, the caret a bar
+    where it is while typed in; with no text and not typed in, `hint`, dimmed."""
+    box = pygame.Rect(rect)
+    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
+    if caret is not None:
+        pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
+    ink = TEXT if caret is not None or text else DIM_TEXT
+    left = box.left + (42 if icon else 12)
+    if icon:
+        fonts.icons.draw(screen, icon, (box.left + 20, box.centery), 16, ink)
+    font, room = fonts.text, box.right - 10 - left
+    if not text and caret is None:
+        shown = font.render(_fitted(font, hint, room), True, DIM_TEXT)
+        screen.blit(shown, (left, box.centery - shown.get_height() // 2))
+        return
+    start = 0
+    while caret is not None and start < caret and font.size(text[start:caret])[0] > room:
+        start += 1  # the caret always shows: the text slides left
+    end = len(text)
+    while end > start and font.size(text[start:end])[0] > room:
+        end -= 1
+    shown = font.render(text[start:end], True, ink)
+    screen.blit(shown, (left, box.centery - shown.get_height() // 2))
+    if caret is not None:
+        x = left + font.size(text[start:caret])[0]
+        pygame.draw.line(screen, LIT, (x, box.centery - 9), (x, box.centery + 9), 2)
 
 
 def draw_row(

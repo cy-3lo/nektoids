@@ -55,7 +55,9 @@ SCROLL_STEP = 23  # what a notch of the mouse wheel scrolls a list by: half a ro
 SCROLL_THUMB = 24  # the scroll bar's thumb, at its shortest [px]
 GOAL_HEIGHT = 48  # an objective's row in the run: its name, then its bar and count [px]
 HINT_ROWS = 3  # Hints' rows: the idea, the parts, the shadow (D-078)
-HINT_LINE = 20  # a line of a hint under its row, as a note's [px]
+HINT_LINE = 20  # a line of a hint under its row, as a note's [px]; of Brief's spec's field
+SPEC_LINES = 6  # Brief's spec's field: so many lines, enough for SPEC_LONGEST (D-305)
+FIELD_PAD = 10  # ... and so much over and under them [px]
 SHADOW_GAP = 6  # from the shadow's picture to the line under it [px]
 SHADOW_LEAST = 140  # the shadow's picture shrinks to fit Hints, no smaller: then it scrolls [px]
 ROW_PITCH = 46  # from one row to the next [px]
@@ -124,6 +126,11 @@ class Piece(Enum):  # Objects' rows: what the Maker puts on the plane (D-301)
     START = "start"  # the swimmer's start: always one, moved and turned, never placed
 
 
+class Brief(Enum):  # Brief's fields, in the Maker: what the level is called and asks (D-305)
+    TITLE = "title"
+    SPEC = "spec"
+
+
 class EditButton(Enum):
     UNDO = "undo"
     REDO = "redo"
@@ -169,6 +176,7 @@ class Drawer(Enum):  # D-051
     SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
     OBJECTS = "objects"  # the Maker's: the plane's objects, undo and redo, the Wheel (D-301)
+    BRIEF = "brief"  # the Maker's: the level's title and spec (D-305)
 
 
 class MainView(Enum):  # what the editor's main screen shows, by the drawer open (D-058, D-069)
@@ -191,7 +199,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
-    Env.MAKER: (Drawer.OBJECTS, Drawer.NAVIGATOR),
+    Env.MAKER: (Drawer.OBJECTS, Drawer.BRIEF, Drawer.NAVIGATOR),
 }
 FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
 SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT, Env.MAKER: LevelButton.RUN}
@@ -278,6 +286,7 @@ DRAWER_KEYS = {
     Drawer.SETTINGS: ",",
     Drawer.CHAPTERS: "Esc",
     Drawer.OBJECTS: "O",
+    Drawer.BRIEF: "B",
 }
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
 
@@ -299,6 +308,7 @@ class Layout:
     group_titles: tuple[tuple[str, Rect], ...]  # Parts, Files: a click folds or unfolds its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
     piece_rows: tuple[tuple[Piece, Rect], ...]  # Objects' rows, in the Maker (D-301)
+    brief_fields: tuple[tuple[Brief, Rect], ...]  # Brief's: the title's, the spec's (D-305)
     wheel_view: Rect | None  # Tools, Parts, Objects: the Wheel, what is focused large at its hub
     wheel_fold: Rect | None  # ... The Wheel's title; a click folds or unfolds it (D-069)
     list_area: Rect | None  # where the drawer's rows show, scrolled; they answer there (D-096)
@@ -386,6 +396,8 @@ def make_layout(
         rows.parts(folded, kinds, height, wheel_folded, scroll)
     elif drawer is Drawer.OBJECTS:
         rows.objects(height, wheel_folded, scroll)
+    elif drawer is Drawer.BRIEF:
+        rows.brief()
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES:
@@ -438,6 +450,7 @@ def make_layout(
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
         piece_rows=tuple(rows.of(Piece)),
+        brief_fields=tuple(rows.fields),
         wheel_view=rows.wheel_view,
         wheel_fold=rows.wheel_fold,
         list_area=rows.list_area,
@@ -500,6 +513,7 @@ class _Rows:
         self.passkey: Rect | None = None
         self.board_field: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
+        self.fields: list[tuple[Brief, Rect]] = []
         self.picture: Rect | None = None
         self.line: Rect | None = None
 
@@ -604,6 +618,16 @@ class _Rows:
         """The Maker's objects, then undo and redo, as rows, scrolled above the Wheel if they do
         not fit; at the drawer's foot, the Wheel round what is focused on the plane (D-301)."""
         self._over_wheel((("Plane", Piece), ("Edit", EditButton)), height, wheel_folded, scroll)
+
+    def brief(self) -> None:
+        """The level's title, a field a row high, then its spec, a field SPEC_LINES high, each
+        under its label (D-305)."""
+        for label, field, lines in (("Title", Brief.TITLE, 1), ("Spec", Brief.SPEC, SPEC_LINES)):
+            self._title(label, self.sections)
+            height = ROW_HEIGHT if lines == 1 else lines * HINT_LINE + 2 * FIELD_PAD
+            width = DRAWER_WIDTH - 2 * ROW_INSET
+            self.fields.append((field, (BAR_WIDTH + ROW_INSET, self.y, width, height)))
+            self.y += height + ROW_PITCH - ROW_HEIGHT + SECTION_GAP
 
     def _over_wheel(self, sections: tuple, height: int, wheel_folded: bool, scroll: int) -> None:
         """Each section's title and rows, scrolled above the Wheel if they do not fit."""
@@ -841,6 +865,11 @@ def info_at(layout: Layout, point: tuple[int, int]) -> object | None:
 
 def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
     return _row_at(layout, layout.menu_items, point)
+
+
+def brief_field_at(layout: Layout, point: tuple[int, int]) -> Brief | None:
+    """Brief's field under `point`: the title's or the spec's (D-305)."""
+    return next((f for f, rect in layout.brief_fields if contains(rect, point)), None)
 
 
 def piece_row_at(layout: Layout, point: tuple[int, int]) -> Piece | None:

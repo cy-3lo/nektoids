@@ -44,7 +44,7 @@ from dataclasses import replace
 import pygame
 
 from nektoids.editor import clipboard
-from nektoids.editor.boardfield import BoardField, load
+from nektoids.editor.boardfield import board_field, load
 from nektoids.editor.devdrive import TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
@@ -102,6 +102,7 @@ from nektoids.editor.layout import (
 from nektoids.editor.probe import Probe, level_view
 from nektoids.editor.router import WinGroup
 from nektoids.editor.settings import Settings
+from nektoids.editor.textfield import TextField
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.editor.wheel import (
     SLIDE,
@@ -224,7 +225,7 @@ class EditorScene(Frame):
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
-        self.loading: BoardField | None = None  # Load's field, open: a board's text (D-206)
+        self.loading: TextField | None = None  # Load's field, open: a board's text (D-206)
         self.field_pressed = False  # a press on it: it opens when the click is over
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
         self.ghost_wires: tuple = ()  # ... and its wires, cell to cell (D-074); main.py's too
@@ -232,7 +233,8 @@ class EditorScene(Frame):
     def update(self) -> None:
         """Once per frame."""
         if self.loading is not None and clipboard.WEB:  # the page's field took the keys
-            self.loading.text, ended = clipboard.field()
+            text, caret, ended = clipboard.field()
+            self.loading.take(text, caret)
             if ended is not None:
                 self._field_done(ended)
         if self.flash_frames > 0:
@@ -752,8 +754,8 @@ class EditorScene(Frame):
     def _open_field(self) -> None:
         if self._allowed(Action("load")):  # as a win put back is (D-092)
             self._cancel()
-            self.loading = BoardField()
-            clipboard.open_field()
+            self.loading = board_field()
+            clipboard.open_field("", self.loading.longest)
 
     def _close_field(self) -> None:
         self.loading = None
