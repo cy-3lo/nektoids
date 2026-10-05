@@ -1,13 +1,15 @@
-# Ideas for after the jam
+# Ideas for later
 
-Not in the jam's scope (`CLAUDE.md`, scope lock). Each line says where the idea comes from. An
-idea moves to [`todo.md`](todo.md) only with a decision in [`decisions.md`](decisions.md) that
-puts it in scope. Until D-028 these were logged in the decision log as "post-jam".
+Not in the current stage's scope (`CLAUDE.md`, Scope). Each line says where the idea comes from.
+An idea moves to [`todo.md`](todo.md) only with a decision in [`decisions.md`](decisions.md) that
+puts it in scope: a stage opens with one (D-105). Until D-028 these were logged in the decision
+log as "post-jam".
 
 ## The order after the jam (D-105)
 
-Ship first, and listen: Camille's views and strangers' runs on itch.io (brief §3: do five
-strangers finish the real level?) may reorder all that follows. Then five stages, in this order.
+The jam build shipped as v1.0 (D-106). Listen still: Camille's views and strangers' runs on
+itch.io (brief §3: do five strangers finish the real level?) may reorder what follows. Five
+stages, in this order.
 Each opens with a decision that sets its scope, as the scope lock did for the jam, and each
 brings its own levels.
 
@@ -34,16 +36,18 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
 
 - **Tanks**: reservoirs that store signal, the memory (D-015, `.claude/rules/graph.md`). Their
   law (the physicist, 2026-10-04): T dh/dt = in − h, and the tank sends out its level h, with
-  T ≈ 4 s. That is the lag of every node (D-017) with τ = 4 s instead of `TAU` = 1/60 s, so the
-  change is a τ per kind; dt/τ stays in (0, 1]. Being linear, a tank forgets over about T. Its
-  level drawn as a fill.
+  T ≈ 4 s. That is the lag of every node (D-017) with τ = 4 s instead of `TAU` = 1/60 s: in
+  `graph/laws.py` (D-202), `Relax(Scaled(1.0), tau=4.0)`, one entry in the table of kinds, and
+  `test_laws.py` already checks its fill, 0.5 (1 − 1/e) after T, and that T h is what came in
+  less what went out. Being linear, a tank forgets over about T. Its level drawn as a fill.
 - **Valves** (the physicist's "diode", 2026-10-04): a control b cuts a flow a,
   out = max(0, a − b), and b itself is not changed. Each bead of b stops one bead of a, which
   the beads can show. A diode would add nothing: every wire is one-way already (D-016).
   Difference is |a − b|, the full wave; a valve is the half wave, and the order of its inputs
   matters, so the board must show which one is the control: the control wire ending in a bar,
   ⊣, as repression is drawn in gene networks? With a Source a valve inverts: max(0, 1 − b). It
-  is no threshold: its output stays graded.
+  is no threshold: its output stays graded. Its law is three lines in `graph/laws.py` (D-202),
+  but wires come into a node sorted by the part that feeds them: the control needs ports first.
   - Does b end at the valve, to be forked before it if needed elsewhere (D-016), or pass on
     through it, which makes a part with two outputs?
   - Set aside: a(1 − b), divisive and smoother, but it shuts only when b is full.
@@ -71,7 +75,8 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
     swimmer can signal.
   - Levels: go to the red light and flee the blue one; two lights a colour-blind circuit cannot
     tell apart.
-  - Cost: `y` goes from (N, n) to (N, n, 3), and numpy broadcasts every law.
+  - Cost: `y` goes from (N, n) to (N, n, 3); the laws take the channels as a trailing axis
+    (D-202), and numpy broadcasts them.
   - Today's levels must play as they do: white light is all three channels, so does a thruster
     sum them or take their mean?
   - The three hues join the one palette (D-047, D-049), not pure RGB: red against green is the
@@ -95,7 +100,8 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
   above, potential or linear (a Rankine core turns as a solid), so these are exact.
 - **A flow sensor** (2026-10-04): a part turned like an eye, reading the flow past it, relative
   to the body, along its facing: max(0, (u(x_s) − V − Ω × r_s)·n), never negative (D-014); two
-  facing opposite ways give the sign. Two consequences worth levels:
+  facing opposite ways give the sign. It is a sense: a name in the table of kinds, a function
+  in `sim/world.py`'s `SENSES` (D-203). Two consequences worth levels:
   - A uniform stream cannot be felt: the body drifts with it. Rheotaxis needs a shear, a wake,
     or a light to hold on to. A body that only drifts in a linear flow reads the strain alone,
     E·r_s, Faxén's spin taking out the vorticity.
@@ -116,7 +122,8 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
   mount, read as D-019 reads lights: 1/r, a cosine, shadows; a light that moves, in
   `eye_rates`. Shining all round, or a beam that faces where it is turned? Its swimmer's own
   eyes do not see it at first, the body being transparent to its own parts (D-018); seeing it
-  would be a loop through the world.
+  would be a loop through the world. It is an action: a name in the table of kinds, a function
+  in `sim/world.py`'s `ACTIONS` (D-203).
 - **Something that reads the lamp**: with one swimmer, nothing does yet.
   - Photo-targets, items that count the light they receive: a dose objective, "light the three
     beacons", with shadows in the way.
@@ -150,7 +157,9 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
 - **Histograms per axis**, Zachtronics-style: where you stand among all players on each axis,
   not a ranked list. Needs a server, or distributions shipped with the game.
 - **More axes**: area on the board, wire crossings (brief §1: crossings expensive, D-007).
-- **Bests kept between sessions** (needs saving).
+- **Bests kept between sessions**: a board has its text (D-205) and Save/Load copies it (D-206),
+  but nothing is kept between sessions. The page's storage (`localStorage`), reached as the
+  clipboard is (D-206), could keep the wins of Files.
 
 ## Interface
 
@@ -161,8 +170,8 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
   (D-072).
   - Does a phone's keyboard come up for Chapters' passkey field (D-075)? If not, the field
     needs letters of its own on screen.
-    Load's field is a text field of the page itself (D-206): on a phone it may bring the
-    keyboard up, and the passkey field could be made the same way.
+  - Paste a board's field is a text field of the page itself (D-206): on a phone it may bring
+    the keyboard up, and the passkey field could be made the same way.
   - The canvas is 960 × 640 px: on a phone a 40 px hex is about 16 px wide in portrait and
     24 px in landscape, where a finger wants about 44. Landscape only, larger hexes?
   - Under pygbag, do touches arrive as mouse events or as FINGERDOWN only? Try on a phone
@@ -171,7 +180,7 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
     once the pointer leaves the part's cell (D-085): enough for a finger on large hexes?
 - **A board that does not fit, shown in red** (the physicist, 2026-10-04): loading a text or a
   win that a level cannot hold puts it on the board anyway, its surplus parts in red, instead of
-  refusing with a message (D-092, D-205).
+  refusing with a message (D-092, D-206).
 - **Parts as the encyclopedia** (todo §8 until D-104): a row opens into its entry, in the
   drawer; today the entry opens in a box beside it. The rest of the activity bar is built
   (D-053 to D-069).
@@ -185,6 +194,8 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
 ## Studio
 
 - **The domains nektoids.com and nektoids.io** (the physicist, 2026-10-04): both unregistered
-  that day (`whois`). The itch.io page makes the name public, and a .com costs about €10–15 a
-  year. A .io costs more, and its future has been uncertain since the 2025 UK–Mauritius treaty
-  on the Chagos, so the .com first.
+  that day (`whois`). The itch.io page has made the name public (D-106), and a .com costs about
+  €10–15 a year. A .io costs more, and its future has been uncertain since the 2025 UK–Mauritius
+  treaty on the Chagos, so the .com first.
+- **v1.1 on itch.io** (2026-10-05): `main` has had Save/Load since #46, which v1.0 does not.
+  Upload it before stage 1 ends, or wait for the level maker?
