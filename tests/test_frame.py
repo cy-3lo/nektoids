@@ -262,3 +262,18 @@ def test_f1_f2_f3_ask_for_run_editor_and_the_maker_as_their_tabs_and_f3_off_the_
     assert not scene.tab_key("f4") and not scene.tab_key("space")
     scene.gate = lambda action: action.verb != "edit"  # a tutorial's step holds it
     assert scene.tab_key("f2") and scene.request is None and scene.message == REFUSAL
+
+
+def test_tab_asks_for_the_next_tab_shift_tab_the_one_before_as_a_click_on_it():
+    scene = Scene(None, env=Env.EDITOR, maker=True)  # D-304: Run, Editor, Maker
+    scene.next_tab()
+    assert scene.request == "make"
+    scene.request = None
+    scene.next_tab(back=True)
+    assert scene.request == "run"
+    level = Scene(None, env=Env.RUN)  # Run, Editor
+    level.next_tab()
+    assert level.request == "edit"
+    level.request, level.gate = None, (lambda action: action.verb != "edit")
+    level.next_tab()
+    assert level.request is None and level.message == REFUSAL

@@ -256,12 +256,15 @@ MAKER_VIEWS = (ViewButton.RAYS,)  # ... in the Maker: the light, which the plane
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
-# On the physical key: Space runs, as the arena's play (D-021); Tab, the levels, as in F7.
-LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
+# On the physical key: Space runs, as the arena's play (D-021); from the run, Tab goes on to the
+# next tab, the editor's, as it does from every tab, Shift+Tab back (D-304).
+LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Tab"}
+NEXT_TAB, LAST_TAB = "Tab", "Shift+Tab"  # what the tabs' tooltips show; F1 F2 F3 work too
 # Each drawer's key, its initial (D-069): it opens the drawer, or folds it. A letter may mean
 # something else in the other environment, F Fast forward in the run, S Swap in the editor, since
-# the two never show together. Tab opens the levels, as it opened the map; the comma Settings,
-# with Ctrl or Cmd too; the question mark Hints, H being the hand's (D-078).
+# the two never show together. Esc opens the levels, or folds them, once it has nothing left to
+# back out of (D-304); the comma Settings, with Ctrl or Cmd too; the question mark Hints, H being
+# the hand's (D-078).
 PASSKEY_KEY = "P"  # with Chapters open, a passkey to type, not Parts (D-075)
 DRAWER_KEYS = {
     Drawer.TOOLS: "T",
@@ -273,7 +276,7 @@ DRAWER_KEYS = {
     Drawer.SCORE: "S",
     Drawer.HINTS: "?",
     Drawer.SETTINGS: ",",
-    Drawer.CHAPTERS: "Tab",
+    Drawer.CHAPTERS: "Esc",
     Drawer.OBJECTS: "O",
 }
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
@@ -778,6 +781,20 @@ def overview_at(layout: Layout, point: tuple[int, int]) -> bool:
 
 def tab_at(layout: Layout, point: tuple[int, int]) -> str | None:
     return next((name for name, rect in layout.tabs if contains(rect, point)), None)
+
+
+def tab_beside(layout: Layout, back: bool = False) -> str:
+    """The tab after the open one, from the last round to the first; or, `back`, before it."""
+    names = [name for name, _ in layout.tabs]
+    return names[(names.index(layout.env.value) + (-1 if back else 1)) % len(names)]
+
+
+def tab_key_to(layout: Layout, name: str) -> str | None:
+    """The key that goes to tab `name` from the open one, as its tooltip shows it: Tab to the
+    next, Shift+Tab to the one before; None for the open one (D-304)."""
+    if name == layout.env.value:
+        return None
+    return NEXT_TAB if name == tab_beside(layout) else LAST_TAB
 
 
 def on_fold_handle(layout: Layout, point: tuple[int, int]) -> bool:

@@ -1609,3 +1609,17 @@ editor, F6 the circuit view, F7 the arena view, F8 the board's JSON. In the brow
 and F3 is find: the page stops both, in `clipboard.py`'s script, and the game still gets them;
 tried in headless Chrome. On a Mac's own keyboard F1 to F3 work the screen and the windows
 unless fn is held, or the function keys are set as standard ones in the system's settings.
+
+**D-304 — 2026-10-05 — Tab goes round the tabs, Shift+Tab back; Esc opens Chapters once it has nothing left to back out of. The hints show Tab for the tabs; F1 to F3 work and are not shown. Amends D-069, D-303.**
+The physicist found F1 to F3 awkward, a Mac's keyboard wanting fn for them, and asked for Tab to
+go round the tabs and Esc to open the levels. Tab now goes to the next tab, Run, Editor, then the
+Maker on the sandbox, round to the first, Shift+Tab to the one before; on a level, Tab goes from
+the run to the editor and back. Esc keeps what it backs out of, in the editor the hand, Swap,
+Delete, a part in hand or a wire under way, the Wheel opened by keys, the focus, and in the Maker
+what is in hand, Move, the focus; with nothing left it opens Chapters, or folds it, as Esc opens a
+game's menu. A right click backs out only. In the run, where Esc took the player to the editor,
+it opens Chapters at once, and Tab takes the player to the editor; the end banner's Edit says
+Tab. The tabs' tooltips, the switch's and Chapters' name Tab, Shift+Tab and Esc; F1, F2 and F3
+still go to Run, Editor and the Maker, unnamed, for whoever knows them. Space still runs from
+the editor and the Maker, and plays in the run. The developer's arena (F7) keeps Tab for its
+levels and Esc for the editor.

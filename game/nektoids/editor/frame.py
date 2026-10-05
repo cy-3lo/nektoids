@@ -39,6 +39,7 @@ from nektoids.editor.layout import (
     scroll_for,
     setting_row_at,
     tab_at,
+    tab_beside,
 )
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.settings import Settings
@@ -175,6 +176,11 @@ class Frame:
         elif tab != self.layout.env.value:
             self._ask(LEAVE[tab])
         return True
+
+    def next_tab(self, back: bool = False) -> None:
+        """Tab: the next tab, Run, Editor, then the Maker on the sandbox, round to the first;
+        Shift+Tab, the one before (D-304). As a click on it, so a tutorial's step may hold it."""
+        self._ask(LEAVE[tab_beside(self.layout, back)])
 
     def start_passkey(self, typed: str) -> bool:
         """P with Chapters open: a passkey to type, not Parts (D-075); False for any other key."""

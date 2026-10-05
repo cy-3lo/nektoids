@@ -83,6 +83,8 @@ from nektoids.editor.layout import (
     setting_row_at,
     shown_frame,
     tab_at,
+    tab_beside,
+    tab_key_to,
     value_at,
     view_button_at,
     visible_cells,
@@ -421,8 +423,8 @@ def test_hints_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_th
     assert level_button_at(LAYOUT, centre(switch)) is run
     assert palette_target_at(LAYOUT, centre(switch)) is run
     assert contains(LAYOUT.bar_area, switch[:2])
-    assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
-    assert [DRAWER_KEYS[d] for d in FOOT] == ["?", ",", "Tab"]
+    assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Tab"}  # D-304
+    assert [DRAWER_KEYS[d] for d in FOOT] == ["?", ",", "Esc"]
     assert [name for name, _ in LAYOUT.tabs] == ["run", "editor"]  # Run first (D-069)
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name
@@ -672,3 +674,21 @@ def test_objects_lists_the_planes_objects_then_undo_and_redo_over_the_wheel_as_t
     folded = make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True, wheel_folded=True)
     assert folded.wheel_view is None and folded.wheel_fold[1] > layout.wheel_fold[1]
     assert make_layout(Drawer.TOOLS).piece_rows == ()
+
+
+def test_tab_goes_round_the_tabs_and_their_tooltips_name_tab_or_shift_tab_to_reach_them():
+    level = {env: make_layout(None, env=env) for env in (Env.RUN, Env.EDITOR)}  # D-304
+    assert tab_beside(level[Env.RUN]) == tab_beside(level[Env.RUN], back=True) == "editor"
+    assert tab_beside(level[Env.EDITOR]) == "run"
+    assert (
+        tab_key_to(level[Env.RUN], "editor") == "Tab" and tab_key_to(level[Env.RUN], "run") is None
+    )
+    sandbox = {env: make_layout(None, env=env, maker=True) for env in Env}
+    assert [tab_beside(sandbox[e]) for e in (Env.RUN, Env.EDITOR, Env.MAKER)] == [
+        "editor",
+        "maker",
+        "run",
+    ]
+    assert tab_beside(sandbox[Env.RUN], back=True) == "maker"
+    assert tab_key_to(sandbox[Env.EDITOR], "maker") == "Tab"
+    assert tab_key_to(sandbox[Env.EDITOR], "run") == "Shift+Tab"

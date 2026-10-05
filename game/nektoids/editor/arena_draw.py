@@ -665,7 +665,7 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
         text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F7: editor."
     else:
-        text = f"{keys}  Esc: editor."
+        text = f"{keys}  Tab: editor.  Esc: Chapters."
     text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
     if scene.said and not scene.message:  # a passkey that opened a level (D-075)
         text, colour = scene.said, LIGHT
