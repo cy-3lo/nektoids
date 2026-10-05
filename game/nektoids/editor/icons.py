@@ -67,6 +67,7 @@ DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.CHAPTERS: "map",
     Drawer.OBJECTS: "shapes",
     Drawer.BRIEF: "pen",
+    Drawer.GOALS: "list-check",
 }
 VIEW_ICON = {
     ViewButton.ZOOM_IN: "magnifying-glass-plus",

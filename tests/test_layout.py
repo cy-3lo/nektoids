@@ -38,8 +38,11 @@ from nektoids.editor.layout import (
     Env,
     FileButton,
     Goal,
+    GoalButton,
     HintRow,
+    Knob,
     LevelButton,
+    MadeGoal,
     MainView,
     Mode,
     Piece,
@@ -49,6 +52,9 @@ from nektoids.editor.layout import (
     View,
     ViewButton,
     action_at,
+    along,
+    bin_at,
+    bin_rect,
     board_extent,
     board_field_at,
     board_view_of,
@@ -62,11 +68,13 @@ from nektoids.editor.layout import (
     drawer_key,
     edit_button_at,
     file_button_at,
+    goal_button_at,
     goal_row_at,
     group_at,
     hint_row_at,
     info_at,
     kept_on_board,
+    knob_at,
     level_button_at,
     level_of,
     main_view_for,
@@ -86,6 +94,7 @@ from nektoids.editor.layout import (
     scroll_thumb,
     setting_row_at,
     shown_frame,
+    slider_parts,
     tab_at,
     tab_beside,
     tab_key_to,
@@ -94,6 +103,7 @@ from nektoids.editor.layout import (
     visible_cells,
     wheel_fold_at,
     win_row_at,
+    word_at,
     zoom,
     zoom_bar_at,
     zoom_button_at,
@@ -101,6 +111,7 @@ from nektoids.editor.layout import (
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
 from nektoids.levels.arenas import arenas
+from nektoids.levels.objectives import Count, Target, Verb
 from nektoids.levels.sandbox import free_board, tutorial_board
 
 LAYOUT = make_layout()  # Parts open, every part handed out, the cell under the list
@@ -649,7 +660,7 @@ def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_t
             assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
     assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
     maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
-    objects = [Drawer.OBJECTS, Drawer.BRIEF, Drawer.NAVIGATOR]
+    objects = [Drawer.OBJECTS, Drawer.GOALS, Drawer.BRIEF, Drawer.NAVIGATOR]
     assert maker.maker and [d for d, _ in maker.drawer_buttons] == [*objects, *FOOT]
     assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
     assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
@@ -713,3 +724,43 @@ def test_brief_holds_the_titles_field_a_row_high_then_the_specs_taller_under_the
         )
     assert brief_field_at(layout, centre(layout.board_area)) is None
     assert drawer_key(Env.MAKER, "B") is Drawer.BRIEF and drawer_key(Env.EDITOR, "B") is None
+
+
+def test_goals_shows_the_time_then_each_goals_name_over_its_words_and_a_slider_for_a_setting():
+    two = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, made=(True, False))  # D-308
+    assert [t for t, _ in two.section_titles] == ["Time allowed"]  # the names title the goals
+    assert [k for k, _ in two.knobs] == [Knob(None), Knob(0)]  # the second goal takes none
+    assert [h for h, _ in two.goal_heads] == [MadeGoal(0), MadeGoal(1)] and not two.goal_buttons
+    words = [w.word for w, _ in two.goal_words if w.goal == 0]
+    assert words == [*Verb, *Count, *Target] and len(two.goal_words) == 20
+    tops = sorted({rect[1] for w, rect in two.goal_words if w.goal == 0})
+    assert len(tops) == 3  # a row each: the verbs, how many, the targets
+    for top in tops:  # each row fills the drawer's width, its buttons apart
+        row = sorted(rect for _, rect in two.goal_words if rect[1] == top)
+        assert row[0][0] == two.goal_heads[0][1][0] and row[-1][0] + row[-1][2] == 284
+        assert all(a[0] + a[2] < b[0] for a, b in zip(row, row[1:], strict=False))
+    assert two.scroll_max == 0  # two goals and their settings fit, unscrolled
+    one = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, made=(False,), addable=True)
+    assert [b for b, _ in one.goal_buttons] == [GoalButton.ADD]
+    none = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, addable=True)
+    assert not none.goal_heads and [b for b, _ in none.goal_buttons] == [GoalButton.ADD]
+    assert drawer_key(Env.MAKER, "G") is Drawer.GOALS and drawer_key(Env.EDITOR, "G") is None
+
+
+def test_goals_finds_a_word_a_bin_add_and_a_sliders_track_apart_from_its_value():
+    layout = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, made=(True,), addable=True)
+    for word, rect in layout.goal_words:
+        assert word_at(layout, centre(rect)) == word and bin_at(layout, centre(rect)) is None
+    head = layout.goal_heads[0][1]
+    assert bin_at(layout, centre(bin_rect(head))) == 0 and bin_at(layout, head[:2]) is None
+    assert word_at(layout, (head[0] + 1, head[1] + 1)) is None  # the name: no word
+    add = layout.goal_buttons[0][1]
+    assert goal_button_at(layout, centre(add)) is GoalButton.ADD
+    knob, rect = layout.knobs[1]
+    label, track, value = slider_parts(rect)
+    assert knob_at(layout, centre(track)) == (knob, False)
+    assert knob_at(layout, centre(value)) == (knob, True)  # its box: typed, not dragged
+    assert label[0] < track[0] < track[0] + track[2] < value[0]
+    assert along(track, track[0] - 9) == 0.0 and along(track, track[0] + track[2] + 9) == 1.0
+    assert along(track, track[0] + track[2] / 2) == 0.5
+    assert word_at(layout, centre(layout.board_area)) is None

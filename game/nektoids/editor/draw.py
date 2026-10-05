@@ -79,6 +79,7 @@ from nektoids.editor.layout import (
     Drawer,
     EditButton,
     FileButton,
+    GoalButton,
     HintRow,
     LevelButton,
     MainView,
@@ -191,6 +192,9 @@ TIP = {
     Drawer.CHAPTERS: "Chapters",
     Drawer.OBJECTS: "Objects",
     Drawer.BRIEF: "Brief",
+    Drawer.GOALS: "Goals",
+    GoalButton.ADD: "One goal more, two at most: reach every light, on most levels. Its words"
+    " change under its name, and the bin at its right takes it out.",
 }
 SETTING = {  # Settings' rows: their name, icon and what their info box says (D-054)
     Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
@@ -222,6 +226,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Mode.WRITE: "Write",
     Mode.DELETE: "Delete",
     FileButton.SAVE: "Copy a board",
+    GoalButton.ADD: "Add a goal",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Hand",
@@ -810,7 +815,13 @@ def draw_zoom(screen: pygame.Surface, scene: Frame, fonts: Fonts, level: float) 
     }
     for button, rect in scene.layout.zoom_buttons:
         draw_button(screen, fonts, rect, icons[button], False)
-    x, y, w, h = scene.layout.zoom_bar
+    draw_track(screen, scene.layout.zoom_bar, level)
+
+
+def draw_track(screen: pygame.Surface, rect, level: float, held: bool = False) -> None:
+    """A bar across the middle of `rect`, filled to `level`, 0 at its left end, 1 at its right,
+    a knob where it stands, lit while `held`: Navigator's zoom, the Maker's sliders (D-308)."""
+    x, y, w, h = rect
     track = pygame.Rect(x, y + h // 2 - 3, w, 6)
     pygame.draw.rect(screen, RULE, track, border_radius=3)
     filled = track.copy()
@@ -818,7 +829,7 @@ def draw_zoom(screen: pygame.Surface, scene: Frame, fonts: Fonts, level: float) 
     if filled.width > 0:
         pygame.draw.rect(screen, FULL, filled, border_radius=3)
     knob = (x + round(w * level), track.centery)
-    pygame.draw.circle(screen, FULL, knob, 6)
+    pygame.draw.circle(screen, LIT if held else FULL, knob, 6)
     pygame.draw.circle(screen, DARK, knob, 6, 1)
 
 

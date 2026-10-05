@@ -9,8 +9,10 @@ its point; what is in hand, where a click would put it. Round it, the frame (`dr
 tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts draws
 its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and redo,
 then the Wheel round the focus, the focus large at its hub, the line under it saying what it is.
-Brief: the title in a field, the spec in a taller one, wrapped (D-305). Navigator: its rays' row,
-its overview and zoom.
+Goals: each goal's name and bin over its words' buttons, the words it says lit, those that would
+aim at nothing dimmed; the sliders, the time allowed's and each setting's (D-308). Brief: the
+title in a field, the spec in a taller one, wrapped (D-305). Navigator: its rays' row, its
+overview and zoom.
 """
 
 from __future__ import annotations
@@ -47,6 +49,7 @@ from nektoids.editor.draw import (
     draw_tabs,
     draw_tip,
     draw_tooltip,
+    draw_track,
 )
 from nektoids.editor.icons import EDIT_ICON, PIECE_ICON, VIEW_ICON
 from nektoids.editor.layout import (
@@ -60,9 +63,12 @@ from nektoids.editor.layout import (
     WHEEL_TITLE,
     Brief,
     EditButton,
+    Knob,
     Piece,
     Tool,
+    bin_rect,
     contains,
+    slider_parts,
 )
 from nektoids.editor.maker import MakerScene
 from nektoids.editor.objects import NAMES, PLACED, Point, name, reach, says, where
@@ -73,6 +79,7 @@ from nektoids.editor.palette import (
     BUTTON,
     DARK,
     DIM_TEXT,
+    GREYED,
     HOVER,
     ICON_EDGE,
     LIT,
@@ -89,7 +96,8 @@ from nektoids.editor.textfield import caret_at, wrapped
 from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX, centre_in
 from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
-from nektoids.levels.making import NEW
+from nektoids.levels.making import NEW, lacks
+from nektoids.levels.objectives import Count, Target, Verb, settings
 from nektoids.sim.arena import LIGHT_RADIUS
 
 LABEL_INSET = 3  # a line's coordinate, from the line and from the plane's edge [px]
@@ -102,6 +110,19 @@ PIECE_ABOUT = {  # what Objects' rows' info boxes say
     " and the light does not cross: it casts a shadow. Its radius, 0.5 to 5 u.",
     Piece.START: "Where the swimmer starts, and which way it heads. Drag it, or turn it with L"
     " and R, or the mouse wheel on it.",
+}
+
+WORD_NAME = {  # Goals' buttons (D-308), the targets as Objects names them
+    Verb.REACH: "Reach",
+    Verb.LEAVE: "Leave",
+    Verb.STAY: "Stay",
+    Verb.CIRCLE: "Circle",
+    Count.ALL: "All",
+    Count.ONE: "One",
+    Count.NONE: "None",
+    Target.LIGHT: "Lights",
+    Target.OBSTACLE: "Obstacles",
+    Target.MARK: "Marks",
 }
 
 _dots_cache: dict[str, object] = {"key": None, "surface": None}
@@ -228,7 +249,8 @@ def _draw_coordinates(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -
 
 def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     """The Maker's own drawers: Objects' rows, each object and how many are on the plane, lit if
-    in hand or focused, then undo and redo; Navigator's rays, overview and zoom."""
+    in hand or focused, then undo and redo; Goals'; Brief's fields; Navigator's rays, overview
+    and zoom."""
     layout, level = scene.layout, scene.level
     counts = Counter(item.kind for item in level.items)
     for piece, rect in layout.piece_rows:
@@ -260,6 +282,7 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
             draw_field(screen, fonts, rect, text, caret)
         else:
             _draw_spec(screen, fonts, rect, text, caret)
+    _draw_goals(screen, scene, fonts)
     for button, rect in scene.layout.view_buttons:
         key = ("key", VIEW_KEYS[button])
         icon = VIEW_ICON[button]
@@ -268,6 +291,53 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         )
     if scene.layout.overview is not None:
         draw_overview(screen, scene, fonts, (*scene.pos[0], scene.heading))
+
+
+def _draw_goals(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+    """Goals (D-308): each goal's name, as the run will say it, its bin at the right; under it,
+    its words' buttons, those it says lit, those that would aim at nothing dimmed; the sliders;
+    Add a goal."""
+    layout, level = scene.layout, scene.level
+    for head, rect in layout.goal_heads:
+        x, y, _, h = rect
+        shown = cached_text(fonts.name, level.objectives[head.index].name, TEXT)
+        screen.blit(shown, (x + 2, y + (h - shown.get_height()) // 2))
+        fonts.icons.draw(screen, "trash-can", pygame.Rect(bin_rect(rect)).center, 14, DIM_TEXT)
+    for word, rect in layout.goal_words:
+        goal = level.objectives[word.goal]
+        said = word.word in (goal.verb, goal.many, goal.target)
+        dimmed = not said and lacks(level, word.goal, word.word) is not None
+        box = pygame.Rect(rect)
+        pygame.draw.rect(screen, ACTIVE if said else BUTTON, box, border_radius=6)
+        if said:
+            pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
+        shown = cached_text(fonts.label, WORD_NAME[word.word], GREYED if dimmed else TEXT)
+        screen.blit(shown, shown.get_rect(center=box.center))
+    for knob, rect in layout.knobs:
+        _draw_knob(screen, scene, fonts, knob, rect)
+    for button, rect in layout.goal_buttons:
+        draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="plus")
+
+
+def _draw_knob(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, knob: Knob, rect) -> None:
+    """A slider of Goals: what it sets, at its left; its track, as Navigator's zoom; its value,
+    in a box at its right."""
+    if knob.goal is None:
+        name, now = "Time", scene.level.time_limit
+    else:
+        goal = scene.level.objectives[knob.goal]
+        setting = settings(goal)[0][0]
+        name, now = setting.capitalize(), getattr(goal, setting)
+    scale = scene.scale(knob)
+    label, track, value = slider_parts(rect)
+    shown = cached_text(fonts.label, name, DIM_TEXT)
+    screen.blit(shown, (label[0], label[1] + (label[3] - shown.get_height()) // 2))
+    level = (min(max(now, scale.lo), scale.hi) - scale.lo) / (scale.hi - scale.lo)
+    draw_track(screen, track, level, held=scene.sliding == knob)
+    box = pygame.Rect(value)
+    pygame.draw.rect(screen, BUTTON, box, border_radius=6)
+    shown = cached_text(fonts.small, f"{now:g} {scale.unit}".strip(), TEXT)
+    screen.blit(shown, shown.get_rect(center=box.center))
 
 
 def _draw_spec(screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int | None) -> None:
