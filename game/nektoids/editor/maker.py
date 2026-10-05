@@ -6,7 +6,7 @@ on: its lights, obstacles, marks and rays, and the swimmer where it starts, faci
 heads. Round it, the frame the editor and the run have (`frame.Frame`, D-051): Objects, as Parts
 is the board's: the objects as rows, undo and redo, and at its foot the Wheel round what is
 focused (D-068, D-069, `objects.py`); Goals, the time allowed and the goals, each a sentence
-whose words are buttons, with a slider for its setting (D-308); Brief, the level's title and
+whose words are buttons, with a slider for its setting (D-308); Text, the level's title and
 spec (D-305); Files, the level copied as text, another's text pasted, or a blank plane or a
 shipped level to start from (D-310); Parts, the board's size and how many of each part, which
 the Editor's board takes at once, or refuses while it has more (D-315); Navigator, with
@@ -279,7 +279,7 @@ class MakerScene(Frame):
         if self.writing is not None:
             kept = "Enter or a click elsewhere keeps it.  Esc: no change."
             return f"Type {self._what(self.writing)}.  {kept}"
-        if self.layout.drawer is Drawer.BRIEF:
+        if self.layout.drawer is Drawer.TEXT:
             return "Click the title or the spec to write it.  The caption above follows."
         if self.layout.drawer is Drawer.PARTS:
             return "- and +: how big the board is, and how many of each part it hands out."

@@ -59,7 +59,7 @@ def test_what_the_wheels_line_and_its_tooltips_say():
     assert says(LEVEL, None) == "Click the plane"
     assert says(LEVEL, Point((10.0, 14.5))) == "(10, 14.5): empty"
     assert says(LEVEL, Piece.START) == "Swimmer, heading 20°"
-    assert says(LEVEL, 0) == "A light, power 8" and says(LEVEL, 2) == "An obstacle, radius 1 u"
+    assert says(LEVEL, 0) == "A light, power 8" and says(LEVEL, 2) == "An obstacle, radius 1"
     assert (name(LEVEL, 0, Tool.LESS), name(LEVEL, 0, Tool.MORE)) == ("Dimmer", "Brighter")
     assert (name(LEVEL, 2, Tool.LESS), name(LEVEL, 2, Tool.MORE)) == ("Smaller", "Bigger")
     assert name(LEVEL, Piece.START, Tool.TURN_LEFT) == "Turn left"
@@ -78,14 +78,14 @@ def test_an_objects_place_and_reach():
 
 def test_a_mark_is_grabbed_by_its_rim_or_its_centre_and_a_click_inside_finds_the_plane():
     zone = placed(replace(LEVEL, items=()), ItemKind.MARK, (5.0, 30.0))  # D-306
-    zone = adjusted(zone, 0, 9)  # radius 1 + 9 x 1 = 10 u: 100 px at VIEW's 10 px/u
-    assert zone.items[0].value == 10.0 and reach(zone, 0) == 10.0
+    zone = adjusted(zone, 0, 7)  # radius 1 + 7 x 1 = 8 u, the most: 80 px at VIEW's 10 px/u
+    assert zone.items[0].value == 8.0 and reach(zone, 0) == 8.0
     assert object_at(zone, VIEW, px(5.0, 30.0)) == 0  # its centre
-    assert object_at(zone, VIEW, px(15.0, 30.0)) == 0 and object_at(zone, VIEW, px(5.4, 20.0)) == 0
+    assert object_at(zone, VIEW, px(13.0, 30.0)) == 0 and object_at(zone, VIEW, px(5.4, 22.0)) == 0
     assert object_at(zone, VIEW, px(9.0, 30.0)) is None  # inside: the point there
     lit = placed(zone, ItemKind.LIGHT, (5.0, 30.0))  # a light on its centre: the light first
     assert object_at(lit, VIEW, px(5.0, 30.0)) == 1
-    assert says(zone, 0) == "A mark, radius 10 u" and name(zone, 0, Tool.MORE) == "Bigger"
+    assert says(zone, 0) == "A mark, radius 8" and name(zone, 0, Tool.MORE) == "Bigger"
 
 
 def test_the_wheel_lights_move_on_an_object_more_on_a_new_one_and_the_arrows_go_round():

@@ -302,6 +302,21 @@ def follow(level: Level, kept: Kept, pos: np.ndarray, radius: np.ndarray, dt: fl
     return tuple(o.keep(k, o.marks(level, pos, radius), dt) for o, k in pairs)
 
 
+def lit_marks(level: Level, kept: Kept) -> tuple[bool, ...]:
+    """Which of the level's marks are drawn lit (D-307, D-318): each one entered, for a goal to
+    enter every ring, as the swimmer comes into it; every one once the goals on the marks, bans
+    aside, are all met; none if there are none."""
+    pairs = [(o, k) for o, k in zip(level.objectives, kept, strict=True)]
+    on_marks = [(o, k) for o, k in pairs if o.target is Target.MARK and o.many is not Count.NONE]
+    lit = np.zeros(len(level.marks), dtype=bool)
+    for goal, held in on_marks:
+        if goal.verb is Verb.REACH and goal.many is Count.ALL:  # each ring, as it is entered
+            lit |= held.any(axis=0)
+    if on_marks and all(met(o, k) for o, k in on_marks):
+        lit[:] = True
+    return tuple(bool(v) for v in lit)
+
+
 def met(objective: Goal, kept: np.ndarray) -> bool:
     done, needed = objective.count(kept)
     return done >= needed

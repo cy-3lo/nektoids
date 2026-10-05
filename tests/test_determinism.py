@@ -389,13 +389,15 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # are now to enter its four rings and touch no light, in 20 s. Shadows', Greed's and Patience's
 # winners were recorded again when every position went onto whole units (D-313), and Shadows',
 # Love's and Patience's again when every setting did, Love's light power 4 and its ring 7 u, the
-# obstacles of 1.5 u 2 u (D-317): the same outcomes, a few ticks apart.
+# obstacles of 1.5 u 2 u (D-317): the same outcomes, a few ticks apart; Fear's winner again
+# when its ring went from 12 u to 8 u, the most a mark may be, its light to power 4 and its start
+# 3 u from it (D-318): out of the ring in about the time it took before.
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
     ("Shadows", "DRIVEN"): (Outcome.WON, 446, ((1, 1, 1.0),)),  # D-317
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
-    ("Fear", "fear(NW, SW)"): (Outcome.WON, 388, ((1, 1, 1.0),)),
+    ("Fear", "fear(NW, SW)"): (Outcome.WON, 382, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
     ("Fear", "fear(NE, SE)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
     ("Love", "love(E, E)"): (Outcome.WON, 882, ((1, 1, 1.0), (1, 1, 1.0))),  # D-317

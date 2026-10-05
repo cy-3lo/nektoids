@@ -1840,3 +1840,18 @@ whole settings too, 4 and 2: Love's light goes from 3.5 to power 4 and Patience'
 obstacles from 1.5 u to 2 u. Every level's winners still win and its losers lose; but Love's
 winner on the axis rests 5 u from its brighter light, its rim on the 6 u ring, so the ring is
 7 u, the body inside it again. The pinned runs record Love's, Shadows' and Patience's again.
+
+**D-318 — 2026-10-05 — Brief is called Text (T). The line under the action atop the plane is short: "Enter: brighter". A setting is said without its unit: "radius 2". A light's power and an obstacle's or a mark's radius are whole, 1 to 8; Fear's ring goes from 12 u to 8 u, its light to power 4 and its start to 3 u from it. Each ring of a goal to enter every one lights as it is entered. Amends D-305, D-311, D-314, D-307.**
+The physicist, reviewing the Maker. Brief becomes Text, its key T, which only the Editor's Tools
+used; the code still calls the title and the spec the level's brief. The lines under the action
+atop the plane, which said too much, are now: "Click the plane: place it", "Enter: place it
+here", "Click or arrows: move. Enter: done", "Enter: remove it", "Enter: turn 15° left",
+"Enter: dimmer", and so on; with nothing lit, the object and its setting, "An obstacle, radius
+2", no unit said. Every item's setting is a whole number from 1 to 8: the shipped lights are 3
+to 8, the obstacles 1 or 2, the marks 2 to 12. Fear's ring of 12 u, the one setting above 8, is
+8 u; with it alone the fleeing swimmer was out in 1.3 s rather than 3.2, so, as the physicist
+suggested, its light is dimmer, power 4, and its start nearer, 3 u from it: out in 3.18 s, its
+losers still held in for the 10 s. Its tutorial is left as it is, for later work. In the run, the
+rings of a goal to enter every one now light one by one as the swimmer first comes into each,
+as the lights to reach already get a white circle each; other goals on the marks light them all
+once met, as before, and a ban lights none (`objectives.lit_marks`).

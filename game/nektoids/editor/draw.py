@@ -193,7 +193,7 @@ TIP = {
     Drawer.SETTINGS: "Settings",
     Drawer.CHAPTERS: "Chapters",
     Drawer.OBJECTS: "Objects",
-    Drawer.BRIEF: "Brief",
+    Drawer.TEXT: "Text",  # once Brief (D-318)
     Drawer.GOALS: "Goals",
     GoalButton.ADD: "One goal more, two at most: reach every light, on most levels. Its words"
     " change under its name, and the bin at its right takes it out.",

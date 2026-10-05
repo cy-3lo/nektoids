@@ -13,7 +13,7 @@ redo, then the Wheel round the focus, the focus large at its hub, the line under
 it is. Parts: the board's size and each part handed out, − and + either side of the count,
 greyed at the ends (D-315). Goals: each goal's name and bin over its words' buttons, the words
 it says lit, those that would aim at nothing dimmed; the sliders, the time allowed's and each
-setting's (D-308). Brief: the title in a field, the spec in a taller one, wrapped (D-305).
+setting's (D-308). Text: the title in a field, the spec in a taller one, wrapped (D-305).
 Files: Copy level, then the field a level's text is pasted into, then the levels to start from,
 a blank plane first, the chapter's under their numbers, the sandbox's last (D-310). Navigator:
 its rays' row, its overview and zoom.
@@ -81,7 +81,6 @@ from nektoids.editor.maker import MakerScene, Paste
 from nektoids.editor.objects import (
     KEYS,
     NAMES,
-    ONE,
     PLACED,
     Point,
     name,
@@ -125,10 +124,12 @@ FOCUS_GAP = 4  # from an object's rim to the ring round it when focused [px]
 FOCUS_DOT = 5  # a focused point's circle; its cross's arms reach 6 px past it [px]
 DOT_SIZE = 2  # a dot of the grid, square [px] (D-311)
 PIECE_ABOUT = {  # what Objects' rows' info boxes say
-    Piece.LIGHT: "Click it, then the plane, or drag it there. Its power, 1 to 16, is how much"
+    Piece.LIGHT: "Click it, then the plane, or drag it there. Its power, 1 to 8, is how much"
     " light it gives: what an eye reads of it falls as 1/r.",
     Piece.OBSTACLE: "Click it, then the plane, or drag it there. A disc the swimmer slides round"
-    " and the light does not cross: it casts a shadow. Its radius, 1 to 5 u.",
+    " and the light does not cross: it casts a shadow. Its radius, 1 to 8.",
+    Piece.MARK: "Click it, then the plane, or drag it there. A ring only the goals read: the"
+    " swimmer neither sees nor touches it. Its radius, 1 to 8.",
     Piece.START: "Where the swimmer starts, and which way it heads. Drag it, or turn it with L"
     " and R, or the mouse wheel on it.",
 }
@@ -202,19 +203,18 @@ def _draw_action(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> Non
 
 
 def _action_says(scene: MakerScene, action) -> str:
-    """What the action atop the plane does, in a line (D-314)."""
+    """What the action atop the plane does, in a short line (D-314, D-318)."""
     if isinstance(action, Piece) and scene.picked is action:
-        return f"A click on the plane puts {ONE[action]} there"
+        return "Click the plane: place it"
     if isinstance(action, Piece):
-        return f"Enter puts {ONE[action]} on the point"
+        return "Enter: place it here"
     if action is Tool.MOVE:
-        return "A click on the plane, or the arrows, moves it; Enter or Esc puts it down"
+        return "Click or arrows: move. Enter: done"
     if action is Tool.DELETE:
-        return "Enter takes it off the plane"
+        return "Enter: remove it"
     if action in (Tool.TURN_LEFT, Tool.TURN_RIGHT):
-        return f"Enter turns it 15°, {'left' if action is Tool.TURN_LEFT else 'right'}"
-    more = name(scene.level, scene.focus, action).lower()
-    return f"Enter makes it {more}, again and again; the arrows choose another"
+        return f"Enter: turn 15° {'left' if action is Tool.TURN_LEFT else 'right'}"
+    return f"Enter: {name(scene.level, scene.focus, action).lower()}"
 
 
 def _draw_focus(screen: pygame.Surface, scene: MakerScene) -> None:

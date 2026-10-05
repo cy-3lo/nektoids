@@ -113,7 +113,7 @@ from nektoids.levels.objectives import (
     Verb,
     begin,
     follow,
-    met,
+    lit_marks,
     outcome,
 )
 from nektoids.levels.score import Score
@@ -429,12 +429,10 @@ class ArenaScene(Frame):
         return np.zeros(len(self.arena.lights), dtype=bool)
 
     @property
-    def marks_met(self) -> bool:
-        """Whether a goal on the marks, other than a ban, is met: they are drawn lit then, as
-        the rings were (D-307)."""
-        pairs = zip(self.level.objectives, self.kept, strict=True)
-        on_marks = [(o, k) for o, k in pairs if o.target is Target.MARK and o.many is not Many.NONE]
-        return bool(on_marks) and all(met(o, k) for o, k in on_marks)
+    def marks_lit(self) -> tuple[bool, ...]:
+        """Which marks are drawn lit: each one entered, for a goal to enter every ring, as the
+        swimmer comes into it; every one once their goals are met (D-307, D-318)."""
+        return lit_marks(self.level, self.kept)
 
     def eye_polar(self) -> np.ndarray:
         """(n_eyes, A): E(phi) at each eye of the selected swimmer, for POLAR_ANGLES, uncapped.
