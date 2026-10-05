@@ -99,6 +99,24 @@ def sensible(verb: Verb, count: Count, target: Target) -> str | None:
     return None
 
 
+def reworded(goal: Goal, word: Verb | Count | Target) -> Goal:
+    """The goal with `word` in its place, as the Maker's choosers put it (D-308), the other
+    words moved as little as makes the sentence say something: a leave or a stay aims at marks,
+    a stay or a circle at one or all, never none; a target or a "none" the verb cannot take puts
+    the verb back to reach, which takes any. A setting stays with its verb; a new verb's is at
+    its default."""
+    verb, many, target = goal.verb, goal.many, goal.target
+    if isinstance(word, Verb):
+        verb = word
+        target = Target.MARK if verb in ON_MARKS else target
+        many = Count.ONE if verb in NO_NONE and many is Count.NONE else many
+    else:
+        many, target = (word, target) if isinstance(word, Count) else (many, word)
+        verb = verb if sensible(verb, many, target) is None else Verb.REACH
+    kept = {name: getattr(goal, name) for name, _ in settings(goal)} if verb is goal.verb else {}
+    return Goal(verb, many, target, **kept)
+
+
 @dataclass(frozen=True)
 class Goal:
     """An objective, a sentence (D-307): `verb` `many` `target`, and the setting its verb takes:

@@ -19,6 +19,7 @@ from nektoids.levels.objectives import (
     objective_to_dict,
     outcome,
     reaching,
+    reworded,
     sensible,
     settings,
     upgraded,
@@ -180,6 +181,22 @@ def test_a_sentence_must_say_something_a_run_can_count():
     assert Goal(Verb.STAY, Count.ONE, Target.MARK).seconds == 5.0  # its setting's default
     assert Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT).turns == 2 and VISIT.seconds is None
     assert [n for n, _ in settings(Goal(Verb.CIRCLE, Count.ALL, Target.MARK))] == ["turns"]
+
+
+def test_a_word_chosen_moves_the_others_as_little_as_makes_the_sentence_say_something():
+    stay = Goal(Verb.STAY, Count.ONE, Target.MARK, seconds=12.0)
+    assert reworded(VISIT, Verb.LEAVE) == Goal(Verb.LEAVE, Count.ALL, Target.MARK)  # onto marks
+    assert reworded(KEEP_OFF, Verb.STAY) == Goal(Verb.STAY, Count.ONE, Target.MARK)  # not none
+    assert reworded(KEEP_OFF, Verb.CIRCLE) == Goal(Verb.CIRCLE, Count.ONE, Target.LIGHT)
+    assert reworded(stay, Count.NONE) == Goal(Verb.REACH, Count.NONE, Target.MARK)  # to reach
+    assert reworded(stay, Target.LIGHT) == Goal(Verb.REACH, Count.ONE, Target.LIGHT)
+    assert reworded(stay, Count.ALL) == Goal(Verb.STAY, Count.ALL, Target.MARK, seconds=12.0)
+    assert reworded(stay, Verb.CIRCLE).turns == 2 and reworded(stay, Verb.STAY) == stay
+    assert reworded(VISIT, Target.OBSTACLE) == Goal(Verb.REACH, Count.ALL, Target.OBSTACLE)
+    for word in (*Verb, *Count, *Target):  # whatever the sentence, whatever the word
+        for goal in (VISIT, KEEP_OFF, stay, Goal(Verb.CIRCLE, Count.ALL, Target.OBSTACLE)):
+            again = reworded(goal, word)
+            assert word in (again.verb, again.many, again.target)
 
 
 def test_version_1s_five_objectives_keep_their_names_but_the_stay_whose_ring_is_any_mark():
