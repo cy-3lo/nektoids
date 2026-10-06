@@ -136,6 +136,7 @@ from nektoids.levels.making import (
     Unmade,
     adjusted,
     blank,
+    boarded,
     goal_added,
     goal_removed,
     goal_set,
@@ -321,13 +322,23 @@ class MakerScene(Frame):
             self._take(level)
         return True
 
+    def follow_board(self) -> None:
+        """Once a frame: the level placing what the Editor's board has locked, as the maker locks
+        or frees its parts there (D-319); a step for the Maker's undo, which frees it again."""
+        if self.board is None:
+            return
+        level = boarded(self.level, self.board)
+        if level != self.level:
+            self.history.record(self.level)
+            self._take(level)
+
     def _handed(self, level: Level) -> bool:
         """The Editor's board handed out what `level` hands out, its zone and its parts, at once;
         False, refused with its reason, while the board has more of a part or lies outside, which
         is the player's to take off in the Editor (D-315)."""
         if self.board is None or level.board == self.level.board:
             return True
-        refused = self.board.rehand(level.blank_board())
+        refused = self.board.rehand(level.new_board())  # its zone, stock and locked parts
         if refused is not None:
             self._refuse(f"{refused.reason}: take it off in the Editor first")
             return False

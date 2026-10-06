@@ -20,6 +20,7 @@ from nektoids.levels.making import (
     Unmade,
     adjusted,
     blank,
+    boarded,
     goal_added,
     goal_removed,
     goal_set,
@@ -274,3 +275,19 @@ def test_the_zone_is_a_hexagon_of_seven_to_thirty_seven_cells_one_ring_at_a_time
     assert zoned(LEVEL, -1).board["zone"] == 19 and zoned(LEVEL, -2).board["zone"] == 7
     assert zoned(LEVEL, 1).board["zone"] == 37 and zoned(LEVEL, -9).board["zone"] == 7
     assert len(zoned(LEVEL, -2).new_board().cells) == 7
+
+
+def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
+    board = LEVEL.new_board()  # D-319: the Editor's
+    eye = board.place(Kind.EYE, (0, 0))
+    board.place(Kind.THRUSTER, (1, 0))  # free: the player's, not the level's
+    board.lock(eye.id)
+    made = boarded(LEVEL, board)
+    assert [(p["kind"], p["cell"], p["locked"]) for p in made.board["parts"]] == [
+        ("eye", [0, 0], True)
+    ]
+    assert made.board["wires"] == [] and pasted(LEVEL, to_json(made)) == made
+    assert taken(LEVEL, made).board["parts"] == made.board["parts"]  # Start from, Paste
+    assert blank(made).board["parts"] == []  # a blank plane places none
+    aggression = arenas()[1]  # its parts free, prewired: left out
+    assert taken(LEVEL, aggression).board["parts"] == []

@@ -316,15 +316,47 @@ class Board:
         }
 
     def rehand(self, other: Board) -> Refused | None:
-        """This board's parts and wires kept, on `other`'s zone and with what `other` hands
-        out: the Maker's Parts (D-315). Refused, and nothing changes, if a part or a wire lies
-        off that zone, or the board holds more of a kind than it hands out."""
-        refused = _misfit(self.snapshot(), other._on_board, other.total)
+        """This board's parts and wires kept, on `other`'s zone, with what `other` hands out
+        and the parts it places, locked (D-315, D-319): a locked part `other` places too stays,
+        wires and all; one it does not place is freed, the player's now; one it places that this
+        board lacks is put down. Refused, and nothing changes, if a part or a wire would lie off
+        that zone or where `other` places a part, or the board would hold more of a kind than it
+        hands out."""
+        placed = {_where(n): n for n in other.nodes.values() if n.locked}
+        mine = {_where(n) for n in self.nodes.values() if n.locked}
+        nodes = [
+            replace(n, locked=_where(n) in placed) if n.locked else n for n in self.nodes.values()
+        ]
+        taken = {n.cell for n in nodes} | {c for w in self.wires for c in w.path}
+        new = [n for where, n in placed.items() if where not in mine]
+        if any(n.cell in taken for n in new):
+            kind = next(n.kind.value for n in new if n.cell in taken)
+            a = "an" if kind[0] in "aeiou" else "a"
+            return Refused(f"the board has something where the level places {a} {kind}")
+        ids = itertools.count(self._next_id)
+        nodes += [Node(next(ids), n.kind, n.cell, True, n.facing) for n in new]
+        state = BoardState(tuple(sorted(nodes, key=lambda n: n.id)), tuple(self.wires), ())
+        refused = _misfit(state, other._on_board, other.total)
         if refused is not None:
             return refused
         self.cells, self._on_board = list(other.cells), set(other._on_board)
         self._total = dict(other._total)
-        self.restore(self.snapshot())
+        self.restore(state)
+        self._next_id += len(new)
+        return None
+
+    def lock(self, node_id: int, locked: bool = True) -> Refused | None:
+        """A part made the level's, fixed where it is and using no stock, or freed again, the
+        player's, using one (D-319). Refused, nothing changing, freeing a part of a kind the
+        level hands out no more of."""
+        node = self.nodes[node_id]
+        if node.locked == locked:
+            return None
+        if not locked and self.remaining(node.kind) == 0:
+            name = f"{node.kind.value}s"
+            return Refused(f"the level hands out no more {name}: give one more in Parts")
+        self.nodes[node_id] = replace(node, locked=locked)
+        self.restore(self.snapshot())  # the stock left counted again
         return None
 
     def adopt(self, state: BoardState) -> Refused | None:
@@ -572,3 +604,8 @@ def _misfit(state: BoardState, zone: set[Cell], total) -> Refused | None:
                 f" the board has {_count(used)}"
             )
     return None
+
+
+def _where(node: Node) -> tuple[Kind, Cell, int | None]:
+    """A part as placed, whatever its id: its kind, its cell, its facing."""
+    return node.kind, node.cell, node.facing

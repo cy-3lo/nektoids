@@ -1855,3 +1855,20 @@ losers still held in for the 10 s. Its tutorial is left as it is, for later work
 rings of a goal to enter every one now light one by one as the swimmer first comes into each,
 as the lights to reach already get a white circle each; other goals on the marks light them all
 once met, as before, and a ban lights none (`objectives.lit_marks`).
+
+**D-319 — 2026-10-06 — The board's locked parts: Lock, a third mode of the sandbox's Tools (K), makes the part clicked the level's, fixed where it is and using no stock, or frees it again, using one. The level places what the Editor's board has locked: Copy level writes it, Paste and Start from bring it. Locked parts only: no starting wire, no free starting part. Amends D-310, D-315.**
+The todo's last part of the board, as the physicist chose it: locked parts set with the board
+editor itself, in Tools, the same gesture as Delete, rather than a seventh icon on a part's Wheel.
+On the sandbox Tools offers Lock under Write and Delete: while it is on, a click on a part, or
+Enter on the focus, locks it, the part drawn as the level's are, and a click on a locked part
+frees it; freeing one of a kind the level hands out no more of is refused, "give one more in
+Parts". A locked part keeps its cell and its facing (D-009) and uses no stock, so locking one
+gives its stock back. The level follows the board: once a frame the Maker takes the parts the
+board has locked into its level, no wire with them, a step for its undo, which frees them again;
+the Editor's undo covers the locking itself. Copy level writes them; Paste a level and Start
+from bring a level's locked parts onto the Editor's board, keeping those already there, freeing
+those it does not place, putting down the new ones, refused if the board has something on one
+of their cells, "take it off first", or would hold more than the level hands out. A blank plane
+places none. A level's free parts and wires, Aggression's prewired eye and thruster, are not
+brought, and a level made places none: that is in ideas.md for later. The Editor's undo starts
+afresh only when the zone or the parts handed out change, not when a part is locked.

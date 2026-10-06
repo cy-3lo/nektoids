@@ -341,6 +341,8 @@ async def main() -> None:
             if chosen is not None:
                 choose_place(chosen)
         made = makers.get(router.index)
+        if made is not None:  # the parts locked on the Editor's board, the level's (D-319)
+            made.follow_board()
         if made is not None and made.level is not router.level:  # changed in the Maker (D-301)
             router.revise(made.level)
             if router.index in editors:

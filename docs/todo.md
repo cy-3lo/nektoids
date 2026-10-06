@@ -41,10 +41,11 @@ taken, when it starts.
     none to 9 or unlimited, grouped and folding as the Editor's; the Editor's board takes it
     at once or the change is refused; Paste and Start from bring it (D-315).
   - [x] The Maker opens on a blank plane, two of each part (D-317).
+  - [x] The board's locked parts: Lock, a mode of the sandbox's Tools (K), makes a part the
+    level's, fixed and using no stock, or frees it; the level places what is locked, Copy level
+    writes it, Paste and Start from bring it (D-319).
 
   To do, in this order:
-  - [ ] The board's locked parts, set with the board editor itself (its size and the parts
-    handed out are done, D-315).
   - [ ] Share level, after the board, the physicist's plan (2026-10-05): Copy level stays a
     draft, for us, with no proof; Share level is offered once the level, as it stands, has been
     won, and copies its text with its proof, the winning board's text (D-205) and its score,

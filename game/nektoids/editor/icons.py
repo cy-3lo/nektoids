@@ -52,7 +52,7 @@ PIECE_ICON = {
 }
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
-MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser"}  # D-068
+MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser", Mode.LOCK: "lock"}  # D-068, D-319
 LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.EDIT: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.TOOLS: "screwdriver-wrench",

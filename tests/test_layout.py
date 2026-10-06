@@ -817,3 +817,9 @@ def test_the_makers_parts_gives_the_board_size_then_each_part_a_row_with_minus_a
     unfolded = [k for title, kinds in MENU_GROUPS if title != "Operators" for k in kinds]
     assert [s.kind for s, _ in shut.steppers] == [None, *unfolded]  # the operators folded
     assert group_at(shut, centre(shut.group_titles[2][1])) == "Operators"
+
+
+def test_lock_is_a_mode_of_the_sandboxs_tools_alone():
+    sandbox = make_layout(Drawer.TOOLS, maker=True)  # D-319
+    assert [m for m, _ in sandbox.mode_buttons] == [Mode.WRITE, Mode.DELETE, Mode.LOCK]
+    assert [m for m, _ in make_layout(Drawer.TOOLS).mode_buttons] == [Mode.WRITE, Mode.DELETE]

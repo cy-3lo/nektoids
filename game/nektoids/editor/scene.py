@@ -52,6 +52,7 @@ from nektoids.editor.history import History
 from nektoids.editor.layout import (
     DIAGNOSTIC_MAP,
     KEY_ALIASES,
+    LOCK_KEY,
     MAX_HEX,
     MENU_GROUPS,
     MODE_KEY,
@@ -203,7 +204,7 @@ class EditorScene(Frame):
         self.wins: tuple[WinGroup, ...] = ()  # this session's wins, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = opening_view(layout, sorted(board.cells))
-        self.mode = Mode.WRITE  # what a click on the board does: Write, or Delete (D-068)
+        self.mode = Mode.WRITE  # what a click on the board does: Write, Delete, Lock (D-319)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
         self.dragging = False  # Add: mouse held since picking from the menu
@@ -419,6 +420,9 @@ class EditorScene(Frame):
         if self.mode is Mode.DELETE:
             self._erase(self.focused, self._focus_pos())
             return
+        if self.mode is Mode.LOCK:
+            self._lock(self.focused)
+            return
         if self.carrying:
             self.carrying, self.tool = False, Tool.ADD
             return
@@ -479,6 +483,8 @@ class EditorScene(Frame):
             self.toggle_drawer(drawer)
         elif key == MODE_KEY:
             self._set_mode(Mode.DELETE if self.mode is Mode.WRITE else Mode.WRITE)
+        elif key == LOCK_KEY and self.layout.maker:  # the sandbox's (D-319)
+            self._set_mode(Mode.LOCK if self.mode is not Mode.LOCK else Mode.WRITE)
         elif key in KEY_TOOLS:
             self._choose(KEY_TOOLS[key])
         elif key in KEY_VIEWS:
@@ -601,6 +607,9 @@ class EditorScene(Frame):
         if self.mode is Mode.DELETE:
             self._erase(self.hover, pos)
             return
+        if self.mode is Mode.LOCK:
+            self._lock(self.hover)
+            return
         if self.picked is not None:  # a part picked in Parts: it goes where the click falls
             if self.pointed is not None:
                 self._add(self.pointed)
@@ -712,7 +721,7 @@ class EditorScene(Frame):
         probe is made again on its plane, where it stood. Handed out anew, the board's size or
         its parts (D-315), Parts shows what it now hands out, and undo starts afresh: its steps
         were taken on a board handing out other parts."""
-        handed = level.board != self.level.board
+        handed = any(level.board[key] != self.level.board[key] for key in ("zone", "stock"))
         self.level, self.caption = level, caption
         self._probed = None
         if handed:
@@ -1102,8 +1111,8 @@ class EditorScene(Frame):
             what: Kind | Tool | Mode = Tool.PAN
         elif self._dropping():  # a part dragged off the body: letting go deletes it (D-085)
             what = Tool.DELETE
-        elif self.mode is Mode.DELETE:
-            what = Mode.DELETE
+        elif self.mode in (Mode.DELETE, Mode.LOCK):
+            what = self.mode
         elif self.going_round() and self.choice is not None and self.choice < len(items):
             what = items[self.choice]
         elif self.swapping:
@@ -1119,7 +1128,7 @@ class EditorScene(Frame):
         if isinstance(what, Kind):
             return what, part_key(what, self.layout.kinds)
         if isinstance(what, Mode):
-            return what, MODE_KEY
+            return what, LOCK_KEY if what is Mode.LOCK else MODE_KEY
         return what, VIEW_KEYS[ViewButton.PAN] if what is Tool.PAN else TOOL_KEYS[what]
 
     def _focused_node(self) -> Node | None:
@@ -1327,6 +1336,19 @@ class EditorScene(Frame):
         self._landed = self.board.snapshot()
         return result
 
+    def _lock(self, cell: Cell | None) -> None:
+        """Lock, clicked or entered on `cell`: its part made the level's, fixed and using no
+        stock, or freed again (D-319); the Maker's level follows the board."""
+        node = self.board.node_at(cell) if cell is not None else None
+        if node is None:
+            self._refuse("click a part to lock it, or to free it", cell)
+            return
+        refused = self.board.lock(node.id, not node.locked)
+        if refused is not None:
+            self._refuse(refused.reason, cell)
+            return
+        self.message = ""
+
     def _delete_part(self, node: Node) -> None:
         """The part deleted, with its wires; the focus stays on its cell, empty now."""
         if not self._allowed(Action("delete", cell=node.cell), node.cell):
@@ -1367,7 +1389,7 @@ class EditorScene(Frame):
         elif self.swapping:
             self.swapping, self.turn, self.slide_left = False, 0, 0  # back to the part's actions
             self.choice = None
-        elif self.mode is Mode.DELETE:
+        elif self.mode in (Mode.DELETE, Mode.LOCK):
             self.mode = Mode.WRITE
         elif self.carrying or (self.tool is Tool.WIRE and not self.wheel_open and self.source):
             self.carrying, self.tool, self.source = False, Tool.ADD, None
@@ -1395,6 +1417,8 @@ class EditorScene(Frame):
             return "The arrows to the part to wire to, then Enter. Esc gives up."
         if self.mode is Mode.DELETE:
             return "Click a part or a wire to delete it. E or Esc: back to Write."
+        if self.mode is Mode.LOCK:
+            return "Click a part to lock it, or to free it. K or Esc: back to Write."
         if self.swapping:
             return "Pick what it becomes in the Wheel, or press its number. Esc: back."
         node = self._focused_node()
