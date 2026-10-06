@@ -40,7 +40,7 @@ SETTING = {  # what each item's setting may be: a whole number, 1 to 8 (D-301, D
     ItemKind.MARK: Range(1.0, 8.0, 1.0, "u"),  # its radius: Fear's ring, the widest shipped
 }
 NEW = {ItemKind.LIGHT: 1.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 1.0}  # the least (D-314)
-TIME = Range(5.0, 120.0, 5.0, "s")  # the time allowed, which every level has (D-301, D-311)
+TIME = Range(1.0, 120.0, 1.0, "s")  # the time allowed, which every level has (D-311, D-347)
 GOALS_MOST = 2  # goals a made level asks, besides its time (D-308)
 BLANK_TIME = 30.0  # a blank plane's time allowed [s] (D-310)
 STOCK_MOST = 9  # a part handed out counted up to this, then unlimited (D-315)

@@ -2205,3 +2205,8 @@ Wiring, Minus, Love, Two lights and Dragster draw longer streams, and so does a 
 past 8 px/u; the run at its opening zoom, 16 px/u, is as it was. The info boxes' streams thin
 out too, their farthest speck where it was, so that the boxes do not move. A probe near the
 map's edge has its streams cut by the map's frame.
+
+**D-347 — 2026-10-06 — The time allowed, in the Maker's Goals, is 1 to 120 s, by 1 s. Amends D-311.**
+The physicist's: a level as short as Dragster's 4 s, or Dragster II's 1 s, could not be made in
+the Maker, whose slider went from 5 to 120 s by 5. The slider now steps by a second; its value
+may still be typed.
