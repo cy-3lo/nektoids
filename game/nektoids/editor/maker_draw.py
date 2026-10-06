@@ -149,6 +149,13 @@ WORD_NAME = {  # Goals' buttons (D-308), the targets as Objects names them
 }
 
 KEPT = "Its plane, goals and time replace the level's; the board stays as it is."  # D-310
+SHARED = (  # Share level's box, once it has copied (D-346)
+    "Copied: your level and its proof",
+    (
+        "To share it with the community, paste it into a comment on the itch.io page,"
+        " cy-3lo.itch.io/nektoids, or send it to contact@nektoids.com.",
+    ),
+)
 
 _dots_cache: dict[str, object] = {"key": None, "surface": None}
 
@@ -557,7 +564,9 @@ def _draw_wheel_tip(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> 
 
 def _about(scene: MakerScene, what: object) -> tuple[str, tuple[str, ...]]:
     """What the Maker's info boxes say: an object's row, undo and redo, a view's button, a row
-    of Start from."""
+    of Start from; Share level's, once it has copied, how to share the level (D-346)."""
+    if what is FileButton.SHARE and scene.shared:
+        return SHARED
     if isinstance(what, Piece):
         return NAMES[what], (PIECE_ABOUT[what],)
     if isinstance(what, Start) and what.index is None:
