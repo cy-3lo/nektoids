@@ -200,9 +200,5 @@ only, the player wiring them.
 
 ## Studio
 
-- **The domains nektoids.com and nektoids.io** (the physicist, 2026-10-04): both unregistered
-  that day (`whois`). The itch.io page has made the name public (D-106), and a .com costs about
-  €10–15 a year. A .io costs more, and its future has been uncertain since the 2025 UK–Mauritius
-  treaty on the Chagos, so the .com first.
 - **v1.1 on itch.io** (2026-10-05): `main` has had Save/Load since #46, which v1.0 does not.
   Upload it before stage 1 ends, or wait for the level maker?
