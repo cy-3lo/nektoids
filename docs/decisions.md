@@ -2144,3 +2144,14 @@ number was in Plex Mono, its name in FreeSans Bold, each centred on its own: the
 name's font now, on one line with it. Fear's plane turns 90 degrees clockwise about the start, so
 that the swimmer faces right, as in every other level: the start at (17, 19) heading 0, the light
 and its ring at (17, 16), still on its right; every run ends as it did, to the tick.
+
+**D-340 — 2026-10-06 — A run won opens Score. Score's plot is boxed, its time axis ticked in round seconds, at most six ticks, their numbers apart from its label, "time (s)", turned upright. Amends D-046, D-339.**
+The physicist: when the level is won, the run should show Score, the win just scored; and the
+plot should be boxed, its time axis ticked more than at its two ends, the numbers in seconds,
+apart from the axis's label, written along it. The run, reaching its win, opens Score (not in the
+developer's view); it opened on Diagnostic, and stays so until then (D-339). The plot is a box,
+RULE's colour; the time axis is ticked every 1, 2, 5, 10, 15, 20, 30 or 60 s, the first of them
+giving at most six ticks from 0 to the time allowed (`arena_layout.time_ticks`): 10 s every 2,
+20 s every 5, 45 s every 10, 120 s every 30. A tick is a short line inward from both sides of
+the box; its number, in seconds, sits left of the box; "time (s)", turned a quarter, stands left
+of the numbers. The parts' axis is as it was.

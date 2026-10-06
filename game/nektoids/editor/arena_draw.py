@@ -46,6 +46,7 @@ from nektoids.editor.arena_layout import (
     control_rects,
     polar_box,
     summary_at,
+    time_ticks,
     timeline_rect,
     timeline_x,
 )
@@ -131,6 +132,8 @@ END_MARK = 3  # the red mark across the timeline where the run ended [px]
 PART_DOT = 4  # an eye's reading in the polar plot [px]
 POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its circle
 GOAL_BAR = 3  # an objective's bar, along its row's foot [px]
+TICK = 4  # a tick on Score's time axis, inward from either side of the box [px] (D-340)
+ADVANCE = 9  # a figure of Plex Mono at 15 px, the numbers on that axis [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 WIN_DOT = 4  # a win on that plot; this run's ring sits 4 px round it [px]
@@ -637,7 +640,8 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     for k, text in enumerate(notes):
         screen.blit(fonts.small.render(text, True, DIM_TEXT), (x + MARGIN, y + 4 + k * line))
     below = (len(notes) - 1) * line  # the plot, under the notes
-    plot = pygame.Rect(x + MARGIN + 40, y + 36 + below, w - 2 * MARGIN - 52, h - 96 - below)
+    left = MARGIN + line + 4 + 3 * ADVANCE + 6  # the time's label, rotated, then its numbers
+    plot = pygame.Rect(x + left, y + 36 + below, w - left - MARGIN - 8, h - 96 - below)
     shown = scores | ({beat} if beat is not None else set())
     low = min(s.parts for s in shown) - 1
     high = max(max(s.parts for s in shown) + 1, low + PLOT_PARTS)
@@ -649,16 +653,20 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
             plot.bottom - ticks / limit * plot.height,
         )
 
-    pygame.draw.line(screen, RULE, plot.topleft, plot.bottomleft)
-    pygame.draw.line(screen, RULE, plot.bottomleft, plot.bottomright)
+    pygame.draw.rect(screen, RULE, plot, 1)  # boxed (D-340)
     for parts in range(low, high + 1):
         label = fonts.small.render(str(parts), True, DIM_TEXT)
         screen.blit(label, label.get_rect(midtop=(at(parts, 0)[0], plot.bottom + 4)))
     unit = fonts.small.render("parts", True, DIM_TEXT)
     screen.blit(unit, unit.get_rect(midtop=(plot.centerx, plot.bottom + 20)))
-    for ticks, text in ((0, "0 s"), (limit, f"{scene.level.time_limit:g} s")):
-        label = fonts.small.render(text, True, DIM_TEXT)
-        screen.blit(label, label.get_rect(midright=(plot.left - 6, at(low, ticks)[1])))
+    for seconds in time_ticks(scene.level.time_limit):  # numbers, then the label, rotated
+        height = at(low, round(seconds / DT))[1]
+        pygame.draw.line(screen, RULE, (plot.left, height), (plot.left + TICK, height))
+        pygame.draw.line(screen, RULE, (plot.right - 1 - TICK, height), (plot.right - 1, height))
+        label = fonts.small.render(f"{seconds:g}", True, DIM_TEXT)
+        screen.blit(label, label.get_rect(midright=(plot.left - 6, height)))
+    axis = pygame.transform.rotate(fonts.small.render("time (s)", True, DIM_TEXT), 90)
+    screen.blit(axis, axis.get_rect(midleft=(x + MARGIN, plot.centery)))
     if beat is not None:  # under the wins: one on it covers it
         cx, cy, r = *at(beat.parts, beat.ticks), WIN_DOT + 1
         pygame.draw.line(screen, TO_BEAT, (cx - r, cy - r), (cx + r, cy + r), 2)
