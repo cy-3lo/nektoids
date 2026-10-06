@@ -6,8 +6,10 @@ from dataclasses import replace
 
 import pytest
 
+from nektoids.editor.boardfield import load
 from nektoids.editor.hints import Hints
 from nektoids.graph import boardtext
+from nektoids.graph.board import complexity
 from nektoids.levels.arenas import arenas
 from nektoids.levels.level import Level, to_json
 from nektoids.levels.making import read_level
@@ -43,6 +45,17 @@ def test_a_level_shared_carries_its_proof_through_its_text():
     shared = replace(ORBIT, proof=proof.to_dict())
     again = read_level(to_json(shared))
     assert again == shared and Proof.from_dict(again.proof) == proof
-    assert "proof" not in json.loads(to_json(ORBIT))  # none unless shared
+    assert "proof" not in json.loads(to_json(replace(ORBIT, proof=None)))  # none, none written
     with pytest.raises(ValueError, match="a proof takes no 'seed'"):
         Level.from_dict({**json.loads(to_json(shared)), "proof": {**proof.to_dict(), "seed": 1}})
+
+
+@pytest.mark.parametrize("level", arenas(), ids=lambda level: level.title)
+def test_every_shipped_level_carries_its_proof_and_its_board_wins_it_again(level):
+    proof = Proof.from_dict(level.proof)  # D-328: the level's clear check, as a pasted one's
+    board = level.new_board()
+    fits, why = load(board, proof.board)
+    assert fits, why
+    assert complexity(board) == proof.parts
+    replay = Replay(level, board, DT)
+    assert replay.advance(replay.last) is Outcome.WON  # the win, not its tick (D-004)

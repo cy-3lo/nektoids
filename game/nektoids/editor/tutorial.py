@@ -49,6 +49,7 @@ from nektoids.editor.router import Screen
 from nektoids.editor.wheel import ICON, WHEEL_HEX, Slot
 from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
+from nektoids.levels.level import known
 from nektoids.levels.objectives import Outcome
 
 CHARS = 48  # a line of the box, at most: the paragraphs are wrapped to it (D-094)
@@ -146,6 +147,10 @@ class Tutorial:
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
+        """ValueError for a key it does not know, refused, not ignored (D-201, D-328)."""
+        known(data, ("starts_in", "ghosts", "ghost_wires", "steps"), "a tutorial")
+        for step in data["steps"]:
+            known(step, ("say", "show", "until"), "a tutorial's step")
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
         starts_in = Drawer(data["starts_in"]) if "starts_in" in data else None
         return cls(ghosts_from(data), steps, ghost_wires_from(data), starts_in)

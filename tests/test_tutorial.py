@@ -127,8 +127,9 @@ def on_screen(rect):
 
 def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
     fear, aggression = LEVELS["Fear"], LEVELS["Aggression"]
+    shipped = [(level, level.tutorial) for level in LEVELS.values() if level.tutorial is not None]
     for level, data in (
-        (fear, fear.tutorial),
+        *shipped,  # every shipped level's (D-328)
         (fear, BUILT["fear"]),
         (aggression, BUILT["aggression"]),
     ):
@@ -141,6 +142,15 @@ def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
             for screen in (Screen.EDIT, Screen.RUN):
                 layout = layout_on(screen, step)
                 assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
+
+
+def test_a_tutorial_refuses_a_key_it_does_not_know():
+    data = LEVELS["Aggression"].tutorial  # D-328: a typo refused, not ignored
+    with pytest.raises(ValueError, match="a tutorial takes no 'step'"):
+        Tutorial.from_dict({**data, "step": []})
+    misspelt = [{**data["steps"][0], "untill": {"drawer": "diagnostic"}}]
+    with pytest.raises(ValueError, match="a tutorial's step takes no 'untill'"):
+        Tutorial.from_dict({**data, "steps": misspelt})
 
 
 def test_fear_and_aggression_have_tutorials_and_neither_builds_anything():

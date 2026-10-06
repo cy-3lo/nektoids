@@ -1983,3 +1983,20 @@ The physicist: the accent line over the open tab was thinner than the nav bar's,
 tabs and the rest of the strip, where more tabs would go, should be a shade lighter than the open
 tab's black. The strip was the bar's colour, `P.deep`, darker than the open tab's, `P.base`; it is
 now `P.surface`, the drawers' colour, one step above it. `LIT_EDGE`, 3 px, is both accents.
+
+**D-328 — 2026-10-06 — A level made in the Maker ships from Share level: its text and its proof in a file of its chapter's folder, its passkey, hints and tutorial written there by hand. Every shipped level carries its proof, which a test runs again; a hint's shadow goes over the level's locked parts; a tutorial refuses a key it does not know. Applies D-320, D-325; the todo's §13.**
+The path, from the Maker to the game: win the level in the Run, Share level, save its text as
+`data/<chapter>/<name>.json`, name it in its chapter in `levels/arenas.py`, write in the file
+what the Maker does not set, then `PYTHONPATH=game python -m nektoids.levels.level FILE` writes
+it as the game does, which the tests ask, byte for byte (D-313). The physicist: the proof stays
+in the file, and a test runs it again, as a pasted level's is (D-320). Every shipped level now
+carries one, so every level's file shows a board that wins it: Fear, Aggression, Love, Orbit and
+Shadows their hint's shadow, Greed, Patience and Two lights the models their tests win with
+(D-098, D-324), each run on its level from its start, its tick and parts the proof's. The test
+checks the win and the parts, not the tick, which may differ in its last bit on another
+platform (D-004). A level may place locked parts (D-319) and hand out none: `blank_board`, what a
+hint's shadow is built on, keeps the locked parts, and drops the free ones and the wires as
+before (D-103), so a shadow over 0.1's locked Source and thruster no longer asks for parts the
+level does not hand out. A tutorial's data and its steps refuse a key they do not know, as a
+level's do (D-201): a misspelt "untill" was skipped silently, and the step never waited. Every
+shipped level's tutorial is tested, not only Fear's: Aggression's had not been.

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from nektoids.graph.board import Kind
+from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import NE, hex_disc
 from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas, sandbox
 from nektoids.levels.level import FORMAT, Item, ItemKind, Level, is_passkey, load, to_json
@@ -177,6 +177,22 @@ def test_version_4_writes_a_hexagons_zone_as_its_size_and_whole_numbers_as_integ
     bare = {**old["board"], "zone": [[0, 0], [1, 0]], "parts": [], "wires": []}
     odd = Level.from_dict({**old, "board": bare})
     assert odd.to_dict()["board"]["zone"] == [[0, 0], [1, 0]]  # no hexagon: its cells
+
+
+def test_a_blank_board_keeps_the_levels_locked_parts_and_none_of_its_free_ones():
+    board = Board(hex_disc(1), {Kind.EYE: 1})  # a level that places a Source and a thruster
+    source = board.place(Kind.SOURCE, (0, 0), locked=True)
+    thruster = board.place(Kind.THRUSTER, (-1, 0), locked=True)
+    eye = board.place(Kind.EYE, (1, 0))  # a free part, as Aggression's (D-103)
+    board.connect(source.id, thruster.id)
+    board.connect(eye.id, thruster.id)
+    level = Level.from_dict(a_level(board=board.to_dict()))
+    blank = level.blank_board()  # D-328: what a hint's shadow goes on
+    assert {(n.kind, n.cell, n.locked) for n in blank.nodes.values()} == {
+        (Kind.SOURCE, (0, 0), True),
+        (Kind.THRUSTER, (-1, 0), True),
+    }
+    assert blank.wires == [] and blank.remaining(Kind.EYE) == 1
 
 
 def test_every_shipped_levels_positions_are_whole_units_and_its_zone_a_size():
