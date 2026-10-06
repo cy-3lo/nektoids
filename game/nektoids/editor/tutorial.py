@@ -12,9 +12,10 @@ dimmed. A step with nothing to wait for waits for Next, and only such a step has
 that waits for an action moves on when it is done, never before (D-048). Only Fear has one, an
 introduction that builds nothing and shows once a session (D-079); every level's hints are asked
 for in the Hints drawer (`hints.py`, D-078). What a tutorial that builds needs, the waits for a
-part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, used by no level
-now and tested on the tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial;
-Settings' Tutorial starts Fear's again. On a step that waits for Next, any key or click moves
+part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, for chapter 0's
+first two levels, which lead the player through what they teach (D-334), and is tested on the
+tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial; Settings' Tutorial
+starts the open level's again. On a step that waits for Next, any key or click moves
 on and does nothing else, but a click on Skip (D-081). While a step leads, only the means to
 what it waits for go through (`allows`); the editor and the run ask before they act. Pure
 Python, no pygame: what the step waits for is read from a `Context`, the screen's geometry from

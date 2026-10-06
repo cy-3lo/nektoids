@@ -214,7 +214,7 @@ SETTING = {  # Settings' rows: their name, icon and what their info box says (D-
     Setting.TUTORIAL: (
         "Tutorial",
         "graduation-cap",
-        "Fear's tutorial again, from its first step.",
+        "This level's tutorial again, from its first step.",
     ),
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),
@@ -1063,12 +1063,11 @@ def _draw_settings(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     shown = {
         Setting.FAST: ("count", f"{settings.fast}x"),
         Setting.HINTS: ("tick", "on") if settings.key_hints else ("count", "off"),
-        Setting.TUTORIAL: ("none", ""),
-    }
+    } | ({Setting.TUTORIAL: ("none", "")} if scene.tutored else {})  # D-334
     for setting, rect in scene.layout.setting_rows:
         name, icon, _ = SETTING[setting]
         status = shown.get(setting, ("lock", ""))
-        greyed = setting not in shown  # Sound and Music: no sound yet
+        greyed = setting not in shown  # Sound and Music: no sound yet; a level with no tutorial
         draw_row(screen, scene, fonts, rect, setting, name, status, False, greyed, icon=icon)
 
 

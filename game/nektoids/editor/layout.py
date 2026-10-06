@@ -302,7 +302,7 @@ class Knob:
 class Setting(Enum):  # the Settings drawer's rows (D-054)
     FAST = "fast"  # fast forward's speed
     HINTS = "hints"  # keys on the rows and in the tooltips
-    TUTORIAL = "tutorial"  # Fear's tutorial again
+    TUTORIAL = "tutorial"  # the open level's tutorial again (D-334)
     SOUND = "sound"  # locked: there is no sound yet
     MUSIC = "music"
 

@@ -86,17 +86,18 @@ starts; they come in this order.
   its chapter's folder, its proof kept and run again by a test, a passkey, an idea and a tutorial
   written in the file; Hints 2 and 3 from the proof, over the level's locked parts; hints in
   chapters 0 and 1 only (D-328, D-329).
-- [ ] **Tutorials**: what a tutorial does (its ghosts and steps, D-039, D-050), written by hand
-  as now; Settings' Tutorial replays the open level's, not Fear's; Fear's and Aggression's moved
-  to chapter 0 once it teaches what they teach now.
+- [x] **Tutorials**: written by hand as now; 0.1 and 0.2 lead, a ghost and a card that waits,
+  later levels explain; Settings' Tutorial replays the open level's (D-334).
 - [ ] **Chapter 0, the tutorials**, six levels made in the Maker, each teaching one thing:
   - [ ] 0.1 Wiring: a Source and a thruster already on the board, locked; the player just
-    connects them; the goal is to go straight. Once "a first level, before Fear".
+    connects them; the goal is to go straight. Once "a first level, before Fear". Fear's six
+    introduction cards move here (D-334).
   - [ ] 0.2 Turning: a part turned (a locked part cannot turn: it comes from the stock).
   - [ ] 0.3 Eyes: the first eye.
   - [ ] 0.4 Half: the Halve and the Double.
   - [ ] 0.5 Plus: the Sum and the Diff.
-  - [ ] 0.6 Diagnostic: the drawer, which Aggression's tutorial teaches now (D-103).
+  - [ ] 0.6 Diagnostic: the drawer, which Aggression's tutorial teaches now (D-103); its two
+    cards move here (D-334).
 - [x] **Dragster**, the physicist's, made in the Maker: chapter 4's first level, LEVEL 4.1,
   signed "@Cy-3LO" (D-332).
 - [ ] **Chapter 2's new levels**: obstacles, before Shadows.
