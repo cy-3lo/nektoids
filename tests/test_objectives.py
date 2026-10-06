@@ -7,6 +7,7 @@ import pytest
 
 from nektoids.editor.glyphs import GLYPH
 from nektoids.graph.board import Board
+from nektoids.levels.arenas import arenas
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.objectives import (
     REACH,
@@ -15,6 +16,7 @@ from nektoids.levels.objectives import (
     Outcome,
     Target,
     Verb,
+    at_start,
     begin,
     follow,
     lit_marks,
@@ -141,7 +143,8 @@ def test_touching_a_light_breaks_the_ban_and_loses_the_run_whatever_else_stands(
     off = level(KEEP_OFF)
     clear = begin(off, at([20.0, 20.0]), ONE)
     assert KEEP_OFF.count(clear[0]) == (1, 1) and not KEEP_OFF.lost(clear[0])
-    assert outcome(off, clear, 1, DT) is Outcome.WON  # alone, met from the start
+    assert outcome(off, clear, 1, DT) is None  # alone, kept until the time is up (D-349)
+    assert outcome(off, clear, round(off.time_limit / DT), DT) is Outcome.WON
     touched = follow(off, clear, at([30.0 - REACHED + 1e-9, 20.0]), ONE, DT)  # just in
     away = follow(off, touched, at([20.0, 20.0]), ONE, DT)  # gone again: it still touched
     assert KEEP_OFF.count(away[0]) == (0, 1) and KEEP_OFF.lost(away[0])
@@ -311,3 +314,26 @@ def test_the_rings_light_one_by_one_as_they_are_entered_for_a_goal_to_enter_ever
     ban = level(Goal(Verb.REACH, Count.NONE, Target.MARK), items=(LIGHTS[0], *rings))
     kept = follow(ban, begin(ban, at([10.0, 20.0]), ONE), at([30.0, 10.0]), ONE, DT)
     assert lit_marks(ban, kept) == (False, False, False)  # a ban lights nothing
+
+
+def test_a_level_decided_where_its_swimmer_starts_is_not_judged_and_runs_out_its_time():
+    ring = mark(30.0, 20.0, 5.0)  # the swimmer starts at (10, 20), out of it
+    limit = round(10.0 / DT)
+    for goal, decided in (
+        (Goal(Verb.LEAVE, Count.ALL, Target.MARK), Outcome.WON),  # out from the start
+        (Goal(Verb.LEAVE, Count.NONE, Target.MARK), Outcome.LOST),  # "stay inside": out already
+        (Goal(Verb.REACH, Count.ALL, Target.MARK), None),  # to do: judged
+    ):
+        made = level(goal, items=(ring,))
+        assert at_start(made) is decided
+        kept = begin(made, at([10.0, 20.0]), ONE)
+        if decided is not None:  # D-349: no end at its start, nor later but the time's
+            assert outcome(made, kept, 0, DT) is outcome(made, kept, limit - 1, DT) is None
+            assert outcome(made, kept, limit, DT) is Outcome.TIME_UP
+    entered = level(Goal(Verb.REACH, Count.ALL, Target.MARK), items=(ring,))
+    inside = begin(entered, at([30.0, 20.0]), ONE)
+    assert outcome(entered, inside, 1, DT) is Outcome.WON  # got there in the run: judged
+
+
+def test_no_shipped_level_is_decided_where_its_swimmer_starts():
+    assert [lv.title for lv in arenas() if at_start(lv) is not None] == []

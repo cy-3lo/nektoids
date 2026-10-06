@@ -160,7 +160,7 @@ from nektoids.levels.making import (
     turned,
     zoned,
 )
-from nektoids.levels.objectives import Outcome, settings
+from nektoids.levels.objectives import Outcome, at_start, settings
 from nektoids.levels.proof import Proof, Replay
 from nektoids.levels.score import Score
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
@@ -842,6 +842,9 @@ class MakerScene(Frame):
     def _share_level(self) -> None:
         """Share level: the level's text with its proof, on the clipboard, and its box open on
         how to share it (D-346); refused, saying how, while the level as it stands is not won."""
+        if at_start(self.level) is not None:  # nothing a run can win (D-349)
+            self._refuse("its goals are decided where the swimmer starts: nothing to share")
+            return
         if not self.shareable:
             self._refuse("win it in Run first, as it stands, to share it")  # D-321
             return

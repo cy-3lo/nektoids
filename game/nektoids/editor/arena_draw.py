@@ -116,7 +116,7 @@ from nektoids.editor.palette import (
 )
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
-from nektoids.levels.objectives import Outcome
+from nektoids.levels.objectives import Outcome, at_start
 from nektoids.levels.proof import to_beat
 from nektoids.levels.score import Score, front
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
@@ -593,7 +593,8 @@ def _draw_polar(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
 
 
 def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """Over the arena's top, once the run is over: how it ended, and what each objective got."""
+    """Over the arena's top, once the run is over: how it ended, and what each objective got; a
+    level decided where its swimmer starts, that it was not judged (D-349)."""
     ended = scene.outcome
     if ended is None:
         return
@@ -604,6 +605,9 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     else:
         head = f"Time is up ({scene.level.time_limit:g} s)"
     rows = [f"{row.name}: {row.met} of {row.needed}" for row in scene.counts()]
+    start = at_start(scene.level)
+    if start is not None:  # it was never judged (D-349)
+        rows.append(f"Not judged: {'won' if start is Outcome.WON else 'lost'} where it starts")
     lines = [fonts.text.render(head, True, TEXT)]
     lines += [fonts.small.render(row, True, DIM_TEXT) for row in rows]  # 0 starts again
     if ended is Outcome.WON and scene.passkey is not None:  # to keep: it opens the next (D-075)
