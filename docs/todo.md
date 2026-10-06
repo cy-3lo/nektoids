@@ -62,9 +62,6 @@ taken, when it starts.
 
 - [ ] Files' title, "Wins this session", is not drawn: it lies above the wins' list, and the
   drawer's rows are clipped to that list (`editor/draw.py`, `draw_drawer`). Seen 2026-10-04.
-- [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
-- [ ] The Maker in Safari: a slider's typed value, Paste a level (D-308, D-310); only Chrome was
-  tried.
 
 ## 13. Chapters, levels and tutorials, made with the Maker (done, D-325 to D-341)
 
