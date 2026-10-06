@@ -940,13 +940,14 @@ def _draw_foot(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
 
 
 def _draw_board_text(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Files' foot (D-206): Save/Load, Copy a board, then the field to paste one: what is
-    pasted or typed, its end showing, with a caret, lit while it is open; else what to do."""
+    """Files' titles, over the wins' list and at its foot; the foot (D-206): Save/Load, Copy a
+    board, then the field to paste one: what is pasted or typed, its end showing, with a caret,
+    lit while it is open; else what to do."""
     layout = scene.layout
     _, top, _, room = layout.list_area
     for title, rect in layout.section_titles:
-        if rect[1] >= top + room:  # under the wins' list, which is clipped: the foot's title
-            x, y, _, h = rect
+        x, y, _, h = rect
+        if y + h <= top or y >= top + room:  # outside the wins' list, which is clipped
             shown = fonts.label.render(title.upper(), True, DIM_TEXT)
             screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
     for button, rect in layout.file_buttons:
