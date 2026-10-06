@@ -5,7 +5,7 @@ is left goes here, in the order it unblocks the rest; the PR that does an item r
 what was done is in git and in [`decisions.md`](decisions.md). Sections keep their numbers,
 which the decision log cites. Ideas for later go in [`ideas.md`](ideas.md). §11 is stage 1, a
 level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300); §13, the
-chapters, levels and tutorials to be made with it, is being planned.
+chapters, levels and tutorials to be made with it, is being planned; §14, the repository's face.
 
 ## 11. A level maker (stage 1, D-300)
 
@@ -107,3 +107,13 @@ and its decisions taken, when it starts.
 - [ ] **A level made in the Maker shipped as one of the game's**: from Copy or Share level to a
   file in `levels/data/`, with what the Maker does not set yet, a passkey and hints: set in the
   Maker, or written in the file.
+
+## 14. The repository's face
+
+- [ ] **A new banner for GitHub**, the physicist's: a new catch phrase and an image, at the top of
+  the README and as the repository's social preview (1280 × 640 px). The image could be the game
+  itself, a swimmer and its streams round a light, rendered by the game's own drawing (no new
+  art: the stage's scope leaves art out). The phrase to find: the README's line today, "You
+  don't steer the agents. You wire their sensors to their thrusters, press run, and watch.",
+  and its "collective behaviour", come from the jam's brief, when the game was to have many
+  swimmers; it has one.
