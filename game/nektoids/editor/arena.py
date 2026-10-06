@@ -340,8 +340,11 @@ class ArenaScene(Frame):
             ticks = self.clock.frame()
         for tick in ticks:
             self._advance(tick)
-            if outcome(self.level, self.kept, tick + 1, DT) is not None:
+            ended = outcome(self.level, self.kept, tick + 1, DT)
+            if ended is not None:
                 self.clock.tick, self.clock.paused, self.seek_to = tick + 1, True, None
+                if ended is Outcome.WON and not self.developer:  # the win, scored (D-340)
+                    self.open_drawer(Drawer.SCORE)
                 break
         if len(ticks) and self.show_map:
             self._map()  # the swimmers' shadows moved

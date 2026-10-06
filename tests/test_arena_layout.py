@@ -9,6 +9,7 @@ from nektoids.editor.arena_layout import (
     KEY_BUTTONS,
     MAP_KEY,
     POLAR_KEY,
+    TIME_TICKS,
     TURN_KEYS,
     VIEW_BUTTON,
     ArenaButton,
@@ -19,6 +20,7 @@ from nektoids.editor.arena_layout import (
     control_rects,
     polar_box,
     summary_at,
+    time_ticks,
     timeline_at,
     timeline_rect,
     timeline_x,
@@ -106,3 +108,18 @@ def test_every_button_has_a_key_and_typed_ones_find_their_button():
     assert set(BUTTON_KEYS) == set(ArenaButton)
     for key, button in KEY_BUTTONS.items():
         assert BUTTON_KEYS[button] == key and len(key) == 1
+
+
+@pytest.mark.parametrize(
+    ("limit", "ticks"),
+    [
+        (4, [0, 1, 2, 3, 4]),
+        (10, [0, 2, 4, 6, 8, 10]),
+        (15, [0, 5, 10, 15]),
+        (20, [0, 5, 10, 15, 20]),
+        (45, [0, 10, 20, 30, 40]),
+        (120, [0, 30, 60, 90, 120]),
+    ],
+)
+def test_scores_time_axis_is_ticked_in_round_seconds_a_few_times(limit, ticks):
+    assert time_ticks(limit) == ticks and len(ticks) <= TIME_TICKS  # D-340
