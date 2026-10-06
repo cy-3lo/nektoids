@@ -32,6 +32,13 @@ Done: D-200 to D-206, built on `stage/0-foundations` and merged into `main` in #
 
 In the todo, §11, since D-300: built on `stage/1-level-maker`.
 
+Later, from Share level (D-320): the score to beat, the maker's, in the run's Score drawer
+beside the player's wins.
+
+Later, from the board's locked parts (D-319): a level that starts with wires, or with parts
+the player may move, as Aggression's prewired eye and thruster; the Maker places locked parts
+only, the player wiring them.
+
 ## 2. Memory: the graph's vocabulary
 
 - **Tanks**: reservoirs that store signal, the memory (D-015, `.claude/rules/graph.md`). Their

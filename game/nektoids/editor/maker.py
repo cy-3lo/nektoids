@@ -58,6 +58,8 @@ from nektoids.editor.arena_view import (
     widened,
     zoom_view,
 )
+from nektoids.editor.boardfield import load
+from nektoids.editor.devdrive import DT
 from nektoids.editor.frame import Frame
 from nektoids.editor.history import History
 from nektoids.editor.layout import (
@@ -125,7 +127,8 @@ from nektoids.editor.scene import (
 from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
 from nektoids.editor.wheel import WHEEL_HEX, Slot, centre_in, slot_at, slots
-from nektoids.graph.board import Board
+from nektoids.graph import boardtext
+from nektoids.graph.board import Board, complexity
 from nektoids.levels.lattice import POSITION, Range, snapped
 from nektoids.levels.level import Level, to_json
 from nektoids.levels.making import (
@@ -136,14 +139,15 @@ from nektoids.levels.making import (
     Unmade,
     adjusted,
     blank,
+    boarded,
     goal_added,
     goal_removed,
     goal_set,
     goal_worded,
     moved,
     number,
-    pasted,
     placed,
+    read_level,
     removed,
     specified,
     start_moved,
@@ -154,7 +158,9 @@ from nektoids.levels.making import (
     turned,
     zoned,
 )
-from nektoids.levels.objectives import settings
+from nektoids.levels.objectives import Outcome, settings
+from nektoids.levels.proof import Proof, Replay
+from nektoids.levels.score import Score
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
 ARROW_PAN = 2.0  # an arrow drags the view this far [u]
@@ -167,6 +173,7 @@ DIGITS = POINT_PIECES  # 1, 2, 3, on their physical keys, as Parts' numbers
 NUMBER = frozenset("0123456789.")  # what a slider's box takes, typed (D-308)
 NUMBER_LONGEST = 5  # ... and how long it grows: 300, 12.5
 LEVEL_LONGEST = 20_000  # what a level's text, pasted in Files, may run to (D-310)
+CHECK_TICKS = 120  # a pasted level's proof run so many ticks a frame, a second of it (D-320)
 
 
 class Paste(Enum):  # the field of the Maker's Files: a level's text pasted there (D-310)
@@ -189,6 +196,9 @@ class MakerScene(Frame):
         self.label = label  # "SANDBOX", before its title in the caption
         self.starts = tuple(starts)  # Start from's levels, each with its label: "1.2", or ""
         self.board = board  # the Editor's board, which takes what the level hands out (D-315)
+        self.proof: Proof | None = None  # the board that won the level, its score (D-320)
+        self.proved: Level | None = None  # ... the level as it was won: shared while it holds
+        self.checking: tuple[Replay, Proof, Level] | None = None  # a pasted proof, run again
         self.show_rays = True  # the light's rays, drawn or not
         self.pointer = (0, 0)  # where the mouse is [px]
         self.panning: tuple[int, int] | None = None  # where a drag on the plane last was
@@ -214,6 +224,7 @@ class MakerScene(Frame):
         self.folded: set[str] = set()  # Parts' groups shown closed, as the Editor's (D-315)
         self._take(level)
         self._open_view()
+        self.layout = self._relayout(self.layout.drawer)  # its rows, now it knows its starts
 
     @property
     def caption(self) -> tuple[str, str]:
@@ -269,6 +280,7 @@ class MakerScene(Frame):
             self.field.take(text, caret)
             if ended is not None:
                 self._field_done(ended)
+        self._check_proof()
         self.frame_update()
         self.view = kept_in(self.view, self.arena_area, self.extent())
 
@@ -283,6 +295,8 @@ class MakerScene(Frame):
             return "Click the title or the spec to write it.  The caption above follows."
         if self.layout.drawer is Drawer.PARTS:
             return "- and +: how big the board is, and how many of each part it hands out."
+        if self.checking is not None:
+            return f"Checking its proof: {round(100 * self.checking[0].progress)}%."
         if self.layout.drawer is Drawer.FILES:
             return (
                 "Copy level: the level as text.  Paste a level, or start from one or a blank plane."
@@ -321,13 +335,23 @@ class MakerScene(Frame):
             self._take(level)
         return True
 
+    def follow_board(self) -> None:
+        """Once a frame: the level placing what the Editor's board has locked, as the maker locks
+        or frees its parts there (D-319); a step for the Maker's undo, which frees it again."""
+        if self.board is None:
+            return
+        level = boarded(self.level, self.board)
+        if level != self.level:
+            self.history.record(self.level)
+            self._take(level)
+
     def _handed(self, level: Level) -> bool:
         """The Editor's board handed out what `level` hands out, its zone and its parts, at once;
         False, refused with its reason, while the board has more of a part or lies outside, which
         is the player's to take off in the Editor (D-315)."""
         if self.board is None or level.board == self.level.board:
             return True
-        refused = self.board.rehand(level.blank_board())
+        refused = self.board.rehand(level.new_board())  # its zone, stock and locked parts
         if refused is not None:
             self._refuse(f"{refused.reason}: take it off in the Editor first")
             return False
@@ -563,6 +587,8 @@ class MakerScene(Frame):
             self._edit(edit)
         elif file_button_at(self.layout, pos) is FileButton.LEVEL:  # Files (D-310)
             self._copy_level()
+        elif file_button_at(self.layout, pos) is FileButton.SHARE:  # ... with its proof (D-320)
+            self._share_level()
         elif (start := start_row_at(self.layout, pos)) is not None:
             self._start_from(start)
         elif (step := stepper_at(self.layout, pos)) is not None:  # Parts (D-315)
@@ -762,10 +788,76 @@ class MakerScene(Frame):
         self.said = f"Copied: the level's text, {len(text.splitlines())} lines of JSON."
 
     def _paste_level(self, text: str) -> None:
-        """The level `text` holds, taken onto this one but its board, one step for undo, the
-        view on it; or why not, in the status line."""
-        if self._made_anew(lambda level: pasted(level, text)):
-            self.said = f"Pasted: {self.level.title}."
+        """The level `text` holds, taken onto this one but its board's free parts, one step for
+        undo, the view on it; or why not, in the status line. Its proof, if it has one, is run
+        again on it, a few ticks a frame (D-320)."""
+        try:
+            other = read_level(text)
+        except Unmade as why:
+            self._refuse(str(why))
+            return
+        if not self._made_anew(lambda level: taken(level, other)):
+            return
+        self.said = f"Pasted: {self.level.title}."
+        if other.proof is not None:
+            proof, board = Proof.from_dict(other.proof), self.level.new_board()
+            fits, why = load(board, proof.board)
+            if not fits:
+                self._refuse(f"its proof does not fit the level ({why}): a draft")
+                return
+            proof = replace(proof, parts=complexity(board))  # counted here, not taken on trust
+            self.checking = (Replay(self.level, board, DT), proof, self.level)
+
+    # Share level (D-320)
+
+    @property
+    def shareable(self) -> bool:
+        """Whether the level, as it stands, has been won: its proof holds."""
+        return self.proof is not None and self.proved == self.level
+
+    def won(self, level: Level, board: Board, score: Score) -> None:
+        """A run of the sandbox won (main.py): the board that won, if it won the level as it
+        stands, its proof; a board no text can hold is no proof."""
+        if level != self.level:
+            return
+        if self.shareable and not score.beats(Score(self.proof.parts, self.proof.ticks)):
+            return  # the proof it has is as good: kept
+        try:
+            text = boardtext.to_text(board)
+        except ValueError:
+            return
+        self.proof, self.proved = Proof(text, score.ticks, score.parts), level
+
+    def _share_level(self) -> None:
+        """Share level: the level's text with its proof, on the clipboard; refused, saying how,
+        while the level as it stands is not won."""
+        if not self.shareable:
+            goals = "win it in the Run" if self.level.objectives else "give it a goal, then win it"
+            self._refuse(f"{goals} as it stands, to share it")
+            return
+        clipboard.copy(to_json(replace(self.level, proof=self.proof.to_dict())))
+        seconds = self.proof.ticks * DT
+        self.said = f"Copied, with its proof: won in {seconds:.2f} s, {self.proof.parts} parts."
+
+    def _check_proof(self) -> None:
+        """Once a frame: a pasted level's proof run on, CHECK_TICKS more; won, the level is
+        cleared, its proof kept, the score to beat; else a draft. Given up if the level changed."""
+        if self.checking is None:
+            return
+        replay, proof, level = self.checking
+        if level != self.level:
+            self.checking = None
+            return
+        ended = replay.advance(CHECK_TICKS)
+        if ended is None:
+            return
+        self.checking = None
+        if ended is not Outcome.WON:
+            self.message = "its proof does not win it: pasted as a draft"
+            return
+        self.proof, self.proved = replace(proof, ticks=replay.tick), level  # its own tick
+        seconds = replay.tick * DT
+        self.said = f"Cleared: won in {seconds:.2f} s with {proof.parts} parts, the score to beat."
 
     def _start_from(self, start: Start) -> None:
         """A blank plane, or a shipped level taken onto this one but its board, one step for

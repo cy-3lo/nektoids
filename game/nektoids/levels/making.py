@@ -1,8 +1,9 @@
 """A level made by hand, one change at a time (D-301): an item placed, moved, set or removed; the
 swimmer's start moved or turned; its title or its spec written (D-305); the time allowed set; a
 goal added, a word of it chosen, its setting set, or taken out (D-308); another level's text
-pasted, of which it takes all but the board's parts (D-310); how many of a part the board hands
-out, and its zone's size (D-315). Each change returns a new `Level`, the old
+pasted, of which it takes all but the board's free parts (D-310); how many of a part the board
+hands out, and its zone's size (D-315); the parts it places, locked on the Editor's board
+(D-319). Each change returns a new `Level`, the old
 one untouched, so the Maker's undo keeps whole levels (D-027), and each lands on the lattice
 (`lattice.py`). A change the level could not hold is refused with its reason, for the status
 line: a light touching an obstacle, as the arena refuses it, the swimmer starting inside one, a
@@ -17,7 +18,7 @@ import math
 from dataclasses import replace
 from itertools import product
 
-from nektoids.graph.board import Kind
+from nektoids.graph.board import Board, Kind
 from nektoids.levels.lattice import HEADING, Range, snap, snapped
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.objectives import (
@@ -174,6 +175,12 @@ def goal_set(level: Level, index: int, value: float) -> Level:
 def pasted(level: Level, text: str) -> Level:
     """The level that `text` holds, its JSON as `to_json` writes it, taken onto `level`
     (`taken`); Unmade, saying why, for a text no level could hold (D-201, D-310)."""
+    return taken(level, read_level(text))
+
+
+def read_level(text: str) -> Level:
+    """The level that `text` holds, its proof with it if it has one (D-320); Unmade, saying
+    why, for a text no level could hold (D-201, D-310)."""
     if not text.strip():
         raise Unmade("paste a level's text into the field first")
     try:
@@ -186,7 +193,7 @@ def pasted(level: Level, text: str) -> Level:
         raise Unmade("that is not a level's text") from None
     except ValueError as refused:  # a newer version, a key it does not know, items that overlap
         raise Unmade(str(refused)) from None
-    return taken(level, other)
+    return other
 
 
 def blank(level: Level) -> Level:
@@ -195,15 +202,16 @@ def blank(level: Level) -> Level:
     words = replace(level, title="New level", spec="Say what the level asks.")
     plane = replace(words, start=(0.0, 0.0, 0.0), items=(), objectives=())
     stock = {kind.value: BLANK_STOCK for kind in Kind}
-    board = {**level.board, "stock": stock}
+    board = {**level.board, "stock": stock, "parts": [], "wires": []}  # placing none (D-319)
     return taken(level, replace(plane, time_limit=BLANK_TIME, board=board))
 
 
 def taken(level: Level, other: Level) -> Level:
-    """`other`'s title, spec, plane, start, goals and time, and its board's zone and what it
-    hands out (D-315), on `level`'s board, its parts kept; no tutorial, passkey or hints, which a
-    made level has none of (D-310)."""
-    handout = {"zone": other.board["zone"], "stock": other.board["stock"]}
+    """`other`'s title, spec, plane, start, goals and time, and its board's zone, what it hands
+    out and the parts it places, locked, its free parts and wires left out (D-315, D-319); no
+    tutorial, passkey or hints, which a made level has none of (D-310)."""
+    handout = {"zone": other.board["zone"], "stock": other.board["stock"], "wires": []}
+    handout["parts"] = [part for part in other.board["parts"] if part["locked"]]
     made = replace(
         level,
         board={**level.board, **handout},
@@ -216,6 +224,13 @@ def taken(level: Level, other: Level) -> Level:
         hints=None,
     )
     return _checked(specified(titled(made, other.title), other.spec))
+
+
+def boarded(level: Level, board: Board) -> Level:
+    """The level placing the parts `board` has locked, where they are, and no wire: the
+    Editor's board as the maker locks its parts (D-319)."""
+    parts = [part for part in board.to_dict()["parts"] if part["locked"]]
+    return replace(level, board={**level.board, "parts": parts, "wires": []})
 
 
 def stocked(level: Level, kind: Kind, steps: int) -> Level:

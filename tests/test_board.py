@@ -626,3 +626,36 @@ def test_a_board_handed_out_anew_keeps_its_parts_unless_they_no_longer_fit():
     assert len(board.nodes) == 3 and len(board.wires) == 1
     board.restore(before)  # a state from before: its stock left counted again from the new
     assert board.remaining(Kind.EYE) == 1 and board.total(Kind.EYE) == 3
+
+
+def test_a_part_locked_is_the_levels_using_no_stock_and_freed_uses_one_again():
+    board = Board(hex_disc(2), {Kind.EYE: 1, Kind.THRUSTER: 2})  # D-319
+    eye = board.place(Kind.EYE, (0, 0))
+    assert board.remaining(Kind.EYE) == 0 and board.lock(eye.id) is None
+    assert board.nodes[eye.id].locked and board.remaining(Kind.EYE) == 1  # its stock back
+    assert board.remove_node(eye.id).reason == "placed by the level"
+    other = board.place(Kind.EYE, (1, 0))  # the one handed out, now free to place
+    refused = board.lock(eye.id, locked=False)
+    assert "no more eyes" in refused.reason and board.nodes[eye.id].locked  # none left
+    board.remove_node(other.id)
+    assert board.lock(eye.id, locked=False) is None and board.remaining(Kind.EYE) == 0
+
+
+def test_a_board_handed_out_anew_takes_the_parts_the_level_places_locked():
+    board = Board(hex_disc(2), {Kind.EYE: 2, Kind.THRUSTER: 2})  # D-319
+    kept = board.place(Kind.EYE, (-1, -1), locked=True, facing=NE)
+    freed = board.place(Kind.THRUSTER, (2, -1), locked=True, facing=E)
+    board.connect(kept.id, freed.id)
+    level = Board(hex_disc(2), {Kind.EYE: 2, Kind.THRUSTER: 2})
+    level.place(Kind.EYE, (-1, -1), locked=True, facing=NE)  # the same: stays, wired
+    level.place(Kind.THRUSTER, (1, 1), locked=True, facing=E)  # new: put down
+    assert board.rehand(level) is None
+    assert board.nodes[kept.id].locked and not board.nodes[freed.id].locked  # freed, kept
+    placed = [n for n in board.nodes.values() if n.cell == (1, 1)]
+    assert len(placed) == 1 and placed[0].locked and placed[0].facing == E
+    assert len(board.wires) == 1 and board.remaining(Kind.THRUSTER) == 1
+    blocked = Board(hex_disc(2), {Kind.EYE: 2, Kind.THRUSTER: 2})
+    blocked.place(Kind.EYE, (2, -1), locked=True, facing=NE)  # where the freed thruster is
+    before = board.snapshot()
+    assert "where the level places an eye" in board.rehand(blocked).reason
+    assert board.snapshot() == before

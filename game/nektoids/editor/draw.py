@@ -66,6 +66,7 @@ from nektoids.editor.layout import (
     HINT_LINE,
     INFO_AT,
     LEVEL_KEYS,
+    LOCK_KEY,
     MARGIN,
     MAX_HEX,
     MODE_KEY,
@@ -176,10 +177,15 @@ TIP = {
     Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them, or"
     " drag one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
+    Mode.LOCK: "A click on a part makes it the level's: the player can neither move nor take it"
+    " off, and it uses no stock. A click on one of the level's parts frees it.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
     " into Paste a board, under this row, to bring it back, on this level or another.",
     FileButton.LEVEL: "Copies the level as text, its JSON, as the game's own level files hold it:"
     " to keep, or to paste into Paste a level, under this row, to make it again.",
+    FileButton.SHARE: "Copies the level as text with its proof, the board that won it and its"
+    " score, the one to beat. Offered once the level, as it stands, has been won in the Run;"
+    " pasted, the proof is run again, and the level is cleared if it wins.",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     Drawer.TOOLS: "Tools",
@@ -227,8 +233,10 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     EditButton.REDO: "Redo",
     Mode.WRITE: "Write",
     Mode.DELETE: "Delete",
+    Mode.LOCK: "Lock",
     FileButton.SAVE: "Copy a board",
     FileButton.LEVEL: "Copy level",
+    FileButton.SHARE: "Share level",
     GoalButton.ADD: "Add a goal",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
@@ -397,6 +405,7 @@ def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> No
 ACTION_SAYS = {  # under the action atop the main screen: what it is (D-068)
     Mode.WRITE: "Write: a click on a cell shows what can be done there",
     Mode.DELETE: "Delete: a click removes the part or the wire under it",
+    Mode.LOCK: "Lock: a click makes the part the level's, or frees it",
     Tool.WIRE: "Wire: the next part clicked is wired to this one",
     Tool.MOVE: "Move: the part goes to the next empty cell clicked, or with the arrows",
     Tool.TURN_LEFT: "Turn left: the part turns 60° counter-clockwise",
@@ -488,7 +497,7 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
     """Tools' rows (D-068): Write and Delete, undo and redo."""
     layout = scene.layout
     for mode, rect in layout.mode_buttons:
-        status = ("key", MODE_KEY)
+        status = ("key", LOCK_KEY if mode is Mode.LOCK else MODE_KEY)
         icon = MODE_ICON[mode]
         draw_row(
             screen, scene, fonts, rect, mode, ROW_NAME[mode], status, mode is scene.mode, icon=icon

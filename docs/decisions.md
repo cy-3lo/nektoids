@@ -1855,3 +1855,39 @@ losers still held in for the 10 s. Its tutorial is left as it is, for later work
 rings of a goal to enter every one now light one by one as the swimmer first comes into each,
 as the lights to reach already get a white circle each; other goals on the marks light them all
 once met, as before, and a ban lights none (`objectives.lit_marks`).
+
+**D-319 — 2026-10-06 — The board's locked parts: Lock, a third mode of the sandbox's Tools (K), makes the part clicked the level's, fixed where it is and using no stock, or frees it again, using one. The level places what the Editor's board has locked: Copy level writes it, Paste and Start from bring it. Locked parts only: no starting wire, no free starting part. Amends D-310, D-315.**
+The todo's last part of the board, as the physicist chose it: locked parts set with the board
+editor itself, in Tools, the same gesture as Delete, rather than a seventh icon on a part's Wheel.
+On the sandbox Tools offers Lock under Write and Delete: while it is on, a click on a part, or
+Enter on the focus, locks it, the part drawn as the level's are, and a click on a locked part
+frees it; freeing one of a kind the level hands out no more of is refused, "give one more in
+Parts". A locked part keeps its cell and its facing (D-009) and uses no stock, so locking one
+gives its stock back. The level follows the board: once a frame the Maker takes the parts the
+board has locked into its level, no wire with them, a step for its undo, which frees them again;
+the Editor's undo covers the locking itself. Copy level writes them; Paste a level and Start
+from bring a level's locked parts onto the Editor's board, keeping those already there, freeing
+those it does not place, putting down the new ones, refused if the board has something on one
+of their cells, "take it off first", or would hold more than the level hands out. A blank plane
+places none. A level's free parts and wires, Aggression's prewired eye and thruster, are not
+brought, and a level made places none: that is in ideas.md for later. The Editor's undo starts
+afresh only when the zone or the parts handed out change, not when a part is locked.
+
+**D-320 — 2026-10-06 — Share level, in the Maker's Files: once the level, as it stands, has been won in the Run, it is copied with its proof, the winning board's text and its score; pasted, the proof is run again, a second of it a frame, and the level is cleared if it wins, its score the one to beat, else a draft. The proof's board stays hidden. Applies D-205, D-310; the todo's clear check and sharing as text.**
+The physicist's plan, as Mario Maker clears a course by its maker. A run of the made level won
+in Free play gives the Maker a proof: the board that won, as its text (D-205), the tick it won at
+and its parts; a better score replaces it. The proof holds while the level stays as it was won;
+any change in the Maker voids it. Files has Share level under Copy level, greyed until then, and
+a line under it: "Won in 9.11 s, 4 parts", or "Win it in the Run, as it stands", or "Give it a
+goal, then win it"; a click without a proof says so. Share level copies the level's JSON with
+`"proof": {"board", "ticks", "parts"}`; Copy level stays a draft, with none. The key joins
+version 4, which has not reached `main`, so no version is added; a proof's unknown key is
+refused (D-201). Paste a level takes the level as before, then, if it has a proof, puts the
+proof's board on a fresh board of the level, refused if it does not fit, and runs it headless
+(`levels/proof.Replay`), 120 ticks a frame: the worst run, 120 s, takes some 2 s natively and
+more in a browser, which must never hold a frame. Won, the level is cleared, "Cleared: won in
+9.11 s with 4 parts, the score to beat", and its proof kept, its tick its own run's and its parts
+counted on the board, not taken on trust; otherwise it stays a draft and says so. What is
+checked is the outcome: across platforms a run may differ in its last bit (D-004). The proof's
+board never goes on the Editor's board, so a player solves the level alone; the score to beat
+shows in Files only, the run's Score drawer later.

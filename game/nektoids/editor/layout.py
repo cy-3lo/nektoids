@@ -160,6 +160,7 @@ class Shown(Enum):  # atop the editor's main screen (D-068)
 class Mode(Enum):  # what a click on the board does (D-068)
     WRITE = "write"  # a cell focused, its Wheel: place, turn, wire, move
     DELETE = "delete"  # the part clicked removed with its wires, or the wire clicked
+    LOCK = "lock"  # the sandbox's: the part clicked made the level's, or freed (D-319)
 
 
 class LevelButton(Enum):  # the accented switch at the bar's foot, to the other environment
@@ -170,6 +171,7 @@ class LevelButton(Enum):  # the accented switch at the bar's foot, to the other 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
     SAVE = "save"  # Copy a board: its text; the field to paste one is under it
     LEVEL = "level"  # the Maker's Files: Copy level, its JSON; a field under it (D-310)
+    SHARE = "share"  # ... Share level: its JSON and its proof, once it is won (D-320)
 
 
 class ViewButton(Enum):
@@ -328,6 +330,7 @@ MAKER_VIEWS = (ViewButton.RAYS,)  # ... in the Maker: the light, which the plane
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
+LOCK_KEY = "K"  # Lock and Write in turn, on the sandbox (D-319)
 # On the physical key: Space runs, as the arena's play (D-021); from the run, Tab goes on to the
 # next tab, the editor's, as it does from every tab, Shift+Tab back (D-304).
 LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Tab"}
@@ -401,6 +404,7 @@ class Layout:
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # Files' foot: Save (D-206)
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
     level_field: Rect | None  # the Maker's Files: a level's text pasted there (D-310)
+    share_note: Rect | None  # ... under Share level, a line: won, or how to win it (D-320)
     start_rows: tuple[tuple[Start, Rect], ...]  # ... under it, Start from: a blank plane, a level
     steppers: tuple[tuple[Stepper, Rect], ...]  # the Maker's Parts: the zone, each part (D-315)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
@@ -468,7 +472,7 @@ def make_layout(
     floor = _goals_top(height, goals) - 16 if env is Env.RUN else height - FOOT_MARGIN
     rows = _Rows()
     if drawer is Drawer.TOOLS:
-        rows.tools(height, wheel_folded, scroll)
+        rows.tools(height, wheel_folded, scroll, maker)
     elif drawer is Drawer.PARTS and env is Env.MAKER:
         rows.maker_parts(folded)
         rows.scrolled(floor, scroll)  # D-096
@@ -566,6 +570,7 @@ def make_layout(
         file_buttons=tuple(rows.of(FileButton)),
         board_field=rows.board_field,
         level_field=rows.level_field,
+        share_note=rows.share_note,
         start_rows=tuple(rows.of(Start)),
         steppers=tuple(rows.steppers),
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
@@ -606,6 +611,7 @@ class _Rows:
         self.passkey: Rect | None = None
         self.board_field: Rect | None = None
         self.level_field: Rect | None = None
+        self.share_note: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
         self.fields: list[tuple[Brief, Rect]] = []
         self.heads: list[tuple[MadeGoal, Rect]] = []
@@ -678,11 +684,15 @@ class _Rows:
         self.y += ROW_PITCH
 
     def maker_files(self, starts: int) -> None:
-        """The Maker's Files (D-310): under Save/Load, Copy level, then a field to paste a
-        level's text into, as the editor's Files has for a board (D-206); under Start from, a
-        blank plane, then the `starts` shipped levels."""
+        """The Maker's Files (D-310): under Save/Load, Copy level, Share level and a line under
+        it (D-320), then a field to paste a level's text into, as the editor's Files has for a
+        board (D-206); under Start from, a blank plane, then the `starts` shipped levels."""
         self._title("Save/Load", self.sections)
         self._row(FileButton.LEVEL)
+        self._row(FileButton.SHARE)
+        top, width = self.y - (ROW_PITCH - ROW_HEIGHT), DRAWER_WIDTH - 2 * ROW_INSET
+        self.share_note = (BAR_WIDTH + ROW_INSET, top, width, HINT_LINE)
+        self.y = top + HINT_LINE + ROW_PITCH - ROW_HEIGHT
         self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH + SECTION_GAP
         self._title("Start from", self.sections)
@@ -737,11 +747,14 @@ class _Rows:
         self.picture, self.line = _moved(self.picture, up), _moved(self.line, up)
         self.passkey, self.overview = _moved(self.passkey, up), _moved(self.overview, up)
         self.zoom_bar, self.level_field = _moved(self.zoom_bar, up), _moved(self.level_field, up)
+        self.share_note = _moved(self.share_note, up)
 
-    def tools(self, height: int, wheel_folded: bool, scroll: int) -> None:
-        """Write and Delete, then undo and redo, as rows, scrolled above the Wheel if they do not
-        fit; at the drawer's foot, the cell, as in Parts (D-068, D-069)."""
-        self._over_wheel((("Mode", Mode), ("Edit", EditButton)), height, wheel_folded, scroll)
+    def tools(self, height: int, wheel_folded: bool, scroll: int, maker: bool = False) -> None:
+        """Write and Delete, and on the sandbox Lock (D-319), then undo and redo, as rows,
+        scrolled above the Wheel if they do not fit; at the drawer's foot, the cell, as in Parts
+        (D-068, D-069)."""
+        modes = tuple(mode for mode in Mode if maker or mode is not Mode.LOCK)
+        self._over_wheel((("Mode", modes), ("Edit", EditButton)), height, wheel_folded, scroll)
 
     def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
         """The Maker's objects under their title, then undo and redo, which need none, as rows,
