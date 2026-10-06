@@ -32,7 +32,8 @@ HINTED = [title for title, level in LEVELS.items() if level.hints is not None]
 def test_the_levels_of_chapters_0_and_1_have_hints_and_the_others_none():
     chapters = [locate(k)[0].number for k in range(len(LEVELS))]  # D-329
     assert HINTED == [title for title, n in zip(LEVELS, chapters, strict=True) if n <= 1]
-    assert HINTED == ["Fear", "Aggression", "Love", "Orbit"]
+    tutorials = ["Wiring", "Turning", "Eyes", "Half", "Minus", "Diagnostic"]  # D-335
+    assert HINTED == [*tutorials, "Fear", "Aggression", "Love", "Orbit"]
 
 
 @pytest.mark.parametrize("title", HINTED)

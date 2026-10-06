@@ -33,7 +33,7 @@ from nektoids.levels.arenas import arenas, sandbox
 
 SIZE = 40.0
 CENTRE = (628.0, 335.0)
-FEAR = arenas()[0]
+FEAR = next(level for level in arenas() if level.title == "Fear")
 
 
 def test_an_empty_cell_offers_the_parts_left_and_a_part_its_actions():

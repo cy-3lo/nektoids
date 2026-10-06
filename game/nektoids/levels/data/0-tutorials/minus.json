@@ -1,0 +1,33 @@
+{
+  "version": 5,
+  "title": "Minus",
+  "spec": "Stay 3 s in the ring round the light, without touching it.",
+  "author": "@Cy-3LO",
+  "start": {"at": [0, 0], "heading": 0},
+  "items": [{"kind": "light", "at": [16, 0], "power": 4}, {"kind": "mark", "at": [16, 0], "radius": 8}],
+  "board": {
+    "zone": 7,
+    "stock": {"eye": 1, "source": 1, "difference": 1, "thruster": 1},
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 20,
+  "objectives": [
+    {"verb": "stay", "count": "one", "target": "mark", "seconds": 3},
+    {"verb": "reach", "count": "none", "target": "light"}
+  ],
+  "hints": {"idea": "The light takes the push away."},
+  "tutorial": {
+    "starts_in": "parts",
+    "steps": [
+      {
+        "show": [{"drawer": "parts"}, {"menu": "difference"}],
+        "say": [
+          "The Diff sends the difference of its two inputs.",
+          "A Source less an eye: a full push in the dark, none once the eye sees all the light it can."
+        ]
+      }
+    ]
+  },
+  "proof": {"board": "AMdqP9epxMdvd", "ticks": 890, "parts": 4}
+}

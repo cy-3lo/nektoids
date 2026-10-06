@@ -189,10 +189,12 @@ class Router:
         self.index = index
 
     def unlocked(self, index: int) -> bool:
-        """Each chapter's first level, any level after one won, any a passkey opened, and the
-        sandbox are open (D-075, D-325)."""
-        first = index == self.sandbox_index or locate(index)[1] == 0
-        return first or index - 1 in self.won or index in self.opened
+        """Each chapter's first level, every level of a chapter all open, the tutorials (D-335),
+        any level after one won, any a passkey opened, and the sandbox are open (D-075, D-325)."""
+        if index == self.sandbox_index:
+            return True
+        chapter, k = locate(index)
+        return k == 0 or chapter.all_open or index - 1 in self.won or index in self.opened
 
     def unlock(self, word: str) -> int | None:
         """A passkey typed (D-075): the level after the one whose win gives `word`, in any case,

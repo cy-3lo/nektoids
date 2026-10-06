@@ -1,0 +1,30 @@
+{
+  "version": 5,
+  "title": "Half",
+  "spec": "Stay in the ring for 3 s.",
+  "author": "@Cy-3LO",
+  "start": {"at": [-8, 0], "heading": 0},
+  "items": [{"kind": "mark", "at": [4, 0], "radius": 3}],
+  "board": {
+    "zone": 7,
+    "stock": {"source": 1, "double": 1, "halve": 1, "thruster": 1},
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 15,
+  "objectives": [{"verb": "stay", "count": "one", "target": "mark", "seconds": 3}],
+  "hints": {"idea": "Slower stays longer."},
+  "tutorial": {
+    "starts_in": "parts",
+    "steps": [
+      {
+        "show": [{"drawer": "parts"}, {"menu": "halve"}, {"menu": "double"}],
+        "say": [
+          "The Halve sends half the beads that come in, the Double twice as many. No wire carries more than a Source sends."
+        ]
+      },
+      {"say": ["At full push the swimmer crosses the ring in 2 s: too fast to stay 3 s in it."]}
+    ]
+  },
+  "proof": {"board": "2FqtG2w76Cs", "ticks": 1083, "parts": 3}
+}
