@@ -79,13 +79,13 @@ def test_a_level_opened_comes_up_under_its_card_and_one_returned_to_does_not():
     router.edit()  # Edit after a run
     assert router.screen is Screen.EDIT
     router.open(router.sandbox_index)
-    assert router.screen is Screen.SPEC
+    assert router.screen is Screen.MAKE  # Open Maker: straight on the Maker, no card (D-341)
 
 
 def test_the_sandbox_has_no_next_and_is_never_won():
     router = a_router()
     router.open(router.sandbox_index)
-    assert router.label == "SANDBOX" and router.level.objectives == ()
+    assert router.label == "YOUR LEVEL" and router.level.objectives == ()  # D-341
     assert not router.has_next and not router.is_last
     router.mark_won()
     assert router.won == set()
@@ -263,7 +263,7 @@ def test_the_maker_opens_on_the_sandbox_alone_and_the_editor_and_the_run_go_on_f
     router.open(router.sandbox_index)
     router.begin()
     router.make()
-    assert router.screen is Screen.MAKE and router.label == "SANDBOX"
+    assert router.screen is Screen.MAKE and router.label == "YOUR LEVEL"
     router.run()
     assert router.screen is Screen.RUN
     router.make()

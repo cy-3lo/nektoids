@@ -325,8 +325,12 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         )
     for field, rect in layout.brief_fields:
         writing = scene.writing is field
-        said = {Brief.TITLE: level.title, Brief.SPEC: level.spec}.get(field, level.author or "@")
+        author = (level.author or "").removeprefix("@")  # its "@" outside the field (D-341)
+        said = {Brief.TITLE: level.title, Brief.SPEC: level.spec}.get(field, author)
         text, caret = (scene.field.text, scene.field.caret) if writing else (said, None)
+        if field is Brief.AUTHOR:  # the "@", fixed, before the field (D-341)
+            at = fonts.text.render("@", True, TEXT)
+            screen.blit(at, at.get_rect(midright=(rect[0] - 4, rect[1] + rect[3] // 2)))
         if field is not Brief.SPEC:  # the title's, the author's (D-331)
             draw_field(screen, fonts, rect, text, caret)
         else:
@@ -335,7 +339,7 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     _draw_parts(screen, scene, fonts)
     for start, rect in layout.start_rows:  # under the rule, scrolled (D-322)
         label, level = scene.starts[start.index] if start.index is not None else ("", None)
-        name, icon = ("Blank level", "file") if level is None else ("Sandbox", "border-all")
+        name, icon = ("Blank level", "file") if level is None else (level.title, "border-all")
         if label:
             name, icon = level.title, None
         draw_row(

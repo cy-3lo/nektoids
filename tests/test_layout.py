@@ -863,14 +863,14 @@ def test_chapters_lists_each_chapter_with_levels_under_a_title_that_folds():
     shut = make_layout(Drawer.CHAPTERS, frozenset({"Chapter 1", "Chapter 3"}), chapters=SHIPPED)
     assert [k for k, _ in shut.chapter_rows] == [4, 8] and shut.folded == {"Chapter 1", "Chapter 3"}
     assert [title for title, _ in shut.group_titles] == list(titles)  # its titles stay
-    assert [title for title, _ in shut.section_titles] == ["Free play", "Passkey"]
+    assert [title for title, _ in shut.section_titles] == ["Build your level", "Passkey"]  # D-341
 
 
 def test_start_from_is_a_list_of_its_own_under_a_rule_its_chapters_folding():
     files = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=9, chapters=SHIPPED)
     rule, area = files.files_rule, files.list_area  # D-322, D-326
     assert files.level_field[1] < files.share_note[1] < rule[1] < area[1]  # Save/Load stays above
-    titles = ["Chapter 1", "Chapter 2", "Chapter 3", "Free play"]
+    titles = ["Chapter 1", "Chapter 2", "Chapter 3", "Sandbox"]  # its plane (D-341)
     assert [t for t, _ in files.group_titles] == titles
     assert [s.index for s, _ in files.start_rows] == [None, *range(9)]  # Blank level first
     assert files.start_rows[0][1][1] >= area[1] and level_field_at(files, centre(files.level_field))

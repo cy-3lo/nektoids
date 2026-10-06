@@ -47,6 +47,7 @@ SWITCH = 36  # the accented switch at its foot, square [px]
 ACTION_WIDTH = 50  # atop the editor's main screen, what a click does: a Wheel's icon, square [px]
 ACTION_ROOM = 96  # from the board's top: the action, the line under it, a little more [px]
 DRAWER_WIDTH = 248  # [px]
+AT_WIDTH = 18  # the Maker's Author field: its "@" stands outside it, this wide [px] (D-341)
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
 OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
@@ -724,7 +725,7 @@ class _Rows:
         groups = [("", [Start(None)])]
         groups += [(title, [Start(k) for k in levels]) for title, levels in _spans(chapters)]
         total = sum(count for _, count in chapters)
-        groups.append(("Free play", [Start(k) for k in range(total, starts)]))
+        groups.append(("Sandbox", [Start(k) for k in range(total, starts)]))  # its plane (D-341)
         self._folding(groups, folded, height - FOOT_MARGIN, scroll)
 
     def _folding(
@@ -805,8 +806,9 @@ class _Rows:
         for label, field, lines in fields:
             self._title(label, self.sections)
             height = ROW_HEIGHT if lines == 1 else lines * HINT_LINE + 2 * FIELD_PAD
-            width = DRAWER_WIDTH - 2 * ROW_INSET
-            self.fields.append((field, (BAR_WIDTH + ROW_INSET, self.y, width, height)))
+            at = AT_WIDTH if field is Brief.AUTHOR else 0  # its "@" before it, fixed (D-341)
+            width = DRAWER_WIDTH - 2 * ROW_INSET - at
+            self.fields.append((field, (BAR_WIDTH + ROW_INSET + at, self.y, width, height)))
             self.y += height + ROW_PITCH - ROW_HEIGHT + SECTION_GAP
 
     def made_goals(self, made: tuple[bool, ...], addable: bool) -> None:
@@ -921,8 +923,8 @@ class _Rows:
                 for k in () if title in folded else levels:
                     self._row(k)
                 self.y += SECTION_GAP
-        self._title("Free play", self.sections)
-        self._row(sum(count for _, count in chapters))  # the sandbox
+        self._title("Build your level", self.sections)  # once Free play (D-341)
+        self._row(sum(count for _, count in chapters))  # the sandbox: Open Maker
         self.y += SECTION_GAP
         self._title("Passkey", self.sections)  # a level's word typed: it opens (D-075)
         self.passkey = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)

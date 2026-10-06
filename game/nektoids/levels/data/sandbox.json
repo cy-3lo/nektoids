@@ -27,5 +27,16 @@
     "wires": []
   },
   "time_limit": 120,
-  "objectives": []
+  "objectives": [],
+  "tutorial": {
+    "steps": [
+      {
+        "show": {"tab": "maker"},
+        "say": [
+          "This is the **Maker**, a new tab: build your own level here.",
+          "Place lights, obstacles and rings in **Objects**, choose the **Goals**, try it in the **Editor** and the **Run**, and share it from **Files**."
+        ]
+      }
+    ]
+  }
 }

@@ -91,8 +91,9 @@ settings = Settings()  # what the player sets, for the session (D-054)
 
 
 def tutorial() -> Tutorial | None:
-    """The open level's tutorial while a step remains, or None (the sandbox has none)."""
-    data = None if router.in_sandbox else router.level.tutorial
+    """The open level's tutorial while a step remains, or None; the sandbox's is the shipped
+    one's, the Maker's introduction, whatever level the Maker has made since (D-341)."""
+    data = free.tutorial if router.in_sandbox else router.level.tutorial
     if data is not None and router.index not in tutorials:
         tutorials[router.index] = Tutorial.from_dict(data)
     guide = tutorials.get(router.index)
@@ -122,8 +123,10 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
     editor, the Wheel's icons round the focused cell are targets too (D-070)."""
     if isinstance(scene, EditorScene):
         live = Live(wheel=tuple(scene.wheel()), focused=scene.focused)
-    else:  # the run: the swimmer, which Fear's first step outlines (D-071)
+    elif isinstance(scene, ArenaScene):  # the run: the swimmer, as a step may outline (D-071)
         live = Live(swimmer=scene.swimmer_box())
+    else:  # the Maker: its tabs, and nothing that moves (D-341)
+        live = Live()
     where = (router.screen, scene.layout, scene.view, live)
     spots = target_spots(guide.step.show, *where)
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
@@ -144,6 +147,8 @@ def choose_place(index: int) -> None:
     if router.index in editors:
         editors[router.index].open_drawer(Drawer.PARTS)
     router.open(index)
+    if router.screen is Screen.MAKE:  # Open Maker: the Maker on Objects, no card (D-341)
+        maker().open_drawer(Drawer.OBJECTS)
 
 
 def replay_tutorial() -> None:
@@ -284,7 +289,7 @@ async def main() -> None:
                 developer.handle_event(event)
             elif (
                 (guide := tutorial()) is not None
-                and router.screen in (Screen.EDIT, Screen.RUN)
+                and router.screen in (Screen.EDIT, Screen.RUN, Screen.MAKE)
                 and (button := tutorial_press(guide, event, on_screen())) is not None
             ):
                 if button == "next":
@@ -412,7 +417,8 @@ async def main() -> None:
         for scene in frames:  # what Chapters shows, in every tab, and the chapters it folds
             if scene is not None:
                 scene.set_chapters(router.rows(), frozenset(router.folded))
-                scene.tutored = not router.in_sandbox and router.level.tutorial is not None
+                tutored = free.tutorial if router.in_sandbox else router.level.tutorial
+                scene.tutored = tutored is not None
         scene = on_screen()
         wanted = drawer_for(guide.step, scene.layout.drawer) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on
@@ -427,6 +433,8 @@ async def main() -> None:
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
         editor().lit_ink = pulse(frame)  # ... in the accent, pulsing (D-337)
         editor().guide_cells = focus_cells(guide)  # the cells a step acts on, lit (D-063)
+        if router.screen is Screen.MAKE:  # the Maker's introduction (D-341)
+            maker().gate, maker().lit, maker().lit_ink = gate, panels(guide), pulse(frame)
         if playing is not None:
             playing.gate = gate
             playing.lit = panels(guide)
@@ -459,7 +467,8 @@ async def main() -> None:
             draw_title_card(screen, fonts)
         elif developer is None and router.screen is Screen.SPEC:
             draw_level_card(screen, router, fonts)
-        if developer is None and guide is not None and router.screen in (Screen.EDIT, Screen.RUN):
+        shown = router.screen in (Screen.EDIT, Screen.RUN, Screen.MAKE)  # the Maker's (D-341)
+        if developer is None and guide is not None and shown:
             draw_tutorial(screen, fonts, guide, tutorial_box(guide, on_screen())[1], pointer)
         pygame.display.flip()
         clock.tick(FPS)
