@@ -2171,3 +2171,11 @@ plane under Sandbox, by its title, Two lights, four obstacles. The code keeps th
 The Author field in Text: its "@" stands outside the field, before it, so that it cannot be
 deleted; the field holds the name after it, and what is typed is signed "@" and the name; an
 empty name leaves the level unsigned (D-331). The level file still writes "@Cy-3LO".
+
+**D-342 — 2026-10-06 — The Maker's Start from opens with every chapter folded, and no longer lists the sandbox's plane, Two lights, four obstacles. The light's rays are a shade lighter. Amends D-310, D-322, D-341.**
+The physicist: in the Maker's Files the chapters should be folded, and the sandbox's plane go.
+Start from lists Blank level, then each chapter under its title, folded at first (the Maker's
+own folds, which a click on a title changes, D-322); the old plane, once Free play's (D-035,
+D-341), is gone from it, its file still the sandbox's, where the Maker's introduction lives. And
+the rays a light sends, in the run, Diagnostic's map and the Maker's plane, are a shade lighter:
+`RAY`, three quarters of the way from the bar's black to a rule's grey, was under half.

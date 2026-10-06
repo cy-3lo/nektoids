@@ -223,7 +223,8 @@ class MakerScene(Frame):
         self.field: TextField | None = None  # ... what it holds (D-305)
         self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
-        self.folded: set[str] = set()  # Parts' groups shown closed, as the Editor's (D-315)
+        self.folded: set[str] = set()  # Parts' groups shown closed, as the Editor's (D-315),
+        self.folded |= {title for title, _ in chapters}  # and Start from's chapters (D-342)
         self._take(level)
         self._open_view()
         self.layout = self._relayout(self.layout.drawer)  # its rows, now it knows its starts
