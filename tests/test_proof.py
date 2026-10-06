@@ -18,7 +18,7 @@ from nektoids.levels.proof import Proof, Replay
 
 DT = 1.0 / 120.0
 ORBIT = next(level for level in arenas() if level.title == "Orbit")
-ORBITER = Hints.from_dict(ORBIT.hints).build(ORBIT.blank_board())  # its hint's board, which wins
+ORBITER = Hints.of(ORBIT).board  # its hint's board, its proof's, which wins
 
 
 def test_a_proof_is_its_boards_text_and_its_score_and_refuses_what_it_does_not_know():
