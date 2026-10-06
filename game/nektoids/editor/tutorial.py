@@ -30,8 +30,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
 
-import numpy as np
-
 from nektoids.editor import arena_layout
 from nektoids.editor.layout import (
     DRAWERS,
@@ -45,7 +43,6 @@ from nektoids.editor.layout import (
     Tool,
     View,
 )
-from nektoids.editor.marks import SPECKS, Specks
 from nektoids.editor.router import Screen
 from nektoids.editor.wheel import ICON, WHEEL_HEX, Slot
 from nektoids.graph.board import FACING_NAMES, Board, Kind
@@ -64,11 +61,6 @@ PATH_MARGIN = 20  # the hand's way from one target to the next, this wide on eit
 AREA = 400  # a target this wide, and half as tall, is an area: the box may lie over it [px]
 GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
 EDGE = 3  # an outline keeps this far inside the screen's edges [px] (D-071)
-HALO = 6  # where the outline was, round a target: this far out of it [px]
-SPARK_LIFE = 24  # [frames] a spark's way out, 0.4 s (D-080)
-SPARK_REACH = 14.0  # [px] how far out of the edge it goes
-SPARK_PITCH = 24.0  # [px] of edge per spark alive at once, on average
-SPARK_STREAMS = 128  # the sparks' streams in the specks' table, after the swimmer's
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 RUN_PANELS = {"arena", "controls", "objectives", "inside", "score"}  # the rest are buttons
 RUN_DRAWERS = {"inside": Drawer.INSIDE, "score": Drawer.SCORE}  # the objectives are in each
@@ -206,14 +198,14 @@ class Tutorial:
 
 
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
-    """What a leading step shows, by name, drawn in the accent (D-050, D-080): an area, a drawer
-    or a part of the run by its own name, its titles lit; a tab as "tab:editor". A drawer's icon
-    keeps its colour: its sparks are enough (D-095)."""
+    """What a leading step shows, by name, drawn in the accent, the only highlight (D-050,
+    D-336): an area, a drawer or a part of the run by its own name, its titles lit; a drawer's
+    icon in the bar by the drawer's name, the bar lighting them all; a tab as "tab:editor"."""
     if tutorial is None or not tutorial.leads:
         return frozenset()
     names = set()
     for one in _shows(tutorial.step):
-        names.add(one.get("area") or one.get("drawer") or one.get("run"))
+        names.add(one.get("area") or one.get("drawer") or one.get("run") or one.get("icon"))
         names.add(f"tab:{one['tab']}" if "tab" in one else None)
     return frozenset(names - {None})
 
@@ -682,41 +674,6 @@ def ghosts_from(data: Mapping) -> tuple[Ghost, ...]:
 def ghost_wires_from(data: Mapping) -> tuple[tuple[Cell, Cell], ...]:
     """The ghost wires of a tutorial's data, or of a hint's shadow: each from a cell to a cell."""
     return tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
-
-
-def sparks(
-    spots: list[tuple[Rect, object]], frame: int, specks: Specks = SPECKS
-) -> list[tuple[float, float]]:
-    """Where the sparks round a step's targets are at `frame` [px] (D-080): specks drifting out
-    of each target's edge, where its outline was, SPARK_REACH px in SPARK_LIFE frames, as the
-    thrusters' flames drift out of their backs (D-076), as many as the edge is long. Round a
-    disc, a cell or a Wheel's icon, they go out from its centre; round anything else, square out
-    of each side. A place the box only keeps clear of ("none") has none."""
-    found, stream = [], SPARK_STREAMS
-    for rect, shape in spots:
-        if shape == "none":
-            continue
-        x, y, w, h = rect
-        if shape in ("disc", "icon"):
-            cx, cy, r = x + w / 2, y + h / 2, h / 2 + HALO
-            u, across = specks.stream(2 * math.pi * r / SPARK_PITCH, frame, SPARK_LIFE, stream)
-            stream += 1
-            out, angle = r + u * SPARK_REACH, math.pi * across
-            xs, ys = cx + out * np.cos(angle), cy + out * np.sin(angle)
-            found += zip(xs.tolist(), ys.tolist(), strict=True)
-            continue
-        if not isinstance(shape, (Page, Docked)) and shape != "panel":  # a button, a row...
-            x, y, w, h = x - HALO, y - HALO, w + 2 * HALO, h + 2 * HALO
-        x, y, w, h = outline_kept((x, y, w, h))
-        sides = ((x, y, w, 0, -1), (x, y + h, w, 0, 1), (x, y, h, -1, 0), (x + w, y, h, 1, 0))
-        for left, top, length, nx, ny in sides:  # each side: where along it, then how far out
-            u, across = specks.stream(length / SPARK_PITCH, frame, SPARK_LIFE, stream)
-            stream += 1
-            along = (across + 1.0) / 2.0 * length
-            xs = left + (along if nx == 0 else nx * u * SPARK_REACH)
-            ys = top + (along if ny == 0 else ny * u * SPARK_REACH)
-            found += zip(xs.tolist(), ys.tolist(), strict=True)
-    return found
 
 
 def _cell(data) -> Cell:

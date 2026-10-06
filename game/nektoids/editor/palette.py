@@ -153,7 +153,6 @@ FLASH = P.accent2.dark  # the flash on a refused move
 VEIL = (0, 0, 0, 150)  # over a level's board under its card; over all but a tutorial's targets
 CLEAR = (0, 0, 0, 0)  # a hole in a veil
 LIT = P.accent1.bright  # a tutorial's target, drawn in it, and its box while it leads
-SPARK = P.accent1.dark  # the sparks drifting out of a tutorial's target (D-080)
 
 # The board
 ZONE = P.surface  # cells of the level's zone

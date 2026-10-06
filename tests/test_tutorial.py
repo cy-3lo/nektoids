@@ -19,10 +19,7 @@ from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     CHARS,
     GAP,
-    HALO,
     LINE,
-    SPARK_PITCH,
-    SPARK_REACH,
     Action,
     Context,
     Docked,
@@ -41,13 +38,12 @@ from nektoids.editor.tutorial import (
     panels,
     shows_wheel,
     skip_rect,
-    sparks,
     target_rects,
     target_spots,
 )
 from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import NE, NW, SW, E, W
+from nektoids.graph.hexgrid import NW, SW, E, W
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome
 
@@ -164,8 +160,8 @@ def test_chapter_0_has_the_tutorials_its_first_two_lead_the_others_explain():
         {"screen": "run"},
         {"outcome": "won"},
     ]
-    assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (0, 0), NE)]
-    assert turning.steps[0].until == {"facing": {"cell": [0, 0], "facing": "NE"}}
+    assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (0, 1), E)]
+    assert turning.steps[0].until == {"facing": {"cell": [0, 1], "facing": "E"}}  # D-336
     for title in ("Eyes", "Half", "Minus", "Diagnostic"):  # they explain: nothing built
         tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
         assert tutorial.ghosts == () and tutorial.ghost_wires == ()
@@ -204,21 +200,19 @@ def test_diagnostics_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it
 
 
 def test_wirings_introduction_shows_the_objective_the_tabs_the_bar_leads_the_wire_ends_on_hints():
-    level = LEVELS["Wiring"]  # Fear's introduction, moved to 0.1, then the wire (D-334, D-335)
+    level = LEVELS["Wiring"]  # Fear's introduction, moved to 0.1, then the wire (D-334, D-336)
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
 
     def context(screen, drawer=None, outcome=None):
         return Context(board, Tool.ADD, screen, outcome, 0.0, drawer)
 
-    for shown in ({"run": "swimmer"}, {"run": "objectives"}):  # in the run: any key goes on
+    for shown in (None, {"run": "objectives"}):  # in the run: any key goes on
         tutorial.follow(context(Screen.RUN))
         assert tutorial.step.show == shown and tutorial.waits_for_next
         tutorial.next()
     tutorial.follow(context(Screen.RUN))
     assert {"tab": "editor"} in tutorial.step.show  # waits for the Editor
-    tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
-    assert tutorial.step.show is None and not tutorial.leads  # the board: its box out of the way
-    tutorial.next()
+    tutorial.follow(context(Screen.EDIT, Drawer.PARTS))
     assert tutorial.step.show == {"area": "bar"} and tutorial.waits_for_next  # any key, D-081
     tutorial.next()
     assert tutorial.step.until == {"wired": {"from": [0, 0], "to": [-1, 0]}}  # it leads
@@ -226,9 +220,9 @@ def test_wirings_introduction_shows_the_objective_the_tabs_the_bar_leads_the_wir
     source, thruster = (board.node_at(cell).id for cell in ((0, 0), (-1, 0)))
     board.connect(source, thruster)
     tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
-    assert {"tab": "run"} in tutorial.step.show
+    assert tutorial.step.until == {"screen": "run"} and not tutorial.leads  # nothing lit
     tutorial.follow(context(Screen.RUN))
-    assert tutorial.step.until == {"outcome": "won"}
+    assert tutorial.step.until == {"outcome": "won"} and not tutorial.leads
     tutorial.follow(context(Screen.RUN, outcome=Outcome.WON))
     assert tutorial.step.show == {"icon": "hints"} and drawer_for(tutorial.step) is None
     assert tutorial.waits_for_next  # the last: any key or click closes it
@@ -528,8 +522,8 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
     for index in range(len(intro.steps)):
         intro.index = index
         named.append(panels(intro))
-    tabs = [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}]  # D-095
-    assert named == [*tabs, set(), {"tab:run"}, {"play", "arena"}, set()]  # the wire, the run
+    tabs = [set(), {"objectives"}, {"tab:editor"}, {"bar"}]  # D-095, D-336
+    assert named == [*tabs, set(), set(), set(), {"hints"}]  # the wire, the run, Hints's icon
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
@@ -791,25 +785,6 @@ def test_aggressions_boxes_keep_clear_of_what_they_show_on_screen():
             if narrow:
                 box = box_rect(targets, len(step.lines), layout.board_area)
                 assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
-
-
-def test_sparks_drift_out_of_where_the_outline_was_as_many_as_its_edge_is_long():
-    button, cell = ((400, 300, 40, 40), "spot"), ((200, 200, 70, 80), "disc")  # D-080
-    assert sparks([button, cell], 7) == sparks([button, cell], 7)  # still while the frame is
-    counts = []
-    for frame in range(200):
-        for x, y in sparks([button], frame):
-            dx = max(400 - HALO - x, 0, x - (440 + HALO))
-            dy = max(300 - HALO - y, 0, y - (340 + HALO))
-            assert max(dx, dy) <= SPARK_REACH + 1e-9  # out of the edge, not beyond its reach
-            assert not (400 - HALO < x < 440 + HALO and 300 - HALO < y < 340 + HALO)
-        counts.append(len(sparks([button], frame)))
-    edge = 4 * (40 + 2 * HALO)
-    assert abs(sum(counts) / len(counts) - edge / SPARK_PITCH) < 0.25 * edge / SPARK_PITCH
-    for x, y in sparks([cell], 3):  # round a cell: out from its centre
-        r = ((x - 235) ** 2 + (y - 240) ** 2) ** 0.5
-        assert 40 + HALO - 1e-9 <= r <= 40 + HALO + SPARK_REACH
-    assert sparks([((0, 0, 10, 10), "none")], 3) == []
 
 
 def test_a_steps_paragraphs_are_wrapped_to_the_box_each_on_a_new_line():
