@@ -4,14 +4,15 @@ The jam build shipped as v1.0 (D-106), and stage 0, Foundations, is built (D-200
 is left goes here, in the order it unblocks the rest; the PR that does an item removes it, and
 what was done is in git and in [`decisions.md`](decisions.md). Sections keep their numbers,
 which the decision log cites. Ideas for later go in [`ideas.md`](ideas.md). §11 is stage 1, a
-level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300).
+level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300); §13, the
+chapters, levels and tutorials to be made with it, is being planned.
 
 ## 11. A level maker (stage 1, D-300)
 
 For us and Camille first, then for players (D-105). Each item is planned, and its decisions
 taken, when it starts.
 
-- [ ] **A level editor**, Super Mario Maker-like: levels are data already (D-028). It comes
+- [x] **A level editor**, Super Mario Maker-like: levels are data already (D-028). It comes
   first after the foundations (D-105): Camille can make levels without programming (D-041), and
   every later stage needs levels. It is the Maker, a third tab on the sandbox (D-301).
   Done, on `stage/1-level-maker`:
@@ -56,9 +57,6 @@ taken, when it starts.
   (D-324).
 - [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
   their JSON (D-310), shared with their proof (D-320).
-- [ ] **A first level, before Fear** (the physicist's): its parts already on the board, one eye
-  and one thruster, and the player just has to connect them; the goal is to go straight
-  (Drags). D-300's scope names the levels, so it takes a decision when it starts.
 
 ## 12. Checks and fixes on `main`
 
@@ -67,3 +65,26 @@ taken, when it starts.
 - [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
 - [ ] The Maker in Safari: a slider's typed value, Paste a level (D-308, D-310); only Chrome was
   tried.
+
+## 13. Chapters, levels and tutorials, made with the Maker (being planned)
+
+The physicist has chapters, levels and tutorials in mind, to be made with the Maker (§11). The
+game holds one chapter today, "light", levels 1.1 to 1.8, and the levels' tutorials, hints and
+passkeys are written by hand in their files, which the Maker does not set. Each item is planned,
+and its decisions taken, when it starts; the plan itself comes first.
+
+- [ ] **The plan**, the physicist's: the chapters, what each teaches, their levels in order, and
+  which have a tutorial; where today's levels, Fear to Two lights, go: kept, moved or retired.
+  A decision, since D-300's scope names the levels, and `CLAUDE.md`'s scope list with it.
+- [ ] **Several chapters in the game**: the router, Chapters and the level labels (2.1, ...)
+  for more than one chapter; where a chapter ends and the next opens; the levels' files by
+  chapter.
+- [ ] **A level made in the Maker shipped as one of the game's**: from Copy or Share level to a
+  file in `levels/data/`, with what the Maker does not set yet, a passkey and hints: set in the
+  Maker, or written in the file.
+- [ ] **Tutorials**: what a tutorial does (its ghosts and steps, D-039, D-050), which levels have
+  one, how they are written, by hand as now or in the Maker; Fear's and Aggression's rewritten
+  for the new chapters, in later pull requests.
+- [ ] **A first level, before Fear** (the physicist's): its parts already on the board, one eye
+  and one thruster, and the player just has to connect them; the goal is to go straight
+  (Drags).
