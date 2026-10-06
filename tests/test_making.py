@@ -134,10 +134,10 @@ def test_the_last_of_a_kind_a_goal_aims_at_stays():
     assert len(removed(two, 6).marks) == 1  # one of two may go
 
 
-def test_the_time_allowed_sits_on_five_second_steps_from_five_seconds_to_two_minutes():
-    assert LEVEL.time_limit == 120.0 and timed(LEVEL, 42.0).time_limit == 40.0
-    assert timed(LEVEL, 0.0).time_limit == TIME.lo == 5.0
-    assert timed(LEVEL, 999.0).time_limit == TIME.hi == 120.0  # D-311
+def test_the_time_allowed_sits_on_whole_seconds_from_one_second_to_two_minutes():
+    assert LEVEL.time_limit == 120.0 and timed(LEVEL, 42.4).time_limit == 42.0
+    assert timed(LEVEL, 0.0).time_limit == TIME.lo == 1.0  # D-347
+    assert timed(LEVEL, 999.0).time_limit == TIME.hi == 120.0
 
 
 def test_a_goal_added_is_the_first_sentence_the_level_can_hold_and_does_not_ask_two_at_most():
@@ -197,7 +197,7 @@ def test_a_sliders_box_takes_a_number_typed_and_refuses_anything_else():
     for text in ("", ".", "1.2.3", "inf"):
         with pytest.raises(Unmade, match="type a number"):
             number(text)
-    assert timed(LEVEL, number("42")).time_limit == 40.0  # then onto the slider's steps
+    assert timed(LEVEL, number("42.6")).time_limit == 43.0  # then onto the slider's steps
 
 
 def test_a_level_copied_as_text_is_pasted_back_as_it_was():
