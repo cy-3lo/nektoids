@@ -5,7 +5,7 @@ is left goes here, in the order it unblocks the rest; the PR that does an item r
 what was done is in git and in [`decisions.md`](decisions.md). Sections keep their numbers,
 which the decision log cites. Ideas for later go in [`ideas.md`](ideas.md). §11 is stage 1, a
 level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300); §13, the
-chapters, levels and tutorials to be made with it, is being planned; §14, the repository's face.
+chapters, levels and tutorials made with it (D-325); §14, the repository's face.
 
 ## 11. A level maker (stage 1, D-300)
 
@@ -70,43 +70,37 @@ taken, when it starts.
   `FLAME_LENGTH` and `INTAKE_LENGTH` in `editor/marks.py`, where they should fade out, between
   2 and 4 body radii or 2.5 and 3.5. Visual tests first, to choose.
 
-## 13. Chapters, levels and tutorials, made with the Maker (being planned)
+## 13. Chapters, levels and tutorials, made with the Maker (D-325)
 
-The physicist's plan, 2026-10-06, to be made with the Maker (§11) and started in its own work:
+Five chapters, from the physicist's plan (D-325): 0 Tutorials, six levels; 1 Braitenberg, Fear,
+Aggression, Love, Orbit; 2 Obstacles, new levels, then Shadows; 3 Many lights, Greed, Patience,
+Two lights; 4 Your levels. The levels' tutorials, hints and passkeys are written by hand in their
+files today, which the Maker does not set. Each item is planned, and its decisions taken, when it
+starts; they come in this order.
 
-- Chapter 0, Tutorials: 0.1 Wiring, 0.2 Turning, 0.3 Eyes, 0.4 Half, 0.5 Plus, 0.6 Diagnostic.
-- Chapter 1, Braitenberg: 1.1 Fear, 1.2 Aggression, 1.3 Love, 1.4 Orbit.
-- Chapter 2, Obstacles: obstacles introduced, and their shadows.
-- Chapter 3, Many lights.
-- Chapter 4, Your levels.
-
-The game holds one chapter today, "light", levels 1.1 to 1.8, and the levels' tutorials, hints and
-passkeys are written by hand in their files, which the Maker does not set. Each item is planned,
-and its decisions taken, when it starts.
-
-- [ ] **The plan as a decision**: what each level teaches; where Shadows, Greed, Patience and
-  Two lights go, chapters 2 and 3 by their names; new levels for those chapters. D-300's scope
-  names the levels, and `CLAUDE.md`'s scope list with it.
-- [ ] **Several chapters in the game**: the router, Chapters by chapter, its titles folding as the
-  Maker's Files do (D-322), the labels from 0.1, the passkeys, where a chapter ends and the next
-  opens, the end; the levels' files by chapter.
+- [x] **The plan as a decision**: what each level teaches, where each level goes (D-325).
+- [ ] **Several chapters in the game**: the levels' files by chapter, LEVEL 2.1; Chapters by
+  chapter, its titles folding as the Maker's Files do (D-322), all but the chapter being played;
+  the Maker's Start from by chapter.
+- [ ] **A level made in the Maker shipped as one of the game's**: from Copy or Share level to a
+  file in its chapter's folder, with what the Maker does not set, a passkey, hints and a tutorial,
+  written in the file; every shipped tutorial checked by a test; a hint's shadow over the level's
+  locked parts (with no stock, as 0.1 will have, it fails today).
+- [ ] **Tutorials**: what a tutorial does (its ghosts and steps, D-039, D-050), written by hand
+  as now; Settings' Tutorial replays the open level's, not Fear's; Fear's and Aggression's moved
+  to chapter 0 once it teaches what they teach now.
 - [ ] **Chapter 0, the tutorials**, six levels made in the Maker, each teaching one thing:
-  - [ ] 0.1 Wiring: one eye and one thruster already on the board, the player just connects
-    them; the goal is to go straight (Drags). Once "a first level, before Fear".
-  - [ ] 0.2 Turning: a part turned.
-  - [ ] 0.3 Eyes.
-  - [ ] 0.4 Half: the Halve.
-  - [ ] 0.5 Plus: the Sum.
+  - [ ] 0.1 Wiring: a Source and a thruster already on the board, locked; the player just
+    connects them; the goal is to go straight (Drags). Once "a first level, before Fear".
+  - [ ] 0.2 Turning: a part turned (a locked part cannot turn: it comes from the stock).
+  - [ ] 0.3 Eyes: the first eye.
+  - [ ] 0.4 Half: the Halve and the Double.
+  - [ ] 0.5 Plus: the Sum and the Diff.
   - [ ] 0.6 Diagnostic: the drawer, which Aggression's tutorial teaches now (D-103).
-- [ ] **Tutorials**: what a tutorial does (its ghosts and steps, D-039, D-050), how they are
-  written, by hand as now or in the Maker; Fear's and Aggression's rewritten once chapter 0
-  teaches what they teach now.
+- [ ] **Chapter 2's new levels**: obstacles, before Shadows.
 - [ ] **Chapter 4, Your levels**: the levels made in the Maker or pasted, where they are kept
   (nothing is stored beyond the session, D-075), how they are played, with their proof and
   score to beat (D-320).
-- [ ] **A level made in the Maker shipped as one of the game's**: from Copy or Share level to a
-  file in `levels/data/`, with what the Maker does not set yet, a passkey and hints: set in the
-  Maker, or written in the file.
 
 ## 14. The repository's face
 

@@ -37,8 +37,9 @@ In: the game as it is on `main`. 2D top-down; one agent; two eyes that read ligh
 shadows, D-019); two outputs (left and right thruster), in the levels: the sandbox hands out any
 number (D-102); the board is the body plan: eyes and thrusters sit where they are placed
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
-nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); four Braitenberg levels
-(Fear, Aggression, Love, Orbit), then Shadows, Greed and one real level, Patience, each with a
+nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); levels in five chapters
+(D-325): 0 Tutorials, six to make; 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles,
+new levels, then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Your levels; each with a
 countable win condition (D-097); fixed seed, fully deterministic;
 complexity, the number of parts, is scored and every body stays a sphere of radius 1 u (D-045);
 undo and redo in the editor (D-027). Stage 0's foundations (D-200 to D-206): one table of part
@@ -47,7 +48,7 @@ their paths, a board as text, Save/Load in Files.
 And stage 1, the todo's §11: a level maker, for us and Camille first (D-041), then for players:
 the plane's lights, obstacles, marks (zones only the objectives read, D-306) and start, the
 board's zone, stock and locked parts, objectives and the time allowed, a clear check, levels
-and solutions shared as text, no server.
+and solutions shared as text, no server; and §13, the chapters, levels and tutorials made with it.
 
 Out: no new part or sense, and no new item but marks (D-306). The later stages, memory, flows, actions other than moving, and
 all after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,
