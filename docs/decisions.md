@@ -2154,4 +2154,5 @@ RULE's colour; the time axis is ticked every 1, 2, 5, 10, 15, 20, 30 or 60 s, th
 giving at most six ticks from 0 to the time allowed (`arena_layout.time_ticks`): 10 s every 2,
 20 s every 5, 45 s every 10, 120 s every 30. A tick is a short line inward from both sides of
 the box; its number, in seconds, sits left of the box; "time (s)", turned a quarter, stands left
-of the numbers. The parts' axis is as it was.
+of the numbers. The parts' axis is as it was. The box and its ticks are a shade lighter than a
+rule, `PLOT_FRAME`, and its numbers and its axes' names lighter than dimmed text, `PLOT_TEXT`.

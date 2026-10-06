@@ -103,6 +103,8 @@ from nektoids.editor.palette import (
     MARK,
     OBSTACLE,
     PANEL,
+    PLOT_FRAME,
+    PLOT_TEXT,
     RAY,
     REFUSED,
     RULE,
@@ -655,19 +657,19 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
             plot.bottom - ticks / limit * plot.height,
         )
 
-    pygame.draw.rect(screen, RULE, plot, 1)  # boxed (D-340)
+    pygame.draw.rect(screen, PLOT_FRAME, plot, 1)  # boxed (D-340)
     for parts in range(low, high + 1):
-        label = fonts.small.render(str(parts), True, DIM_TEXT)
+        label = fonts.small.render(str(parts), True, PLOT_TEXT)
         screen.blit(label, label.get_rect(midtop=(at(parts, 0)[0], plot.bottom + 4)))
-    unit = fonts.small.render("parts", True, DIM_TEXT)
+    unit = fonts.small.render("parts", True, PLOT_TEXT)
     screen.blit(unit, unit.get_rect(midtop=(plot.centerx, plot.bottom + 20)))
     for seconds in time_ticks(scene.level.time_limit):  # numbers, then the label, rotated
         height = at(low, round(seconds / DT))[1]
-        pygame.draw.line(screen, RULE, (plot.left, height), (plot.left + TICK, height))
-        pygame.draw.line(screen, RULE, (plot.right - 1 - TICK, height), (plot.right - 1, height))
-        label = fonts.small.render(f"{seconds:g}", True, DIM_TEXT)
+        for start, end in ((plot.left, plot.left + TICK), (plot.right - 1 - TICK, plot.right - 1)):
+            pygame.draw.line(screen, PLOT_FRAME, (start, height), (end, height))
+        label = fonts.small.render(f"{seconds:g}", True, PLOT_TEXT)
         screen.blit(label, label.get_rect(midright=(plot.left - 6, height)))
-    axis = pygame.transform.rotate(fonts.small.render("time (s)", True, DIM_TEXT), 90)
+    axis = pygame.transform.rotate(fonts.small.render("time (s)", True, PLOT_TEXT), 90)
     screen.blit(axis, axis.get_rect(midleft=(x + LABEL_INSET, plot.centery)))
     if beat is not None:  # under the wins: one on it covers it
         cx, cy, r = *at(beat.parts, beat.ticks), WIN_DOT + 1
