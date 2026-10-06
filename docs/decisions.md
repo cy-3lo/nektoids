@@ -2098,14 +2098,7 @@ alone is lit; "Click the Editor tab or button, or press Tab."; the board's card 
 icons are lit; the wire's card lights its two cells, "Click the Source, then the Thruster to wire
 them."; the Run and Play cards light nothing, and so hold nothing back (D-048); the last lights
 the Hints icon: "You won! You reached the objectives. If you are stuck, try clicking Hints."
-0.2, the physicist's design: the thruster's torque turns the swimmer round an obstacle and into
-a ring after half a turn. A push off the axis turns the body: a thruster one row off it, pushing
-ahead, circles at 3 u/s on a radius of 4/3 body radii over its offset in board radii, 4.6 u on
-37 cells. So 0.2's board has 37: a Source locked at the centre, wired to a free thruster on the
-body's right, (0, 1), pointing SE, through the centre, so that it slides the swimmer away
-unturned and time runs out; one turn left points it E, and the swimmer turns left round an
-obstacle of 2 u at (0, 5) into a ring of 2 u at (0, 9), behind it, in 4.18 s. Pointing W, it
-sails backwards round the same circle and wins too; the other facings miss.
+0.2 was redesigned on 37 cells, a thruster turned off the centre; D-338 redesigned it again.
 
 **D-337 — 2026-10-06 — A tutorial's highlight pulses, accent1 bright to medium and back every 1.2 s, smoothly, in place of the sparks. A game's word in a card's text, marked "**Editor**", is drawn in accent1. Amends D-063, D-094, D-336.**
 The physicist chose among animated trials, a hard blink and a smooth pulse, on text (the
@@ -2119,3 +2112,20 @@ Wheel's actions, the keys, are set apart, as the physicist asked: marked "**Edit
 level's file, as markdown writes bold, which `docs/tutorials.md` shows so, they are drawn in
 accent1, steady. A step wraps by what shows, its marks taking no room, and a marked phrase that
 runs on to the next line stays marked there. The six tutorials' words are marked, to be edited.
+
+**D-338 — 2026-10-06 — Every tutorial opens on the Run, its introduction ending "Press the Editor button or tab, or press Tab." 0.2 Turning, on 19 cells: the thruster behind the Source, as in 0.1, is moved to the swimmer's right, and turns it round an obstacle into the ring behind. A card may wait for a part moved. The switch, Play, a row of Parts and a Wheel's icon pulse when a card shows them. 0.1's cards as the physicist edited them. Amends D-334, D-335, D-336, D-337.**
+The physicist edited 0.1 in `docs/tutorials.md`: "swimmer" marked; "Click the Editor tab or
+button, or press Tab."; the Run card lighting the Run tab; "Press Play, or Space to play the
+simulation.", lighting Play. A highlight with no accent drawing of its own showed nothing once
+the sparks went: the switch at the bar's foot, the run's Play, a row of Parts and a Wheel's icon
+now pulse too (`tutorial.panels` names them "level:edit", "play", "menu:eye", "wheel:move").
+Every tutorial opens on the Run, as 0.1 does, and its introduction ends on the Editor, lighting
+its tab and button and waiting for it; 0.3 to 0.6 opened in the Editor, Parts open, and now say
+their goal first: no tutorial names `starts_in`. 0.2: 37 cells were too many, 7 or 19 enough; its
+first card, on the Run, says the goal, reaching the ring by turning round the obstacle; the next
+leads the thruster's move, from behind the Source, where 0.1 has it, to the swimmer's right. On 19
+cells a thruster one row off the axis, pushing ahead, circles on 3.08 u: an obstacle of 1 u at
+(0, 3), a ring of 1 u at (0, 6), entered after some 160 degrees, in 2.92 s; behind the Source the
+swimmer goes straight and misses, and on the left it circles the other way. A card may wait for
+`moved`, a part of that kind on that cell, as `placed` does, letting through the Move tool and a
+drag, and nothing else; `placed` still lets no move through.

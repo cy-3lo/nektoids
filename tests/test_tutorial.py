@@ -164,13 +164,35 @@ def test_chapter_0_has_the_tutorials_its_first_two_lead_the_others_explain():
         {"screen": "run"},
         {"outcome": "won"},
     ]
-    assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (0, 1), E)]
-    assert turning.steps[0].until == {"facing": {"cell": [0, 1], "facing": "E"}}  # D-336
+    assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (-1, 1), E)]
+    assert turning.steps[1].until == {"moved": {"kind": "thruster", "cell": [-1, 1]}}  # D-338
     for title in ("Eyes", "Half", "Minus", "Diagnostic"):  # they explain: nothing built
         tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
         assert tutorial.ghosts == () and tutorial.ghost_wires == ()
-        assert all(not step.until or "drawer" in step.until for step in tutorial.steps)
-        assert tutorial.starts_in is Drawer.PARTS
+        waits = [step.until for step in tutorial.steps[1:] if step.until]
+        assert all("drawer" in until for until in waits)
+    for title in tutored:  # each opens on the Run, its introduction ending on the Editor (D-338)
+        tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
+        assert tutorial.starts_in is None
+        first = next(step for step in tutorial.steps if step.until)
+        assert first.until == {"screen": "edit"} and "Tab" in first.say[-1]
+
+
+def test_a_card_that_waits_for_a_part_moved_lets_a_move_through_and_nothing_else():
+    level = LEVELS["Turning"]  # D-338: the thruster behind the Source, moved to the right
+    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    tutorial.index = 1  # in the Editor: move it
+    step = tutorial.step
+    assert allows(step, Action("move", cell=(-1, 0))) and allows(
+        step, Action("tool", tool=Tool.MOVE)
+    )
+    assert not allows(step, Action("tool", tool=Tool.WIRE)) and not allows(step, Action("view"))
+    context = Context(board, Tool.MOVE, Screen.EDIT, None, 0.0, Drawer.PARTS)
+    tutorial.follow(context)
+    assert tutorial.step is step  # still behind the Source
+    board.move_node(board.node_at((-1, 0)).id, (-1, 1))
+    tutorial.follow(context)
+    assert tutorial.step.until == {"screen": "run"}
 
 
 def test_a_box_keeps_clear_of_the_parts_on_the_board():
@@ -193,7 +215,9 @@ def test_diagnostics_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it
     def context(screen=Screen.EDIT, drawer=Drawer.PARTS):
         return Context(board, Tool.ADD, screen, None, 0.0, drawer)
 
-    assert tutorial.starts_in is Drawer.PARTS  # the editor, Parts open, not the run (D-103)
+    assert tutorial.starts_in is None  # the run first, to the Editor after (D-338)
+    tutorial.follow(context(Screen.RUN, Drawer.INSIDE))
+    assert tutorial.step.until == {"screen": "edit"}
     tutorial.follow(context())
     assert tutorial.step.until == {"drawer": "diagnostic"}
     assert allows(tutorial.step, Action("view")) and drawer_for(tutorial.step) is None
@@ -224,9 +248,9 @@ def test_wirings_introduction_shows_the_objective_the_tabs_the_bar_leads_the_wir
     source, thruster = (board.node_at(cell).id for cell in ((0, 0), (-1, 0)))
     board.connect(source, thruster)
     tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
-    assert tutorial.step.until == {"screen": "run"} and not tutorial.leads  # nothing lit
+    assert tutorial.step.until == {"screen": "run"} and tutorial.step.show == {"tab": "run"}
     tutorial.follow(context(Screen.RUN))
-    assert tutorial.step.until == {"outcome": "won"} and not tutorial.leads
+    assert tutorial.step.until == {"outcome": "won"} and tutorial.step.show == {"run": "play"}
     tutorial.follow(context(Screen.RUN, outcome=Outcome.WON))
     assert tutorial.step.show == {"icon": "hints"} and drawer_for(tutorial.step) is None
     assert tutorial.waits_for_next  # the last: any key or click closes it
@@ -511,11 +535,11 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
     expected = {
         0: {"swimmer"},
         1: {"objectives"},
-        TAB: {"tab:editor"},
+        TAB: {"tab:editor", "level:edit"},  # the switch too, now that sparks are gone (D-338)
         BOARD: set(),
     }  # that explain
-    expected |= {TOOLS: {"tools"}, THRUSTER: {"parts"}, EYE: set(), RUN: {"tab:run"}}
-    expected |= {PLAY: {"play", "arena"}, INSIDE: {"inside"}}
+    expected |= {TOOLS: {"tools"}, THRUSTER: {"parts", "menu:thruster"}, EYE: {"wheel:eye"}}
+    expected |= {RUN: {"tab:run", "level:run"}, PLAY: {"play", "arena"}, INSIDE: {"inside"}}
     for index, names in expected.items():
         tutorial.index = index
         assert panels(tutorial) == names, index
@@ -526,8 +550,8 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
     for index in range(len(intro.steps)):
         intro.index = index
         named.append(panels(intro))
-    tabs = [set(), {"objectives"}, {"tab:editor"}, {"bar"}]  # D-095, D-336
-    assert named == [*tabs, set(), set(), set(), {"hints"}]  # the wire, the run, Hints's icon
+    tabs = [set(), {"objectives"}, {"tab:editor", "level:edit"}, {"bar"}]  # D-095, D-336
+    assert named == [*tabs, set(), {"tab:run"}, {"play"}, {"hints"}]  # the wire, the run, Hints
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():

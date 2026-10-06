@@ -18,8 +18,15 @@
   ],
   "hints": {"idea": "The light takes the push away."},
   "tutorial": {
-    "starts_in": "parts",
     "steps": [
+      {
+        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "until": {"screen": "edit"},
+        "say": [
+          "Stop in the ring round the light for 3 s, without touching it.",
+          "Press the **Editor** button or tab, or press Tab."
+        ]
+      },
       {
         "show": [{"drawer": "parts"}, {"menu": "difference"}],
         "say": [

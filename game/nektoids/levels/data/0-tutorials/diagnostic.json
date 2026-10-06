@@ -18,13 +18,18 @@
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "hints": {"idea": "Where does the eye look?"},
   "tutorial": {
-    "starts_in": "parts",
     "steps": [
       {
-        "show": {"drawer": "diagnostic"},
+        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "until": {"screen": "edit"},
         "say": [
-          "This swimmer comes with an eye wired to a thruster, yet it does not move. Open **Diagnostic** by choosing the stethoscope, or pressing **D**."
-        ],
+          "This swimmer comes with an **Eye** wired to a **Thruster**, yet it does not move.",
+          "Press the **Editor** button or tab, or press Tab."
+        ]
+      },
+      {
+        "show": {"drawer": "diagnostic"},
+        "say": ["Open **Diagnostic** by choosing the stethoscope, or pressing **D**."],
         "until": {"drawer": "diagnostic"}
       },
       {

@@ -20,71 +20,75 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
-| 1 | Run, Diagnostic | This is your tiny swimmer.<br>Your goal is to wire its control board to make it reach the ring ahead. | — | Next, or any key or click |
+| 1 | Run, Diagnostic | This is your tiny **swimmer**.<br>Your goal is to wire its control board to make it reach the ring ahead. | — | Next, or any key or click |
 | 2 | Run, Diagnostic | **Objectives** are what the level asks. Here, get into the ring before the 10 s are out. | Run: Objectives | Next, or any key or click |
-| 3 | Run, Diagnostic | The window has two tabs: **Run** plays the level and the **Editor** builds the control board.<br>Click the **Editor** tab or button, or press **Tab**. | Editor tab; Editor button | the Editor opens |
+| 3 | Run, Diagnostic | The window has two tabs: Run plays the level and the **Editor** builds the control board.<br>Click the **Editor** tab or button, or press Tab. | Editor tab; Editor button | the Editor opens |
 | 4 | Editor, Parts | The nav bar opens the drawers: **Tools**, **Parts**, **Files**, **Diagnostic**, **Navigator**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**. | the nav bar | Next, or any key or click |
 | 5 | Editor, Parts | A **Source** sends beads all the time; a thruster pushes as hard as beads come in.<br>Click the **Source**, then the **Thruster** to wire them. | the Source, cell (0, 0); the Thruster, cell (-1, 0) | a wire from the Source, cell (0, 0) to the Thruster, cell (-1, 0) |
-| 6 | Editor, Parts | Click the **Run** tab or button, or press **Tab**. | — | the Run opens |
-| 7 | Run, Diagnostic | Press **Play**, or **Space**: the swimmer goes straight into the ring. | — | the run is won |
+| 6 | Editor, Parts | Click the **Run** tab or button, or press **Tab**. | Run tab | the Run opens |
+| 7 | Run, Diagnostic | Press **Play**, or Space to play the simulation. | Run: Play | the run is won |
 | 8 | Run, Diagnostic | You won! You reached the objectives.<br>If you are stuck, try clicking **Hints**. | Hints icon | any key or click closes it |
 
 ## 0.2 Turning
 
-- Spec: Go round the obstacle into the ring behind it.
+- Spec: Reach the ring by turning round the obstacle.
 - Hint 1, the idea: Off the centre, a push turns.
-- Opens on: the Editor, Tools open
-- Ghosts: thruster on (0, 1) pointing E
+- Opens on: the Run
+- Ghosts: thruster on (-1, 1) pointing E
 
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
-| 1 | Editor, Tools | This thruster pushes through the body's centre: the swimmer slides, without turning. Off the centre, a push turns it.<br>Click the thruster, then **Turn left** on the **Wheel**, or press **L**: it turns by 60 degrees. | the Thruster, cell (0, 1); Wheel: Turn left | the Thruster, cell (0, 1) points E |
-| 2 | Editor, Tools | Click the **Run** tab or button, or press **Tab**. | — | the Run opens |
-| 3 | Run, Diagnostic | Press **Play**, or **Space**: the push turns the swimmer round the obstacle. | — | the run is won |
+| 1 | Run, Diagnostic | Reach the ring by turning round the obstacle.<br>Press the **Editor** button or tab, or press Tab. | Editor tab; Editor button | the Editor opens |
+| 2 | Editor, Parts | Behind the **Source**, the **Thruster** pushes straight ahead. Off the centre, a push turns the swimmer.<br>Move the **Thruster** to the swimmer's right: drag it, or click it, then **Move** on the **Wheel**. | the Thruster, cell (-1, 0); cell (-1, 1); Wheel: Move | the thruster moved to cell (-1, 1) |
+| 3 | Editor, Parts | Click the **Run** tab or button, or press **Tab**. | Run tab | the Run opens |
+| 4 | Run, Diagnostic | Press **Play**, or Space to play the simulation. | Run: Play | the run is won |
 
 ## 0.3 Eyes
 
 - Spec: Swim to the light and touch it.
 - Hint 1, the idea: The eye drives what it is wired to.
-- Opens on: the Editor, Parts open
+- Opens on: the Run
 - Ghosts: none
 
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
-| 1 | Editor, Parts | An eye sends beads as fast as it sees light: more from a light near it and in front of it.<br>Here the light is straight ahead. | Parts drawer; Parts: Eye row | Next, or any key or click |
-| 2 | Editor, Parts | Put an eye and a thruster on the board, both pointing forward, and wire the eye to the thruster. Then run it. | — | any key or click closes it |
+| 1 | Run, Diagnostic | Swim to the light and touch it. To see it, the swimmer needs an **Eye**.<br>Press the **Editor** button or tab, or press Tab. | Editor tab; Editor button | the Editor opens |
+| 2 | Editor, Parts | An **Eye** sends beads as fast as it sees light: more from a light near it and in front of it.<br>Here the light is straight ahead. | Parts drawer; Parts: Eye row | Next, or any key or click |
+| 3 | Editor, Parts | Put an **Eye** and a **Thruster** on the board, both pointing forward, and wire the **Eye** to the **Thruster**. Then run it. | — | any key or click closes it |
 
 ## 0.4 Half
 
 - Spec: Stay in the ring for 3 s.
 - Hint 1, the idea: Slower stays longer.
-- Opens on: the Editor, Parts open
+- Opens on: the Run
 - Ghosts: none
 
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
-| 1 | Editor, Parts | The **Halve** sends half the beads that come in, the **Double** twice as many. No wire carries more than a **Source** sends. | Parts drawer; Parts: Halve row; Parts: Double row | Next, or any key or click |
-| 2 | Editor, Parts | At full push the swimmer crosses the ring in 2 s: too fast to stay 3 s in it. | — | any key or click closes it |
+| 1 | Run, Diagnostic | Stay 3 s in the ring. At full push the swimmer crosses it in 2 s: too fast.<br>Press the **Editor** button or tab, or press Tab. | Editor tab; Editor button | the Editor opens |
+| 2 | Editor, Parts | The **Halve** sends half the beads that come in, the **Double** twice as many. No wire carries more than a **Source** sends. | Parts drawer; Parts: Halve row; Parts: Double row | any key or click closes it |
 
 ## 0.5 Minus
 
 - Spec: Stay 3 s in the ring round the light, without touching it.
 - Hint 1, the idea: The light takes the push away.
-- Opens on: the Editor, Parts open
+- Opens on: the Run
 - Ghosts: none
 
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
-| 1 | Editor, Parts | The **Diff** sends the difference of its two inputs.<br>A **Source** less an eye: a full push in the dark, none once the eye sees all the light it can. | Parts drawer; Parts: Diff row | any key or click closes it |
+| 1 | Run, Diagnostic | Stop in the ring round the light for 3 s, without touching it.<br>Press the **Editor** button or tab, or press Tab. | Editor tab; Editor button | the Editor opens |
+| 2 | Editor, Parts | The **Diff** sends the difference of its two inputs.<br>A **Source** less an eye: a full push in the dark, none once the eye sees all the light it can. | Parts drawer; Parts: Diff row | any key or click closes it |
 
 ## 0.6 Diagnostic
 
 - Spec: Swim to the light and touch it.
 - Hint 1, the idea: Where does the eye look?
-- Opens on: the Editor, Parts open
+- Opens on: the Run
 - Ghosts: none
 
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
-| 1 | Editor, Parts | This swimmer comes with an eye wired to a thruster, yet it does not move. Open **Diagnostic** by choosing the stethoscope, or pressing **D**. | Diagnostic (stethoscope) drawer | Diagnostic (stethoscope) opens |
-| 2 | Editor, Diagnostic | The main screen shows your board. The map shows your swimmer and the light.<br>Drag it round the light and turn it with the mouse wheel: when does its eye see the light? | — | any key or click closes it |
+| 1 | Run, Diagnostic | This swimmer comes with an **Eye** wired to a **Thruster**, yet it does not move.<br>Press the **Editor** button or tab, or press Tab. | Editor tab; Editor button | the Editor opens |
+| 2 | Editor, Parts | Open **Diagnostic** by choosing the stethoscope, or pressing **D**. | Diagnostic (stethoscope) drawer | Diagnostic (stethoscope) opens |
+| 3 | Editor, Diagnostic | The main screen shows your board. The map shows your swimmer and the light.<br>Drag it round the light and turn it with the mouse wheel: when does its eye see the light? | — | any key or click closes it |

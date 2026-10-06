@@ -325,7 +325,8 @@ def _draw_controls(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> N
     pygame.draw.rect(screen, PANEL, strip)
     pygame.draw.line(screen, RULE, strip.topleft, strip.topright)
     for button, rect in control_rects(scene.layout):
-        draw_button(screen, fonts, rect, _icon(scene, button), _on(scene, button))
+        lit = scene.lit_ink if button is ArenaButton.PLAY and "play" in scene.lit else None
+        draw_button(screen, fonts, rect, _icon(scene, button), _on(scene, button), lit=lit)
     _draw_timeline(screen, scene, fonts)
     counts = scene.counts()
     met = sum(c.met >= c.needed and not c.lost for c in counts)
