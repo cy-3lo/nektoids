@@ -134,6 +134,7 @@ POLAR_CLIP = 1.25  # the polar plot shows readings up to this many times its cir
 GOAL_BAR = 3  # an objective's bar, along its row's foot [px]
 TICK = 4  # a tick on Score's time axis, inward from either side of the box [px] (D-340)
 ADVANCE = 9  # a figure of Plex Mono at 15 px, the numbers on that axis [px]
+LABEL_INSET = 6  # its label, "time (s)", upright, this far from the drawer's left edge [px]
 VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 WIN_DOT = 4  # a win on that plot; this run's ring sits 4 px round it [px]
@@ -640,8 +641,9 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     for k, text in enumerate(notes):
         screen.blit(fonts.small.render(text, True, DIM_TEXT), (x + MARGIN, y + 4 + k * line))
     below = (len(notes) - 1) * line  # the plot, under the notes
-    left = MARGIN + line + 4 + 3 * ADVANCE + 6  # the time's label, rotated, then its numbers
-    plot = pygame.Rect(x + left, y + 36 + below, w - left - MARGIN - 8, h - 96 - below)
+    left = LABEL_INSET + line + 4 + 3 * ADVANCE + 6  # the time's label, upright, its numbers
+    side = min(w - left - 14, h - 96 - below)  # a square, as wide as the drawer lets it (D-340)
+    plot = pygame.Rect(x + left, y + 36 + below, side, side)
     shown = scores | ({beat} if beat is not None else set())
     low = min(s.parts for s in shown) - 1
     high = max(max(s.parts for s in shown) + 1, low + PLOT_PARTS)
@@ -666,7 +668,7 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
         label = fonts.small.render(f"{seconds:g}", True, DIM_TEXT)
         screen.blit(label, label.get_rect(midright=(plot.left - 6, height)))
     axis = pygame.transform.rotate(fonts.small.render("time (s)", True, DIM_TEXT), 90)
-    screen.blit(axis, axis.get_rect(midleft=(x + MARGIN, plot.centery)))
+    screen.blit(axis, axis.get_rect(midleft=(x + LABEL_INSET, plot.centery)))
     if beat is not None:  # under the wins: one on it covers it
         cx, cy, r = *at(beat.parts, beat.ticks), WIN_DOT + 1
         pygame.draw.line(screen, TO_BEAT, (cx - r, cy - r), (cx + r, cy + r), 2)
