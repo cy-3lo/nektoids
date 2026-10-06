@@ -1914,3 +1914,10 @@ Sandbox, each title folding its rows as Parts' and Files' do (D-069), the list s
 own area, its scroll bar at the drawer's edge (D-096). The rows above the list are drawn apart
 from it, so that its clip never hides them, which is what hides the title of the Editor's Files
 (the todo's §12).
+
+**D-323 — 2026-10-06 — A drawer's rows over the Wheel scroll only if the rows themselves do not fit: the gaps under the last row are not counted. Applies D-096.**
+The sandbox's Tools, with Lock and Erase all, showed a scroll bar for 8 px: its last row ended at
+364 px, the Wheel's area began at 368, but the gap under the last row and the section's gap after
+it counted as content. They no longer do, for Tools and the Maker's Objects alike: nothing moves on
+screen, the Wheel keeps its height, which a Wheel's piled icons need, and a drawer whose rows do
+not fit scrolls as before, to its last row.
