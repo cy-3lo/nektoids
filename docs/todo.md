@@ -58,10 +58,11 @@ taken, when it starts.
 - [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
   their JSON (D-310), shared with their proof (D-320).
 
-## 12. Checks and fixes on `main`
+## 12. Checks and fixes on `main` (done, D-345)
 
-- [ ] Files' title, "Wins this session", is not drawn: it lies above the wins' list, and the
-  drawer's rows are clipped to that list (`editor/draw.py`, `draw_drawer`). Seen 2026-10-04.
+Done: Files' title drawn again; Copy and Paste a board in Firefox, and the Maker's typed values
+and Paste a level in Safari, checked by the physicist; the streams thin out from 3 to 5 body
+radii and are never shorter than 32 px on screen (D-345).
 
 ## 13. Chapters, levels and tutorials, made with the Maker (done, D-325 to D-341)
 
