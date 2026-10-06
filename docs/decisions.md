@@ -2179,3 +2179,7 @@ own folds, which a click on a title changes, D-322); the old plane, once Free pl
 D-341), is gone from it, its file still the sandbox's, where the Maker's introduction lives. And
 the rays a light sends, in the run, Diagnostic's map and the Maker's plane, are a shade lighter:
 `RAY`, three quarters of the way from the bar's black to a rule's grey, was under half.
+
+**D-343 — 2026-10-06 — The end says where to reach the studio: "leave a comment on the itch.io page or at contact@nektoids.com." Amends D-035.**
+The physicist's: the domain registered on 2026-10-06 has its address. The end screen's second
+line, which named the itch.io page alone, names both; it fits on one line of the end screen.
