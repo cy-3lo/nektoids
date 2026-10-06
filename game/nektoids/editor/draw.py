@@ -139,6 +139,7 @@ from nektoids.editor.palette import (
     RULE,
     SCROLL_THUMB,
     SHADOW,
+    TAB_STRIP,
     TEXT,
     THRUSTER_BACK,
     TOOLTIP_BG,
@@ -250,6 +251,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.MOTION: "Motion",
     ViewButton.STREAMS: "Streams",
 }
+LIT_EDGE = 3  # the accent along the open drawer's icon, and over the open tab [px]
 TAB_NAME = {"editor": "Editor", "run": "Run", "maker": "Maker"}
 TAB_TIP = {"run": "Run", "editor": "Back to the editor", "maker": "Make the level"}  # D-301
 
@@ -696,7 +698,7 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         on = drawer is layout.drawer
         box = pygame.Rect(rect)
         if on:
-            pygame.draw.rect(screen, LIT, (0, box.top + 2, 3, box.height - 4))
+            pygame.draw.rect(screen, LIT, (0, box.top + 2, LIT_EDGE, box.height - 4))
         ink = TEXT if on else DIM_TEXT  # a tutorial's target too: its sparks say it (D-095)
         fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, ink)
     for button, rect in layout.level_buttons:  # the switch
@@ -1211,13 +1213,13 @@ def draw_tabs(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     and what it asks, on one baseline, a rule under them (D-056)."""
     layout = scene.layout
     left = layout.board_area[0]
-    pygame.draw.rect(screen, BAR, (left, 0, SCREEN[0] - left, TABS_HEIGHT))
+    pygame.draw.rect(screen, TAB_STRIP, (left, 0, SCREEN[0] - left, TABS_HEIGHT))
     for name, rect in layout.tabs:
         box = pygame.Rect(rect)
         on = name == layout.env.value
         if on:
             pygame.draw.rect(screen, BACKGROUND, box)
-            pygame.draw.rect(screen, LIT, (box.left, 0, box.width, 2))
+            pygame.draw.rect(screen, LIT, (box.left, 0, box.width, LIT_EDGE))
         ink = LIT if f"tab:{name}" in scene.lit else TEXT if on else DIM_TEXT  # D-080
         label = fonts.label.render(TAB_NAME[name], True, ink)
         screen.blit(label, label.get_rect(center=box.center))
