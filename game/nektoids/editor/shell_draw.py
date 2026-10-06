@@ -13,6 +13,7 @@ from nektoids.editor.palette import (
     BACKGROUND,
     BUTTON,
     DIM_TEXT,
+    GREYED,
     PANEL,
     RULE,
     TEXT,
@@ -46,7 +47,8 @@ def draw_title_card(screen: pygame.Surface, fonts: Fonts) -> None:
 
 
 def draw_level_card(screen: pygame.Surface, router: Router, fonts: Fonts) -> None:
-    """Over a level just opened, veiled: its name, what it asks, its time, how to start."""
+    """Over a level just opened, veiled: its name, what it asks, its time, how to start; in its
+    bottom right corner, darker, its author, as a signature (D-331)."""
     level = router.level
     _card(
         screen,
@@ -58,6 +60,10 @@ def draw_level_card(screen: pygame.Surface, router: Router, fonts: Fonts) -> Non
             (fonts.small.render(START, True, DIM_TEXT), 250),
         ],
     )
+    if level.author:
+        card, signed = pygame.Rect(CARD), fonts.small.render(level.author, True, GREYED)
+        corner = (card.right - CARD_MARGIN // 2, card.bottom - CARD_MARGIN // 2)
+        screen.blit(signed, signed.get_rect(bottomright=corner))
 
 
 def _card(screen: pygame.Surface, lines: list[tuple[pygame.Surface, int]]) -> None:

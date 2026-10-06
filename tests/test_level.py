@@ -111,11 +111,26 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
 def test_a_level_without_its_version_or_of_another_is_refused():
     data = a_level()
     del data["version"]
-    with pytest.raises(ValueError, match="without its version: this game reads version 4"):
+    with pytest.raises(ValueError, match="without its version: this game reads version 5"):
         Level.from_dict(data)
-    with pytest.raises(ValueError, match="of version 5: this game reads version 4 and those"):
-        Level.from_dict(a_level(version=5))  # D-201
-    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 4  # 1 upgraded (D-313)
+    with pytest.raises(ValueError, match="of version 6: this game reads version 5 and those"):
+        Level.from_dict(a_level(version=6))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 5  # 1 upgraded (D-331)
+
+
+def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
+    fear = {k: v for k, v in arenas()[0].to_dict().items() if k != "author"}
+    unsigned = Level.from_dict({**fear, "version": 4})  # D-331: as version 4 wrote it
+    assert unsigned.author is None and "author" not in unsigned.to_dict()
+    signed = Level.from_dict(a_level(author="@Cy-3LO"))
+    assert signed.author == "@Cy-3LO" and list(signed.to_dict())[:4] == [
+        "version",
+        "title",
+        "spec",
+        "author",
+    ]
+    assert Level.from_dict(json.loads(to_json(signed))) == signed
+    assert {level.author for level in (*arenas(), sandbox())} == {"@Cy-3LO"}
 
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
@@ -200,4 +215,4 @@ def test_every_shipped_levels_positions_are_whole_units_and_its_zone_a_size():
         data = json.loads(path.read_text())
         points = [data["start"]["at"], *(item["at"] for item in data["items"])]
         assert all(isinstance(v, int) for point in points for v in point), path.stem
-        assert data["version"] == 4 and data["board"]["zone"] in (19, 37), path.stem
+        assert data["version"] == FORMAT and data["board"]["zone"] in (19, 37), path.stem

@@ -724,13 +724,14 @@ def test_tab_goes_round_the_tabs_and_their_tooltips_name_tab_or_shift_tab_to_rea
     assert tab_key_to(sandbox[Env.EDITOR], "run") == "Shift+Tab"
 
 
-def test_brief_holds_the_titles_field_a_row_high_then_the_specs_taller_under_their_labels():
-    layout = make_layout(Drawer.TEXT, env=Env.MAKER, maker=True)  # D-305
-    (title, high), (spec, tall) = layout.brief_fields
-    assert (title, spec) == (Brief.TITLE, Brief.SPEC)
-    assert [t for t, _ in layout.section_titles] == ["Title", "Spec"]
+def test_text_holds_the_title_a_row_high_the_spec_taller_then_the_author_under_their_labels():
+    layout = make_layout(Drawer.TEXT, env=Env.MAKER, maker=True)  # D-305, D-331
+    (title, high), (spec, tall), (author, low) = layout.brief_fields
+    assert (title, spec, author) == (Brief.TITLE, Brief.SPEC, Brief.AUTHOR)
+    assert [t for t, _ in layout.section_titles] == ["Title", "Spec", "Author"]
     assert high[3] == make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True).piece_rows[0][1][3]
     assert tall[3] == SPEC_LINES * HINT_LINE + 2 * FIELD_PAD and tall[1] > high[1] + high[3]
+    assert low[3] == high[3] and low[1] > tall[1] + tall[3]
     for field, rect in layout.brief_fields:
         assert brief_field_at(layout, centre(rect)) is field and contains(
             layout.drawer_area, rect[:2]

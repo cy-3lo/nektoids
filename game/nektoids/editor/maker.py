@@ -132,12 +132,14 @@ from nektoids.graph.board import Board, complexity
 from nektoids.levels.lattice import POSITION, Range, snapped
 from nektoids.levels.level import Level, to_json
 from nektoids.levels.making import (
+    AUTHOR_LONGEST,
     GOALS_MOST,
     SPEC_LONGEST,
     TIME,
     TITLE_LONGEST,
     Unmade,
     adjusted,
+    authored,
     blank,
     boarded,
     goal_added,
@@ -292,7 +294,7 @@ class MakerScene(Frame):
             kept = "Enter or a click elsewhere keeps it.  Esc: no change."
             return f"Type {self._what(self.writing)}.  {kept}"
         if self.layout.drawer is Drawer.TEXT:
-            return "Click the title or the spec to write it.  The caption above follows."
+            return "Click the title, the spec or the author to write it."
         if self.layout.drawer is Drawer.PARTS:
             return "- and +: how big the board is, and how many of each part it hands out."
         if self.checking is not None:
@@ -728,8 +730,9 @@ class MakerScene(Frame):
         return f"its {settings(self.level.objectives[which.goal])[0][0]}"
 
     def _open_field(self, which: Brief | Knob | Paste) -> None:
-        """The title's field or the spec's, holding what the level says now, a slider's box,
-        holding its number, the caret after it; or Files' field, empty, for a level's text."""
+        """The title's field, the spec's or the author's, holding what the level says now, the
+        author's an "@" if it has none (D-331); a slider's box, holding its number, the caret
+        after it; or Files' field, empty, for a level's text."""
         self.said = ""  # what the status line said before gives way to how to fill it
         if which is Paste.LEVEL:
             text, longest, taken = "", LEVEL_LONGEST, None
@@ -737,6 +740,8 @@ class MakerScene(Frame):
             text, longest, taken = f"{self.value(which):g}", NUMBER_LONGEST, NUMBER
         elif which is Brief.TITLE:
             text, longest, taken = self.level.title, TITLE_LONGEST, None
+        elif which is Brief.AUTHOR:
+            text, longest, taken = self.level.author or "@", AUTHOR_LONGEST, None
         else:
             text, longest, taken = self.level.spec, SPEC_LONGEST, None
         self.writing, self.field = which, TextField(text, taken, longest)
@@ -765,7 +770,7 @@ class MakerScene(Frame):
         elif isinstance(which, Knob):  # on its range's steps, within it
             self._set_knob(which, lambda: number(text))
         else:
-            write = titled if which is Brief.TITLE else specified
+            write = {Brief.TITLE: titled, Brief.SPEC: specified, Brief.AUTHOR: authored}[which]
             self._make(lambda level: write(level, text))
 
     # Parts (D-315)

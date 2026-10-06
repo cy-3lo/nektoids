@@ -139,9 +139,10 @@ class Piece(Enum):  # Objects' rows: what the Maker puts on the plane (D-301)
     START = "start"  # the swimmer's start: always one, moved and turned, never placed
 
 
-class Brief(Enum):  # Brief's fields, in the Maker: what the level is called and asks (D-305)
-    TITLE = "title"
+class Brief(Enum):  # Text's fields, in the Maker: the level's name, what it asks, its maker
+    TITLE = "title"  # D-305
     SPEC = "spec"
+    AUTHOR = "author"  # D-331
 
 
 class EditButton(Enum):
@@ -791,9 +792,14 @@ class _Rows:
         self._over_wheel((("Plane", Piece), ("", EditButton)), height, wheel_folded, scroll)
 
     def brief(self) -> None:
-        """The level's title, a field a row high, then its spec, a field SPEC_LINES high, each
-        under its label (D-305)."""
-        for label, field, lines in (("Title", Brief.TITLE, 1), ("Spec", Brief.SPEC, SPEC_LINES)):
+        """The level's title, a field a row high, its spec, a field SPEC_LINES high, then its
+        author, a row high, each under its label (D-305, D-331)."""
+        fields = (
+            ("Title", Brief.TITLE, 1),
+            ("Spec", Brief.SPEC, SPEC_LINES),
+            ("Author", Brief.AUTHOR, 1),
+        )
+        for label, field, lines in fields:
             self._title(label, self.sections)
             height = ROW_HEIGHT if lines == 1 else lines * HINT_LINE + 2 * FIELD_PAD
             width = DRAWER_WIDTH - 2 * ROW_INSET
@@ -1117,7 +1123,7 @@ def menu_item_at(layout: Layout, point: tuple[int, int]) -> Kind | None:
 
 
 def brief_field_at(layout: Layout, point: tuple[int, int]) -> Brief | None:
-    """Brief's field under `point`: the title's or the spec's (D-305)."""
+    """Text's field under `point`: the title's, the spec's or the author's (D-305, D-331)."""
     return next((f for f, rect in layout.brief_fields if contains(rect, point)), None)
 
 

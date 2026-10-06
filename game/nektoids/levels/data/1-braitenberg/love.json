@@ -1,7 +1,8 @@
 {
-  "version": 4,
+  "version": 5,
   "title": "Love",
   "spec": "Stay by the light for 5 s without touching it.",
+  "author": "@Cy-3LO",
   "start": {"at": [10, 19], "heading": 0},
   "items": [{"kind": "light", "at": [25, 19], "power": 4}, {"kind": "mark", "at": [25, 19], "radius": 7}],
   "board": {

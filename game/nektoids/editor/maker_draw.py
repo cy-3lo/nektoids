@@ -325,9 +325,9 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         )
     for field, rect in layout.brief_fields:
         writing = scene.writing is field
-        said = level.title if field is Brief.TITLE else level.spec
+        said = {Brief.TITLE: level.title, Brief.SPEC: level.spec}.get(field, level.author or "@")
         text, caret = (scene.field.text, scene.field.caret) if writing else (said, None)
-        if field is Brief.TITLE:
+        if field is not Brief.SPEC:  # the title's, the author's (D-331)
             draw_field(screen, fonts, rect, text, caret)
         else:
             _draw_spec(screen, fonts, rect, text, caret)
