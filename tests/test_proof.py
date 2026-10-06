@@ -10,11 +10,12 @@ from nektoids.editor.boardfield import load
 from nektoids.editor.hints import Hints
 from nektoids.graph import boardtext
 from nektoids.graph.board import complexity
-from nektoids.levels.arenas import arenas
+from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Level, to_json
 from nektoids.levels.making import read_level
 from nektoids.levels.objectives import Outcome
-from nektoids.levels.proof import Proof, Replay
+from nektoids.levels.proof import Proof, Replay, to_beat
+from nektoids.levels.score import Score
 
 DT = 1.0 / 120.0
 ORBIT = next(level for level in arenas() if level.title == "Orbit")
@@ -59,3 +60,9 @@ def test_every_shipped_level_carries_its_proof_and_its_board_wins_it_again(level
     assert complexity(board) == proof.parts
     replay = Replay(level, board, DT)
     assert replay.advance(replay.last) is Outcome.WON  # the win, not its tick (D-004)
+
+
+def test_the_score_to_beat_is_the_proofs_and_a_level_without_one_has_none():
+    proof = Proof.from_dict(ORBIT.proof)  # D-330: a cross in Score
+    assert to_beat(ORBIT) == Score(proof.parts, proof.ticks) == Score(4, proof.ticks)
+    assert to_beat(sandbox()) is None
