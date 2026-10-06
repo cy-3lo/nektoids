@@ -25,7 +25,7 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 | 3 | Run, Diagnostic | The window has two tabs: Run plays the level and the **Editor** builds the control board.<br>Click the **Editor** tab or button, or press Tab. | Editor tab; Editor button | the Editor opens |
 | 4 | Editor, Parts | The nav bar opens the drawers: **Tools**, **Parts**, **Files**, **Diagnostic**, **Navigator**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**. | the nav bar | Next, or any key or click |
 | 5 | Editor, Parts | A **Source** sends beads all the time; a thruster pushes as hard as beads come in.<br>Click the **Source**, then the **Thruster** to wire them. | the Source, cell (0, 0); the Thruster, cell (-1, 0) | a wire from the Source, cell (0, 0) to the Thruster, cell (-1, 0) |
-| 6 | Editor, Parts | Click the **Run** tab or button, or press **Tab**. | Run tab | the Run opens |
+| 6 | Editor, Parts | Click the **Run** tab or button, or press **Tab**. | Run tab; Run button | the Run opens |
 | 7 | Run, Diagnostic | Press **Play**, or Space to play the simulation. | Run: Play | the run is won |
 | 8 | Run, Diagnostic | You won! You reached the objectives.<br>If you are stuck, try clicking **Hints**. | Hints icon | any key or click closes it |
 
@@ -48,7 +48,7 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 - Spec: Swim to the light and touch it.
 - Hint 1, the idea: The eye drives what it is wired to.
 - Opens on: the Run
-- Ghosts: none
+- Ghosts: eye on (1, 0) pointing E; thruster on (-1, 0) pointing E; a wire from (1, 0) to (-1, 0)
 
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
@@ -78,7 +78,7 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 | # | Open | Text | Highlighted | Waits for |
 |---|---|---|---|---|
 | 1 | Run, Diagnostic | Stop in the ring round the light for 3 s, without touching it.<br>Press the **Editor** button or tab, or press Tab. | Editor tab; Editor button | the Editor opens |
-| 2 | Editor, Parts | The **Diff** sends the difference of its two inputs.<br>A **Source** less an eye: a full push in the dark, none once the eye sees all the light it can. | Parts drawer; Parts: Diff row | any key or click closes it |
+| 2 | Editor, Parts | The **Diff** sends the difference of its two inputs.<br>A **Source** less an eye: a full push in the dark, none once the eye sees all the light it can. | Parts: Diff row | any key or click closes it |
 
 ## 0.6 Diagnostic
 

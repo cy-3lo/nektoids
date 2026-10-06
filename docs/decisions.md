@@ -2129,3 +2129,18 @@ cells a thruster one row off the axis, pushing ahead, circles on 3.08 u: an obst
 swimmer goes straight and misses, and on the left it circles the other way. A card may wait for
 `moved`, a part of that kind on that cell, as `placed` does, letting through the Move tool and a
 drag, and nothing else; `placed` still lets no move through.
+
+**D-339 — 2026-10-06 — The physicist's review, round two: 0.1's Run card lights the Run button too; 0.3 shows the wiring's shadow; 0.5's second card lights the Diff alone. The run opens on Diagnostic, always. A stay's goal says its seconds, "Stay 3 s in the ring". The Editor's Diagnostic has no handles on its eyes' meters, and a part clicked there opens Tools on it. Chapters' numbers are in their names' font. Fear's plane turned a quarter, the swimmer facing right. Amends D-058, D-307, D-321, D-338.**
+Tutorials: in 0.1 the card that sends the player to the Run lights its button with its tab; 0.3
+ghosts its model, an eye ahead looking forward wired to a thruster behind, while its cards
+explain; 0.5's card on the Diff lights its row of Parts, not the drawer's title. The run kept the
+drawer it last had open, from one run to the next; it opens on Diagnostic every time now, as it
+did when a place was chosen (D-321). A stay's name said where, not how long: "Stay 3 s in the
+ring", "the" where the level has one, "every ring" for all. The Editor's Diagnostic let the
+player drag an eye's meter to set what it reads (D-058), a slider in all but name: it goes, the
+meters staying meters, and a click on a part in the Run preview opens Tools, the board in place
+of the preview, with that part's Wheel. In Chapters, and in the Maker's Start from, a level's
+number was in Plex Mono, its name in FreeSans Bold, each centred on its own: the number is in the
+name's font now, on one line with it. Fear's plane turns 90 degrees clockwise about the start, so
+that the swimmer faces right, as in every other level: the start at (17, 19) heading 0, the light
+and its ring at (17, 16), still on its right; every run ends as it did, to the tick.

@@ -31,7 +31,12 @@
           "Put an **Eye** and a **Thruster** on the board, both pointing forward, and wire the **Eye** to the **Thruster**. Then run it."
         ]
       }
-    ]
+    ],
+    "ghosts": [
+      {"kind": "eye", "cell": [1, 0], "facing": "E"},
+      {"kind": "thruster", "cell": [-1, 0], "facing": "E"}
+    ],
+    "ghost_wires": [{"from": [1, 0], "to": [-1, 0]}]
   },
   "proof": {"board": "GtnHChyDr", "ticks": 645, "parts": 2}
 }

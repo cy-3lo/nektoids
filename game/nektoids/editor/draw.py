@@ -1196,9 +1196,9 @@ def draw_row(
     if part is not None:
         fill = GREYED if greyed else None
         draw_part(screen, fonts, part, MENU_ANGLE.get(part), slot, 24, False, fill)
-    elif badge is not None:
-        label = fonts.small.render(badge, True, DIM_TEXT if greyed else TEXT)
-        screen.blit(label, label.get_rect(center=slot))
+    elif badge is not None:  # in the name's font, so the two sit on one line (D-339)
+        label = fonts.name.render(badge, True, DIM_TEXT if greyed else TEXT)
+        screen.blit(label, label.get_rect(center=(slot[0], box.centery)))
     elif icon is not None:
         fonts.icons.draw(screen, icon, slot, 16, ink)
     named = lit or (REFUSED if alarm else DIM_TEXT if greyed else TEXT)

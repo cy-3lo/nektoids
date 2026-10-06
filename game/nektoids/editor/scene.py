@@ -182,7 +182,6 @@ class EditorScene(Frame):
         self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
         self._probed = None  # the board as the probe was made for it
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
-        self.holding: int | None = None  # the eye whose meter's knob the mouse holds
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.wheel_folded = False  # the picture of the cell folded, in Tools and Parts (D-069)
@@ -506,7 +505,6 @@ class EditorScene(Frame):
             self._overview_to(pos)
         if self.zooming:
             self._zoom_to(pos)
-        self._hold(pos)
         self.wheel_hover = slot_at(self.wheel(), pos, WHEEL_HEX)
         piling = 0
         if self.layout.wheel_view is not None:
@@ -597,12 +595,14 @@ class EditorScene(Frame):
         if shown and action_at(self.layout, pos) is not None:  # the action: Tools, to see it all
             self.open_drawer(Drawer.TOOLS)
             return
-        if self.main is MainView.PREVIEW:  # the board is not on screen to edit, but the eyes are
+        if self.main is MainView.PREVIEW:  # the board runs here: a part clicked goes to Tools
             if self.tool is Tool.PAN:  # the hand moves the view, the preview's as the board's
                 self.panning_from = pos
                 return
-            self.holding = self.probe.handle_at(pos) if self.probe is not None else None
-            self._hold(pos)
+            cell = cell_at(self.layout, self.view, pos)
+            if cell is not None and self.board.node_at(cell) is not None:  # to edit it (D-339)
+                self.open_drawer(Drawer.TOOLS)
+                self._focus(cell)
             return
         if not contains(self.layout.board_area, pos):
             return
@@ -664,17 +664,12 @@ class EditorScene(Frame):
         bx, by, bw, bh = self.layout.board_area
         self.view = zoom(self.view, size / self.view.size, (bx + bw / 2, by + bh / 2))
 
-    def _hold(self, pos: tuple[int, int]) -> None:
-        """The eye whose knob is held reads what its meter says at the mouse: a test input."""
-        if self.holding is not None and self.probe is not None:
-            self.probe.hold(self.holding, self.probe.level_at(self.holding, pos[1]))
-
     def _release(self, pos: tuple[int, int]) -> None:
         if self.field_pressed:
             self.field_pressed = False
             if board_field_at(self.layout, pos):
                 self._open_field()
-        self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
+        self.probing, self.overviewing, self.zooming = False, False, False
         self.panning_from = None
         self.frame_release()
         if self.press_cell is not None:  # a press on a part: a drag moved it, or drew a wire,

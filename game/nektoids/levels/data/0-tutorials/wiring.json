@@ -55,7 +55,7 @@
         "until": {"wired": {"from": [0, 0], "to": [-1, 0]}}
       },
       {
-        "show": {"tab": "run"},
+        "show": [{"tab": "run"}, {"level": "run"}],
         "say": ["Click the **Run** tab or button, or press **Tab**."],
         "until": {"screen": "run"}
       },
