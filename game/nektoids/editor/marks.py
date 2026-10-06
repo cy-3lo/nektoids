@@ -5,7 +5,10 @@ Its parts: each eye's face and each thruster's back where the board puts them on
 drifting out of each thruster's back, FLAME_LENGTH long at any rate, the rate being their
 density. The light it draws in: the flames run backwards, specks drawn into each eye's face from
 each light the eye sees, along that light's direction, as many as that light gives the reading;
-they come in over the face's width as the light sees it, its cosine (D-019). Its motion: the
+they come in over the face's width as the light sees it, its cosine (D-019). Each speck ends at
+its own distance, within FADE of the stream's length, so that a stream thins out to none rather
+than stopping; and a stream is drawn longer where it would be shorter than LEAST_STREAM on screen
+(`stretch_at`). Its motion: the
 velocity as a segment from the rim, the spin as an arc from the heading, both from the thrust
 the nodes have now (D-022), which is what the next tick does.
 
@@ -33,6 +36,8 @@ from nektoids.sim.optics import FACING_STEP, TINY, discs, exposure, eye_poses, v
 from nektoids.sim.world import parts, push
 
 FLAME_LENGTH = 3.0  # [body radii] every flame, whatever its rate: the rate is its density
+FADE = 0.0  # a speck ends within this fraction of its stream's length either side of its end
+LEAST_STREAM = 0.0  # [px] no stream is drawn shorter on screen than this
 FLAME_SPECKS = 12  # specks in a flame at once at RATE_MAX, on average
 FLAME_SPREAD = math.radians(10.0)  # a flame widens by this much either side
 FLAME_LIFE = 16  # [frames] a speck's way out
@@ -57,27 +62,34 @@ NOWHERE = np.zeros((0, 2))
 
 class Specks:
     """Random draws for the specks, made once (invariant 1): for each frame of a cycle and each
-    slot, whether a speck starts then, when within that frame, and where across its stream."""
+    slot, whether a speck starts then, when within that frame, where across its stream, and
+    where it ends."""
 
     def __init__(self, seed: int = 0):
-        self.table = np.random.default_rng(seed).random((TABLE_FRAMES, SLOTS, 3))
+        rng = np.random.default_rng(seed)
+        starts = rng.random((TABLE_FRAMES, SLOTS, 3))
+        ends = rng.random((TABLE_FRAMES, SLOTS, 1))  # drawn last: the starts are those of D-076
+        self.table = np.concatenate((starts, ends), axis=2)
         self.table.flags.writeable = False  # drawn once, read only
 
     def stream(
-        self, density: float, frame: int, life: int, stream: int
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """The specks of one stream at `frame`: how far along its way each is, u in [0, 1), 0
-        where it starts; and where across the stream, in [-1, 1]; two arrays (P,). `density`:
-        specks alive at once, on average; `life`: frames from a speck's start to its end;
-        `stream`: which stream, so that no two move alike."""
+        self, density: float, frame: int, life: int, stream: int, fade: float = 0.0
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """The specks of one stream at `frame`, in units of the stream's length: how far each
+        has gone from where it starts, and how far it has left to go; and where across the
+        stream, in [-1, 1]; three arrays (P,). `density`: specks alive at once, on average;
+        `life`: frames a speck takes to go the stream's length; `stream`: which stream, so that
+        no two move alike; `fade`: each speck ends at its own distance, drawn evenly within
+        1 ± fade, so that the stream thins out to none over that range, as dense as before it."""
         if density <= 0.0:
-            return np.zeros(0), np.zeros(0)
-        ages = np.arange(life)
-        rows = self.table[(frame - ages + STREAM_STEP * stream) % TABLE_FRAMES]  # (life, SLOTS, 3)
+            return np.zeros(0), np.zeros(0), np.zeros(0)
+        ages = np.arange(math.ceil(life * (1.0 + fade)))
+        rows = self.table[(frame - ages + STREAM_STEP * stream) % TABLE_FRAMES]  # (A, SLOTS, 4)
         started = np.minimum(SLOTS, np.floor(density / life + rows[:, 0, 0]))
-        alive = np.arange(SLOTS)[None, :] < started[:, None]
-        u = (ages[:, None] + rows[:, :, 1]) / life
-        return u[alive], 2.0 * rows[:, :, 2][alive] - 1.0
+        gone = (ages[:, None] + rows[:, :, 1]) / life
+        end = 1.0 + fade * (2.0 * rows[:, :, 3] - 1.0)
+        alive = (np.arange(SLOTS)[None, :] < started[:, None]) & (gone < end)
+        return gone[alive], (end - gone)[alive], 2.0 * rows[:, :, 2][alive] - 1.0
 
 
 SPECKS = Specks()
@@ -104,9 +116,10 @@ def at_work(
     radius: float,
     frame: int,
     specks: Specks = SPECKS,
+    stretch: float = 1.0,
 ) -> AtWork:
     """What a swimmer running `net` on a board of `cells`, its nodes at rates `y` (n,), shows
-    at `pose` in `arena`, at `frame` of the run."""
+    at `pose` in `arena`, at `frame` of the run, its streams `stretch` times their length."""
     scale = part_scale(cells)
     eye_mount, eye_facing = parts(net, net.eyes)
     thr_mount, thr_facing = parts(net, net.thrusters)
@@ -115,13 +128,21 @@ def at_work(
     vel, spin = motion(net, y, radius)
     centre, heading = pose[:2], pose[2]
     return AtWork(
-        intake=intake(arena, eye_mount, eye_facing, eyes, pose, radius, frame, specks),
-        flames=flames(y[net.thrusters], thr_facing, thrusters, pose, radius, frame, specks),
+        intake=intake(arena, eye_mount, eye_facing, eyes, pose, radius, frame, specks, stretch),
+        flames=flames(
+            y[net.thrusters], thr_facing, thrusters, pose, radius, frame, specks, stretch
+        ),
         eyes=to_plane(eyes, pose, radius),
         thrusters=to_plane(thrusters, pose, radius),
         velocity=velocity_segment(centre, heading, radius, vel),
         spin=spin_arc(centre, heading, radius, spin),
     )
+
+
+def stretch_at(scale: float, radius: float) -> float:
+    """How many times its length a stream is drawn, seen at `scale` [px/u] round a body of
+    `radius` [u]: 1, or more where it would be shorter than LEAST_STREAM on screen."""
+    return max(1.0, LEAST_STREAM / (FLAME_LENGTH * radius * scale))
 
 
 def part_scale(cells: Sequence[Cell]) -> float:
@@ -166,18 +187,20 @@ def flames(
     radius: float,
     frame: int,
     specks: Specks = SPECKS,
+    stretch: float = 1.0,
 ) -> np.ndarray:
     """(P, 2) [u]: the specks of the flames of thrusters at `rates` (k,), facing `facing` (k,),
-    with outlines (k, m, 2) on the body [body radii]: out of each one's back, FLAME_LENGTH long,
-    as many as its rate."""
+    with outlines (k, m, 2) on the body [body radii]: out of each one's back, FLAME_LENGTH long
+    `stretch` times over, thinning out at its end, as many as its rate."""
+    length = FLAME_LENGTH * stretch
     found = [NOWHERE]
     for k, rate in enumerate(np.asarray(rates, dtype=np.float64) / RATE_MAX):
         start, half = face(outline[k])
         angle = FACING_STEP * float(facing[k])
         way = np.array([-math.cos(angle), -math.sin(angle)])  # out of the back
         side = np.array([-way[1], way[0]])
-        u, across = specks.stream(FLAME_SPECKS * rate, frame, FLAME_LIFE, k)
-        along = u * FLAME_LENGTH
+        gone, _, across = specks.stream(FLAME_SPECKS * rate, frame, FLAME_LIFE, k, FADE)
+        along = gone * length
         wide = across * (half + along * math.tan(FLAME_SPREAD))
         found.append(start + along[:, None] * way + wide[:, None] * side)
     return to_plane(np.concatenate(found), pose, radius)
@@ -211,10 +234,12 @@ def intake(
     radius: float,
     frame: int,
     specks: Specks = SPECKS,
+    stretch: float = 1.0,
 ) -> np.ndarray:
     """(P, 2) [u]: the specks of light drawn into eyes at `mount` (k, 2) [body radii], facing
     `facing` (k,), with outlines (k, m, 2): into each face from each light it sees, along the
-    light's direction, from INTAKE_LENGTH out, as many as that light gives the reading."""
+    light's direction, from INTAKE_LENGTH out `stretch` times over, thinning out there, or from
+    the light if it is nearer; as many as that light gives the reading."""
     if len(mount) == 0 or len(arena.lights) == 0:
         return NOWHERE
     shares, looks = light_shares(arena, mount, facing, pose, radius)
@@ -233,8 +258,8 @@ def intake(
             side = np.array([-way[1], way[0]])
             cosine = max(0.0, float(looks[k] @ way))  # the face as the light sees it
             stream = LIGHT_STREAMS + k * len(arena.lights) + light
-            u, across = specks.stream(INTAKE_SPECKS * share, frame, INTAKE_LIFE, stream)
-            out = (1.0 - u) * min(INTAKE_LENGTH * radius, far - LIGHT_RADIUS)
+            _, left, across = specks.stream(INTAKE_SPECKS * share, frame, INTAKE_LIFE, stream, FADE)
+            out = left * min(INTAKE_LENGTH * stretch * radius, (far - LIGHT_RADIUS) / (1.0 + FADE))
             wide = across * (half * radius * cosine + out * math.tan(INTAKE_SPREAD))
             found.append(end + out[:, None] * way + wide[:, None] * side)
     return np.concatenate(found)
