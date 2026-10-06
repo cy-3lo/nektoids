@@ -850,3 +850,10 @@ def test_start_from_is_a_list_of_its_own_under_a_rule_its_chapter_folding():
         Drawer.FILES, frozenset({CHAPTER_TITLE}), env=Env.MAKER, maker=True, starts=8, chapter=7
     )
     assert [s.index for s, _ in shut.start_rows] == [None, 7] and shut.scroll_max == 0
+
+
+def test_the_sandboxs_tools_fit_above_the_wheel_unscrolled():
+    tools = make_layout(Drawer.TOOLS, maker=True)  # Lock and Erase all with it (D-323)
+    assert tools.scroll_max == 0 and tools.scroll_bar is None
+    last = max(rect[1] + rect[3] for _, rect in (*tools.mode_buttons, *tools.board_buttons))
+    assert last <= tools.list_area[1] + tools.list_area[3] < tools.wheel_fold[1]

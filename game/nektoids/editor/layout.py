@@ -821,13 +821,15 @@ class _Rows:
         self.y += SLIDER_HEIGHT + WORD_GAP
 
     def _over_wheel(self, sections: tuple, height: int, wheel_folded: bool, scroll: int) -> None:
-        """Each section's title and rows, scrolled above the Wheel if they do not fit."""
+        """Each section's title and rows, scrolled above the Wheel if they do not fit, the gaps
+        after the last row not counted: blank, they never make it scroll (D-323)."""
         for title, rows in sections:
             if title:
                 self._title(title, self.sections)
             for what in rows:
                 self._row(what)
             self.y += SECTION_GAP
+        self.y -= SECTION_GAP + ROW_PITCH - ROW_HEIGHT  # what lies under the last row
         self.scrolled(self._wheel(height, wheel_folded) - SECTION_GAP, scroll)
 
     def _wheel(self, height: int, folded: bool) -> int:
