@@ -25,7 +25,6 @@ the layouts.
 from __future__ import annotations
 
 import math
-import textwrap
 from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
@@ -51,6 +50,7 @@ from nektoids.levels.level import known
 from nektoids.levels.objectives import Outcome
 
 CHARS = 48  # a line of the box, at most: the paragraphs are wrapped to it (D-094)
+MARK = "**"  # round a game's word in a step's text: drawn in the accent (D-337)
 BOX_WIDTH = 464  # CHARS characters of Plex Mono and the padding (D-055) [px]
 LINE = 22  # a line of the box [px]
 PAD = 14  # inside the box [px]
@@ -83,8 +83,9 @@ class Step:
 
     @property
     def lines(self) -> tuple[str, ...]:
-        """What the box shows: each paragraph wrapped to CHARS, ragged right (D-094)."""
-        return tuple(line for text in self.say for line in textwrap.wrap(text, CHARS))
+        """What the box shows: each paragraph wrapped to CHARS of what shows, ragged right
+        (D-094), a game's word marked "**Editor**" keeping its marks for the accent (D-337)."""
+        return tuple(line for text in self.say for line in _wrapped(text))
 
 
 @dataclass(frozen=True)
@@ -674,6 +675,36 @@ def ghosts_from(data: Mapping) -> tuple[Ghost, ...]:
 def ghost_wires_from(data: Mapping) -> tuple[tuple[Cell, Cell], ...]:
     """The ghost wires of a tutorial's data, or of a hint's shadow: each from a cell to a cell."""
     return tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
+
+
+def _wrapped(text: str) -> list[str]:
+    """`text` wrapped to CHARS, word by word, a word's length what shows of it, its marks not
+    counted (D-337); a marked phrase may run on to the next line, its marks with it."""
+    lines, line, size = [], [], 0
+    for word in text.split():
+        length = len(word.replace(MARK, ""))
+        if line and size + 1 + length > CHARS:
+            lines.append(" ".join(line))
+            line, size = [], 0
+        size += length + (1 if line else 0)
+        line.append(word)
+    return [*lines, " ".join(line)] if line else lines
+
+
+def shown(line: str) -> str:
+    """What shows of a line of a step: its marks taken out."""
+    return line.replace(MARK, "")
+
+
+def runs(line: str, marked: bool = False) -> list[tuple[str, bool]]:
+    """A line of a step as runs of text, each marked or not, `marked` if the line starts inside
+    a marked phrase; the marks toggle it (D-337)."""
+    found = []
+    for k, text in enumerate(line.split(MARK)):
+        marked = marked if k == 0 else not marked
+        if text:
+            found.append((text, marked))
+    return found
 
 
 def _cell(data) -> Cell:

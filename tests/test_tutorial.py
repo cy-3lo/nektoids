@@ -20,6 +20,7 @@ from nektoids.editor.tutorial import (
     CHARS,
     GAP,
     LINE,
+    MARK,
     Action,
     Context,
     Docked,
@@ -36,11 +37,13 @@ from nektoids.editor.tutorial import (
     next_rect,
     outline_kept,
     panels,
+    runs,
     shows_wheel,
     skip_rect,
     target_rects,
     target_spots,
 )
+from nektoids.editor.tutorial import shown as visible
 from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NW, SW, E, W
@@ -132,7 +135,8 @@ def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
         tutorial = Tutorial.from_dict(data)
         context = Context(level.new_board(), Tool.ADD, Screen.EDIT)
         for step in tutorial.steps:
-            assert step.say and all(len(line) <= CHARS for line in step.lines)
+            assert step.say and all(len(visible(line)) <= CHARS for line in step.lines)
+            assert all(text.count(MARK) % 2 == 0 for text in step.say)  # every mark closed
             if step.until:
                 met(step.until, context)  # a condition it knows
             for screen in (Screen.EDIT, Screen.RUN):
@@ -785,6 +789,19 @@ def test_aggressions_boxes_keep_clear_of_what_they_show_on_screen():
             if narrow:
                 box = box_rect(targets, len(step.lines), layout.board_area)
                 assert on_screen(box) and not any(overlap(box, t) for t in narrow), step.say
+
+
+def test_a_games_word_marked_in_a_steps_text_is_drawn_marked_and_its_marks_not_counted():
+    say = "Click the **Editor** tab, then **Turn left** on the **Wheel** to see what **it does**."
+    lines = Step((say,)).lines  # D-337
+    assert all(len(visible(line)) <= CHARS for line in lines)
+    assert len(lines[0]) > CHARS >= len(visible(lines[0]))  # the marks take no room
+    marked, found = False, []
+    for line in lines:  # as the box draws them: a marked phrase may run on to the next line
+        found += [text for text, lit in runs(line, marked) if lit]
+        marked = marked != (line.count(MARK) % 2 == 1)
+    assert " ".join(found).split() == ["Editor", "Turn", "left", "Wheel", "it", "does"]
+    assert runs("plain") == [("plain", False)] and runs("**a** b") == [("a", True), (" b", False)]
 
 
 def test_a_steps_paragraphs_are_wrapped_to_the_box_each_on_a_new_line():

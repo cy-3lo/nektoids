@@ -28,38 +28,43 @@
       },
       {
         "show": {"run": "objectives"},
-        "say": ["Objectives are what the level asks. Here, get into the ring before the 10 s are out."]
+        "say": [
+          "**Objectives** are what the level asks. Here, get into the ring before the 10 s are out."
+        ]
       },
       {
         "show": [{"tab": "editor"}, {"level": "edit"}],
         "say": [
-          "The window has two tabs: Run plays the level and the Editor builds the control board.",
-          "Click the Editor tab or button, or press Tab."
+          "The window has two tabs: **Run** plays the level and the **Editor** builds the control board.",
+          "Click the **Editor** tab or button, or press **Tab**."
         ],
         "until": {"screen": "edit"}
       },
       {
         "show": {"area": "bar"},
         "say": [
-          "The nav bar opens the drawers: Tools, Parts, Files, Diagnostic, Navigator. At its foot: Hints, Settings, Chapters, and Run."
+          "The nav bar opens the drawers: **Tools**, **Parts**, **Files**, **Diagnostic**, **Navigator**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**."
         ]
       },
       {
         "show": [{"cell": [0, 0]}, {"cell": [-1, 0]}],
         "say": [
-          "A Source sends beads all the time; a thruster pushes as hard as beads come in.",
-          "Click the Source, then the Thruster to wire them."
+          "A **Source** sends beads all the time; a thruster pushes as hard as beads come in.",
+          "Click the **Source**, then the **Thruster** to wire them."
         ],
         "until": {"wired": {"from": [0, 0], "to": [-1, 0]}}
       },
-      {"say": ["Click the Run tab or button, or press Tab."], "until": {"screen": "run"}},
       {
-        "say": ["Press Play, or Space: the swimmer goes straight into the ring."],
+        "say": ["Click the **Run** tab or button, or press **Tab**."],
+        "until": {"screen": "run"}
+      },
+      {
+        "say": ["Press **Play**, or **Space**: the swimmer goes straight into the ring."],
         "until": {"outcome": "won"}
       },
       {
         "show": {"icon": "hints"},
-        "say": ["You won! You reached the objectives.", "If you are stuck, try clicking Hints."]
+        "say": ["You won! You reached the objectives.", "If you are stuck, try clicking **Hints**."]
       }
     ]
   },

@@ -23,7 +23,7 @@
       {
         "show": {"drawer": "diagnostic"},
         "say": [
-          "This swimmer comes with an eye wired to a thruster, yet it does not move. Open Diagnostic by choosing the stethoscope, or pressing D."
+          "This swimmer comes with an eye wired to a thruster, yet it does not move. Open **Diagnostic** by choosing the stethoscope, or pressing **D**."
         ],
         "until": {"drawer": "diagnostic"}
       },

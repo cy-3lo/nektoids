@@ -117,7 +117,7 @@ from nektoids.editor.palette import (
     EYE_FACE,
     FLAME,
     FLASH,
-    FOCUS_CELL,
+    FOCUS_TINT,
     FULL,
     GHOST_FILL,
     GHOST_OK,
@@ -147,6 +147,7 @@ from nektoids.editor.palette import (
     WIRING,
     WIRING_OK,
     ZONE,
+    mix,
 )
 from nektoids.editor.parts import NAME, info, ports
 from nektoids.editor.probe import level_view
@@ -344,8 +345,8 @@ def _draw_board(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             pygame.draw.polygon(screen, OUTSIDE, hexagon)
         elif cell == scene.focused:  # the Wheel's cell, the keyboard's (D-068)
             pygame.draw.polygon(screen, ACTIVE, hexagon)
-        elif cell in scene.guide_cells:  # a cell a tutorial's step acts on (D-063)
-            pygame.draw.polygon(screen, FOCUS_CELL, hexagon)
+        elif cell in scene.guide_cells:  # a cell a tutorial's step acts on, pulsing (D-337)
+            pygame.draw.polygon(screen, mix(ZONE, scene.lit_ink, FOCUS_TINT), hexagon)
         else:
             pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
         pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
@@ -700,7 +701,7 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         if on:
             pygame.draw.rect(screen, LIT, (0, box.top + 2, LIT_EDGE, box.height - 4))
         lit = drawer.value in scene.lit or "bar" in scene.lit  # a tutorial's target (D-336)
-        ink = LIT if lit else TEXT if on else DIM_TEXT
+        ink = scene.lit_ink if lit else TEXT if on else DIM_TEXT  # pulsing (D-337)
         fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, ink)
     for button, rect in layout.level_buttons:  # the switch
         box = pygame.Rect(rect)
@@ -737,8 +738,8 @@ def draw_drawer(
     pygame.draw.rect(screen, PANEL, area)
     pygame.draw.line(screen, RULE, (area.right - 1, 0), (area.right - 1, area.bottom), 2)
     lit = layout.drawer.value in scene.lit  # a tutorial step explains it (D-050)
-    ink = LIT if lit else DIM_TEXT
-    draw_title(screen, fonts, TIP[layout.drawer], layout.drawer_title_at, lit=lit)
+    ink = scene.lit_ink if lit else DIM_TEXT  # pulsing (D-337)
+    draw_title(screen, fonts, TIP[layout.drawer], layout.drawer_title_at, ink=ink)
     with clipped(screen, layout.list_area):  # None: the rows fit, or there are none
         _draw_sections(screen, scene, fonts, ink, at_foot=False)
         for title, rect in layout.group_titles:
@@ -769,7 +770,8 @@ def _draw_sections(screen: pygame.Surface, scene: Frame, fonts: Fonts, ink, at_f
         if ((title, rect) in foot) is not at_foot:
             continue
         x, y, _, h = rect
-        shown = fonts.label.render(title.upper(), True, LIT if title.lower() in scene.lit else ink)
+        lit = title.lower() in scene.lit
+        shown = fonts.label.render(title.upper(), True, scene.lit_ink if lit else ink)
         screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
 
 
@@ -1221,7 +1223,7 @@ def draw_tabs(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         if on:
             pygame.draw.rect(screen, BACKGROUND, box)
             pygame.draw.rect(screen, LIT, (box.left, 0, box.width, LIT_EDGE))
-        ink = LIT if f"tab:{name}" in scene.lit else TEXT if on else DIM_TEXT  # D-080
+        ink = scene.lit_ink if f"tab:{name}" in scene.lit else TEXT if on else DIM_TEXT  # D-337
         label = fonts.label.render(TAB_NAME[name], True, ink)
         screen.blit(label, label.get_rect(center=box.center))
         pygame.draw.line(screen, RULE, (box.right, 6), (box.right, TABS_HEIGHT - 6))
@@ -1250,11 +1252,11 @@ def _fitted(font: pygame.font.Font, text: str, width: int) -> str:
 
 
 def draw_title(
-    screen, fonts: Fonts, title: str, topleft, height: int = PALETTE_TITLE, lit: bool = False
+    screen, fonts: Fonts, title: str, topleft, height: int = PALETTE_TITLE, ink=DIM_TEXT
 ) -> None:
     """A section's title, as every view writes them: upper case, dimmed, centred in `height`;
-    `lit`, in the accent, while a tutorial step explains its panel (D-050)."""
-    text = fonts.name.render(title.upper(), True, LIT if lit else DIM_TEXT)
+    in the accent, `ink`, while a tutorial step explains its panel (D-050, D-337)."""
+    text = fonts.name.render(title.upper(), True, ink)
     screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 
