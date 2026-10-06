@@ -379,6 +379,7 @@ class Layout:
     fold_handle: Rect | None  # the arrow on the drawer's edge
     drawer_title_at: tuple[int, int]
     section_titles: tuple[tuple[str, Rect], ...]  # Tools, Edit, File; View
+    foot_titles: tuple[tuple[str, Rect], ...]  # ... those at the foot, over the run's objectives
     group_titles: tuple[tuple[str, Rect], ...]  # Parts, Files: a click folds or unfolds its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
     piece_rows: tuple[tuple[Piece, Rect], ...]  # Objects' rows, in the Maker (D-301)
@@ -516,7 +517,7 @@ def make_layout(
         else:
             rows.chapters(chapters, folded)
         rows.scrolled(floor, scroll)
-    goal_area = None
+    goal_area, foot_titles = None, []
     if env is Env.RUN and drawer is not None:  # the objectives, at the foot of every drawer
         foot = _Rows()
         foot.y = _goals_top(height, goals)
@@ -525,6 +526,7 @@ def make_layout(
         foot.goals(goals)
         rows.items += foot.items
         rows.sections += foot.sections
+        foot_titles = foot.sections
     tabs, x = [], left
     for name in MAKER_TABS if maker else TABS:
         tabs.append((name, (x, 0, TAB_WIDTHS[name], TABS_HEIGHT)))
@@ -546,6 +548,7 @@ def make_layout(
         fold_handle=(left - 1, height // 2 - HANDLE[1] // 2, *HANDLE) if open_ else None,
         drawer_title_at=(BAR_WIDTH + MARGIN, 9),
         section_titles=tuple(rows.sections),
+        foot_titles=tuple(foot_titles),
         group_titles=tuple(rows.groups),
         menu_items=tuple(rows.of(Kind)),
         piece_rows=tuple(rows.of(Piece)),

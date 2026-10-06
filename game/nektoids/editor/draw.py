@@ -761,10 +761,11 @@ def draw_drawer(
 
 def _draw_sections(screen: pygame.Surface, scene: Frame, fonts: Fonts, ink, at_foot: bool) -> None:
     """The drawer's section titles, lit with it or by their name: those over its rows, or with
-    `at_foot` those at its foot, over the run's objectives, which never scroll (D-065)."""
-    goals = scene.layout.goal_area
+    `at_foot` those at its foot, over the run's objectives, which never scroll (D-065). A title of
+    the rows scrolled down under the objectives is still the rows', clipped with them (D-333)."""
+    foot = scene.layout.foot_titles
     for title, rect in scene.layout.section_titles:
-        if (goals is not None and pygame.Rect(goals).collidepoint(rect[:2])) is not at_foot:
+        if ((title, rect) in foot) is not at_foot:
             continue
         x, y, _, h = rect
         shown = fonts.label.render(title.upper(), True, LIT if title.lower() in scene.lit else ink)

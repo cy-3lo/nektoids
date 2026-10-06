@@ -842,6 +842,14 @@ def test_tools_ends_with_erase_all_under_undo_and_redo():
     assert not make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True).board_buttons  # Tools'
 
 
+def test_a_title_of_chapters_scrolled_under_the_objectives_is_still_the_lists():
+    chapters = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapters=SEVEN)  # D-333
+    _, top, _, room = chapters.list_area
+    under = [t for t, (_, y, _, _) in chapters.section_titles if y >= top + room]
+    assert "Passkey" in under  # scrolled down, under the list's area, as far as the objectives
+    assert [title for title, _ in chapters.foot_titles] == ["Objectives"]
+
+
 SHIPPED = (("Chapter 0", 0), ("Chapter 1", 4), ("Chapter 2", 1), ("Chapter 3", 3))
 
 
