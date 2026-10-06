@@ -77,7 +77,7 @@ taken, when it starts.
 
 Five chapters, from the physicist's plan (D-325): 0 Tutorials, six levels; 1 Braitenberg, Fear,
 Aggression, Love, Orbit; 2 Obstacles, new levels, then Shadows; 3 Many lights, Greed, Patience,
-Two lights; 4 Your levels. The levels' tutorials, hints and passkeys are written by hand in their
+Two lights; 4 Made by users. The levels' tutorials, hints and passkeys are written by hand in their
 files today, which the Maker does not set. Each item is planned, and its decisions taken, when it
 starts; they come in this order.
 
@@ -103,7 +103,7 @@ starts; they come in this order.
 - [x] **Dragster**, the physicist's, made in the Maker: chapter 4's first level, LEVEL 4.1,
   signed "@Cy-3LO" (D-332).
 - [ ] **Chapter 2's new levels**: obstacles, before Shadows.
-- [ ] **Chapter 4, Your levels**: the levels made in the Maker or pasted, where they are kept
+- [ ] **Chapter 4, Made by users**: the levels made in the Maker or pasted, where they are kept
   (nothing is stored beyond the session, D-075), how they are played, with their proof and
   score to beat (D-320).
 

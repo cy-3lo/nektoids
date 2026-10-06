@@ -28,7 +28,7 @@ def test_the_route_runs_through_the_chapters_in_order_each_level_in_one():
         "Chapter 1: Braitenberg",
         "Chapter 2: Obstacles",
         "Chapter 3: Many lights",
-        "Chapter 4: Your levels",
+        "Chapter 4: Made by users",
     ]  # D-325
     assert [len(chapter.names) for chapter in CHAPTERS] == [0, 4, 1, 3, 1]  # D-332: Dragster
     assert [(locate(k)[0].number, locate(k)[1]) for k in (0, 3, 4, 5, 7)] == [

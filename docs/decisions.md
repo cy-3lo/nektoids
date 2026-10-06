@@ -1937,7 +1937,7 @@ one light only. Like Greed and Patience it has no hints yet. Every level gives a
 named for it: GEMINI, the twins. Its title is Two lights: the old one ran under the info disc
 and the lock of its row in Chapters; Free play keeps the plane under the old title.
 
-**D-325 — 2026-10-06 — The game in five chapters: 0 Tutorials, six levels each teaching one thing; 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles, new levels then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Your levels. In Chapters each chapter's title folds, all but the one being played. Amends D-097, D-300, D-324.**
+**D-325 — 2026-10-06 — The game in five chapters: 0 Tutorials, six levels each teaching one thing; 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles, new levels then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Made by users. In Chapters each chapter's title folds, all but the one being played. Amends D-097, D-300, D-324.**
 The physicist's plan (the todo's §13), settled with him the same day. Chapter 0 teaches the
 board and the parts, one thing a level: 0.1 Wiring, a Source and a thruster locked on the board,
 the player drawing the wire between them, the swimmer going straight; 0.2 Turning, a part turned;
@@ -1947,8 +1947,9 @@ it moves the swimmer with no light to read. Every part Love and Orbit hand out i
 before them. Chapter 1 keeps Braitenberg's vehicles, one idea a level (D-097): each eye its own
 side, crossed, inhibition, one side always pushed. Chapter 2 opens with new levels, made in the
 Maker, on obstacles, then Shadows. Chapter 3 goes from Greed's two lights to Patience's three
-among obstacles, then Two lights, two among four obstacles, the hardest last (D-324). Chapter 4
-holds the levels made in the Maker or pasted, this session (D-075). Free play keeps the sandbox
+among obstacles, then Two lights, two among four obstacles, the hardest last (D-324). Chapter 4,
+Made by users, the physicist's title, holds the levels made in the Maker or pasted, this session
+(D-075). Free play keeps the sandbox
 and the Maker.
 Each chapter's first level is open from the start, the physicist's choice: a player may begin
 any chapter. Inside a chapter a level opens once the one before it is won, or by its passkey
@@ -1959,7 +1960,7 @@ D-322): the chapter being played is open, the others folded; a chapter with no l
 listed. D-300's scope, and `CLAUDE.md`'s, names the levels by chapter; still no new part, sense or
 item. The rest of §13 is planned, and its decisions taken, item by item: several chapters in the
 game, a level made in the Maker shipped as one of the game's, tutorials, chapter 0's levels,
-chapter 2's, Your levels.
+chapter 2's, Made by users.
 
 **D-326 — 2026-10-06 — Several chapters in the game: each chapter's level files in a folder of its own, a level named by its chapter, LEVEL 2.1; in Chapters, in every tab, each chapter under a title that folds, every chapter folded but the one being played until the player opens one; the Maker's Start from by chapter. Applies D-325.**
 `levels/arenas.py` declares the chapters, `CHAPTERS`, each with its number, title, folder and
@@ -2041,4 +2042,4 @@ by the studio. "Go as fast as possible.": the swimmer at (-15, 0) heading 0, a m
 thrusters. One Source on one thruster, 3 u/s, runs out of time; two, each on a thruster on the
 body's axis, back and front, win in 2.52 s, its proof; three would be faster, for more parts.
 It is the route's last level, after Two lights, so it gives no passkey and has no hints
-(D-329). Its file is `4-your-levels/dragster.json`.
+(D-329). Its file is `4-made-by-users/dragster.json`.
