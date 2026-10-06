@@ -9,6 +9,7 @@ from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level, to_json
 from nektoids.levels.making import (
+    AUTHOR_LONGEST,
     BLANK_STOCK,
     BLANK_TIME,
     GOALS_MOST,
@@ -19,6 +20,7 @@ from nektoids.levels.making import (
     TITLE_LONGEST,
     Unmade,
     adjusted,
+    authored,
     blank,
     boarded,
     goal_added,
@@ -219,6 +221,17 @@ def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_
     assert made.board["parts"] == LEVEL.board["parts"]  # the board's own parts, none here
     assert made.tutorial is None and made.passkey is None and made.hints is None
     assert fear.tutorial is not None and fear.passkey is not None
+
+
+def test_a_level_is_signed_in_text_a_pasted_one_keeps_its_author_one_started_from_none():
+    made = authored(blank(LEVEL), "  @someone   else ")  # D-331
+    assert made.author == "@someone else"
+    assert authored(made, "@").author is None and authored(made, " ").author is None
+    assert len(authored(made, "@" + "x" * 99).author) == AUTHOR_LONGEST
+    fear = arenas()[0]
+    assert pasted(made, to_json(fear)).author == "@Cy-3LO"  # someone's level stays theirs
+    assert taken(made, fear).author is None  # Start from: a new level, its maker's to sign
+    assert blank(made).author is None
 
 
 def test_a_text_no_level_could_hold_is_refused_with_its_reason():

@@ -49,6 +49,7 @@ BLANK_STOCK = 2  # of each part, on a blank plane (D-315)
 ZONES = (7, 19, 37)  # a zone's sizes: hexagons of 1 to 3 rings, the sandbox's the largest
 TITLE_LONGEST = 40  # characters: the caption's line holds it with a short spec beside it
 SPEC_LONGEST = 120  # a sentence or two, as the shipped levels' (D-305)
+AUTHOR_LONGEST = 24  # characters: a handle, "@Cy-3LO", in the level card's corner (D-331)
 
 
 class Unmade(ValueError):
@@ -104,6 +105,13 @@ def specified(level: Level, spec: str) -> Level:
     if not spec:
         raise Unmade("say what the level asks")
     return replace(level, spec=spec[:SPEC_LONGEST])
+
+
+def authored(level: Level, author: str) -> Level:
+    """The level signed `author`, its spaces squeezed to one between words; nothing, or the
+    "@" the field opens with alone, leaves it unsigned (D-331)."""
+    author = " ".join(author.split())
+    return replace(level, author=author[:AUTHOR_LONGEST] if author not in ("", "@") else None)
 
 
 def timed(level: Level, seconds: float) -> Level:
@@ -174,8 +182,10 @@ def goal_set(level: Level, index: int, value: float) -> Level:
 
 def pasted(level: Level, text: str) -> Level:
     """The level that `text` holds, its JSON as `to_json` writes it, taken onto `level`
-    (`taken`); Unmade, saying why, for a text no level could hold (D-201, D-310)."""
-    return taken(level, read_level(text))
+    (`taken`), signed as it is: someone's level keeps its author (D-331); Unmade, saying why,
+    for a text no level could hold (D-201, D-310)."""
+    other = read_level(text)
+    return replace(taken(level, other), author=other.author)
 
 
 def read_level(text: str) -> Level:
@@ -209,7 +219,8 @@ def blank(level: Level) -> Level:
 def taken(level: Level, other: Level) -> Level:
     """`other`'s title, spec, plane, start, goals and time, and its board's zone, what it hands
     out and the parts it places, locked, its free parts and wires left out (D-315, D-319); no
-    tutorial, passkey or hints, which a made level has none of (D-310)."""
+    tutorial, passkey or hints, which a made level has none of (D-310), and no author: a level
+    started from another is its maker's to sign (D-331)."""
     handout = {"zone": other.board["zone"], "stock": other.board["stock"], "wires": []}
     handout["parts"] = [part for part in other.board["parts"] if part["locked"]]
     made = replace(
@@ -222,6 +233,7 @@ def taken(level: Level, other: Level) -> Level:
         tutorial=None,
         passkey=None,
         hints=None,
+        author=None,
     )
     return _checked(specified(titled(made, other.title), other.spec))
 

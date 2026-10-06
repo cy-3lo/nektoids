@@ -2021,3 +2021,15 @@ lines head the plot, "Time against parts." and "The cross: one to beat."; with n
 plot shows the cross alone. Every shipped level has a proof (D-328), so every level shows one.
 A level pasted with its proof in Free play keeps it in the Maker, not in its level: its cross
 stays in `ideas.md`.
+
+**D-331 — 2026-10-06 — A level has an author, written in the Maker's Text, the field opening on "@", and signed in its card's bottom right corner, in a darker grey. Every shipped level is "@Cy-3LO". A pasted level keeps its author; one started from another has none. The level format is version 5; version 4 is read as it is. Amends D-305, D-310.**
+The physicist: the Maker and the level format had no author. Text's third field, Author, under
+Title and Spec, a row high, opens on what the level says, or on "@" if it has none; what is
+typed is kept as it is, spaces squeezed, 24 characters at most, and nothing, or the "@" alone,
+leaves the level unsigned. The card a level opens under shows it in `GREYED`, small, in its
+bottom right corner, as a signature, the lines above it where they were. The studio signs every
+shipped level, the sandbox's too, as `CLAUDE.md` writes it, "@Cy-3LO", not "Cy_3LO". Paste a
+level brings the author with the rest, someone's level staying theirs; Start from and a blank
+plane leave it unsigned, a level started from another being its maker's to sign. Adding a key
+changes the format (D-201): files are version 5, written "author" after "spec", and version 4,
+which has none, is read unsigned.

@@ -1,7 +1,8 @@
 {
-  "version": 4,
+  "version": 5,
   "title": "Two lights",
   "spec": "Touch both lights, in any order.",
+  "author": "@Cy-3LO",
   "start": {"at": [15, 19], "heading": 20},
   "items": [
     {"kind": "light", "at": [28, 24], "power": 8},

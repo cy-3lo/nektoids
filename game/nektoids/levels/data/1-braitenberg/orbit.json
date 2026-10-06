@@ -1,7 +1,8 @@
 {
-  "version": 4,
+  "version": 5,
   "title": "Orbit",
   "spec": "Go round the light through its four rings, without touching it.",
+  "author": "@Cy-3LO",
   "start": {"at": [25, 9], "heading": 0},
   "items": [
     {"kind": "light", "at": [25, 19], "power": 8},

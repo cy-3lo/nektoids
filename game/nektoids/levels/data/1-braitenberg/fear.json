@@ -1,7 +1,8 @@
 {
-  "version": 4,
+  "version": 5,
   "title": "Fear",
   "spec": "Get out of the ring round the light.",
+  "author": "@Cy-3LO",
   "start": {"at": [17, 19], "heading": 90},
   "items": [{"kind": "light", "at": [20, 19], "power": 4}, {"kind": "mark", "at": [20, 19], "radius": 8}],
   "board": {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []},

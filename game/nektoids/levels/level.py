@@ -31,12 +31,13 @@ from nektoids.levels.objectives import Goal, objective_from_dict, objective_to_d
 from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
-FORMAT = 4  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
-# 4 a zone written as its size (D-313)
+FORMAT = 5  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
+# 4 a zone written as its size (D-313), 5 an author (D-331)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "version",
     "title",
     "spec",
+    "author",
     "start",
     "items",
     "board",
@@ -103,6 +104,7 @@ class Level:
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
     hints: Mapping | None = field(default=None, repr=False)  # its idea and shadow (D-078)
     proof: Mapping | None = field(default=None, repr=False)  # a level shared: its win (D-320)
+    author: str | None = None  # who made it, as they sign: "@Cy-3LO" (D-331)
 
     @cached_property
     def marks(self) -> tuple[Item, ...]:
@@ -133,10 +135,9 @@ class Level:
     def to_dict(self) -> dict:
         x, y, heading = self.start
         return (
-            {
-                "version": FORMAT,
-                "title": self.title,
-                "spec": self.spec,
+            {"version": FORMAT, "title": self.title, "spec": self.spec}
+            | ({"author": self.author} if self.author else {})
+            | {
                 "start": {"at": [whole(x), whole(y)], "heading": whole(heading)},
                 "items": [item.to_dict() for item in self.items],
                 "board": self.board,
@@ -171,6 +172,7 @@ class Level:
             passkey=data.get("passkey"),
             hints=data.get("hints"),
             proof=data.get("proof"),
+            author=data.get("author"),
         )
         if level.proof is not None:  # its board's text, its score (`proof.Proof`, D-320)
             known(level.proof, ("board", "ticks", "parts"), "a proof")
@@ -190,8 +192,8 @@ def upgraded(data: Mapping) -> Mapping:
     """`data` in FORMAT, from the version it says (D-201): version 1 had no marks, and is
     version 2 as it is (D-306); version 2's objectives become sentences, its rings marks on its
     lights (D-307, `objectives.upgraded`); version 3's zone, a hexagon's cells, becomes its size
-    (D-313). ValueError for no version, one this game does not know, or rings that would mix
-    with the marks a level has."""
+    (D-313); version 4 has no author, and is version 5 as it is (D-331). ValueError for no
+    version, one this game does not know, or rings that would mix with the marks a level has."""
     if "version" not in data:
         raise ValueError(f"a level without its version: this game reads version {FORMAT}")
     version = data["version"]

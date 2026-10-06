@@ -1,7 +1,8 @@
 {
-  "version": 4,
+  "version": 5,
   "title": "Shadows",
   "spec": "Reach the light from an obstacle's shadow.",
+  "author": "@Cy-3LO",
   "start": {"at": [15, 18], "heading": 0},
   "items": [
     {"kind": "light", "at": [30, 19], "power": 8},
