@@ -38,7 +38,7 @@ def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_write
         path = DATA / f"{name}.json"
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
     titles = ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
-    titles.append("Two lights, four obstacles")  # D-324
+    titles.append("Two lights")  # D-324
     assert [level.title for level in arenas()] == titles
 
 

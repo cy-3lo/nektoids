@@ -1922,7 +1922,7 @@ it counted as content. They no longer do, for Tools and the Maker's Objects alik
 screen, the Wheel keeps its height, which a Wheel's piled icons need, and a drawer whose rows do
 not fit scrolls as before, to its last row.
 
-**D-324 — 2026-10-06 — "Two lights, four obstacles" comes back as the chapter's last level, 1.8: reach both lights in 45 s, two eyes, a Source, the operators and two thrusters on 19 cells; its passkey GEMINI. No slider in Objects. Applies D-300; amends D-032.**
+**D-324 — 2026-10-06 — "Two lights, four obstacles" comes back as the chapter's last level, 1.8, titled Two lights: reach both lights in 45 s, two eyes, a Source, the operators and two thrusters on 19 cells; its passkey GEMINI. No slider in Objects. Applies D-300; amends D-032.**
 The physicist: no slider in Objects, its item struck from the todo; and the old level two, set
 aside as too hard (D-032), at the end of the chapter for now, until the chapters he has in mind.
 Its plane is the sandbox's, on whole units since D-313: lights of power 8 and 4 at (28, 24) and
@@ -1934,4 +1934,5 @@ Source on the other, a Halve or a Double on either wire or none, 27 win; the fas
 an eye at the back left looking ahead through a Double to the left thruster, the Source on the
 right, in 24.6 s, which a test pins; plain aggression and Greed's and Patience's models touch
 one light only. Like Greed and Patience it has no hints yet. Every level gives a passkey,
-named for it: GEMINI, the twins. Free play keeps the plane under the same title.
+named for it: GEMINI, the twins. Its title is Two lights: the old one ran under the info disc
+and the lock of its row in Chapters; Free play keeps the plane under the old title.

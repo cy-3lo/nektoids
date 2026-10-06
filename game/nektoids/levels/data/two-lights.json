@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "title": "Two lights, four obstacles",
+  "title": "Two lights",
   "spec": "Touch both lights, in any order.",
   "start": {"at": [15, 19], "heading": 20},
   "items": [
