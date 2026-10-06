@@ -2183,3 +2183,10 @@ the rays a light sends, in the run, Diagnostic's map and the Maker's plane, are 
 **D-343 — 2026-10-06 — The end says where to reach the studio: "leave a comment on the itch.io page or at contact@nektoids.com." Amends D-035.**
 The physicist's: the domain registered on 2026-10-06 has its address. The end screen's second
 line, which named the itch.io page alone, names both; it fits on one line of the end screen.
+
+**D-344 — 2026-10-06 — Fear's proof is the physicist's board, 3C4tsBWoGsoQcW4i, four parts, won in 2.03 s: Score's cross and Hints 2 and 3 show it. Amends D-328.**
+The physicist found it, and holds it optimal: two eyes at the back corners, each looking across
+the body, back and out to the other side, wired to the thruster on the side it looks to, the
+thrusters at the back corners as before. It wins Fear in 244 ticks, 2.03 s, where the old
+shadow's board, eyes at the front looking back, took 3.18 s, with as many parts. Fear's idea,
+"Each eye its thruster.", still holds: each eye drives the thruster on the side it sees.
