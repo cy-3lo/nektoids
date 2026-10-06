@@ -2069,9 +2069,7 @@ and 0.6 are made, so the game always opens with one, and move then.
 Designed with the physicist, each checked by simulation (`tests/test_chapter0.py`):
 - 0.1 Wiring: a Source and a thruster locked on the axis, nothing handed out; Fear's five cards,
   then one that leads the wire, Run, Play, and Hints last. Into a ring 16 u ahead in 10 s: 4.35 s.
-- 0.2 Turning: a locked Source wired to a free thruster at the body's centre, pointing ahead; a
-  card leads its turn to NE, and the swimmer slides, unturned, into the ring ahead on its left:
-  2.91 s. A thruster off the centre, on so small a board, spins the body on the spot.
+- 0.2 Turning: redesigned by D-336, a thruster's turn making the swimmer turn round an obstacle.
 - 0.3 Eyes: an eye and a thruster to place and wire, a light of power 4 12 u ahead: 5.38 s; an
   eye looking back never moves. Cards explain the eye, from 0.3 on (D-334).
 - 0.4 Half: stay 3 s in a ring of 3 u; a Source on the thruster crosses it in 2 s, halved it
@@ -2088,3 +2086,23 @@ tutorial is open always, so a player may take them in any order, or none; a chap
 `Chapter.all_open`, and its levels give no passkey, having nothing to open. Chapter 1 keeps its
 hints, and chapters 2 and after have none, as D-329 has it. The game now opens on 0.1. Fear and Aggression lose their tutorials, Aggression keeping its
 prewired half swimmer (D-103); Settings' Tutorial is greyed on them (D-334).
+
+**D-336 — 2026-10-06 — A tutorial's highlight is accent1 alone, the sparks gone: a panel's titles, a tab's name, a cell, and now a drawer's icon in the bar, drawn in it. 0.1's cards edited by the physicist. 0.2 Turning: a thruster off the axis, pointing through the centre, turned to push ahead, takes the swimmer round an obstacle into the ring behind it. Amends D-080, D-095, D-335.**
+The physicist reviewed chapter 0 in `docs/tutorials.md`, a table of every card, generated from
+the level files: what is open, the text, what is lit, what moves it on. No highlight with sparks:
+accent1 is enough, or an icon. The sparks (D-080) go, their code with them; what a step shows is
+still drawn in accent1 by what draws it (`tutorial.panels`), and the bar's icons now are too:
+every one for a step that shows the bar, the Hints icon for one that shows it (D-095 had left
+them to the sparks). 0.1: the swimmer, already in accent1, needs no highlight; Objectives' title
+alone is lit; "Click the Editor tab or button, or press Tab."; the board's card goes; the bar's
+icons are lit; the wire's card lights its two cells, "Click the Source, then the Thruster to wire
+them."; the Run and Play cards light nothing, and so hold nothing back (D-048); the last lights
+the Hints icon: "You won! You reached the objectives. If you are stuck, try clicking Hints."
+0.2, the physicist's design: the thruster's torque turns the swimmer round an obstacle and into
+a ring after half a turn. A push off the axis turns the body: a thruster one row off it, pushing
+ahead, circles at 3 u/s on a radius of 4/3 body radii over its offset in board radii, 4.6 u on
+37 cells. So 0.2's board has 37: a Source locked at the centre, wired to a free thruster on the
+body's right, (0, 1), pointing SE, through the centre, so that it slides the swimmer away
+unturned and time runs out; one turn left points it E, and the swimmer turns left round an
+obstacle of 2 u at (0, 5) into a ring of 2 u at (0, 9), behind it, in 4.18 s. Pointing W, it
+sails backwards round the same circle and wins too; the other facings miss.

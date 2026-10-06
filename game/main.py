@@ -260,9 +260,7 @@ async def main() -> None:
         return maker() if router.screen is Screen.MAKE else editor()
 
     pointer = (0, 0)  # where the mouse is, for the end's button [px]
-    frame = 0  # frames drawn: what the tutorial's sparks move by (D-080), drawing only
     while running:
-        frame += 1
         for event in pygame.event.get():
             if event.type == pygame.MOUSEMOTION:
                 pointer = event.pos
@@ -461,7 +459,7 @@ async def main() -> None:
         elif developer is None and router.screen is Screen.SPEC:
             draw_level_card(screen, router, fonts)
         if developer is None and guide is not None and router.screen in (Screen.EDIT, Screen.RUN):
-            draw_tutorial(screen, fonts, guide, *tutorial_box(guide, on_screen()), pointer, frame)
+            draw_tutorial(screen, fonts, guide, tutorial_box(guide, on_screen())[1], pointer)
         pygame.display.flip()
         clock.tick(FPS)
 

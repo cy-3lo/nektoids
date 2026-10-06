@@ -47,7 +47,7 @@ MARGIN = 0.6  # round the circuit and its specks, in its area [hex sizes]
 SETTLE = 0.25  # [s] run before it shows, so that it opens at its steady rates
 EYE_LOW, EYE_HIGH, EYE_PERIOD = 0.2, 0.9, 10.0  # the Eye's own reading, rising and falling [s]
 REACH = 1.8  # [hex sizes] how far out the light comes from, and the flames go
-STREAMS = 400  # the entry's streams in the specks' table, after the swimmer's and the sparks'
+STREAMS = 400  # the entry's streams in the specks' table, after the swimmer's
 OUTWARDS = W  # every eye and thruster faces left: the eye's face, the thruster's back, outwards
 ZONE = [(q, r) for q in range(-6, 6) for r in range(-2, 3)]  # room for every route
 

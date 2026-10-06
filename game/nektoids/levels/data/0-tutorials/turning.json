@@ -1,45 +1,40 @@
 {
   "version": 5,
   "title": "Turning",
-  "spec": "Get into the ring, ahead on the left.",
+  "spec": "Go round the obstacle into the ring behind it.",
   "author": "@Cy-3LO",
   "start": {"at": [0, 0], "heading": 0},
-  "items": [{"kind": "mark", "at": [6, 10], "radius": 3}],
+  "items": [{"kind": "obstacle", "at": [0, 5], "radius": 2}, {"kind": "mark", "at": [0, 9], "radius": 2}],
   "board": {
-    "zone": 7,
+    "zone": 37,
     "stock": {"thruster": 1},
     "parts": [
-      {"kind": "source", "cell": [-1, 0], "facing": null, "locked": true},
-      {"kind": "thruster", "cell": [0, 0], "facing": "E", "locked": false}
+      {"kind": "source", "cell": [0, 0], "facing": null, "locked": true},
+      {"kind": "thruster", "cell": [0, 1], "facing": "SE", "locked": false}
     ],
-    "wires": [{"from": 0, "to": 1, "path": [[-1, 0], [0, 0]]}]
+    "wires": [{"from": 0, "to": 1, "path": [[0, 0], [0, 1]]}]
   },
   "time_limit": 10,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
-  "hints": {"idea": "A thruster pushes the way it points."},
+  "hints": {"idea": "Off the centre, a push turns."},
   "tutorial": {
     "starts_in": "tools",
-    "ghosts": [{"kind": "thruster", "cell": [0, 0], "facing": "NE"}],
+    "ghosts": [{"kind": "thruster", "cell": [0, 1], "facing": "E"}],
     "steps": [
       {
-        "show": [{"cell": [0, 0]}, {"wheel": "turn left"}],
+        "show": [{"cell": [0, 1]}, {"wheel": "turn left"}],
         "say": [
-          "This thruster pushes straight ahead, but the ring is ahead on the left: pushed straight, the swimmer passes it.",
+          "This thruster pushes through the body's centre: the swimmer slides, without turning. Off the centre, a push turns it.",
           "Click the thruster, then Turn left on the Wheel, or press L: it turns by 60 degrees."
         ],
-        "until": {"facing": {"cell": [0, 0], "facing": "NE"}}
+        "until": {"facing": {"cell": [0, 1], "facing": "E"}}
       },
+      {"say": ["Click the Run tab or button, or press Tab."], "until": {"screen": "run"}},
       {
-        "show": [{"tab": "run"}, {"level": "run"}],
-        "say": ["Click the Run tab, or Run at the bottom left."],
-        "until": {"screen": "run"}
-      },
-      {
-        "show": [{"run": "play"}, {"run": "arena"}],
-        "say": ["Press Play, or Space: a thruster pushes the way it points."],
+        "say": ["Press Play, or Space: the push turns the swimmer round the obstacle."],
         "until": {"outcome": "won"}
       }
     ]
   },
-  "proof": {"board": "3FwUEA72D", "ticks": 349, "parts": 2}
+  "proof": {"board": "7BtZgEVZMB", "ticks": 502, "parts": 2}
 }

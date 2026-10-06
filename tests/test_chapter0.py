@@ -4,7 +4,7 @@ fails, and the proof, which does, wins (`test_proof.py`). proof.py imports no py
 import pytest
 
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import NE, E, W
+from nektoids.graph.hexgrid import E, W
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.proof import Replay
@@ -30,8 +30,8 @@ def test_wiring_stays_put_until_the_wire_is_drawn():
     assert ended("Wiring") is Outcome.TIME_UP
 
 
-def test_turning_pushed_straight_passes_the_ring():
-    assert ended("Turning") is Outcome.TIME_UP  # its thruster as it comes, pointing ahead
+def test_turning_pushed_through_the_centre_slides_away_without_turning():
+    assert ended("Turning") is Outcome.TIME_UP  # its thruster as it comes, pointing SE (D-336)
 
 
 @pytest.mark.parametrize("facing", [E, W])
@@ -64,8 +64,8 @@ def test_diagnostic_comes_with_an_eye_looking_back_and_never_moves():
     assert ended("Diagnostic", board=board) is Outcome.TIME_UP
 
 
-def test_turning_pointed_up_and_ahead_wins():
+def test_turning_pointed_ahead_off_the_centre_goes_round_the_obstacle_into_the_ring():
     board = LEVELS["Turning"].new_board()
-    board.rotate(board.node_at((0, 0)).id, 1)  # one turn left: NE (D-009)
-    assert board.node_at((0, 0)).facing == NE
+    board.rotate(board.node_at((0, 1)).id, 1)  # one turn left: E (D-009, D-336)
+    assert board.node_at((0, 1)).facing == E
     assert ended("Turning", board=board) is Outcome.WON
