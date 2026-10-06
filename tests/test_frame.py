@@ -109,6 +109,9 @@ def test_settings_step_through_their_choices_and_the_tutorial_is_asked_for():
     scene.frame_press(centre(rows[Setting.SOUND]))
     assert scene.message == "there is no sound yet"
     scene.frame_press(centre(rows[Setting.TUTORIAL]))
+    assert scene.request is None and scene.message == "this level has no tutorial"  # D-334
+    scene.tutored = True  # main.py's: the open level has one
+    scene.frame_press(centre(rows[Setting.TUTORIAL]))
     assert scene.request == "tutorial"
 
 

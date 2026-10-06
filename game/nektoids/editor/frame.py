@@ -75,6 +75,9 @@ class Frame:
         self.asked_passkey: str | None = None  # a passkey typed: main.py's to try and clear
         self.said = ""  # what that passkey opened, in the status line until the next click
         self.hints: HintView | None = None  # what Hints shows; None, the level has none; main.py's
+        self.tutored = (
+            False  # the open level has a tutorial, Settings' to replay (D-334); main.py's
+        )
         self.asked_hint: int | None = None  # a row of Hints clicked: main.py's to take and clear
         self.scrolls: dict[Drawer, int] = {}  # how far each drawer's rows are scrolled [px]
         self.scrolling = False  # a drawer's scroll bar held: its rows follow the mouse
@@ -272,13 +275,16 @@ class Frame:
             self.chosen = index
 
     def _set(self, setting: Setting) -> None:
-        """A row of Settings: each choice in turn, or Fear's tutorial again (D-054)."""
+        """A row of Settings: each choice in turn, or the open level's tutorial again (D-054,
+        D-334)."""
         if setting is Setting.FAST:
             self.settings.next_fast()
         elif setting is Setting.HINTS:
             self.settings.toggle_hints()
-        elif setting is Setting.TUTORIAL:
+        elif setting is Setting.TUTORIAL and self.tutored:
             self._ask("tutorial")
+        elif setting is Setting.TUTORIAL:
+            self._refuse("this level has no tutorial")
         else:
             self._refuse("there is no sound yet")
 

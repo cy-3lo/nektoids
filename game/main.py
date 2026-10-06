@@ -146,11 +146,12 @@ def choose_place(index: int) -> None:
 
 
 def replay_tutorial() -> None:
-    """Settings' Tutorial: Fear's introduction again, from its first step, on Fear as the player
-    left it (D-079)."""
-    tutorials.pop(0, None)
-    opened_for.pop(0, None)
-    choose_place(0)
+    """Settings' Tutorial: the open level's tutorial again, from its first step, on its board as
+    the player left it, under its card (D-079, D-334)."""
+    index = router.index
+    tutorials.pop(index, None)
+    opened_for.pop(index, None)
+    choose_place(index)
 
 
 MODIFIERS = {  # alone, they close no card: Cmd+Tab to another window, Shift before a letter
@@ -327,7 +328,7 @@ async def main() -> None:
                 router.edit()
             elif playing.request == "make":
                 router.make()
-            elif playing.request == "tutorial":  # Settings: Fear's tutorial again
+            elif playing.request == "tutorial":  # Settings: the level's tutorial again
                 replay_tutorial()
             if playing.chosen is not None:  # a place picked in Chapters
                 choose_place(playing.chosen)
@@ -341,7 +342,7 @@ async def main() -> None:
                 playing = play(run_drawer)
             elif asked == "make":
                 router.make()
-            elif asked == "tutorial":  # Settings: Fear's tutorial again
+            elif asked == "tutorial":  # Settings: the level's tutorial again
                 replay_tutorial()
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
@@ -414,6 +415,7 @@ async def main() -> None:
         for scene in frames:  # what Chapters shows, in every tab, and the chapters it folds
             if scene is not None:
                 scene.set_chapters(router.rows(), frozenset(router.folded))
+                scene.tutored = not router.in_sandbox and router.level.tutorial is not None
         scene = on_screen()
         wanted = drawer_for(guide.step, scene.layout.drawer) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on

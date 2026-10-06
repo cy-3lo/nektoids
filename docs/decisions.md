@@ -2050,3 +2050,17 @@ the list scrolled down under the objectives was drawn over OBJECTIVES, unclipped
 took any title whose corner lay in the objectives' area for theirs. The layout now keeps the
 foot's titles apart, `foot_titles`, and only those are drawn over the objectives; the others are
 the list's, clipped with it. The todo's §12 had it since D-326.
+
+**D-334 — 2026-10-06 — Tutorials stay written by hand in their level's file. Chapter 0's first two lead the player through what they teach, a ghost where the part goes or how it faces and a card that waits until it is done; from 0.3 on, cards explain and the player builds. Settings' Tutorial replays the open level's tutorial, greyed on a level with none. Fear's introduction moves to 0.1, Aggression's Diagnostic cards to 0.6, once those levels are made. Amends D-039, D-054, D-079.**
+The physicist chose the way chapter 0 teaches: lead in 0.1 Wiring and 0.2 Turning, explain after.
+A tutorial is hand-written in its level's JSON, which the Maker does not set and the tests check
+(D-328); what one that builds needs, the ghosts and the waits for a part placed, turned or wired,
+has stayed since D-079 took it from Fear, and 0.1 and 0.2 use it again. From 0.3 on a card shows
+the new part or drawer and says what it does, waiting for Next or for a drawer opened, and the
+player builds with no ghost; the hints wait until the tutorial ends or is skipped (D-078).
+Settings' Tutorial, which started Fear's again whatever the level, replays the open level's from
+its first step, under its card, its board as the player left it; on a level with none, the
+sandbox among them, its row is greyed and a click says "this level has no tutorial". Fear's six
+cards, the swimmer, the objectives, the tabs, the board, the bar and Hints, are the game's
+introduction, and Aggression's two lead to Diagnostic (D-103): they stay where they are until 0.1
+and 0.6 are made, so the game always opens with one, and move then.
