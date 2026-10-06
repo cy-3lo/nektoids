@@ -33,5 +33,6 @@
       ],
       "ghost_wires": [{"from": [-1, -1], "to": [2, -1]}, {"from": [0, 0], "to": [1, 1]}]
     }
-  }
+  },
+  "proof": {"board": "Q94CnG3c2C6fsL", "ticks": 1093, "parts": 4}
 }

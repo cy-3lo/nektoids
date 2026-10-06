@@ -27,5 +27,6 @@
   },
   "time_limit": 45,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
-  "passkey": "GEMINI"
+  "passkey": "GEMINI",
+  "proof": {"board": "1F3FX8L4CdNUgasx9", "ticks": 2950, "parts": 5}
 }

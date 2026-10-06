@@ -31,5 +31,6 @@
         {"from": [1, 0], "to": [-2, 0]}
       ]
     }
-  }
+  },
+  "proof": {"board": "pe7UcDzhFWhwJH", "ticks": 1178, "parts": 4}
 }

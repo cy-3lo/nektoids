@@ -5,6 +5,12 @@ read once at startup. Lengths in u, the base body radius, in an open plane; what
 in 40 x 38 u. The swimmer runs whatever board is in the editor, and each level says what it asks
 (`objectives.py`). The chapters make one route: `arenas()` is its levels in order, and a level's
 place on it, its index, is all the rest of the game needs; `locate` gives its chapter.
+
+A level made in the Maker ships from Share level (D-320, D-328): its text, with its proof, saved
+in its chapter's folder and named in its chapter below; its passkey, hints and tutorial, which
+the Maker does not set, written in the file by hand; then
+`PYTHONPATH=game python -m nektoids.levels.level FILE` writes the file as the game does, which
+the tests ask. Every shipped level carries its proof, and the tests run it again.
 """
 
 from __future__ import annotations

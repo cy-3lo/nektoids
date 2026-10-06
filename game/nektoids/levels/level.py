@@ -125,9 +125,10 @@ class Level:
         return Board.from_dict(self.board)
 
     def blank_board(self) -> Board:
-        """The level's zone and stock, none of the parts or wires it starts with: what a hint's
-        shadow is built on, from scratch (D-103)."""
-        return Board.from_dict({**self.board, "parts": [], "wires": []})
+        """The level's zone, stock and locked parts, none of its free parts or wires: what a
+        hint's shadow is built on (D-103), over what the level places (D-328)."""
+        parts = [part for part in self.board["parts"] if part["locked"]]
+        return Board.from_dict({**self.board, "parts": parts, "wires": []})
 
     def to_dict(self) -> dict:
         x, y, heading = self.start
@@ -274,3 +275,11 @@ def _dumps(value: object, indent: int) -> str:
                 lines.append(pad + part)
         return "[\n" + "\n".join(lines) + "\n" + " " * indent + "]"
     return "[\n" + ",\n".join(lines) + "\n" + " " * indent + "]"
+
+
+if __name__ == "__main__":  # PYTHONPATH=game python -m nektoids.levels.level FILE...
+    import sys
+
+    for name in sys.argv[1:]:  # each file, edited by hand, written again as the game writes it
+        path = Path(name)
+        path.write_text(to_json(load(path)), encoding="utf-8")

@@ -43,5 +43,6 @@
         {"from": [-2, 1], "to": [2, -1]}
       ]
     }
-  }
+  },
+  "proof": {"board": "h9AbgaRDZ0Pzfw6Ln", "ticks": 446, "parts": 5}
 }
