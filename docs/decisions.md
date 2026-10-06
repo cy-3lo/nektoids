@@ -2000,3 +2000,15 @@ before (D-103), so a shadow over 0.1's locked Source and thruster no longer asks
 level does not hand out. A tutorial's data and its steps refuse a key they do not know, as a
 level's do (D-201): a misspelt "untill" was skipped silently, and the step never waited. Every
 shipped level's tutorial is tested, not only Fear's: Aggression's had not been.
+
+**D-329 — 2026-10-06 — A level's hints are its idea, written in its file, and its proof: Hint 2 counts the parts the proof's board adds, Hint 3 shows that board over the parts the level places. Only chapters 0 and 1 have hints: Shadows' go. Amends D-078, D-103.**
+The physicist: Hint 3 is taken from the proof, as Hint 2 is, and there are no hints after
+chapter 1. A hint's shadow was written by hand, cell by cell, each wire from a cell to a cell,
+and a test checked it won; a Maker level now comes with the board that won it (D-328), so a
+level's `hints` holds its idea alone, refusing any other key, and `Hints.of(level)` puts the
+proof's board on the level's blank board, the locked parts under it the level's own: the parts
+it adds are the shadow's ghosts, in the editor and in Hint 2's count, its wires the ghost wires.
+A shadow that adds no part, as 0.1's will, says "No part to add: only wires." The five shadows
+became the proofs of D-328, so every hint reads as it did: Fear's, Aggression's, Love's and
+Orbit's ideas stay; Shadows', "No light in the dark.", goes with its hints, chapter 2 having
+none, as Greed, Patience and Two lights never had. Its proof stays, as every level's.

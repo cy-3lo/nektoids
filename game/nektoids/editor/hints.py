@@ -2,9 +2,10 @@
 cryptic; the parts one solution takes; the shadow of that solution, its parts and wires drawn
 faintly, in a picture in the drawer and on the editor's board.
 
-A level's data says the idea and the shadow, whose ghosts and ghost wires are written as a
-tutorial's are (D-074). The parts are counted from the shadow, so the second hint and the third
-cannot disagree. Taken hints last the session, level by level, and never show on the score.
+A level's data says the idea; the solution is its proof, the board that won it (D-320, D-329),
+put on the level's own board over the parts the level places. The parts the player adds are
+counted from it, so the second hint and the third cannot disagree. Only the levels of chapters
+0 and 1 have hints. Taken hints last the session, level by level, and never show on the score.
 Pure Python, no pygame.
 """
 
@@ -12,14 +13,16 @@ from __future__ import annotations
 
 import textwrap
 from collections import Counter
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 
+from nektoids.editor.boardfield import load
 from nektoids.editor.layout import DRAWER_WIDTH, MARGIN, MENU_GROUPS
 from nektoids.editor.parts import NAME
-from nektoids.editor.tutorial import Ghost, ghost_wires_from, ghosts_from
-from nektoids.graph.board import Board, Refused
+from nektoids.editor.tutorial import Ghost
+from nektoids.graph.board import Board
 from nektoids.graph.hexgrid import Cell
+from nektoids.levels.level import Level, known
+from nektoids.levels.proof import Proof
 
 NAMES = ("Hint 1", "Hint 2", "Hint 3")  # the drawer's rows: the idea, the parts, the shadow
 IDEA, PARTS, SHADOW = range(3)
@@ -31,13 +34,24 @@ NUMBERS = ("one", "two", "three", "four", "five", "six")
 @dataclass(frozen=True)
 class Hints:
     idea: str
-    ghosts: tuple[Ghost, ...]  # the shadow's parts, where they go and the way they face
+    ghosts: tuple[Ghost, ...]  # the parts the shadow adds, where they go and the way they face
     ghost_wires: tuple[tuple[Cell, Cell], ...]  # ... and its wires, from a cell to a cell
+    board: Board = field(compare=False)  # the shadow, built: the level's board, the proof's on it
 
     @classmethod
-    def from_dict(cls, data: Mapping) -> Hints:
-        shadow = data["shadow"]
-        return cls(data["idea"], ghosts_from(shadow), ghost_wires_from(shadow))
+    def of(cls, level: Level) -> Hints:
+        """The hints of `level`, which has some and a proof: its idea, and its proof's board on
+        its blank board, the parts it places locked under it (D-329). ValueError for a key the
+        hints do not know, or a proof that does not fit the level."""
+        known(level.hints, ("idea",), "a level's hints")
+        board = level.blank_board()
+        fits, why = load(board, Proof.from_dict(level.proof).board)
+        if not fits:
+            raise ValueError(f"{level.title}'s proof: {why}")
+        nodes = [board.nodes[k] for k in sorted(board.nodes)]
+        ghosts = tuple(Ghost(n.kind, n.cell, n.facing) for n in nodes if not n.locked)
+        cells = tuple((board.nodes[w.source].cell, board.nodes[w.target].cell) for w in board.wires)
+        return cls(level.hints["idea"], ghosts, cells, board)
 
     def says(self, index: int) -> tuple[str, ...]:
         """Hint `index`'s lines, as the drawer shows them under its row; the shadow's are none:
@@ -45,24 +59,12 @@ class Hints:
         text = (self.idea, parts_line(self.ghosts), "")[index]
         return tuple(textwrap.wrap(text, CHARS))
 
-    def build(self, board: Board) -> Board:
-        """The shadow, made for real on `board`, the level's own and fresh: its parts placed,
-        then its wires made in order, as a player would make them. Returns `board`."""
-        for ghost in self.ghosts:
-            placed = board.place(ghost.kind, ghost.cell, facing=ghost.facing)
-            if isinstance(placed, Refused):
-                raise ValueError(f"a shadow's {ghost.kind.value} at {ghost.cell}: {placed.reason}")
-        for start, end in self.ghost_wires:
-            a, b = board.node_at(start), board.node_at(end)
-            made = board.connect(a.id, b.id) if a and b else Refused("no part at an end")
-            if isinstance(made, Refused):
-                raise ValueError(f"a shadow's wire {start} to {end}: {made.reason}")
-        return board
-
 
 def parts_line(ghosts: tuple[Ghost, ...]) -> str:
-    """The parts the shadow takes, counted, in Parts' order, each name as Parts writes it:
-    "One Eye, one Source, one Thruster, one Diff." """
+    """The parts the shadow adds, counted, in Parts' order, each name as Parts writes it:
+    "One Eye, one Source, one Thruster, one Diff."; with none, the wires alone."""
+    if not ghosts:
+        return "No part to add: only wires."
     counts = Counter(ghost.kind for ghost in ghosts)
     named = [
         f"{_number(n)} {NAME[kind]}{'s' if n > 1 else ''}"

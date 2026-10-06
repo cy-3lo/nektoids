@@ -16,21 +16,6 @@
     {"verb": "reach", "count": "none", "target": "light"}
   ],
   "passkey": "HEART",
-  "hints": {
-    "idea": "Light softens the push.",
-    "shadow": {
-      "ghosts": [
-        {"kind": "eye", "cell": [2, 0], "facing": "E"},
-        {"kind": "source", "cell": [0, -1]},
-        {"kind": "difference", "cell": [1, 0]},
-        {"kind": "thruster", "cell": [-2, 0], "facing": "E"}
-      ],
-      "ghost_wires": [
-        {"from": [0, -1], "to": [1, 0]},
-        {"from": [2, 0], "to": [1, 0]},
-        {"from": [1, 0], "to": [-2, 0]}
-      ]
-    }
-  },
+  "hints": {"idea": "Light softens the push."},
   "proof": {"board": "pe7UcDzhFWhwJH", "ticks": 1178, "parts": 4}
 }

@@ -8,18 +8,7 @@
   "time_limit": 10,
   "objectives": [{"verb": "leave", "count": "all", "target": "mark"}],
   "passkey": "LOVE",
-  "hints": {
-    "idea": "Each eye its thruster.",
-    "shadow": {
-      "ghosts": [
-        {"kind": "eye", "cell": [2, -1], "facing": "NW"},
-        {"kind": "eye", "cell": [1, 1], "facing": "SW"},
-        {"kind": "thruster", "cell": [1, -2], "facing": "E"},
-        {"kind": "thruster", "cell": [-1, 2], "facing": "E"}
-      ],
-      "ghost_wires": [{"from": [2, -1], "to": [1, -2]}, {"from": [1, 1], "to": [-1, 2]}]
-    }
-  },
+  "hints": {"idea": "Each eye its thruster."},
   "tutorial": {
     "steps": [
       {

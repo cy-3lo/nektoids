@@ -85,10 +85,10 @@ starts; they come in this order.
 - [x] **Several chapters in the game**: the levels' files by chapter, LEVEL 2.1; Chapters by
   chapter, its titles folding as the Maker's Files do (D-322), all but the chapter being played;
   the Maker's Start from by chapter (D-326).
-- [ ] **A level made in the Maker shipped as one of the game's**: from Copy or Share level to a
-  file in its chapter's folder, with what the Maker does not set, a passkey, hints and a tutorial,
-  written in the file; every shipped tutorial checked by a test; a hint's shadow over the level's
-  locked parts (with no stock, as 0.1 will have, it fails today).
+- [x] **A level made in the Maker shipped as one of the game's**: from Share level to a file in
+  its chapter's folder, its proof kept and run again by a test, a passkey, an idea and a tutorial
+  written in the file; Hints 2 and 3 from the proof, over the level's locked parts; hints in
+  chapters 0 and 1 only (D-328, D-329).
 - [ ] **Tutorials**: what a tutorial does (its ghosts and steps, D-039, D-050), written by hand
   as now; Settings' Tutorial replays the open level's, not Fear's; Fear's and Aggression's moved
   to chapter 0 once it teaches what they teach now.
