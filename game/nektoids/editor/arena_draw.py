@@ -108,11 +108,13 @@ from nektoids.editor.palette import (
     RUN_SO_FAR,
     SHADOW,
     TEXT,
+    TO_BEAT,
     WIN,
 )
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import label
 from nektoids.levels.objectives import Outcome
+from nektoids.levels.proof import to_beat
 from nektoids.levels.score import Score, front
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
 from nektoids.sim.optics import discs
@@ -619,19 +621,25 @@ def _won(scene: ArenaScene) -> bool:
 
 def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """The level's wins this session (D-028, D-046): time against parts, the Pareto front a
-    staircase through the points no other beats, the others dimmed, this run ringed if won."""
+    staircase through the points no other beats, the others dimmed, this run ringed if won; under
+    them, the level's proof, the score to beat, a dark grey cross (D-330)."""
     this = Score(scene.parts, scene.ended_at) if _won(scene) else None
     scores = scene.scores | ({this} if this is not None else set())
+    beat = to_beat(scene.level)
     x, y, w, h = DRAWER_BODY
-    if not scores:
+    if not scores and beat is None:
         note = "No win yet. Each win is a point here: its time and its parts."
         draw_note(screen, fonts, note, (x + MARGIN, y + 8), w - 2 * MARGIN)
         return
-    note = fonts.small.render("Time against parts.", True, DIM_TEXT)
-    screen.blit(note, (x + MARGIN, y + 4))
-    plot = pygame.Rect(x + MARGIN + 40, y + 36, w - 2 * MARGIN - 52, h - 96)
-    low = min(s.parts for s in scores) - 1
-    high = max(max(s.parts for s in scores) + 1, low + PLOT_PARTS)
+    notes = ("Time against parts.", *(("The cross: one to beat.",) if beat else ()))
+    line = fonts.small.get_linesize()
+    for k, text in enumerate(notes):
+        screen.blit(fonts.small.render(text, True, DIM_TEXT), (x + MARGIN, y + 4 + k * line))
+    below = (len(notes) - 1) * line  # the plot, under the notes
+    plot = pygame.Rect(x + MARGIN + 40, y + 36 + below, w - 2 * MARGIN - 52, h - 96 - below)
+    shown = scores | ({beat} if beat is not None else set())
+    low = min(s.parts for s in shown) - 1
+    high = max(max(s.parts for s in shown) + 1, low + PLOT_PARTS)
     limit = round(scene.level.time_limit / DT)  # the time axis runs to the time allowed
 
     def at(parts: int, ticks: int) -> tuple[float, float]:
@@ -650,13 +658,18 @@ def _draw_wins(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     for ticks, text in ((0, "0 s"), (limit, f"{scene.level.time_limit:g} s")):
         label = fonts.small.render(text, True, DIM_TEXT)
         screen.blit(label, label.get_rect(midright=(plot.left - 6, at(low, ticks)[1])))
+    if beat is not None:  # under the wins: one on it covers it
+        cx, cy, r = *at(beat.parts, beat.ticks), WIN_DOT + 1
+        pygame.draw.line(screen, TO_BEAT, (cx - r, cy - r), (cx + r, cy + r), 2)
+        pygame.draw.line(screen, TO_BEAT, (cx - r, cy + r), (cx + r, cy - r), 2)
     best = front(scores)
-    stairs = [(at(best[0].parts, 0)[0], plot.top)]
-    for score in best:
-        x, y = at(score.parts, score.ticks)
-        stairs += [(x, stairs[-1][1]), (x, y)]
-    stairs.append((plot.right, stairs[-1][1]))
-    pygame.draw.lines(screen, LIGHT, False, stairs[1:])
+    if best:
+        stairs = [(at(best[0].parts, 0)[0], plot.top)]
+        for score in best:
+            x, y = at(score.parts, score.ticks)
+            stairs += [(x, stairs[-1][1]), (x, y)]
+        stairs.append((plot.right, stairs[-1][1]))
+        pygame.draw.lines(screen, LIGHT, False, stairs[1:])
     for score in sorted(scores):
         colour = WIN if score in best else DIM_TEXT
         pygame.draw.circle(screen, colour, at(score.parts, score.ticks), WIN_DOT)

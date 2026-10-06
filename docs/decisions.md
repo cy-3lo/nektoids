@@ -2012,3 +2012,12 @@ A shadow that adds no part, as 0.1's will, says "No part to add: only wires." Th
 became the proofs of D-328, so every hint reads as it did: Fear's, Aggression's, Love's and
 Orbit's ideas stay; Shadows', "No light in the dark.", goes with its hints, chapter 2 having
 none, as Greed, Patience and Two lights never had. Its proof stays, as every level's.
+
+**D-330 — 2026-10-06 — Score shows a level's proof as a dark grey cross, the score to beat, under the player's wins; its board stays hidden. Applies D-328; amends D-046.**
+The physicist: the player does not see the proof's board, but sees it in Score, as a darkish grey
+cross. `to_beat(level)` is the proof's score, its parts and tick; Score plots it in `P.muted`,
+two strokes 2 px wide, under the wins, so a win on it covers it, and its axes take it in. Two
+lines head the plot, "Time against parts." and "The cross: one to beat."; with no win yet, the
+plot shows the cross alone. Every shipped level has a proof (D-328), so every level shows one.
+A level pasted with its proof in Free play keeps it in the Maker, not in its level: its cross
+stays in `ideas.md`.

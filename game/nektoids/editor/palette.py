@@ -147,6 +147,7 @@ SWATCH_OFF = P.raised  # colour picker, not active yet
 TEXT = P.text
 DIM_TEXT = P.dim
 GREYED = P.muted
+TO_BEAT = P.muted  # the score of a level's proof, a cross in Score (D-330)
 REFUSED = P.accent2.bright  # a refusal, a lost run, a run out of time
 FLASH = P.accent2.dark  # the flash on a refused move
 VEIL = (0, 0, 0, 150)  # over a level's board under its card; over all but a tutorial's targets

@@ -22,6 +22,7 @@ from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level, known
 from nektoids.levels.objectives import Outcome, begin, follow, outcome
+from nektoids.levels.score import Score
 from nektoids.sim import world
 from nektoids.sim.arena import BASE_RADIUS
 
@@ -45,6 +46,15 @@ class Proof:
             return cls(str(data["board"]), int(data["ticks"]), int(data["parts"]))
         except KeyError as missing:
             raise ValueError(f"a proof needs its {missing.args[0]!r}") from None
+
+
+def to_beat(level: Level) -> Score | None:
+    """The score of the level's proof, the one to beat, which Score shows as a cross (D-330);
+    None for a level with no proof."""
+    if level.proof is None:
+        return None
+    proof = Proof.from_dict(level.proof)
+    return Score(proof.parts, proof.ticks)
 
 
 class Replay:
