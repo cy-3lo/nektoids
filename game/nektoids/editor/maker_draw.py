@@ -339,9 +339,7 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     _draw_parts(screen, scene, fonts)
     for start, rect in layout.start_rows:  # under the rule, scrolled (D-322)
         label, level = scene.starts[start.index] if start.index is not None else ("", None)
-        name, icon = ("Blank level", "file") if level is None else (level.title, "border-all")
-        if label:
-            name, icon = level.title, None
+        name, icon = ("Blank level", "file") if level is None else (level.title, None)
         draw_row(
             screen, scene, fonts, rect, start, name, ("none", ""), icon=icon, badge=label or None
         )

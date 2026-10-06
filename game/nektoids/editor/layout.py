@@ -710,8 +710,8 @@ class _Rows:
         """The Maker's Files (D-310): under Save/Load, Copy level, a field to paste a level's
         text into, as the editor's Files has for a board (D-206), then Share level and a line
         under it (D-320, D-321), which stay; under a rule, the levels to start from, a list of
-        its own that scrolls: Blank level, then each chapter's levels and Free play's, under
-        titles that fold, as Chapters lists them (D-322, D-326)."""
+        its own that scrolls: Blank level, then each chapter's levels under titles that fold,
+        as Chapters lists them (D-322, D-326), the sandbox's plane no longer among them (D-342)."""
         self._title("Save/Load", self.sections)
         self._row(FileButton.LEVEL)
         self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
@@ -724,8 +724,6 @@ class _Rows:
         self.y += SECTION_GAP
         groups = [("", [Start(None)])]
         groups += [(title, [Start(k) for k in levels]) for title, levels in _spans(chapters)]
-        total = sum(count for _, count in chapters)
-        groups.append(("Sandbox", [Start(k) for k in range(total, starts)]))  # its plane (D-341)
         self._folding(groups, folded, height - FOOT_MARGIN, scroll)
 
     def _folding(

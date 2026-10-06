@@ -797,7 +797,8 @@ def test_the_makers_files_holds_copy_the_level_then_a_field_to_paste_one_into():
 
 
 def test_start_from_lists_a_blank_plane_then_every_shipped_level_under_the_paste_field():
-    layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8)  # D-310
+    chapters = (("Chapter 1", 8),)  # D-310; the sandbox's plane no longer among them (D-342)
+    layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8, chapters=chapters)
     starts = [s for s, _ in layout.start_rows]
     assert starts == [Start(None), *(Start(k) for k in range(8))]
     assert layout.start_rows[0][1][1] > layout.level_field[1] + layout.level_field[3]
@@ -867,22 +868,22 @@ def test_chapters_lists_each_chapter_with_levels_under_a_title_that_folds():
 
 
 def test_start_from_is_a_list_of_its_own_under_a_rule_its_chapters_folding():
-    files = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=9, chapters=SHIPPED)
+    files = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8, chapters=SHIPPED)
     rule, area = files.files_rule, files.list_area  # D-322, D-326
     assert files.level_field[1] < files.share_note[1] < rule[1] < area[1]  # Save/Load stays above
-    titles = ["Chapter 1", "Chapter 2", "Chapter 3", "Sandbox"]  # its plane (D-341)
+    titles = ["Chapter 1", "Chapter 2", "Chapter 3"]  # no sandbox's plane (D-342)
     assert [t for t, _ in files.group_titles] == titles
-    assert [s.index for s, _ in files.start_rows] == [None, *range(9)]  # Blank level first
+    assert [s.index for s, _ in files.start_rows] == [None, *range(8)]  # Blank level first
     assert files.start_rows[0][1][1] >= area[1] and level_field_at(files, centre(files.level_field))
     shut = make_layout(
         Drawer.FILES,
         frozenset({"Chapter 1", "Chapter 3"}),
         env=Env.MAKER,
         maker=True,
-        starts=9,
+        starts=8,
         chapters=SHIPPED,
     )
-    assert [s.index for s, _ in shut.start_rows] == [None, 4, 8] and shut.scroll_max == 0
+    assert [s.index for s, _ in shut.start_rows] == [None, 4] and shut.scroll_max == 0
 
 
 def test_the_sandboxs_tools_fit_above_the_wheel_unscrolled():

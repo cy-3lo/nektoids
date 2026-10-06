@@ -198,7 +198,7 @@ def editor() -> EditorScene:
 def maker() -> MakerScene:
     """The sandbox's Maker, made the first time it opens (D-301)."""
     if router.index not in makers:
-        starts = (*((level_number(k), level) for k, level in enumerate(levels)), ("", free))
+        starts = tuple((level_number(k), level) for k, level in enumerate(levels))  # D-342
         makers[router.index] = MakerScene(
             router.level, router.label, settings, chapters, starts=starts, board=router.board
         )

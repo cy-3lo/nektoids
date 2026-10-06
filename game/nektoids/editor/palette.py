@@ -186,7 +186,7 @@ WARN = P.accent2.mid  # the developer view's warnings
 # The arena
 SHADOW = P.deep  # the open plane, and a reading of 0 on the light map
 LIGHT = P.bright  # a light, and a reading of RATE_MAX
-RAY = mix(P.deep, P.line, 0.45)  # every ray, whatever its light
+RAY = mix(P.deep, P.line, 0.75)  # every ray, whatever its light, a shade lighter (D-342)
 OBSTACLE = mix(P.line, P.muted, 0.5)
 BODY = P.accent1.bright  # the selected swimmer
 BODY_UNSELECTED = P.dim
