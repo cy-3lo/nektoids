@@ -137,9 +137,10 @@ def tutorial_box(guide: Tutorial, scene: EditorScene | ArenaScene) -> tuple:
 def choose_place(index: int) -> None:
     """A place picked in Chapters, under its card. Every level keeps its board, its undo history,
     the hints taken (D-078) and where its tutorial has got to: Fear's shows once a session
-    (D-079). The editor left goes back to Tools, as an editor opens (D-068)."""
+    (D-079). The editor left goes back to Parts, as an editor opens, and the run to Diagnostic
+    (D-068, D-321)."""
     if router.index in editors:
-        editors[router.index].open_drawer(Drawer.TOOLS)
+        editors[router.index].open_drawer(Drawer.PARTS)
     router.open(index)
 
 
@@ -181,7 +182,7 @@ def editor() -> EditorScene:
         board = router.board
         handed_out = frozenset(kind for kind in Kind if board.total(kind) != 0)
         maker = router.in_sandbox  # its tabs end with the Maker's (D-301)
-        layout = make_layout(Drawer.TOOLS, kinds=handed_out, chapter=len(levels), maker=maker)
+        layout = make_layout(Drawer.PARTS, kinds=handed_out, chapter=len(levels), maker=maker)
         editors[router.index] = EditorScene(board, layout, caption, settings, level)
     return editors[router.index]
 
@@ -330,7 +331,8 @@ async def main() -> None:
             if playing.chosen is not None:  # a place picked in Chapters
                 choose_place(playing.chosen)
             if playing.request is not None or playing.chosen is not None:
-                run_drawer, playing = playing.layout.drawer, None
+                kept = playing.layout.drawer if playing.chosen is None else Drawer.INSIDE  # D-321
+                run_drawer, playing = kept, None
         if router.screen is Screen.EDIT:
             asked, editor().request = editor().request, None
             if asked == "run":
@@ -343,6 +345,7 @@ async def main() -> None:
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
                 choose_place(chosen)
+                run_drawer = Drawer.INSIDE  # a place's run opens on Diagnostic (D-321)
         made = makers.get(router.index)
         if made is not None:  # the parts locked on the Editor's board, the level's (D-319)
             made.follow_board()
@@ -362,6 +365,7 @@ async def main() -> None:
             chosen, maker().chosen = maker().chosen, None
             if chosen is not None:
                 choose_place(chosen)
+                run_drawer = Drawer.INSIDE
         if router.screen in (Screen.TITLE, Screen.SPEC) and playing is None:
             playing = play(run_drawer)  # the run it opens on, paused, under its card (D-069)
 

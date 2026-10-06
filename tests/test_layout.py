@@ -8,6 +8,7 @@ from nektoids.editor.layout import (
     ACTION_WIDTH,
     BAR_WIDTH,
     CAPTION_HEIGHT,
+    CHAPTER_TITLE,
     DRAWER_KEYS,
     DRAWER_WIDTH,
     DRAWERS,
@@ -33,6 +34,7 @@ from nektoids.editor.layout import (
     TURNS,
     VIEW_KEYS,
     WHEEL_HEIGHT,
+    BoardButton,
     Brief,
     Drawer,
     EditButton,
@@ -58,6 +60,7 @@ from nektoids.editor.layout import (
     along,
     bin_at,
     bin_rect,
+    board_button_at,
     board_extent,
     board_field_at,
     board_view_of,
@@ -328,8 +331,8 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
 
 
 def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_atop():
-    tools = make_layout(Drawer.TOOLS)  # D-068: first in the bar
-    assert DRAWERS[Env.EDITOR][0] is Drawer.TOOLS
+    tools = make_layout(Drawer.TOOLS)  # D-068: second in the bar, Parts first (D-321)
+    assert DRAWERS[Env.EDITOR][:2] == (Drawer.PARTS, Drawer.TOOLS)
     assert [title for title, _ in tools.section_titles] == ["Mode", "Edit"]
     rows = [*tools.mode_buttons, *tools.edit_buttons]
     assert [b for b, _ in rows] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
@@ -776,11 +779,11 @@ def test_goals_finds_a_word_a_bin_add_and_a_sliders_track_apart_from_its_value()
 
 def test_the_makers_files_holds_copy_the_level_then_a_field_to_paste_one_into():
     layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True)  # D-310
-    assert [t for t, _ in layout.section_titles] == ["Save/Load", "Start from"]
+    assert [t for t, _ in layout.section_titles] == ["Save/Load"]  # Start from: no title, D-322
     (button, row), (share, under), field = *layout.file_buttons, layout.level_field
     assert (button, share) == (FileButton.LEVEL, FileButton.SHARE)  # D-320: Share level
-    note = layout.share_note  # its line, between it and the field
-    assert under[1] + under[3] <= note[1] and note[1] + note[3] <= field[1]
+    note = layout.share_note  # under Copy and Paste, its line under it (D-321)
+    assert field[1] + field[3] <= under[1] and under[1] + under[3] <= note[1]
     assert field[1] > row[1] + row[3] and field[3] == row[3] and not layout.win_rows
     assert level_field_at(layout, centre(field)) and not level_field_at(layout, centre(row))
     assert file_button_at(layout, centre(row)) is FileButton.LEVEL
@@ -826,3 +829,24 @@ def test_lock_is_a_mode_of_the_sandboxs_tools_alone():
     sandbox = make_layout(Drawer.TOOLS, maker=True)  # D-319
     assert [m for m, _ in sandbox.mode_buttons] == [Mode.WRITE, Mode.DELETE, Mode.LOCK]
     assert [m for m, _ in make_layout(Drawer.TOOLS).mode_buttons] == [Mode.WRITE, Mode.DELETE]
+
+
+def test_tools_ends_with_erase_all_under_undo_and_redo():
+    tools = make_layout(Drawer.TOOLS)  # D-321
+    (button, rect), (_, redo) = tools.board_buttons[0], tools.edit_buttons[-1]
+    assert button is BoardButton.ERASE and rect[1] > redo[1]
+    assert board_button_at(tools, centre(rect)) is BoardButton.ERASE
+    assert not make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True).board_buttons  # Tools'
+
+
+def test_start_from_is_a_list_of_its_own_under_a_rule_its_chapter_folding():
+    files = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8, chapter=7)  # D-322
+    rule, area = files.files_rule, files.list_area
+    assert files.level_field[1] < files.share_note[1] < rule[1] < area[1]  # Save/Load stays above
+    assert [t for t, _ in files.group_titles] == [CHAPTER_TITLE, "Free play"]
+    assert [s.index for s, _ in files.start_rows] == [None, *range(8)]  # Blank level first
+    assert files.start_rows[0][1][1] >= area[1] and level_field_at(files, centre(files.level_field))
+    shut = make_layout(
+        Drawer.FILES, frozenset({CHAPTER_TITLE}), env=Env.MAKER, maker=True, starts=8, chapter=7
+    )
+    assert [s.index for s, _ in shut.start_rows] == [None, 7] and shut.scroll_max == 0

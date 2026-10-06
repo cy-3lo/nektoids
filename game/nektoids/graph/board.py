@@ -345,6 +345,16 @@ class Board:
         self._next_id += len(new)
         return None
 
+    def clear(self) -> tuple[int, int]:
+        """Erase all (D-321): every wire and every part but the level's locked ones, their stock
+        back; how many parts and wires went."""
+        free = [n for n in self.nodes.values() if not n.locked]
+        wires = len(self.wires)
+        self.nodes = {n.id: n for n in self.nodes.values() if n.locked}
+        self.wires = []
+        self.restore(self.snapshot())  # the stock left counted again
+        return len(free), wires
+
     def lock(self, node_id: int, locked: bool = True) -> Refused | None:
         """A part made the level's, fixed where it is and using no stock, or freed again, the
         player's, using one (D-319). Refused, nothing changing, freeing a part of a kind the

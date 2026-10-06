@@ -659,3 +659,14 @@ def test_a_board_handed_out_anew_takes_the_parts_the_level_places_locked():
     before = board.snapshot()
     assert "where the level places an eye" in board.rehand(blocked).reason
     assert board.snapshot() == before
+
+
+def test_erase_all_takes_every_wire_and_every_part_but_the_levels_own():
+    board = Board(hex_disc(2), {Kind.EYE: 2, Kind.THRUSTER: 2})  # D-321
+    eye = board.place(Kind.EYE, (-1, -1), locked=True, facing=NE)
+    thruster = board.place(Kind.THRUSTER, (2, -1), facing=E)
+    board.connect(eye.id, thruster.id)
+    board.place(Kind.EYE, (0, 0))
+    assert board.clear() == (2, 1) and list(board.nodes) == [eye.id] and not board.wires
+    assert board.remaining(Kind.EYE) == 2 and board.remaining(Kind.THRUSTER) == 2
+    assert board.clear() == (0, 0)  # nothing left to erase

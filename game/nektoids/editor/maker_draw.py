@@ -333,24 +333,9 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
             _draw_spec(screen, fonts, rect, text, caret)
     _draw_goals(screen, scene, fonts)
     _draw_parts(screen, scene, fonts)
-    for button, rect in layout.file_buttons:
-        icon, shut = (
-            ("share", not scene.shareable) if button is FileButton.SHARE else ("copy", False)
-        )
-        draw_row(
-            screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), shut, icon=icon
-        )
-    if layout.share_note is not None:
-        x, y, _, h = layout.share_note
-        note = cached_text(fonts.small, _share_says(scene), LIT if scene.shareable else DIM_TEXT)
-        screen.blit(note, (x + 4, y + (h - note.get_height()) // 2))
-    if layout.level_field is not None:
-        pasting = scene.writing is Paste.LEVEL
-        text, caret = (scene.field.text, scene.field.caret) if pasting else ("", None)
-        draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level")
-    for start, rect in layout.start_rows:
+    for start, rect in layout.start_rows:  # under the rule, scrolled (D-322)
         label, level = scene.starts[start.index] if start.index is not None else ("", None)
-        name, icon = ("Blank plane", "file") if level is None else ("Sandbox", "border-all")
+        name, icon = ("Blank level", "file") if level is None else ("Sandbox", "border-all")
         if label:
             name, icon = level.title, None
         draw_row(
@@ -372,9 +357,7 @@ def _share_says(scene: MakerScene) -> str:
         return f"Checking its proof: {round(100 * scene.checking[0].progress)}%"
     if scene.shareable:
         return f"Won in {scene.proof.ticks * DT:.2f} s, {scene.proof.parts} parts"
-    if not scene.level.objectives:
-        return "Give it a goal, then win it"
-    return "Win it in the Run, as it stands"
+    return "Win it in Run first"  # D-321
 
 
 def _draw_parts(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
@@ -476,9 +459,36 @@ def _draw_spec(screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int
 
 
 def _draw_foot(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """At the foot of Objects, the Wheel."""
+    """What the drawer's scrolled rows do not clip: at the foot of Objects, the Wheel; atop
+    Files, Save/Load, over its rule."""
     if scene.layout.wheel_fold is not None:
         _draw_wheel(screen, scene, fonts)
+    if scene.layout.files_rule is not None:
+        _draw_save_load(screen, scene, fonts)
+
+
+def _draw_save_load(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+    """Files' Save/Load (D-310, D-320): its title; Copy level, the field to paste a level into,
+    Share level, greyed until it is won, and the line under it; the rule over the levels to
+    start from, which scroll under it (D-322)."""
+    layout = scene.layout
+    for title, (x, y, _, h) in layout.section_titles:
+        if title == "Save/Load":
+            shown = cached_text(fonts.label, title.upper(), DIM_TEXT)
+            screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
+    for button, rect in layout.file_buttons:
+        share = button is FileButton.SHARE  # greyed until the level is won (D-320)
+        icon, shut = ("share", not scene.shareable) if share else ("copy", False)
+        name = ROW_NAME[button]
+        draw_row(screen, scene, fonts, rect, button, name, ("none", ""), greyed=shut, icon=icon)
+    x, y, _, h = layout.share_note
+    note = cached_text(fonts.small, _share_says(scene), LIT if scene.shareable else DIM_TEXT)
+    screen.blit(note, (x + 4, y + (h - note.get_height()) // 2))
+    pasting = scene.writing is Paste.LEVEL
+    text, caret = (scene.field.text, scene.field.caret) if pasting else ("", None)
+    draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level")
+    x, y, w, _ = layout.files_rule
+    pygame.draw.line(screen, RULE, (x, y), (x + w, y), 2)  # the bar that divides, as the Wheel's
 
 
 def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
@@ -549,10 +559,8 @@ def _about(scene: MakerScene, what: object) -> tuple[str, tuple[str, ...]]:
     if isinstance(what, Piece):
         return NAMES[what], (PIECE_ABOUT[what],)
     if isinstance(what, Start) and what.index is None:
-        return "Blank plane", (
-            f"No item, the swimmer at the origin, no goal, {BLANK_TIME:g} s.",
-            KEPT,
-        )
+        blank = f"No item, the swimmer at the origin, no goal, {BLANK_TIME:g} s, two of each part."
+        return "Blank level", (blank, KEPT)
     if isinstance(what, Start):
         level = scene.starts[what.index][1]
         return level.title, (level.spec, KEPT)
