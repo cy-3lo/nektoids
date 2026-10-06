@@ -29,6 +29,7 @@ class Chapter:
     title: str
     folder: str  # under `data/`
     names: tuple[str, ...]  # its levels' files, in the order they come
+    all_open: bool = False  # every level open from the start, not one after another (D-335)
 
     @property
     def heading(self) -> str:
@@ -38,8 +39,12 @@ class Chapter:
 
 CHAPTERS = (
     Chapter(
-        0, "Tutorials", "0-tutorials", ("wiring", "turning", "eyes", "half", "minus", "diagnostic")
-    ),  # the board and the parts, one thing a level (D-325, D-335)
+        0,
+        "Tutorials",
+        "0-tutorials",
+        ("wiring", "turning", "eyes", "half", "minus", "diagnostic"),
+        all_open=True,
+    ),  # the board and the parts, one thing a level, any in any order (D-325, D-335, D-335)
     Chapter(1, "Braitenberg", "1-braitenberg", ("fear", "aggression", "love", "orbit")),
     Chapter(2, "Obstacles", "2-obstacles", ("shadows",)),
     Chapter(3, "Many lights", "3-many-lights", ("greed", "patience", "two-lights")),

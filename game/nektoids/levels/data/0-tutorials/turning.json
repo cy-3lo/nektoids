@@ -16,7 +16,6 @@
   },
   "time_limit": 10,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
-  "passkey": "COMPASS",
   "hints": {"idea": "A thruster pushes the way it points."},
   "tutorial": {
     "starts_in": "tools",

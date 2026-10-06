@@ -16,7 +16,6 @@
     {"verb": "stay", "count": "one", "target": "mark", "seconds": 3},
     {"verb": "reach", "count": "none", "target": "light"}
   ],
-  "passkey": "BRAKE",
   "hints": {"idea": "The light takes the push away."},
   "tutorial": {
     "starts_in": "parts",

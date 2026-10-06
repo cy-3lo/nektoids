@@ -2065,7 +2065,7 @@ cards, the swimmer, the objectives, the tabs, the board, the bar and Hints, are 
 introduction, and Aggression's two lead to Diagnostic (D-103): they stay where they are until 0.1
 and 0.6 are made, so the game always opens with one, and move then.
 
-**D-335 — 2026-10-06 — Chapter 0, Tutorials: 0.1 Wiring, 0.2 Turning, 0.3 Eyes, 0.4 Half, 0.5 Minus, 0.6 Diagnostic, each on a 7-cell board, each won by its proof and lost by the board that misses its lesson. Fear's introduction opens 0.1; Aggression's Diagnostic cards are 0.6's. Applies D-325, D-334; amends D-079, D-103.**
+**D-335 — 2026-10-06 — Chapter 0, Tutorials: 0.1 Wiring, 0.2 Turning, 0.3 Eyes, 0.4 Half, 0.5 Minus, 0.6 Diagnostic, each on a 7-cell board, each won by its proof and lost by the board that misses its lesson; every one open from the start, none giving a passkey. Fear's introduction opens 0.1; Aggression's Diagnostic cards are 0.6's. Applies D-325, D-334; amends D-075, D-079, D-103.**
 Designed with the physicist, each checked by simulation (`tests/test_chapter0.py`):
 - 0.1 Wiring: a Source and a thruster locked on the axis, nothing handed out; Fear's five cards,
   then one that leads the wire, Run, Play, and Hints last. Into a ring 16 u ahead in 10 s: 4.35 s.
@@ -2083,7 +2083,8 @@ Designed with the physicist, each checked by simulation (`tests/test_chapter0.py
 - 0.6 Diagnostic: an eye wired to a thruster comes with the eye looking back, so the swimmer
   never moves; Aggression's two cards, moved, take the player to Diagnostic to find why; turned
   forward, the eye reaches the light, 5.38 s.
-Each is the studio's, "@Cy-3LO", hinted (D-329) with an idea of its own; its words, COPPER,
-COMPASS, IRIS, TORTOISE and BRAKE, open the next, and 0.6, the chapter's last, gives none. The
-game now opens on 0.1. Fear and Aggression lose their tutorials, Aggression keeping its
+Each is the studio's, "@Cy-3LO", hinted (D-329) with an idea of its own. The physicist: every
+tutorial is open always, so a player may take them in any order, or none; a chapter says so,
+`Chapter.all_open`, and its levels give no passkey, having nothing to open. Chapter 1 keeps its
+hints, and chapters 2 and after have none, as D-329 has it. The game now opens on 0.1. Fear and Aggression lose their tutorials, Aggression keeping its
 prewired half swimmer (D-103); Settings' Tutorial is greyed on them (D-334).

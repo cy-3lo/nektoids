@@ -40,13 +40,16 @@ def test_run_and_back_to_edit_keeps_the_board_as_it_was_left():
 
 def test_a_level_opens_once_the_one_before_it_is_won_and_the_sandbox_always():
     router = a_router()
-    assert router.unlocked(0) and not router.unlocked(1) and router.unlocked(router.sandbox_index)
+    fear, aggression = AT["Fear"], AT["Aggression"]
+    assert router.unlocked(fear) and not router.unlocked(aggression)
+    assert router.unlocked(router.sandbox_index) and all(router.unlocked(k) for k in range(6))
     with pytest.raises(ValueError, match="once the level before it is won"):
-        router.open(1)
+        router.open(aggression)
+    router.index = fear
     router.mark_won()
-    assert router.unlocked(1)
-    router.open(1)
-    assert (router.index, router.screen, router.label) == (1, Screen.SPEC, "LEVEL 0.2")
+    assert router.unlocked(aggression)
+    router.open(aggression)
+    assert (router.index, router.screen, router.label) == (aggression, Screen.SPEC, "LEVEL 1.2")
 
 
 def test_next_goes_on_with_its_own_board_and_after_the_last_level_comes_the_end():
@@ -132,7 +135,8 @@ def test_levels_are_named_by_chapter_and_place():
 def test_each_chapters_first_level_is_open_and_a_chapters_last_gives_no_word():
     router = a_router()  # D-325: the next chapter's first level is open from the start
     states = [router.state(k) for k in range(len(router.levels))]
-    assert states == ["open" if k in FIRSTS else "locked" for k in range(len(router.levels))]
+    opened = FIRSTS | set(range(6))  # the tutorials, every one open (D-335)
+    assert states == ["open" if k in opened else "locked" for k in range(len(router.levels))]
     assert router.state(router.sandbox_index) == "sandbox"
     router.index = AT["Orbit"]
     assert router.next_passkey() is None
@@ -171,7 +175,9 @@ def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
     router = a_router()
     rows = router.rows()
     assert len(rows) == len(router.levels) + 1 and rows[-1].index == router.sandbox_index
-    assert [row.state for row in rows[:3]] == ["open", "locked", "locked"]
+    assert [row.state for row in rows[:3]] == ["open", "open", "open"]  # tutorials (D-335)
+    fear = AT["Fear"]
+    assert [row.state for row in rows[fear : fear + 3]] == ["open", "locked", "locked"]
     assert (rows[0].label, rows[0].current, rows[-1].label, rows[-1].state) == (
         "0.1",
         True,
@@ -236,11 +242,13 @@ def test_a_passkey_opens_the_level_after_the_one_whose_win_gives_it_and_those_be
 
 def test_a_win_card_names_the_word_for_the_next_level_and_chapters_once_it_is_won():
     router = a_router()
-    router.begin()  # Wiring
-    assert router.next_passkey() == ("COPPER", "LEVEL 0.2")
-    assert router.rows()[0].passkey == ""  # not won yet: not given away
+    router.begin()  # Wiring: the tutorials give no word, every one being open (D-335)
+    assert router.next_passkey() is None
+    fear = router.index = AT["Fear"]
+    assert router.next_passkey() == ("LOVE", "LEVEL 1.2")
+    assert router.rows()[fear].passkey == ""  # not won yet: not given away
     router.mark_won()
-    assert router.rows()[0].passkey == "COPPER" and router.rows()[1].passkey == ""
+    assert router.rows()[fear].passkey == "LOVE" and router.rows()[fear + 1].passkey == ""
     router.unlock(router.levels[-2].passkey)  # the word before the last opens it
     router.open(len(router.levels) - 1)  # the last: there is no next level to open
     assert router.next_passkey() is None

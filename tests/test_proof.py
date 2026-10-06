@@ -7,7 +7,6 @@ from dataclasses import replace
 import pytest
 
 from nektoids.editor.boardfield import load
-from nektoids.editor.hints import Hints
 from nektoids.graph import boardtext
 from nektoids.graph.board import complexity
 from nektoids.levels.arenas import arenas, sandbox
@@ -19,7 +18,8 @@ from nektoids.levels.score import Score
 
 DT = 1.0 / 120.0
 ORBIT = next(level for level in arenas() if level.title == "Orbit")
-ORBITER = Hints.of(ORBIT).board  # its hint's board, its proof's, which wins
+ORBITER = ORBIT.blank_board()
+load(ORBITER, Proof.from_dict(ORBIT.proof).board)  # its proof's board, which wins
 
 
 def test_a_proof_is_its_boards_text_and_its_score_and_refuses_what_it_does_not_know():

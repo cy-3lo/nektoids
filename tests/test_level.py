@@ -138,9 +138,9 @@ def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
     assert {level.author for level in (*arenas(), sandbox())} == {"@Cy-3LO"}
 
 
-def test_every_level_gives_a_passkey_but_the_last_of_the_tutorials_and_of_the_route():
+def test_every_level_gives_a_passkey_but_the_tutorials_and_the_last():
     words = {level.title: level.passkey for level in arenas()}  # D-075
-    tutorials = ["COPPER", "COMPASS", "IRIS", "TORTOISE", "BRAKE", None]  # D-335
+    tutorials = [None] * 6  # every one open: no word to give (D-335)
     shipped = ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI", None]
     assert list(words.values()) == [*tutorials, *shipped]  # Diagnostic, Dragster: none (D-332)
     given = [word for word in words.values() if word is not None]

@@ -90,7 +90,8 @@ starts; they come in this order.
   later levels explain; Settings' Tutorial replays the open level's (D-334).
 - [x] **Chapter 0, the tutorials**, six levels, each teaching one thing (D-335): 0.1 Wiring,
   Fear's introduction then the wire; 0.2 Turning; 0.3 Eyes; 0.4 Half; 0.5 Minus, the Diff, the
-  Sum left to Love; 0.6 Diagnostic, with Aggression's cards. To adjust in the Maker as played.
+  Sum left to Love; 0.6 Diagnostic, with Aggression's cards; all open, no passkey. To adjust in
+  the Maker as played.
 - [x] **Dragster**, the physicist's, made in the Maker: chapter 4's first level, LEVEL 4.1,
   signed "@Cy-3LO" (D-332).
 - [ ] **Chapter 2's new levels**: obstacles, before Shadows.

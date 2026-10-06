@@ -13,7 +13,6 @@
   },
   "time_limit": 15,
   "objectives": [{"verb": "stay", "count": "one", "target": "mark", "seconds": 3}],
-  "passkey": "TORTOISE",
   "hints": {"idea": "Slower stays longer."},
   "tutorial": {
     "starts_in": "parts",
