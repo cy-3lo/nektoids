@@ -115,6 +115,49 @@ def test_a_level_reset_opens_on_a_fresh_board_and_the_others_keep_theirs():
 
 def test_levels_are_named_by_chapter_and_place():
     assert level_label(0) == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"
+    assert level_label(4) == "LEVEL 2.1" and level_label(7) == "LEVEL 3.3"  # D-325
+    labels = [row.label for row in a_router().rows()]
+    assert labels == ["1.1", "1.2", "1.3", "1.4", "2.1", "3.1", "3.2", "3.3", ""]
+
+
+def test_each_chapters_first_level_is_open_and_a_chapters_last_gives_no_word():
+    router = a_router()  # D-325: the next chapter's first level is open from the start
+    assert [router.state(k) for k in range(9)] == [
+        *("open", "locked", "locked", "locked"),
+        "open",
+        *("open", "locked", "locked"),
+        "sandbox",
+    ]
+    router.index = 3  # Orbit
+    assert router.next_passkey() is None
+    router.mark_won()
+    assert router.rows()[3].passkey == ""
+    router.index = 5  # Greed: its word opens Patience
+    assert router.next_passkey() == ("GOLD", "LEVEL 3.2")
+
+
+def test_chapters_shows_the_chapter_being_played_and_folds_the_others_until_asked():
+    router = a_router()  # D-326
+    one, two, three = "Chapter 1: Braitenberg", "Chapter 2: Obstacles", "Chapter 3: Many lights"
+    assert one not in router.folded and {two, three} <= router.folded
+    router.fold(three)  # the player shows chapter 3 too
+    router.next()  # 1.2: the same chapter, the folds kept
+    assert router.folded & {one, three} == set()
+    router.index = 3  # Orbit, then Next level: Shadows, in chapter 2, which was folded
+    router.next()
+    assert router.label == "LEVEL 2.1" and two not in router.folded and one in router.folded
+    router.open(router.sandbox_index)  # Free play keeps them
+    assert two not in router.folded and one in router.folded
+    router.fold(one)
+    router.open(0)  # chapter 1 shows: nothing else folds
+    assert router.folded & {one, two} == set()
+
+
+def test_a_passkey_shows_the_chapter_of_the_level_it_opens():
+    router = a_router()  # D-326
+    assert "Chapter 3: Many lights" in router.folded
+    assert router.unlock("gold") == 6  # Greed's word opens Patience, 3.2
+    assert "Chapter 3: Many lights" not in router.folded
 
 
 def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():

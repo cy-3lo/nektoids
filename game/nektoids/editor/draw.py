@@ -739,7 +739,7 @@ def draw_drawer(
     with clipped(screen, layout.list_area):  # None: the rows fit, or there are none
         _draw_sections(screen, scene, fonts, ink, at_foot=False)
         for title, rect in layout.group_titles:
-            draw_fold_title(screen, fonts, title, rect, title in scene.folded, ink)
+            draw_fold_title(screen, fonts, title, rect, title in layout.folded, ink)
         rows(screen, scene, fonts)
         _draw_hints(screen, scene, fonts)
         _draw_settings(screen, scene, fonts)

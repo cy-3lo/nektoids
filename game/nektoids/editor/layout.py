@@ -84,7 +84,6 @@ CAPTION_HEIGHT = 26  # under the tabs, inside the Editor's: the level's title an
 TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
 TABS = ("run", "editor")  # a level's tabs, Run first (D-069)
 MAKER_TABS = (*TABS, "maker")  # the sandbox's: the Maker makes its level (D-301)
-CHAPTER_TITLE = "Chapter 1: light"  # its levels' title, in Chapters and in the Maker's Files
 TAB_WIDTHS = {"run": 64, "editor": 84, "maker": 80}  # [px]
 TAB_KEYS = {"run": "F1", "editor": "F2", "maker": "F3"}  # each tab's key, in their order (D-303)
 STATUS_HEIGHT = 28  # [px]
@@ -370,7 +369,8 @@ class Layout:
     maker: bool  # the sandbox: a third tab, the Maker, makes its level (D-301)
     kinds: frozenset[Kind]  # the parts the level hands out: the only ones Parts shows
     drawer: Drawer | None  # the drawer open, if one is
-    chapter: int  # how many levels the chapter has: Chapters' rows, then the sandbox's
+    chapters: tuple[tuple[str, int], ...]  # each chapter's title and how many levels it has
+    folded: frozenset[str]  # the groups shown closed: Parts', Files' or Chapters' (D-326)
     bar_area: Rect
     drawer_buttons: tuple[tuple[Drawer, Rect], ...]  # the bar's icons, top down
     level_buttons: tuple[tuple[LevelButton, Rect], ...]  # at the bar's foot: Chapters, the switch
@@ -437,7 +437,7 @@ def make_layout(
     drawer: Drawer | None = Drawer.PARTS,
     folded: frozenset[str] = frozenset(),
     kinds: frozenset[Kind] = frozenset(Kind),
-    chapter: int = 0,
+    chapters: tuple[tuple[str, int], ...] = (),
     env: Env = Env.EDITOR,
     goals: int = 0,
     files: tuple[tuple[str, int], ...] = (),
@@ -451,8 +451,9 @@ def make_layout(
     starts: int = 0,
 ) -> Layout:
     """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
-    the groups shown closed, Parts' or Files'; kinds: the parts the level hands out, the only
-    ones Parts shows (D-039); chapter: how many levels Chapters lists, before the sandbox; goals:
+    the groups shown closed, Parts', Files' or Chapters'; kinds: the parts the level hands out,
+    the only ones Parts shows (D-039); chapters: each chapter's title and how many levels it
+    has, which Chapters lists in order, before the sandbox, as the Maker's Files does; goals:
     how many objectives the level has, at the foot of each of the run's drawers, before the time
     left; files: Files' groups, each a level's title and how many of its wins it lists (D-092);
     wheel_folded: the picture of the cell folded, at the foot of Tools and of Parts; scroll: how
@@ -495,7 +496,7 @@ def make_layout(
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES and env is Env.MAKER:
-        rows.maker_files(starts, chapter, folded, height, scroll)
+        rows.maker_files(starts, chapters, folded, height, scroll)
     elif drawer is Drawer.FILES:
         rows.files(files, folded, height, scroll)
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
@@ -512,7 +513,7 @@ def make_layout(
         elif drawer is Drawer.SETTINGS:
             rows.settings()
         else:
-            rows.chapters(chapter)
+            rows.chapters(chapters, folded)
         rows.scrolled(floor, scroll)
     goal_area = None
     if env is Env.RUN and drawer is not None:  # the objectives, at the foot of every drawer
@@ -535,7 +536,8 @@ def make_layout(
         maker=maker,
         kinds=kinds,
         drawer=drawer,
-        chapter=chapter,
+        chapters=chapters,
+        folded=folded,
         bar_area=bar,
         drawer_buttons=drawer_buttons,
         level_buttons=((SWITCH_TO[env], switch),),
@@ -693,13 +695,18 @@ class _Rows:
         self.y += ROW_PITCH
 
     def maker_files(
-        self, starts: int, chapter: int, folded: frozenset[str], height: int, scroll: int
+        self,
+        starts: int,
+        chapters: tuple[tuple[str, int], ...],
+        folded: frozenset[str],
+        height: int,
+        scroll: int,
     ) -> None:
         """The Maker's Files (D-310): under Save/Load, Copy level, a field to paste a level's
         text into, as the editor's Files has for a board (D-206), then Share level and a line
         under it (D-320, D-321), which stay; under a rule, the levels to start from, a list of
-        its own that scrolls: Blank level, then the chapter's `chapter` levels and Free play's,
-        under titles that fold, as Chapters lists them (D-322)."""
+        its own that scrolls: Blank level, then each chapter's levels and Free play's, under
+        titles that fold, as Chapters lists them (D-322, D-326)."""
         self._title("Save/Load", self.sections)
         self._row(FileButton.LEVEL)
         self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
@@ -710,8 +717,10 @@ class _Rows:
         self.y = top + HINT_LINE + ROW_PITCH - ROW_HEIGHT
         self.files_rule = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, 2)
         self.y += SECTION_GAP
-        groups = [("", [Start(None)]), (CHAPTER_TITLE, [Start(k) for k in range(chapter)])]
-        groups.append(("Free play", [Start(k) for k in range(chapter, starts)]))
+        groups = [("", [Start(None)])]
+        groups += [(title, [Start(k) for k in levels]) for title, levels in _spans(chapters)]
+        total = sum(count for _, count in chapters)
+        groups.append(("Free play", [Start(k) for k in range(total, starts)]))
         self._folding(groups, folded, height - FOOT_MARGIN, scroll)
 
     def _folding(
@@ -894,17 +903,30 @@ class _Rows:
             self.line = (x, self.y + side + SHADOW_GAP, width, HINT_LINE)
             self.y += side + SHADOW_GAP + HINT_LINE + ROW_PITCH - ROW_HEIGHT
 
-    def chapters(self, levels: int) -> None:
-        self._title(CHAPTER_TITLE, self.sections)
-        for k in range(levels):
-            self._row(k)
-        self.y += SECTION_GAP
+    def chapters(self, chapters: tuple[tuple[str, int], ...], folded: frozenset[str]) -> None:
+        """Each chapter's levels under its title, which folds, a chapter with none not listed
+        (D-326); then Free play's sandbox and the passkey field, all scrolling together."""
+        for title, levels in _spans(chapters):
+            if levels:
+                self._title(title, self.groups)
+                for k in () if title in folded else levels:
+                    self._row(k)
+                self.y += SECTION_GAP
         self._title("Free play", self.sections)
-        self._row(levels)  # the sandbox
+        self._row(sum(count for _, count in chapters))  # the sandbox
         self.y += SECTION_GAP
         self._title("Passkey", self.sections)  # a level's word typed: it opens (D-075)
         self.passkey = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH
+
+
+def _spans(chapters: tuple[tuple[str, int], ...]) -> list[tuple[str, range]]:
+    """Each chapter's title and its levels' places on the route, which runs through them all."""
+    spans, k = [], 0
+    for title, count in chapters:
+        spans.append((title, range(k, k + count)))
+        k += count
+    return spans
 
 
 def _moved(rect: Rect | None, dy: int) -> Rect | None:

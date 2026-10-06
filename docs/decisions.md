@@ -1950,11 +1950,30 @@ Maker, on obstacles, then Shadows. Chapter 3 goes from Greed's two lights to Pat
 among obstacles, then Two lights, two among four obstacles, the hardest last (D-324). Chapter 4
 holds the levels made in the Maker or pasted, this session (D-075). Free play keeps the sandbox
 and the Maker.
-The route stays one chain (D-035, D-075): a level opens once the one before it is won, across
-chapters, or by its passkey; the end comes after the last chapter's last level. A level is named
-by its chapter, LEVEL 2.1. In Chapters each chapter's title folds, as Files' groups do (D-069,
+Each chapter's first level is open from the start, the physicist's choice: a player may begin
+any chapter. Inside a chapter a level opens once the one before it is won, or by its passkey
+(D-035, D-075), so a chapter's last level gives no word, the next level being open already. Next
+level still goes on through the chapters in order, and the end comes after the last chapter's
+last level. A level is named by its chapter, LEVEL 2.1. In Chapters each chapter's title folds, as Files' groups do (D-069,
 D-322): the chapter being played is open, the others folded; a chapter with no level yet is not
 listed. D-300's scope, and `CLAUDE.md`'s, names the levels by chapter; still no new part, sense or
 item. The rest of §13 is planned, and its decisions taken, item by item: several chapters in the
 game, a level made in the Maker shipped as one of the game's, tutorials, chapter 0's levels,
 chapter 2's, Your levels.
+
+**D-326 — 2026-10-06 — Several chapters in the game: each chapter's level files in a folder of its own, a level named by its chapter, LEVEL 2.1; in Chapters, in every tab, each chapter under a title that folds, every chapter folded but the one being played until the player opens one; the Maker's Start from by chapter. Applies D-325.**
+`levels/arenas.py` declares the chapters, `CHAPTERS`, each with its number, title, folder and
+levels; the route is still one list, `arenas()`, in the same order, so every level's index,
+board, wins and passkey are what they were, and `locate` gives a level's chapter and its place
+there. The eight files moved as they were, byte for byte, into `1-braitenberg/`,
+`2-obstacles/` and `3-many-lights/`; the sandbox's stays. Fear to Orbit are 1.1 to 1.4, Shadows
+2.1, Greed, Patience and Two lights 3.1 to 3.3; 1.1, 2.1 and 3.1 are open from the start, and
+Orbit's, Shadows' and Two lights' words, MOON, DARK and GEMINI, are kept in their files but no
+longer given. Chapters 0 and 4 have no level yet and are not listed. The router keeps which chapters are folded, for the
+session, so the run, the Editor and the Maker show the same: at first all but chapter 1. A
+level whose chapter is folded, opened from Chapters or by Next level, folds every other chapter
+instead, so the open level's row always shows; a level in a chapter that shows keeps the
+player's folds, as the sandbox does; a passkey shows the chapter of the level it opens. Free
+play and the passkey field stay under the chapters, scrolling with them (D-096). The Maker's
+Start from lists Blank level, then a group per chapter, then Free play (D-322), folding as the
+Maker's own groups do.

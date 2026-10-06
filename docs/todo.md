@@ -62,6 +62,9 @@ taken, when it starts.
 
 - [ ] Files' title, "Wins this session", is not drawn: it lies above the wins' list, and the
   drawer's rows are clipped to that list (`editor/draw.py`, `draw_drawer`). Seen 2026-10-04.
+- [ ] In the run, Chapters' rows scrolled under the objectives draw a section title over
+  OBJECTIVES, unclipped: "PASSKEY", or "FREE PLAY" with every chapter open (`editor/draw.py`,
+  `_draw_sections` takes any title in the objectives' area for theirs). Seen 2026-10-06.
 - [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
 - [ ] The Maker in Safari: a slider's typed value, Paste a level (D-308, D-310); only Chrome was
   tried.
@@ -79,9 +82,9 @@ files today, which the Maker does not set. Each item is planned, and its decisio
 starts; they come in this order.
 
 - [x] **The plan as a decision**: what each level teaches, where each level goes (D-325).
-- [ ] **Several chapters in the game**: the levels' files by chapter, LEVEL 2.1; Chapters by
+- [x] **Several chapters in the game**: the levels' files by chapter, LEVEL 2.1; Chapters by
   chapter, its titles folding as the Maker's Files do (D-322), all but the chapter being played;
-  the Maker's Start from by chapter.
+  the Maker's Start from by chapter (D-326).
 - [ ] **A level made in the Maker shipped as one of the game's**: from Copy or Share level to a
   file in its chapter's folder, with what the Maker does not set, a passkey, hints and a tutorial,
   written in the file; every shipped tutorial checked by a test; a hint's shadow over the level's

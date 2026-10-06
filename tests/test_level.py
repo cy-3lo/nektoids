@@ -33,7 +33,8 @@ def a_level(**changes):
 
 
 def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_writes():
-    assert sorted(path.stem for path in DATA.glob("*.json")) == sorted((*ORDER, SANDBOX))
+    names = (path.relative_to(DATA).with_suffix("").as_posix() for path in DATA.rglob("*.json"))
+    assert sorted(names) == sorted((*ORDER, SANDBOX))  # each in its chapter's folder (D-325)
     for name in (*ORDER, SANDBOX):
         path = DATA / f"{name}.json"
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
@@ -179,7 +180,7 @@ def test_version_4_writes_a_hexagons_zone_as_its_size_and_whole_numbers_as_integ
 
 
 def test_every_shipped_levels_positions_are_whole_units_and_its_zone_a_size():
-    for path in sorted(DATA.glob("*.json")):  # D-313
+    for path in sorted(DATA.rglob("*.json")):  # D-313
         data = json.loads(path.read_text())
         points = [data["start"]["at"], *(item["at"] for item in data["items"])]
         assert all(isinstance(v, int) for point in points for v in point), path.stem
