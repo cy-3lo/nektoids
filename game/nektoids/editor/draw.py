@@ -492,7 +492,10 @@ def _draw_wheel(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             continue
         lit = slot == chosen or slot.what is in_hand
         fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
-        draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE, radius)
+        edge = LIT if lit else ICON_EDGE
+        if f"wheel:{slot.what.value}" in scene.lit:  # a tutorial's target, pulsing (D-338)
+            edge = scene.lit_ink
+        draw_disc(screen, fonts, slot.at, slot.what, fill, edge, radius)
     lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
     lit = scene.wheel_lit()  # the icon chosen or in hand, named in the accent (D-069)
     says, ink = (_named(scene, lit.what, lit.key), LIT) if lit else (_cell_says(scene), DIM_TEXT)
@@ -706,7 +709,8 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     for button, rect in layout.level_buttons:  # the switch
         box = pygame.Rect(rect)
         pygame.draw.rect(screen, ACTIVE, box, border_radius=8)
-        fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 18, TEXT)
+        lit = f"level:{button.value}" in scene.lit  # a tutorial's target, pulsing (D-338)
+        fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 18, scene.lit_ink if lit else TEXT)
 
 
 @contextmanager
@@ -968,7 +972,20 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
         picked = kind == scene.picked
-        draw_row(screen, scene, fonts, rect, kind, NAME[kind], status, picked, left == 0, part=kind)
+        lit = scene.lit_ink if f"menu:{kind.value}" in scene.lit else None  # pulsing (D-338)
+        draw_row(
+            screen,
+            scene,
+            fonts,
+            rect,
+            kind,
+            NAME[kind],
+            status,
+            picked,
+            left == 0,
+            part=kind,
+            lit=lit,
+        )
     for button, rect in layout.view_buttons:
         active = button is ViewButton.PAN and scene.tool is Tool.PAN
         key = ("key", VIEW_KEYS[button])
@@ -1165,11 +1182,13 @@ def draw_row(
     part: Kind | None = None,
     badge: str | None = None,
     alarm: bool = False,
+    lit=None,
 ) -> None:
     """A drawer's row, as every drawer draws them (D-051): an icon (or the part itself, or a
     level's number), the name, an info disc, then a count, the infinity sign, a key, a tick or a
     lock, right-aligned; nothing for "none". Keys show while the key hints are on (D-054).
-    `alarm`: the name and the count in the refusals' colour, for an objective that lost."""
+    `alarm`: the name and the count in the refusals' colour, for an objective that lost; `lit`:
+    the name in that colour, a tutorial's target (D-338)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, box, border_radius=6)
     ink = GREYED if greyed else TEXT
@@ -1182,7 +1201,8 @@ def draw_row(
         screen.blit(label, label.get_rect(center=slot))
     elif icon is not None:
         fonts.icons.draw(screen, icon, slot, 16, ink)
-    shown = fonts.name.render(name, True, REFUSED if alarm else DIM_TEXT if greyed else TEXT)
+    named = lit or (REFUSED if alarm else DIM_TEXT if greyed else TEXT)
+    shown = fonts.name.render(name, True, named)
     screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
     disc = TEXT if what == scene.info else DIM_TEXT
     fonts.icons.draw(screen, "circle-info", (box.left + INFO_AT, box.centery), INFO_ICON, disc)
@@ -1260,11 +1280,15 @@ def draw_title(
     screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 
-def draw_button(screen, fonts: Fonts, rect, icon: str, active: bool, enabled: bool = True) -> None:
-    """A palette button: lit while `active`, its icon greyed when it would do nothing."""
+def draw_button(
+    screen, fonts: Fonts, rect, icon: str, active: bool, enabled: bool = True, lit=None
+) -> None:
+    """A palette button: lit while `active`, its icon greyed when it would do nothing, or in
+    `lit`, a tutorial's target (D-338)."""
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, rect, border_radius=6)
     x, y, w, h = rect
-    fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, TEXT if enabled else GREYED)
+    ink = lit or (TEXT if enabled else GREYED)
+    fonts.icons.draw(screen, icon, (x + w // 2, y + h // 2), 20, ink)
 
 
 def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:

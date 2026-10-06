@@ -15,15 +15,21 @@
   "objectives": [{"verb": "stay", "count": "one", "target": "mark", "seconds": 3}],
   "hints": {"idea": "Slower stays longer."},
   "tutorial": {
-    "starts_in": "parts",
     "steps": [
+      {
+        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "until": {"screen": "edit"},
+        "say": [
+          "Stay 3 s in the ring. At full push the swimmer crosses it in 2 s: too fast.",
+          "Press the **Editor** button or tab, or press Tab."
+        ]
+      },
       {
         "show": [{"drawer": "parts"}, {"menu": "halve"}, {"menu": "double"}],
         "say": [
           "The **Halve** sends half the beads that come in, the **Double** twice as many. No wire carries more than a **Source** sends."
         ]
-      },
-      {"say": ["At full push the swimmer crosses the ring in 2 s: too fast to stay 3 s in it."]}
+      }
     ]
   },
   "proof": {"board": "2FqtG2w76Cs", "ticks": 1083, "parts": 3}

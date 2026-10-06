@@ -201,13 +201,15 @@ class Tutorial:
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
     """What a leading step shows, by name, drawn in the accent, the only highlight (D-050,
     D-336): an area, a drawer or a part of the run by its own name, its titles lit; a drawer's
-    icon in the bar by the drawer's name, the bar lighting them all; a tab as "tab:editor"."""
+    icon in the bar by the drawer's name, the bar lighting them all; a tab as "tab:editor"; the
+    switch as "level:edit", a row of Parts as "menu:eye", a Wheel's icon as "wheel:turn left"."""
     if tutorial is None or not tutorial.leads:
         return frozenset()
     names = set()
     for one in _shows(tutorial.step):
         names.add(one.get("area") or one.get("drawer") or one.get("run") or one.get("icon"))
-        names.add(f"tab:{one['tab']}" if "tab" in one else None)
+        for key in ("tab", "level", "menu", "wheel"):
+            names.add(f"{key}:{one[key]}" if key in one else None)
     return frozenset(names - {None})
 
 
@@ -256,8 +258,9 @@ def _shows(step: Step | None) -> list:
 def allows(step: Step | None, action: Action) -> bool:
     """Whether `step` lets `action` through (D-048). No step, or a hint, lets all through. A step
     that leads lets through only the means to what it waits for: picking that part (from the
-    menu or by its key) and placing it on that cell; a turn tool, or L and R, on that part; that
-    tool; the Wire tool and that wire, either way round (D-026); Run. While it waits for a win, or
+    menu or by its key) and placing it on that cell; moving a part, to move one there (D-338);
+    a turn tool, or L and R, on that part; that tool; the Wire tool and that wire, either way
+    round (D-026); Run. While it waits for a win, or
     for the run to play a while, running, playing and going back to edit. A step that waits for
     several things lets through the means to any of them (D-071). A step that waits for Next
     lets nothing through. Zoom, the view's centre, info boxes and folding the menu change none
@@ -278,6 +281,8 @@ def _allows(until: Mapping, action: Action) -> bool:
             or (verb == "tool" and action.tool is Tool.ADD)
             or (verb == "place" and action.kind is kind and action.cell == cell)
         )
+    if "moved" in until:  # a part moved there: the Move tool, a drag (D-338)
+        return (verb == "tool" and action.tool is Tool.MOVE) or verb == "move"
     if "facing" in until:
         cell = _cell(until["facing"]["cell"])
         return (verb == "tool" and action.tool in TURNS) or (verb == "turn" and action.cell == cell)
@@ -305,9 +310,10 @@ def met(until: Mapping | list, context: Context) -> bool:
         return context.time >= until["time"]
     if "drawer" in until:  # that drawer is open (D-074)
         return context.drawer is Drawer(until["drawer"])
-    if "placed" in until:
-        node = board.node_at(_cell(until["placed"]["cell"]))
-        return node is not None and node.kind is Kind(until["placed"]["kind"])
+    if "placed" in until or "moved" in until:  # a part of that kind on that cell (D-338)
+        where = until.get("placed") or until["moved"]
+        node = board.node_at(_cell(where["cell"]))
+        return node is not None and node.kind is Kind(where["kind"])
     if "facing" in until:
         node = board.node_at(_cell(until["facing"]["cell"]))
         return node is not None and node.facing == FACING_NAMES.index(until["facing"]["facing"])

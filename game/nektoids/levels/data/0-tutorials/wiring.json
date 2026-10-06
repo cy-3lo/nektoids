@@ -22,7 +22,7 @@
     "steps": [
       {
         "say": [
-          "This is your tiny swimmer.",
+          "This is your tiny **swimmer**.",
           "Your goal is to wire its control board to make it reach the ring ahead."
         ]
       },
@@ -35,8 +35,8 @@
       {
         "show": [{"tab": "editor"}, {"level": "edit"}],
         "say": [
-          "The window has two tabs: **Run** plays the level and the **Editor** builds the control board.",
-          "Click the **Editor** tab or button, or press **Tab**."
+          "The window has two tabs: Run plays the level and the **Editor** builds the control board.",
+          "Click the **Editor** tab or button, or press Tab."
         ],
         "until": {"screen": "edit"}
       },
@@ -55,11 +55,13 @@
         "until": {"wired": {"from": [0, 0], "to": [-1, 0]}}
       },
       {
+        "show": {"tab": "run"},
         "say": ["Click the **Run** tab or button, or press **Tab**."],
         "until": {"screen": "run"}
       },
       {
-        "say": ["Press **Play**, or **Space**: the swimmer goes straight into the ring."],
+        "show": {"run": "play"},
+        "say": ["Press **Play**, or Space to play the simulation."],
         "until": {"outcome": "won"}
       },
       {

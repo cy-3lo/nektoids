@@ -10,18 +10,25 @@
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "hints": {"idea": "The eye drives what it is wired to."},
   "tutorial": {
-    "starts_in": "parts",
     "steps": [
+      {
+        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "until": {"screen": "edit"},
+        "say": [
+          "Swim to the light and touch it. To see it, the swimmer needs an **Eye**.",
+          "Press the **Editor** button or tab, or press Tab."
+        ]
+      },
       {
         "show": [{"drawer": "parts"}, {"menu": "eye"}],
         "say": [
-          "An eye sends beads as fast as it sees light: more from a light near it and in front of it.",
+          "An **Eye** sends beads as fast as it sees light: more from a light near it and in front of it.",
           "Here the light is straight ahead."
         ]
       },
       {
         "say": [
-          "Put an eye and a thruster on the board, both pointing forward, and wire the eye to the thruster. Then run it."
+          "Put an **Eye** and a **Thruster** on the board, both pointing forward, and wire the **Eye** to the **Thruster**. Then run it."
         ]
       }
     ]

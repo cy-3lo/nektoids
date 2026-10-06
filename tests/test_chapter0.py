@@ -30,8 +30,8 @@ def test_wiring_stays_put_until_the_wire_is_drawn():
     assert ended("Wiring") is Outcome.TIME_UP
 
 
-def test_turning_pushed_through_the_centre_slides_away_without_turning():
-    assert ended("Turning") is Outcome.TIME_UP  # its thruster as it comes, pointing SE (D-336)
+def test_turning_pushed_from_behind_the_centre_goes_straight_and_misses():
+    assert ended("Turning") is Outcome.TIME_UP  # its thruster as it comes, behind (D-338)
 
 
 @pytest.mark.parametrize("facing", [E, W])
@@ -64,8 +64,8 @@ def test_diagnostic_comes_with_an_eye_looking_back_and_never_moves():
     assert ended("Diagnostic", board=board) is Outcome.TIME_UP
 
 
-def test_turning_pointed_ahead_off_the_centre_goes_round_the_obstacle_into_the_ring():
-    board = LEVELS["Turning"].new_board()
-    board.rotate(board.node_at((0, 1)).id, 1)  # one turn left: E (D-009, D-336)
-    assert board.node_at((0, 1)).facing == E
-    assert ended("Turning", board=board) is Outcome.WON
+@pytest.mark.parametrize(("cell", "outcome"), [((-1, 1), Outcome.WON), ((-1, -1), Outcome.TIME_UP)])
+def test_turning_moved_to_the_right_goes_round_the_obstacle_and_to_the_left_away(cell, outcome):
+    board = LEVELS["Turning"].new_board()  # the swimmer's right turns it left, round (D-338)
+    board.move_node(board.node_at((-1, 0)).id, cell)
+    assert ended("Turning", board=board) is outcome
