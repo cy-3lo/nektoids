@@ -86,7 +86,7 @@ from nektoids.editor.draw import (
 )
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, Rect, ViewButton, level_of
-from nektoids.editor.marks import at_work
+from nektoids.editor.marks import at_work, stretch_at
 from nektoids.editor.marks_draw import draw_motion, draw_parts, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
@@ -273,9 +273,10 @@ def draw_rays(
 def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
     """Each swimmer its body's circle round a wedge, its tip where it heads; the selected one
     bright, the others dimmer; each at work (D-076), its specks under it, its parts and motion
-    over it, the specks moving with the run's frames; the specks and the motion as Navigator
-    sets them. The view keeps angles (y flips, heading stays counter-clockwise). A swimmer out
-    of view gets an arrow at the edge, pointing to where it is."""
+    over it, the specks moving with the run's frames, no shorter on screen than LEAST_STREAM
+    (D-345); the specks and the motion as Navigator sets them. The view keeps angles (y flips,
+    heading stays counter-clockwise). A swimmer out of view gets an arrow at the edge, pointing
+    to where it is."""
     view = scene.view
     frame = scene.clock.tick // TICKS_PER_FRAME
     for k in range(len(scene.pos)):
@@ -291,6 +292,7 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
             pose,
             float(scene.radius[k]),
             frame,
+            stretch=stretch_at(view.scale, float(scene.radius[k])),
         )
         if scene.settings.streams:
             draw_under(screen, view, body)

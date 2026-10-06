@@ -58,15 +58,11 @@ taken, when it starts.
 - [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
   their JSON (D-310), shared with their proof (D-320).
 
-## 12. Checks and fixes on `main`
+## 12. Checks and fixes on `main` (done, D-345)
 
-- [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
-- [ ] The Maker in Safari: a slider's typed value, Paste a level (D-308, D-310); only Chrome was
-  tried.
-- [ ] The streams (D-076), the physicist's: in the mini view the thrusters' flames and the light
-  the eyes draw in should reach farther; and at full rate they end abruptly at 3 body radii,
-  `FLAME_LENGTH` and `INTAKE_LENGTH` in `editor/marks.py`, where they should fade out, between
-  2 and 4 body radii or 2.5 and 3.5. Visual tests first, to choose.
+Done: Files' title drawn again; Copy and Paste a board in Firefox, and the Maker's typed values
+and Paste a level in Safari, checked by the physicist; the streams thin out from 3 to 5 body
+radii and are never shorter than 32 px on screen (D-345).
 
 ## 13. Chapters, levels and tutorials, made with the Maker (done, D-325 to D-341)
 
