@@ -51,12 +51,9 @@ taken, when it starts.
     text and its score; pasted, the proof run again, the level cleared if it wins, its score the
     one to beat, else a draft (D-320).
 
-  To do, in this order:
-  - [ ] Perhaps: a slider in Objects for the focused item's power or radius, beside < and >.
-- [ ] **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
-  2,603 random wirings, the fastest a one-eyed circler. Its plane lives on as the sandbox's,
-  under that title (`levels/data/sandbox.json`); its file as a level is in the history
-  (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
+- [x] **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032), back as the
+  chapter's last level, 1.8: 27 of 1,728 one-eyed circlers win it, the fastest in 24.6 s
+  (D-324).
 - [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
   their JSON (D-310), shared with their proof (D-320).
 - [ ] **A first level, before Fear** (the physicist's): its parts already on the board, one eye

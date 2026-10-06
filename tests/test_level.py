@@ -38,6 +38,7 @@ def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_write
         path = DATA / f"{name}.json"
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
     titles = ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
+    titles.append("Two lights, four obstacles")  # D-324
     assert [level.title for level in arenas()] == titles
 
 
@@ -118,7 +119,7 @@ def test_a_level_without_its_version_or_of_another_is_refused():
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
     words = [level.passkey for level in arenas()]  # D-075
-    assert words == ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL"]
+    assert words == ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI"]
     assert len(set(words)) == len(words)
     assert all(is_passkey(word) for word in words) and sandbox().passkey is None
     assert not is_passkey("sword") and not is_passkey("SWÖRD") and not is_passkey("A" * 11)
