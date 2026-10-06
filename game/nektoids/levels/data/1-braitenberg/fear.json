@@ -1,0 +1,14 @@
+{
+  "version": 5,
+  "title": "Fear",
+  "spec": "Get out of the ring round the light.",
+  "author": "@Cy-3LO",
+  "start": {"at": [17, 19], "heading": 0},
+  "items": [{"kind": "light", "at": [17, 16], "power": 4}, {"kind": "mark", "at": [17, 16], "radius": 8}],
+  "board": {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []},
+  "time_limit": 10,
+  "objectives": [{"verb": "leave", "count": "all", "target": "mark"}],
+  "passkey": "LOVE",
+  "hints": {"idea": "Each eye its thruster."},
+  "proof": {"board": "3C4tsBWoGsoQcW4i", "ticks": 244, "parts": 4}
+}

@@ -32,6 +32,13 @@ Done: D-200 to D-206, built on `stage/0-foundations` and merged into `main` in #
 
 In the todo, §11, since D-300: built on `stage/1-level-maker`.
 
+Later, from Share level (D-320): a pasted level's score to beat in the run's Score drawer, as
+a shipped level's shows there (D-330).
+
+Later, from the board's locked parts (D-319): a level that starts with wires, or with parts
+the player may move, as Aggression's prewired eye and thruster; the Maker places locked parts
+only, the player wiring them.
+
 ## 2. Memory: the graph's vocabulary
 
 - **Tanks**: reservoirs that store signal, the memory (D-015, `.claude/rules/graph.md`). Their
@@ -193,9 +200,5 @@ In the todo, §11, since D-300: built on `stage/1-level-maker`.
 
 ## Studio
 
-- **The domains nektoids.com and nektoids.io** (the physicist, 2026-10-04): both unregistered
-  that day (`whois`). The itch.io page has made the name public (D-106), and a .com costs about
-  €10–15 a year. A .io costs more, and its future has been uncertain since the 2025 UK–Mauritius
-  treaty on the Chagos, so the .com first.
 - **v1.1 on itch.io** (2026-10-05): `main` has had Save/Load since #46, which v1.0 does not.
   Upload it before stage 1 ends, or wait for the level maker?

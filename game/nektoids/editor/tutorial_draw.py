@@ -1,8 +1,8 @@
-"""Drawing a tutorial's step over the screen (D-039): nothing dimmed and nothing outlined; out
-of each target's edge, where its outline was, sparks drift, as a thruster's flame does (D-080),
-while the target itself is drawn in the accent by what draws it (`tutorial.panels`); then the
-box, its lines, the step's place, Skip and Next, Next in the accent: what a key does. Reads the
-tutorial; never changes it. Where things sit is `tutorial.py`'s.
+"""Drawing a tutorial's step over the screen (D-039): nothing dimmed and nothing outlined; the
+target is drawn by what draws it in the accent, pulsing (`tutorial.panels`, `palette.pulse`), the
+only highlight, sparks gone (D-336, D-337); then the box, its lines, a game's word in them in the
+accent, the step's place, Skip and Next, Next in the accent: what a key does. Reads the tutorial;
+never changes it. Where things sit is `tutorial.py`'s.
 """
 
 from __future__ import annotations
@@ -18,35 +18,33 @@ from nektoids.editor.palette import (
     HOVER,
     LIT,
     RULE,
-    SPARK,
     TEXT,
     TOOLTIP_BG,
 )
-from nektoids.editor.tutorial import LINE, PAD, Tutorial, next_rect, skip_rect, sparks
-
-SPECK = 3  # a spark's side, and the pitch of the grid it sits on, as a flame's speck [px]
+from nektoids.editor.tutorial import LINE, MARK, PAD, Tutorial, next_rect, runs, skip_rect
 
 
 def draw_tutorial(
     screen: pygame.Surface,
     fonts: Fonts,
     tutorial: Tutorial,
-    spots: list[tuple[Rect, str]],
     box: Rect,
     pointer: tuple[int, int],
-    frame: int,
 ) -> None:
     step = tutorial.step
     if step is None:
         return
-    for x, y in sparks(spots, frame):
-        screen.fill(SPARK, (x // SPECK * SPECK, y // SPECK * SPECK, SPECK, SPECK))
     card = pygame.Rect(box)
     pygame.draw.rect(screen, TOOLTIP_BG, card, border_radius=8)
     pygame.draw.rect(screen, RULE, card, 1, border_radius=8)  # as an info box's (D-080)
-    y = card.top + PAD
-    for line in step.lines:
-        screen.blit(fonts.small.render(line, True, TEXT), (card.left + PAD, y))
+    y, marked = card.top + PAD, False
+    for line in step.lines:  # a game's word, marked, in the accent (D-337)
+        x = card.left + PAD
+        for text, lit in runs(line, marked):
+            shown = fonts.small.render(text, True, LIT if lit else TEXT)
+            screen.blit(shown, (x, y))
+            x += shown.get_width()
+        marked = marked != (line.count(MARK) % 2 == 1)  # a marked phrase run on to the next
         y += LINE
     count = fonts.small.render(f"{tutorial.index + 1} / {len(tutorial.steps)}", True, DIM_TEXT)
     button = next_rect(box)

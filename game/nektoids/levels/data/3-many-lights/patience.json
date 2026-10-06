@@ -1,0 +1,32 @@
+{
+  "version": 5,
+  "title": "Patience",
+  "spec": "Touch all three lights.",
+  "author": "@Cy-3LO",
+  "start": {"at": [8, 18], "heading": 0},
+  "items": [
+    {"kind": "light", "at": [23, 18], "power": 4},
+    {"kind": "light", "at": [21, 8], "power": 4},
+    {"kind": "light", "at": [15, 18], "power": 4},
+    {"kind": "obstacle", "at": [12, 19], "radius": 2},
+    {"kind": "obstacle", "at": [18, 11], "radius": 2}
+  ],
+  "board": {
+    "zone": 19,
+    "stock": {
+      "eye": 2,
+      "source": 1,
+      "double": null,
+      "halve": null,
+      "sum": null,
+      "difference": null,
+      "thruster": 2
+    },
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 20,
+  "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
+  "passkey": "SNAIL",
+  "proof": {"board": "ZWyWkpi61C4KdQ5CZBRk", "ticks": 1213, "parts": 6}
+}

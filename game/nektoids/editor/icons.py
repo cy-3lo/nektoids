@@ -22,6 +22,7 @@ from nektoids.editor.layout import (
     EditButton,
     LevelButton,
     Mode,
+    Piece,
     Tool,
     ViewButton,
 )
@@ -40,10 +41,18 @@ TOOL_ICON = {
     Tool.MOVE: "up-down-left-right",
     Tool.DELETE: "trash-can",
     Tool.SWAP: "arrow-right-arrow-left",
+    Tool.LESS: "minus",  # the Maker's (D-301)
+    Tool.MORE: "plus",
+}
+PIECE_ICON = {
+    Piece.LIGHT: "lightbulb",
+    Piece.OBSTACLE: "circle",
+    Piece.MARK: "circle-plus",  # a + in a circle, as the plane draws a mark (D-306, D-314)
+    Piece.START: "location-arrow",
 }
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
-MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser"}  # D-068
+MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser", Mode.LOCK: "lock"}  # D-068, D-319
 LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.EDIT: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.TOOLS: "screwdriver-wrench",
@@ -56,6 +65,9 @@ DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.HINTS: "life-ring",
     Drawer.SETTINGS: "gear",
     Drawer.CHAPTERS: "map",
+    Drawer.OBJECTS: "shapes",
+    Drawer.TEXT: "pen",
+    Drawer.GOALS: "list-check",
 }
 VIEW_ICON = {
     ViewButton.ZOOM_IN: "magnifying-glass-plus",

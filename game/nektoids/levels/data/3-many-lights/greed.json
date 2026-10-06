@@ -1,0 +1,26 @@
+{
+  "version": 5,
+  "title": "Greed",
+  "spec": "Touch both lights.",
+  "author": "@Cy-3LO",
+  "start": {"at": [8, 19], "heading": 0},
+  "items": [{"kind": "light", "at": [18, 19], "power": 6}, {"kind": "light", "at": [13, 10], "power": 3}],
+  "board": {
+    "zone": 19,
+    "stock": {
+      "eye": 2,
+      "source": 1,
+      "double": null,
+      "halve": null,
+      "sum": null,
+      "difference": null,
+      "thruster": 2
+    },
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 20,
+  "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
+  "passkey": "GOLD",
+  "proof": {"board": "4pifG7G7tDDQKNGcN4Zs", "ticks": 1202, "parts": 6}
+}

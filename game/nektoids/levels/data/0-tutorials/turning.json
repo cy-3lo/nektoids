@@ -1,0 +1,52 @@
+{
+  "version": 5,
+  "title": "Turning",
+  "spec": "Reach the ring by turning round the obstacle.",
+  "author": "@Cy-3LO",
+  "start": {"at": [0, 0], "heading": 0},
+  "items": [{"kind": "obstacle", "at": [0, 3], "radius": 1}, {"kind": "mark", "at": [0, 6], "radius": 1}],
+  "board": {
+    "zone": 19,
+    "stock": {"thruster": 1},
+    "parts": [
+      {"kind": "source", "cell": [0, 0], "facing": null, "locked": true},
+      {"kind": "thruster", "cell": [-1, 0], "facing": "E", "locked": false}
+    ],
+    "wires": [{"from": 0, "to": 1, "path": [[0, 0], [-1, 0]]}]
+  },
+  "time_limit": 10,
+  "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
+  "hints": {"idea": "Off the centre, a push turns."},
+  "tutorial": {
+    "ghosts": [{"kind": "thruster", "cell": [-1, 1], "facing": "E"}],
+    "steps": [
+      {
+        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "until": {"screen": "edit"},
+        "say": [
+          "Reach the ring by turning round the obstacle.",
+          "Press the **Editor** button or tab, or press Tab."
+        ]
+      },
+      {
+        "show": [{"cell": [-1, 0]}, {"cell": [-1, 1]}, {"wheel": "move"}],
+        "say": [
+          "Behind the **Source**, the **Thruster** pushes straight ahead. Off the centre, a push turns the swimmer.",
+          "Move the **Thruster** to the swimmer's right: drag it, or click it, then **Move** on the **Wheel**."
+        ],
+        "until": {"moved": {"kind": "thruster", "cell": [-1, 1]}}
+      },
+      {
+        "show": {"tab": "run"},
+        "say": ["Click the **Run** tab or button, or press **Tab**."],
+        "until": {"screen": "run"}
+      },
+      {
+        "show": {"run": "play"},
+        "say": ["Press **Play**, or Space to play the simulation."],
+        "until": {"outcome": "won"}
+      }
+    ]
+  },
+  "proof": {"board": "yQfK18rfF", "ticks": 350, "parts": 2}
+}

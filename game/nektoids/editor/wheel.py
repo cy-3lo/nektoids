@@ -18,8 +18,9 @@ pygame.
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from enum import Enum
 
 from nektoids.editor.layout import MENU_GROUPS, TOOL_KEYS, Tool
 from nektoids.graph.board import Board, Kind
@@ -45,7 +46,7 @@ ACTIONS = (  # the wire at the top, the turns either side of the gap, delete las
 
 @dataclass(frozen=True)
 class Slot:
-    what: Kind | Tool  # a part to place, or an action on the part
+    what: Enum  # a part to place, or an action on the part; in the Maker, its own (D-301)
     at: tuple[float, float]  # the icon's centre [px]
     key: str
     depth: float = 0  # 0 on the rim; 1, 2... down a pile, the further the lower; between, sliding
@@ -93,13 +94,11 @@ def part_key(kind: Kind, kinds: frozenset[Kind]) -> str:
 
 def angles(n: int) -> list[float]:
     """Where n <= ON_RIM icons sit round the cell, from the left clockwise, each beyond a
-    corner: an odd number centred on the top one, an even one as many each side of it
+    corner, side by side with no corner left empty between them, as near the middle as they can
+    be: an odd number centred on the top one, an even one a corner to its left (D-316)
     [degrees, counter-clockwise from the right]."""
-    if n % 2:
-        first = (ON_RIM - n) // 2
-        return list(CORNERS[first : first + n])
-    side = n // 2
-    return list(CORNERS[2 - side : 2] + CORNERS[3 : 3 + side])
+    first = (ON_RIM - n) // 2
+    return list(CORNERS[first : first + n])
 
 
 def turned(turn: int, chosen: int | None, n: int) -> int:
@@ -118,23 +117,27 @@ def slid(start: float, aim: int, left: int) -> float:
 
 
 def slots(
-    items: Sequence[Kind | Tool],
+    items: Sequence[Enum],
     centre: tuple[float, float],
     size: float,
     kinds: frozenset[Kind],
     turn: float = 0,
+    keys: Mapping[Enum, str] | None = None,
 ) -> list[Slot]:
     """The icons round a cell drawn at `centre` with hexes of `size` [px], the Wheel turned by
     `turn`, a fraction while it slides from one turn to the next: the icons before it piled under
     the rim's first end, those after it under its last, each further one set back along the
-    circle, towards the gap."""
+    circle, towards the gap. Each icon's key is the tool's or the part's number, or `keys`'s."""
     turn = min(max(turn, 0), max(0, len(items) - ON_RIM))  # never past the last
     rim = angles(min(len(items), ON_RIM))
     back = math.degrees(PILE * ICON / RADIUS)  # from one icon of a pile to the next [degrees]
     cx, cy = centre
     out = []
     for k, item in enumerate(items):
-        key = TOOL_KEYS[item] if isinstance(item, Tool) else part_key(item, kinds)
+        if keys is not None:
+            key = keys[item]
+        else:
+            key = TOOL_KEYS[item] if isinstance(item, Tool) else part_key(item, kinds)
         s = k - turn  # its place on the rim from the first end
         depth = max(0, -s, s - len(rim) + 1)  # past an end: down its pile
         if s < 0:

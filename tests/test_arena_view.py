@@ -4,9 +4,12 @@ import pytest
 from nektoids.editor.arena_view import (
     BRIGHTEST,
     DARKEST,
+    DOT_LEAST,
+    DOT_STEP,
     FAN_DRIFT,
     FAN_SWING,
     GRAB,
+    LINE_STEP,
     MAX_SCALE,
     MIN_SCALE,
     RAY_SWAY,
@@ -14,8 +17,10 @@ from nektoids.editor.arena_view import (
     ArenaView,
     Rays,
     body_at,
+    dot_step,
     edge_marker,
     frame,
+    lattice,
     map_grid,
     map_points,
     pan_view,
@@ -253,3 +258,17 @@ def test_the_runs_extent_grows_by_union_and_a_frame_at_its_border_touches_it():
     assert tall == (0.0, -2.0, 10.0, 3.0)
     assert touches((0.0, 1.0, 5.0, 4.0), a) and touches((1.0, 1.0, 10.0, 4.0), a)
     assert not touches((1.0, 1.0, 9.0, 4.0), a)  # inside, clear of every side
+
+
+def test_the_makers_grid_shows_where_a_position_may_fall_unless_its_dots_would_crowd():
+    assert DOT_STEP == 1.0 and LINE_STEP == 5.0  # D-311: whole u, a line every 5
+    assert dot_step(16.0) == 1.0  # the opening zoom (D-101): a dot every 16 px
+    assert dot_step(DOT_LEAST / DOT_STEP) == 1.0
+    assert dot_step(0.99 * DOT_LEAST) is None and dot_step(MIN_SCALE) is None  # none farther
+
+
+def test_the_lattice_holds_every_multiple_of_its_step_between_its_ends_and_the_ends_if_on_it():
+    assert lattice(-1.2, 1.0, 0.5).tolist() == [-1.0, -0.5, 0.0, 0.5, 1.0]
+    assert lattice(0.1, 0.4, 0.5).tolist() == []
+    assert lattice(-10.0, 12.0, 5.0).tolist() == [-10.0, -5.0, 0.0, 5.0, 10.0]
+    assert lattice(0.3 * 10, 3.0, 0.5).tolist() == [3.0]  # 3.0000000000000004 still counts

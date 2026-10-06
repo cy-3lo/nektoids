@@ -1,0 +1,22 @@
+{
+  "version": 5,
+  "title": "Love",
+  "spec": "Stay by the light for 5 s without touching it.",
+  "author": "@Cy-3LO",
+  "start": {"at": [10, 19], "heading": 0},
+  "items": [{"kind": "light", "at": [25, 19], "power": 4}, {"kind": "mark", "at": [25, 19], "radius": 7}],
+  "board": {
+    "zone": 19,
+    "stock": {"eye": 2, "source": 2, "sum": 2, "difference": 2, "thruster": 2},
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 20,
+  "objectives": [
+    {"verb": "stay", "count": "one", "target": "mark", "seconds": 5},
+    {"verb": "reach", "count": "none", "target": "light"}
+  ],
+  "passkey": "HEART",
+  "hints": {"idea": "Light softens the push."},
+  "proof": {"board": "pe7UcDzhFWhwJH", "ticks": 1178, "parts": 4}
+}

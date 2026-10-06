@@ -1,6 +1,6 @@
 """The frame the editor and the run share (D-051, D-054). frame.py imports no pygame."""
 
-from nektoids.editor.frame import WARM_FRAMES, Frame
+from nektoids.editor.frame import LEAVE, WARM_FRAMES, Frame
 from nektoids.editor.layout import (
     SCROLL_STEP,
     Drawer,
@@ -22,20 +22,24 @@ class Scene(Frame):
         self,
         drawer: Drawer | None = Drawer.PARTS,
         env: Env = Env.EDITOR,
-        chapter: int = 3,
+        chapters: tuple[tuple[str, int], ...] = (("Chapter 1", 3),),
         goals: int = 0,
+        maker: bool = False,
     ):
         self.goals = goals  # the level's objectives, under the run's drawers
-        self._start_frame(make_layout(drawer, chapter=chapter, env=env, goals=goals), None)
+        layout = make_layout(drawer, chapters=chapters, env=env, goals=goals, maker=maker)
+        self._start_frame(layout, None)
         self.slid: list[tuple[Drawer | None, Drawer | None]] = []
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         return make_layout(
             drawer,
-            chapter=self.layout.chapter,
+            self._folded(drawer),
+            chapters=self.layout.chapters,
             env=self.layout.env,
             goals=self.goals,
             scroll=self.scrolls.get(drawer, 0),
+            maker=self.layout.maker,
         )
 
     def _slid(self, before: Layout, after: Layout) -> None:
@@ -104,6 +108,9 @@ def test_settings_step_through_their_choices_and_the_tutorial_is_asked_for():
     assert (scene.settings.fast, scene.settings.key_hints) == (8, False)
     scene.frame_press(centre(rows[Setting.SOUND]))
     assert scene.message == "there is no sound yet"
+    scene.frame_press(centre(rows[Setting.TUTORIAL]))
+    assert scene.request is None and scene.message == "this level has no tutorial"  # D-334
+    scene.tutored = True  # main.py's: the open level has one
     scene.frame_press(centre(rows[Setting.TUTORIAL]))
     assert scene.request == "tutorial"
 
@@ -209,8 +216,21 @@ def test_a_parts_entry_runs_its_own_circuit_while_its_box_is_open():
     assert scene.entry is None
 
 
+def test_a_chapters_title_asks_main_py_to_fold_it_and_its_rows_go_once_it_is_shut():
+    scene = Scene(Drawer.CHAPTERS, Env.RUN, (("Chapter 1", 2), ("Chapter 2", 1)))  # D-326
+    titles = dict(scene.layout.group_titles)
+    assert scene.frame_press(centre(titles["Chapter 2"]))
+    assert scene.asked_fold == "Chapter 2" and scene.chosen is None
+    scene.set_chapters((), frozenset({"Chapter 2"}))  # main.py, once the router has folded it
+    assert [k for k, _ in scene.layout.chapter_rows] == [0, 1, 3]  # the sandbox still last
+    scene.toggle_drawer(Drawer.SETTINGS)
+    assert scene.layout.folded == frozenset()  # Chapters' folds are its own
+    scene.toggle_drawer(Drawer.CHAPTERS)
+    assert scene.layout.folded == {"Chapter 2"}
+
+
 def test_the_mouse_wheel_scrolls_a_drawer_whose_rows_do_not_fit_in_the_run_too():
-    scene = Scene(Drawer.CHAPTERS, Env.RUN, chapter=7, goals=3)  # D-096
+    scene = Scene(Drawer.CHAPTERS, Env.RUN, (("Chapter 1", 7),), goals=3)  # D-096
     inside = centre(scene.layout.list_area)
     assert scene.layout.scroll_max > 0 and scene.layout.scroll == 0
     scene.info = 0  # a row's info box: it closes, as its row moves
@@ -225,7 +245,7 @@ def test_the_mouse_wheel_scrolls_a_drawer_whose_rows_do_not_fit_in_the_run_too()
 
 
 def test_the_scroll_bar_held_drags_the_rows_until_it_is_let_go():
-    scene = Scene(Drawer.CHAPTERS, Env.RUN, chapter=7, goals=3)
+    scene = Scene(Drawer.CHAPTERS, Env.RUN, (("Chapter 1", 7),), goals=3)
     x, y, w, h = scene.layout.scroll_bar
     assert scene.frame_press((x + w // 2, y + h // 2)) and scene.scrolling
     scene.frame_track((x, y + h))
@@ -233,3 +253,44 @@ def test_the_scroll_bar_held_drags_the_rows_until_it_is_let_go():
     scene.frame_release()
     scene.frame_track((x, y))
     assert not scene.scrolling and scene.layout.scroll == scene.layout.scroll_max
+
+
+def test_on_the_sandbox_each_tab_asks_for_its_own_screen_and_shows_its_tooltip():
+    for env, here in ((Env.EDITOR, "editor"), (Env.RUN, "run"), (Env.MAKER, "maker")):  # D-301
+        scene = Scene(None, env=env, maker=True)
+        tabs = dict(scene.layout.tabs)
+        for name, asked in (("run", "run"), ("editor", "edit"), ("maker", "make")):
+            scene.request = None
+            assert scene.frame_press(centre(tabs[name]))
+            assert scene.request == (None if name == here else asked)
+            scene.frame_track(centre(tabs[name]))
+            assert scene.tip_target == (None if name == here else name)
+
+
+def test_f1_f2_f3_ask_for_run_editor_and_the_maker_as_their_tabs_and_f3_off_the_sandbox_says_why():
+    for env, here in ((Env.EDITOR, "editor"), (Env.RUN, "run"), (Env.MAKER, "maker")):  # D-303
+        scene = Scene(None, env=env, maker=True)
+        for key, asked in (("f1", "run"), ("f2", "edit"), ("f3", "make")):
+            scene.request = None
+            assert scene.tab_key(key)
+            assert scene.request == (None if LEAVE[here] == asked else asked)
+    scene = Scene(None, env=Env.RUN)  # a level of the chapter: two tabs
+    assert scene.tab_key("f3") and scene.request is None and "Chapters" in scene.message
+    assert not scene.tab_key("f4") and not scene.tab_key("space")
+    scene.gate = lambda action: action.verb != "edit"  # a tutorial's step holds it
+    assert scene.tab_key("f2") and scene.request is None and scene.message == REFUSAL
+
+
+def test_tab_asks_for_the_next_tab_shift_tab_the_one_before_as_a_click_on_it():
+    scene = Scene(None, env=Env.EDITOR, maker=True)  # D-304: Run, Editor, Maker
+    scene.next_tab()
+    assert scene.request == "make"
+    scene.request = None
+    scene.next_tab(back=True)
+    assert scene.request == "run"
+    level = Scene(None, env=Env.RUN)  # Run, Editor
+    level.next_tab()
+    assert level.request == "edit"
+    level.request, level.gate = None, (lambda action: action.verb != "edit")
+    level.next_tab()
+    assert level.request is None and level.message == REFUSAL

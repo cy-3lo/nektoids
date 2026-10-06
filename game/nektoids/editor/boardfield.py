@@ -1,15 +1,17 @@
 """Load's field at Files' foot, and what loading a board's text does (D-206).
 
-The field holds what is pasted or typed into it. On the web the page's own text field takes the
-keys and the paste (`clipboard.py`); natively the editor hands it pygame's keys. Enter loads:
-the text gives a board (D-205), which goes on the open level as a win of another level does
-(`Board.adopt`, D-092), or the status line says why it does not. Pure Python, no pygame.
+The field, a `TextField`, holds what is pasted or typed into it. On the web the page's own text
+field takes the keys and the paste (`clipboard.py`); natively the editor hands it pygame's keys.
+Enter loads: the text gives a board (D-205), which goes on the open level as a win of another
+level does (`Board.adopt`, D-092), or the status line says why it does not. Pure Python, no
+pygame.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import replace
 
+from nektoids.editor.textfield import TextField
 from nektoids.graph import boardtext
 from nektoids.graph.board import Board
 
@@ -17,26 +19,9 @@ TAKEN = frozenset(boardtext.READ) | frozenset(boardtext.IGNORED)  # what the fie
 LONGEST = 400  # characters, far more than any board's text
 
 
-@dataclass
-class BoardField:
-    text: str = ""
-
-    def type(self, name: str, char: str) -> str | None:
-        """A key, by its pygame name and the character it types: one the field accepts is
-        added, Backspace takes one back; "enter" or "escape" when the field is done, else None."""
-        if name == "escape":
-            return "escape"
-        if name in ("return", "enter"):
-            return "enter"
-        if name == "backspace":
-            self.text = self.text[:-1]
-        elif len(char) == 1 and char in TAKEN:
-            self.paste(char)
-        return None
-
-    def paste(self, text: str) -> None:
-        """Text pasted in: what the field accepts of it, up to LONGEST characters in all."""
-        self.text = (self.text + "".join(c for c in text if c in TAKEN))[:LONGEST]
+def board_field() -> TextField:
+    """Load's field: a board's characters, LONGEST of them at most (`textfield.py`)."""
+    return TextField(taken=TAKEN, longest=LONGEST)
 
 
 def load(board: Board, text: str) -> tuple[bool, str]:

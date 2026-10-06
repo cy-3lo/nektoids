@@ -8,9 +8,9 @@ of the mouse wheel, and `frame_update` once a frame; it gives `_relayout` (its l
 another drawer open, scrolled as `scrolls` says), and may give `_slid` (what follows the main
 screen when a drawer opens or folds), `_cancel` (a gesture under way ends) and `_refuse` (says
 why not).
-What the player asks of `main.py` is left in `request` ("run", "edit", "tutorial"), `chosen`
-(a place picked in Chapters) or `asked_hint` (a row of Hints), which `main.py` clears. Pure
-Python, no pygame.
+What the player asks of `main.py` is left in `request` ("run", "edit", "make", "tutorial"), `chosen`
+(a place picked in Chapters), `asked_fold` (a chapter's title clicked there) or `asked_hint` (a
+row of Hints), which `main.py` clears. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -22,12 +22,14 @@ from nektoids.editor.hints import HintView
 from nektoids.editor.layout import (
     PASSKEY_KEY,
     SCROLL_STEP,
+    TAB_KEYS,
     Drawer,
     Layout,
     Setting,
     chapter_row_at,
     contains,
     drawer_button_at,
+    group_at,
     hint_row_at,
     info_at,
     level_button_at,
@@ -38,14 +40,16 @@ from nektoids.editor.layout import (
     scroll_for,
     setting_row_at,
     tab_at,
+    tab_beside,
 )
+from nektoids.editor.palette import LIT
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Kind
 from nektoids.levels.level import PASSKEY_LENGTH
 
-LEAVE = {"editor": "edit", "run": "run"}  # what a tab asks for: the screen it names
+LEAVE = {"editor": "edit", "run": "run", "maker": "make"}  # what a tab asks for: its screen
 WARM_FRAMES = 18  # after a tooltip, the next one shows at once for this long: 0.3 s [frames]
 
 
@@ -55,21 +59,27 @@ class Frame:
     def _start_frame(self, layout: Layout, settings: Settings | None) -> None:
         self.layout = layout
         self.settings = settings if settings is not None else Settings()  # the session's
-        self.request: str | None = None  # "run", "edit" or "tutorial": main.py's to clear
+        self.request: str | None = None  # "run", "edit", "make", "tutorial": main.py's to clear
         self.chosen: int | None = None  # a place picked in Chapters: main.py's to clear
         self.chapters: tuple[ChapterRow, ...] = ()  # what Chapters shows; main.py's
+        self.shut: frozenset[str] = frozenset()  # ... the chapters it shows closed; main.py's
+        self.asked_fold: str | None = None  # a chapter's title clicked: main.py's to fold and clear
         self.info: object | None = None  # the row whose info box is open: a part, a tool...
         self.entry: Entry | None = None  # ... a part's, at work in its own circuit (D-082)
-        self.tip_target: object | None = None  # the bar's icon, or the other tab, under the mouse
+        self.tip_target: object | None = None  # the bar's icon, or another tab, under the mouse
         self.tip_frames = 0  # how long it has been there
         self.tip_warm = 0  # a tooltip showed lately: the next shows at once, for so long [frames]
         self.message = ""  # the last refusal, until something succeeds
         self.lit: frozenset[str] = frozenset()  # what a tutorial step explains (D-050); main.py's
+        self.lit_ink = LIT  # ... the colour it is drawn in now, pulsing (D-337); main.py's
         self.gate: Callable[[Action], bool] | None = None  # what it lets through; main.py's
         self.typing: str | None = None  # a passkey being typed in Chapters; None: not (D-075)
         self.asked_passkey: str | None = None  # a passkey typed: main.py's to try and clear
         self.said = ""  # what that passkey opened, in the status line until the next click
         self.hints: HintView | None = None  # what Hints shows; None, the level has none; main.py's
+        self.tutored = (
+            False  # the open level has a tutorial, Settings' to replay (D-334); main.py's
+        )
         self.asked_hint: int | None = None  # a row of Hints clicked: main.py's to take and clear
         self.scrolls: dict[Drawer, int] = {}  # how far each drawer's rows are scrolled [px]
         self.scrolling = False  # a drawer's scroll bar held: its rows follow the mouse
@@ -77,7 +87,7 @@ class Frame:
     @property
     def tooltip(self) -> object | None:
         """What a tooltip names now, once the mouse has rested on it long enough: an icon of the
-        bar, the other tab, or what the scene adds (`_tip_target`)."""
+        bar, another tab, or what the scene adds (`_tip_target`)."""
         return self.tip_target if self.tip_frames >= self.settings.tooltip_frames else None
 
     def frame_update(self) -> None:
@@ -153,6 +163,10 @@ class Frame:
         if hint is not None:
             self._take_hint(hint.index)
             return True
+        title = group_at(self.layout, pos) if self.layout.drawer is Drawer.CHAPTERS else None
+        if title is not None:  # a chapter folds or shows again, in every tab (D-326)
+            self.asked_fold = title
+            return True
         place = chapter_row_at(self.layout, pos)
         if place is not None:
             self._choose_place(place)
@@ -162,6 +176,23 @@ class Frame:
             self._set(setting)
             return True
         return False
+
+    def tab_key(self, name: str) -> bool:
+        """F1, F2 or F3, by pygame's name for the key: its tab, Run, Editor or the Maker, as a
+        click on it (D-303); off the sandbox, F3 says where the Maker is. False for any other."""
+        tab = next((tab for tab, key in TAB_KEYS.items() if key.lower() == name), None)
+        if tab is None:
+            return False
+        if tab not in dict(self.layout.tabs):
+            self._refuse("the Maker opens from Chapters: Open Maker")
+        elif tab != self.layout.env.value:
+            self._ask(LEAVE[tab])
+        return True
+
+    def next_tab(self, back: bool = False) -> None:
+        """Tab: the next tab, Run, Editor, then the Maker on the sandbox, round to the first;
+        Shift+Tab, the one before (D-304). As a click on it, so a tutorial's step may hold it."""
+        self._ask(LEAVE[tab_beside(self.layout, back)])
 
     def start_passkey(self, typed: str) -> bool:
         """P with Chapters open: a passkey to type, not Parts (D-075); False for any other key."""
@@ -210,6 +241,19 @@ class Frame:
             self.hints = hints
             self.layout = self._relayout(self.layout.drawer)
 
+    def set_chapters(self, rows: tuple[ChapterRow, ...], shut: frozenset[str]) -> None:
+        """What Chapters shows, and the chapters it shows closed (D-326); the drawer is laid out
+        again if those changed."""
+        self.chapters = rows
+        if shut != self.shut:
+            self.shut = shut
+            self.layout = self._relayout(self.layout.drawer)
+
+    def _folded(self, drawer: Drawer | None, own: set[str] | None = None) -> frozenset[str]:
+        """The groups `drawer` shows closed: in Chapters, the chapters, as main.py says; in any
+        other, the scene's `own`."""
+        return self.shut if drawer is Drawer.CHAPTERS else frozenset(own or ())
+
     def _hint_layout(self) -> dict:
         """What `make_layout` needs of the hints shown: the lines under each row, the picture."""
         if self.hints is None:
@@ -233,13 +277,16 @@ class Frame:
             self.chosen = index
 
     def _set(self, setting: Setting) -> None:
-        """A row of Settings: each choice in turn, or Fear's tutorial again (D-054)."""
+        """A row of Settings: each choice in turn, or the open level's tutorial again (D-054,
+        D-334)."""
         if setting is Setting.FAST:
             self.settings.next_fast()
         elif setting is Setting.HINTS:
             self.settings.toggle_hints()
-        elif setting is Setting.TUTORIAL:
+        elif setting is Setting.TUTORIAL and self.tutored:
             self._ask("tutorial")
+        elif setting is Setting.TUTORIAL:
+            self._refuse("this level has no tutorial")
         else:
             self._refuse("there is no sound yet")
 
@@ -262,7 +309,7 @@ class Frame:
         raise NotImplementedError
 
     def _tip_target(self, pos: tuple[int, int]) -> object | None:
-        """What a tooltip would name under `pos`: the bar's icon, the other tab; a scene may add
+        """What a tooltip would name under `pos`: the bar's icon, another tab; a scene may add
         its own, as the editor adds the Wheel's icons (D-069)."""
         return palette_target_at(self.layout, pos)
 

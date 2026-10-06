@@ -5,7 +5,8 @@ from itertools import pairwise
 
 import pytest
 
-from nektoids.editor.layout import BAR_WIDTH, DRAWER_WIDTH, Drawer, Tool, make_layout
+from nektoids.editor.layout import BAR_WIDTH, DRAWER_WIDTH, Drawer, Piece, Tool, make_layout
+from nektoids.editor.objects import KEYS
 from nektoids.editor.wheel import (
     ACTIONS,
     ICON,
@@ -32,7 +33,7 @@ from nektoids.levels.arenas import arenas, sandbox
 
 SIZE = 40.0
 CENTRE = (628.0, 335.0)
-FEAR = arenas()[0]
+FEAR = next(level for level in arenas() if level.title == "Fear")
 
 
 def test_an_empty_cell_offers_the_parts_left_and_a_part_its_actions():
@@ -72,8 +73,10 @@ def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
 
 
 def test_up_to_five_icons_sit_beyond_the_cells_corners_the_gap_at_the_foot():
-    assert angles(1) == [90.0] and angles(2) == [150.0, 30.0]  # the top, or each side of it
-    assert angles(4) == [210.0, 150.0, 30.0, -30.0]
+    assert angles(1) == [90.0] and angles(2) == [150.0, 90.0]  # side by side, no gap (D-316)
+    assert angles(4) == [210.0, 150.0, 90.0, 30.0]  # a Source's actions: none left empty
+    for n in range(1, ON_RIM + 1):
+        assert all(b - a == -60.0 for a, b in zip(angles(n), angles(n)[1:], strict=False))
     assert angles(ON_RIM) == [210.0, 150.0, 90.0, 30.0, -30.0]  # the corners but the lowest
     for n in range(ON_RIM + 1):
         assert len(angles(n)) == n and all(a % 60.0 == 30.0 for a in angles(n))  # corners
@@ -184,3 +187,12 @@ def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
                 assert slot.at[1] - r >= y
             lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + r for slot in wheel])
             assert lowest + LINE_BELOW + line <= y + h
+
+
+def test_the_wheel_takes_the_makers_keys_for_its_own_icons():
+    items = (Piece.LIGHT, Piece.OBSTACLE)  # an empty point of the plane (D-301)
+    shown = slots(items, (100.0, 100.0), WHEEL_HEX, frozenset(), keys=KEYS)
+    assert [(s.what, s.key) for s in shown] == [(Piece.LIGHT, "1"), (Piece.OBSTACLE, "2")]
+    assert [s.at for s in shown] == [
+        s.at for s in slots(list(Kind)[:2], (100.0, 100.0), WHEEL_HEX, frozenset(Kind))
+    ]

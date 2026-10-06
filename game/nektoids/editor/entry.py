@@ -28,6 +28,7 @@ from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
 from nektoids.editor.layout import Rect, View, fitted_view
 from nektoids.editor.marks import (
+    FADE,
     FLAME_LIFE,
     FLAME_SPECKS,
     FLAME_SPREAD,
@@ -46,8 +47,8 @@ ENTRY_AREA: Rect = (0, 0, 420, 140)  # the circuit, in the box's own frame [px]
 MARGIN = 0.6  # round the circuit and its specks, in its area [hex sizes]
 SETTLE = 0.25  # [s] run before it shows, so that it opens at its steady rates
 EYE_LOW, EYE_HIGH, EYE_PERIOD = 0.2, 0.9, 10.0  # the Eye's own reading, rising and falling [s]
-REACH = 1.8  # [hex sizes] how far out the light comes from, and the flames go
-STREAMS = 400  # the entry's streams in the specks' table, after the swimmer's and the sparks'
+REACH = 1.8  # [hex sizes] how far out the light comes from, and the flames go, at most
+STREAMS = 400  # the entry's streams in the specks' table, after the swimmer's
 OUTWARDS = W  # every eye and thruster faces left: the eye's face, the thruster's back, outwards
 ZONE = [(q, r) for q in range(-6, 6) for r in range(-2, 3)]  # room for every route
 
@@ -140,8 +141,10 @@ class Entry:
         found = []
         for k, i in enumerate(self.circuit.net.eyes):
             share = float(self.y[i]) / RATE_MAX
-            u, across = SPECKS.stream(INTAKE_SPECKS * share, self.frame, INTAKE_LIFE, STREAMS + k)
-            found += self._off_face(int(i), middle, half, 1.0 - u, across, INTAKE_SPREAD, 1.0)
+            _, left, across = SPECKS.stream(
+                INTAKE_SPECKS * share, self.frame, INTAKE_LIFE, STREAMS + k, FADE
+            )
+            found += self._off_face(int(i), middle, half, left, across, INTAKE_SPREAD, 1.0)
         return found
 
     def flames(self) -> list[Point]:
@@ -152,18 +155,21 @@ class Entry:
         for k, i in enumerate(self.circuit.net.thrusters):
             rate = float(self.y[i]) / RATE_MAX
             stream = STREAMS + 8 + k
-            u, across = SPECKS.stream(FLAME_SPECKS * rate, self.frame, FLAME_LIFE, stream)
-            found += self._off_face(int(i), middle, half, u, across, FLAME_SPREAD, -1.0)
+            gone, _, across = SPECKS.stream(
+                FLAME_SPECKS * rate, self.frame, FLAME_LIFE, stream, FADE
+            )
+            found += self._off_face(int(i), middle, half, gone, across, FLAME_SPREAD, -1.0)
         return found
 
     def _off_face(self, i, middle, half, along, across, spread, way) -> list[Point]:
         """Specks off node i's face, `middle` hex sizes along its axis and `half` wide: `along`
-        in [0, 1] of REACH out of it, ahead of the part if `way` is +1, behind it if -1; `across`
-        in [-1, 1], widening by `spread` [rad] either side."""
+        out of it in units of the stream's length, REACH / (1 + FADE), so that the farthest
+        speck is REACH out; ahead of the part if `way` is +1, behind it if -1; `across` in
+        [-1, 1], widening by `spread` [rad] either side."""
         size = self.circuit.view.size
         cx, cy = self.circuit.centre(i)
         ax, ay = AHEAD
-        out = along * REACH * size
+        out = along * REACH / (1.0 + FADE) * size
         wide = across * (half * size + out * math.tan(spread))
         x = cx + ax * middle * size + way * ax * out - ay * wide
         y = cy + ay * middle * size + way * ay * out + ax * wide

@@ -12,40 +12,58 @@ from nektoids.editor.layout import (
     DRAWER_WIDTH,
     DRAWERS,
     EDIT_KEYS,
+    FIELD_PAD,
     FOOT,
     FOOT_MARGIN,
     HEX_SIZE,
     HINT_LINE,
     LEVEL_KEYS,
+    MAKER_VIEWS,
     MAX_HEX,
+    MENU_GROUPS,
     MIN_HEX,
     MODE_KEY,
     PALETTE_TOOLS,
     RUN_VIEWS,
     SCREEN,
+    SPEC_LINES,
+    TAB_KEYS,
     TABS_HEIGHT,
     TOOL_KEYS,
     TURNS,
     VIEW_KEYS,
     WHEEL_HEIGHT,
+    BoardButton,
+    Brief,
     Drawer,
     EditButton,
     Env,
     FileButton,
     Goal,
+    GoalButton,
     HintRow,
+    Knob,
     LevelButton,
+    MadeGoal,
     MainView,
     Mode,
+    Piece,
     Setting,
     Shown,
+    Start,
+    Stepper,
     Tool,
     View,
     ViewButton,
     action_at,
+    along,
+    bin_at,
+    bin_rect,
+    board_button_at,
     board_extent,
     board_field_at,
     board_view_of,
+    brief_field_at,
     cell_at,
     centred_on,
     centred_view,
@@ -55,12 +73,15 @@ from nektoids.editor.layout import (
     drawer_key,
     edit_button_at,
     file_button_at,
+    goal_button_at,
     goal_row_at,
     group_at,
     hint_row_at,
     info_at,
     kept_on_board,
+    knob_at,
     level_button_at,
+    level_field_at,
     level_of,
     main_view_for,
     make_layout,
@@ -73,17 +94,25 @@ from nektoids.editor.layout import (
     palette_target_at,
     pan,
     passkey_at,
+    piece_row_at,
     scroll_bar_at,
     scroll_for,
     scroll_thumb,
     setting_row_at,
     shown_frame,
+    slider_parts,
+    start_row_at,
+    step_buttons,
+    stepper_at,
     tab_at,
+    tab_beside,
+    tab_key_to,
     value_at,
     view_button_at,
     visible_cells,
     wheel_fold_at,
     win_row_at,
+    word_at,
     zoom,
     zoom_bar_at,
     zoom_button_at,
@@ -91,6 +120,7 @@ from nektoids.editor.layout import (
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import hex_disc, to_pixel
 from nektoids.levels.arenas import arenas
+from nektoids.levels.objectives import Count, Target, Verb
 from nektoids.levels.sandbox import free_board, tutorial_board
 
 LAYOUT = make_layout()  # Parts open, every part handed out, the cell under the list
@@ -224,8 +254,8 @@ def _inside(rect, area):
     return ax <= x and x + w <= ax + aw and ay <= y and y + h <= ay + ah
 
 
-MOST = {  # each drawer with the most it may show: 7 levels, 3 objectives, every hint taken
-    "chapter": 7,
+MOST = {  # each drawer with the most it may show: 16 levels, 3 objectives, every hint taken
+    "chapters": (("Chapter 0", 6), ("Chapter 1", 4), ("Chapter 2", 3), ("Chapter 3", 3)),
     "hint_lines": (2, 2, 0),
     "shadow": True,
     "files": (("1.7", 5), ("1.6", 5), ("1.5", 5)),
@@ -256,15 +286,18 @@ def test_every_drawers_rows_show_within_it_scrolled_into_view_if_they_do_not_fit
         assert (first.scroll_bar is None) == (first.scroll_max == 0), drawer
 
 
+SEVEN = (("Chapter 1", 7),)  # a chapter of seven levels
+
+
 def test_chapters_scrolls_in_the_run_and_its_rows_answer_only_where_they_show():
-    chapters = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapter=7)
+    chapters = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapters=SEVEN)
     assert chapters.scroll_max > 0 and scroll_bar_at(chapters, centre(chapters.scroll_bar))
     _, ly, _, lh = chapters.list_area
     hidden = [k for k, (_, y, _, h) in chapters.chapter_rows if y + h // 2 >= ly + lh]
     assert hidden and not passkey_at(chapters, centre(chapters.passkey_field))
     sandbox = dict(chapters.chapter_rows)[hidden[-1]]
     assert chapter_row_at(chapters, centre(sandbox)) is None  # out of sight, it does not answer
-    end = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapter=7, scroll=10_000)
+    end = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapters=SEVEN, scroll=10_000)
     assert end.scroll == chapters.scroll_max
     assert chapter_row_at(end, centre(dict(end.chapter_rows)[hidden[-1]])) == hidden[-1]
     assert passkey_at(end, centre(end.passkey_field))
@@ -274,8 +307,8 @@ def test_chapters_scrolls_in_the_run_and_its_rows_answer_only_where_they_show():
     assert info_at(end, centre(disc)) == Goal(0)
 
 
-def test_the_first_levels_parts_fit_with_the_cell_open_so_a_steps_rows_would_show():
-    for level in arenas()[:2]:  # Fear and Aggression, whose old tutorials showed Parts' rows
+def test_a_tutored_levels_parts_fit_with_the_cell_open_so_a_steps_rows_would_show():
+    for level in (level for level in arenas() if level.tutorial is not None):  # D-335
         board = level.new_board()
         kinds = frozenset(kind for kind in Kind if board.total(kind) != 0)
         assert make_layout(kinds=kinds).scroll_max == 0, level.title
@@ -300,8 +333,8 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
 
 
 def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_atop():
-    tools = make_layout(Drawer.TOOLS)  # D-068: first in the bar
-    assert DRAWERS[Env.EDITOR][0] is Drawer.TOOLS
+    tools = make_layout(Drawer.TOOLS)  # D-068: second in the bar, Parts first (D-321)
+    assert DRAWERS[Env.EDITOR][:2] == (Drawer.PARTS, Drawer.TOOLS)
     assert [title for title, _ in tools.section_titles] == ["Mode", "Edit"]
     rows = [*tools.mode_buttons, *tools.edit_buttons]
     assert [b for b, _ in rows] == [Mode.WRITE, Mode.DELETE, EditButton.UNDO, EditButton.REDO]
@@ -383,7 +416,7 @@ def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
 
 def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_environment():
     # D-069: a letter may mean one thing in the editor and another in the run, never two in one
-    assert set(DRAWER_KEYS) == {*DRAWERS[Env.EDITOR], *DRAWERS[Env.RUN], *FOOT} == set(Drawer)
+    assert set(DRAWER_KEYS) == {*(d for env in Env for d in DRAWERS[env]), *FOOT} == set(Drawer)
     for drawer, key in DRAWER_KEYS.items():
         named = Drawer.INSIDE  # shown as Diagnostic in the run: D, as the editor's (D-089)
         assert key == drawer.value[0].upper() or drawer in (Drawer.HINTS, named, *FOOT[1:])
@@ -391,7 +424,11 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
     editor = [*(TOOL_KEYS[t] for t in PALETTE_TOOLS), *views, MODE_KEY, LEVEL_KEYS[LevelButton.RUN]]
     editor += [DRAWER_KEYS[d] for d in (*DRAWERS[Env.EDITOR], *FOOT)]
     run = [*BUTTON_KEYS.values(), *(DRAWER_KEYS[d] for d in (*DRAWERS[Env.RUN], *FOOT))]
-    for keys in (editor, run):
+    maker = [TOOL_KEYS[t] for t in (Tool.MOVE, Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.LESS)]
+    maker += [TOOL_KEYS[Tool.MORE], TOOL_KEYS[Tool.DELETE], "1", "2", LEVEL_KEYS[LevelButton.RUN]]
+    maker += [VIEW_KEYS[b] for b in (*MAKER_VIEWS, ViewButton.ZOOM_IN, ViewButton.ZOOM_OUT)]
+    maker += [VIEW_KEYS[ViewButton.CENTRE], *(DRAWER_KEYS[d] for d in (*DRAWERS[Env.MAKER], *FOOT))]
+    for keys in (editor, run, maker):  # the Maker's: D-301
         assert len(set(keys)) == len(keys)
     assert drawer_key(Env.EDITOR, "F") is Drawer.FILES and drawer_key(Env.RUN, "F") is None
     assert drawer_key(Env.RUN, "S") is Drawer.SCORE and drawer_key(Env.EDITOR, "S") is None
@@ -413,8 +450,8 @@ def test_hints_settings_chapters_and_the_run_switch_sit_at_the_bars_foot_with_th
     assert level_button_at(LAYOUT, centre(switch)) is run
     assert palette_target_at(LAYOUT, centre(switch)) is run
     assert contains(LAYOUT.bar_area, switch[:2])
-    assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Esc"}
-    assert [DRAWER_KEYS[d] for d in FOOT] == ["?", ",", "Tab"]
+    assert LEVEL_KEYS == {LevelButton.RUN: "Space", LevelButton.EDIT: "Tab"}  # D-304
+    assert [DRAWER_KEYS[d] for d in FOOT] == ["?", ",", "Esc"]
     assert [name for name, _ in LAYOUT.tabs] == ["run", "editor"]  # Run first (D-069)
     for name, rect in LAYOUT.tabs:
         assert tab_at(LAYOUT, centre(rect)) == name
@@ -452,7 +489,7 @@ def test_the_menu_shows_only_the_parts_the_level_hands_out_and_no_empty_group():
 
 
 def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_section():
-    chapters = make_layout(Drawer.CHAPTERS, chapter=3)
+    chapters = make_layout(Drawer.CHAPTERS, chapters=(("Chapter 1", 3),))
     assert [k for k, _ in chapters.chapter_rows] == [0, 1, 2, 3]  # the sandbox last
     settings = make_layout(Drawer.SETTINGS)
     assert [what for what, _ in settings.setting_rows] == list(Setting)
@@ -624,3 +661,233 @@ def test_the_editor_opens_a_zone_clear_of_the_action_atop_the_board():
     big = opening_view(layout, hex_disc(3))  # the sandbox's (D-102)
     _, y, _, h = layout.board_area
     assert big.size < HEX_SIZE and big.origin[1] - 5.5 * big.size >= y + ACTION_ROOM - 1e-9
+
+
+def test_the_sandbox_has_a_third_tab_the_maker_with_its_own_drawers_and_switch_to_the_run():
+    for env in Env:  # D-301: every environment of the sandbox shows the three tabs
+        layout = make_layout(None, env=env, maker=True)
+        assert [name for name, _ in layout.tabs] == ["run", "editor", "maker"]
+        assert [TAB_KEYS[name] for name, _ in layout.tabs] == ["F1", "F2", "F3"]  # D-303
+        for name, rect in layout.tabs:
+            assert tab_at(layout, centre(rect)) == name and rect[1] + rect[3] == TABS_HEIGHT
+    assert [name for name, _ in make_layout(None, env=Env.RUN).tabs] == ["run", "editor"]
+    maker = make_layout(Drawer.NAVIGATOR, env=Env.MAKER, maker=True)
+    objects = [Drawer.OBJECTS, Drawer.PARTS, Drawer.GOALS, Drawer.TEXT, Drawer.FILES]
+    objects += [Drawer.NAVIGATOR]
+    assert maker.maker and [d for d, _ in maker.drawer_buttons] == [*objects, *FOOT]
+    assert [b for b, _ in maker.level_buttons] == [LevelButton.RUN]  # Space runs it
+    assert [b for b, _ in maker.view_buttons] == [ViewButton.RAYS]
+    assert maker.overview is not None and maker.zoom_bar is not None
+    assert maker.controls_area is None and maker.action_at is not None  # the plane, D-314
+    assert maker.board_area[1] + maker.board_area[3] == maker.status_at[1] - 6
+    tabs = dict(maker.tabs)
+    assert palette_target_at(maker, centre(tabs["run"])) == "run"
+    assert palette_target_at(maker, centre(tabs["maker"])) is None  # this one
+    assert drawer_key(Env.MAKER, "N") is Drawer.NAVIGATOR and drawer_key(Env.MAKER, "W") is None
+    assert drawer_key(Env.MAKER, "O") is Drawer.OBJECTS and drawer_key(Env.EDITOR, "O") is None
+
+
+def test_objects_lists_the_planes_objects_then_undo_and_redo_over_the_wheel_as_tools_does():
+    layout = make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True)  # D-301
+    pieces = [Piece.LIGHT, Piece.OBSTACLE, Piece.MARK, Piece.START]  # D-306
+    assert [p for p, _ in layout.piece_rows] == pieces
+    assert [b for b, _ in layout.edit_buttons] == [EditButton.UNDO, EditButton.REDO]
+    assert [t for t, _ in layout.section_titles] == ["Plane"]  # Undo and Redo need none
+    assert layout.scroll_max == 0  # all of them over the Wheel, no scroll bar
+    lowest = max(r[1] + r[3] for _, r in (*layout.piece_rows, *layout.edit_buttons))
+    assert layout.wheel_view is not None and lowest < layout.wheel_fold[1]  # all over the Wheel
+    for piece, rect in layout.piece_rows:
+        assert piece_row_at(layout, centre(rect)) is piece and contains(
+            layout.drawer_area, rect[:2]
+        )
+    assert piece_row_at(layout, centre(layout.board_area)) is None
+    folded = make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True, wheel_folded=True)
+    assert folded.wheel_view is None and folded.wheel_fold[1] > layout.wheel_fold[1]
+    assert make_layout(Drawer.TOOLS).piece_rows == ()
+
+
+def test_tab_goes_round_the_tabs_and_their_tooltips_name_tab_or_shift_tab_to_reach_them():
+    level = {env: make_layout(None, env=env) for env in (Env.RUN, Env.EDITOR)}  # D-304
+    assert tab_beside(level[Env.RUN]) == tab_beside(level[Env.RUN], back=True) == "editor"
+    assert tab_beside(level[Env.EDITOR]) == "run"
+    assert (
+        tab_key_to(level[Env.RUN], "editor") == "Tab" and tab_key_to(level[Env.RUN], "run") is None
+    )
+    sandbox = {env: make_layout(None, env=env, maker=True) for env in Env}
+    assert [tab_beside(sandbox[e]) for e in (Env.RUN, Env.EDITOR, Env.MAKER)] == [
+        "editor",
+        "maker",
+        "run",
+    ]
+    assert tab_beside(sandbox[Env.RUN], back=True) == "maker"
+    assert tab_key_to(sandbox[Env.EDITOR], "maker") == "Tab"
+    assert tab_key_to(sandbox[Env.EDITOR], "run") == "Shift+Tab"
+
+
+def test_text_holds_the_title_a_row_high_the_spec_taller_then_the_author_under_their_labels():
+    layout = make_layout(Drawer.TEXT, env=Env.MAKER, maker=True)  # D-305, D-331
+    (title, high), (spec, tall), (author, low) = layout.brief_fields
+    assert (title, spec, author) == (Brief.TITLE, Brief.SPEC, Brief.AUTHOR)
+    assert [t for t, _ in layout.section_titles] == ["Title", "Spec", "Author"]
+    assert high[3] == make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True).piece_rows[0][1][3]
+    assert tall[3] == SPEC_LINES * HINT_LINE + 2 * FIELD_PAD and tall[1] > high[1] + high[3]
+    assert low[3] == high[3] and low[1] > tall[1] + tall[3]
+    for field, rect in layout.brief_fields:
+        assert brief_field_at(layout, centre(rect)) is field and contains(
+            layout.drawer_area, rect[:2]
+        )
+    assert brief_field_at(layout, centre(layout.board_area)) is None
+    assert drawer_key(Env.MAKER, "T") is Drawer.TEXT and drawer_key(Env.EDITOR, "T") is Drawer.TOOLS
+
+
+def test_goals_shows_the_time_then_each_goals_name_over_its_words_and_a_slider_for_a_setting():
+    two = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, made=(True, False))  # D-308
+    assert [t for t, _ in two.section_titles] == ["Time allowed"]  # the names title the goals
+    assert [k for k, _ in two.knobs] == [Knob(None), Knob(0)]  # the second goal takes none
+    assert [h for h, _ in two.goal_heads] == [MadeGoal(0), MadeGoal(1)] and not two.goal_buttons
+    words = [w.word for w, _ in two.goal_words if w.goal == 0]
+    assert words == [*Verb, *Count, *Target] and len(two.goal_words) == 18
+    tops = sorted({rect[1] for w, rect in two.goal_words if w.goal == 0})
+    assert len(tops) == 3  # a row each: the verbs, how many, the targets
+    for top in tops:  # each row fills the drawer's width, its buttons apart
+        row = sorted(rect for _, rect in two.goal_words if rect[1] == top)
+        assert row[0][0] == two.goal_heads[0][1][0] and row[-1][0] + row[-1][2] == 284
+        assert all(a[0] + a[2] < b[0] for a, b in zip(row, row[1:], strict=False))
+    assert two.scroll_max == 0  # two goals and their settings fit, unscrolled
+    one = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, made=(False,), addable=True)
+    assert [b for b, _ in one.goal_buttons] == [GoalButton.ADD]
+    none = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, addable=True)
+    assert not none.goal_heads and [b for b, _ in none.goal_buttons] == [GoalButton.ADD]
+    assert drawer_key(Env.MAKER, "G") is Drawer.GOALS and drawer_key(Env.EDITOR, "G") is None
+
+
+def test_goals_finds_a_word_a_bin_add_and_a_sliders_track_apart_from_its_value():
+    layout = make_layout(Drawer.GOALS, env=Env.MAKER, maker=True, made=(True,), addable=True)
+    for word, rect in layout.goal_words:
+        assert word_at(layout, centre(rect)) == word and bin_at(layout, centre(rect)) is None
+    head = layout.goal_heads[0][1]
+    assert bin_at(layout, centre(bin_rect(head))) == 0 and bin_at(layout, head[:2]) is None
+    assert word_at(layout, (head[0] + 1, head[1] + 1)) is None  # the name: no word
+    add = layout.goal_buttons[0][1]
+    assert goal_button_at(layout, centre(add)) is GoalButton.ADD
+    knob, rect = layout.knobs[1]
+    label, track, value = slider_parts(rect)
+    assert knob_at(layout, centre(track)) == (knob, False)
+    assert knob_at(layout, centre(value)) == (knob, True)  # its box: typed, not dragged
+    assert label[0] < track[0] < track[0] + track[2] < value[0]
+    assert along(track, track[0] - 9) == 0.0 and along(track, track[0] + track[2] + 9) == 1.0
+    assert along(track, track[0] + track[2] / 2) == 0.5
+    assert word_at(layout, centre(layout.board_area)) is None
+
+
+def test_the_makers_files_holds_copy_the_level_then_a_field_to_paste_one_into():
+    layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True)  # D-310
+    assert [t for t, _ in layout.section_titles] == ["Save/Load"]  # Start from: no title, D-322
+    (button, row), (share, under), field = *layout.file_buttons, layout.level_field
+    assert (button, share) == (FileButton.LEVEL, FileButton.SHARE)  # D-320: Share level
+    note = layout.share_note  # under Copy and Paste, its line under it (D-321)
+    assert field[1] + field[3] <= under[1] and under[1] + under[3] <= note[1]
+    assert field[1] > row[1] + row[3] and field[3] == row[3] and not layout.win_rows
+    assert level_field_at(layout, centre(field)) and not level_field_at(layout, centre(row))
+    assert file_button_at(layout, centre(row)) is FileButton.LEVEL
+    assert layout.board_field is None  # the board's, the editor's alone
+    editor = make_layout(Drawer.FILES, env=Env.EDITOR)
+    assert editor.level_field is None and editor.board_field is not None
+    assert drawer_key(Env.MAKER, "F") is Drawer.FILES
+
+
+def test_start_from_lists_a_blank_plane_then_every_shipped_level_under_the_paste_field():
+    chapters = (("Chapter 1", 8),)  # D-310; the sandbox's plane no longer among them (D-342)
+    layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8, chapters=chapters)
+    starts = [s for s, _ in layout.start_rows]
+    assert starts == [Start(None), *(Start(k) for k in range(8))]
+    assert layout.start_rows[0][1][1] > layout.level_field[1] + layout.level_field[3]
+    assert layout.scroll_max > 0  # the nine and Save/Load run past the foot: it scrolls (D-096)
+    for start, rect in layout.start_rows:
+        shown = contains(layout.list_area, centre(rect))
+        assert start_row_at(layout, centre(rect)) == (start if shown else None)
+    assert start_row_at(layout, centre(layout.level_field)) is None
+
+
+def test_the_makers_parts_gives_the_board_size_then_each_part_a_row_with_minus_and_plus():
+    layout = make_layout(Drawer.PARTS, env=Env.MAKER, maker=True)  # D-315
+    assert [t for t, _ in layout.section_titles] == ["Board"]
+    assert [t for t, _ in layout.group_titles] == ["Sensors", "Actuators", "Operators"]
+    order = [k for _, kinds in MENU_GROUPS for k in kinds]  # as the Editor's Parts groups them
+    assert [s for s, _ in layout.steppers] == [Stepper(None), *(Stepper(k) for k in order)]
+    assert not layout.menu_items and layout.scroll_max == 0  # not the Editor's, and it fits
+    for what, row in layout.steppers:
+        minus, plus = step_buttons(row)
+        assert row[0] < minus[0] < plus[0] and plus[0] + plus[2] < row[0] + row[2]
+        assert stepper_at(layout, centre(minus)) == (what, -1)
+        assert stepper_at(layout, centre(plus)) == (what, 1)
+        assert stepper_at(layout, (row[0] + 30, row[1] + 20)) is None  # its name: nothing
+    assert drawer_key(Env.MAKER, "P") is Drawer.PARTS
+    shut = make_layout(Drawer.PARTS, frozenset({"Operators"}), env=Env.MAKER, maker=True)
+    unfolded = [k for title, kinds in MENU_GROUPS if title != "Operators" for k in kinds]
+    assert [s.kind for s, _ in shut.steppers] == [None, *unfolded]  # the operators folded
+    assert group_at(shut, centre(shut.group_titles[2][1])) == "Operators"
+
+
+def test_lock_is_a_mode_of_the_sandboxs_tools_alone():
+    sandbox = make_layout(Drawer.TOOLS, maker=True)  # D-319
+    assert [m for m, _ in sandbox.mode_buttons] == [Mode.WRITE, Mode.DELETE, Mode.LOCK]
+    assert [m for m, _ in make_layout(Drawer.TOOLS).mode_buttons] == [Mode.WRITE, Mode.DELETE]
+
+
+def test_tools_ends_with_erase_all_under_undo_and_redo():
+    tools = make_layout(Drawer.TOOLS)  # D-321
+    (button, rect), (_, redo) = tools.board_buttons[0], tools.edit_buttons[-1]
+    assert button is BoardButton.ERASE and rect[1] > redo[1]
+    assert board_button_at(tools, centre(rect)) is BoardButton.ERASE
+    assert not make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True).board_buttons  # Tools'
+
+
+def test_a_title_of_chapters_scrolled_under_the_objectives_is_still_the_lists():
+    chapters = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapters=SEVEN)  # D-333
+    _, top, _, room = chapters.list_area
+    under = [t for t, (_, y, _, _) in chapters.section_titles if y >= top + room]
+    assert "Passkey" in under  # scrolled down, under the list's area, as far as the objectives
+    assert [title for title, _ in chapters.foot_titles] == ["Objectives"]
+
+
+SHIPPED = (("Chapter 0", 0), ("Chapter 1", 4), ("Chapter 2", 1), ("Chapter 3", 3))
+
+
+def test_chapters_lists_each_chapter_with_levels_under_a_title_that_folds():
+    chapters = make_layout(Drawer.CHAPTERS, chapters=SHIPPED)  # D-326
+    titles = dict(chapters.group_titles)
+    assert list(titles) == ["Chapter 1", "Chapter 2", "Chapter 3"]  # none for an empty chapter
+    assert [k for k, _ in chapters.chapter_rows] == list(range(9))  # the sandbox last
+    for title, rect in titles.items():
+        assert group_at(chapters, centre(rect)) == title
+    shut = make_layout(Drawer.CHAPTERS, frozenset({"Chapter 1", "Chapter 3"}), chapters=SHIPPED)
+    assert [k for k, _ in shut.chapter_rows] == [4, 8] and shut.folded == {"Chapter 1", "Chapter 3"}
+    assert [title for title, _ in shut.group_titles] == list(titles)  # its titles stay
+    assert [title for title, _ in shut.section_titles] == ["Build your level", "Passkey"]  # D-341
+
+
+def test_start_from_is_a_list_of_its_own_under_a_rule_its_chapters_folding():
+    files = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8, chapters=SHIPPED)
+    rule, area = files.files_rule, files.list_area  # D-322, D-326
+    assert files.level_field[1] < files.share_note[1] < rule[1] < area[1]  # Save/Load stays above
+    titles = ["Chapter 1", "Chapter 2", "Chapter 3"]  # no sandbox's plane (D-342)
+    assert [t for t, _ in files.group_titles] == titles
+    assert [s.index for s, _ in files.start_rows] == [None, *range(8)]  # Blank level first
+    assert files.start_rows[0][1][1] >= area[1] and level_field_at(files, centre(files.level_field))
+    shut = make_layout(
+        Drawer.FILES,
+        frozenset({"Chapter 1", "Chapter 3"}),
+        env=Env.MAKER,
+        maker=True,
+        starts=8,
+        chapters=SHIPPED,
+    )
+    assert [s.index for s, _ in shut.start_rows] == [None, 4] and shut.scroll_max == 0
+
+
+def test_the_sandboxs_tools_fit_above_the_wheel_unscrolled():
+    tools = make_layout(Drawer.TOOLS, maker=True)  # Lock and Erase all with it (D-323)
+    assert tools.scroll_max == 0 and tools.scroll_bar is None
+    last = max(rect[1] + rect[3] for _, rect in (*tools.mode_buttons, *tools.board_buttons))
+    assert last <= tools.list_area[1] + tools.list_area[3] < tools.wheel_fold[1]

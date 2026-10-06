@@ -6,7 +6,8 @@ refuses `navigator.clipboard.readText`. So the page does it, with a few lines of
 in once at startup (`install`): Save writes the text with `navigator.clipboard.writeText` on a
 click; Load focuses a text field of the page's own, invisible, once the click is over, which
 Cmd/Ctrl+V pastes into and whose keys never reach the game; the editor reads it once a frame.
-Natively, `pygame.scrap` does both, and the editor hands the field pygame's keys.
+Natively, `pygame.scrap` does both, and the editor hands the field pygame's keys. The page's
+own F1 and F3, help and find, are stopped: they are the Run's and the Maker's tabs (D-303).
 """
 
 from __future__ import annotations
@@ -17,6 +18,9 @@ import sys
 WEB = sys.platform == "emscripten"
 
 PAGE = r"""
+window.addEventListener('keydown', function (e) {
+  if (e.key === 'F1' || e.key === 'F3') { e.preventDefault(); }  // the tabs', not help, find
+});
 window.nkCopy = function (text) {
   if (navigator.clipboard) { navigator.clipboard.writeText(text).catch(function () {}); }
 };
@@ -40,17 +44,20 @@ window.nkField = (function () {
     field.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); ended = 'enter'; }
       else if (e.key === 'Escape') { e.preventDefault(); ended = 'escape'; }
+      else if (e.key === 'Tab') { e.preventDefault(); }  // the focus stays in the field
     });
     document.body.appendChild(field);
   }
   return {
-    open: function () {
+    open: function (text, longest) {
       if (!field) { make(); }
-      field.value = ''; ended = '';
-      setTimeout(function () { field.focus(); }, 60);  // after the click, or Safari takes it back
+      field.value = text; field.maxLength = longest; ended = '';
+      setTimeout(function () {  // after the click, or Safari takes the focus back
+        field.focus(); field.selectionStart = field.selectionEnd = field.value.length; }, 60);
     },
     close: function () { if (field) { field.blur(); } },
     text: function () { return field ? field.value : ''; },
+    caret: function () { return field ? field.selectionStart : 0; },
     ended: function () { var was = ended; ended = ''; return was; }
   };
 })();
@@ -94,10 +101,11 @@ def paste() -> str:
         return ""
 
 
-def open_field() -> None:
-    """On the web, the page's field takes the keys, once the click is over."""
+def open_field(text: str, longest: int) -> None:
+    """On the web, the page's field takes the keys, once the click is over, holding `text`, the
+    caret after it, and no more than `longest` characters."""
     if WEB:
-        _page("nkField.open()")
+        _page(f"nkField.open({json.dumps(text)}, {int(longest)})")
 
 
 def close_field() -> None:
@@ -105,10 +113,10 @@ def close_field() -> None:
         _page("nkField.close()")
 
 
-def field() -> tuple[str, str | None]:
-    """On the web: what the page's field holds, and "enter" or "escape" if it was ended since
-    the last call, else None."""
+def field() -> tuple[str, int, str | None]:
+    """On the web: what the page's field holds, where its caret is, and "enter" or "escape" if
+    it was ended since the last call, else None."""
     if not WEB:
-        return "", None
+        return "", 0, None
     ended = str(_page("nkField.ended()"))
-    return str(_page("nkField.text()")), ended or None
+    return str(_page("nkField.text()")), int(_page("nkField.caret()")), ended or None

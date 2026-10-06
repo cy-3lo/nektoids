@@ -13,6 +13,7 @@ from nektoids.editor.palette import (
     BACKGROUND,
     BUTTON,
     DIM_TEXT,
+    GREYED,
     PANEL,
     RULE,
     TEXT,
@@ -26,9 +27,9 @@ INVITE = "Wire the eyes to the thrusters, then Run."  # the card's one instructi
 START = "Click, or press a key, to start."  # how either card goes
 CARD_MARGIN = 32  # a card's lines keep this far from its sides [px]
 THANKS = "Thank you for playing."
-REACH_OUT = (  # the brief's end screen, with the contact chosen for it (D-035)
+REACH_OUT = (  # the brief's end screen, with the contacts chosen for it (D-035, D-343)
     "If you liked this and want to support development, reach out:",
-    "leave a comment on the itch.io page.",
+    "leave a comment on the itch.io page or at contact@nektoids.com.",
 )
 
 
@@ -46,7 +47,8 @@ def draw_title_card(screen: pygame.Surface, fonts: Fonts) -> None:
 
 
 def draw_level_card(screen: pygame.Surface, router: Router, fonts: Fonts) -> None:
-    """Over a level just opened, veiled: its name, what it asks, its time, how to start."""
+    """Over a level just opened, veiled: its name, what it asks, its time, how to start; in its
+    bottom right corner, darker, its author, as a signature (D-331)."""
     level = router.level
     _card(
         screen,
@@ -58,6 +60,10 @@ def draw_level_card(screen: pygame.Surface, router: Router, fonts: Fonts) -> Non
             (fonts.small.render(START, True, DIM_TEXT), 250),
         ],
     )
+    if level.author:
+        card, signed = pygame.Rect(CARD), fonts.small.render(level.author, True, GREYED)
+        corner = (card.right - CARD_MARGIN // 2, card.bottom - CARD_MARGIN // 2)
+        screen.blit(signed, signed.get_rect(bottomright=corner))
 
 
 def _card(screen: pygame.Surface, lines: list[tuple[pygame.Surface, int]]) -> None:

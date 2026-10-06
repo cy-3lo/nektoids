@@ -37,18 +37,20 @@ In: the game as it is on `main`. 2D top-down; one agent; two eyes that read ligh
 shadows, D-019); two outputs (left and right thruster), in the levels: the sandbox hands out any
 number (D-102); the board is the body plan: eyes and thrusters sit where they are placed
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
-nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); four Braitenberg levels
-(Fear, Aggression, Love, Orbit), then Shadows, Greed and one real level, Patience, each with a
+nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); levels in five chapters
+(D-325): 0 Tutorials, Wiring, Turning, Eyes, Half, Minus, Diagnostic (D-335); 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles,
+new levels, then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Made by users; each with a
 countable win condition (D-097); fixed seed, fully deterministic;
 complexity, the number of parts, is scored and every body stays a sphere of radius 1 u (D-045);
 undo and redo in the editor (D-027). Stage 0's foundations (D-200 to D-206): one table of part
 kinds and their laws, senses and actions, a level format with a version, saved boards with
 their paths, a board as text, Save/Load in Files.
 And stage 1, the todo's §11: a level maker, for us and Camille first (D-041), then for players:
-the plane's lights, obstacles and start, the board's zone, stock and locked parts, objectives
-and the time allowed, a clear check, levels and solutions shared as text, no server.
+the plane's lights, obstacles, marks (zones only the objectives read, D-306) and start, the
+board's zone, stock and locked parts, objectives and the time allowed, a clear check, levels
+and solutions shared as text, no server; and §13, the chapters, levels and tutorials made with it.
 
-Out: no new part, sense or item. The later stages, memory, flows, actions other than moving, and
+Out: no new part or sense, and no new item but marks (D-306). The later stages, memory, flows, actions other than moving, and
 all after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,
 optical flow, parts that move on the body during a run, threshold nodes, the generalisation
 pillar (multi-seed validation), sound, art.
@@ -64,12 +66,15 @@ game/                    everything pygbag bundles; keep it lean
   nektoids/sim/          physics: state arrays, integrator, sensors (numpy, no pygame)
   nektoids/graph/        node graph: data structure, evaluation, bead rates (no pygame)
   nektoids/editor/       pygame UI: grid, node placement, wires, beads, inspector
-  nektoids/levels/       levels as data (JSON in levels/data/, D-028): items, board, objectives
+  nektoids/levels/       levels as data (JSON in levels/data/, by chapter, D-028): items, board, objectives
 tests/                   pytest; never import pygame here
 docs/                    brief, decisions, todo, ideas, walkthrough
 ```
 
 Path-specific rules live in `.claude/rules/` and load when the matching files are touched.
+
+`README.md`, `docs/brief.md` and `docs/ideas.md` are read by strangers (the repository is public):
+keep them in step with the decisions, write them for a visitor, and put nothing private in them.
 
 ## Commands
 

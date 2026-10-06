@@ -12,9 +12,10 @@ dimmed. A step with nothing to wait for waits for Next, and only such a step has
 that waits for an action moves on when it is done, never before (D-048). Only Fear has one, an
 introduction that builds nothing and shows once a session (D-079); every level's hints are asked
 for in the Hints drawer (`hints.py`, D-078). What a tutorial that builds needs, the waits for a
-part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, used by no level
-now and tested on the tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial;
-Settings' Tutorial starts Fear's again. On a step that waits for Next, any key or click moves
+part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, for chapter 0's
+first two levels, which lead the player through what they teach (D-334), and is tested on the
+tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial; Settings' Tutorial
+starts the open level's again. On a step that waits for Next, any key or click moves
 on and does nothing else, but a click on Skip (D-081). While a step leads, only the means to
 what it waits for go through (`allows`); the editor and the run ask before they act. Pure
 Python, no pygame: what the step waits for is read from a `Context`, the screen's geometry from
@@ -24,12 +25,9 @@ the layouts.
 from __future__ import annotations
 
 import math
-import textwrap
 from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
-
-import numpy as np
 
 from nektoids.editor import arena_layout
 from nektoids.editor.layout import (
@@ -44,14 +42,15 @@ from nektoids.editor.layout import (
     Tool,
     View,
 )
-from nektoids.editor.marks import SPECKS, Specks
 from nektoids.editor.router import Screen
 from nektoids.editor.wheel import ICON, WHEEL_HEX, Slot
 from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
+from nektoids.levels.level import known
 from nektoids.levels.objectives import Outcome
 
 CHARS = 48  # a line of the box, at most: the paragraphs are wrapped to it (D-094)
+MARK = "**"  # round a game's word in a step's text: drawn in the accent (D-337)
 BOX_WIDTH = 464  # CHARS characters of Plex Mono and the padding (D-055) [px]
 LINE = 22  # a line of the box [px]
 PAD = 14  # inside the box [px]
@@ -62,11 +61,6 @@ PATH_MARGIN = 20  # the hand's way from one target to the next, this wide on eit
 AREA = 400  # a target this wide, and half as tall, is an area: the box may lie over it [px]
 GRID = 16  # the pitch of the spots tried over the screen when none beside a target is clear [px]
 EDGE = 3  # an outline keeps this far inside the screen's edges [px] (D-071)
-HALO = 6  # where the outline was, round a target: this far out of it [px]
-SPARK_LIFE = 24  # [frames] a spark's way out, 0.4 s (D-080)
-SPARK_REACH = 14.0  # [px] how far out of the edge it goes
-SPARK_PITCH = 24.0  # [px] of edge per spark alive at once, on average
-SPARK_STREAMS = 128  # the sparks' streams in the specks' table, after the swimmer's
 REFUSAL = "do what the box says, or press Skip"  # an action a leading step does not let through
 RUN_PANELS = {"arena", "controls", "objectives", "inside", "score"}  # the rest are buttons
 RUN_DRAWERS = {"inside": Drawer.INSIDE, "score": Drawer.SCORE}  # the objectives are in each
@@ -89,8 +83,9 @@ class Step:
 
     @property
     def lines(self) -> tuple[str, ...]:
-        """What the box shows: each paragraph wrapped to CHARS, ragged right (D-094)."""
-        return tuple(line for text in self.say for line in textwrap.wrap(text, CHARS))
+        """What the box shows: each paragraph wrapped to CHARS of what shows, ragged right
+        (D-094), a game's word marked "**Editor**" keeping its marks for the accent (D-337)."""
+        return tuple(line for text in self.say for line in _wrapped(text))
 
 
 @dataclass(frozen=True)
@@ -146,6 +141,10 @@ class Tutorial:
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
+        """ValueError for a key it does not know, refused, not ignored (D-201, D-328)."""
+        known(data, ("starts_in", "ghosts", "ghost_wires", "steps"), "a tutorial")
+        for step in data["steps"]:
+            known(step, ("say", "show", "until"), "a tutorial's step")
         steps = tuple(Step(tuple(s["say"]), s.get("show"), s.get("until")) for s in data["steps"])
         starts_in = Drawer(data["starts_in"]) if "starts_in" in data else None
         return cls(ghosts_from(data), steps, ghost_wires_from(data), starts_in)
@@ -200,15 +199,17 @@ class Tutorial:
 
 
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
-    """What a leading step shows, by name, drawn in the accent (D-050, D-080): an area, a drawer
-    or a part of the run by its own name, its titles lit; a tab as "tab:editor". A drawer's icon
-    keeps its colour: its sparks are enough (D-095)."""
+    """What a leading step shows, by name, drawn in the accent, the only highlight (D-050,
+    D-336): an area, a drawer or a part of the run by its own name, its titles lit; a drawer's
+    icon in the bar by the drawer's name, the bar lighting them all; a tab as "tab:editor"; the
+    switch as "level:edit", a row of Parts as "menu:eye", a Wheel's icon as "wheel:turn left"."""
     if tutorial is None or not tutorial.leads:
         return frozenset()
     names = set()
     for one in _shows(tutorial.step):
-        names.add(one.get("area") or one.get("drawer") or one.get("run"))
-        names.add(f"tab:{one['tab']}" if "tab" in one else None)
+        names.add(one.get("area") or one.get("drawer") or one.get("run") or one.get("icon"))
+        for key in ("tab", "level", "menu", "wheel"):
+            names.add(f"{key}:{one[key]}" if key in one else None)
     return frozenset(names - {None})
 
 
@@ -257,8 +258,9 @@ def _shows(step: Step | None) -> list:
 def allows(step: Step | None, action: Action) -> bool:
     """Whether `step` lets `action` through (D-048). No step, or a hint, lets all through. A step
     that leads lets through only the means to what it waits for: picking that part (from the
-    menu or by its key) and placing it on that cell; a turn tool, or L and R, on that part; that
-    tool; the Wire tool and that wire, either way round (D-026); Run. While it waits for a win, or
+    menu or by its key) and placing it on that cell; moving a part, to move one there (D-338);
+    a turn tool, or L and R, on that part; that tool; the Wire tool and that wire, either way
+    round (D-026); Run. While it waits for a win, or
     for the run to play a while, running, playing and going back to edit. A step that waits for
     several things lets through the means to any of them (D-071). A step that waits for Next
     lets nothing through. Zoom, the view's centre, info boxes and folding the menu change none
@@ -279,6 +281,8 @@ def _allows(until: Mapping, action: Action) -> bool:
             or (verb == "tool" and action.tool is Tool.ADD)
             or (verb == "place" and action.kind is kind and action.cell == cell)
         )
+    if "moved" in until:  # a part moved there: the Move tool, a drag (D-338)
+        return (verb == "tool" and action.tool is Tool.MOVE) or verb == "move"
     if "facing" in until:
         cell = _cell(until["facing"]["cell"])
         return (verb == "tool" and action.tool in TURNS) or (verb == "turn" and action.cell == cell)
@@ -306,9 +310,10 @@ def met(until: Mapping | list, context: Context) -> bool:
         return context.time >= until["time"]
     if "drawer" in until:  # that drawer is open (D-074)
         return context.drawer is Drawer(until["drawer"])
-    if "placed" in until:
-        node = board.node_at(_cell(until["placed"]["cell"]))
-        return node is not None and node.kind is Kind(until["placed"]["kind"])
+    if "placed" in until or "moved" in until:  # a part of that kind on that cell (D-338)
+        where = until.get("placed") or until["moved"]
+        node = board.node_at(_cell(where["cell"]))
+        return node is not None and node.kind is Kind(where["kind"])
     if "facing" in until:
         node = board.node_at(_cell(until["facing"]["cell"]))
         return node is not None and node.facing == FACING_NAMES.index(until["facing"]["facing"])
@@ -678,38 +683,33 @@ def ghost_wires_from(data: Mapping) -> tuple[tuple[Cell, Cell], ...]:
     return tuple((_cell(w["from"]), _cell(w["to"])) for w in data.get("ghost_wires", ()))
 
 
-def sparks(
-    spots: list[tuple[Rect, object]], frame: int, specks: Specks = SPECKS
-) -> list[tuple[float, float]]:
-    """Where the sparks round a step's targets are at `frame` [px] (D-080): specks drifting out
-    of each target's edge, where its outline was, SPARK_REACH px in SPARK_LIFE frames, as the
-    thrusters' flames drift out of their backs (D-076), as many as the edge is long. Round a
-    disc, a cell or a Wheel's icon, they go out from its centre; round anything else, square out
-    of each side. A place the box only keeps clear of ("none") has none."""
-    found, stream = [], SPARK_STREAMS
-    for rect, shape in spots:
-        if shape == "none":
-            continue
-        x, y, w, h = rect
-        if shape in ("disc", "icon"):
-            cx, cy, r = x + w / 2, y + h / 2, h / 2 + HALO
-            u, across = specks.stream(2 * math.pi * r / SPARK_PITCH, frame, SPARK_LIFE, stream)
-            stream += 1
-            out, angle = r + u * SPARK_REACH, math.pi * across
-            xs, ys = cx + out * np.cos(angle), cy + out * np.sin(angle)
-            found += zip(xs.tolist(), ys.tolist(), strict=True)
-            continue
-        if not isinstance(shape, (Page, Docked)) and shape != "panel":  # a button, a row...
-            x, y, w, h = x - HALO, y - HALO, w + 2 * HALO, h + 2 * HALO
-        x, y, w, h = outline_kept((x, y, w, h))
-        sides = ((x, y, w, 0, -1), (x, y + h, w, 0, 1), (x, y, h, -1, 0), (x + w, y, h, 1, 0))
-        for left, top, length, nx, ny in sides:  # each side: where along it, then how far out
-            u, across = specks.stream(length / SPARK_PITCH, frame, SPARK_LIFE, stream)
-            stream += 1
-            along = (across + 1.0) / 2.0 * length
-            xs = left + (along if nx == 0 else nx * u * SPARK_REACH)
-            ys = top + (along if ny == 0 else ny * u * SPARK_REACH)
-            found += zip(xs.tolist(), ys.tolist(), strict=True)
+def _wrapped(text: str) -> list[str]:
+    """`text` wrapped to CHARS, word by word, a word's length what shows of it, its marks not
+    counted (D-337); a marked phrase may run on to the next line, its marks with it."""
+    lines, line, size = [], [], 0
+    for word in text.split():
+        length = len(word.replace(MARK, ""))
+        if line and size + 1 + length > CHARS:
+            lines.append(" ".join(line))
+            line, size = [], 0
+        size += length + (1 if line else 0)
+        line.append(word)
+    return [*lines, " ".join(line)] if line else lines
+
+
+def shown(line: str) -> str:
+    """What shows of a line of a step: its marks taken out."""
+    return line.replace(MARK, "")
+
+
+def runs(line: str, marked: bool = False) -> list[tuple[str, bool]]:
+    """A line of a step as runs of text, each marked or not, `marked` if the line starts inside
+    a marked phrase; the marks toggle it (D-337)."""
+    found = []
+    for k, text in enumerate(line.split(MARK)):
+        marked = marked if k == 0 else not marked
+        if text:
+            found.append((text, marked))
     return found
 
 

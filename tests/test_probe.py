@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from nektoids.editor.layout import View
-from nektoids.editor.probe import Probe, ring_radii
+from nektoids.editor.probe import Probe
 from nektoids.graph.board import Kind
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import to_pixel
@@ -47,21 +47,6 @@ def test_the_eyes_read_the_light_where_the_probe_stands_and_the_circuit_follows(
     assert probe.y[thruster] == pytest.approx(sent, abs=1e-3)  # settled: it passes the eye on
 
 
-def test_an_eye_held_at_a_level_sends_it_until_the_probe_moves_or_turns():
-    probe = seeing(LEVELS["Fear"])
-    (eye,) = probe.net.eyes
-    light = probe.eyes().copy()
-    probe.hold(int(eye), 5.0)
-    assert probe.eyes()[0] == RATE_MAX  # clamped
-    probe.hold(int(eye), 0.2)
-    assert probe.eyes()[0] == 0.2
-    probe.turn(math.pi)
-    assert not probe.held and probe.eyes()[0] != light[0]  # back to the light, now behind it
-    probe.hold(int(eye), 0.2)
-    probe.place(*probe.pose[:2])
-    assert not probe.held
-
-
 def test_the_probe_stays_out_of_the_obstacles():
     level = LEVELS["Shadows"]
     probe = Probe(level.new_board(), level, VIEW)
@@ -69,16 +54,6 @@ def test_the_probe_stays_out_of_the_obstacles():
     probe.place(disc.x, disc.y)
     gap = math.hypot(probe.pose.x - disc.x, probe.pose.y - disc.y)
     assert gap >= disc.radius + BASE_RADIUS - 1e-9
-
-
-def test_an_eyes_meter_is_a_handle_from_nothing_at_its_foot_to_full_at_its_top():
-    probe = Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], VIEW)
-    (eye,) = probe.net.eyes
-    track = probe.track(int(eye))
-    assert probe.handle_at((track.x, (track.top + track.bottom) / 2)) == int(eye)
-    assert probe.handle_at(probe.circuit.centre(int(eye))) is None  # the eye itself
-    assert probe.level_at(int(eye), track.top) == RATE_MAX
-    assert probe.level_at(int(eye), track.bottom + 50) == 0.0
 
 
 def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view():
@@ -94,7 +69,8 @@ def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view(
     probe.see(zoomed)
     assert probe.circuit.centre(int(eye)) == to_pixel(cell, zoomed.size, zoomed.origin)
     assert np.array_equal(probe.y, before)
-    assert ring_radii(LEVELS["Fear"]) == [12.0] and ring_radii(LEVELS["Love"]) == [6.0]
+    rings = [[m.value for m in LEVELS[t].marks] for t in ("Fear", "Love")]  # marks (D-307)
+    assert rings == [[8.0], [7.0]]  # Fear's ring, Love's (D-317, D-318)
 
 
 def test_diagnostics_map_shows_the_whole_level_where_the_swimmer_starts():

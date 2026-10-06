@@ -23,6 +23,8 @@ from nektoids.graph.hexgrid import (
     DIRECTIONS,
     Cell,
     direction_to,
+    disc_radius,
+    hex_disc,
     neighbour,
     opposite,
 )
@@ -302,11 +304,70 @@ class Board:
         return BoardState(nodes, tuple(self.wires), stock)  # in fixed orders, not dict order
 
     def restore(self, state: BoardState) -> None:
-        """Put the board back as it was in `state`, in place, routes and all. Ids still never
-        come back: the next part placed gets a new one."""
+        """Put the board back as it was in `state`, in place, routes and all, the stock left
+        counted again from what the level hands out, which may have changed since (D-315). Ids
+        still never come back: the next part placed gets a new one."""
         self.nodes = {node.id: node for node in state.nodes}
         self.wires = list(state.wires)
-        self._stock = dict(state.stock)
+        free = [node.kind for node in state.nodes if not node.locked]
+        self._stock = {
+            kind: None if total is None else total - free.count(kind)
+            for kind, total in self._total.items()
+        }
+
+    def rehand(self, other: Board) -> Refused | None:
+        """This board's parts and wires kept, on `other`'s zone, with what `other` hands out
+        and the parts it places, locked (D-315, D-319): a locked part `other` places too stays,
+        wires and all; one it does not place is freed, the player's now; one it places that this
+        board lacks is put down. Refused, and nothing changes, if a part or a wire would lie off
+        that zone or where `other` places a part, or the board would hold more of a kind than it
+        hands out."""
+        placed = {_where(n): n for n in other.nodes.values() if n.locked}
+        mine = {_where(n) for n in self.nodes.values() if n.locked}
+        nodes = [
+            replace(n, locked=_where(n) in placed) if n.locked else n for n in self.nodes.values()
+        ]
+        taken = {n.cell for n in nodes} | {c for w in self.wires for c in w.path}
+        new = [n for where, n in placed.items() if where not in mine]
+        if any(n.cell in taken for n in new):
+            kind = next(n.kind.value for n in new if n.cell in taken)
+            a = "an" if kind[0] in "aeiou" else "a"
+            return Refused(f"the board has something where the level places {a} {kind}")
+        ids = itertools.count(self._next_id)
+        nodes += [Node(next(ids), n.kind, n.cell, True, n.facing) for n in new]
+        state = BoardState(tuple(sorted(nodes, key=lambda n: n.id)), tuple(self.wires), ())
+        refused = _misfit(state, other._on_board, other.total)
+        if refused is not None:
+            return refused
+        self.cells, self._on_board = list(other.cells), set(other._on_board)
+        self._total = dict(other._total)
+        self.restore(state)
+        self._next_id += len(new)
+        return None
+
+    def clear(self) -> tuple[int, int]:
+        """Erase all (D-321): every wire and every part but the level's locked ones, their stock
+        back; how many parts and wires went."""
+        free = [n for n in self.nodes.values() if not n.locked]
+        wires = len(self.wires)
+        self.nodes = {n.id: n for n in self.nodes.values() if n.locked}
+        self.wires = []
+        self.restore(self.snapshot())  # the stock left counted again
+        return len(free), wires
+
+    def lock(self, node_id: int, locked: bool = True) -> Refused | None:
+        """A part made the level's, fixed where it is and using no stock, or freed again, the
+        player's, using one (D-319). Refused, nothing changing, freeing a part of a kind the
+        level hands out no more of."""
+        node = self.nodes[node_id]
+        if node.locked == locked:
+            return None
+        if not locked and self.remaining(node.kind) == 0:
+            name = f"{node.kind.value}s"
+            return Refused(f"the level hands out no more {name}: give one more in Parts")
+        self.nodes[node_id] = replace(node, locked=locked)
+        self.restore(self.snapshot())  # the stock left counted again
+        return None
 
     def adopt(self, state: BoardState) -> Refused | None:
         """Put on this board a state built on another, a win of another level (D-092): its parts
@@ -319,34 +380,24 @@ class Board:
         locked = [n for n in self.nodes.values() if n.locked]
         if _placed(locked) != _placed(n for n in state.nodes if n.locked):
             return Refused("this level places other parts")
-        free = [node.kind for node in state.nodes if not node.locked]
-        stock = dict(self._total)
-        for kind in Kind:
-            used, total = free.count(kind), self.total(kind)
-            if used and total == 0:
-                return Refused(f"this level hands out no {kind.value}s")
-            if total is not None and used > total:
-                plural = "" if total == 1 else "s"
-                return Refused(
-                    f"this level hands out {_count(total)} {kind.value}{plural};"
-                    f" the board has {_count(used)}"
-                )
-            if total is not None and kind in stock:
-                stock[kind] = total - used
-        self.restore(BoardState(state.nodes, state.wires, tuple(stock.items())))
+        refused = _misfit(state, self._on_board, self.total)
+        if refused is not None:
+            return refused
+        self.restore(state)  # the stock left counted again from this level's
         self._next_id = max([self._next_id, *(node.id + 1 for node in state.nodes)])
         return None
 
     # As plain data (D-024)
 
     def to_dict(self) -> dict:
-        """The board as JSON-able data: the zone, what the level handed out, the components in
-        id order and the wires in the order they were drawn, each naming its ends by their place
-        in that list."""
+        """The board as JSON-able data: the zone, its size if it is a hexagon round (0, 0), as
+        the levels' are (D-313), else its cells; what the level handed out; the components in id
+        order and the wires in the order they were drawn, each naming its ends by their place in
+        that list."""
         ids = sorted(self.nodes)
         index = {node_id: i for i, node_id in enumerate(ids)}
         return {
-            "zone": [list(cell) for cell in self.cells],
+            "zone": _zone(self.cells),
             "stock": {kind.value: self._total[kind] for kind in Kind if kind in self._total},
             "parts": [
                 {
@@ -373,7 +424,9 @@ class Board:
         order along their saved paths, so the board is the one saved, routes and all (D-204). A
         wire saved without a path is routed. Raises ValueError for data no board could hold."""
         stock = {Kind(name): left for name, left in data["stock"].items()}
-        board = cls([tuple(cell) for cell in data["zone"]], stock)
+        zone = data["zone"]
+        cells = hex_disc(disc_radius(zone)) if isinstance(zone, int) else map(tuple, zone)
+        board = cls(list(cells), stock)
         for part in data["parts"]:
             facing = part["facing"]
             placed = board.place(
@@ -529,3 +582,40 @@ def _placed(nodes: Iterable[Node]) -> list[tuple[str, Cell, int | None]]:
 
 def _count(n: int) -> str:
     return {1: "one", 2: "two", 3: "three"}.get(n, str(n))
+
+
+def _zone(cells: Iterable[Cell]) -> int | list[list[int]]:
+    """A zone as a board's data holds it: its size, if it is a hexagon round (0, 0) (D-313);
+    else its cells, as lists, in their order."""
+    cells = list(cells)
+    try:
+        if set(cells) == set(hex_disc(disc_radius(len(cells)))):
+            return len(cells)
+    except ValueError:  # no hexagon holds so many
+        pass
+    return [list(cell) for cell in cells]
+
+
+def _misfit(state: BoardState, zone: set[Cell], total) -> Refused | None:
+    """Why `state` could not stand on a board of `zone` handing out `total(kind)` of each kind:
+    a part or a wire off the zone, more of a kind than handed out; None if it could."""
+    cells = {node.cell for node in state.nodes} | {c for w in state.wires for c in w.path}
+    if not cells <= zone:
+        return Refused("the board goes outside this level's zone")
+    free = [node.kind for node in state.nodes if not node.locked]
+    for kind in Kind:
+        used, handed = free.count(kind), total(kind)
+        if used and handed == 0:
+            return Refused(f"this level hands out no {kind.value}s")
+        if handed is not None and used > handed:
+            plural = "" if handed == 1 else "s"
+            return Refused(
+                f"this level hands out {_count(handed)} {kind.value}{plural};"
+                f" the board has {_count(used)}"
+            )
+    return None
+
+
+def _where(node: Node) -> tuple[Kind, Cell, int | None]:
+    """A part as placed, whatever its id: its kind, its cell, its facing."""
+    return node.kind, node.cell, node.facing

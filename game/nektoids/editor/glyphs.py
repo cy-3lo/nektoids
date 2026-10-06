@@ -21,6 +21,10 @@ GLYPH = {
     "caret-right": 0xF0DA,
     "infinity": 0xF534,
     "minus": 0xF068,
+    "shapes": 0xF61F,  # the Maker's Objects (D-301)
+    "circle": 0xF111,  # an obstacle
+    "location-arrow": 0xF124,  # the swimmer's start
+    "circle-dot": 0xF192,  # a mark (D-306)
     "magnifying-glass-plus": 0xF00E,
     "magnifying-glass-minus": 0xF010,
     "hand": 0xF256,
@@ -58,6 +62,8 @@ GLYPH = {
     "volume-high": 0xF028,
     "music": 0xF001,
     "border-all": 0xF84C,
+    "circle-plus": 0xF055,  # a mark, in the Maker (D-314)
+    "file": 0xF15B,  # a blank plane, in the Maker's Start from (D-310)
     "list-check": 0xF0AE,
     "magnifying-glass": 0xF002,
     "trophy": 0xF091,
@@ -65,7 +71,6 @@ GLYPH = {
     "bullseye": 0xF140,
     "circle-xmark": 0xF057,
     "right-from-bracket": 0xF2F5,
-    "rotate": 0xF2F1,  # Circle the light (D-097)
     "location-dot": 0xF3C5,
     "stethoscope": 0xF0F1,
     "life-ring": 0xF1CD,  # Hints (D-078)

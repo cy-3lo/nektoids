@@ -1553,3 +1553,689 @@ the objectives and the time allowed, and shares a level as text only once its ma
 "Two lights, four obstacles" brought back; sharing levels and solutions, with no server. Out:
 all else in `ideas.md`; no new part, sense or item. Each item is planned when it starts, and its
 own decisions, a level's text first among them, are taken then, as the board's was (D-205).
+
+**D-301 — 2026-10-05 — The level maker is the Maker, a third tab on the sandbox alone: the sandbox's level is the one made, and the Editor and the Run try it. Its drawers: Objects, Goals, Brief, Files, Navigator. Values sit on a lattice the plane shows as a grid; sliders and typed numbers set them; Save copies the level's JSON.**
+The physicist asked for a tab of its own, with drawers for the objects, the objectives with
+sliders and their values, the level's text and a save, and for the Editor and the Run to go on
+working on the level being made, as Mario Maker plays a course from where it is built. The
+sandbox is already a level with no goal and every part handed out (D-102), so it becomes the
+place where a level is made rather than a second place beside it: its tabs are Run, Editor,
+Maker; a level of the chapter keeps two. The Maker's drawers are Objects (O): the lights, the
+obstacles and the swimmer's start; Goals (G): the objectives with their settings, and the time
+allowed; Brief (B): the title and the spec; Files (F): Copy level, Paste a level, and a level to
+start from; Navigator (N): the run's, with the overview, the zoom and the rays. Space and the
+switch run the level. Values sit on the todo's lattice: positions every 0.5 u, powers whole,
+headings every 15°; each setting declares its range and step. The plane shows that lattice, a
+dot every 0.5 u and a line every 5 u with its coordinate at the edge, in the Maker only; the
+dots go to whole u, then away, as the view zooms out, before they crowd. Sliders and typed
+numbers are the maker's, not the player's graph: invariant 4 binds only the graph. Save copies
+the level's JSON as `to_json` writes it, the shipped files' layout, to the clipboard, which
+D-206 already reaches in Chrome and Safari; no file is written, so `web.md` stands. The level
+made lasts the session, as wins do; nothing is stored (D-075). Ranges proposed, to be settled
+when Goals is built: a light's power 1 to 16; an obstacle's radius 0.5 to 5 by 0.5; a ring's
+radius 2 to 30 by 0.5; seconds 1 to 60; turns 1 to 10; the time allowed 5 to 300 s by 5. The
+first step, the tab itself, shows the plane over its grid, read only; each drawer comes with its
+own pull request into `stage/1-level-maker`.
+
+**D-302 — 2026-10-05 — The Maker's Objects is a copy of Parts: the objects as rows, undo and redo, the Wheel at its foot round what is focused on the plane. A click focuses, a drag moves; the Wheel offers a light and an obstacle on an empty point, less, move, delete and more on an item, the turns and Move on the swimmer. Applies D-301; amends D-068 for the Maker.**
+The physicist asked for Objects to work as Parts does in the editor, the Wheel offering what may
+be placed and what may be done, and asked whether moving or editing should come first. Both
+come by gesture, as on the board (D-090): a click on an object focuses it, and its Wheel shows
+what can be done to it; a drag moves it, on the lattice, one step for undo. A click on the open
+plane focuses its nearest lattice point, and the Wheel offers a light (1) and an obstacle (2)
+there, as an empty cell offers the parts; a drag there moves the view. Round a light, Dimmer,
+Move, Delete, Brighter; round an obstacle, Smaller, Move, Delete, Bigger: the less and the more
+either side of the gap, where a part's turns sit, on < and >, since + and - zoom. Round the
+swimmer, Turn left, Move, Turn right (L, R): it is never placed nor deleted. Move in hand, a
+click on the plane or an arrow, 0.5 u, moves the focus. The mouse wheel on an object makes it
+more or less, or turns the swimmer. Objects' rows are Light, Obstacle and Swimmer, each with how
+many are on the plane: a click on Light or Obstacle puts it in hand for the next click on the
+plane, a drag puts it where it is let go; Swimmer focuses it. Under them, Undo and Redo (Ctrl+Z,
+Ctrl+Y), over whole levels. A new light has power 4, a new obstacle radius 1 u. A change the
+level cannot hold is refused, its reason in the status line: a light touching an obstacle, the
+arena's own refusal, or the swimmer starting inside one. A value off the lattice in a shipped
+level stays until it is changed: the sandbox's heading of 20°, turned, becomes 30°. Each change
+is a new `Level` (`levels/making.py`), handed to the router, the editor's caption and Run
+preview, and the next run.
+
+**D-303 — 2026-10-05 — F1, F2 and F3 are the tabs, Run, Editor and the Maker, in every environment, as a click on the tab. Space and Esc stay; the developer's F1 to F4 move to F5 to F8. Amends D-069; applies D-301.**
+With three tabs, Space (to the run) and Esc (from the run to the editor) no longer reach every
+tab, and Esc in the Maker puts down what is in hand. The physicist asked for one switch between
+the three: each tab has its key, in the tabs' order, the same everywhere, and its tooltip says
+it. F3 on a level of the chapter, which has no Maker, says the Maker is Free play's, in
+Chapters. A tutorial's step that holds a tab holds its key too. Space and Esc keep what they did,
+so the tutorials' words hold. The developer's keys, behind `DEV_VIEW`, move four on: F5 the
+editor, F6 the circuit view, F7 the arena view, F8 the board's JSON. In the browser, F1 is help
+and F3 is find: the page stops both, in `clipboard.py`'s script, and the game still gets them;
+tried in headless Chrome. On a Mac's own keyboard F1 to F3 work the screen and the windows
+unless fn is held, or the function keys are set as standard ones in the system's settings.
+
+**D-304 — 2026-10-05 — Tab goes round the tabs, Shift+Tab back; Esc opens Chapters once it has nothing left to back out of. The hints show Tab for the tabs; F1 to F3 work and are not shown. Amends D-069, D-303.**
+The physicist found F1 to F3 awkward, a Mac's keyboard wanting fn for them, and asked for Tab to
+go round the tabs and Esc to open the levels. Tab now goes to the next tab, Run, Editor, then the
+Maker on the sandbox, round to the first, Shift+Tab to the one before; on a level, Tab goes from
+the run to the editor and back. Esc keeps what it backs out of, in the editor the hand, Swap,
+Delete, a part in hand or a wire under way, the Wheel opened by keys, the focus, and in the Maker
+what is in hand, Move, the focus; with nothing left it opens Chapters, or folds it, as Esc opens a
+game's menu. A right click backs out only. In the run, where Esc took the player to the editor,
+it opens Chapters at once, and Tab takes the player to the editor; the end banner's Edit says
+Tab. The tabs' tooltips, the switch's and Chapters' name Tab, Shift+Tab and Esc; F1, F2 and F3
+still go to Run, Editor and the Maker, unnamed, for whoever knows them. Space still runs from
+the editor and the Maker, and plays in the run. The developer's arena (F7) keeps Tab for its
+levels and Esc for the editor.
+
+**D-305 — 2026-10-05 — Brief, the Maker's third drawer, holds the level's title and its spec, each in a field of text that a click opens with what the level says; Enter or a click elsewhere keeps what is typed, Esc gives it up. Every field of text is one `TextField`, with a caret. Applies D-301; amends D-206.**
+The plan's Brief: the level's words, as Objects is its plane. Its two fields sit under their
+labels, the title a row high, the spec six lines high and wrapped, enough for its longest. A
+field opens once the click on it is over, as Paste a board does for Safari (D-206), holding the
+level's title or spec with the caret after it; the arrows, Home and End move the caret natively,
+and on the web the page's own field moves it and says where it is, so the bar drawn is where the
+next character goes. Enter or a click anywhere else keeps the text, its spaces squeezed, one
+step for undo; Esc leaves the level as it was. A title or a spec with nothing in it is refused,
+"a level needs a title", "say what the level asks"; a title is at most 40 characters, a spec
+120. The caption over the main screen, Chapters' row, the level's card and the next run follow.
+Paste a board's field is the same class, taking only a board's characters (D-206), and it, the
+passkey's and the title's are drawn by one function, `draw_field`: the caret is now a bar in the
+accent, and a board's text shows its spaces. In the page's field Tab no longer takes the focus
+away. The run's status line drops F for fast forward, which its button's tooltip names, so that
+Tab and Esc fit (D-304).
+
+**D-306 — 2026-10-05 — Marks, a third kind of item: a zone on the plane, a circle the swimmer neither sees nor touches, which only the objectives read. Placed, moved, sized and deleted in Objects; drawn as a grey empty circle with a cross on its centre, in every view. The level format is version 2; version 1 is read as it is. Widens D-300's "no new item" for marks alone.**
+The physicist's grammar for objectives (reach, leave, stay, circle; all, one, none; lights,
+obstacles, marks) needs zones to aim at, and Fear's and Love's rings are zones already, round
+their one light. A mark is `{"kind": "mark", "at": [x, y], "radius": r}`, radius 0.5 to 30 u
+by 0.5, 3 u when placed. `Level.arena` holds the lights and the obstacles only, as before, so the
+simulation and every shipped run are what they were; `Level.marks` holds the zones. In Objects
+a mark is a row and an empty point's third offer (3), its Wheel Smaller, Move, Delete, Bigger,
+as an obstacle's. A mark is grabbed by its rim or its centre, within 6 px: a click inside a zone
+finds the point there, so a light may still be put inside one; a light or an obstacle over a
+mark is found first. Marks are drawn under the lights and the obstacles, in the Maker, the run,
+Diagnostic's map and the overviews, and the run and the Maker frame them whole. Adding a kind of
+item changes the format (D-201): files are version 2, and version 1, which has no marks, is
+upgraded as it is; a newer version is refused. Every shipped file is rewritten, its version
+line alone changing. `CLAUDE.md`'s scope now says so. Until the next decision makes objectives
+sentences, no objective reads a mark. Objects' Undo and Redo lose their section title, so its
+four rows and theirs fit over the Wheel.
+
+**D-307 — 2026-10-05 — An objective is a sentence: reach, leave, stay or circle; all, one or none; lights, obstacles or marks; with a stay's seconds or a circle's turns. "None" makes it a ban, lost the moment it happens. Version 1's five objectives are five sentences and run as they did, to the tick and the bit. The level format is version 3; version 2's rings become marks on its lights. Amends D-038, D-040, D-097; applies D-306.**
+The physicist proposed objectives that can be "programmed": avoid, reach or approach all, one or
+none of the lights, marks or obstacles. With marks as zones (D-306), "approach" is to reach a
+mark round the thing, and "avoid" is to reach none, so four verbs carry it: reach (touch a light
+or an obstacle, at 1.05 times touching distance, D-043; come into a mark, the swimmer's centre
+inside its circle), leave (get out of a mark), stay (be inside a mark for so many seconds in a
+row) and circle (go round a target so many turns, the angle swept the short way round, D-097).
+"All" is every target of the kind, "one" any of them, "none" a ban. Leave and stay take marks
+alone; stay and circle take no "none". "Leave all marks" means out of every mark at the same
+tick, "stay in one mark" inside any of them, the clock back to 0 only when out of all, as the
+rings were. Version 1's objectives are reach all lights, reach no light, leave all marks (Fear's
+ring, a 12 u mark on its light), stay in one mark for 5 s (Love's, 6 u) and circle one light
+twice; the same comparisons on the same numbers, so every shipped run is bit-identical. A test
+recorded eighteen runs before the change, each level's winners and losers, their outcome, last
+tick, and each objective's count and progress to the last digit, and pins them. Every
+objective of the kind of every target must find one in its level, or the level is refused, and
+the Maker keeps the last one. Names stay as players read them, but "Stay by the light", whose
+ring is now any mark, reads "Stay in a ring"; a mark is "a ring" to the player. The rings, once
+drawn dashed round the lights, are the marks: a grey circle, lit once the goal on them is met.
+Files are version 3, `{"verb", "count", "target"}` and the setting; version 2's objectives are
+upgraded, their rings appended as marks on every light, and a level whose rings would mix with
+its marks, or with rings of another size, is refused. The goals' sliders (D-306's Goals) follow
+in their own pull request.
+
+**D-308 — 2026-10-05 — Goals, the Maker's second drawer: the time allowed, a slider, then at most two goals, each a sentence chosen in three rows of buttons, verb, how many, target, every option shown; a word chosen moves the others as little as makes sense, a word that would aim at nothing is dimmed. A stay's seconds or a circle's turns is a slider whose value may be typed. Applies D-301, D-307.**
+The todo's Goals, the plan's choice: rows of buttons rather than words that cycle or lists that
+drop down, so that every option shows and none hides behind a click (invariant 6). At the top,
+the time allowed, 5 to 300 s by 5. Under it, each goal under its name, as the run will say it,
+with a bin at the right to take it out; then Reach, Leave, Stay, Circle; All, One, None; Lights,
+Obstacles, Marks, as Objects names them; the words chosen lit; under them a slider for the
+setting its verb takes, seconds 1 to 60, turns 1 to 10. Add a goal shows while there are fewer
+than two, which the run's drawers fit and no shipped level exceeds; the goal added is the first
+sentence, in the order of the words, whose target the level has and which it does not ask yet,
+reach every light on most levels. A word chosen wins and the others follow
+(`objectives.reworded`): Leave or Stay takes the target to marks, Stay or Circle takes "none" to
+one; "none" or a light or an obstacle that the verb cannot take puts the verb back to Reach,
+which takes any; a setting stays with its verb. A word whose sentence would aim at something the
+level has none of, Marks or Leave or Stay on a level without a mark, is dimmed, and a click on it
+says "the level has no mark: place one in Objects". A sentence another goal asks, whatever its
+setting, is refused. A drag on a slider is one step for undo, as an object's; the mouse wheel
+there scrolls the drawer (D-096), not the value, which a click on its box types instead, as
+Brief's fields are typed (D-305). Goals that cannot both be met, reach every light and touch
+none, are not refused here: the clear check will find no winner. Three pull requests: the
+changes (`making.py`), the drawer, the typed value.
+
+**D-309 — 2026-10-05 — A goal's name says "the light", "the ring", only where the level has one; where it has more, it says "a light", "every ring", "the rings". Its name, its info text and the run's last line read the level. Amends D-307.**
+D-307 kept version 1's names as players read them, "Don't touch the light", "Leave the ring",
+"Circle the light", true on the levels they came from, each with one light or one ring; on a level
+made with two lights they say what is not so. The physicist asked for the wording to be right.
+Those three names now hold where the level has one target of the kind, and the sentence's own
+words where it has more: "Touch no light", "Leave every ring", "Circle a light"; "the rings"
+becomes "the ring" where there is one, in "Keep out of", "Stay inside" and their info texts, and
+"It touched the light" becomes "It touched a light" where there are more. `Goal.name`, `about`
+and `broken` take the level. Every shipped level reads as it did, word for word.
+
+**D-310 — 2026-10-05 — Save, in the Maker's Files (F): Copy level puts its JSON on the clipboard, as `to_json` writes the shipped files; Paste a level, a field, takes a level's text. A level pasted, or started from, brings its title, spec, plane, start, goals and time, not its board, tutorial, passkey or hints. Start from offers a blank plane and every shipped level. Applies D-301, D-206.**
+The todo's Save, the plan the physicist agreed to. Files is the Maker's fourth drawer, between
+Brief and Navigator, as D-301 listed it. Under Save/Load, Copy level puts the level's text on the
+clipboard through D-206's path, which Chrome and Safari reach; the text, 35 lines for the
+sandbox's, is too long for the status line, which says that it was copied and how long it is.
+Under it, Paste a level is a field as Paste a board is: a click opens it, Cmd/Ctrl+V pastes, Enter
+takes the text, Esc gives up. Whatever no level could hold is refused, its reason in the status
+line: not JSON, no version or a newer one, a key it does not know (D-201), a light on an
+obstacle, a start inside one, a title with nothing in it. What it takes, the plane and the words,
+is one step for undo, and the view goes to it. The board stays the one being made: the Maker
+sets no board yet, which is the todo's next item, and a board it could neither show nor change
+would be a failure the player cannot see (invariant 6). A made level has no tutorial, passkey or
+hints. Copy level and Paste a level give the same level back. Start from, under them, offers a
+blank plane, no item, the swimmer at the origin, no goal, 30 s, titled "New level", and the
+shipped levels, the seven of the chapter and "Two lights, four obstacles", open or not: the Maker
+is for us and Camille first. It follows in its own pull request.
+
+**D-311 — 2026-10-05 — The Maker's values are whole numbers: positions on whole u, an obstacle's radius 1 to 5 u and a mark's 1 to 30 u by 1. Its grid is a dot every 1 u, 2 px square, and a line every 5 u, with no coordinate at the edges. The time allowed is 5 to 120 s. Amends D-301, D-302, D-306, D-308.**
+The physicist, reviewing the Maker: no rulers, the grid is enough; dots every 1 u and bigger,
+2 px, so that all quantities are integers; the time allowed at most 120 s. Positions snap to
+whole u, and the arrows with Move in hand step 1 u; radii step by 1 u from 1. A light's power,
+the headings every 15°, the time by 5 s, a stay's seconds and a circle's turns were whole
+already. The dots go where they would come closer than 8 px, the lines every 5 u stay. A shipped
+value off the lattice, the sandbox's lights at 27.5 u, Patience's obstacles of 1.5 u, stays as it
+is until the Maker changes it (D-302).
+
+**D-312 — 2026-10-05 — Circle leaves the objectives: a sentence is three words from three, reach, leave or stay; all, one or none; lights, obstacles or marks. Orbit asks to enter four rings round its light, 5 u out, and touch no light, in 20 s. Amends D-097, D-307, D-308.**
+The physicist, reviewing the Maker: remove circle, and make Orbit avoid the light and reach marks
+placed round it, so that every objective is three words, each chosen from three. Of the 27
+sentences, 14 say something a run can count, as before: leave and stay take marks alone, and
+stay takes no "none"; the Maker's choosers dim the rest (D-308). Going round is reaching the
+marks round the target: it needs no counting of its own, and the turns' slider goes with it.
+Orbit keeps its light at (25, 19) and its start at (25, 9) heading east; four marks of 2 u sit
+5 u from the light, east, north, west and south, on the circle its hint's board settles on
+(5.2 u, measured). Enter every ring and Don't touch the light: the orbiter wins in 9.1 s, the
+brief's ÷2 in 8.7 s, the crossed board touches the light, a bare drive and fear go nowhere, the
+hint's shadow wins; one lap is enough, so the time allowed is 20 s rather than 30. Its spec
+reads "Go round the light through its four rings, without touching it." The pinned runs record
+Orbit's three again. A level that still asks to circle, a version 3 file with "circle" or a
+version 2 one with "circle light", is refused, saying so; only Orbit asked it. The run no
+longer frames a circle round a circled light: Orbit's rings frame themselves.
+
+**D-313 — 2026-10-05 — A level's file writes every whole number as an integer, and its board's zone as its size, 1, 7, 19 or 37 cells, a hexagon round the centre: version 4. Every shipped position is on whole units. Amends D-201, D-306, D-307.**
+The physicist, reading a level copied from the Maker: the board's zone, a list of 37 cells, should
+be just its size, and every position an integer, the shipped levels' too. A zone that is a
+hexagon of r rings round (0, 0), 3r(r + 1) + 1 cells, is written as that number, as a board's
+text already gives its zone by its rings (D-205); a zone of any other shape keeps its cells,
+which no level has. A whole number is written without its ".0": [25, 19], 20 s. Version 3's
+zones are upgraded to their size; the files are version 4, each rewritten. Positions off whole
+units moved to the nearest, halves to the even one: Greed's dim light to (13, 10), Shadows' and
+Patience's starts to y = 18, Patience's lights to (23, 18) and (21, 8), its obstacle to
+(18, 11), the sandbox's lights to (28, 24) and (8, 8) and an obstacle to (14, 28); Patience's
+third light goes to (15, 18) rather than (14, 18), which would touch its obstacle. Every level's
+winners still win and its losers still lose, the hints' shadows too; the pinned runs record
+Shadows', Greed's and Patience's winners again, a few ticks apart. Love's light of power 3.5 and
+the obstacles of radius 1.5 in Patience and Shadows are settings, not positions: they stay. The
+Maker's Parts drawer will set the zone's size (the todo's "The board").
+
+**D-314 — 2026-10-05 — The Maker's Wheel works as the Editor's: atop the plane, what the next click or Enter does; a click on an object puts Move in hand; an object placed starts at the least, 1, with More lit; the arrows go round the Wheel and Enter uses the icon lit, Move carrying the object with the arrows until Enter or Esc. Amends D-302.**
+The physicist, reviewing the Maker: the Wheel should behave as in the Editor, an icon at the top
+middle showing the current action, Move the default on an object clicked, + on one first placed,
+the arrows turning the Wheel's choice and Enter choosing or applying it; and a new object at the
+least, 1. Atop the plane, as atop the board (D-068), the action shows as a lit disc with its name
+and key beside it and a line under it: the object in hand, Move in hand, the Wheel's lit icon;
+with none, the object focused, plain. A click on an object focuses it with Move lit, in hand
+once the click is over: the next click on the open plane moves it there, a click on another
+object focuses that one, a drag moves it as before. A light, an obstacle or a mark placed is
+power 1 or radius 1 u, the least, and focused with More lit, so Enter, again and again, makes it
+more. With something focused, → and ↓ light the next icon, ← and ↑ the one before, stopping at
+the ends (D-084); on a point nothing is lit until they do, as the Editor's empty cell. Enter on
+the lit icon: less, more and the turns at once; Move in hand, the arrows then carrying the
+object 1 u at a time, a step for undo each, until Enter or Esc puts it down, as the physicist
+chose; Delete. With nothing focused the arrows move the view, as before. The keys of the icons,
+M, L, R, < and >, Delete, 1 to 3, still act at once, and light their icon. A click on the action
+opens Objects, as the Editor's opens Tools. Esc puts down what is in hand, then lets go of the
+focus, then opens Chapters (D-304). The physicist found the item's Wheel off, More at the lower
+right and the top empty: its four icons now sit side by side over the top, no corner left empty
+between them, Less, Move, More at the top, Delete, and the arrows go round in that order; the
+Editor's Wheel keeps its own. A mark's icon is a + in a circle, as the plane draws it.
+
+**D-315 — 2026-10-05 — Parts, in the Maker: the board's size, 7, 19 or 37 cells, and how many of each part it hands out, none to 9 or unlimited, each with − and +. The Editor's board takes it at once, its parts kept, or the change is refused while the board has more of a part or lies outside. Paste and Start from bring the zone and the parts handed out; a blank plane hands out 2 of each. Applies D-313; amends D-310.**
+The physicist, reviewing the Maker: the number of each part allowed was missing, a Parts drawer
+with − and + round it; the board's size chosen there, from 7 cells to the sandbox's 37, a
+single cell holding nothing that could swim; every part from 0 to 9 or unlimited, as free as
+the sandbox; 2 of each by default; the parts grouped and folding as the Editor's Parts. Parts is
+the Maker's second drawer (P), under Objects: under Board, Cells, the zone's size, a hexagon of
+1 to 3 rings; then Sensors, Actuators and Operators, titles that fold their rows as the
+Editor's (D-069), each part's count between − and +, the infinity sign when unlimited, the
+buttons greyed at the ends. Each step is a change of the level, one for
+undo, and the Editor's board, the same one the run takes, is handed out anew at once
+(`Board.rehand`), its parts and wires kept: if it has more of a part than the level would hand
+out, or a part or a wire off the smaller zone, the change is refused, "this level hands out two
+eyes; the board has three: take it off in the Editor first", as the physicist chose; nothing on
+the board changes behind the player's back (invariant 6). Undo in the Maker and Paste and Start
+from are refused alike. The Editor's Parts then lists what is handed out, and its undo starts
+afresh, its steps having been taken on a board handing out other parts; a board put back by
+undo counts its stock left from what the level hands out now. A level copied takes its zone
+and its parts handed out with it, so Paste and Start from bring them, which D-310 left out;
+the board's own parts, a tutorial's locked ones, are not brought. A blank plane hands out 2 of
+each part on the zone it had. The sandbox itself still hands out every part without limit
+(D-102). Locked parts, the rest of the todo's "The board", come later.
+
+**D-316 — 2026-10-05 — Every Wheel sets its icons side by side over the top, no corner left empty between them, the Editor's as the Maker's: an odd number centred on the top corner, an even one a corner to its left. Amends D-068, D-314.**
+The physicist found a gap at the top of the Editor's Wheel round a Source, whose four actions,
+Move, Wire, Swap and Delete, sat two each side of the top corner, as the rule for an even number
+of icons put them. D-314 had set the Maker's side by side and left the Editor's; one rule now
+serves both: n icons take n corners in a row, from the left, as near the middle as they can, so
+two take the upper left and the top, four the four left of the lower right, and an odd number
+stays centred on the top. A Source's Wheel reads Move, Wire, Swap at the top, Delete; an empty
+cell offering two parts, Fear's, sets them at the upper left and the top. The lowest corner, the
+gap where piles end, stays clear. The tutorials, which name icons rather than places, play as
+they did.
+
+**D-317 — 2026-10-05 — The Maker reviewed again: a click on the plane opens Objects, whose Wheel never folds; the line under the Wheel says the setting; Move goes when another object or anything off the plane is clicked, leaving nothing lit; the Maker opens on a blank plane. Love's light is power 4 and its ring 7 u, Patience's and Shadows' obstacles 2 u: every setting shipped is whole. Amends D-314, D-315, D-313.**
+The physicist, reviewing the Maker. A click on the plane, a point or an object, opens Objects if
+another drawer is open, so its Wheel shows; a drag of the view does not. The Maker's Wheel never
+folds, its title without the Editor's arrow. The line under it says what is focused and its
+setting again, "A light, power 3", the action being named atop the plane. Move in hand goes, and
+nothing is lit, the Wheel's empty tool, when another object is clicked, which is focused, or
+anything off the plane is; a second click on that object puts Move in hand, as the first did.
+Esc puts nothing lit, then lets go of the focus. The key beside the action atop the plane is the
+action's, not the object's. The Maker, the first time it opens, makes a blank plane with two of
+each part, Free play's level one undo away; if the Editor's board holds more than two of a part,
+the blank plane keeps Free play's parts, and the status line says so. The physicist asked for
+whole settings too, 4 and 2: Love's light goes from 3.5 to power 4 and Patience's and Shadows'
+obstacles from 1.5 u to 2 u. Every level's winners still win and its losers lose; but Love's
+winner on the axis rests 5 u from its brighter light, its rim on the 6 u ring, so the ring is
+7 u, the body inside it again. The pinned runs record Love's, Shadows' and Patience's again.
+
+**D-318 — 2026-10-05 — Brief is called Text (T). The line under the action atop the plane is short: "Enter: brighter". A setting is said without its unit: "radius 2". A light's power and an obstacle's or a mark's radius are whole, 1 to 8; Fear's ring goes from 12 u to 8 u, its light to power 4 and its start to 3 u from it. Each ring of a goal to enter every one lights as it is entered. Amends D-305, D-311, D-314, D-307.**
+The physicist, reviewing the Maker. Brief becomes Text, its key T, which only the Editor's Tools
+used; the code still calls the title and the spec the level's brief. The lines under the action
+atop the plane, which said too much, are now: "Click the plane: place it", "Enter: place it
+here", "Click or arrows: move. Enter: done", "Enter: remove it", "Enter: turn 15° left",
+"Enter: dimmer", and so on; with nothing lit, the object and its setting, "An obstacle, radius
+2", no unit said. Every item's setting is a whole number from 1 to 8: the shipped lights are 3
+to 8, the obstacles 1 or 2, the marks 2 to 12. Fear's ring of 12 u, the one setting above 8, is
+8 u; with it alone the fleeing swimmer was out in 1.3 s rather than 3.2, so, as the physicist
+suggested, its light is dimmer, power 4, and its start nearer, 3 u from it: out in 3.18 s, its
+losers still held in for the 10 s. Its tutorial is left as it is, for later work. In the run, the
+rings of a goal to enter every one now light one by one as the swimmer first comes into each,
+as the lights to reach already get a white circle each; other goals on the marks light them all
+once met, as before, and a ban lights none (`objectives.lit_marks`).
+
+**D-319 — 2026-10-06 — The board's locked parts: Lock, a third mode of the sandbox's Tools (K), makes the part clicked the level's, fixed where it is and using no stock, or frees it again, using one. The level places what the Editor's board has locked: Copy level writes it, Paste and Start from bring it. Locked parts only: no starting wire, no free starting part. Amends D-310, D-315.**
+The todo's last part of the board, as the physicist chose it: locked parts set with the board
+editor itself, in Tools, the same gesture as Delete, rather than a seventh icon on a part's Wheel.
+On the sandbox Tools offers Lock under Write and Delete: while it is on, a click on a part, or
+Enter on the focus, locks it, the part drawn as the level's are, and a click on a locked part
+frees it; freeing one of a kind the level hands out no more of is refused, "give one more in
+Parts". A locked part keeps its cell and its facing (D-009) and uses no stock, so locking one
+gives its stock back. The level follows the board: once a frame the Maker takes the parts the
+board has locked into its level, no wire with them, a step for its undo, which frees them again;
+the Editor's undo covers the locking itself. Copy level writes them; Paste a level and Start
+from bring a level's locked parts onto the Editor's board, keeping those already there, freeing
+those it does not place, putting down the new ones, refused if the board has something on one
+of their cells, "take it off first", or would hold more than the level hands out. A blank plane
+places none. A level's free parts and wires, Aggression's prewired eye and thruster, are not
+brought, and a level made places none: that is in ideas.md for later. The Editor's undo starts
+afresh only when the zone or the parts handed out change, not when a part is locked.
+
+**D-320 — 2026-10-06 — Share level, in the Maker's Files: once the level, as it stands, has been won in the Run, it is copied with its proof, the winning board's text and its score; pasted, the proof is run again, a second of it a frame, and the level is cleared if it wins, its score the one to beat, else a draft. The proof's board stays hidden. Applies D-205, D-310; the todo's clear check and sharing as text.**
+The physicist's plan, as Mario Maker clears a course by its maker. A run of the made level won
+in Free play gives the Maker a proof: the board that won, as its text (D-205), the tick it won at
+and its parts; a better score replaces it. The proof holds while the level stays as it was won;
+any change in the Maker voids it. Files has Share level under Copy level, greyed until then, and
+a line under it: "Won in 9.11 s, 4 parts", or "Win it in the Run, as it stands", or "Give it a
+goal, then win it"; a click without a proof says so. Share level copies the level's JSON with
+`"proof": {"board", "ticks", "parts"}`; Copy level stays a draft, with none. The key joins
+version 4, which has not reached `main`, so no version is added; a proof's unknown key is
+refused (D-201). Paste a level takes the level as before, then, if it has a proof, puts the
+proof's board on a fresh board of the level, refused if it does not fit, and runs it headless
+(`levels/proof.Replay`), 120 ticks a frame: the worst run, 120 s, takes some 2 s natively and
+more in a browser, which must never hold a frame. Won, the level is cleared, "Cleared: won in
+9.11 s with 4 parts, the score to beat", and its proof kept, its tick its own run's and its parts
+counted on the board, not taken on trust; otherwise it stays a draft and says so. What is
+checked is the outcome: across platforms a run may differ in its last bit (D-004). The proof's
+board never goes on the Editor's board, so a player solves the level alone; the score to beat
+shows in Files only, the run's Score drawer later.
+
+**D-321 — 2026-10-06 — Share level sits under Copy level and Paste a level, its line "Win it in Run first" until the level is won. Tools ends with Erase all. Parts is the Editor's first drawer and the one it opens on; the run opens on Diagnostic when a place is chosen; the Maker on Objects. Amends D-320, D-068, D-069.**
+The physicist, trying Share level and the Editor. In the Maker's Files, Share level now comes
+after Copy level and the field to paste a level into, its line under it saying "Win it in Run
+first" until the level as it stands is won, and the score once it is; a click before says the
+same. The Editor's Tools ends with Erase all, under Undo and Redo: every wire and every part
+but the level's own off the board, their stock back, one step for undo, greyed with nothing to
+erase; a tutorial's step that stops a board put back stops it too. The Editor's bar starts with
+Parts, then Tools, and an editor opens on Parts, the level's or a place chosen in Chapters, where
+it opened on Tools; the run opens on Diagnostic when a place is chosen, as it did the first time,
+then keeps the drawer the player leaves it on from one run to the next; the Maker opens on
+Objects, as it did. The tutorials, which open their own drawers, play as they did.
+
+**D-322 — 2026-10-06 — The Maker's Files: Save/Load stays at the top; under a rule, the levels to start from are a list of their own that scrolls, Blank level, then Chapter 1: light and Free play under titles that fold, as Chapters lists them. Amends D-310.**
+The physicist asked for Start from to be organised in chapters, a horizontal line, a Blank level
+button, the chapter's title, which folds, and a button for each level, a sub-drawer of its own
+with a scroll bar when needed. Save/Load, its title, Copy level, Paste a level, Share level and
+its line, no longer scroll; the rule under them divides, as the Wheel's does; under it Blank
+level, once Blank plane, then Chapter 1: light's seven levels under their numbers and Free play's
+Sandbox, each title folding its rows as Parts' and Files' do (D-069), the list scrolling in its
+own area, its scroll bar at the drawer's edge (D-096). The rows above the list are drawn apart
+from it, so that its clip never hides them, which is what hides the title of the Editor's Files
+(the todo's §12).
+
+**D-323 — 2026-10-06 — A drawer's rows over the Wheel scroll only if the rows themselves do not fit: the gaps under the last row are not counted. Applies D-096.**
+The sandbox's Tools, with Lock and Erase all, showed a scroll bar for 8 px: its last row ended at
+364 px, the Wheel's area began at 368, but the gap under the last row and the section's gap after
+it counted as content. They no longer do, for Tools and the Maker's Objects alike: nothing moves on
+screen, the Wheel keeps its height, which a Wheel's piled icons need, and a drawer whose rows do
+not fit scrolls as before, to its last row.
+
+**D-324 — 2026-10-06 — "Two lights, four obstacles" comes back as the chapter's last level, 1.8, titled Two lights: reach both lights in 45 s, two eyes, a Source, the operators and two thrusters on 19 cells; its passkey GEMINI. No slider in Objects. Applies D-300; amends D-032.**
+The physicist: no slider in Objects, its item struck from the todo; and the old level two, set
+aside as too hard (D-032), at the end of the chapter for now, until the chapters he has in mind.
+Its plane is the sandbox's, on whole units since D-313: lights of power 8 and 4 at (28, 24) and
+(8, 8), four obstacles of 1 u, the start at (15, 19) heading 20°; its board as it was, 19 cells,
+two eyes, one Source, the operators without limit, two thrusters; 45 s to touch both lights, in
+any order. Its plane having moved half a unit since D-032, a search ran again: of 1,728
+one-eyed circlers, an eye anywhere on the board looking any way, wired to either thruster, a
+Source on the other, a Halve or a Double on either wire or none, 27 win; the fastest, 5 parts,
+an eye at the back left looking ahead through a Double to the left thruster, the Source on the
+right, in 24.6 s, which a test pins; plain aggression and Greed's and Patience's models touch
+one light only. Like Greed and Patience it has no hints yet. Every level gives a passkey,
+named for it: GEMINI, the twins. Its title is Two lights: the old one ran under the info disc
+and the lock of its row in Chapters; Free play keeps the plane under the old title.
+
+**D-325 — 2026-10-06 — The game in five chapters: 0 Tutorials, six levels each teaching one thing; 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles, new levels then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Made by users. In Chapters each chapter's title folds, all but the one being played. Amends D-097, D-300, D-324.**
+The physicist's plan (the todo's §13), settled with him the same day. Chapter 0 teaches the
+board and the parts, one thing a level: 0.1 Wiring, a Source and a thruster locked on the board,
+the player drawing the wire between them, the swimmer going straight; 0.2 Turning, a part turned;
+0.3 Eyes, the first eye; 0.4 Half, the Halve and the Double; 0.5 Plus, the Sum and the Diff; 0.6
+Diagnostic, the drawer, which Aggression's tutorial teaches now (D-103). The Source comes first:
+it moves the swimmer with no light to read. Every part Love and Orbit hand out is then known
+before them. Chapter 1 keeps Braitenberg's vehicles, one idea a level (D-097): each eye its own
+side, crossed, inhibition, one side always pushed. Chapter 2 opens with new levels, made in the
+Maker, on obstacles, then Shadows. Chapter 3 goes from Greed's two lights to Patience's three
+among obstacles, then Two lights, two among four obstacles, the hardest last (D-324). Chapter 4,
+Made by users, the physicist's title, holds the levels made in the Maker or pasted, this session
+(D-075). Free play keeps the sandbox
+and the Maker.
+Each chapter's first level is open from the start, the physicist's choice: a player may begin
+any chapter. Inside a chapter a level opens once the one before it is won, or by its passkey
+(D-035, D-075), so a chapter's last level gives no word, the next level being open already. Next
+level still goes on through the chapters in order, and the end comes after the last chapter's
+last level. A level is named by its chapter, LEVEL 2.1. In Chapters each chapter's title folds, as Files' groups do (D-069,
+D-322): the chapter being played is open, the others folded; a chapter with no level yet is not
+listed. D-300's scope, and `CLAUDE.md`'s, names the levels by chapter; still no new part, sense or
+item. The rest of §13 is planned, and its decisions taken, item by item: several chapters in the
+game, a level made in the Maker shipped as one of the game's, tutorials, chapter 0's levels,
+chapter 2's, Made by users.
+
+**D-326 — 2026-10-06 — Several chapters in the game: each chapter's level files in a folder of its own, a level named by its chapter, LEVEL 2.1; in Chapters, in every tab, each chapter under a title that folds, every chapter folded but the one being played until the player opens one; the Maker's Start from by chapter. Applies D-325.**
+`levels/arenas.py` declares the chapters, `CHAPTERS`, each with its number, title, folder and
+levels; the route is still one list, `arenas()`, in the same order, so every level's index,
+board, wins and passkey are what they were, and `locate` gives a level's chapter and its place
+there. The eight files moved as they were, byte for byte, into `1-braitenberg/`,
+`2-obstacles/` and `3-many-lights/`; the sandbox's stays. Fear to Orbit are 1.1 to 1.4, Shadows
+2.1, Greed, Patience and Two lights 3.1 to 3.3; 1.1, 2.1 and 3.1 are open from the start, and
+Orbit's, Shadows' and Two lights' words, MOON, DARK and GEMINI, are kept in their files but no
+longer given. Chapters 0 and 4 have no level yet and are not listed. The router keeps which chapters are folded, for the
+session, so the run, the Editor and the Maker show the same: at first all but chapter 1. A
+level whose chapter is folded, opened from Chapters or by Next level, folds every other chapter
+instead, so the open level's row always shows; a level in a chapter that shows keeps the
+player's folds, as the sandbox does; a passkey shows the chapter of the level it opens. Free
+play and the passkey field stay under the chapters, scrolling with them (D-096). The Maker's
+Start from lists Blank level, then a group per chapter, then Free play (D-322), folding as the
+Maker's own groups do.
+
+**D-327 — 2026-10-06 — The strip of tabs is a shade lighter than the open tab, the shut tabs on it, and the accent over the open tab is 3 px, as thick as the one along the open drawer's icon. Amends D-056.**
+The physicist: the accent line over the open tab was thinner than the nav bar's, and the shut
+tabs and the rest of the strip, where more tabs would go, should be a shade lighter than the open
+tab's black. The strip was the bar's colour, `P.deep`, darker than the open tab's, `P.base`; it is
+now `P.surface`, the drawers' colour, one step above it. `LIT_EDGE`, 3 px, is both accents.
+
+**D-328 — 2026-10-06 — A level made in the Maker ships from Share level: its text and its proof in a file of its chapter's folder, its passkey, hints and tutorial written there by hand. Every shipped level carries its proof, which a test runs again; a hint's shadow goes over the level's locked parts; a tutorial refuses a key it does not know. Applies D-320, D-325; the todo's §13.**
+The path, from the Maker to the game: win the level in the Run, Share level, save its text as
+`data/<chapter>/<name>.json`, name it in its chapter in `levels/arenas.py`, write in the file
+what the Maker does not set, then `PYTHONPATH=game python -m nektoids.levels.level FILE` writes
+it as the game does, which the tests ask, byte for byte (D-313). The physicist: the proof stays
+in the file, and a test runs it again, as a pasted level's is (D-320). Every shipped level now
+carries one, so every level's file shows a board that wins it: Fear, Aggression, Love, Orbit and
+Shadows their hint's shadow, Greed, Patience and Two lights the models their tests win with
+(D-098, D-324), each run on its level from its start, its tick and parts the proof's. The test
+checks the win and the parts, not the tick, which may differ in its last bit on another
+platform (D-004). A level may place locked parts (D-319) and hand out none: `blank_board`, what a
+hint's shadow is built on, keeps the locked parts, and drops the free ones and the wires as
+before (D-103), so a shadow over 0.1's locked Source and thruster no longer asks for parts the
+level does not hand out. A tutorial's data and its steps refuse a key they do not know, as a
+level's do (D-201): a misspelt "untill" was skipped silently, and the step never waited. Every
+shipped level's tutorial is tested, not only Fear's: Aggression's had not been.
+
+**D-329 — 2026-10-06 — A level's hints are its idea, written in its file, and its proof: Hint 2 counts the parts the proof's board adds, Hint 3 shows that board over the parts the level places. Only chapters 0 and 1 have hints: Shadows' go. Amends D-078, D-103.**
+The physicist: Hint 3 is taken from the proof, as Hint 2 is, and there are no hints after
+chapter 1. A hint's shadow was written by hand, cell by cell, each wire from a cell to a cell,
+and a test checked it won; a Maker level now comes with the board that won it (D-328), so a
+level's `hints` holds its idea alone, refusing any other key, and `Hints.of(level)` puts the
+proof's board on the level's blank board, the locked parts under it the level's own: the parts
+it adds are the shadow's ghosts, in the editor and in Hint 2's count, its wires the ghost wires.
+A shadow that adds no part, as 0.1's will, says "No part to add: only wires." The five shadows
+became the proofs of D-328, so every hint reads as it did: Fear's, Aggression's, Love's and
+Orbit's ideas stay; Shadows', "No light in the dark.", goes with its hints, chapter 2 having
+none, as Greed, Patience and Two lights never had. Its proof stays, as every level's.
+
+**D-330 — 2026-10-06 — Score shows a level's proof as a dark grey cross, the score to beat, under the player's wins; its board stays hidden. Applies D-328; amends D-046.**
+The physicist: the player does not see the proof's board, but sees it in Score, as a darkish grey
+cross. `to_beat(level)` is the proof's score, its parts and tick; Score plots it in `P.muted`,
+two strokes 2 px wide, under the wins, so a win on it covers it, and its axes take it in. Two
+lines head the plot, "Time against parts." and "The cross: one to beat."; with no win yet, the
+plot shows the cross alone. Every shipped level has a proof (D-328), so every level shows one.
+A level pasted with its proof in Free play keeps it in the Maker, not in its level: its cross
+stays in `ideas.md`.
+
+**D-331 — 2026-10-06 — A level has an author, written in the Maker's Text, the field opening on "@", and signed in its card's bottom right corner, in a darker grey. Every shipped level is "@Cy-3LO". A pasted level keeps its author; one started from another has none. The level format is version 5; version 4 is read as it is. Amends D-305, D-310.**
+The physicist: the Maker and the level format had no author. Text's third field, Author, under
+Title and Spec, a row high, opens on what the level says, or on "@" if it has none; what is
+typed is kept as it is, spaces squeezed, 24 characters at most, and nothing, or the "@" alone,
+leaves the level unsigned. The card a level opens under shows it in `GREYED`, small, in its
+bottom right corner, as a signature, the lines above it where they were. The studio signs every
+shipped level, the sandbox's too, as `CLAUDE.md` writes it, "@Cy-3LO", not "Cy_3LO". Paste a
+level brings the author with the rest, someone's level staying theirs; Start from and a blank
+plane leave it unsigned, a level started from another being its maker's to sign. Adding a key
+changes the format (D-201): files are version 5, written "author" after "spec", and version 4,
+which has none, is read unsigned.
+
+**D-332 — 2026-10-06 — Dragster, the physicist's level made in the Maker, ships as chapter 4's first, LEVEL 4.1, signed "@Cy-3LO": reach a mark 15 u ahead in 4 s with Sources and thrusters from the stock. Its proof is two drives on the body's axis, 2.52 s. Applies D-325, D-328, D-331.**
+The physicist made it in the Maker and put it in chapter 4, the levels made by players, signed
+by the studio. "Go as fast as possible.": the swimmer at (-15, 0) heading 0, a mark of 8 u at
+(8, 0), its centre to reach it in 4 s; a 7-cell board handing out three Sources and three
+thrusters. One Source on one thruster, 3 u/s, runs out of time; two, each on a thruster on the
+body's axis, back and front, win in 2.52 s, its proof; three would be faster, for more parts.
+It is the route's last level, after Two lights, so it gives no passkey and has no hints
+(D-329). Its file is `4-made-by-users/dragster.json`.
+
+**D-333 — 2026-10-06 — In the run, a drawer's title scrolled under the objectives is the list's, clipped with its rows: the layout says which titles are the foot's. Applies D-065, D-096.**
+In the run's Chapters, with every chapter open or the passkey field below the room, a title of
+the list scrolled down under the objectives was drawn over OBJECTIVES, unclipped: the drawing
+took any title whose corner lay in the objectives' area for theirs. The layout now keeps the
+foot's titles apart, `foot_titles`, and only those are drawn over the objectives; the others are
+the list's, clipped with it. The todo's §12 had it since D-326.
+
+**D-334 — 2026-10-06 — Tutorials stay written by hand in their level's file. Chapter 0's first two lead the player through what they teach, a ghost where the part goes or how it faces and a card that waits until it is done; from 0.3 on, cards explain and the player builds. Settings' Tutorial replays the open level's tutorial, greyed on a level with none. Fear's introduction moves to 0.1, Aggression's Diagnostic cards to 0.6, once those levels are made. Amends D-039, D-054, D-079.**
+The physicist chose the way chapter 0 teaches: lead in 0.1 Wiring and 0.2 Turning, explain after.
+A tutorial is hand-written in its level's JSON, which the Maker does not set and the tests check
+(D-328); what one that builds needs, the ghosts and the waits for a part placed, turned or wired,
+has stayed since D-079 took it from Fear, and 0.1 and 0.2 use it again. From 0.3 on a card shows
+the new part or drawer and says what it does, waiting for Next or for a drawer opened, and the
+player builds with no ghost; the hints wait until the tutorial ends or is skipped (D-078).
+Settings' Tutorial, which started Fear's again whatever the level, replays the open level's from
+its first step, under its card, its board as the player left it; on a level with none, the
+sandbox among them, its row is greyed and a click says "this level has no tutorial". Fear's six
+cards, the swimmer, the objectives, the tabs, the board, the bar and Hints, are the game's
+introduction, and Aggression's two lead to Diagnostic (D-103): they stay where they are until 0.1
+and 0.6 are made, so the game always opens with one, and move then.
+
+**D-335 — 2026-10-06 — Chapter 0, Tutorials: 0.1 Wiring, 0.2 Turning, 0.3 Eyes, 0.4 Half, 0.5 Minus, 0.6 Diagnostic, each on a 7-cell board, each won by its proof and lost by the board that misses its lesson; every one open from the start, none giving a passkey. Fear's introduction opens 0.1; Aggression's Diagnostic cards are 0.6's. Applies D-325, D-334; amends D-075, D-079, D-103.**
+Designed with the physicist, each checked by simulation (`tests/test_chapter0.py`):
+- 0.1 Wiring: a Source and a thruster locked on the axis, nothing handed out; Fear's five cards,
+  then one that leads the wire, Run, Play, and Hints last. Into a ring 16 u ahead in 10 s: 4.35 s.
+- 0.2 Turning: redesigned by D-336, a thruster's turn making the swimmer turn round an obstacle.
+- 0.3 Eyes: an eye and a thruster to place and wire, a light of power 4 12 u ahead: 5.38 s; an
+  eye looking back never moves. Cards explain the eye, from 0.3 on (D-334).
+- 0.4 Half: stay 3 s in a ring of 3 u; a Source on the thruster crosses it in 2 s, halved it
+  stays, 9.03 s. The Double is handed out too: no wire carries more than a Source sends, so on
+  a Source's wire it adds nothing, which its card says.
+- 0.5 Minus, once Plus: the Diff alone, the Sum left to Love, the physicist's choice. Stay 3 s in
+  the ring of 8 u round a light 16 u ahead, without touching it: |Source - eye| slows to nothing
+  as the eye fills, 7.42 s; an eye alone or a Source alone touch the light.
+- 0.6 Diagnostic: an eye wired to a thruster comes with the eye looking back, so the swimmer
+  never moves; Aggression's two cards, moved, take the player to Diagnostic to find why; turned
+  forward, the eye reaches the light, 5.38 s.
+Each is the studio's, "@Cy-3LO", hinted (D-329) with an idea of its own. The physicist: every
+tutorial is open always, so a player may take them in any order, or none; a chapter says so,
+`Chapter.all_open`, and its levels give no passkey, having nothing to open. Chapter 1 keeps its
+hints, and chapters 2 and after have none, as D-329 has it. The game now opens on 0.1. Fear and Aggression lose their tutorials, Aggression keeping its
+prewired half swimmer (D-103); Settings' Tutorial is greyed on them (D-334).
+
+**D-336 — 2026-10-06 — A tutorial's highlight is accent1 alone, the sparks gone: a panel's titles, a tab's name, a cell, and now a drawer's icon in the bar, drawn in it. 0.1's cards edited by the physicist. 0.2 Turning: a thruster off the axis, pointing through the centre, turned to push ahead, takes the swimmer round an obstacle into the ring behind it. Amends D-080, D-095, D-335.**
+The physicist reviewed chapter 0 in `docs/tutorials.md`, a table of every card, generated from
+the level files: what is open, the text, what is lit, what moves it on. No highlight with sparks:
+accent1 is enough, or an icon. The sparks (D-080) go, their code with them; what a step shows is
+still drawn in accent1 by what draws it (`tutorial.panels`), and the bar's icons now are too:
+every one for a step that shows the bar, the Hints icon for one that shows it (D-095 had left
+them to the sparks). 0.1: the swimmer, already in accent1, needs no highlight; Objectives' title
+alone is lit; "Click the Editor tab or button, or press Tab."; the board's card goes; the bar's
+icons are lit; the wire's card lights its two cells, "Click the Source, then the Thruster to wire
+them."; the Run and Play cards light nothing, and so hold nothing back (D-048); the last lights
+the Hints icon: "You won! You reached the objectives. If you are stuck, try clicking Hints."
+0.2 was redesigned on 37 cells, a thruster turned off the centre; D-338 redesigned it again.
+
+**D-337 — 2026-10-06 — A tutorial's highlight pulses, accent1 bright to medium and back every 1.2 s, smoothly, in place of the sparks. A game's word in a card's text, marked "**Editor**", is drawn in accent1. Amends D-063, D-094, D-336.**
+The physicist chose among animated trials, a hard blink and a smooth pulse, on text (the
+Objectives title, the Editor tab) and on icons (the bar, the Hints icon): the pulse. What a step
+lights, a tab's name, a drawer's title, a section's, a bar's icon or a cell, is drawn in
+`palette.pulse(frame)`, a cosine between `P.accent1.mid` and `P.accent1.bright` over
+`PULSE_FRAMES`, 72 frames; `main.py` counts the frames, drawing only, and hands the colour to the
+scenes, `Frame.lit_ink`. A cell fills with half of it over the zone's colour (`FOCUS_TINT`), in
+place of `FOCUS_CELL`. And in a card, the game's words, the tabs, the drawers, the parts, the
+Wheel's actions, the keys, are set apart, as the physicist asked: marked "**Editor**" in the
+level's file, as markdown writes bold, which `docs/tutorials.md` shows so, they are drawn in
+accent1, steady. A step wraps by what shows, its marks taking no room, and a marked phrase that
+runs on to the next line stays marked there. The six tutorials' words are marked, to be edited.
+
+**D-338 — 2026-10-06 — Every tutorial opens on the Run, its introduction ending "Press the Editor button or tab, or press Tab." 0.2 Turning, on 19 cells: the thruster behind the Source, as in 0.1, is moved to the swimmer's right, and turns it round an obstacle into the ring behind. A card may wait for a part moved. The switch, Play, a row of Parts and a Wheel's icon pulse when a card shows them. 0.1's cards as the physicist edited them. Amends D-334, D-335, D-336, D-337.**
+The physicist edited 0.1 in `docs/tutorials.md`: "swimmer" marked; "Click the Editor tab or
+button, or press Tab."; the Run card lighting the Run tab; "Press Play, or Space to play the
+simulation.", lighting Play. A highlight with no accent drawing of its own showed nothing once
+the sparks went: the switch at the bar's foot, the run's Play, a row of Parts and a Wheel's icon
+now pulse too (`tutorial.panels` names them "level:edit", "play", "menu:eye", "wheel:move").
+Every tutorial opens on the Run, as 0.1 does, and its introduction ends on the Editor, lighting
+its tab and button and waiting for it; 0.3 to 0.6 opened in the Editor, Parts open, and now say
+their goal first: no tutorial names `starts_in`. 0.2: 37 cells were too many, 7 or 19 enough; its
+first card, on the Run, says the goal, reaching the ring by turning round the obstacle; the next
+leads the thruster's move, from behind the Source, where 0.1 has it, to the swimmer's right. On 19
+cells a thruster one row off the axis, pushing ahead, circles on 3.08 u: an obstacle of 1 u at
+(0, 3), a ring of 1 u at (0, 6), entered after some 160 degrees, in 2.92 s; behind the Source the
+swimmer goes straight and misses, and on the left it circles the other way. A card may wait for
+`moved`, a part of that kind on that cell, as `placed` does, letting through the Move tool and a
+drag, and nothing else; `placed` still lets no move through.
+
+**D-339 — 2026-10-06 — The physicist's review, round two: 0.1's Run card lights the Run button too; 0.3 shows the wiring's shadow; 0.5's second card lights the Diff alone. The run opens on Diagnostic, always. A stay's goal says its seconds, "Stay 3 s in the ring". The Editor's Diagnostic has no handles on its eyes' meters, and a part clicked there opens Tools on it. Chapters' numbers are in their names' font. Fear's plane turned a quarter, the swimmer facing right. Amends D-058, D-307, D-321, D-338.**
+Tutorials: in 0.1 the card that sends the player to the Run lights its button with its tab; 0.3
+ghosts its model, an eye ahead looking forward wired to a thruster behind, while its cards
+explain; 0.5's card on the Diff lights its row of Parts, not the drawer's title. The run kept the
+drawer it last had open, from one run to the next; it opens on Diagnostic every time now, as it
+did when a place was chosen (D-321). A stay's name said where, not how long: "Stay 3 s in the
+ring", "the" where the level has one, "every ring" for all. The Editor's Diagnostic let the
+player drag an eye's meter to set what it reads (D-058), a slider in all but name: it goes, the
+meters staying meters, and a click on a part in the Run preview opens Tools, the board in place
+of the preview, with that part's Wheel. In Chapters, and in the Maker's Start from, a level's
+number was in Plex Mono, its name in FreeSans Bold, each centred on its own: the number is in the
+name's font now, on one line with it. Fear's plane turns 90 degrees clockwise about the start, so
+that the swimmer faces right, as in every other level: the start at (17, 19) heading 0, the light
+and its ring at (17, 16), still on its right; every run ends as it did, to the tick.
+
+**D-340 — 2026-10-06 — A run won opens Score. Score's plot is boxed, its time axis ticked in round seconds, at most six ticks, their numbers apart from its label, "time (s)", turned upright. Amends D-046, D-339.**
+The physicist: when the level is won, the run should show Score, the win just scored; and the
+plot should be a square box, as wide as the drawer lets it, its label near the drawer's edge, its time axis ticked more than at its two ends, the numbers in seconds,
+apart from the axis's label, written along it. The run, reaching its win, opens Score (not in the
+developer's view); it opened on Diagnostic, and stays so until then (D-339). The plot is a box,
+RULE's colour; the time axis is ticked every 1, 2, 5, 10, 15, 20, 30 or 60 s, the first of them
+giving at most six ticks from 0 to the time allowed (`arena_layout.time_ticks`): 10 s every 2,
+20 s every 5, 45 s every 10, 120 s every 30. A tick is a short line inward from both sides of
+the box; its number, in seconds, sits left of the box; "time (s)", turned a quarter, stands left
+of the numbers. The parts' axis is as it was. The box and its ticks are a shade lighter than a
+rule, `PLOT_FRAME`, and its numbers and its axes' names lighter than dimmed text, `PLOT_TEXT`.
+
+**D-341 — 2026-10-06 — Free play is Build your level, its row Open Maker, which opens the Maker on Objects, no card, under a card of its own, once a session, lighting the Maker's tab. The sandbox's caption says YOUR LEVEL. The Author field's "@" stands outside it, fixed. The todo's §13 is done. Amends D-035, D-301, D-322, D-331.**
+The physicist closed §13: chapter 2's new levels and chapter 4's are made with the Maker as they
+come. Its door in Chapters is renamed: the section once Free play is Build your level, its row,
+once Sandbox, Open Maker, its info "Build your own level in the Maker: its objects, its goals,
+its parts. Try it, then share it." Chosen, it opens the Maker on Objects, with no level card
+(`Router.open`), and the shipped sandbox's file holds the Maker's introduction, a tutorial of
+one card, which `main.py` runs on the Maker's screen too: it lights the Maker's tab, pulsing, and
+says what the Maker is for; any key or click closes it, and it shows once a session, Settings'
+Tutorial bringing it back (D-334). The caption's label, once SANDBOX, is YOUR LEVEL; F3 off the
+sandbox says "the Maker opens from Chapters: Open Maker"; the Maker's Start from lists the old
+plane under Sandbox, by its title, Two lights, four obstacles. The code keeps the word sandbox.
+The Author field in Text: its "@" stands outside the field, before it, so that it cannot be
+deleted; the field holds the name after it, and what is typed is signed "@" and the name; an
+empty name leaves the level unsigned (D-331). The level file still writes "@Cy-3LO".
+
+**D-342 — 2026-10-06 — The Maker's Start from opens with every chapter folded, and no longer lists the sandbox's plane, Two lights, four obstacles. The light's rays are a shade lighter. Amends D-310, D-322, D-341.**
+The physicist: in the Maker's Files the chapters should be folded, and the sandbox's plane go.
+Start from lists Blank level, then each chapter under its title, folded at first (the Maker's
+own folds, which a click on a title changes, D-322); the old plane, once Free play's (D-035,
+D-341), is gone from it, its file still the sandbox's, where the Maker's introduction lives. And
+the rays a light sends, in the run, Diagnostic's map and the Maker's plane, are a shade lighter:
+`RAY`, three quarters of the way from the bar's black to a rule's grey, was under half.
+
+**D-343 — 2026-10-06 — The end says where to reach the studio: "leave a comment on the itch.io page or at contact@nektoids.com." Amends D-035.**
+The physicist's: the domain registered on 2026-10-06 has its address. The end screen's second
+line, which named the itch.io page alone, names both; it fits on one line of the end screen.
+
+**D-344 — 2026-10-06 — Fear's proof is the physicist's board, 3C4tsBWoGsoQcW4i, four parts, won in 2.03 s: Score's cross and Hints 2 and 3 show it. Amends D-328.**
+The physicist found it, and holds it optimal: two eyes at the back corners, each looking across
+the body, back and out to the other side, wired to the thruster on the side it looks to, the
+thrusters at the back corners as before. It wins Fear in 244 ticks, 2.03 s, where the old
+shadow's board, eyes at the front looking back, took 3.18 s, with as many parts. Fear's idea,
+"Each eye its thruster.", still holds: each eye drives the thruster on the side it sees.
+
+**D-345 — 2026-10-06 — The streams thin out from 3 to 5 body radii, and are never shorter than 32 px on screen, on average: Diagnostic's map and a run zoomed out draw them longer. Amends D-076.**
+The physicist's (todo §12): in Diagnostic's map the flames and the light drawn in should reach
+farther, and at full rate they ended abruptly at 3 body radii. Chosen on a trial drawn by the
+game's own code, the run of Aggression and the maps of Fear, Love and Dragster, fades and floors
+side by side. Each speck now ends at its own distance, drawn evenly between 3 and 5 body radii:
+a stream is as dense as before over its first 3 body radii, then thins out to none by 5, 4 on
+average. The specks keep their speed, 3 body radii in 16 frames out of a thruster and in 0.5 s
+into an eye, and their density, 12 at once in the first 3 body radii at RATE_MAX, 16 in all on
+average: their number is still the rate. A stream is drawn longer where it would be shorter than
+32 px on screen, on average. A body radius is 5 to 14 px in Diagnostic's map, so the maps of
+Wiring, Minus, Love, Two lights and Dragster draw longer streams, and so does a run zoomed out
+past 8 px/u; the run at its opening zoom, 16 px/u, is as it was. The info boxes' streams thin
+out too, their farthest speck where it was, so that the boxes do not move. A probe near the
+map's edge has its streams cut by the map's frame.
+
+**D-346 — 2026-10-06 — Share level, once it has copied, opens its box on how to share the level: "Copied: your level and its proof. To share it with the community, paste it into a comment on the itch.io page, cy-3lo.itch.io/nektoids, or send it to contact@nektoids.com." Amends D-320.**
+The physicist's: a level copied with its proof said only so on the status line, and nothing of
+where to take it. The box is Share level's info box, beside its row, as the info disc opens it;
+the next click or key closes it, and only that, as any info box. The info disc still tells what
+Share level does. No server: the community is the itch.io page's comments and the studio's
+address (D-343).
+
+**D-347 — 2026-10-06 — The time allowed, in the Maker's Goals, is 1 to 120 s, by 1 s. Amends D-311.**
+The physicist's: a level as short as Dragster's 4 s, or Dragster II's 1 s, could not be made in
+the Maker, whose slider went from 5 to 120 s by 5. The slider now steps by a second; its value
+may still be typed.
+
+**D-348 — 2026-10-06 — Dragster II, the physicist's, ships as LEVEL 4.2, signed "@Cy-3LO": reach Dragster's mark in 1 s, from a stock of nine Sources and nine thrusters on 19 cells. Chapter 4's levels, made by users, are all open and give no passkey. Applies D-325, D-332, D-347.**
+"Go even faster.": Dragster's plane, the swimmer at (-15, 0) heading 0 and a mark of 8 u at
+(8, 0), with a board of 19 cells handing out nine of each. Its proof is the physicist's, nine
+Sources each on a thruster, 18 parts, won in 69 ticks, 0.575 s. Levels made by users come in no
+order, so chapter 4 is open from the start, as the tutorials are (D-335), and none of its levels
+gives a word; it has no hints (D-329). Its file is `4-made-by-users/dragster-ii.json`.
+
+**D-349 — 2026-10-06 — A level whose goals are won or lost where its swimmer starts is not judged: its run plays out its time, the Maker's status line says so and Share level refuses it. A level of bans alone is won when its time is up, none broken. Amends D-040, D-307, D-320.**
+The physicist found it in the Maker: Dragster II's goal turned to "Leave every ring", its
+swimmer starting out of the ring, and the run was over at once, "Done in 0.00 s", again after
+every rewind; to him it looked frozen, a failure he could not read (invariant 6). Goals are
+counted from where the swimmer starts, so a goal met there wins at the first tick: leave every
+ring or a ring from outside them, reach a ring from inside it; a ban broken there loses, "Stay
+inside the ring" from outside it. Such a level is now not judged: no banner at its start, Play
+runs it, and it ends when its time is up, the banner adding "Not judged: won where it starts".
+In the Maker the status line says "Won (or Lost) where the swimmer starts: move the start or
+change a goal." while it holds, and Share level refuses the level, whose run cannot be won. A
+ban was met while unbroken, so a level asking bans alone was won at once wherever it started;
+such a level is now won by keeping its bans until its time is up: "Reach none of the lights"
+alone is to keep off the light for the time allowed. No shipped level is decided at its start,
+a test says so, and none asks bans alone.

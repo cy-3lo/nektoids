@@ -72,6 +72,21 @@ def hex_disc(radius: int) -> list[Cell]:
     return [(q, r) for r in span for q in span if hex_distance((q, r), (0, 0)) <= radius]
 
 
+def disc_size(radius: int) -> int:
+    """How many cells a hexagon of `radius` rings round (0, 0) holds: 1, 7, 19, 37..."""
+    return 3 * radius * (radius + 1) + 1
+
+
+def disc_radius(size: int) -> int:
+    """The rings of the hexagon round (0, 0) that holds `size` cells; ValueError if none does."""
+    radius = 0
+    while disc_size(radius) < size:
+        radius += 1
+    if disc_size(radius) != size:
+        raise ValueError(f"no hexagon holds {size} cells: 1, 7, 19, 37...")
+    return radius
+
+
 def to_pixel(cell: Cell, size: float, origin: tuple[float, float]) -> tuple[float, float]:
     """Pixel centre of `cell`.
 

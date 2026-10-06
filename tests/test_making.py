@@ -1,0 +1,312 @@
+"""A level made by hand (D-301). making.py imports no pygame."""
+
+import json
+from dataclasses import replace
+
+import pytest
+
+from nektoids.graph.board import Kind
+from nektoids.levels.arenas import arenas, sandbox
+from nektoids.levels.level import Item, ItemKind, Level, to_json
+from nektoids.levels.making import (
+    AUTHOR_LONGEST,
+    BLANK_STOCK,
+    BLANK_TIME,
+    GOALS_MOST,
+    NEW,
+    SETTING,
+    SPEC_LONGEST,
+    TIME,
+    TITLE_LONGEST,
+    Unmade,
+    adjusted,
+    authored,
+    blank,
+    boarded,
+    goal_added,
+    goal_removed,
+    goal_set,
+    goal_worded,
+    lacks,
+    moved,
+    number,
+    pasted,
+    placed,
+    removed,
+    specified,
+    start_moved,
+    stocked,
+    taken,
+    timed,
+    titled,
+    turned,
+    zoned,
+)
+from nektoids.levels.objectives import Count, Goal, Target, Verb
+
+LEVEL = replace(sandbox(), tutorial=None)  # as the Maker holds it: the intro is main's (D-341)
+# two lights, four obstacles; the start at (15, 19), heading 20°
+
+
+def test_an_item_placed_lands_on_the_lattice_last_in_order_set_as_new_and_the_old_level_stays():
+    made = placed(LEVEL, ItemKind.LIGHT, (10.2, 13.9))
+    assert made.items[:-1] == LEVEL.items and len(LEVEL.items) == 6
+    last = made.items[-1]
+    assert (last.kind, last.at, last.value) == (ItemKind.LIGHT, (10.0, 14.0), NEW[ItemKind.LIGHT])
+    assert len(made.arena.lights) == 3  # the simulation reads it
+    assert placed(LEVEL, ItemKind.OBSTACLE, (3.0, 3.0)).items[-1].value == 1.0
+
+
+def test_an_item_moved_or_set_stays_on_the_lattice_and_within_its_range():
+    light = len(LEVEL.items) - 6  # the first light, power 8
+    assert moved(LEVEL, light, (12.74, 3.1)).items[light].at == (13.0, 3.0)  # whole u, D-311
+    assert adjusted(LEVEL, light, -3).items[light].value == 5.0  # power 8, the most (D-318)
+    assert adjusted(LEVEL, light, 99).items[light].value == SETTING[ItemKind.LIGHT].hi
+    obstacle = 2  # radius 1
+    assert adjusted(LEVEL, obstacle, -1).items[obstacle].value == 1.0  # no smaller
+    assert adjusted(LEVEL, obstacle, 2).items[obstacle].value == 3.0
+    alone = replace(LEVEL, items=(LEVEL.items[obstacle],), start=(0.0, 0.0, 0.0))  # room
+    assert adjusted(alone, 0, 99).items[0].value == SETTING[ItemKind.OBSTACLE].hi == 8.0
+
+
+def test_a_light_on_an_obstacle_and_a_start_inside_one_are_refused_with_their_reason():
+    obstacle = LEVEL.items[2].at  # (21, 21), radius 1
+    with pytest.raises(Unmade, match="touches an obstacle"):
+        moved(LEVEL, 0, obstacle)
+    with pytest.raises(Unmade, match="touches an obstacle"):
+        placed(LEVEL, ItemKind.LIGHT, (obstacle[0] + 1.5, obstacle[1]))  # rims 0.5 u apart
+    placed(LEVEL, ItemKind.LIGHT, (obstacle[0] + 2.5, obstacle[1]))  # clear of it
+    with pytest.raises(Unmade, match="start inside an obstacle"):
+        start_moved(LEVEL, (obstacle[0] + 1.5, obstacle[1]))
+    with pytest.raises(Unmade, match="start inside an obstacle"):
+        placed(LEVEL, ItemKind.OBSTACLE, (15.0, 20.5))  # on the swimmer
+    with pytest.raises(Unmade, match="start inside an obstacle"):
+        adjusted(placed(LEVEL, ItemKind.OBSTACLE, (15.0, 21.5)), 6, 2)  # grown onto it
+
+
+def test_an_item_removed_takes_its_place_out_and_the_others_move_up():
+    made = removed(LEVEL, 1)
+    assert made.items == LEVEL.items[:1] + LEVEL.items[2:]
+    assert len(made.arena.lights) == 1
+
+
+def test_the_start_moves_on_the_lattice_and_turns_by_fifteen_degrees_within_a_turn():
+    assert start_moved(LEVEL, (4.3, 4.8)).start == (4.0, 5.0, 20.0)
+    assert turned(LEVEL, 1).start[2] == 30.0  # 35, onto the lattice: touched, it snaps
+    assert turned(turned(LEVEL, 1), 1).start[2] == 45.0
+    assert turned(turned(LEVEL, -1), -1).start[2] == 345.0  # 5, then -10: within [0, 360)
+    assert turned(replace(LEVEL, start=(0.0, 0.0, 345.0)), 1).start[2] == 0.0
+
+
+def test_a_made_level_reads_back_as_written_by_to_json():
+    made = turned(placed(start_moved(LEVEL, (3.0, 4.5)), ItemKind.OBSTACLE, (12.0, 4.0)), -2)
+    text = to_json(made)
+    again = Level.from_dict(json.loads(text))
+    assert again == made and to_json(again) == text
+
+
+def test_a_title_and_a_spec_are_written_their_spaces_squeezed_and_never_left_empty():
+    made = specified(titled(LEVEL, "  Two   lights "), "Touch\nboth lights.")
+    assert (made.title, made.spec) == ("Two lights", "Touch both lights.")
+    assert made.items == LEVEL.items and len(titled(LEVEL, "x" * 99).title) == TITLE_LONGEST
+    assert len(specified(LEVEL, "y" * 999).spec) == SPEC_LONGEST
+    with pytest.raises(Unmade, match="needs a title"):
+        titled(LEVEL, "   ")
+    with pytest.raises(Unmade, match="what the level asks"):
+        specified(LEVEL, "")
+
+
+def test_a_mark_goes_anywhere_its_radius_from_one_unit_to_eight():
+    on_light = placed(LEVEL, ItemKind.MARK, LEVEL.items[0].at)  # D-306: no light refuses it
+    assert on_light.items[-1].value == NEW[ItemKind.MARK] == 1.0  # the least (D-314)
+    over = placed(LEVEL, ItemKind.MARK, (15.0, 19.0))  # on the swimmer, on obstacles: a zone
+    assert adjusted(over, 6, 99).items[6].value == SETTING[ItemKind.MARK].hi == 8.0  # D-318
+    assert adjusted(over, 6, -99).items[6].value == 1.0
+    assert (over.arena.lights, over.arena.obstacles) == (LEVEL.arena.lights, LEVEL.arena.obstacles)
+
+
+def test_the_last_of_a_kind_a_goal_aims_at_stays():
+    goal = Goal(Verb.LEAVE, Count.ALL, Target.MARK)  # D-307
+    ringed = replace(placed(LEVEL, ItemKind.MARK, (3.0, 3.0)), objectives=(goal,))
+    with pytest.raises(Unmade, match="Leave every ring needs a ring: take the goal out first"):
+        removed(ringed, 6)
+    two = placed(ringed, ItemKind.MARK, (9.0, 9.0))
+    assert len(removed(two, 6).marks) == 1  # one of two may go
+
+
+def test_the_time_allowed_sits_on_whole_seconds_from_one_second_to_two_minutes():
+    assert LEVEL.time_limit == 120.0 and timed(LEVEL, 42.4).time_limit == 42.0
+    assert timed(LEVEL, 0.0).time_limit == TIME.lo == 1.0  # D-347
+    assert timed(LEVEL, 999.0).time_limit == TIME.hi == 120.0
+
+
+def test_a_goal_added_is_the_first_sentence_the_level_can_hold_and_does_not_ask_two_at_most():
+    one = goal_added(LEVEL)  # the sandbox asks nothing; it has lights and obstacles, no mark
+    assert one.objectives == (Goal(Verb.REACH, Count.ALL, Target.LIGHT),) and not LEVEL.objectives
+    two = goal_added(one)
+    assert two.objectives[1] == Goal(Verb.REACH, Count.ALL, Target.OBSTACLE)
+    assert len(two.objectives) == GOALS_MOST
+    with pytest.raises(Unmade, match="2 goals at most"):
+        goal_added(two)
+    assert goal_removed(two, 0).objectives == two.objectives[1:]
+    marks_only = replace(LEVEL, items=(Item(ItemKind.MARK, (3.0, 3.0), 3.0),))
+    assert goal_added(marks_only).objectives[0] == Goal(Verb.REACH, Count.ALL, Target.MARK)
+    with pytest.raises(Unmade, match="place a light, an obstacle or a mark first"):
+        goal_added(replace(LEVEL, items=()))
+
+
+def test_a_word_chosen_rewords_the_goal_unless_it_would_aim_at_nothing_or_ask_twice():
+    two = goal_added(goal_added(LEVEL))  # reach every light, reach every obstacle
+    assert goal_worded(two, 0, Count.NONE).objectives[0] == Goal(
+        Verb.REACH, Count.NONE, Target.LIGHT
+    )
+    assert lacks(two, 0, Count.NONE) is None and lacks(two, 0, Target.MARK) is not None
+    for word in (Target.MARK, Verb.LEAVE, Verb.STAY):  # each would aim at marks: there are none
+        assert lacks(two, 0, word) == "the level has no mark: place one in Objects"
+        with pytest.raises(Unmade, match="no mark"):
+            goal_worded(two, 0, word)
+    with pytest.raises(Unmade, match="asks that already"):
+        goal_worded(two, 1, Target.LIGHT)
+    assert goal_worded(two, 1, Target.OBSTACLE) == two  # the word it has: nothing changes
+    ringed = placed(two, ItemKind.MARK, (3.0, 3.0))
+    assert goal_worded(ringed, 0, Verb.STAY).objectives[0] == Goal(
+        Verb.STAY, Count.ALL, Target.MARK
+    )
+
+
+def test_a_stays_seconds_sit_on_their_range_and_a_verb_without_a_setting_has_none():
+    ringed = placed(LEVEL, ItemKind.MARK, (3.0, 3.0))
+    stay = replace(ringed, objectives=(Goal(Verb.STAY, Count.ONE, Target.MARK),))
+    assert goal_set(stay, 0, 12.4).objectives[0].seconds == 12.0
+    assert goal_set(stay, 0, 99.0).objectives[0].seconds == 60.0
+    assert goal_set(stay, 0, 0.0).objectives[0].seconds == 1.0 and stay.objectives[0].seconds == 5
+    with pytest.raises(ValueError, match="no setting"):
+        goal_set(goal_added(LEVEL), 0, 3.0)
+
+
+def test_a_level_with_goals_made_reads_back_as_written_by_to_json():
+    ringed = placed(goal_added(LEVEL), ItemKind.MARK, (3.0, 3.0))
+    made = goal_set(goal_worded(timed(ringed, 35.0), 0, Verb.STAY), 0, 8.0)
+    text = to_json(made)
+    again = Level.from_dict(json.loads(text))
+    assert again == made and again.objectives[0].seconds == 8.0 and again.time_limit == 35.0
+
+
+def test_a_sliders_box_takes_a_number_typed_and_refuses_anything_else():
+    assert number("35") == 35.0 and number("12.5") == 12.5 and number("007") == 7.0
+    for text in ("", ".", "1.2.3", "inf"):
+        with pytest.raises(Unmade, match="type a number"):
+            number(text)
+    assert timed(LEVEL, number("42.6")).time_limit == 43.0  # then onto the slider's steps
+
+
+def test_a_level_copied_as_text_is_pasted_back_as_it_was():
+    made = goal_set(
+        goal_worded(placed(goal_added(LEVEL), ItemKind.MARK, (3.0, 3.0)), 0, Verb.STAY), 0, 8
+    )
+    made = titled(timed(turned(made, 2), 45.0), "Made")
+    assert pasted(LEVEL, to_json(made)) == made  # D-310
+    assert pasted(made, to_json(LEVEL)) == LEVEL  # and back: one step for undo each way
+
+
+def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_parts():
+    fear = next(
+        level for level in arenas() if level.title == "Fear"
+    )  # its passkey, its hints, a board of its own
+    made = pasted(LEVEL, to_json(fear))
+    assert (made.title, made.spec, made.start) == (fear.title, fear.spec, fear.start)
+    assert (made.items, made.objectives, made.time_limit) == (
+        fear.items,
+        fear.objectives,
+        fear.time_limit,
+    )
+    assert (made.board["zone"], made.board["stock"]) == (19, fear.board["stock"])  # D-315
+    assert made.board["parts"] == LEVEL.board["parts"]  # the board's own parts, none here
+    assert made.tutorial is None and made.passkey is None and made.hints is None
+    assert fear.passkey is not None and fear.hints is not None
+    wiring = next(level for level in arenas() if level.title == "Wiring")  # D-335: a tutorial
+    assert wiring.tutorial is not None and pasted(LEVEL, to_json(wiring)).tutorial is None
+
+
+def test_a_level_is_signed_in_text_a_pasted_one_keeps_its_author_one_started_from_none():
+    made = authored(blank(LEVEL), "  @someone   else ")  # D-331
+    assert made.author == "@someone else"
+    assert authored(made, "@").author is None and authored(made, " ").author is None
+    assert len(authored(made, "@" + "x" * 99).author) == AUTHOR_LONGEST
+    fear = next(level for level in arenas() if level.title == "Fear")
+    assert pasted(made, to_json(fear)).author == "@Cy-3LO"  # someone's level stays theirs
+    assert taken(made, fear).author is None  # Start from: a new level, its maker's to sign
+    assert blank(made).author is None
+
+
+def test_a_text_no_level_could_hold_is_refused_with_its_reason():
+    text = json.loads(to_json(LEVEL))
+    for given, why in (
+        ("  ", "paste a level's text into the field first"),
+        ("{", "not JSON"),
+        ("[1, 2]", "without its version"),
+        ("12", "not a level's text"),
+        (json.dumps({**text, "version": 9}), "version 9"),
+        (json.dumps({**text, "colour": "red"}), "takes no 'colour'"),
+        (json.dumps({k: v for k, v in text.items() if k != "title"}), "no 'title'"),
+        (json.dumps({**text, "title": "   "}), "needs a title"),
+        (json.dumps({**text, "start": {"at": [21.0, 21.0], "heading": 0}}), "inside an obstacle"),
+    ):
+        with pytest.raises(Unmade, match=why):
+            pasted(LEVEL, given)
+
+
+def test_a_blank_plane_has_no_item_no_goal_the_swimmer_at_the_origin_two_of_each_part():
+    made = blank(goal_added(LEVEL))  # D-310, D-315
+    assert (made.items, made.objectives, made.start) == ((), (), (0.0, 0.0, 0.0))
+    assert made.time_limit == BLANK_TIME and made.title == "New level" and made.spec
+    assert made.board["stock"] == {kind.value: BLANK_STOCK for kind in Kind}
+    assert made.board["zone"] == LEVEL.board["zone"] and pasted(LEVEL, to_json(made)) == made
+
+
+def test_every_shipped_level_may_be_started_from_its_plane_goals_time_and_handout():
+    for level in (*arenas(), sandbox()):
+        made = taken(blank(LEVEL), level)
+        assert (made.title, made.items, made.objectives) == (
+            level.title,
+            level.items,
+            level.objectives,
+        )
+        assert made.board["stock"] == level.board["stock"] and made.tutorial is None
+        assert made.board["zone"] == level.board["zone"]
+
+
+def test_a_part_handed_out_goes_from_none_to_nine_then_unlimited_and_back():
+    made = blank(LEVEL)  # two of each (D-315)
+    assert stocked(made, Kind.EYE, 1).board["stock"]["eye"] == 3
+    assert "eye" not in stocked(made, Kind.EYE, -2).board["stock"]  # none: left out
+    assert stocked(made, Kind.EYE, -9).board["stock"].get("eye", 0) == 0  # no fewer
+    assert stocked(made, Kind.SUM, 7).board["stock"]["sum"] == 9
+    assert stocked(made, Kind.SUM, 8).board["stock"]["sum"] is None  # then unlimited
+    assert stocked(stocked(made, Kind.SUM, 9), Kind.SUM, -1).board["stock"]["sum"] == 9
+    assert stocked(LEVEL, Kind.THRUSTER, 5).board["stock"]["thruster"] is None  # stays so
+    assert list(stocked(made, Kind.EYE, 1).board["stock"]) == [k.value for k in Kind]
+
+
+def test_the_zone_is_a_hexagon_of_seven_to_thirty_seven_cells_one_ring_at_a_time():
+    assert LEVEL.board["zone"] == 37  # D-313, D-315: one cell holds nothing that swims
+    assert zoned(LEVEL, -1).board["zone"] == 19 and zoned(LEVEL, -2).board["zone"] == 7
+    assert zoned(LEVEL, 1).board["zone"] == 37 and zoned(LEVEL, -9).board["zone"] == 7
+    assert len(zoned(LEVEL, -2).new_board().cells) == 7
+
+
+def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
+    board = LEVEL.new_board()  # D-319: the Editor's
+    eye = board.place(Kind.EYE, (0, 0))
+    board.place(Kind.THRUSTER, (1, 0))  # free: the player's, not the level's
+    board.lock(eye.id)
+    made = boarded(LEVEL, board)
+    assert [(p["kind"], p["cell"], p["locked"]) for p in made.board["parts"]] == [
+        ("eye", [0, 0], True)
+    ]
+    assert made.board["wires"] == [] and pasted(LEVEL, to_json(made)) == made
+    assert taken(LEVEL, made).board["parts"] == made.board["parts"]  # Start from, Paste
+    assert blank(made).board["parts"] == []  # a blank plane places none
+    aggression = next(level for level in arenas() if level.title == "Aggression")  # its parts
+    # free, prewired: left out
+    assert taken(LEVEL, aggression).board["parts"] == []

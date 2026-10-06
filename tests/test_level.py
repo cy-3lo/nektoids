@@ -4,11 +4,11 @@ import json
 
 import pytest
 
-from nektoids.graph.board import Kind
+from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import NE, hex_disc
 from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas, sandbox
 from nektoids.levels.level import FORMAT, Item, ItemKind, Level, is_passkey, load, to_json
-from nektoids.levels.objectives import VisitLights
+from nektoids.levels.objectives import Count, Goal, Target, Verb
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import OBSTACLE_RADIUS
 
@@ -33,11 +33,14 @@ def a_level(**changes):
 
 
 def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_writes():
-    assert sorted(path.stem for path in DATA.glob("*.json")) == sorted((*ORDER, SANDBOX))
+    names = (path.relative_to(DATA).with_suffix("").as_posix() for path in DATA.rglob("*.json"))
+    assert sorted(names) == sorted((*ORDER, SANDBOX))  # each in its chapter's folder (D-325)
     for name in (*ORDER, SANDBOX):
         path = DATA / f"{name}.json"
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
-    titles = ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
+    titles = ["Wiring", "Turning", "Eyes", "Half", "Minus", "Diagnostic"]  # D-335
+    titles += ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
+    titles += ["Two lights", "Dragster", "Dragster II"]  # D-324, D-332, D-348
     assert [level.title for level in arenas()] == titles
 
 
@@ -45,7 +48,7 @@ def test_a_level_comes_back_from_its_data_as_it_was_even_through_json():
     level = Level.from_dict(a_level())
     assert Level.from_dict(json.loads(json.dumps(level.to_dict()))) == level
     assert level.start == (5.0, 5.0, 90.0) and level.time_limit == 30.0
-    assert level.objectives == (VisitLights(),)
+    assert level.objectives == (Goal(Verb.REACH, Count.ALL, Target.LIGHT),)  # D-307
 
 
 def test_items_are_placed_as_parts_are_a_kind_a_point_and_their_kinds_setting():
@@ -109,19 +112,116 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
 def test_a_level_without_its_version_or_of_another_is_refused():
     data = a_level()
     del data["version"]
-    with pytest.raises(ValueError, match="without its version: this game reads version 1"):
+    with pytest.raises(ValueError, match="without its version: this game reads version 5"):
         Level.from_dict(data)
-    with pytest.raises(ValueError, match="of version 2: this game reads version 1"):
-        Level.from_dict(a_level(version=2))  # D-201
-    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 1
+    with pytest.raises(ValueError, match="of version 6: this game reads version 5 and those"):
+        Level.from_dict(a_level(version=6))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 5  # 1 upgraded (D-331)
 
 
-def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
-    words = [level.passkey for level in arenas()]  # D-075
-    assert words == ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL"]
-    assert len(set(words)) == len(words)
-    assert all(is_passkey(word) for word in words) and sandbox().passkey is None
+def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
+    fear = {
+        k: v
+        for k, v in next(level for level in arenas() if level.title == "Fear").to_dict().items()
+        if k != "author"
+    }
+    unsigned = Level.from_dict({**fear, "version": 4})  # D-331: as version 4 wrote it
+    assert unsigned.author is None and "author" not in unsigned.to_dict()
+    signed = Level.from_dict(a_level(author="@Cy-3LO"))
+    assert signed.author == "@Cy-3LO" and list(signed.to_dict())[:4] == [
+        "version",
+        "title",
+        "spec",
+        "author",
+    ]
+    assert Level.from_dict(json.loads(to_json(signed))) == signed
+    assert {level.author for level in (*arenas(), sandbox())} == {"@Cy-3LO"}
+
+
+def test_every_level_gives_a_passkey_but_the_tutorials_and_the_last():
+    words = {level.title: level.passkey for level in arenas()}  # D-075
+    tutorials = [None] * 6  # every one open: no word to give (D-335)
+    shipped = ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI"]
+    made = [None, None]  # by users, every one open (D-348)
+    assert list(words.values()) == [*tutorials, *shipped, *made]
+    given = [word for word in words.values() if word is not None]
+    assert len(set(given)) == len(given)
+    assert all(is_passkey(word) for word in given) and sandbox().passkey is None
     assert not is_passkey("sword") and not is_passkey("SWÖRD") and not is_passkey("A" * 11)
     data = a_level(passkey="lower")
     with pytest.raises(ValueError):
         Level.from_dict(data)
+
+
+def test_a_mark_is_an_item_the_arena_never_has_so_the_run_is_what_it_was():
+    marked = a_level(
+        version=2, items=[*a_level()["items"], {"kind": "mark", "at": [20.0, 5.0], "radius": 6.0}]
+    )
+    level, plain = Level.from_dict(marked), Level.from_dict(a_level())  # D-306
+    assert level.marks == (Item(ItemKind.MARK, (20.0, 5.0), 6.0),) and plain.marks == ()
+    seen = (level.arena.lights, level.arena.obstacles)  # on a light, of any size, unread
+    assert seen == (plain.arena.lights, plain.arena.obstacles)
+    assert ItemKind.MARK.setting == "radius" and ItemKind.MARK.default is None
+    assert Level.from_dict(json.loads(to_json(level))) == level
+    with pytest.raises(ValueError, match="a mark needs its radius"):
+        Level.from_dict(a_level(items=[{"kind": "mark", "at": [1.0, 1.0]}]))
+    with pytest.raises(ValueError, match="'zone' is not a valid ItemKind"):
+        Level.from_dict(a_level(items=[{"kind": "zone", "at": [1.0, 1.0]}]))
+
+
+def test_version_2s_rings_become_marks_on_its_lights_and_its_objectives_sentences():
+    data = a_level(version=2, objectives=[{"kind": "leave ring", "radius": 12.0}])  # D-307
+    level = Level.from_dict(data)
+    assert level.marks == (Item(ItemKind.MARK, (20.0, 5.0), 12.0),)  # on its one light
+    assert level.objectives == (Goal(Verb.LEAVE, Count.ALL, Target.MARK),)
+    assert level.items[:3] == Level.from_dict(a_level()).items  # the rest as it was
+    marked = [*a_level()["items"], {"kind": "mark", "at": [1.0, 1.0], "radius": 2.0}]
+    with pytest.raises(ValueError, match="would count its marks"):
+        Level.from_dict(a_level(version=2, items=marked, objectives=data["objectives"]))
+
+
+def test_a_goal_must_aim_at_something_the_level_has():
+    goal = {"verb": "leave", "count": "all", "target": "mark"}  # D-307: no mark to leave
+    with pytest.raises(ValueError, match="'Leave every ring': the level has no rings"):
+        Level.from_dict(a_level(version=3, objectives=[goal]))
+
+
+def test_version_4_writes_a_hexagons_zone_as_its_size_and_whole_numbers_as_integers():
+    old = a_level(version=3, objectives=[{"verb": "reach", "count": "all", "target": "light"}])
+    old["board"] = {**old["board"], "zone": [list(c) for c in hex_disc(2)]}  # its cells
+    data = Level.from_dict(old).to_dict()  # D-313
+    assert data["board"]["zone"] == 19 and data["start"] == {"at": [5, 5], "heading": 90}
+    assert data["items"][1] == {"kind": "light", "at": [20, 5], "power": 6}
+    assert data["time_limit"] == 30 and isinstance(data["time_limit"], int)
+    again = Level.from_dict(json.loads(json.dumps(data)))
+    assert again.start == (5.0, 5.0, 90.0) and isinstance(again.start[0], float)
+    assert again.new_board().cells == Level.from_dict(old).new_board().cells
+    halves = Level.from_dict({**data, "start": {"at": [5.5, 5], "heading": 90}}).to_dict()
+    assert halves["start"]["at"] == [5.5, 5]  # not whole: written as it is
+    bare = {**old["board"], "zone": [[0, 0], [1, 0]], "parts": [], "wires": []}
+    odd = Level.from_dict({**old, "board": bare})
+    assert odd.to_dict()["board"]["zone"] == [[0, 0], [1, 0]]  # no hexagon: its cells
+
+
+def test_a_blank_board_keeps_the_levels_locked_parts_and_none_of_its_free_ones():
+    board = Board(hex_disc(1), {Kind.EYE: 1})  # a level that places a Source and a thruster
+    source = board.place(Kind.SOURCE, (0, 0), locked=True)
+    thruster = board.place(Kind.THRUSTER, (-1, 0), locked=True)
+    eye = board.place(Kind.EYE, (1, 0))  # a free part, as Aggression's (D-103)
+    board.connect(source.id, thruster.id)
+    board.connect(eye.id, thruster.id)
+    level = Level.from_dict(a_level(board=board.to_dict()))
+    blank = level.blank_board()  # D-328: what a hint's shadow goes on
+    assert {(n.kind, n.cell, n.locked) for n in blank.nodes.values()} == {
+        (Kind.SOURCE, (0, 0), True),
+        (Kind.THRUSTER, (-1, 0), True),
+    }
+    assert blank.wires == [] and blank.remaining(Kind.EYE) == 1
+
+
+def test_every_shipped_levels_positions_are_whole_units_and_its_zone_a_size():
+    for path in sorted(DATA.rglob("*.json")):  # D-313
+        data = json.loads(path.read_text())
+        points = [data["start"]["at"], *(item["at"] for item in data["items"])]
+        assert all(isinstance(v, int) for point in points for v in point), path.stem
+        assert data["version"] == FORMAT and data["board"]["zone"] in (7, 19, 37), path.stem

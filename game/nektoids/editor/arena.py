@@ -1,9 +1,9 @@
 """The arena view: a swimmer running your board in a lit arena (D-018, D-019).
 
-Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Esc)
+Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Tab)
 goes back to it, and once the level is won the banner's Next level (Enter) moves on. Nothing
 touches the programmed swimmer: no dragging or turning it, and none of the developer's tools.
-The developer's (F3): every level, Tab between them, and the tools below.
+The developer's (F7): every level, Tab between them, and the tools below.
 
 Left, the arena: the light as rays (or, with I, as a map), the obstacles and the lights, and the
 swimmer as a circle round a wedge; its eyes and thrusters sit where the board puts them on it.
@@ -70,6 +70,7 @@ from nektoids.editor.arena_view import (
     map_grid,
     map_points,
     pan_view,
+    rims,
     shown,
     touches,
     union,
@@ -103,17 +104,16 @@ from nektoids.graph.board import Board, complexity
 from nektoids.graph.dynamics import initial_state
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
+from nektoids.levels.objectives import Count as Many
 from nektoids.levels.objectives import (
-    CircleLight,
+    Goal,
     Kept,
-    LeaveRing,
-    Objective,
     Outcome,
-    StayNear,
-    VisitLights,
+    Target,
+    Verb,
     begin,
     follow,
-    met,
+    lit_marks,
     outcome,
 )
 from nektoids.levels.score import Score
@@ -169,12 +169,14 @@ class ArenaScene(Frame):
         label: str | None = None,
         settings: Settings | None = None,
         drawer: Drawer | None = Drawer.INSIDE,
-        chapter: int = 0,
+        chapters: tuple[tuple[str, int], ...] = (),
         passkey: tuple[str, str] | None = None,
+        maker: bool = False,
     ):
         self.levels = list(levels)
         self.index = 0
-        layout = make_layout(drawer, env=Env.RUN, goals=len(self.level.objectives), chapter=chapter)
+        goals = len(self.level.objectives)  # the sandbox's tabs end with the Maker's (D-301)
+        layout = make_layout(drawer, env=Env.RUN, goals=goals, chapters=chapters, maker=maker)
         self._start_frame(layout, settings)  # also `request`: "edit", "next"... for main.py
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
@@ -234,10 +236,17 @@ class ArenaScene(Frame):
         return self.layout.board_area
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
-        goals, chapter = len(self.level.objectives), self.layout.chapter
+        goals, chapters = len(self.level.objectives), self.layout.chapters
         scroll = self.scrolls.get(drawer, 0)  # D-096
         return make_layout(
-            drawer, env=Env.RUN, goals=goals, chapter=chapter, scroll=scroll, **self._hint_layout()
+            drawer,
+            self._folded(drawer),
+            env=Env.RUN,
+            goals=goals,
+            chapters=chapters,
+            scroll=scroll,
+            maker=self.layout.maker,
+            **self._hint_layout(),
         )
 
     def _slid(self, before: Layout, after: Layout) -> None:
@@ -331,8 +340,11 @@ class ArenaScene(Frame):
             ticks = self.clock.frame()
         for tick in ticks:
             self._advance(tick)
-            if outcome(self.level, self.kept, tick + 1, DT) is not None:
+            ended = outcome(self.level, self.kept, tick + 1, DT)
+            if ended is not None:
                 self.clock.tick, self.clock.paused, self.seek_to = tick + 1, True, None
+                if ended is Outcome.WON and not self.developer:  # the win, scored (D-340)
+                    self.open_drawer(Drawer.SCORE)
                 break
         if len(ticks) and self.show_map:
             self._map()  # the swimmers' shadows moved
@@ -402,28 +414,29 @@ class ArenaScene(Frame):
     def counts(self) -> list[Count]:
         """Each objective of the level as the run stands now."""
         pairs = zip(self.level.objectives, self.kept, strict=True)
-        return [Count(o.name, *o.count(k), o.progress(k), o.lost(k)) for o, k in pairs]
+        return [Count(o.name(self.level), *o.count(k), o.progress(k), o.lost(k)) for o, k in pairs]
 
     @property
-    def lost_by(self) -> Objective | None:
+    def lost_by(self) -> Goal | None:
         """The objective that lost the run, if one did."""
         pairs = zip(self.level.objectives, self.kept, strict=True)
         return next((o for o, k in pairs if o.lost(k)), None)
 
     @property
     def lights_reached(self) -> np.ndarray:
-        """(L,): the lights a swimmer has reached, if the level asks for visits; else none."""
+        """(L,): the lights a swimmer has reached, if the level asks to reach every one; else
+        none."""
+        every = (Verb.REACH, Many.ALL, Target.LIGHT)
         for objective, kept in zip(self.level.objectives, self.kept, strict=True):
-            if isinstance(objective, VisitLights):
+            if (objective.verb, objective.many, objective.target) == every:
                 return kept.any(axis=0)
         return np.zeros(len(self.arena.lights), dtype=bool)
 
     @property
-    def rings(self) -> list[tuple[float, bool]]:
-        """Each ring an objective draws round the lights, to leave or to stay in: its radius [u],
-        and whether that is done."""
-        pairs = zip(self.level.objectives, self.kept, strict=True)
-        return [(o.radius, met(o, k)) for o, k in pairs if isinstance(o, LeaveRing | StayNear)]
+    def marks_lit(self) -> tuple[bool, ...]:
+        """Which marks are drawn lit: each one entered, for a goal to enter every ring, as the
+        swimmer comes into it; every one once their goals are met (D-307, D-318)."""
+        return lit_marks(self.level, self.kept)
 
     def eye_polar(self) -> np.ndarray:
         """(n_eyes, A): E(phi) at each eye of the selected swimmer, for POLAR_ANGLES, uncapped.
@@ -570,6 +583,8 @@ class ArenaScene(Frame):
         if self.typing is not None:  # a passkey in Chapters takes every key (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
             return
+        if not self.developer and self.tab_key(pygame.key.name(event.key)):  # F1 F2 F3, D-303
+            return
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         typed = KEY_ALIASES.get(event.unicode, event.unicode).upper()
         if arrow is not None:
@@ -578,16 +593,18 @@ class ArenaScene(Frame):
             self.press(ArenaButton.PLAY)
         elif event.scancode in (pygame.KSCAN_0, pygame.KSCAN_KP_0):  # "à" on AZERTY, unshifted
             self.press(ArenaButton.RESTART)
-        elif event.key == pygame.K_ESCAPE:
-            self.press(ArenaButton.EDIT)
+        elif event.key == pygame.K_ESCAPE and self.developer:
+            self.press(ArenaButton.EDIT)  # back to the editor, as F7
+        elif event.key == pygame.K_ESCAPE:  # DRAWER_KEYS[CHAPTERS]: nothing to back out of here
+            self.toggle_drawer(Drawer.CHAPTERS)
         elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
             self.press(ArenaButton.NEXT)
         elif not self.developer:
             drawer = drawer_key(Env.RUN, typed)  # the character first: AZERTY's ? is on the comma
             if drawer is None and event.key == pygame.K_COMMA:  # with Ctrl or Cmd, none is typed
                 drawer = Drawer.SETTINGS
-            if event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS], as in the editor
-                self.toggle_drawer(Drawer.CHAPTERS)
+            if event.scancode == pygame.KSCAN_TAB:  # the next tab, the editor's (D-304)
+                self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
             elif self.start_passkey(typed):  # P in Chapters: a passkey (D-075)
                 pass
             elif drawer is not None:  # its initial, or the comma, with Ctrl or Cmd too (D-069)
@@ -623,20 +640,6 @@ class ArenaScene(Frame):
         (cx, cy), r = self.view.to_screen(*self.pos[0]), float(self.radius[0]) * self.view.scale + 8
         return (round(cx - r), round(cy - r), round(2 * r), round(2 * r))
 
-    def _rims(self) -> list[np.ndarray]:
-        """Points round the lights that the view frames, (L, 2) each: the rims of the rings an
-        objective draws, and, for Circle the light, a circle as far out as the swimmer starts,
-        which it goes round (D-097)."""
-        x, y, _ = self.level.start
-        far = np.hypot(self.arena.light_xy[:, 0] - x, self.arena.light_xy[:, 1] - y)
-        radii = [r for r, _ in self.rings]
-        radii += [far for o in self.level.objectives if isinstance(o, CircleLight)]
-        return [
-            self.arena.light_xy + np.stack((sx * r, sy * r), axis=-1).reshape(-1, 2)
-            for r in radii
-            for sx, sy in ((1, 0), (-1, 0), (0, 1), (0, -1))
-        ]
-
     def extent(self) -> tuple[float, float, float, float]:
         """What Navigator's overview shows, and the most the arena may (D-066), as this frame
         keeps it (D-073)."""
@@ -653,10 +656,15 @@ class ArenaScene(Frame):
         self._extent = widened(bounds, w / h)
 
     def _needed(self, room: float = ROOM) -> tuple[float, float, float, float]:
-        """What matters now (D-066): the lights and their rings, the obstacles and the swimmer
-        where it is, `room` times over."""
-        arena = self.arena
-        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy, *self._rims()))
+        """What matters now (D-066): the lights and their rings, the obstacles, the marks
+        whole (D-306) and the swimmer where it is, `room` times over."""
+        arena, marks = self.arena, self.level.marks
+        at, radii = (
+            np.array([m.at for m in marks]).reshape(-1, 2),
+            np.array([m.value for m in marks]),
+        )
+        points = np.concatenate((self.pos, arena.light_xy, arena.disc_xy))
+        points = np.concatenate((points, rims(at, radii)))
         reach = float(np.concatenate(([LIGHT_RADIUS], arena.disc_radius, self.radius)).max())
         _, _, w, h = self.arena_area
         return extent(points, reach, w / h, room)

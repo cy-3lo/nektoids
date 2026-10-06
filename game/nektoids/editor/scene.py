@@ -44,7 +44,7 @@ from dataclasses import replace
 import pygame
 
 from nektoids.editor import clipboard
-from nektoids.editor.boardfield import BoardField, load
+from nektoids.editor.boardfield import board_field, load
 from nektoids.editor.devdrive import TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
@@ -52,6 +52,7 @@ from nektoids.editor.history import History
 from nektoids.editor.layout import (
     DIAGNOSTIC_MAP,
     KEY_ALIASES,
+    LOCK_KEY,
     MAX_HEX,
     MENU_GROUPS,
     MODE_KEY,
@@ -60,6 +61,7 @@ from nektoids.editor.layout import (
     TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
+    BoardButton,
     Bounds,
     Drawer,
     EditButton,
@@ -70,6 +72,7 @@ from nektoids.editor.layout import (
     ViewButton,
     WinRow,
     action_at,
+    board_button_at,
     board_extent,
     board_field_at,
     board_view_of,
@@ -102,6 +105,7 @@ from nektoids.editor.layout import (
 from nektoids.editor.probe import Probe, level_view
 from nektoids.editor.router import WinGroup
 from nektoids.editor.settings import Settings
+from nektoids.editor.textfield import TextField
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.editor.wheel import (
     SLIDE,
@@ -178,7 +182,6 @@ class EditorScene(Frame):
         self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
         self._probed = None  # the board as the probe was made for it
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
-        self.holding: int | None = None  # the eye whose meter's knob the mouse holds
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.wheel_folded = False  # the picture of the cell folded, in Tools and Parts (D-069)
@@ -202,7 +205,7 @@ class EditorScene(Frame):
         self.wins: tuple[WinGroup, ...] = ()  # this session's wins, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = opening_view(layout, sorted(board.cells))
-        self.mode = Mode.WRITE  # what a click on the board does: Write, or Delete (D-068)
+        self.mode = Mode.WRITE  # what a click on the board does: Write, Delete, Lock (D-319)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
         self.dragging = False  # Add: mouse held since picking from the menu
@@ -224,7 +227,7 @@ class EditorScene(Frame):
         self.flash_frames = 0
         self.history = History()
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
-        self.loading: BoardField | None = None  # Load's field, open: a board's text (D-206)
+        self.loading: TextField | None = None  # Load's field, open: a board's text (D-206)
         self.field_pressed = False  # a press on it: it opens when the click is over
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
         self.ghost_wires: tuple = ()  # ... and its wires, cell to cell (D-074); main.py's too
@@ -232,7 +235,8 @@ class EditorScene(Frame):
     def update(self) -> None:
         """Once per frame."""
         if self.loading is not None and clipboard.WEB:  # the page's field took the keys
-            self.loading.text, ended = clipboard.field()
+            text, caret, ended = clipboard.field()
+            self.loading.take(text, caret)
             if ended is not None:
                 self._field_done(ended)
         if self.flash_frames > 0:
@@ -326,10 +330,11 @@ class EditorScene(Frame):
             self._field_key(event)
         elif event.type == pygame.KEYDOWN and self.typing is not None:  # a passkey (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
-        elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 3) or (
-            event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
-        ):
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             self._escape()
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if not self._escape():  # nothing left to back out of: the levels (D-304)
+                self.toggle_drawer(Drawer.CHAPTERS)
         elif event.type == pygame.KEYDOWN:
             self._key(event)
         if self.moving is None and not self.carrying:  # between gestures
@@ -338,6 +343,8 @@ class EditorScene(Frame):
     # Keyboard
 
     def _key(self, event: pygame.event.Event) -> None:
+        if self.tab_key(pygame.key.name(event.key)):  # F1, F2, F3 (D-303)
+            return
         if event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
             if event.key == pygame.K_z:
                 self._edit(EditButton.REDO if event.mod & pygame.KMOD_SHIFT else EditButton.UNDO)
@@ -356,8 +363,8 @@ class EditorScene(Frame):
                 self._enter()
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
-        elif event.scancode == pygame.KSCAN_TAB:  # DRAWER_KEYS[CHAPTERS]
-            self.toggle_drawer(Drawer.CHAPTERS)
+        elif event.scancode == pygame.KSCAN_TAB:  # the next tab, or the one before (D-304)
+            self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
         elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
             self._choose(Tool.DELETE)
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
@@ -413,6 +420,9 @@ class EditorScene(Frame):
             return
         if self.mode is Mode.DELETE:
             self._erase(self.focused, self._focus_pos())
+            return
+        if self.mode is Mode.LOCK:
+            self._lock(self.focused)
             return
         if self.carrying:
             self.carrying, self.tool = False, Tool.ADD
@@ -474,6 +484,8 @@ class EditorScene(Frame):
             self.toggle_drawer(drawer)
         elif key == MODE_KEY:
             self._set_mode(Mode.DELETE if self.mode is Mode.WRITE else Mode.WRITE)
+        elif key == LOCK_KEY and self.layout.maker:  # the sandbox's (D-319)
+            self._set_mode(Mode.LOCK if self.mode is not Mode.LOCK else Mode.WRITE)
         elif key in KEY_TOOLS:
             self._choose(KEY_TOOLS[key])
         elif key in KEY_VIEWS:
@@ -493,7 +505,6 @@ class EditorScene(Frame):
             self._overview_to(pos)
         if self.zooming:
             self._zoom_to(pos)
-        self._hold(pos)
         self.wheel_hover = slot_at(self.wheel(), pos, WHEEL_HEX)
         piling = 0
         if self.layout.wheel_view is not None:
@@ -552,6 +563,9 @@ class EditorScene(Frame):
         if mode is not None:
             self._set_mode(mode)
             return
+        if board_button_at(self.layout, pos) is BoardButton.ERASE:  # Erase all (D-321)
+            self._erase_all()
+            return
         edit = edit_button_at(self.layout, pos)
         if edit is not None:
             self._edit(edit)
@@ -581,12 +595,14 @@ class EditorScene(Frame):
         if shown and action_at(self.layout, pos) is not None:  # the action: Tools, to see it all
             self.open_drawer(Drawer.TOOLS)
             return
-        if self.main is MainView.PREVIEW:  # the board is not on screen to edit, but the eyes are
+        if self.main is MainView.PREVIEW:  # the board runs here: a part clicked goes to Tools
             if self.tool is Tool.PAN:  # the hand moves the view, the preview's as the board's
                 self.panning_from = pos
                 return
-            self.holding = self.probe.handle_at(pos) if self.probe is not None else None
-            self._hold(pos)
+            cell = cell_at(self.layout, self.view, pos)
+            if cell is not None and self.board.node_at(cell) is not None:  # to edit it (D-339)
+                self.open_drawer(Drawer.TOOLS)
+                self._focus(cell)
             return
         if not contains(self.layout.board_area, pos):
             return
@@ -595,6 +611,9 @@ class EditorScene(Frame):
             return
         if self.mode is Mode.DELETE:
             self._erase(self.hover, pos)
+            return
+        if self.mode is Mode.LOCK:
+            self._lock(self.hover)
             return
         if self.picked is not None:  # a part picked in Parts: it goes where the click falls
             if self.pointed is not None:
@@ -645,17 +664,12 @@ class EditorScene(Frame):
         bx, by, bw, bh = self.layout.board_area
         self.view = zoom(self.view, size / self.view.size, (bx + bw / 2, by + bh / 2))
 
-    def _hold(self, pos: tuple[int, int]) -> None:
-        """The eye whose knob is held reads what its meter says at the mouse: a test input."""
-        if self.holding is not None and self.probe is not None:
-            self.probe.hold(self.holding, self.probe.level_at(self.holding, pos[1]))
-
     def _release(self, pos: tuple[int, int]) -> None:
         if self.field_pressed:
             self.field_pressed = False
             if board_field_at(self.layout, pos):
                 self._open_field()
-        self.probing, self.holding, self.overviewing, self.zooming = False, None, False, False
+        self.probing, self.overviewing, self.zooming = False, False, False
         self.panning_from = None
         self.frame_release()
         if self.press_cell is not None:  # a press on a part: a drag moved it, or drew a wire,
@@ -688,17 +702,36 @@ class EditorScene(Frame):
             self.probe.see(self.view)
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
-        """The layout with `drawer` open, the same parts handed out, chapter, wins and hints."""
+        """The layout with `drawer` open, the same parts handed out, chapters, wins, hints and
+        tabs."""
         return make_layout(
             drawer,
-            frozenset(self.folded),
+            self._folded(drawer, self.folded),
             self.layout.kinds,
-            self.layout.chapter,
+            self.layout.chapters,
             files=tuple((group.title, len(group.wins)) for group in self.wins),
             wheel_folded=self.wheel_folded,
             scroll=self.scrolls.get(drawer, 0),
+            maker=self.layout.maker,
             **self._hint_layout(),
         )
+
+    def revise(self, level: Level, caption: tuple[str, str]) -> None:
+        """The level made again in the Maker (D-301): the caption follows, and the Run preview's
+        probe is made again on its plane, where it stood. Handed out anew, the board's size or
+        its parts (D-315), Parts shows what it now hands out, and undo starts afresh: its steps
+        were taken on a board handing out other parts."""
+        handed = any(level.board[key] != self.level.board[key] for key in ("zone", "stock"))
+        self.level, self.caption = level, caption
+        self._probed = None
+        if handed:
+            kinds = frozenset(kind for kind in Kind if self.board.total(kind) != 0)
+            self.layout = self._relayout_on(replace(self.layout, kinds=kinds))
+            self.history, self._kept = History(), self.board.snapshot()
+
+    def _relayout_on(self, layout: Layout) -> Layout:
+        self.layout = layout
+        return self._relayout(layout.drawer)
 
     def unfold_wheel(self) -> None:
         """The Wheel unfolded, if it was folded: a tutorial's step shows one of its icons."""
@@ -741,8 +774,8 @@ class EditorScene(Frame):
     def _open_field(self) -> None:
         if self._allowed(Action("load")):  # as a win put back is (D-092)
             self._cancel()
-            self.loading = BoardField()
-            clipboard.open_field()
+            self.loading = board_field()
+            clipboard.open_field("", self.loading.longest)
 
     def _close_field(self) -> None:
         self.loading = None
@@ -1078,8 +1111,8 @@ class EditorScene(Frame):
             what: Kind | Tool | Mode = Tool.PAN
         elif self._dropping():  # a part dragged off the body: letting go deletes it (D-085)
             what = Tool.DELETE
-        elif self.mode is Mode.DELETE:
-            what = Mode.DELETE
+        elif self.mode in (Mode.DELETE, Mode.LOCK):
+            what = self.mode
         elif self.going_round() and self.choice is not None and self.choice < len(items):
             what = items[self.choice]
         elif self.swapping:
@@ -1095,7 +1128,7 @@ class EditorScene(Frame):
         if isinstance(what, Kind):
             return what, part_key(what, self.layout.kinds)
         if isinstance(what, Mode):
-            return what, MODE_KEY
+            return what, LOCK_KEY if what is Mode.LOCK else MODE_KEY
         return what, VIEW_KEYS[ViewButton.PAN] if what is Tool.PAN else TOOL_KEYS[what]
 
     def _focused_node(self) -> Node | None:
@@ -1303,6 +1336,32 @@ class EditorScene(Frame):
         self._landed = self.board.snapshot()
         return result
 
+    def _erase_all(self) -> None:
+        """Erase all: every wire and every part but the level's off the board, one step for
+        undo, as a board put back is one (D-321); refused with nothing to erase."""
+        if not self._allowed(Action("load")):
+            return
+        self._cancel()
+        parts, wires = self.board.clear()
+        if not parts and not wires:
+            self._refuse("nothing to erase", None)
+            return
+        self._focus(None)
+        self.said = f"Erased: {parts} part{'s' * (parts != 1)}, {wires} wire{'s' * (wires != 1)}."
+
+    def _lock(self, cell: Cell | None) -> None:
+        """Lock, clicked or entered on `cell`: its part made the level's, fixed and using no
+        stock, or freed again (D-319); the Maker's level follows the board."""
+        node = self.board.node_at(cell) if cell is not None else None
+        if node is None:
+            self._refuse("click a part to lock it, or to free it", cell)
+            return
+        refused = self.board.lock(node.id, not node.locked)
+        if refused is not None:
+            self._refuse(refused.reason, cell)
+            return
+        self.message = ""
+
     def _delete_part(self, node: Node) -> None:
         """The part deleted, with its wires; the focus stays on its cell, empty now."""
         if not self._allowed(Action("delete", cell=node.cell), node.cell):
@@ -1335,23 +1394,27 @@ class EditorScene(Frame):
         elif cell is not None and self.board.node_at(cell) is not None:
             self._refuse("placed by the level", cell)
 
-    def _escape(self) -> None:
-        """Esc, or a right click: back one step, from a gesture, to the Wheel, to nothing."""
+    def _escape(self) -> bool:
+        """Esc, or a right click: back one step, from a gesture, to the Wheel, to nothing; False
+        if there was nothing to back out of."""
         if self.tool is Tool.PAN:
             self.tool = Tool.ADD
         elif self.swapping:
             self.swapping, self.turn, self.slide_left = False, 0, 0  # back to the part's actions
             self.choice = None
-        elif self.mode is Mode.DELETE:
+        elif self.mode in (Mode.DELETE, Mode.LOCK):
             self.mode = Mode.WRITE
         elif self.carrying or (self.tool is Tool.WIRE and not self.wheel_open and self.source):
             self.carrying, self.tool, self.source = False, Tool.ADD, None
             self._update_ghost()
         elif self.wheel_open and self.focused is not None and self.wheel_keys:
             self.wheel_open, self.wheel_keys = False, False
+        elif self.focused is not None or self.picked is not None or self.tool is not Tool.ADD:
+            self._focus(None)  # and whatever was in hand
         else:
-            self._focus(None)
+            return False
         self.message = ""
+        return True
 
     def hint(self) -> str:
         """What the status line says the player can do now."""
@@ -1367,6 +1430,8 @@ class EditorScene(Frame):
             return "The arrows to the part to wire to, then Enter. Esc gives up."
         if self.mode is Mode.DELETE:
             return "Click a part or a wire to delete it. E or Esc: back to Write."
+        if self.mode is Mode.LOCK:
+            return "Click a part to lock it, or to free it. K or Esc: back to Write."
         if self.swapping:
             return "Pick what it becomes in the Wheel, or press its number. Esc: back."
         node = self._focused_node()

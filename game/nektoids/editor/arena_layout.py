@@ -35,6 +35,8 @@ SUMMARY_WIDTH = 132  # right of the timeline: so many objectives met of so many 
 TIMELINE_HEIGHT = 20  # what a press on it catches [px]
 TIMELINE_BAR = 8  # the bar's height, centred in it [px]
 DRAWER_BODY: Rect = (BAR_WIDTH, DRAWER_TOP + TITLE_HEIGHT, DRAWER_WIDTH, 300)  # Inside, Score
+TIME_STEPS = (1, 2, 5, 10, 15, 20, 30, 60)  # Score's time axis is ticked every so many seconds
+TIME_TICKS = 6  # ... with at most so many ticks, its foot's 0 among them (D-340)
 BANNER_SIZE = (352, 156)  # [px], room for a passkey's line after a win (D-075)
 BANNER_BUTTON = (160, 32)  # [px]
 POLAR_SIZE = (300, 252)  # the developer's inset [px]
@@ -72,7 +74,7 @@ VIEW_BUTTON = {  # Navigator's rows, as the run's buttons
 # drawers' keys may differ, each the initial of a drawer of its environment (D-069), and so may
 # Navigator's Motion and Streams, M and W, Move and Wire in the editor, which never shows them.
 BUTTON_KEYS = {
-    ArenaButton.EDIT: "Esc",  # leave the run, as Escape leaves a gesture in the editor
+    ArenaButton.EDIT: "Tab",  # on to the next tab, the editor's, as from every tab (D-304)
     ArenaButton.NEXT: "Enter",
     ArenaButton.RESTART: "0",
     ArenaButton.PLAY: "Space",
@@ -83,7 +85,7 @@ BUTTON_KEYS = {
 # Keys with no button, for developers: turn the swimmer, the light map, the polar plot.
 TURN_KEYS = (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])  # the editor's: L, R
 MAP_KEY, POLAR_KEY = "I", "P"
-# Typed characters that press a button; Space, 0, Esc and Enter are matched on the physical key.
+# Typed characters that press a button; Space, 0, Tab and Enter are matched on the physical key.
 KEY_BUTTONS = {key: b for b, key in BUTTON_KEYS.items() if len(key) == 1 and not key.isdigit()}
 
 
@@ -161,3 +163,10 @@ def polar_box(layout: Layout) -> Rect:
     """The developer's polar plot, over the arena's top left corner."""
     x, y, _, _ = layout.board_area
     return (x + 8, y + 8, *POLAR_SIZE)
+
+
+def time_ticks(limit: float) -> list[float]:
+    """The seconds Score's time axis is ticked at, from 0 to the time allowed `limit` [s]: every
+    TIME_STEPS' first step that gives at most TIME_TICKS (D-340)."""
+    step = next((s for s in TIME_STEPS if limit // s + 1 <= TIME_TICKS), TIME_STEPS[-1])
+    return [float(k * step) for k in range(int(limit // step) + 1)]

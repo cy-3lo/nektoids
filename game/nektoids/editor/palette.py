@@ -133,7 +133,8 @@ P = PALETTE
 
 # Every view
 BACKGROUND = P.base
-BAR = P.deep  # the activity bar, the strip of tabs, the status line (D-051)
+BAR = P.deep  # the activity bar, the status line (D-051)
+TAB_STRIP = P.surface  # the strip of tabs, the shut ones on it: a shade over the open one's
 DARK = P.base  # icons on parts, text on bright buttons
 PANEL = P.surface
 TOOLTIP_BG = mix(P.surface, P.raised, 0.5)
@@ -146,12 +147,15 @@ SWATCH_OFF = P.raised  # colour picker, not active yet
 TEXT = P.text
 DIM_TEXT = P.dim
 GREYED = P.muted
+TO_BEAT = P.muted  # the score of a level's proof, a cross in Score (D-330)
+PLOT_FRAME = mix(P.line, P.dim, 0.75)  # Score's box and ticks, a shade over a rule (D-340)
+PLOT_TEXT = mix(P.dim, P.text, 0.6)  # ... its numbers and its axes' names
 REFUSED = P.accent2.bright  # a refusal, a lost run, a run out of time
 FLASH = P.accent2.dark  # the flash on a refused move
 VEIL = (0, 0, 0, 150)  # over a level's board under its card; over all but a tutorial's targets
 CLEAR = (0, 0, 0, 0)  # a hole in a veil
 LIT = P.accent1.bright  # a tutorial's target, drawn in it, and its box while it leads
-SPARK = P.accent1.dark  # the sparks drifting out of a tutorial's target (D-080)
+PULSE_FRAMES = 72  # a tutorial's target pulses, bright to medium and back: 1.2 s (D-337)
 
 # The board
 ZONE = P.surface  # cells of the level's zone
@@ -167,7 +171,7 @@ WIRE = mix(P.dim, P.parts, 0.4)
 WIRING = P.bright  # the wire being drawn, where it would run: white, apart from the shadows
 WIRING_OK = P.accent1.bright  # ... and it may connect there (D-087)
 GHOST_OK = P.bright  # a tutorial's part outlined where it should face
-FOCUS_CELL = mix(P.surface, P.accent1.mid, 0.55)  # a cell a tutorial's step acts on (D-063)
+FOCUS_TINT = 0.5  # a cell a tutorial's step acts on: so much of its pulse over the zone (D-337)
 GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part or wire: a paler grey, no outline
 DOOMED = P.muted  # what a Delete click would remove
 ICON_EDGE = mix(P.muted, P.dim, 0.5)  # the edge of an icon of the Wheel, and of a pile's (D-068)
@@ -182,14 +186,18 @@ WARN = P.accent2.mid  # the developer view's warnings
 # The arena
 SHADOW = P.deep  # the open plane, and a reading of 0 on the light map
 LIGHT = P.bright  # a light, and a reading of RATE_MAX
-RAY = mix(P.deep, P.line, 0.45)  # every ray, whatever its light
+RAY = mix(P.deep, P.line, 0.75)  # every ray, whatever its light, a shade lighter (D-342)
 OBSTACLE = mix(P.line, P.muted, 0.5)
 BODY = P.accent1.bright  # the selected swimmer
 BODY_UNSELECTED = P.dim
-RING = P.dim  # a ring to leave or to stay in, until that is done
 RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead of the playhead
 EYE_SHADES = (P.bright, P.dim)  # one per eye in the polar plot, in turn
 WIN = P.accent1.bright  # a win on Score's plot that no other beats: the Pareto front
+
+# The Maker's plane (D-301): its grid, under the rays
+PLANE_DOT = mix(P.deep, P.dim, 0.35)  # where a position may fall, every whole u (D-311)
+PLANE_LINE = mix(P.deep, P.line, 0.6)  # a line every 5 u
+MARK = mix(P.muted, P.dim, 0.5)  # a mark, an empty circle and its centre, in every view (D-306)
 
 # The swimmer at work (D-076): its flames and the light it draws in, of one lightness (OKLab L
 # 0.56), dimmer than the swimmer
@@ -197,3 +205,10 @@ FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks d
 INTAKE = mix(P.muted, P.dim, 0.6)  # the light an eye draws in, specks drifting to its face
 PART_OUTLINE = P.dim  # a part's outline on the swimmer; its face keeps EYE_FACE, THRUSTER_BACK
 MOTION = P.accent1.bright  # its velocity and its spin, in the swimmer's own colour
+
+
+def pulse(frame: int) -> Colour:
+    """A tutorial's target's colour at `frame`, drawing only: accent1, bright to medium and back
+    every PULSE_FRAMES, a cosine's smoothness, in place of the sparks (D-337)."""
+    t = 0.5 + 0.5 * math.cos(2 * math.pi * frame / PULSE_FRAMES)
+    return mix(P.accent1.mid, P.accent1.bright, t)

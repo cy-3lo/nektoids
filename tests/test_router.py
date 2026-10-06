@@ -1,5 +1,7 @@
 """Where the player is, and how they move about (D-030, D-035). router.py imports no pygame."""
 
+from dataclasses import replace
+
 import pytest
 
 from nektoids.editor.router import ChapterRow, Router, Screen, level_label
@@ -12,16 +14,22 @@ def a_router():
     return Router(arenas(), sandbox())
 
 
+AT = {level.title: k for k, level in enumerate(arenas())}  # each level's place on the route
+FIRSTS = {AT[title] for title in ("Wiring", "Fear", "Shadows", "Greed", "Dragster")}  # D-325
+
+
 def test_the_game_opens_on_the_first_level_under_its_title_card():
     router = a_router()
     assert router.screen is Screen.TITLE and router.index == 0
     router.begin()
-    assert router.screen is Screen.RUN and router.label == "LEVEL 1.1"  # D-069
-    assert router.board.nodes == {} and router.board.remaining(Kind.EYE) == 2  # its own stock
+    assert router.screen is Screen.RUN and router.label == "LEVEL 0.1"  # D-069, D-335
+    assert all(n.locked for n in router.board.nodes.values()) and len(router.board.nodes) == 2
+    assert router.board.remaining(Kind.EYE) == 0  # its own stock: none
 
 
 def test_run_and_back_to_edit_keeps_the_board_as_it_was_left():
     router = a_router()
+    router.index = AT["Fear"]  # a level that hands out eyes
     board = router.board
     eye = board.place(Kind.EYE, (0, 0))
     router.run()
@@ -32,13 +40,16 @@ def test_run_and_back_to_edit_keeps_the_board_as_it_was_left():
 
 def test_a_level_opens_once_the_one_before_it_is_won_and_the_sandbox_always():
     router = a_router()
-    assert router.unlocked(0) and not router.unlocked(1) and router.unlocked(router.sandbox_index)
+    fear, aggression = AT["Fear"], AT["Aggression"]
+    assert router.unlocked(fear) and not router.unlocked(aggression)
+    assert router.unlocked(router.sandbox_index) and all(router.unlocked(k) for k in range(6))
     with pytest.raises(ValueError, match="once the level before it is won"):
-        router.open(1)
+        router.open(aggression)
+    router.index = fear
     router.mark_won()
-    assert router.unlocked(1)
-    router.open(1)
-    assert (router.index, router.screen, router.label) == (1, Screen.SPEC, "LEVEL 1.2")
+    assert router.unlocked(aggression)
+    router.open(aggression)
+    assert (router.index, router.screen, router.label) == (aggression, Screen.SPEC, "LEVEL 1.2")
 
 
 def test_next_goes_on_with_its_own_board_and_after_the_last_level_comes_the_end():
@@ -68,13 +79,13 @@ def test_a_level_opened_comes_up_under_its_card_and_one_returned_to_does_not():
     router.edit()  # Edit after a run
     assert router.screen is Screen.EDIT
     router.open(router.sandbox_index)
-    assert router.screen is Screen.SPEC
+    assert router.screen is Screen.MAKE  # Open Maker: straight on the Maker, no card (D-341)
 
 
 def test_the_sandbox_has_no_next_and_is_never_won():
     router = a_router()
     router.open(router.sandbox_index)
-    assert router.label == "SANDBOX" and router.level.objectives == ()
+    assert router.label == "YOUR LEVEL" and router.level.objectives == ()  # D-341
     assert not router.has_next and not router.is_last
     router.mark_won()
     assert router.won == set()
@@ -112,16 +123,76 @@ def test_a_level_reset_opens_on_a_fresh_board_and_the_others_keep_theirs():
 
 
 def test_levels_are_named_by_chapter_and_place():
-    assert level_label(0) == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"
+    assert level_label(0) == "LEVEL 0.1" and level_label(AT["Fear"]) == "LEVEL 1.1"
+    assert (
+        level_label(AT["Shadows"]) == "LEVEL 2.1" and level_label(AT["Two lights"]) == "LEVEL 3.3"
+    )
+    labels = [row.label for row in a_router().rows()]  # D-325, D-335
+    tutorials = [f"0.{k}" for k in range(1, 7)]
+    assert labels == [
+        *tutorials,
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "2.1",
+        "3.1",
+        "3.2",
+        "3.3",
+        "4.1",
+        "4.2",
+        "",
+    ]
+
+
+def test_each_chapters_first_level_is_open_and_a_chapters_last_gives_no_word():
+    router = a_router()  # D-325: the next chapter's first level is open from the start
+    states = [router.state(k) for k in range(len(router.levels))]
+    opened = FIRSTS | set(range(6)) | {AT["Dragster II"]}  # tutorials, made by users (D-348)
+    assert states == ["open" if k in opened else "locked" for k in range(len(router.levels))]
+    assert router.state(router.sandbox_index) == "sandbox"
+    router.index = AT["Orbit"]
+    assert router.next_passkey() is None
+    router.mark_won()
+    assert router.rows()[AT["Orbit"]].passkey == ""
+    router.index = AT["Greed"]  # its word opens Patience
+    assert router.next_passkey() == ("GOLD", "LEVEL 3.2")
+
+
+def test_chapters_shows_the_chapter_being_played_and_folds_the_others_until_asked():
+    router = a_router()  # D-326
+    zero, one = "Chapter 0: Tutorials", "Chapter 1: Braitenberg"
+    two, three = "Chapter 2: Obstacles", "Chapter 3: Many lights"
+    assert zero not in router.folded and {one, two, three} <= router.folded
+    router.fold(three)  # the player shows chapter 3 too
+    router.next()  # 0.2: the same chapter, the folds kept
+    assert router.folded & {zero, three} == set()
+    router.index = AT["Orbit"]  # then Next level: Shadows, in chapter 2, which was folded
+    router.next()
+    assert router.label == "LEVEL 2.1" and two not in router.folded and one in router.folded
+    router.open(router.sandbox_index)  # Free play keeps them
+    assert two not in router.folded and one in router.folded
+    router.fold(one)
+    router.open(AT["Fear"])  # chapter 1 shows: nothing else folds
+    assert router.folded & {one, two} == set()
+
+
+def test_a_passkey_shows_the_chapter_of_the_level_it_opens():
+    router = a_router()  # D-326
+    assert "Chapter 3: Many lights" in router.folded
+    assert router.unlock("gold") == AT["Patience"]  # Greed's word opens Patience, 3.2
+    assert "Chapter 3: Many lights" not in router.folded
 
 
 def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
     router = a_router()
     rows = router.rows()
     assert len(rows) == len(router.levels) + 1 and rows[-1].index == router.sandbox_index
-    assert [row.state for row in rows[:3]] == ["open", "locked", "locked"]
+    assert [row.state for row in rows[:3]] == ["open", "open", "open"]  # tutorials (D-335)
+    fear = AT["Fear"]
+    assert [row.state for row in rows[fear : fear + 3]] == ["open", "locked", "locked"]
     assert (rows[0].label, rows[0].current, rows[-1].label, rows[-1].state) == (
-        "1.1",
+        "0.1",
         True,
         "",
         "sandbox",
@@ -136,6 +207,7 @@ def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
 
 def test_files_lists_the_wins_with_their_boards_the_unbeaten_first_each_score_once():
     router = a_router()
+    router.index = AT["Fear"]  # a level that hands out eyes
     router.begin()
     first = router.board.snapshot()
     router.record(Score(ticks=900, parts=4), first)
@@ -144,46 +216,81 @@ def test_files_lists_the_wins_with_their_boards_the_unbeaten_first_each_score_on
     router.record(Score(ticks=600, parts=5), later)
     router.record(Score(ticks=700, parts=6), later)  # beaten by the 600-tick win
     router.record(Score(ticks=900, parts=4), later)  # the same score: its first board stays
-    wins = router.wins(0)
+    wins = router.wins(AT["Fear"])
     assert [(w.score.ticks, w.best) for w in wins] == [(600, True), (900, True), (700, False)]
-    assert wins[1].board == first and wins[0].board == later
-    assert router.wins(1) == ()
+    assert wins[1].board == first and wins[0].board == later and first != later
+    assert router.wins(AT["Aggression"]) == ()
 
 
 def test_files_lists_every_levels_wins_the_open_ones_first_then_the_chapters_order():
     router = a_router()  # D-092
     assert router.files() == ()
-    for k, ticks in ((0, 900), (2, 800), (2, 700)):
+    fear, love = AT["Fear"], AT["Love"]
+    for k, ticks in ((fear, 900), (love, 800), (love, 700)):
         router.index = k
         router.record(Score(ticks=ticks, parts=4), router.board.snapshot())
-    router.index = 2
+    router.index = love
     files = router.files()
-    assert [(group.index, group.title) for group in files] == [(2, "1.3 Love"), (0, "1.1 Fear")]
-    assert files[0].wins == router.wins(2) and len(files[1].wins) == 1
+    assert [(group.index, group.title) for group in files] == [
+        (love, "1.3 Love"),
+        (fear, "1.1 Fear"),
+    ]
+    assert files[0].wins == router.wins(love) and len(files[1].wins) == 1
     router.index = router.sandbox_index  # no wins of its own: the levels', in order
-    assert [group.index for group in router.files()] == [0, 2]
+    assert [group.index for group in router.files()] == [fear, love]
 
 
 def test_a_passkey_opens_the_level_after_the_one_whose_win_gives_it_and_those_before():
     router = a_router()  # D-075: LOVE is Fear's word, SWORD Aggression's, HEART Love's
-    assert router.state(2) == "locked" and router.unlock("nothing") is None
-    assert router.unlock("  sword ") == 2  # any case, spaces round it
-    assert [router.state(k) for k in range(4)] == ["open", "open", "open", "locked"]
-    assert not router.won  # opened, not won: no score
-    router.open(2)  # Love opens
-    assert router.unlock(router.levels[-1].passkey) is None  # the last's opens nothing yet
-    assert router.unlock("heart") == 3 and router.state(3) == "open"
+    fear, love, orbit = AT["Fear"], AT["Love"], AT["Orbit"]
+    assert router.state(love) == "locked" and router.unlock("nothing") is None
+    assert router.unlock("  sword ") == love  # any case, spaces round it
+    states = [router.state(k) for k in range(fear, orbit + 1)]
+    assert states == ["open", "open", "open", "locked"]
+    assert router.state(1) == "open" and not router.won  # every level before it, none won
+    router.open(love)  # Love opens
+    assert router.levels[-1].passkey is None  # the last gives no word (D-332)
+    assert router.unlock("heart") == orbit and router.state(orbit) == "open"
 
 
 def test_a_win_card_names_the_word_for_the_next_level_and_chapters_once_it_is_won():
     router = a_router()
-    router.begin()  # Fear
+    router.begin()  # Wiring: the tutorials give no word, every one being open (D-335)
+    assert router.next_passkey() is None
+    fear = router.index = AT["Fear"]
     assert router.next_passkey() == ("LOVE", "LEVEL 1.2")
-    assert router.rows()[0].passkey == ""  # not won yet: not given away
+    assert router.rows()[fear].passkey == ""  # not won yet: not given away
     router.mark_won()
-    assert router.rows()[0].passkey == "LOVE" and router.rows()[1].passkey == ""
-    router.unlock(router.levels[-2].passkey)  # the word before the last opens it
-    router.open(len(router.levels) - 1)  # the last: there is no next level to open
+    assert router.rows()[fear].passkey == "LOVE" and router.rows()[fear + 1].passkey == ""
+    router.open(len(router.levels) - 1)  # the last, open as chapter 4's are: no next (D-348)
     assert router.next_passkey() is None
     router.open(router.sandbox_index)
     assert router.next_passkey() is None
+
+
+def test_the_maker_opens_on_the_sandbox_alone_and_the_editor_and_the_run_go_on_from_it():
+    router = a_router()  # D-301
+    with pytest.raises(ValueError, match="only the sandbox"):
+        router.make()
+    router.open(router.sandbox_index)
+    router.begin()
+    router.make()
+    assert router.screen is Screen.MAKE and router.label == "YOUR LEVEL"
+    router.run()
+    assert router.screen is Screen.RUN
+    router.make()
+    router.edit()
+    assert router.screen is Screen.EDIT
+
+
+def test_the_maker_revises_the_sandboxs_level_alone_and_its_board_stays():
+    router = a_router()  # D-301
+    with pytest.raises(ValueError, match="only the sandbox"):
+        router.revise(router.level)
+    router.open(router.sandbox_index)
+    board = router.board
+    eye = board.place(Kind.EYE, (0, 0))
+    made = replace(router.level, start=(3.0, 4.0, 90.0))
+    router.revise(made)
+    assert router.level is made and router.sandbox is made
+    assert router.board is board and eye.id in board.nodes  # the plane changed round it

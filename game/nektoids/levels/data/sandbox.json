@@ -1,23 +1,19 @@
 {
-  "version": 1,
+  "version": 5,
   "title": "Two lights, four obstacles",
   "spec": "No goal: try any wiring.",
-  "start": {"at": [15.0, 19.0], "heading": 20.0},
+  "author": "@Cy-3LO",
+  "start": {"at": [15, 19], "heading": 20},
   "items": [
-    {"kind": "light", "at": [27.5, 24.0], "power": 8.0},
-    {"kind": "light", "at": [7.5, 7.5], "power": 4.0},
-    {"kind": "obstacle", "at": [21.0, 21.0], "radius": 1.0},
-    {"kind": "obstacle", "at": [24.0, 15.0], "radius": 1.0},
-    {"kind": "obstacle", "at": [14.0, 27.5], "radius": 1.0},
-    {"kind": "obstacle", "at": [31.0, 10.0], "radius": 1.0}
+    {"kind": "light", "at": [28, 24], "power": 8},
+    {"kind": "light", "at": [8, 8], "power": 4},
+    {"kind": "obstacle", "at": [21, 21], "radius": 1},
+    {"kind": "obstacle", "at": [24, 15], "radius": 1},
+    {"kind": "obstacle", "at": [14, 28], "radius": 1},
+    {"kind": "obstacle", "at": [31, 10], "radius": 1}
   ],
   "board": {
-    "zone": [
-      [0, -3], [1, -3], [2, -3], [3, -3], [-1, -2], [0, -2], [1, -2], [2, -2], [3, -2], [-2, -1],
-      [-1, -1], [0, -1], [1, -1], [2, -1], [3, -1], [-3, 0], [-2, 0], [-1, 0], [0, 0], [1, 0],
-      [2, 0], [3, 0], [-3, 1], [-2, 1], [-1, 1], [0, 1], [1, 1], [2, 1], [-3, 2], [-2, 2],
-      [-1, 2], [0, 2], [1, 2], [-3, 3], [-2, 3], [-1, 3], [0, 3]
-    ],
+    "zone": 37,
     "stock": {
       "eye": null,
       "source": null,
@@ -30,6 +26,17 @@
     "parts": [],
     "wires": []
   },
-  "time_limit": 120.0,
-  "objectives": []
+  "time_limit": 120,
+  "objectives": [],
+  "tutorial": {
+    "steps": [
+      {
+        "show": {"tab": "maker"},
+        "say": [
+          "This is the **Maker**, a new tab: build your own level here.",
+          "Place lights, obstacles and rings in **Objects**, choose the **Goals**, try it in the **Editor** and the **Run**, and share it from **Files**."
+        ]
+      }
+    ]
+  }
 }
