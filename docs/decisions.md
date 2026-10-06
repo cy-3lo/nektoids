@@ -2106,3 +2106,16 @@ body's right, (0, 1), pointing SE, through the centre, so that it slides the swi
 unturned and time runs out; one turn left points it E, and the swimmer turns left round an
 obstacle of 2 u at (0, 5) into a ring of 2 u at (0, 9), behind it, in 4.18 s. Pointing W, it
 sails backwards round the same circle and wins too; the other facings miss.
+
+**D-337 — 2026-10-06 — A tutorial's highlight pulses, accent1 bright to medium and back every 1.2 s, smoothly, in place of the sparks. A game's word in a card's text, marked "**Editor**", is drawn in accent1. Amends D-063, D-094, D-336.**
+The physicist chose among animated trials, a hard blink and a smooth pulse, on text (the
+Objectives title, the Editor tab) and on icons (the bar, the Hints icon): the pulse. What a step
+lights, a tab's name, a drawer's title, a section's, a bar's icon or a cell, is drawn in
+`palette.pulse(frame)`, a cosine between `P.accent1.mid` and `P.accent1.bright` over
+`PULSE_FRAMES`, 72 frames; `main.py` counts the frames, drawing only, and hands the colour to the
+scenes, `Frame.lit_ink`. A cell fills with half of it over the zone's colour (`FOCUS_TINT`), in
+place of `FOCUS_CELL`. And in a card, the game's words, the tabs, the drawers, the parts, the
+Wheel's actions, the keys, are set apart, as the physicist asked: marked "**Editor**" in the
+level's file, as markdown writes bold, which `docs/tutorials.md` shows so, they are drawn in
+accent1, steady. A step wraps by what shows, its marks taking no room, and a marked phrase that
+runs on to the next line stays marked there. The six tutorials' words are marked, to be edited.

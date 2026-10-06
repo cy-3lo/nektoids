@@ -153,6 +153,7 @@ FLASH = P.accent2.dark  # the flash on a refused move
 VEIL = (0, 0, 0, 150)  # over a level's board under its card; over all but a tutorial's targets
 CLEAR = (0, 0, 0, 0)  # a hole in a veil
 LIT = P.accent1.bright  # a tutorial's target, drawn in it, and its box while it leads
+PULSE_FRAMES = 72  # a tutorial's target pulses, bright to medium and back: 1.2 s (D-337)
 
 # The board
 ZONE = P.surface  # cells of the level's zone
@@ -168,7 +169,7 @@ WIRE = mix(P.dim, P.parts, 0.4)
 WIRING = P.bright  # the wire being drawn, where it would run: white, apart from the shadows
 WIRING_OK = P.accent1.bright  # ... and it may connect there (D-087)
 GHOST_OK = P.bright  # a tutorial's part outlined where it should face
-FOCUS_CELL = mix(P.surface, P.accent1.mid, 0.55)  # a cell a tutorial's step acts on (D-063)
+FOCUS_TINT = 0.5  # a cell a tutorial's step acts on: so much of its pulse over the zone (D-337)
 GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part or wire: a paler grey, no outline
 DOOMED = P.muted  # what a Delete click would remove
 ICON_EDGE = mix(P.muted, P.dim, 0.5)  # the edge of an icon of the Wheel, and of a pile's (D-068)
@@ -202,3 +203,10 @@ FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks d
 INTAKE = mix(P.muted, P.dim, 0.6)  # the light an eye draws in, specks drifting to its face
 PART_OUTLINE = P.dim  # a part's outline on the swimmer; its face keeps EYE_FACE, THRUSTER_BACK
 MOTION = P.accent1.bright  # its velocity and its spin, in the swimmer's own colour
+
+
+def pulse(frame: int) -> Colour:
+    """A tutorial's target's colour at `frame`, drawing only: accent1, bright to medium and back
+    every PULSE_FRAMES, a cosine's smoothness, in place of the sparks (D-337)."""
+    t = 0.5 + 0.5 * math.cos(2 * math.pi * frame / PULSE_FRAMES)
+    return mix(P.accent1.mid, P.accent1.bright, t)

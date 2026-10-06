@@ -20,7 +20,7 @@
       {
         "show": [{"drawer": "parts"}, {"menu": "halve"}, {"menu": "double"}],
         "say": [
-          "The Halve sends half the beads that come in, the Double twice as many. No wire carries more than a Source sends."
+          "The **Halve** sends half the beads that come in, the **Double** twice as many. No wire carries more than a **Source** sends."
         ]
       },
       {"say": ["At full push the swimmer crosses the ring in 2 s: too fast to stay 3 s in it."]}

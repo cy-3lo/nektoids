@@ -25,13 +25,16 @@
         "show": [{"cell": [0, 1]}, {"wheel": "turn left"}],
         "say": [
           "This thruster pushes through the body's centre: the swimmer slides, without turning. Off the centre, a push turns it.",
-          "Click the thruster, then Turn left on the Wheel, or press L: it turns by 60 degrees."
+          "Click the thruster, then **Turn left** on the **Wheel**, or press **L**: it turns by 60 degrees."
         ],
         "until": {"facing": {"cell": [0, 1], "facing": "E"}}
       },
-      {"say": ["Click the Run tab or button, or press Tab."], "until": {"screen": "run"}},
       {
-        "say": ["Press Play, or Space: the push turns the swimmer round the obstacle."],
+        "say": ["Click the **Run** tab or button, or press **Tab**."],
+        "until": {"screen": "run"}
+      },
+      {
+        "say": ["Press **Play**, or **Space**: the push turns the swimmer round the obstacle."],
         "until": {"outcome": "won"}
       }
     ]
