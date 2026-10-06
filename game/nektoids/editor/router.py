@@ -3,13 +3,13 @@
 The loop of the brief (§1): the spec and the board in the editor, Run, watch the run, back to
 the editor to change the mechanism, or on to the next level once won (D-030). Around it (D-035,
 D-054): the game opens on the first level under a title card; the Chapters drawer lists the
-chapter's levels and the sandbox, each level opening once the one before it is won; after the
-last level comes the end. A level opened from Chapters or by Next level comes up under its card,
-which says what it asks, then on its run, paused, the board as it stands (D-069). On the
-sandbox, a third screen, the Maker, makes its level, which the editor and the run try (D-301).
-Each level keeps its board for the session, so going back finds it as it was left, and the
-scores of its wins (D-028); nothing is kept after it. Pure Python, no pygame: `main.py` turns
-the state into scenes.
+levels by chapter, one route through them all (D-325), and the sandbox, each level opening once
+the one before it is won; after the last level comes the end. A level opened from Chapters or by
+Next level comes up under its card, which says what it asks, then on its run, paused, the board
+as it stands (D-069). On the sandbox, a third screen, the Maker, makes its level, which the
+editor and the run try (D-301). Each level keeps its board for the session, so going back finds
+it as it was left, and the scores of its wins (D-028); nothing is kept after it. Pure Python, no
+pygame: `main.py` turns the state into scenes.
 """
 
 from __future__ import annotations
@@ -19,16 +19,21 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.board import Board, BoardState
+from nektoids.levels.arenas import locate
 from nektoids.levels.level import Level
 from nektoids.levels.score import Score, front
 
-CHAPTER = 1  # the jam's one chapter, light (D-028): its levels are LEVEL 1.1, LEVEL 1.2...
-CHAPTER_NAME = "light"
+
+def level_number(index: int) -> str:
+    """The number of the route's level at `index`: its chapter's, then its place there, "2.1"
+    (D-325)."""
+    chapter, k = locate(index)
+    return f"{chapter.number}.{k + 1}"
 
 
 def level_label(index: int) -> str:
-    """How the level at `index` in the chapter is named on screen, before its title (D-034)."""
-    return f"LEVEL {CHAPTER}.{index + 1}"
+    """How the route's level at `index` is named on screen, before its title (D-034)."""
+    return f"LEVEL {level_number(index)}"
 
 
 @dataclass(frozen=True)
@@ -59,7 +64,7 @@ class Won:
 class WinGroup:
     """A level's wins this session, under its title in Files, a group that folds (D-092)."""
 
-    index: int  # the level's place in the chapter
+    index: int  # the level's place on the route
     title: str  # "1.2 Aggression"
     wins: tuple[Won, ...]  # as `Router.wins` orders them
 
@@ -70,16 +75,16 @@ class Screen(Enum):
     EDIT = "edit"  # a level's board in the editor
     RUN = "run"  # the level's board swimming in its arena
     MAKE = "make"  # the sandbox's level, made in the Maker (D-301)
-    END = "end"  # after the last level of the chapter
+    END = "end"  # after the route's last level
 
 
 class Router:
     def __init__(self, levels: Sequence[Level], sandbox: Level | None = None) -> None:
-        self.levels = list(levels)  # the chapter, in order
+        self.levels = list(levels)  # the route, every chapter's levels in order
         self.sandbox = sandbox  # no objective; always open
-        self.index = 0  # the open place: a level of the chapter, or `sandbox_index`
+        self.index = 0  # the open place: a level on the route, or `sandbox_index`
         self.screen = Screen.TITLE
-        self.won: set[int] = set()  # the chapter's levels won this session
+        self.won: set[int] = set()  # the levels won this session
         self.opened: set[int] = set()  # the levels a passkey opened this session (D-075)
         self._boards: dict[int, Board] = {}
         self._scores: dict[int, set[Score]] = {}
@@ -110,12 +115,12 @@ class Router:
 
     @property
     def has_next(self) -> bool:
-        """A level of the chapter comes after the open one."""
+        """A level comes after the open one on the route."""
         return not self.in_sandbox and self.index + 1 < len(self.levels)
 
     @property
     def is_last(self) -> bool:
-        """The open level is the chapter's last: winning it leads to the end."""
+        """The open level is the route's last: winning it leads to the end."""
         return not self.in_sandbox and self.index + 1 == len(self.levels)
 
     @property
@@ -137,12 +142,12 @@ class Router:
         return "open" if self.unlocked(index) else "locked"
 
     def rows(self) -> tuple[ChapterRow, ...]:
-        """What Chapters shows: the chapter's levels, then the sandbox."""
+        """What Chapters shows: the levels, then the sandbox."""
         places = [*self.levels, self.sandbox] if self.sandbox is not None else list(self.levels)
         return tuple(
             ChapterRow(
                 k,
-                "" if k == self.sandbox_index else f"{CHAPTER}.{k + 1}",
+                "" if k == self.sandbox_index else level_number(k),
                 place.title,
                 place.spec,
                 self.state(k),
@@ -205,14 +210,14 @@ class Router:
         self.screen = Screen.EDIT
 
     def make(self) -> None:
-        """The Maker, the sandbox's alone (D-301); ValueError on a level of the chapter."""
+        """The Maker, the sandbox's alone (D-301); ValueError on a level of the route."""
         if not self.in_sandbox:
             raise ValueError("only the sandbox's level is made in the Maker")
         self.screen = Screen.MAKE
 
     def revise(self, level: Level) -> None:
         """The sandbox's level as the Maker leaves it (D-301), for the editor and the next run;
-        its board stays as the player left it. ValueError on a level of the chapter."""
+        its board stays as the player left it. ValueError on a level of the route."""
         if not self.in_sandbox:
             raise ValueError("only the sandbox's level is made in the Maker")
         self.sandbox = level
@@ -244,10 +249,10 @@ class Router:
 
     def files(self) -> tuple[WinGroup, ...]:
         """What Files lists (D-092): the open level's wins, then each other level's, in the
-        chapter's order; a level with none has no group, nor has the sandbox."""
+        route's order; a level with none has no group, nor has the sandbox."""
         order = sorted(range(len(self.levels)), key=lambda k: k != self.index)
         groups = (
-            WinGroup(k, f"{CHAPTER}.{k + 1} {self.levels[k].title}", self.wins(k)) for k in order
+            WinGroup(k, f"{level_number(k)} {self.levels[k].title}", self.wins(k)) for k in order
         )
         return tuple(group for group in groups if group.wins)
 

@@ -66,7 +66,7 @@ game/                    everything pygbag bundles; keep it lean
   nektoids/sim/          physics: state arrays, integrator, sensors (numpy, no pygame)
   nektoids/graph/        node graph: data structure, evaluation, bead rates (no pygame)
   nektoids/editor/       pygame UI: grid, node placement, wires, beads, inspector
-  nektoids/levels/       levels as data (JSON in levels/data/, D-028): items, board, objectives
+  nektoids/levels/       levels as data (JSON in levels/data/, by chapter, D-028): items, board, objectives
 tests/                   pytest; never import pygame here
 docs/                    brief, decisions, todo, ideas, walkthrough
 ```

@@ -38,7 +38,7 @@ from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, cont
 from nektoids.editor.maker import MakerScene
 from nektoids.editor.maker_draw import draw_maker
 from nektoids.editor.preview_draw import draw_preview
-from nektoids.editor.router import CHAPTER, Router, Screen, level_label
+from nektoids.editor.router import Router, Screen, level_label, level_number
 from nektoids.editor.scene import EditorScene
 from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
@@ -190,7 +190,7 @@ def editor() -> EditorScene:
 def maker() -> MakerScene:
     """The sandbox's Maker, made the first time it opens (D-301)."""
     if router.index not in makers:
-        starts = (*((f"{CHAPTER}.{k + 1}", level) for k, level in enumerate(levels)), ("", free))
+        starts = (*((level_number(k), level) for k, level in enumerate(levels)), ("", free))
         makers[router.index] = MakerScene(
             router.level, router.label, settings, len(levels), starts=starts, board=router.board
         )

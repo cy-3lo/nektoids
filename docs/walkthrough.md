@@ -656,8 +656,8 @@ touching it, which needs a Diff on each side, Diff(Source, eye) = 1 - e.
 - [`editor/arena.py`](../game/nektoids/editor/arena.py): `kept` replaces `marked`, in the run
   and in each `Snapshot`; `counts()` returns a `Count` per objective, with its bar and whether
   it lost; `lost_by` says which one did, for the banner.
-- [`levels/data/love.json`](../game/nektoids/levels/data/love.json): the level, written by
-  `to_json`.
+- [`levels/data/1-braitenberg/love.json`](../game/nektoids/levels/data/1-braitenberg/love.json):
+  the level, written by `to_json`.
 - Tests: [`test_objectives.py`](../tests/test_objectives.py) for the timer and the touch;
   [`test_determinism.py`](../tests/test_determinism.py) pins love's two winners (two eyes
   looking ahead, and one eye, one Diff and one thruster on the axis, D-044) and the ways to

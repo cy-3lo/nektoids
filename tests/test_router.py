@@ -115,6 +115,16 @@ def test_a_level_reset_opens_on_a_fresh_board_and_the_others_keep_theirs():
 
 def test_levels_are_named_by_chapter_and_place():
     assert level_label(0) == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"
+    assert level_label(4) == "LEVEL 2.1" and level_label(7) == "LEVEL 3.3"  # D-325
+    labels = [row.label for row in a_router().rows()]
+    assert labels == ["1.1", "1.2", "1.3", "1.4", "2.1", "3.1", "3.2", "3.3", ""]
+
+
+def test_a_passkey_opens_the_next_level_across_chapters():
+    router = a_router()  # D-325: one route; Orbit's word opens Shadows, the next chapter's first
+    router.index = 3  # Orbit
+    assert router.next_passkey() == ("MOON", "LEVEL 2.1")
+    assert router.unlock("moon") == 4 and router.state(4) == "open"
 
 
 def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
