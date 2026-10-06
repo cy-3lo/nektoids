@@ -20,8 +20,10 @@ ORDER = (
     "shadows",
     "greed",
     "patience",
+    "two-lights",
 )  # the route's files, in the order the levels come: Braitenberg's 2a, 2b, 3a, the brief's
-# orbit (D-097), then the levels with obstacles and more lights, the real level last (D-098)
+# orbit (D-097), then the levels with obstacles and more lights, the real level (D-098), and
+# "Two lights, four obstacles", once too hard for level 2 (D-032), at the chapter's end (D-324)
 SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)
 
 

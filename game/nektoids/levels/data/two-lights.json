@@ -1,0 +1,31 @@
+{
+  "version": 4,
+  "title": "Two lights",
+  "spec": "Touch both lights, in any order.",
+  "start": {"at": [15, 19], "heading": 20},
+  "items": [
+    {"kind": "light", "at": [28, 24], "power": 8},
+    {"kind": "light", "at": [8, 8], "power": 4},
+    {"kind": "obstacle", "at": [21, 21], "radius": 1},
+    {"kind": "obstacle", "at": [24, 15], "radius": 1},
+    {"kind": "obstacle", "at": [14, 28], "radius": 1},
+    {"kind": "obstacle", "at": [31, 10], "radius": 1}
+  ],
+  "board": {
+    "zone": 19,
+    "stock": {
+      "eye": 2,
+      "source": 1,
+      "double": null,
+      "halve": null,
+      "sum": null,
+      "difference": null,
+      "thruster": 2
+    },
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 45,
+  "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
+  "passkey": "GEMINI"
+}

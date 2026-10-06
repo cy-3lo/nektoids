@@ -428,3 +428,24 @@ def test_every_level_ends_as_it_did_before_objectives_were_sentences(title, name
     assert (ended, ticks) == (then, at_tick)
     assert [g[:2] for g in got] == [c[:2] for c in counted]  # met of needed, each objective
     assert [g[2] for g in got] == pytest.approx([c[2] for c in counted], rel=1e-12, abs=0.0)
+
+
+# "Two lights, four obstacles", titled Two lights, the chapter's last level (D-324): too hard for
+# level 2 (D-032), 27 of 1,728 one-eyed circlers win it. The fastest: an eye at the back left
+# looking ahead, through a Double to the left thruster; a Source on the right one, so it turns left
+# round the bright light until it comes by the dim one. Plain aggression and Greed's model each
+# touch one light only.
+CIRCLER = built(
+    "Two lights",
+    [*THRUSTERS, (Kind.SOURCE, (0, 0), None), (Kind.EYE, (-2, 1), E), (Kind.DOUBLE, (0, -2), None)],
+    [(3, 4), (4, 0), (2, 1)],
+)
+
+
+def test_two_lights_a_one_eyed_circler_touches_both_and_aggression_only_one():
+    ended, ticks, _ = play(CIRCLER, "Two lights")
+    assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Two lights"].time_limit
+    assert play(CIRCLER, "Two lights")[1] == ticks  # the same tick, every run
+    crossed = built("Two lights", [*EYES, *THRUSTERS], [(0, 3), (1, 2)])
+    ended, _, kept = play(crossed, "Two lights")
+    assert ended is Outcome.TIME_UP and LEVELS["Two lights"].objectives[0].count(kept[0]) == (1, 2)
