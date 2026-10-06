@@ -8,6 +8,7 @@ import math
 import numpy as np
 import pytest
 
+from nektoids.editor.arena_view import OPENING_SCALE
 from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
 from nektoids.editor.marks import (
     FADE,
@@ -35,7 +36,7 @@ from nektoids.editor.marks import (
 from nektoids.graph.board import Refused
 from nektoids.graph.network import Network
 from nektoids.levels.sandbox import tutorial_board
-from nektoids.sim.arena import LIGHT_RADIUS, Arena, Disc, Light
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Arena, Disc, Light
 from nektoids.sim.optics import eye_rates
 from nektoids.sim.world import parts, step
 
@@ -191,3 +192,4 @@ def test_no_stream_is_drawn_shorter_on_screen_than_its_least():
     for scale in (2.0, 5.0, 9.4, 16.0, 48.0):  # [px/u]
         on_screen = FLAME_LENGTH * stretch_at(scale, 1.0) * scale
         assert on_screen == pytest.approx(max(LEAST_STREAM, FLAME_LENGTH * scale))
+    assert stretch_at(OPENING_SCALE, BASE_RADIUS) == 1.0  # the run as it opens: as they are

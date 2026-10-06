@@ -100,7 +100,7 @@ from nektoids.editor.layout import (
     tab_key_to,
     visible_cells,
 )
-from nektoids.editor.marks import AtWork, at_work
+from nektoids.editor.marks import AtWork, at_work, stretch_at
 from nektoids.editor.marks_draw import SPECK, draw_over, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
@@ -890,14 +890,19 @@ def _draw_overview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> 
 
 def _draw_diagnostic(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Diagnostic (D-058, D-069): the level small, its obstacles, its marks, its lights,
-    and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076)."""
+    and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076), its
+    streams no shorter on screen than LEAST_STREAM (D-345)."""
     area = pygame.Rect(DIAGNOSTIC_MAP)
-    probe = scene.probe
-    if scene.level is not None and probe is not None:
+    probe, level = scene.probe, scene.level
+    if level is not None and probe is not None:
+        view = level_view(level, tuple(area))
         frame = probe.ticks // TICKS_PER_FRAME
         cells = probe.circuit.board.cells
-        body = at_work(scene.level.arena, probe.net, cells, probe.y, probe.pose, BASE_RADIUS, frame)
-        draw_level_map(screen, scene.level, area, probe.pose, body=body)
+        stretch = stretch_at(view.scale, BASE_RADIUS)
+        body = at_work(
+            level.arena, probe.net, cells, probe.y, probe.pose, BASE_RADIUS, frame, stretch=stretch
+        )
+        draw_level_map(screen, level, area, probe.pose, view=view, body=body)
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)

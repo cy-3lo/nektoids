@@ -2190,3 +2190,18 @@ the body, back and out to the other side, wired to the thruster on the side it l
 thrusters at the back corners as before. It wins Fear in 244 ticks, 2.03 s, where the old
 shadow's board, eyes at the front looking back, took 3.18 s, with as many parts. Fear's idea,
 "Each eye its thruster.", still holds: each eye drives the thruster on the side it sees.
+
+**D-345 — 2026-10-06 — The streams thin out from 3 to 5 body radii, and are never shorter than 32 px on screen, on average: Diagnostic's map and a run zoomed out draw them longer. Amends D-076.**
+The physicist's (todo §12): in Diagnostic's map the flames and the light drawn in should reach
+farther, and at full rate they ended abruptly at 3 body radii. Chosen on a trial drawn by the
+game's own code, the run of Aggression and the maps of Fear, Love and Dragster, fades and floors
+side by side. Each speck now ends at its own distance, drawn evenly between 3 and 5 body radii:
+a stream is as dense as before over its first 3 body radii, then thins out to none by 5, 4 on
+average. The specks keep their speed, 3 body radii in 16 frames out of a thruster and in 0.5 s
+into an eye, and their density, 12 at once in the first 3 body radii at RATE_MAX, 16 in all on
+average: their number is still the rate. A stream is drawn longer where it would be shorter than
+32 px on screen, on average. A body radius is 5 to 14 px in Diagnostic's map, so the maps of
+Wiring, Minus, Love, Two lights and Dragster draw longer streams, and so does a run zoomed out
+past 8 px/u; the run at its opening zoom, 16 px/u, is as it was. The info boxes' streams thin
+out too, their farthest speck where it was, so that the boxes do not move. A probe near the
+map's edge has its streams cut by the map's frame.

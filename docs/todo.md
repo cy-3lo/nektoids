@@ -65,10 +65,6 @@ taken, when it starts.
 - [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
 - [ ] The Maker in Safari: a slider's typed value, Paste a level (D-308, D-310); only Chrome was
   tried.
-- [ ] The streams (D-076), the physicist's: in the mini view the thrusters' flames and the light
-  the eyes draw in should reach farther; and at full rate they end abruptly at 3 body radii,
-  `FLAME_LENGTH` and `INTAKE_LENGTH` in `editor/marks.py`, where they should fade out, between
-  2 and 4 body radii or 2.5 and 3.5. Visual tests first, to choose.
 
 ## 13. Chapters, levels and tutorials, made with the Maker (done, D-325 to D-341)
 

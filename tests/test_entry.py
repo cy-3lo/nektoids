@@ -14,6 +14,7 @@ from nektoids.editor.entry import (
     Entry,
 )
 from nektoids.editor.layout import contains
+from nektoids.editor.marks import FLAME_SPECKS, INTAKE_SPECKS
 from nektoids.graph.board import Kind
 
 FPS = 60  # frames a second: a tick of the entry
@@ -105,5 +106,5 @@ def test_the_light_and_the_flames_are_as_many_as_the_rates():
     for _ in range(600):
         double.tick()
         seen, out = seen + len(double.light()), out + len(double.flames())
-    assert 12 * 0.3 * 0.8 < seen / 600 < 12 * 0.3 * 1.2  # INTAKE_SPECKS at the eye's reading
-    assert 12 * 0.6 * 0.8 < out / 600 < 12 * 0.6 * 1.2  # FLAME_SPECKS at the thruster's rate
+    assert 0.8 < seen / 600 / (INTAKE_SPECKS * 0.3) < 1.2  # at the eye's reading
+    assert 0.8 < out / 600 / (FLAME_SPECKS * 0.6) < 1.2  # at the thruster's rate

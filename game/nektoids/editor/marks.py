@@ -8,9 +8,9 @@ each light the eye sees, along that light's direction, as many as that light giv
 they come in over the face's width as the light sees it, its cosine (D-019). Each speck ends at
 its own distance, within FADE of the stream's length, so that a stream thins out to none rather
 than stopping; and a stream is drawn longer where it would be shorter than LEAST_STREAM on screen
-(`stretch_at`). Its motion: the
-velocity as a segment from the rim, the spin as an arc from the heading, both from the thrust
-the nodes have now (D-022), which is what the next tick does.
+(`stretch_at`, D-345). Its motion: the velocity as a segment from the rim, the spin as an arc
+from the heading, both from the thrust the nodes have now (D-022), which is what the next tick
+does.
 
 Every function returns points in the plane [u]; the drawing turns them into pixels. The specks
 are a picture, never read by the model: drawn from a table made once and read by the frame, so
@@ -35,16 +35,16 @@ from nektoids.sim.motion import stokes
 from nektoids.sim.optics import FACING_STEP, TINY, discs, exposure, eye_poses, visible
 from nektoids.sim.world import parts, push
 
-FLAME_LENGTH = 3.0  # [body radii] every flame, whatever its rate: the rate is its density
-FADE = 0.0  # a speck ends within this fraction of its stream's length either side of its end
-LEAST_STREAM = 0.0  # [px] no stream is drawn shorter on screen than this
-FLAME_SPECKS = 12  # specks in a flame at once at RATE_MAX, on average
+FLAME_LENGTH = 4.0  # [body radii] every flame, whatever its rate, on average: its specks end
+FADE = 0.25  # within this fraction of it either side, from 3 to 5 body radii (D-345)
+LEAST_STREAM = 32.0  # [px] no stream is drawn shorter than this on screen, on average (D-345)
+FLAME_SPECKS = 16  # specks in a flame at once at RATE_MAX, on average: 12 in its first 3 radii
 FLAME_SPREAD = math.radians(10.0)  # a flame widens by this much either side
-FLAME_LIFE = 16  # [frames] a speck's way out
-INTAKE_LENGTH = 3.0  # [body radii] how far out the specks of light start
-INTAKE_SPECKS = 12  # specks drawn into an eye reading RATE_MAX, at once, on average
+FLAME_LIFE = 16.0 / 3.0 * FLAME_LENGTH  # [frames] a speck's way out: 3 body radii in 16 frames
+INTAKE_LENGTH = 4.0  # [body radii] how far out the specks of light start, on average
+INTAKE_SPECKS = 16  # specks drawn into an eye reading RATE_MAX, at once, on average
 INTAKE_SPREAD = math.radians(10.0)
-INTAKE_LIFE = 30  # [frames] a speck's way in, 0.5 s
+INTAKE_LIFE = 10.0 * INTAKE_LENGTH  # [frames] a speck's way in: 3 body radii in 0.5 s
 VELOCITY_SPAN = 1.0  # [s] the segment is the way the body goes in this long
 SPIN_SPAN = 2.0  # [s] the arc is the angle the body turns in this long
 SPIN_RADIUS = 1.6  # [body radii]
@@ -73,7 +73,7 @@ class Specks:
         self.table.flags.writeable = False  # drawn once, read only
 
     def stream(
-        self, density: float, frame: int, life: int, stream: int, fade: float = 0.0
+        self, density: float, frame: int, life: float, stream: int, fade: float = 0.0
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """The specks of one stream at `frame`, in units of the stream's length: how far each
         has gone from where it starts, and how far it has left to go; and where across the
