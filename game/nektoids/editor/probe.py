@@ -2,11 +2,8 @@
 
 The probe is the swimmer put anywhere on the level and turned any way; nothing moves and
 nothing is scored. Its eyes read the light there, as they would in a run, and the circuit
-settles tick by tick, with its lags (D-017) and its beads. The player may hold an eye at a
-level by its meter, to see what follows: a test input, kept nowhere and never seen by a run, so
-the board still holds no continuous parameter (brief: "No sliders"; amends D-016's developer
-sliders). Moving or turning the probe gives every eye back to the light. Pure Python and numpy,
-no pygame.
+settles tick by tick, with its lags (D-017) and its beads. Nothing sets an eye by hand: the
+eyes' meters, once handles, are meters again (D-339). Pure Python and numpy, no pygame.
 """
 
 from __future__ import annotations
@@ -17,11 +14,11 @@ from typing import NamedTuple
 import numpy as np
 
 from nektoids.editor.arena_view import ArenaView, frame, rims
-from nektoids.editor.circuit import METER_AT, METER_HEIGHT, Circuit
+from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT
 from nektoids.editor.layout import Rect, View
 from nektoids.graph.board import Board
-from nektoids.graph.dynamics import RATE_MAX, initial_state, step
+from nektoids.graph.dynamics import initial_state, step
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
 from nektoids.sim import world
@@ -31,7 +28,6 @@ from nektoids.sim.optics import eye_rates
 
 NO_AREA: Rect = (0, 0, 0, 0)  # the circuit is drawn through a given view: nothing to fit
 MAP_MARGIN = 2.0  # room round what Diagnostic's map shows of the level [u]
-HANDLE_GRAB = 10  # a press this close to an eye's meter takes it [px]
 
 
 class Pose(NamedTuple):
@@ -59,7 +55,6 @@ class Probe:
         self.pos = np.array([[start.x, start.y]], dtype=np.float64)  # (1, 2) [u]
         self.heading = np.array([start.heading])  # (1,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # every body alike (D-045)
-        self.held: dict[int, float] = {}  # an eye's network index: the level it is held at
         self.state = initial_state(self.net)  # (1, n), from rest
         self.ticks = 0  # ticks run: the clock of the specks on Diagnostic's map (D-076)
         self.mount, self.facing = world.parts(self.net, self.net.eyes)
@@ -86,11 +81,8 @@ class Probe:
         ]
 
     def eyes(self) -> np.ndarray:
-        """What each eye sends now, (n_eyes,): the light, or the level it is held at."""
-        sent = self.light.copy()
-        for k, i in enumerate(self.net.eyes):
-            sent[k] = self.held.get(int(i), sent[k])
-        return sent
+        """What each eye sends now, (n_eyes,): the light it reads."""
+        return self.light.copy()
 
     def tick(self, dt: float = DT) -> None:
         self.state = step(self.net, self.state, self.eyes()[None, :], dt)
@@ -98,48 +90,19 @@ class Probe:
         self.ticks += 1
 
     def place(self, x: float, y: float) -> None:
-        """The probe to (x, y) [u], outside the obstacles; the eyes back to the light."""
+        """The probe to (x, y) [u], outside the obstacles."""
         point = np.array([[x, y]], dtype=np.float64)
         self.pos = confine(self.level.arena, point, self.radius)
-        self.held.clear()
         self._look()
 
     def turn(self, angle: float) -> None:
-        """Turn the probe by `angle` [rad], counter-clockwise; the eyes back to the light."""
+        """Turn the probe by `angle` [rad], counter-clockwise."""
         self.heading = self.heading + angle
-        self.held.clear()
         self._look()
-
-    def hold(self, i: int, level: float) -> None:
-        """Hold eye `i` (its network index) at `level`, clamped to [0, RATE_MAX]."""
-        self.held[i] = min(RATE_MAX, max(0.0, level))
 
     def see(self, view: View) -> None:
         """Draw the circuit through another view, zoomed or panned; nothing else changes."""
         self.circuit.view = view
-
-    # The eyes' meters as handles
-
-    def track(self, i: int) -> Track:
-        """Eye `i`'s meter, beside it, as `schematic_draw` draws every meter (D-052)."""
-        cx, cy = self.circuit.centre(i)
-        size = self.circuit.view.size
-        half = 0.5 * METER_HEIGHT * size
-        return Track(cx + METER_AT * size, cy - half, cy + half)
-
-    def handle_at(self, point: tuple[float, float]) -> int | None:
-        """The eye whose meter a press at `point` takes, if any."""
-        for i in self.net.eyes:
-            track = self.track(int(i))
-            near = abs(point[0] - track.x) <= HANDLE_GRAB
-            if near and track.top - HANDLE_GRAB <= point[1] <= track.bottom + HANDLE_GRAB:
-                return int(i)
-        return None
-
-    def level_at(self, i: int, y: float) -> float:
-        """The level eye `i`'s handle sets with its knob at screen height `y` [px]."""
-        track = self.track(i)
-        return RATE_MAX * min(1.0, max(0.0, (track.bottom - y) / (track.bottom - track.top)))
 
 
 def level_view(level: Level, area: Rect) -> ArenaView:

@@ -208,7 +208,8 @@ def test_version_1s_five_objectives_keep_their_names_but_the_stay_whose_ring_is_
     names = [g.name(alone) for g in (VISIT, KEEP_OFF)]
     assert names == ["Visit every light", "Don't touch the light"]
     assert Goal(Verb.LEAVE, Count.ALL, Target.MARK).name(alone) == "Leave the ring"
-    assert Goal(Verb.STAY, Count.ONE, Target.MARK).name(alone) == "Stay in a ring"
+    assert Goal(Verb.STAY, Count.ONE, Target.MARK).name(alone) == "Stay 5 s in the ring"  # D-339
+    assert Goal(Verb.STAY, Count.ONE, Target.MARK, seconds=3).name(alone) == "Stay 3 s in the ring"
     assert KEEP_OFF.broken(alone) == "It touched the light" and VISIT.broken(alone) == "Lost"
 
 

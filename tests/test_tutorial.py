@@ -166,11 +166,18 @@ def test_chapter_0_has_the_tutorials_its_first_two_lead_the_others_explain():
     ]
     assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (-1, 1), E)]
     assert turning.steps[1].until == {"moved": {"kind": "thruster", "cell": [-1, 1]}}  # D-338
-    for title in ("Eyes", "Half", "Minus", "Diagnostic"):  # they explain: nothing built
+    for title in ("Eyes", "Half", "Minus", "Diagnostic"):  # they explain: nothing waited for
         tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
-        assert tutorial.ghosts == () and tutorial.ghost_wires == ()
         waits = [step.until for step in tutorial.steps[1:] if step.until]
         assert all("drawer" in until for until in waits)
+        shadow = (tutorial.ghosts, tutorial.ghost_wires)
+        assert bool(shadow[0]) == (title == "Eyes")  # Eyes shows the wiring's shadow (D-339)
+    eyes = Tutorial.from_dict(LEVELS["Eyes"].tutorial)
+    assert [(g.kind, g.cell, g.facing) for g in eyes.ghosts] == [
+        (Kind.EYE, (1, 0), E),
+        (Kind.THRUSTER, (-1, 0), E),
+    ]
+    assert eyes.ghost_wires == (((1, 0), (-1, 0)),)
     for title in tutored:  # each opens on the Run, its introduction ending on the Editor (D-338)
         tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
         assert tutorial.starts_in is None
@@ -248,7 +255,8 @@ def test_wirings_introduction_shows_the_objective_the_tabs_the_bar_leads_the_wir
     source, thruster = (board.node_at(cell).id for cell in ((0, 0), (-1, 0)))
     board.connect(source, thruster)
     tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
-    assert tutorial.step.until == {"screen": "run"} and tutorial.step.show == {"tab": "run"}
+    assert tutorial.step.until == {"screen": "run"}
+    assert tutorial.step.show == [{"tab": "run"}, {"level": "run"}]  # the tab and the button
     tutorial.follow(context(Screen.RUN))
     assert tutorial.step.until == {"outcome": "won"} and tutorial.step.show == {"run": "play"}
     tutorial.follow(context(Screen.RUN, outcome=Outcome.WON))
@@ -551,7 +559,8 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
         intro.index = index
         named.append(panels(intro))
     tabs = [set(), {"objectives"}, {"tab:editor", "level:edit"}, {"bar"}]  # D-095, D-336
-    assert named == [*tabs, set(), {"tab:run"}, {"play"}, {"hints"}]  # the wire, the run, Hints
+    run = {"tab:run", "level:run"}  # D-339
+    assert named == [*tabs, set(), run, {"play"}, {"hints"}]  # the wire, the run, Hints
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():

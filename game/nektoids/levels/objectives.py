@@ -146,6 +146,9 @@ class Goal:
             return known
         one, many, a_one = THING[self.target]
         come, the = "Enter" if self.target is Target.MARK else "Reach", self._the(alone)
+        if self.verb is Verb.STAY:  # how long, in its name (D-339)
+            where = f"every {one}" if self.many is Count.ALL else the if alone else a_one
+            return f"Stay {self.seconds:g} s in {where}"
         return {
             (Verb.REACH, Count.ALL): f"{come} every {one}",
             (Verb.REACH, Count.ONE): f"{come} {a_one}",
@@ -155,8 +158,6 @@ class Goal:
             (Verb.LEAVE, Count.ALL): f"Leave every {one}",
             (Verb.LEAVE, Count.ONE): f"Leave {a_one}",
             (Verb.LEAVE, Count.NONE): f"Stay inside {the}",
-            (Verb.STAY, Count.ALL): f"Stay in every {one}",
-            (Verb.STAY, Count.ONE): f"Stay in {a_one}",
         }[(self.verb, self.many)]
 
     def about(self, level: Level) -> str:

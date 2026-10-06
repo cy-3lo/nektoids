@@ -202,7 +202,8 @@ def maker() -> MakerScene:
 
 
 def play(drawer: Drawer | None) -> ArenaScene:
-    """The player's run of the open level, on its board as it stands, `drawer` open."""
+    """The player's run of the open level, on its board as it stands, `drawer` open: always
+    Diagnostic, whatever was open in the run before (D-321, D-339)."""
     after = "Next level" if router.has_next else "The end" if router.is_last else None
     return ArenaScene(
         router.board,
@@ -251,7 +252,6 @@ async def main() -> None:
     running = True
     developer: SchematicScene | ArenaScene | None = None  # the F6 or F7 view, while open
     playing: ArenaScene | None = None  # the player's run, while it shows
-    run_drawer: Drawer | None = Drawer.INSIDE  # the run's open drawer, from one run to the next
     held: ArenaScene | None = None  # the run an explaining step paused while it played (D-071)
 
     def on_screen() -> EditorScene | ArenaScene | MakerScene:
@@ -300,8 +300,7 @@ async def main() -> None:
                 if router.screen is Screen.RUN and (start := tutorial_start()) is not None:
                     router.edit()  # the card gives way to the editor, not the run (D-103)
                     editor().open_drawer(start)
-                    if playing is not None:
-                        run_drawer, playing = playing.layout.drawer, None
+                    playing = None
             elif playing is not None:
                 playing.handle_event(event)
             elif router.screen is Screen.MAKE:
@@ -334,13 +333,12 @@ async def main() -> None:
             if playing.chosen is not None:  # a place picked in Chapters
                 choose_place(playing.chosen)
             if playing.request is not None or playing.chosen is not None:
-                kept = playing.layout.drawer if playing.chosen is None else Drawer.INSIDE  # D-321
-                run_drawer, playing = kept, None
+                playing = None
         if router.screen is Screen.EDIT:
             asked, editor().request = editor().request, None
             if asked == "run":
                 router.run()
-                playing = play(run_drawer)
+                playing = play(Drawer.INSIDE)
             elif asked == "make":
                 router.make()
             elif asked == "tutorial":  # Settings: the level's tutorial again
@@ -348,7 +346,6 @@ async def main() -> None:
             chosen, editor().chosen = editor().chosen, None
             if chosen is not None:
                 choose_place(chosen)
-                run_drawer = Drawer.INSIDE  # a place's run opens on Diagnostic (D-321)
         made = makers.get(router.index)
         if made is not None:  # the parts locked on the Editor's board, the level's (D-319)
             made.follow_board()
@@ -360,7 +357,7 @@ async def main() -> None:
             asked, maker().request = maker().request, None
             if asked == "run":
                 router.run()
-                playing = play(run_drawer)
+                playing = play(Drawer.INSIDE)
             elif asked == "edit":
                 router.edit()
             elif asked == "tutorial":
@@ -368,9 +365,8 @@ async def main() -> None:
             chosen, maker().chosen = maker().chosen, None
             if chosen is not None:
                 choose_place(chosen)
-                run_drawer = Drawer.INSIDE
         if router.screen in (Screen.TITLE, Screen.SPEC) and playing is None:
-            playing = play(run_drawer)  # the run it opens on, paused, under its card (D-069)
+            playing = play(Drawer.INSIDE)  # the run it opens on, paused, under its card (D-069)
 
         frames = (editor(), playing, makers.get(router.index))  # the scenes open on this place
         for scene in frames:  # a chapter's title clicked in Chapters (D-326)
