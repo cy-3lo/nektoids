@@ -2043,3 +2043,10 @@ thrusters. One Source on one thruster, 3 u/s, runs out of time; two, each on a t
 body's axis, back and front, win in 2.52 s, its proof; three would be faster, for more parts.
 It is the route's last level, after Two lights, so it gives no passkey and has no hints
 (D-329). Its file is `4-made-by-users/dragster.json`.
+
+**D-333 — 2026-10-06 — In the run, a drawer's title scrolled under the objectives is the list's, clipped with its rows: the layout says which titles are the foot's. Applies D-065, D-096.**
+In the run's Chapters, with every chapter open or the passkey field below the room, a title of
+the list scrolled down under the objectives was drawn over OBJECTIVES, unclipped: the drawing
+took any title whose corner lay in the objectives' area for theirs. The layout now keeps the
+foot's titles apart, `foot_titles`, and only those are drawn over the objectives; the others are
+the list's, clipped with it. The todo's §12 had it since D-326.
