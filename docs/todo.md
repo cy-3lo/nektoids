@@ -44,23 +44,18 @@ taken, when it starts.
   - [x] The board's locked parts: Lock, a mode of the sandbox's Tools (K), makes a part the
     level's, fixed and using no stock, or frees it; the level places what is locked, Copy level
     writes it, Paste and Start from bring it (D-319).
+  - [x] Share level: once won as it stands, the level copied with its proof, the winning board's
+    text and its score; pasted, the proof run again, the level cleared if it wins, its score the
+    one to beat, else a draft (D-320).
 
   To do, in this order:
-  - [ ] Share level, after the board, the physicist's plan (2026-10-05): Copy level stays a
-    draft, for us, with no proof; Share level is offered once the level, as it stands, has been
-    won, and copies its text with its proof, the winning board's text (D-205) and its score,
-    the one to beat. Paste a level replays the proof, the runs being deterministic, and marks
-    the level cleared if it wins, else pastes it as a draft, unproven. The check is the
-    outcome, not the tick: a run may differ in its last bit across platforms (D-004). Shared
-    as text, as a board is (D-206); no server.
   - [ ] Perhaps: a slider in Objects for the focused item's power or radius, beside < and >.
 - [ ] **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032): 5 winners in
   2,603 random wirings, the fastest a one-eyed circler. Its plane lives on as the sandbox's,
   under that title (`levels/data/sandbox.json`); its file as a level is in the history
   (`game/nektoids/levels/data/two-lights.json`, removed after PR #12).
-- [ ] **Sharing levels and solutions.** Solutions can be shared already, as a board's text
-  (D-205, D-206); levels are copied as their JSON (D-310); sharing them with a proof is the
-  Share level above.
+- [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
+  their JSON (D-310), shared with their proof (D-320).
 - [ ] **A first level, before Fear** (the physicist's): its parts already on the board, one eye
   and one thruster, and the player just has to connect them; the goal is to go straight
   (Drags). D-300's scope names the levels, so it takes a decision when it starts.

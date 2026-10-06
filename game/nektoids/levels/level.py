@@ -45,6 +45,7 @@ KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "passkey",
     "hints",
     "tutorial",
+    "proof",
 )
 
 
@@ -101,6 +102,7 @@ class Level:
     tutorial: Mapping | None = field(default=None, repr=False)  # its ghosts and steps (D-039)
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
     hints: Mapping | None = field(default=None, repr=False)  # its idea and shadow (D-078)
+    proof: Mapping | None = field(default=None, repr=False)  # a level shared: its win (D-320)
 
     @cached_property
     def marks(self) -> tuple[Item, ...]:
@@ -143,6 +145,7 @@ class Level:
             | ({"passkey": self.passkey} if self.passkey else {})
             | ({"hints": self.hints} if self.hints is not None else {})
             | ({"tutorial": self.tutorial} if self.tutorial is not None else {})
+            | ({"proof": self.proof} if self.proof is not None else {})
         )
 
     @classmethod
@@ -166,7 +169,10 @@ class Level:
             tutorial=data.get("tutorial"),
             passkey=data.get("passkey"),
             hints=data.get("hints"),
+            proof=data.get("proof"),
         )
+        if level.proof is not None:  # its board's text, its score (`proof.Proof`, D-320)
+            known(level.proof, ("board", "ticks", "parts"), "a proof")
         for goal in level.objectives:  # each aims at something the level has
             if not len(goals.targets(level, goal.target)[0]):
                 raise ValueError(

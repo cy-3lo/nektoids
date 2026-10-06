@@ -175,6 +175,12 @@ def goal_set(level: Level, index: int, value: float) -> Level:
 def pasted(level: Level, text: str) -> Level:
     """The level that `text` holds, its JSON as `to_json` writes it, taken onto `level`
     (`taken`); Unmade, saying why, for a text no level could hold (D-201, D-310)."""
+    return taken(level, read_level(text))
+
+
+def read_level(text: str) -> Level:
+    """The level that `text` holds, its proof with it if it has one (D-320); Unmade, saying
+    why, for a text no level could hold (D-201, D-310)."""
     if not text.strip():
         raise Unmade("paste a level's text into the field first")
     try:
@@ -187,7 +193,7 @@ def pasted(level: Level, text: str) -> Level:
         raise Unmade("that is not a level's text") from None
     except ValueError as refused:  # a newer version, a key it does not know, items that overlap
         raise Unmade(str(refused)) from None
-    return taken(level, other)
+    return other
 
 
 def blank(level: Level) -> Level:

@@ -777,8 +777,10 @@ def test_goals_finds_a_word_a_bin_add_and_a_sliders_track_apart_from_its_value()
 def test_the_makers_files_holds_copy_the_level_then_a_field_to_paste_one_into():
     layout = make_layout(Drawer.FILES, env=Env.MAKER, maker=True)  # D-310
     assert [t for t, _ in layout.section_titles] == ["Save/Load", "Start from"]
-    (button, row), field = layout.file_buttons[0], layout.level_field
-    assert button is FileButton.LEVEL and len(layout.file_buttons) == 1
+    (button, row), (share, under), field = *layout.file_buttons, layout.level_field
+    assert (button, share) == (FileButton.LEVEL, FileButton.SHARE)  # D-320: Share level
+    note = layout.share_note  # its line, between it and the field
+    assert under[1] + under[3] <= note[1] and note[1] + note[3] <= field[1]
     assert field[1] > row[1] + row[3] and field[3] == row[3] and not layout.win_rows
     assert level_field_at(layout, centre(field)) and not level_field_at(layout, centre(row))
     assert file_button_at(layout, centre(row)) is FileButton.LEVEL
@@ -793,9 +795,10 @@ def test_start_from_lists_a_blank_plane_then_every_shipped_level_under_the_paste
     starts = [s for s, _ in layout.start_rows]
     assert starts == [Start(None), *(Start(k) for k in range(8))]
     assert layout.start_rows[0][1][1] > layout.level_field[1] + layout.level_field[3]
-    assert layout.scroll_max == 0  # the nine fit, unscrolled
+    assert layout.scroll_max > 0  # the nine and Save/Load run past the foot: it scrolls (D-096)
     for start, rect in layout.start_rows:
-        assert start_row_at(layout, centre(rect)) == start
+        shown = contains(layout.list_area, centre(rect))
+        assert start_row_at(layout, centre(rect)) == (start if shown else None)
     assert start_row_at(layout, centre(layout.level_field)) is None
 
 

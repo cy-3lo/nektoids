@@ -1872,3 +1872,22 @@ of their cells, "take it off first", or would hold more than the level hands out
 places none. A level's free parts and wires, Aggression's prewired eye and thruster, are not
 brought, and a level made places none: that is in ideas.md for later. The Editor's undo starts
 afresh only when the zone or the parts handed out change, not when a part is locked.
+
+**D-320 — 2026-10-06 — Share level, in the Maker's Files: once the level, as it stands, has been won in the Run, it is copied with its proof, the winning board's text and its score; pasted, the proof is run again, a second of it a frame, and the level is cleared if it wins, its score the one to beat, else a draft. The proof's board stays hidden. Applies D-205, D-310; the todo's clear check and sharing as text.**
+The physicist's plan, as Mario Maker clears a course by its maker. A run of the made level won
+in Free play gives the Maker a proof: the board that won, as its text (D-205), the tick it won at
+and its parts; a better score replaces it. The proof holds while the level stays as it was won;
+any change in the Maker voids it. Files has Share level under Copy level, greyed until then, and
+a line under it: "Won in 9.11 s, 4 parts", or "Win it in the Run, as it stands", or "Give it a
+goal, then win it"; a click without a proof says so. Share level copies the level's JSON with
+`"proof": {"board", "ticks", "parts"}`; Copy level stays a draft, with none. The key joins
+version 4, which has not reached `main`, so no version is added; a proof's unknown key is
+refused (D-201). Paste a level takes the level as before, then, if it has a proof, puts the
+proof's board on a fresh board of the level, refused if it does not fit, and runs it headless
+(`levels/proof.Replay`), 120 ticks a frame: the worst run, 120 s, takes some 2 s natively and
+more in a browser, which must never hold a frame. Won, the level is cleared, "Cleared: won in
+9.11 s with 4 parts, the score to beat", and its proof kept, its tick its own run's and its parts
+counted on the board, not taken on trust; otherwise it stays a draft and says so. What is
+checked is the outcome: across platforms a run may differ in its last bit (D-004). The proof's
+board never goes on the Editor's board, so a player solves the level alone; the score to beat
+shows in Files only, the run's Score drawer later.

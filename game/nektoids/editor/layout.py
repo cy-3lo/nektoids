@@ -171,6 +171,7 @@ class LevelButton(Enum):  # the accented switch at the bar's foot, to the other 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
     SAVE = "save"  # Copy a board: its text; the field to paste one is under it
     LEVEL = "level"  # the Maker's Files: Copy level, its JSON; a field under it (D-310)
+    SHARE = "share"  # ... Share level: its JSON and its proof, once it is won (D-320)
 
 
 class ViewButton(Enum):
@@ -403,6 +404,7 @@ class Layout:
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # Files' foot: Save (D-206)
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
     level_field: Rect | None  # the Maker's Files: a level's text pasted there (D-310)
+    share_note: Rect | None  # ... under Share level, a line: won, or how to win it (D-320)
     start_rows: tuple[tuple[Start, Rect], ...]  # ... under it, Start from: a blank plane, a level
     steppers: tuple[tuple[Stepper, Rect], ...]  # the Maker's Parts: the zone, each part (D-315)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
@@ -568,6 +570,7 @@ def make_layout(
         file_buttons=tuple(rows.of(FileButton)),
         board_field=rows.board_field,
         level_field=rows.level_field,
+        share_note=rows.share_note,
         start_rows=tuple(rows.of(Start)),
         steppers=tuple(rows.steppers),
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
@@ -608,6 +611,7 @@ class _Rows:
         self.passkey: Rect | None = None
         self.board_field: Rect | None = None
         self.level_field: Rect | None = None
+        self.share_note: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
         self.fields: list[tuple[Brief, Rect]] = []
         self.heads: list[tuple[MadeGoal, Rect]] = []
@@ -680,11 +684,15 @@ class _Rows:
         self.y += ROW_PITCH
 
     def maker_files(self, starts: int) -> None:
-        """The Maker's Files (D-310): under Save/Load, Copy level, then a field to paste a
-        level's text into, as the editor's Files has for a board (D-206); under Start from, a
-        blank plane, then the `starts` shipped levels."""
+        """The Maker's Files (D-310): under Save/Load, Copy level, Share level and a line under
+        it (D-320), then a field to paste a level's text into, as the editor's Files has for a
+        board (D-206); under Start from, a blank plane, then the `starts` shipped levels."""
         self._title("Save/Load", self.sections)
         self._row(FileButton.LEVEL)
+        self._row(FileButton.SHARE)
+        top, width = self.y - (ROW_PITCH - ROW_HEIGHT), DRAWER_WIDTH - 2 * ROW_INSET
+        self.share_note = (BAR_WIDTH + ROW_INSET, top, width, HINT_LINE)
+        self.y = top + HINT_LINE + ROW_PITCH - ROW_HEIGHT
         self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH + SECTION_GAP
         self._title("Start from", self.sections)
@@ -739,6 +747,7 @@ class _Rows:
         self.picture, self.line = _moved(self.picture, up), _moved(self.line, up)
         self.passkey, self.overview = _moved(self.passkey, up), _moved(self.overview, up)
         self.zoom_bar, self.level_field = _moved(self.zoom_bar, up), _moved(self.level_field, up)
+        self.share_note = _moved(self.share_note, up)
 
     def tools(self, height: int, wheel_folded: bool, scroll: int, maker: bool = False) -> None:
         """Write and Delete, and on the sandbox Lock (D-319), then undo and redo, as rows,

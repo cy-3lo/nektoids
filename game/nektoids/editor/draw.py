@@ -183,6 +183,9 @@ TIP = {
     " into Paste a board, under this row, to bring it back, on this level or another.",
     FileButton.LEVEL: "Copies the level as text, its JSON, as the game's own level files hold it:"
     " to keep, or to paste into Paste a level, under this row, to make it again.",
+    FileButton.SHARE: "Copies the level as text with its proof, the board that won it and its"
+    " score, the one to beat. Offered once the level, as it stands, has been won in the Run;"
+    " pasted, the proof is run again, and the level is cleared if it wins.",
     LevelButton.RUN: "Run",
     LevelButton.EDIT: "Back to the editor",
     Drawer.TOOLS: "Tools",
@@ -233,6 +236,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Mode.LOCK: "Lock",
     FileButton.SAVE: "Copy a board",
     FileButton.LEVEL: "Copy level",
+    FileButton.SHARE: "Share level",
     GoalButton.ADD: "Add a goal",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",

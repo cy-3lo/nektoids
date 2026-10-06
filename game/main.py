@@ -313,6 +313,9 @@ async def main() -> None:
                 router.mark_won()  # the next level opens in Chapters
                 score = Score(playing.parts, playing.ended_at)  # once: a set
                 router.record(score, router.board.snapshot())  # the board that won, for Files
+                made = makers.get(router.index)
+                if router.in_sandbox and made is not None:  # the level made, won: its proof
+                    made.won(playing.level, router.board, score)  # (D-320)
             playing.scores = router.scores
             if playing.request == "next" and router.has_next:
                 router.next()

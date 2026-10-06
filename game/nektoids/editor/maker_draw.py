@@ -36,6 +36,7 @@ from nektoids.editor.arena_draw import (
     draw_rays,
 )
 from nektoids.editor.arena_view import LINE_STEP, dot_step, lattice, shown
+from nektoids.editor.devdrive import DT
 from nektoids.editor.draw import (
     MENU_ANGLE,
     ROW_NAME,
@@ -68,6 +69,7 @@ from nektoids.editor.layout import (
     WHEEL_TITLE,
     Brief,
     EditButton,
+    FileButton,
     Knob,
     Piece,
     Start,
@@ -332,7 +334,16 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     _draw_goals(screen, scene, fonts)
     _draw_parts(screen, scene, fonts)
     for button, rect in layout.file_buttons:
-        draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="copy")
+        icon, shut = (
+            ("share", not scene.shareable) if button is FileButton.SHARE else ("copy", False)
+        )
+        draw_row(
+            screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), shut, icon=icon
+        )
+    if layout.share_note is not None:
+        x, y, _, h = layout.share_note
+        note = cached_text(fonts.small, _share_says(scene), LIT if scene.shareable else DIM_TEXT)
+        screen.blit(note, (x + 4, y + (h - note.get_height()) // 2))
     if layout.level_field is not None:
         pasting = scene.writing is Paste.LEVEL
         text, caret = (scene.field.text, scene.field.caret) if pasting else ("", None)
@@ -353,6 +364,17 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         )
     if scene.layout.overview is not None:
         draw_overview(screen, scene, fonts, (*scene.pos[0], scene.heading))
+
+
+def _share_says(scene: MakerScene) -> str:
+    """The line under Share level (D-320): its score, once won as it stands; else how to win."""
+    if scene.checking is not None:
+        return f"Checking its proof: {round(100 * scene.checking[0].progress)}%"
+    if scene.shareable:
+        return f"Won in {scene.proof.ticks * DT:.2f} s, {scene.proof.parts} parts"
+    if not scene.level.objectives:
+        return "Give it a goal, then win it"
+    return "Win it in the Run, as it stands"
 
 
 def _draw_parts(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
