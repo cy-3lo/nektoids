@@ -1936,3 +1936,25 @@ right, in 24.6 s, which a test pins; plain aggression and Greed's and Patience's
 one light only. Like Greed and Patience it has no hints yet. Every level gives a passkey,
 named for it: GEMINI, the twins. Its title is Two lights: the old one ran under the info disc
 and the lock of its row in Chapters; Free play keeps the plane under the old title.
+
+**D-325 — 2026-10-06 — The game in five chapters: 0 Tutorials, six levels each teaching one thing; 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles, new levels then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Your levels. In Chapters each chapter's title folds, all but the one being played. Amends D-097, D-300, D-324.**
+The physicist's plan (the todo's §13), settled with him the same day. Chapter 0 teaches the
+board and the parts, one thing a level: 0.1 Wiring, a Source and a thruster locked on the board,
+the player drawing the wire between them, the swimmer going straight; 0.2 Turning, a part turned;
+0.3 Eyes, the first eye; 0.4 Half, the Halve and the Double; 0.5 Plus, the Sum and the Diff; 0.6
+Diagnostic, the drawer, which Aggression's tutorial teaches now (D-103). The Source comes first:
+it moves the swimmer with no light to read. Every part Love and Orbit hand out is then known
+before them. Chapter 1 keeps Braitenberg's vehicles, one idea a level (D-097): each eye its own
+side, crossed, inhibition, one side always pushed. Chapter 2 opens with new levels, made in the
+Maker, on obstacles, then Shadows. Chapter 3 goes from Greed's two lights to Patience's three
+among obstacles, then Two lights, two among four obstacles, the hardest last (D-324). Chapter 4
+holds the levels made in the Maker or pasted, this session (D-075). Free play keeps the sandbox
+and the Maker.
+The route stays one chain (D-035, D-075): a level opens once the one before it is won, across
+chapters, or by its passkey; the end comes after the last chapter's last level. A level is named
+by its chapter, LEVEL 2.1. In Chapters each chapter's title folds, as Files' groups do (D-069,
+D-322): the chapter being played is open, the others folded; a chapter with no level yet is not
+listed. D-300's scope, and `CLAUDE.md`'s, names the levels by chapter; still no new part, sense or
+item. The rest of §13 is planned, and its decisions taken, item by item: several chapters in the
+game, a level made in the Maker shipped as one of the game's, tutorials, chapter 0's levels,
+chapter 2's, Your levels.
