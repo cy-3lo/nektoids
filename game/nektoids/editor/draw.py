@@ -77,6 +77,7 @@ from nektoids.editor.layout import (
     TABS_HEIGHT,
     VIEW_KEYS,
     WHEEL_TITLE,
+    BoardButton,
     Drawer,
     EditButton,
     FileButton,
@@ -177,6 +178,8 @@ TIP = {
     Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them, or"
     " drag one to move it.",
     Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
+    BoardButton.ERASE: "Takes every wire and every part off the board, but the level's own; Undo"
+    " brings them back.",
     Mode.LOCK: "A click on a part makes it the level's: the player can neither move nor take it"
     " off, and it uses no stock. A click on one of the level's parts frees it.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
@@ -235,6 +238,7 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Mode.DELETE: "Delete",
     Mode.LOCK: "Lock",
     FileButton.SAVE: "Copy a board",
+    BoardButton.ERASE: "Erase all",
     FileButton.LEVEL: "Copy level",
     FileButton.SHARE: "Share level",
     GoalButton.ADD: "Add a goal",
@@ -517,6 +521,20 @@ def _draw_tools(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> Non
             False,
             not can[button],
             icon=icon,
+        )
+    empty = not any(not n.locked for n in scene.board.nodes.values()) and not scene.board.wires
+    for button, rect in layout.board_buttons:  # Erase all, greyed with nothing to erase (D-321)
+        draw_row(
+            screen,
+            scene,
+            fonts,
+            rect,
+            button,
+            ROW_NAME[button],
+            ("none", ""),
+            False,
+            empty,
+            icon="eraser",
         )
 
 

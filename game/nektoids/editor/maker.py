@@ -832,8 +832,7 @@ class MakerScene(Frame):
         """Share level: the level's text with its proof, on the clipboard; refused, saying how,
         while the level as it stands is not won."""
         if not self.shareable:
-            goals = "win it in the Run" if self.level.objectives else "give it a goal, then win it"
-            self._refuse(f"{goals} as it stands, to share it")
+            self._refuse("win it in Run first, as it stands, to share it")  # D-321
             return
         clipboard.copy(to_json(replace(self.level, proof=self.proof.to_dict())))
         seconds = self.proof.ticks * DT
@@ -864,7 +863,7 @@ class MakerScene(Frame):
         undo, the view on it."""
         if start.index is None:
             if self._made_anew(blank):
-                self.said = "Started from a blank plane."
+                self.said = "Started from a blank level."
         elif self._made_anew(lambda level: taken(level, self.starts[start.index][1])):
             self.said = f"Started from {self.level.title}."
 

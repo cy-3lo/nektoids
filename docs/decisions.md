@@ -1891,3 +1891,26 @@ counted on the board, not taken on trust; otherwise it stays a draft and says so
 checked is the outcome: across platforms a run may differ in its last bit (D-004). The proof's
 board never goes on the Editor's board, so a player solves the level alone; the score to beat
 shows in Files only, the run's Score drawer later.
+
+**D-321 — 2026-10-06 — Share level sits under Copy level and Paste a level, its line "Win it in Run first" until the level is won. Tools ends with Erase all. Parts is the Editor's first drawer and the one it opens on; the run opens on Diagnostic when a place is chosen; the Maker on Objects. Amends D-320, D-068, D-069.**
+The physicist, trying Share level and the Editor. In the Maker's Files, Share level now comes
+after Copy level and the field to paste a level into, its line under it saying "Win it in Run
+first" until the level as it stands is won, and the score once it is; a click before says the
+same. The Editor's Tools ends with Erase all, under Undo and Redo: every wire and every part
+but the level's own off the board, their stock back, one step for undo, greyed with nothing to
+erase; a tutorial's step that stops a board put back stops it too. The Editor's bar starts with
+Parts, then Tools, and an editor opens on Parts, the level's or a place chosen in Chapters, where
+it opened on Tools; the run opens on Diagnostic when a place is chosen, as it did the first time,
+then keeps the drawer the player leaves it on from one run to the next; the Maker opens on
+Objects, as it did. The tutorials, which open their own drawers, play as they did.
+
+**D-322 — 2026-10-06 — The Maker's Files: Save/Load stays at the top; under a rule, the levels to start from are a list of their own that scrolls, Blank level, then Chapter 1: light and Free play under titles that fold, as Chapters lists them. Amends D-310.**
+The physicist asked for Start from to be organised in chapters, a horizontal line, a Blank level
+button, the chapter's title, which folds, and a button for each level, a sub-drawer of its own
+with a scroll bar when needed. Save/Load, its title, Copy level, Paste a level, Share level and
+its line, no longer scroll; the rule under them divides, as the Wheel's does; under it Blank
+level, once Blank plane, then Chapter 1: light's seven levels under their numbers and Free play's
+Sandbox, each title folding its rows as Parts' and Files' do (D-069), the list scrolling in its
+own area, its scroll bar at the drawer's edge (D-096). The rows above the list are drawn apart
+from it, so that its clip never hides them, which is what hides the title of the Editor's Files
+(the todo's §12).

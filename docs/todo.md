@@ -34,7 +34,10 @@ taken, when it starts.
     buttons, the words that would aim at nothing dimmed; sliders for the time and a stay's
     seconds, their values typed too (D-308, #59, #60, #61).
   - [x] Save, in the Maker's Files: Copy level, its JSON; Paste a level; Start from a blank
-    plane or a shipped level (D-310, #64, #65).
+    level or a shipped level, a list of its own under a rule, its chapter folding (D-310, D-322,
+    #64, #65).
+  - [x] Erase all, in the Editor's Tools; Parts the Editor's first drawer, the run opening on
+    Diagnostic (D-321).
   - [x] Whole numbers: positions on whole units, settings from 1 to 8, the shipped levels too;
     level files version 4, the zone written as its size (D-311, D-313, D-317, D-318).
   - [x] Parts, in the Maker: the board's size, 7, 19 or 37 cells, and each part handed out,

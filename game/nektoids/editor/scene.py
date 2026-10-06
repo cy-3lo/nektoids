@@ -61,6 +61,7 @@ from nektoids.editor.layout import (
     TURNS,
     VIEW_KEYS,
     ZOOM_STEP,
+    BoardButton,
     Bounds,
     Drawer,
     EditButton,
@@ -71,6 +72,7 @@ from nektoids.editor.layout import (
     ViewButton,
     WinRow,
     action_at,
+    board_button_at,
     board_extent,
     board_field_at,
     board_view_of,
@@ -562,6 +564,9 @@ class EditorScene(Frame):
         mode = mode_button_at(self.layout, pos)
         if mode is not None:
             self._set_mode(mode)
+            return
+        if board_button_at(self.layout, pos) is BoardButton.ERASE:  # Erase all (D-321)
+            self._erase_all()
             return
         edit = edit_button_at(self.layout, pos)
         if edit is not None:
@@ -1335,6 +1340,19 @@ class EditorScene(Frame):
             self.board.restore(before)
         self._landed = self.board.snapshot()
         return result
+
+    def _erase_all(self) -> None:
+        """Erase all: every wire and every part but the level's off the board, one step for
+        undo, as a board put back is one (D-321); refused with nothing to erase."""
+        if not self._allowed(Action("load")):
+            return
+        self._cancel()
+        parts, wires = self.board.clear()
+        if not parts and not wires:
+            self._refuse("nothing to erase", None)
+            return
+        self._focus(None)
+        self.said = f"Erased: {parts} part{'s' * (parts != 1)}, {wires} wire{'s' * (wires != 1)}."
 
     def _lock(self, cell: Cell | None) -> None:
         """Lock, clicked or entered on `cell`: its part made the level's, fixed and using no

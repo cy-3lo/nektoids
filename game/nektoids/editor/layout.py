@@ -84,6 +84,7 @@ CAPTION_HEIGHT = 26  # under the tabs, inside the Editor's: the level's title an
 TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
 TABS = ("run", "editor")  # a level's tabs, Run first (D-069)
 MAKER_TABS = (*TABS, "maker")  # the sandbox's: the Maker makes its level (D-301)
+CHAPTER_TITLE = "Chapter 1: light"  # its levels' title, in Chapters and in the Maker's Files
 TAB_WIDTHS = {"run": 64, "editor": 84, "maker": 80}  # [px]
 TAB_KEYS = {"run": "F1", "editor": "F2", "maker": "F3"}  # each tab's key, in their order (D-303)
 STATUS_HEIGHT = 28  # [px]
@@ -147,6 +148,10 @@ class Brief(Enum):  # Brief's fields, in the Maker: what the level is called and
 class EditButton(Enum):
     UNDO = "undo"
     REDO = "redo"
+
+
+class BoardButton(Enum):  # Tools' last row, under undo and redo (D-321)
+    ERASE = "erase all"  # every wire and every part but the level's, off the board
 
 
 class GoalButton(Enum):  # Goals' last row, while the level asks fewer than two (D-308)
@@ -218,7 +223,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.EDITOR: (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
+    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
     Env.MAKER: (
         Drawer.OBJECTS,
@@ -389,6 +394,7 @@ class Layout:
     scroll_bar: Rect | None  # its track, while the rows do not fit
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo; Objects' too
+    board_buttons: tuple[tuple[BoardButton, Rect], ...]  # ... then Tools' Erase all (D-321)
     action_at: Rect | None  # the editor's and the Maker's: what a click does, atop the main screen
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
@@ -405,6 +411,7 @@ class Layout:
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
     level_field: Rect | None  # the Maker's Files: a level's text pasted there (D-310)
     share_note: Rect | None  # ... under Share level, a line: won, or how to win it (D-320)
+    files_rule: Rect | None  # ... under it, the rule over the levels to start from (D-322)
     start_rows: tuple[tuple[Start, Rect], ...]  # ... under it, Start from: a blank plane, a level
     steppers: tuple[tuple[Stepper, Rect], ...]  # the Maker's Parts: the zone, each part (D-315)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
@@ -488,8 +495,7 @@ def make_layout(
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
     elif drawer is Drawer.FILES and env is Env.MAKER:
-        rows.maker_files(starts)
-        rows.scrolled(floor, scroll)  # D-096
+        rows.maker_files(starts, chapter, folded, height, scroll)
     elif drawer is Drawer.FILES:
         rows.files(files, folded, height, scroll)
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
@@ -553,6 +559,7 @@ def make_layout(
         scroll_bar=rows.scroll_bar,
         mode_buttons=tuple(rows.of(Mode)),
         edit_buttons=tuple(rows.of(EditButton)),
+        board_buttons=tuple(rows.of(BoardButton)),
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
         if env in (Env.EDITOR, Env.MAKER)  # the Maker's since D-314
         else None,
@@ -571,6 +578,7 @@ def make_layout(
         board_field=rows.board_field,
         level_field=rows.level_field,
         share_note=rows.share_note,
+        files_rule=rows.files_rule,
         start_rows=tuple(rows.of(Start)),
         steppers=tuple(rows.steppers),
         info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
@@ -612,6 +620,7 @@ class _Rows:
         self.board_field: Rect | None = None
         self.level_field: Rect | None = None
         self.share_note: Rect | None = None
+        self.files_rule: Rect | None = None
         self.hint_texts: list[tuple[int, Rect]] = []
         self.fields: list[tuple[Brief, Rect]] = []
         self.heads: list[tuple[MadeGoal, Rect]] = []
@@ -683,21 +692,27 @@ class _Rows:
         self.steppers.append((what, (BAR_WIDTH + ROW_INSET, self.y, width, ROW_HEIGHT)))
         self.y += ROW_PITCH
 
-    def maker_files(self, starts: int) -> None:
-        """The Maker's Files (D-310): under Save/Load, Copy level, Share level and a line under
-        it (D-320), then a field to paste a level's text into, as the editor's Files has for a
-        board (D-206); under Start from, a blank plane, then the `starts` shipped levels."""
+    def maker_files(
+        self, starts: int, chapter: int, folded: frozenset[str], height: int, scroll: int
+    ) -> None:
+        """The Maker's Files (D-310): under Save/Load, Copy level, a field to paste a level's
+        text into, as the editor's Files has for a board (D-206), then Share level and a line
+        under it (D-320, D-321), which stay; under a rule, the levels to start from, a list of
+        its own that scrolls: Blank level, then the chapter's `chapter` levels and Free play's,
+        under titles that fold, as Chapters lists them (D-322)."""
         self._title("Save/Load", self.sections)
         self._row(FileButton.LEVEL)
-        self._row(FileButton.SHARE)
+        self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
+        self.y += ROW_PITCH
+        self._row(FileButton.SHARE)  # under Copy and Paste (D-321)
         top, width = self.y - (ROW_PITCH - ROW_HEIGHT), DRAWER_WIDTH - 2 * ROW_INSET
         self.share_note = (BAR_WIDTH + ROW_INSET, top, width, HINT_LINE)
         self.y = top + HINT_LINE + ROW_PITCH - ROW_HEIGHT
-        self.level_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
-        self.y += ROW_PITCH + SECTION_GAP
-        self._title("Start from", self.sections)
-        for index in (None, *range(starts)):
-            self._row(Start(index))
+        self.files_rule = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, 2)
+        self.y += SECTION_GAP
+        groups = [("", [Start(None)]), (CHAPTER_TITLE, [Start(k) for k in range(chapter)])]
+        groups.append(("Free play", [Start(k) for k in range(chapter, starts)]))
+        self._folding(groups, folded, height - FOOT_MARGIN, scroll)
 
     def _folding(
         self,
@@ -713,7 +728,9 @@ class _Rows:
         self.list_area = (BAR_WIDTH, top, DRAWER_WIDTH, room)
         groups = [(title, shown) for title, shown in groups if shown]  # no title for nothing
         whole = sum(
-            TITLE_HEIGHT + SECTION_GAP + (0 if title in folded else len(shown) * ROW_PITCH)
+            (TITLE_HEIGHT if title else 0)
+            + SECTION_GAP
+            + (0 if title in folded else len(shown) * ROW_PITCH)
             for title, shown in groups
         )
         self.scroll_max = max(0, whole - room)
@@ -723,7 +740,8 @@ class _Rows:
             self.scroll_bar = (x, top, SCROLL_WIDTH, room)
         self.y = top - self.scroll
         for title, shown in groups:
-            self._title(title, self.groups)
+            if title:  # a group titled "" has its rows alone, which never fold
+                self._title(title, self.groups)
             for what in () if title in folded else shown:
                 self._row(what)
             self.y += SECTION_GAP
@@ -754,7 +772,8 @@ class _Rows:
         scrolled above the Wheel if they do not fit; at the drawer's foot, the cell, as in Parts
         (D-068, D-069)."""
         modes = tuple(mode for mode in Mode if maker or mode is not Mode.LOCK)
-        self._over_wheel((("Mode", modes), ("Edit", EditButton)), height, wheel_folded, scroll)
+        edits = (*EditButton, BoardButton.ERASE)  # Erase all, under undo and redo (D-321)
+        self._over_wheel((("Mode", modes), ("Edit", edits)), height, wheel_folded, scroll)
 
     def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
         """The Maker's objects under their title, then undo and redo, which need none, as rows,
@@ -874,7 +893,7 @@ class _Rows:
             self.y += side + SHADOW_GAP + HINT_LINE + ROW_PITCH - ROW_HEIGHT
 
     def chapters(self, levels: int) -> None:
-        self._title("Chapter 1: light", self.sections)
+        self._title(CHAPTER_TITLE, self.sections)
         for k in range(levels):
             self._row(k)
         self.y += SECTION_GAP
@@ -942,17 +961,17 @@ def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
     return next((d for d, rect in layout.drawer_buttons if contains(rect, point)), None)
 
 
+def board_button_at(layout: Layout, point: tuple[int, int]) -> BoardButton | None:
+    return _row_at(layout, layout.board_buttons, point)
+
+
 def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
     return next((b for b, rect in layout.file_buttons if contains(rect, point)), None)
 
 
 def level_field_at(layout: Layout, point: tuple[int, int]) -> bool:
     """Whether `point` is on the Maker's field for a level's text, in its Files (D-310)."""
-    return (
-        layout.level_field is not None
-        and _listed(layout, point)
-        and contains(layout.level_field, point)
-    )
+    return layout.level_field is not None and contains(layout.level_field, point)  # it stays
 
 
 def step_buttons(row: Rect) -> tuple[Rect, Rect]:
