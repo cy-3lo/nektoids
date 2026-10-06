@@ -2210,3 +2210,10 @@ map's edge has its streams cut by the map's frame.
 The physicist's: a level as short as Dragster's 4 s, or Dragster II's 1 s, could not be made in
 the Maker, whose slider went from 5 to 120 s by 5. The slider now steps by a second; its value
 may still be typed.
+
+**D-348 — 2026-10-06 — Dragster II, the physicist's, ships as LEVEL 4.2, signed "@Cy-3LO": reach Dragster's mark in 1 s, from a stock of nine Sources and nine thrusters on 19 cells. Chapter 4's levels, made by users, are all open and give no passkey. Applies D-325, D-332, D-347.**
+"Go even faster.": Dragster's plane, the swimmer at (-15, 0) heading 0 and a mark of 8 u at
+(8, 0), with a board of 19 cells handing out nine of each. Its proof is the physicist's, nine
+Sources each on a thruster, 18 parts, won in 69 ticks, 0.575 s. Levels made by users come in no
+order, so chapter 4 is open from the start, as the tutorials are (D-335), and none of its levels
+gives a word; it has no hints (D-329). Its file is `4-made-by-users/dragster-ii.json`.

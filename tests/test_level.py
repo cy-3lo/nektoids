@@ -40,7 +40,7 @@ def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_write
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
     titles = ["Wiring", "Turning", "Eyes", "Half", "Minus", "Diagnostic"]  # D-335
     titles += ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
-    titles += ["Two lights", "Dragster"]  # D-324, D-332
+    titles += ["Two lights", "Dragster", "Dragster II"]  # D-324, D-332, D-348
     assert [level.title for level in arenas()] == titles
 
 
@@ -141,8 +141,9 @@ def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
 def test_every_level_gives_a_passkey_but_the_tutorials_and_the_last():
     words = {level.title: level.passkey for level in arenas()}  # D-075
     tutorials = [None] * 6  # every one open: no word to give (D-335)
-    shipped = ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI", None]
-    assert list(words.values()) == [*tutorials, *shipped]  # Diagnostic, Dragster: none (D-332)
+    shipped = ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI"]
+    made = [None, None]  # by users, every one open (D-348)
+    assert list(words.values()) == [*tutorials, *shipped, *made]
     given = [word for word in words.values() if word is not None]
     assert len(set(given)) == len(given)
     assert all(is_passkey(word) for word in given) and sandbox().passkey is None
