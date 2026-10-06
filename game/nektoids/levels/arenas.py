@@ -48,11 +48,11 @@ CHAPTERS = (
     Chapter(1, "Braitenberg", "1-braitenberg", ("fear", "aggression", "love", "orbit")),
     Chapter(2, "Obstacles", "2-obstacles", ("shadows",)),
     Chapter(3, "Many lights", "3-many-lights", ("greed", "patience", "two-lights")),
-    Chapter(4, "Made by users", "4-made-by-users", ("dragster",)),
+    Chapter(4, "Made by users", "4-made-by-users", ("dragster", "dragster-ii"), all_open=True),
 )  # Braitenberg's 2a, 2b, 3a and the brief's orbit (D-097); obstacles; then more lights, the
 # real level (D-098) and "Two lights, four obstacles", once too hard for level 2 (D-032), last
-# (D-324); levels made in the Maker, the physicist's Dragster first (D-332). A chapter with no
-# level yet is not listed.
+# (D-324); levels made in the Maker, the physicist's Dragster first (D-332), every one open, as
+# they come in no order (D-348). A chapter with no level yet is not listed.
 ORDER = tuple(f"{chapter.folder}/{name}" for chapter in CHAPTERS for name in chapter.names)
 SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)
 

@@ -129,13 +129,26 @@ def test_levels_are_named_by_chapter_and_place():
     )
     labels = [row.label for row in a_router().rows()]  # D-325, D-335
     tutorials = [f"0.{k}" for k in range(1, 7)]
-    assert labels == [*tutorials, "1.1", "1.2", "1.3", "1.4", "2.1", "3.1", "3.2", "3.3", "4.1", ""]
+    assert labels == [
+        *tutorials,
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "2.1",
+        "3.1",
+        "3.2",
+        "3.3",
+        "4.1",
+        "4.2",
+        "",
+    ]
 
 
 def test_each_chapters_first_level_is_open_and_a_chapters_last_gives_no_word():
     router = a_router()  # D-325: the next chapter's first level is open from the start
     states = [router.state(k) for k in range(len(router.levels))]
-    opened = FIRSTS | set(range(6))  # the tutorials, every one open (D-335)
+    opened = FIRSTS | set(range(6)) | {AT["Dragster II"]}  # tutorials, made by users (D-348)
     assert states == ["open" if k in opened else "locked" for k in range(len(router.levels))]
     assert router.state(router.sandbox_index) == "sandbox"
     router.index = AT["Orbit"]
@@ -249,8 +262,7 @@ def test_a_win_card_names_the_word_for_the_next_level_and_chapters_once_it_is_wo
     assert router.rows()[fear].passkey == ""  # not won yet: not given away
     router.mark_won()
     assert router.rows()[fear].passkey == "LOVE" and router.rows()[fear + 1].passkey == ""
-    router.unlock(router.levels[-2].passkey)  # the word before the last opens it
-    router.open(len(router.levels) - 1)  # the last: there is no next level to open
+    router.open(len(router.levels) - 1)  # the last, open as chapter 4's are: no next (D-348)
     assert router.next_passkey() is None
     router.open(router.sandbox_index)
     assert router.next_passkey() is None
