@@ -201,6 +201,7 @@ class MakerScene(Frame):
         self.proof: Proof | None = None  # the board that won the level, its score (D-320)
         self.proved: Level | None = None  # ... the level as it was won: shared while it holds
         self.checking: tuple[Replay, Proof, Level] | None = None  # a pasted proof, run again
+        self.shared = False  # Share level's box says how to share what it copied (D-346)
         self.show_rays = True  # the light's rays, drawn or not
         self.pointer = (0, 0)  # where the mouse is [px]
         self.panning: tuple[int, int] | None = None  # where a drag on the plane last was
@@ -285,6 +286,7 @@ class MakerScene(Frame):
                 self._field_done(ended)
         self._check_proof()
         self.frame_update()
+        self.shared = self.shared and self.info is FileButton.SHARE  # while its box is open
         self.view = kept_in(self.view, self.arena_area, self.extent())
 
     def hint(self) -> str:
@@ -838,14 +840,15 @@ class MakerScene(Frame):
         self.proof, self.proved = Proof(text, score.ticks, score.parts), level
 
     def _share_level(self) -> None:
-        """Share level: the level's text with its proof, on the clipboard; refused, saying how,
-        while the level as it stands is not won."""
+        """Share level: the level's text with its proof, on the clipboard, and its box open on
+        how to share it (D-346); refused, saying how, while the level as it stands is not won."""
         if not self.shareable:
             self._refuse("win it in Run first, as it stands, to share it")  # D-321
             return
         clipboard.copy(to_json(replace(self.level, proof=self.proof.to_dict())))
         seconds = self.proof.ticks * DT
         self.said = f"Copied, with its proof: won in {seconds:.2f} s, {self.proof.parts} parts."
+        self.info, self.shared = FileButton.SHARE, True
 
     def _check_proof(self) -> None:
         """Once a frame: a pasted level's proof run on, CHECK_TICKS more; won, the level is

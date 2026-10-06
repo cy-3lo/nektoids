@@ -2206,6 +2206,13 @@ past 8 px/u; the run at its opening zoom, 16 px/u, is as it was. The info boxes'
 out too, their farthest speck where it was, so that the boxes do not move. A probe near the
 map's edge has its streams cut by the map's frame.
 
+**D-346 — 2026-10-06 — Share level, once it has copied, opens its box on how to share the level: "Copied: your level and its proof. To share it with the community, paste it into a comment on the itch.io page, cy-3lo.itch.io/nektoids, or send it to contact@nektoids.com." Amends D-320.**
+The physicist's: a level copied with its proof said only so on the status line, and nothing of
+where to take it. The box is Share level's info box, beside its row, as the info disc opens it;
+the next click or key closes it, and only that, as any info box. The info disc still tells what
+Share level does. No server: the community is the itch.io page's comments and the studio's
+address (D-343).
+
 **D-347 — 2026-10-06 — The time allowed, in the Maker's Goals, is 1 to 120 s, by 1 s. Amends D-311.**
 The physicist's: a level as short as Dragster's 4 s, or Dragster II's 1 s, could not be made in
 the Maker, whose slider went from 5 to 120 s by 5. The slider now steps by a second; its value
