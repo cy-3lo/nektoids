@@ -65,26 +65,45 @@ taken, when it starts.
 - [ ] Copy a board and Paste a board in Firefox; only Chrome and Safari 26.6 were tried (D-206).
 - [ ] The Maker in Safari: a slider's typed value, Paste a level (D-308, D-310); only Chrome was
   tried.
+- [ ] The streams (D-076), the physicist's: in the mini view the thrusters' flames and the light
+  the eyes draw in should reach farther; and at full rate they end abruptly at 3 body radii,
+  `FLAME_LENGTH` and `INTAKE_LENGTH` in `editor/marks.py`, where they should fade out, between
+  2 and 4 body radii or 2.5 and 3.5. Visual tests first, to choose.
 
 ## 13. Chapters, levels and tutorials, made with the Maker (being planned)
 
-The physicist has chapters, levels and tutorials in mind, to be made with the Maker (§11). The
-game holds one chapter today, "light", levels 1.1 to 1.8, and the levels' tutorials, hints and
-passkeys are written by hand in their files, which the Maker does not set. Each item is planned,
-and its decisions taken, when it starts; the plan itself comes first.
+The physicist's plan, 2026-10-06, to be made with the Maker (§11) and started in its own work:
 
-- [ ] **The plan**, the physicist's: the chapters, what each teaches, their levels in order, and
-  which have a tutorial; where today's levels, Fear to Two lights, go: kept, moved or retired.
-  A decision, since D-300's scope names the levels, and `CLAUDE.md`'s scope list with it.
-- [ ] **Several chapters in the game**: the router, Chapters and the level labels (2.1, ...)
-  for more than one chapter; where a chapter ends and the next opens; the levels' files by
-  chapter.
+- Chapter 0, Tutorials: 0.1 Wiring, 0.2 Turning, 0.3 Eyes, 0.4 Half, 0.5 Plus, 0.6 Diagnostic.
+- Chapter 1, Braitenberg: 1.1 Fear, 1.2 Aggression, 1.3 Love, 1.4 Orbit.
+- Chapter 2, Obstacles: obstacles introduced, and their shadows.
+- Chapter 3, Many lights.
+- Chapter 4, Your levels.
+
+The game holds one chapter today, "light", levels 1.1 to 1.8, and the levels' tutorials, hints and
+passkeys are written by hand in their files, which the Maker does not set. Each item is planned,
+and its decisions taken, when it starts.
+
+- [ ] **The plan as a decision**: what each level teaches; where Shadows, Greed, Patience and
+  Two lights go, chapters 2 and 3 by their names; new levels for those chapters. D-300's scope
+  names the levels, and `CLAUDE.md`'s scope list with it.
+- [ ] **Several chapters in the game**: the router, Chapters by chapter, its titles folding as the
+  Maker's Files do (D-322), the labels from 0.1, the passkeys, where a chapter ends and the next
+  opens, the end; the levels' files by chapter.
+- [ ] **Chapter 0, the tutorials**, six levels made in the Maker, each teaching one thing:
+  - [ ] 0.1 Wiring: one eye and one thruster already on the board, the player just connects
+    them; the goal is to go straight (Drags). Once "a first level, before Fear".
+  - [ ] 0.2 Turning: a part turned.
+  - [ ] 0.3 Eyes.
+  - [ ] 0.4 Half: the Halve.
+  - [ ] 0.5 Plus: the Sum.
+  - [ ] 0.6 Diagnostic: the drawer, which Aggression's tutorial teaches now (D-103).
+- [ ] **Tutorials**: what a tutorial does (its ghosts and steps, D-039, D-050), how they are
+  written, by hand as now or in the Maker; Fear's and Aggression's rewritten once chapter 0
+  teaches what they teach now.
+- [ ] **Chapter 4, Your levels**: the levels made in the Maker or pasted, where they are kept
+  (nothing is stored beyond the session, D-075), how they are played, with their proof and
+  score to beat (D-320).
 - [ ] **A level made in the Maker shipped as one of the game's**: from Copy or Share level to a
   file in `levels/data/`, with what the Maker does not set yet, a passkey and hints: set in the
   Maker, or written in the file.
-- [ ] **Tutorials**: what a tutorial does (its ghosts and steps, D-039, D-050), which levels have
-  one, how they are written, by hand as now or in the Maker; Fear's and Aggression's rewritten
-  for the new chapters, in later pull requests.
-- [ ] **A first level, before Fear** (the physicist's): its parts already on the board, one eye
-  and one thruster, and the player just has to connect them; the goal is to go straight
-  (Drags).
