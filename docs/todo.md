@@ -5,7 +5,7 @@ is left goes here, in the order it unblocks the rest; the PR that does an item r
 what was done is in git and in [`decisions.md`](decisions.md). Sections keep their numbers,
 which the decision log cites. Ideas for later go in [`ideas.md`](ideas.md). §11 is stage 1, a
 level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300); §13, the
-chapters, levels and tutorials made with it (D-325); §14, the repository's face.
+chapters, levels and tutorials made with it, done (D-325 to D-341); §14, the repository's face.
 
 ## 11. A level maker (stage 1, D-300)
 
@@ -70,34 +70,13 @@ taken, when it starts.
   `FLAME_LENGTH` and `INTAKE_LENGTH` in `editor/marks.py`, where they should fade out, between
   2 and 4 body radii or 2.5 and 3.5. Visual tests first, to choose.
 
-## 13. Chapters, levels and tutorials, made with the Maker (D-325)
+## 13. Chapters, levels and tutorials, made with the Maker (done, D-325 to D-341)
 
-Five chapters, from the physicist's plan (D-325): 0 Tutorials, six levels; 1 Braitenberg, Fear,
-Aggression, Love, Orbit; 2 Obstacles, new levels, then Shadows; 3 Many lights, Greed, Patience,
-Two lights; 4 Made by users. The levels' tutorials, hints and passkeys are written by hand in their
-files today, which the Maker does not set. Each item is planned, and its decisions taken, when it
-starts; they come in this order.
-
-- [x] **The plan as a decision**: what each level teaches, where each level goes (D-325).
-- [x] **Several chapters in the game**: the levels' files by chapter, LEVEL 2.1; Chapters by
-  chapter, its titles folding as the Maker's Files do (D-322), all but the chapter being played;
-  the Maker's Start from by chapter (D-326).
-- [x] **A level made in the Maker shipped as one of the game's**: from Share level to a file in
-  its chapter's folder, its proof kept and run again by a test, a passkey, an idea and a tutorial
-  written in the file; Hints 2 and 3 from the proof, over the level's locked parts; hints in
-  chapters 0 and 1 only (D-328, D-329).
-- [x] **Tutorials**: written by hand as now; 0.1 and 0.2 lead, a ghost and a card that waits,
-  later levels explain; Settings' Tutorial replays the open level's (D-334).
-- [x] **Chapter 0, the tutorials**, six levels, each teaching one thing (D-335): 0.1 Wiring,
-  Fear's introduction then the wire; 0.2 Turning; 0.3 Eyes; 0.4 Half; 0.5 Minus, the Diff, the
-  Sum left to Love; 0.6 Diagnostic, with Aggression's cards; all open, no passkey. To adjust in
-  the Maker as played.
-- [x] **Dragster**, the physicist's, made in the Maker: chapter 4's first level, LEVEL 4.1,
-  signed "@Cy-3LO" (D-332).
-- [ ] **Chapter 2's new levels**: obstacles, before Shadows.
-- [ ] **Chapter 4, Made by users**: the levels made in the Maker or pasted, where they are kept
-  (nothing is stored beyond the session, D-075), how they are played, with their proof and
-  score to beat (D-320).
+Done: five chapters, 0 Tutorials to 4 Made by users (D-325, D-326); a Maker level shipped with
+its proof, its hints from it (D-328, D-329); chapter 0's six tutorials, reviewed in
+[`tutorials.md`](tutorials.md) (D-334 to D-339); Dragster (D-332); Build your level, Open Maker,
+in Chapters (D-341). What is left is made with the Maker as it comes, under Build your level:
+chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users.
 
 ## 14. The repository's face
 

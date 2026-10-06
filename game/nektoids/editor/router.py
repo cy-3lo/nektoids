@@ -23,6 +23,12 @@ from nektoids.levels.arenas import CHAPTERS, locate
 from nektoids.levels.level import Level
 from nektoids.levels.score import Score, front
 
+SANDBOX_LABEL = "YOUR LEVEL"  # the sandbox's, before its title in the caption (D-341)
+MAKER_ROW = (  # the sandbox's row in Chapters, under Build your level: its name and info (D-341)
+    "Open Maker",
+    "Build your own level in the Maker: its objects, its goals, its parts. Try it, then share it.",
+)
+
 
 def level_number(index: int) -> str:
     """The number of the route's level at `index`: its chapter's, then its place there, "2.1"
@@ -112,7 +118,7 @@ class Router:
 
     @property
     def label(self) -> str:
-        return "SANDBOX" if self.in_sandbox else level_label(self.index)
+        return SANDBOX_LABEL if self.in_sandbox else level_label(self.index)
 
     @property
     def has_next(self) -> bool:
@@ -149,8 +155,8 @@ class Router:
             ChapterRow(
                 k,
                 "" if k == self.sandbox_index else level_number(k),
-                place.title,
-                place.spec,
+                MAKER_ROW[0] if k == self.sandbox_index else place.title,
+                MAKER_ROW[1] if k == self.sandbox_index else place.spec,
                 self.state(k),
                 self.best(k),
                 k == self.index,
@@ -223,11 +229,12 @@ class Router:
         self.screen = Screen.RUN
 
     def open(self, index: int) -> None:
-        """A place from Chapters, under its card; ValueError if it is still locked."""
+        """A place from Chapters, under its card; the sandbox, Open Maker, straight on the Maker,
+        no card (D-341). ValueError if it is still locked."""
         if not self.unlocked(index):
             raise ValueError(f"{level_label(index)} opens once the level before it is won")
         self._go(index)
-        self.screen = Screen.SPEC
+        self.screen = Screen.MAKE if self.in_sandbox else Screen.SPEC
 
     def run(self) -> None:
         self.screen = Screen.RUN

@@ -184,7 +184,7 @@ class Frame:
         if tab is None:
             return False
         if tab not in dict(self.layout.tabs):
-            self._refuse("the Maker is Free play's: open it in Chapters")
+            self._refuse("the Maker opens from Chapters: Open Maker")
         elif tab != self.layout.env.value:
             self._ask(LEAVE[tab])
         return True

@@ -1110,7 +1110,7 @@ def _draw_chapters(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
             fonts,
             rect,
             index,
-            "Sandbox" if row.state == "sandbox" else row.title,
+            row.title,  # the sandbox's: Open Maker (D-341)
             status,
             row.current,
             locked,

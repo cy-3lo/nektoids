@@ -44,7 +44,8 @@ from nektoids.levels.making import (
 )
 from nektoids.levels.objectives import Count, Goal, Target, Verb
 
-LEVEL = sandbox()  # two lights, four obstacles; the start at (15, 19), heading 20°
+LEVEL = replace(sandbox(), tutorial=None)  # as the Maker holds it: the intro is main's (D-341)
+# two lights, four obstacles; the start at (15, 19), heading 20°
 
 
 def test_an_item_placed_lands_on_the_lattice_last_in_order_set_as_new_and_the_old_level_stays():

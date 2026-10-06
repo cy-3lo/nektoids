@@ -195,7 +195,7 @@ class MakerScene(Frame):
     ):
         layout = make_layout(drawer, env=Env.MAKER, chapters=chapters, maker=True)
         self._start_frame(layout, settings)  # also `request`: "run", "edit"... for main.py
-        self.label = label  # "SANDBOX", before its title in the caption
+        self.label = label  # "YOUR LEVEL", before its title in the caption (D-341)
         self.starts = tuple(starts)  # Start from's levels, each with its label: "1.2", or ""
         self.board = board  # the Editor's board, which takes what the level hands out (D-315)
         self.proof: Proof | None = None  # the board that won the level, its score (D-320)
@@ -731,8 +731,8 @@ class MakerScene(Frame):
 
     def _open_field(self, which: Brief | Knob | Paste) -> None:
         """The title's field, the spec's or the author's, holding what the level says now, the
-        author's an "@" if it has none (D-331); a slider's box, holding its number, the caret
-        after it; or Files' field, empty, for a level's text."""
+        author's without its "@", which stands outside the field (D-331, D-341); a slider's box,
+        holding its number, the caret after it; or Files' field, empty, for a level's text."""
         self.said = ""  # what the status line said before gives way to how to fill it
         if which is Paste.LEVEL:
             text, longest, taken = "", LEVEL_LONGEST, None
@@ -740,8 +740,9 @@ class MakerScene(Frame):
             text, longest, taken = f"{self.value(which):g}", NUMBER_LONGEST, NUMBER
         elif which is Brief.TITLE:
             text, longest, taken = self.level.title, TITLE_LONGEST, None
-        elif which is Brief.AUTHOR:
-            text, longest, taken = self.level.author or "@", AUTHOR_LONGEST, None
+        elif which is Brief.AUTHOR:  # the name after the "@", which stands outside (D-341)
+            text = (self.level.author or "").removeprefix("@")
+            longest, taken = AUTHOR_LONGEST - 1, None
         else:
             text, longest, taken = self.level.spec, SPEC_LONGEST, None
         self.writing, self.field = which, TextField(text, taken, longest)
@@ -770,6 +771,8 @@ class MakerScene(Frame):
         elif isinstance(which, Knob):  # on its range's steps, within it
             self._set_knob(which, lambda: number(text))
         else:
+            if which is Brief.AUTHOR:  # its "@" first, whatever was typed (D-341)
+                text = "@" + text.strip().lstrip("@")
             write = {Brief.TITLE: titled, Brief.SPEC: specified, Brief.AUTHOR: authored}[which]
             self._make(lambda level: write(level, text))
 
@@ -874,14 +877,14 @@ class MakerScene(Frame):
 
     def open_blank(self) -> None:
         """The Maker opened for the first time: a blank plane to make (D-317), two of each part
-        unless the Editor's board holds more, when the parts stay as they were; Free play's
-        level one undo away."""
+        unless the Editor's board holds more, when the parts stay as they were; the sandbox's
+        plane one undo away."""
         if self._made_anew(blank):
-            self.said = "A blank plane to make.  Ctrl+Z: Free play's level."
+            self.said = "A blank plane to make.  Ctrl+Z: the plane of two lights."
             return
         self.message = ""  # refused for the board: the parts as they were, then
         if self._made_anew(lambda level: replace(blank(level), board=level.board)):
-            self.said = "A blank plane, the parts as Free play's: the board holds more than two."
+            self.said = "A blank plane, the parts as they were: the board holds more than two."
 
     def _made_anew(self, change: Callable[[Level], Level]) -> bool:
         """`change`, a level made anew, as `_make` makes any; once made, nothing is focused or

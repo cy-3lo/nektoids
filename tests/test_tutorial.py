@@ -47,7 +47,7 @@ from nektoids.editor.tutorial import shown as visible
 from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import NW, SW, E, W
-from nektoids.levels.arenas import arenas
+from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.objectives import Outcome
 
 LAYOUT = make_layout()
@@ -55,11 +55,12 @@ VIEW = centred_view(LAYOUT)
 RUN_LAYOUT = make_layout(Drawer.INSIDE, env=Env.RUN, goals=1)  # the run's frame (D-057)
 
 
-def layout_on(screen: Screen, step=None):
-    """The editor's layout with the drawer `step` opens (Parts if none), or the run's."""
+def layout_on(screen: Screen, step=None, maker: bool = False):
+    """The editor's layout with the drawer `step` opens (Parts if none), or the run's; on the
+    sandbox, `maker`, with the Maker's tab (D-341)."""
     if screen is not Screen.RUN:
-        return make_layout(drawer_for(step) or Drawer.PARTS, kinds=FEAR_KINDS)
-    return make_layout(drawer_for(step) or Drawer.INSIDE, env=Env.RUN, goals=1)
+        return make_layout(drawer_for(step) or Drawer.PARTS, kinds=FEAR_KINDS, maker=maker)
+    return make_layout(drawer_for(step) or Drawer.INSIDE, env=Env.RUN, goals=1, maker=maker)
 
 
 LEVELS = {level.title: level for level in arenas()}
@@ -127,6 +128,7 @@ def on_screen(rect):
 def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
     fear, aggression = LEVELS["Fear"], LEVELS["Aggression"]
     shipped = [(level, level.tutorial) for level in LEVELS.values() if level.tutorial is not None]
+    shipped.append((sandbox(), sandbox().tutorial))  # the Maker's introduction (D-341)
     for level, data in (
         *shipped,  # every shipped level's (D-328)
         (fear, BUILT["fear"]),
@@ -140,7 +142,7 @@ def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
             if step.until:
                 met(step.until, context)  # a condition it knows
             for screen in (Screen.EDIT, Screen.RUN):
-                layout = layout_on(screen, step)
+                layout = layout_on(screen, step, maker=level.title == sandbox().title)
                 assert all(on_screen(r) for r in target_rects(step.show, screen, layout, VIEW))
 
 

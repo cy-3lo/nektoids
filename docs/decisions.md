@@ -2156,3 +2156,18 @@ giving at most six ticks from 0 to the time allowed (`arena_layout.time_ticks`):
 the box; its number, in seconds, sits left of the box; "time (s)", turned a quarter, stands left
 of the numbers. The parts' axis is as it was. The box and its ticks are a shade lighter than a
 rule, `PLOT_FRAME`, and its numbers and its axes' names lighter than dimmed text, `PLOT_TEXT`.
+
+**D-341 — 2026-10-06 — Free play is Build your level, its row Open Maker, which opens the Maker on Objects, no card, under a card of its own, once a session, lighting the Maker's tab. The sandbox's caption says YOUR LEVEL. The Author field's "@" stands outside it, fixed. The todo's §13 is done. Amends D-035, D-301, D-322, D-331.**
+The physicist closed §13: chapter 2's new levels and chapter 4's are made with the Maker as they
+come. Its door in Chapters is renamed: the section once Free play is Build your level, its row,
+once Sandbox, Open Maker, its info "Build your own level in the Maker: its objects, its goals,
+its parts. Try it, then share it." Chosen, it opens the Maker on Objects, with no level card
+(`Router.open`), and the shipped sandbox's file holds the Maker's introduction, a tutorial of
+one card, which `main.py` runs on the Maker's screen too: it lights the Maker's tab, pulsing, and
+says what the Maker is for; any key or click closes it, and it shows once a session, Settings'
+Tutorial bringing it back (D-334). The caption's label, once SANDBOX, is YOUR LEVEL; F3 off the
+sandbox says "the Maker opens from Chapters: Open Maker"; the Maker's Start from lists the old
+plane under Sandbox, by its title, Two lights, four obstacles. The code keeps the word sandbox.
+The Author field in Text: its "@" stands outside the field, before it, so that it cannot be
+deleted; the field holds the name after it, and what is typed is signed "@" and the name; an
+empty name leaves the level unsigned (D-331). The level file still writes "@Cy-3LO".

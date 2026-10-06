@@ -92,3 +92,14 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 | 1 | Run, Diagnostic | This swimmer comes with an **Eye** wired to a **Thruster**, yet it does not move.<br>Press the **Editor** button or tab, or press Tab. | Editor tab; Editor button | the Editor opens |
 | 2 | Editor, Parts | Open **Diagnostic** by choosing the stethoscope, or pressing **D**. | Diagnostic (stethoscope) drawer | Diagnostic (stethoscope) opens |
 | 3 | Editor, Diagnostic | The main screen shows your board. The map shows your swimmer and the light.<br>Drag it round the light and turn it with the mouse wheel: when does its eye see the light? | — | any key or click closes it |
+
+## Build your level: the Maker
+
+- Spec: No goal: try any wiring.
+- Hint 1, the idea: —
+- Opens on: the Maker, Objects open
+- Ghosts: none
+
+| # | Open | Text | Highlighted | Waits for |
+|---|---|---|---|---|
+| 1 | Maker, Objects | This is the **Maker**, a new tab: build your own level here.<br>Place lights, obstacles and rings in **Objects**, choose the **Goals**, try it in the **Editor** and the **Run**, and share it from **Files**. | Maker tab | any key or click closes it |
