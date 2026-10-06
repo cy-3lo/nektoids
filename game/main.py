@@ -61,7 +61,7 @@ from nektoids.editor.tutorial import (
 )
 from nektoids.editor.tutorial_draw import draw_tutorial
 from nektoids.graph.board import Board, Kind
-from nektoids.levels.arenas import arenas, sandbox
+from nektoids.levels.arenas import CHAPTERS, arenas, sandbox
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.scenarios import Scenario, scenarios
 from nektoids.levels.score import Score
@@ -79,6 +79,7 @@ clipboard.install()  # the page's side of Save and Load, once (D-206)
 levels = arenas()  # read from their files once, at startup (web.md: no file I/O in the loop)
 free = sandbox()  # Free play's level as shipped: the Maker may start from it again (D-310)
 router = Router(levels, free)
+chapters = tuple((chapter.heading, len(chapter.names)) for chapter in CHAPTERS)  # D-326
 editors: dict[int, EditorScene] = {}  # each level's editor, and its undo history with it
 makers: dict[int, MakerScene] = {}  # the sandbox's Maker, made when first opened (D-301)
 tutorials: dict[int, Tutorial] = {}  # each level's tutorial, where it has got to
@@ -182,7 +183,7 @@ def editor() -> EditorScene:
         board = router.board
         handed_out = frozenset(kind for kind in Kind if board.total(kind) != 0)
         maker = router.in_sandbox  # its tabs end with the Maker's (D-301)
-        layout = make_layout(Drawer.PARTS, kinds=handed_out, chapter=len(levels), maker=maker)
+        layout = make_layout(Drawer.PARTS, kinds=handed_out, chapters=chapters, maker=maker)
         editors[router.index] = EditorScene(board, layout, caption, settings, level)
     return editors[router.index]
 
@@ -192,7 +193,7 @@ def maker() -> MakerScene:
     if router.index not in makers:
         starts = (*((level_number(k), level) for k, level in enumerate(levels)), ("", free))
         makers[router.index] = MakerScene(
-            router.level, router.label, settings, len(levels), starts=starts, board=router.board
+            router.level, router.label, settings, chapters, starts=starts, board=router.board
         )
         makers[router.index].open_blank()  # a blank plane to make (D-317)
     return makers[router.index]
@@ -209,7 +210,7 @@ def play(drawer: Drawer | None) -> ArenaScene:
         label=router.label,
         settings=settings,
         drawer=drawer,
-        chapter=len(levels),
+        chapters=chapters,
         passkey=router.next_passkey(),  # on the win card (D-075)
         maker=router.in_sandbox,  # the Maker's tab (D-301)
     )
@@ -241,7 +242,7 @@ def toggle(
         return None if isinstance(open_view, SchematicScene) else open_developer_view()
     if isinstance(open_view, ArenaScene):
         return None
-    return ArenaScene(router.board, levels, settings=settings, chapter=len(levels))
+    return ArenaScene(router.board, levels, settings=settings, chapters=chapters)
 
 
 async def main() -> None:
@@ -370,6 +371,10 @@ async def main() -> None:
             playing = play(run_drawer)  # the run it opens on, paused, under its card (D-069)
 
         frames = (editor(), playing, makers.get(router.index))  # the scenes open on this place
+        for scene in frames:  # a chapter's title clicked in Chapters (D-326)
+            if scene is not None and scene.asked_fold is not None:
+                router.fold(scene.asked_fold)
+                scene.asked_fold = None
         for scene in frames:  # a passkey typed in Chapters (D-075)
             if scene is not None and scene.asked_passkey is not None:
                 word, scene.asked_passkey = scene.asked_passkey, None
@@ -405,11 +410,10 @@ async def main() -> None:
         model = guide if guide is not None else shadow  # the tutorial's, else the hint's shadow
         editor().ghosts = model.ghosts if model is not None else ()
         editor().ghost_wires = model.ghost_wires if model is not None else ()  # D-074
-        editor().chapters = router.rows()  # what Chapters shows
         editor().set_wins(router.files())  # what Files shows: every level's wins (D-092)
-        for scene in frames[1:]:  # what Chapters shows, in the run and the Maker too
+        for scene in frames:  # what Chapters shows, in every tab, and the chapters it folds
             if scene is not None:
-                scene.chapters = router.rows()
+                scene.set_chapters(router.rows(), frozenset(router.folded))
         scene = on_screen()
         wanted = drawer_for(guide.step, scene.layout.drawer) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on

@@ -127,6 +127,30 @@ def test_a_passkey_opens_the_next_level_across_chapters():
     assert router.unlock("moon") == 4 and router.state(4) == "open"
 
 
+def test_chapters_shows_the_chapter_being_played_and_folds_the_others_until_asked():
+    router = a_router()  # D-326
+    one, two, three = "Chapter 1: Braitenberg", "Chapter 2: Obstacles", "Chapter 3: Many lights"
+    assert one not in router.folded and {two, three} <= router.folded
+    router.fold(three)  # the player shows chapter 3 too
+    router.next()  # 1.2: the same chapter, the folds kept
+    assert router.folded & {one, three} == set()
+    router.index = 3  # Orbit, then Next level: Shadows, in chapter 2, which was folded
+    router.next()
+    assert router.label == "LEVEL 2.1" and two not in router.folded and one in router.folded
+    router.open(router.sandbox_index)  # Free play keeps them
+    assert two not in router.folded and one in router.folded
+    router.fold(one)
+    router.open(0)  # chapter 1 shows: nothing else folds
+    assert router.folded & {one, two} == set()
+
+
+def test_a_passkey_shows_the_chapter_of_the_level_it_opens():
+    router = a_router()  # D-326
+    assert "Chapter 3: Many lights" in router.folded
+    assert router.unlock("dark") == 5  # Shadows' word opens Greed, 3.1
+    assert "Chapter 3: Many lights" not in router.folded
+
+
 def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
     router = a_router()
     rows = router.rows()

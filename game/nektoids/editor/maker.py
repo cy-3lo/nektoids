@@ -186,12 +186,12 @@ class MakerScene(Frame):
         level: Level,
         label: str,
         settings: Settings | None = None,
-        chapter: int = 0,
+        chapters: tuple[tuple[str, int], ...] = (),
         drawer: Drawer | None = Drawer.OBJECTS,
         starts: Sequence[tuple[str, Level]] = (),
         board: Board | None = None,
     ):
-        layout = make_layout(drawer, env=Env.MAKER, chapter=chapter, maker=True)
+        layout = make_layout(drawer, env=Env.MAKER, chapters=chapters, maker=True)
         self._start_frame(layout, settings)  # also `request`: "run", "edit"... for main.py
         self.label = label  # "SANDBOX", before its title in the caption
         self.starts = tuple(starts)  # Start from's levels, each with its label: "1.2", or ""
@@ -239,9 +239,9 @@ class MakerScene(Frame):
     def _relayout(self, drawer: Drawer | None) -> Layout:
         return make_layout(
             drawer,
-            frozenset(self.folded),
+            self._folded(drawer, self.folded),
             env=Env.MAKER,
-            chapter=self.layout.chapter,
+            chapters=self.layout.chapters,
             maker=True,
             wheel_folded=self.wheel_folded,
             scroll=self.scrolls.get(drawer, 0),  # D-096

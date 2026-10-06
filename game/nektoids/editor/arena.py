@@ -169,14 +169,14 @@ class ArenaScene(Frame):
         label: str | None = None,
         settings: Settings | None = None,
         drawer: Drawer | None = Drawer.INSIDE,
-        chapter: int = 0,
+        chapters: tuple[tuple[str, int], ...] = (),
         passkey: tuple[str, str] | None = None,
         maker: bool = False,
     ):
         self.levels = list(levels)
         self.index = 0
         goals = len(self.level.objectives)  # the sandbox's tabs end with the Maker's (D-301)
-        layout = make_layout(drawer, env=Env.RUN, goals=goals, chapter=chapter, maker=maker)
+        layout = make_layout(drawer, env=Env.RUN, goals=goals, chapters=chapters, maker=maker)
         self._start_frame(layout, settings)  # also `request`: "edit", "next"... for main.py
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
@@ -236,13 +236,14 @@ class ArenaScene(Frame):
         return self.layout.board_area
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
-        goals, chapter = len(self.level.objectives), self.layout.chapter
+        goals, chapters = len(self.level.objectives), self.layout.chapters
         scroll = self.scrolls.get(drawer, 0)  # D-096
         return make_layout(
             drawer,
+            self._folded(drawer),
             env=Env.RUN,
             goals=goals,
-            chapter=chapter,
+            chapters=chapters,
             scroll=scroll,
             maker=self.layout.maker,
             **self._hint_layout(),

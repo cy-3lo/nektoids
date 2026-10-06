@@ -707,13 +707,13 @@ class EditorScene(Frame):
             self.probe.see(self.view)
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
-        """The layout with `drawer` open, the same parts handed out, chapter, wins, hints and
+        """The layout with `drawer` open, the same parts handed out, chapters, wins, hints and
         tabs."""
         return make_layout(
             drawer,
-            frozenset(self.folded),
+            self._folded(drawer, self.folded),
             self.layout.kinds,
-            self.layout.chapter,
+            self.layout.chapters,
             files=tuple((group.title, len(group.wins)) for group in self.wins),
             wheel_folded=self.wheel_folded,
             scroll=self.scrolls.get(drawer, 0),

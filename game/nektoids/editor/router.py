@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.board import Board, BoardState
-from nektoids.levels.arenas import locate
+from nektoids.levels.arenas import CHAPTERS, locate
 from nektoids.levels.level import Level
 from nektoids.levels.score import Score, front
 
@@ -86,6 +86,7 @@ class Router:
         self.screen = Screen.TITLE
         self.won: set[int] = set()  # the levels won this session
         self.opened: set[int] = set()  # the levels a passkey opened this session (D-075)
+        self.folded = self._all_but(0)  # Chapters' chapters shown closed, by title (D-326)
         self._boards: dict[int, Board] = {}
         self._scores: dict[int, set[Score]] = {}
         self._won_with: dict[int, dict[Score, BoardState]] = {}  # each score's first board
@@ -165,6 +166,23 @@ class Router:
             return ""
         return self.levels[index].passkey
 
+    def _all_but(self, index: int) -> set[str]:
+        """Every chapter's title but that of the route's level at `index`: Chapters as it opens
+        on a chapter (D-326)."""
+        return {chapter.heading for chapter in CHAPTERS} - {locate(index)[0].heading}
+
+    def fold(self, title: str) -> None:
+        """A chapter's title clicked in Chapters: its levels fold away, or show again."""
+        self.folded ^= {title}
+
+    def _go(self, index: int) -> None:
+        """The place at `index` is the open one. A level whose chapter Chapters shows closed
+        folds every other chapter instead, so that the open level's row always shows; one whose
+        chapter shows keeps the player's folds, as the sandbox does (D-326)."""
+        if index != self.sandbox_index and locate(index)[0].heading in self.folded:
+            self.folded = self._all_but(index)
+        self.index = index
+
     def unlocked(self, index: int) -> bool:
         """The first level, any level after one won, any a passkey opened, and the sandbox are
         open (D-075)."""
@@ -179,6 +197,7 @@ class Router:
         for k, level in enumerate(self.levels[:-1]):
             if level.passkey == word:
                 self.opened |= set(range(k + 2))
+                self.folded -= {locate(k + 1)[0].heading}  # it shows, open, in Chapters
                 return k + 1
         return None
 
@@ -200,7 +219,7 @@ class Router:
         """A place from Chapters, under its card; ValueError if it is still locked."""
         if not self.unlocked(index):
             raise ValueError(f"{level_label(index)} opens once the level before it is won")
-        self.index = index
+        self._go(index)
         self.screen = Screen.SPEC
 
     def run(self) -> None:
@@ -261,7 +280,7 @@ class Router:
         if not self.has_next:
             raise ValueError("that was the last level")
         self.mark_won()
-        self.index += 1
+        self._go(self.index + 1)
         self.screen = Screen.SPEC
 
     def finish(self) -> None:

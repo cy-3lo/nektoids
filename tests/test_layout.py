@@ -8,7 +8,6 @@ from nektoids.editor.layout import (
     ACTION_WIDTH,
     BAR_WIDTH,
     CAPTION_HEIGHT,
-    CHAPTER_TITLE,
     DRAWER_KEYS,
     DRAWER_WIDTH,
     DRAWERS,
@@ -255,8 +254,8 @@ def _inside(rect, area):
     return ax <= x and x + w <= ax + aw and ay <= y and y + h <= ay + ah
 
 
-MOST = {  # each drawer with the most it may show: 7 levels, 3 objectives, every hint taken
-    "chapter": 7,
+MOST = {  # each drawer with the most it may show: 16 levels, 3 objectives, every hint taken
+    "chapters": (("Chapter 0", 6), ("Chapter 1", 4), ("Chapter 2", 3), ("Chapter 3", 3)),
     "hint_lines": (2, 2, 0),
     "shadow": True,
     "files": (("1.7", 5), ("1.6", 5), ("1.5", 5)),
@@ -287,15 +286,18 @@ def test_every_drawers_rows_show_within_it_scrolled_into_view_if_they_do_not_fit
         assert (first.scroll_bar is None) == (first.scroll_max == 0), drawer
 
 
+SEVEN = (("Chapter 1", 7),)  # a chapter of seven levels
+
+
 def test_chapters_scrolls_in_the_run_and_its_rows_answer_only_where_they_show():
-    chapters = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapter=7)
+    chapters = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapters=SEVEN)
     assert chapters.scroll_max > 0 and scroll_bar_at(chapters, centre(chapters.scroll_bar))
     _, ly, _, lh = chapters.list_area
     hidden = [k for k, (_, y, _, h) in chapters.chapter_rows if y + h // 2 >= ly + lh]
     assert hidden and not passkey_at(chapters, centre(chapters.passkey_field))
     sandbox = dict(chapters.chapter_rows)[hidden[-1]]
     assert chapter_row_at(chapters, centre(sandbox)) is None  # out of sight, it does not answer
-    end = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapter=7, scroll=10_000)
+    end = make_layout(Drawer.CHAPTERS, env=Env.RUN, goals=3, chapters=SEVEN, scroll=10_000)
     assert end.scroll == chapters.scroll_max
     assert chapter_row_at(end, centre(dict(end.chapter_rows)[hidden[-1]])) == hidden[-1]
     assert passkey_at(end, centre(end.passkey_field))
@@ -487,7 +489,7 @@ def test_the_menu_shows_only_the_parts_the_level_hands_out_and_no_empty_group():
 
 
 def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_section():
-    chapters = make_layout(Drawer.CHAPTERS, chapter=3)
+    chapters = make_layout(Drawer.CHAPTERS, chapters=(("Chapter 1", 3),))
     assert [k for k, _ in chapters.chapter_rows] == [0, 1, 2, 3]  # the sandbox last
     settings = make_layout(Drawer.SETTINGS)
     assert [what for what, _ in settings.setting_rows] == list(Setting)
@@ -839,17 +841,39 @@ def test_tools_ends_with_erase_all_under_undo_and_redo():
     assert not make_layout(Drawer.OBJECTS, env=Env.MAKER, maker=True).board_buttons  # Tools'
 
 
-def test_start_from_is_a_list_of_its_own_under_a_rule_its_chapter_folding():
-    files = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=8, chapter=7)  # D-322
-    rule, area = files.files_rule, files.list_area
+SHIPPED = (("Chapter 0", 0), ("Chapter 1", 4), ("Chapter 2", 1), ("Chapter 3", 3))
+
+
+def test_chapters_lists_each_chapter_with_levels_under_a_title_that_folds():
+    chapters = make_layout(Drawer.CHAPTERS, chapters=SHIPPED)  # D-326
+    titles = dict(chapters.group_titles)
+    assert list(titles) == ["Chapter 1", "Chapter 2", "Chapter 3"]  # none for an empty chapter
+    assert [k for k, _ in chapters.chapter_rows] == list(range(9))  # the sandbox last
+    for title, rect in titles.items():
+        assert group_at(chapters, centre(rect)) == title
+    shut = make_layout(Drawer.CHAPTERS, frozenset({"Chapter 1", "Chapter 3"}), chapters=SHIPPED)
+    assert [k for k, _ in shut.chapter_rows] == [4, 8] and shut.folded == {"Chapter 1", "Chapter 3"}
+    assert [title for title, _ in shut.group_titles] == list(titles)  # its titles stay
+    assert [title for title, _ in shut.section_titles] == ["Free play", "Passkey"]
+
+
+def test_start_from_is_a_list_of_its_own_under_a_rule_its_chapters_folding():
+    files = make_layout(Drawer.FILES, env=Env.MAKER, maker=True, starts=9, chapters=SHIPPED)
+    rule, area = files.files_rule, files.list_area  # D-322, D-326
     assert files.level_field[1] < files.share_note[1] < rule[1] < area[1]  # Save/Load stays above
-    assert [t for t, _ in files.group_titles] == [CHAPTER_TITLE, "Free play"]
-    assert [s.index for s, _ in files.start_rows] == [None, *range(8)]  # Blank level first
+    titles = ["Chapter 1", "Chapter 2", "Chapter 3", "Free play"]
+    assert [t for t, _ in files.group_titles] == titles
+    assert [s.index for s, _ in files.start_rows] == [None, *range(9)]  # Blank level first
     assert files.start_rows[0][1][1] >= area[1] and level_field_at(files, centre(files.level_field))
     shut = make_layout(
-        Drawer.FILES, frozenset({CHAPTER_TITLE}), env=Env.MAKER, maker=True, starts=8, chapter=7
+        Drawer.FILES,
+        frozenset({"Chapter 1", "Chapter 3"}),
+        env=Env.MAKER,
+        maker=True,
+        starts=9,
+        chapters=SHIPPED,
     )
-    assert [s.index for s, _ in shut.start_rows] == [None, 7] and shut.scroll_max == 0
+    assert [s.index for s, _ in shut.start_rows] == [None, 4, 8] and shut.scroll_max == 0
 
 
 def test_the_sandboxs_tools_fit_above_the_wheel_unscrolled():

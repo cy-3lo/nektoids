@@ -9,8 +9,8 @@ another drawer open, scrolled as `scrolls` says), and may give `_slid` (what fol
 screen when a drawer opens or folds), `_cancel` (a gesture under way ends) and `_refuse` (says
 why not).
 What the player asks of `main.py` is left in `request` ("run", "edit", "make", "tutorial"), `chosen`
-(a place picked in Chapters) or `asked_hint` (a row of Hints), which `main.py` clears. Pure
-Python, no pygame.
+(a place picked in Chapters), `asked_fold` (a chapter's title clicked there) or `asked_hint` (a
+row of Hints), which `main.py` clears. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ from nektoids.editor.layout import (
     chapter_row_at,
     contains,
     drawer_button_at,
+    group_at,
     hint_row_at,
     info_at,
     level_button_at,
@@ -60,6 +61,8 @@ class Frame:
         self.request: str | None = None  # "run", "edit", "make", "tutorial": main.py's to clear
         self.chosen: int | None = None  # a place picked in Chapters: main.py's to clear
         self.chapters: tuple[ChapterRow, ...] = ()  # what Chapters shows; main.py's
+        self.shut: frozenset[str] = frozenset()  # ... the chapters it shows closed; main.py's
+        self.asked_fold: str | None = None  # a chapter's title clicked: main.py's to fold and clear
         self.info: object | None = None  # the row whose info box is open: a part, a tool...
         self.entry: Entry | None = None  # ... a part's, at work in its own circuit (D-082)
         self.tip_target: object | None = None  # the bar's icon, or another tab, under the mouse
@@ -155,6 +158,10 @@ class Frame:
         if hint is not None:
             self._take_hint(hint.index)
             return True
+        title = group_at(self.layout, pos) if self.layout.drawer is Drawer.CHAPTERS else None
+        if title is not None:  # a chapter folds or shows again, in every tab (D-326)
+            self.asked_fold = title
+            return True
         place = chapter_row_at(self.layout, pos)
         if place is not None:
             self._choose_place(place)
@@ -228,6 +235,19 @@ class Frame:
         if hints != self.hints:
             self.hints = hints
             self.layout = self._relayout(self.layout.drawer)
+
+    def set_chapters(self, rows: tuple[ChapterRow, ...], shut: frozenset[str]) -> None:
+        """What Chapters shows, and the chapters it shows closed (D-326); the drawer is laid out
+        again if those changed."""
+        self.chapters = rows
+        if shut != self.shut:
+            self.shut = shut
+            self.layout = self._relayout(self.layout.drawer)
+
+    def _folded(self, drawer: Drawer | None, own: set[str] | None = None) -> frozenset[str]:
+        """The groups `drawer` shows closed: in Chapters, the chapters, as main.py says; in any
+        other, the scene's `own`."""
+        return self.shut if drawer is Drawer.CHAPTERS else frozenset(own or ())
 
     def _hint_layout(self) -> dict:
         """What `make_layout` needs of the hints shown: the lines under each row, the picture."""

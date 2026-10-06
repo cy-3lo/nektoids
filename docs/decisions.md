@@ -1958,3 +1958,19 @@ listed. D-300's scope, and `CLAUDE.md`'s, names the levels by chapter; still no 
 item. The rest of §13 is planned, and its decisions taken, item by item: several chapters in the
 game, a level made in the Maker shipped as one of the game's, tutorials, chapter 0's levels,
 chapter 2's, Your levels.
+
+**D-326 — 2026-10-06 — Several chapters in the game: each chapter's level files in a folder of its own, a level named by its chapter, LEVEL 2.1; in Chapters, in every tab, each chapter under a title that folds, every chapter folded but the one being played until the player opens one; the Maker's Start from by chapter. Applies D-325.**
+`levels/arenas.py` declares the chapters, `CHAPTERS`, each with its number, title, folder and
+levels; the route is still one list, `arenas()`, in the same order, so every level's index,
+board, wins and passkey are what they were, and `locate` gives a level's chapter and its place
+there. The eight files moved as they were, byte for byte, into `1-braitenberg/`,
+`2-obstacles/` and `3-many-lights/`; the sandbox's stays. Fear to Orbit are 1.1 to 1.4, Shadows
+2.1, Greed, Patience and Two lights 3.1 to 3.3; Orbit's word, MOON, opens LEVEL 2.1. Chapters 0
+and 4 have no level yet and are not listed. The router keeps which chapters are folded, for the
+session, so the run, the Editor and the Maker show the same: at first all but chapter 1. A
+level whose chapter is folded, opened from Chapters or by Next level, folds every other chapter
+instead, so the open level's row always shows; a level in a chapter that shows keeps the
+player's folds, as the sandbox does; a passkey shows the chapter of the level it opens. Free
+play and the passkey field stay under the chapters, scrolling with them (D-096). The Maker's
+Start from lists Blank level, then a group per chapter, then Free play (D-322), folding as the
+Maker's own groups do.
