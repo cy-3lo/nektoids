@@ -37,7 +37,9 @@ class Chapter:
 
 
 CHAPTERS = (
-    Chapter(0, "Tutorials", "0-tutorials", ()),  # six to make (D-325)
+    Chapter(
+        0, "Tutorials", "0-tutorials", ("wiring", "turning", "eyes", "half", "minus", "diagnostic")
+    ),  # the board and the parts, one thing a level (D-325, D-335)
     Chapter(1, "Braitenberg", "1-braitenberg", ("fear", "aggression", "love", "orbit")),
     Chapter(2, "Obstacles", "2-obstacles", ("shadows",)),
     Chapter(3, "Many lights", "3-many-lights", ("greed", "patience", "two-lights")),

@@ -2064,3 +2064,26 @@ sandbox among them, its row is greyed and a click says "this level has no tutori
 cards, the swimmer, the objectives, the tabs, the board, the bar and Hints, are the game's
 introduction, and Aggression's two lead to Diagnostic (D-103): they stay where they are until 0.1
 and 0.6 are made, so the game always opens with one, and move then.
+
+**D-335 — 2026-10-06 — Chapter 0, Tutorials: 0.1 Wiring, 0.2 Turning, 0.3 Eyes, 0.4 Half, 0.5 Minus, 0.6 Diagnostic, each on a 7-cell board, each won by its proof and lost by the board that misses its lesson. Fear's introduction opens 0.1; Aggression's Diagnostic cards are 0.6's. Applies D-325, D-334; amends D-079, D-103.**
+Designed with the physicist, each checked by simulation (`tests/test_chapter0.py`):
+- 0.1 Wiring: a Source and a thruster locked on the axis, nothing handed out; Fear's five cards,
+  then one that leads the wire, Run, Play, and Hints last. Into a ring 16 u ahead in 10 s: 4.35 s.
+- 0.2 Turning: a locked Source wired to a free thruster at the body's centre, pointing ahead; a
+  card leads its turn to NE, and the swimmer slides, unturned, into the ring ahead on its left:
+  2.91 s. A thruster off the centre, on so small a board, spins the body on the spot.
+- 0.3 Eyes: an eye and a thruster to place and wire, a light of power 4 12 u ahead: 5.38 s; an
+  eye looking back never moves. Cards explain the eye, from 0.3 on (D-334).
+- 0.4 Half: stay 3 s in a ring of 3 u; a Source on the thruster crosses it in 2 s, halved it
+  stays, 9.03 s. The Double is handed out too: no wire carries more than a Source sends, so on
+  a Source's wire it adds nothing, which its card says.
+- 0.5 Minus, once Plus: the Diff alone, the Sum left to Love, the physicist's choice. Stay 3 s in
+  the ring of 8 u round a light 16 u ahead, without touching it: |Source - eye| slows to nothing
+  as the eye fills, 7.42 s; an eye alone or a Source alone touch the light.
+- 0.6 Diagnostic: an eye wired to a thruster comes with the eye looking back, so the swimmer
+  never moves; Aggression's two cards, moved, take the player to Diagnostic to find why; turned
+  forward, the eye reaches the light, 5.38 s.
+Each is the studio's, "@Cy-3LO", hinted (D-329) with an idea of its own; its words, COPPER,
+COMPASS, IRIS, TORTOISE and BRAKE, open the next, and 0.6, the chapter's last, gives none. The
+game now opens on 0.1. Fear and Aggression lose their tutorials, Aggression keeping its
+prewired half swimmer (D-103); Settings' Tutorial is greyed on them (D-334).

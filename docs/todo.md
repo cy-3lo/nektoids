@@ -88,16 +88,9 @@ starts; they come in this order.
   chapters 0 and 1 only (D-328, D-329).
 - [x] **Tutorials**: written by hand as now; 0.1 and 0.2 lead, a ghost and a card that waits,
   later levels explain; Settings' Tutorial replays the open level's (D-334).
-- [ ] **Chapter 0, the tutorials**, six levels made in the Maker, each teaching one thing:
-  - [ ] 0.1 Wiring: a Source and a thruster already on the board, locked; the player just
-    connects them; the goal is to go straight. Once "a first level, before Fear". Fear's six
-    introduction cards move here (D-334).
-  - [ ] 0.2 Turning: a part turned (a locked part cannot turn: it comes from the stock).
-  - [ ] 0.3 Eyes: the first eye.
-  - [ ] 0.4 Half: the Halve and the Double.
-  - [ ] 0.5 Plus: the Sum and the Diff.
-  - [ ] 0.6 Diagnostic: the drawer, which Aggression's tutorial teaches now (D-103); its two
-    cards move here (D-334).
+- [x] **Chapter 0, the tutorials**, six levels, each teaching one thing (D-335): 0.1 Wiring,
+  Fear's introduction then the wire; 0.2 Turning; 0.3 Eyes; 0.4 Half; 0.5 Minus, the Diff, the
+  Sum left to Love; 0.6 Diagnostic, with Aggression's cards. To adjust in the Maker as played.
 - [x] **Dragster**, the physicist's, made in the Maker: chapter 4's first level, LEVEL 4.1,
   signed "@Cy-3LO" (D-332).
 - [ ] **Chapter 2's new levels**: obstacles, before Shadows.

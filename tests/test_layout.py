@@ -307,8 +307,8 @@ def test_chapters_scrolls_in_the_run_and_its_rows_answer_only_where_they_show():
     assert info_at(end, centre(disc)) == Goal(0)
 
 
-def test_the_first_levels_parts_fit_with_the_cell_open_so_a_steps_rows_would_show():
-    for level in arenas()[:2]:  # Fear and Aggression, whose old tutorials showed Parts' rows
+def test_a_tutored_levels_parts_fit_with_the_cell_open_so_a_steps_rows_would_show():
+    for level in (level for level in arenas() if level.tutorial is not None):  # D-335
         board = level.new_board()
         kinds = frozenset(kind for kind in Kind if board.total(kind) != 0)
         assert make_layout(kinds=kinds).scroll_max == 0, level.title

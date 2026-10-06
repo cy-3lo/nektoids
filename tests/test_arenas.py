@@ -30,15 +30,10 @@ def test_the_route_runs_through_the_chapters_in_order_each_level_in_one():
         "Chapter 3: Many lights",
         "Chapter 4: Made by users",
     ]  # D-325
-    assert [len(chapter.names) for chapter in CHAPTERS] == [0, 4, 1, 3, 1]  # D-332: Dragster
-    assert [(locate(k)[0].number, locate(k)[1]) for k in (0, 3, 4, 5, 7)] == [
-        (1, 0),
-        (1, 3),
-        (2, 0),
-        (3, 0),
-        (3, 2),
-    ]
-    assert locate(4)[0].names[0] == "shadows"
+    assert [len(chapter.names) for chapter in CHAPTERS] == [6, 4, 1, 3, 1]  # D-332, D-335
+    places = [(locate(k)[0].number, locate(k)[1]) for k in (0, 5, 6, 9, 10, 11, 13, 14)]
+    assert places == [(0, 0), (0, 5), (1, 0), (1, 3), (2, 0), (3, 0), (3, 2), (4, 0)]
+    assert locate(10)[0].names[0] == "shadows"
     with pytest.raises(IndexError):
         locate(len(arenas()))
     with pytest.raises(IndexError):

@@ -38,7 +38,8 @@ def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_write
     for name in (*ORDER, SANDBOX):
         path = DATA / f"{name}.json"
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
-    titles = ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
+    titles = ["Wiring", "Turning", "Eyes", "Half", "Minus", "Diagnostic"]  # D-335
+    titles += ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
     titles += ["Two lights", "Dragster"]  # D-324, D-332
     assert [level.title for level in arenas()] == titles
 
@@ -119,7 +120,11 @@ def test_a_level_without_its_version_or_of_another_is_refused():
 
 
 def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
-    fear = {k: v for k, v in arenas()[0].to_dict().items() if k != "author"}
+    fear = {
+        k: v
+        for k, v in next(level for level in arenas() if level.title == "Fear").to_dict().items()
+        if k != "author"
+    }
     unsigned = Level.from_dict({**fear, "version": 4})  # D-331: as version 4 wrote it
     assert unsigned.author is None and "author" not in unsigned.to_dict()
     signed = Level.from_dict(a_level(author="@Cy-3LO"))
@@ -133,12 +138,14 @@ def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
     assert {level.author for level in (*arenas(), sandbox())} == {"@Cy-3LO"}
 
 
-def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
-    words = [level.passkey for level in arenas()]  # D-075
-    assert words[:-1] == ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI"]
-    assert words[-1] is None  # Dragster, the last, opens nothing (D-332)
-    assert len(set(words)) == len(words)
-    assert all(is_passkey(word) for word in words[:-1]) and sandbox().passkey is None
+def test_every_level_gives_a_passkey_but_the_last_of_the_tutorials_and_of_the_route():
+    words = {level.title: level.passkey for level in arenas()}  # D-075
+    tutorials = ["COPPER", "COMPASS", "IRIS", "TORTOISE", "BRAKE", None]  # D-335
+    shipped = ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI", None]
+    assert list(words.values()) == [*tutorials, *shipped]  # Diagnostic, Dragster: none (D-332)
+    given = [word for word in words.values() if word is not None]
+    assert len(set(given)) == len(given)
+    assert all(is_passkey(word) for word in given) and sandbox().passkey is None
     assert not is_passkey("sword") and not is_passkey("SWÖRD") and not is_passkey("A" * 11)
     data = a_level(passkey="lower")
     with pytest.raises(ValueError):

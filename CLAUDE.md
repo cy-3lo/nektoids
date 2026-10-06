@@ -38,7 +38,7 @@ shadows, D-019); two outputs (left and right thruster), in the levels: the sandb
 number (D-102); the board is the body plan: eyes and thrusters sit where they are placed
 (D-018, fixed by tutorial boards) and point where the player turns them, in 60° steps (D-009);
 nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); levels in five chapters
-(D-325): 0 Tutorials, six to make; 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles,
+(D-325): 0 Tutorials, Wiring, Turning, Eyes, Half, Minus, Diagnostic (D-335); 1 Braitenberg, Fear, Aggression, Love, Orbit; 2 Obstacles,
 new levels, then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Made by users; each with a
 countable win condition (D-097); fixed seed, fully deterministic;
 complexity, the number of parts, is scored and every body stays a sphere of radius 1 u (D-045);

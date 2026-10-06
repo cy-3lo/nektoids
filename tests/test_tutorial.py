@@ -47,7 +47,7 @@ from nektoids.editor.tutorial import (
 )
 from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import NE, NW, SW, E
+from nektoids.graph.hexgrid import NE, NW, SW, E, W
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome
 
@@ -145,7 +145,7 @@ def test_every_tutorial_reads_and_every_step_can_be_shown_and_waited_for():
 
 
 def test_a_tutorial_refuses_a_key_it_does_not_know():
-    data = LEVELS["Aggression"].tutorial  # D-328: a typo refused, not ignored
+    data = LEVELS["Diagnostic"].tutorial  # D-328: a typo refused, not ignored
     with pytest.raises(ValueError, match="a tutorial takes no 'step'"):
         Tutorial.from_dict({**data, "step": []})
     misspelt = [{**data["steps"][0], "untill": {"drawer": "diagnostic"}}]
@@ -153,17 +153,24 @@ def test_a_tutorial_refuses_a_key_it_does_not_know():
         Tutorial.from_dict({**data, "steps": misspelt})
 
 
-def test_fear_and_aggression_have_tutorials_and_neither_builds_anything():
+def test_chapter_0_has_the_tutorials_its_first_two_lead_the_others_explain():
     tutored = [level.title for level in arenas() if level.tutorial is not None]
-    assert tutored == ["Fear", "Aggression"]  # D-079, D-103
-    for title, waits in (
-        ("Fear", [{"screen": "edit"}]),
-        ("Aggression", [{"drawer": "diagnostic"}]),
-    ):
+    assert tutored == ["Wiring", "Turning", "Eyes", "Half", "Minus", "Diagnostic"]  # D-335
+    wiring, turning = (Tutorial.from_dict(LEVELS[t].tutorial) for t in ("Wiring", "Turning"))
+    assert wiring.ghost_wires == (((0, 0), (-1, 0)),) and wiring.starts_in is None  # the run
+    assert [step.until for step in wiring.steps if step.until] == [
+        {"screen": "edit"},
+        {"wired": {"from": [0, 0], "to": [-1, 0]}},  # it leads: the wire drawn (D-334)
+        {"screen": "run"},
+        {"outcome": "won"},
+    ]
+    assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (0, 0), NE)]
+    assert turning.steps[0].until == {"facing": {"cell": [0, 0], "facing": "NE"}}
+    for title in ("Eyes", "Half", "Minus", "Diagnostic"):  # they explain: nothing built
         tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
         assert tutorial.ghosts == () and tutorial.ghost_wires == ()
-        assert [step.until for step in tutorial.steps if step.until] == waits  # nothing built
-    assert Tutorial.from_dict(LEVELS["Fear"].tutorial).starts_in is None  # on the run (D-069)
+        assert all(not step.until or "drawer" in step.until for step in tutorial.steps)
+        assert tutorial.starts_in is Drawer.PARTS
 
 
 def test_a_box_keeps_clear_of_the_parts_on_the_board():
@@ -174,13 +181,13 @@ def test_a_box_keeps_clear_of_the_parts_on_the_board():
     assert not overlap(box, eye) and not overlap(box, stethoscope)
 
 
-def test_aggressions_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it_be():
-    level = LEVELS["Aggression"]
+def test_diagnostics_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it_be():
+    level = LEVELS["Diagnostic"]  # Aggression's cards, moved to 0.6 (D-334, D-335)
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
     parts = [(n.kind, n.cell, n.facing, n.locked) for n in board.nodes.values()]
-    assert parts == [(Kind.EYE, (-1, -1), NE, False), (Kind.THRUSTER, (2, -1), E, False)]
+    assert parts == [(Kind.EYE, (1, 0), W, False), (Kind.THRUSTER, (-1, 0), E, False)]
     assert (
-        len(board.wires) == 1 and board.remaining(Kind.EYE) == board.remaining(Kind.THRUSTER) == 1
+        len(board.wires) == 1 and board.remaining(Kind.EYE) == board.remaining(Kind.THRUSTER) == 0
     )
 
     def context(screen=Screen.EDIT, drawer=Drawer.PARTS):
@@ -196,12 +203,12 @@ def test_aggressions_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it
     assert tutorial.step is None  # the player tries it with no card in the way
 
 
-def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_on_hints():
-    level = LEVELS["Fear"]
+def test_wirings_introduction_shows_the_objective_the_tabs_the_bar_leads_the_wire_ends_on_hints():
+    level = LEVELS["Wiring"]  # Fear's introduction, moved to 0.1, then the wire (D-334, D-335)
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
 
-    def context(screen, drawer=None):
-        return Context(board, Tool.ADD, screen, None, 0.0, drawer)
+    def context(screen, drawer=None, outcome=None):
+        return Context(board, Tool.ADD, screen, outcome, 0.0, drawer)
 
     for shown in ({"run": "swimmer"}, {"run": "objectives"}):  # in the run: any key goes on
         tutorial.follow(context(Screen.RUN))
@@ -214,6 +221,15 @@ def test_fears_introduction_shows_the_objective_the_tabs_the_bar_and_ends_on_hin
     tutorial.next()
     assert tutorial.step.show == {"area": "bar"} and tutorial.waits_for_next  # any key, D-081
     tutorial.next()
+    assert tutorial.step.until == {"wired": {"from": [0, 0], "to": [-1, 0]}}  # it leads
+    assert allows(tutorial.step, Action("tool", tool=Tool.WIRE))
+    source, thruster = (board.node_at(cell).id for cell in ((0, 0), (-1, 0)))
+    board.connect(source, thruster)
+    tutorial.follow(context(Screen.EDIT, Drawer.TOOLS))
+    assert {"tab": "run"} in tutorial.step.show
+    tutorial.follow(context(Screen.RUN))
+    assert tutorial.step.until == {"outcome": "won"}
+    tutorial.follow(context(Screen.RUN, outcome=Outcome.WON))
     assert tutorial.step.show == {"icon": "hints"} and drawer_for(tutorial.step) is None
     assert tutorial.waits_for_next  # the last: any key or click closes it
     tutorial.next()
@@ -426,7 +442,10 @@ def test_the_way_between_two_targets_crosses_a_box_in_its_path_and_not_one_besid
     assert not _crosses((700, 20, 100, 60), menu, cell)  # beyond the end
 
 
-@pytest.mark.parametrize("data", [LEVELS["Fear"].tutorial, BUILT["fear"]])
+SHIPPED = [level.tutorial for level in LEVELS.values() if level.tutorial is not None]
+
+
+@pytest.mark.parametrize("data", [*SHIPPED, BUILT["fear"]])
 def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_just_done(data):
     view = centred_view(LAYOUT)
     tutorial = Tutorial.from_dict(data)
@@ -504,12 +523,13 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
         assert panels(tutorial) == names, index
     tutorial.index = len(tutorial.steps) - 1
     assert panels(tutorial) == {"score"} and panels(None) == frozenset()
-    intro = Tutorial.from_dict(LEVELS["Fear"].tutorial)
+    intro = Tutorial.from_dict(LEVELS["Wiring"].tutorial)
     named = []
     for index in range(len(intro.steps)):
         intro.index = index
         named.append(panels(intro))
-    assert named == [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}, set()]  # D-095
+    tabs = [{"swimmer"}, {"objectives"}, {"tab:editor"}, set(), {"bar"}]  # D-095
+    assert named == [*tabs, set(), {"tab:run"}, {"play", "arena"}, set()]  # the wire, the run
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():

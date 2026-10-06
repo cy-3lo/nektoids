@@ -209,7 +209,9 @@ def test_a_level_copied_as_text_is_pasted_back_as_it_was():
 
 
 def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_parts():
-    fear = arenas()[0]  # its tutorial, its passkey, its hints, a board of its own
+    fear = next(
+        level for level in arenas() if level.title == "Fear"
+    )  # its passkey, its hints, a board of its own
     made = pasted(LEVEL, to_json(fear))
     assert (made.title, made.spec, made.start) == (fear.title, fear.spec, fear.start)
     assert (made.items, made.objectives, made.time_limit) == (
@@ -220,7 +222,9 @@ def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_
     assert (made.board["zone"], made.board["stock"]) == (19, fear.board["stock"])  # D-315
     assert made.board["parts"] == LEVEL.board["parts"]  # the board's own parts, none here
     assert made.tutorial is None and made.passkey is None and made.hints is None
-    assert fear.tutorial is not None and fear.passkey is not None
+    assert fear.passkey is not None and fear.hints is not None
+    wiring = next(level for level in arenas() if level.title == "Wiring")  # D-335: a tutorial
+    assert wiring.tutorial is not None and pasted(LEVEL, to_json(wiring)).tutorial is None
 
 
 def test_a_level_is_signed_in_text_a_pasted_one_keeps_its_author_one_started_from_none():
@@ -228,7 +232,7 @@ def test_a_level_is_signed_in_text_a_pasted_one_keeps_its_author_one_started_fro
     assert made.author == "@someone else"
     assert authored(made, "@").author is None and authored(made, " ").author is None
     assert len(authored(made, "@" + "x" * 99).author) == AUTHOR_LONGEST
-    fear = arenas()[0]
+    fear = next(level for level in arenas() if level.title == "Fear")
     assert pasted(made, to_json(fear)).author == "@Cy-3LO"  # someone's level stays theirs
     assert taken(made, fear).author is None  # Start from: a new level, its maker's to sign
     assert blank(made).author is None
@@ -302,5 +306,6 @@ def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
     assert made.board["wires"] == [] and pasted(LEVEL, to_json(made)) == made
     assert taken(LEVEL, made).board["parts"] == made.board["parts"]  # Start from, Paste
     assert blank(made).board["parts"] == []  # a blank plane places none
-    aggression = arenas()[1]  # its parts free, prewired: left out
+    aggression = next(level for level in arenas() if level.title == "Aggression")  # its parts
+    # free, prewired: left out
     assert taken(LEVEL, aggression).board["parts"] == []
