@@ -133,7 +133,8 @@ P = PALETTE
 
 # Every view
 BACKGROUND = P.base
-BAR = P.deep  # the activity bar, the strip of tabs, the status line (D-051)
+BAR = P.deep  # the activity bar, the status line (D-051)
+TAB_STRIP = P.surface  # the strip of tabs, the shut ones on it: a shade over the open one's
 DARK = P.base  # icons on parts, text on bright buttons
 PANEL = P.surface
 TOOLTIP_BG = mix(P.surface, P.raised, 0.5)

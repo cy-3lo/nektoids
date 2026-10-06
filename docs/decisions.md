@@ -1977,3 +1977,9 @@ player's folds, as the sandbox does; a passkey shows the chapter of the level it
 play and the passkey field stay under the chapters, scrolling with them (D-096). The Maker's
 Start from lists Blank level, then a group per chapter, then Free play (D-322), folding as the
 Maker's own groups do.
+
+**D-327 — 2026-10-06 — The strip of tabs is a shade lighter than the open tab, the shut tabs on it, and the accent over the open tab is 3 px, as thick as the one along the open drawer's icon. Amends D-056.**
+The physicist: the accent line over the open tab was thinner than the nav bar's, and the shut
+tabs and the rest of the strip, where more tabs would go, should be a shade lighter than the open
+tab's black. The strip was the bar's colour, `P.deep`, darker than the open tab's, `P.base`; it is
+now `P.surface`, the drawers' colour, one step above it. `LIT_EDGE`, 3 px, is both accents.
