@@ -39,7 +39,7 @@ def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_write
         path = DATA / f"{name}.json"
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
     titles = ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
-    titles.append("Two lights")  # D-324
+    titles += ["Two lights", "Dragster"]  # D-324, D-332
     assert [level.title for level in arenas()] == titles
 
 
@@ -135,9 +135,10 @@ def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
 
 def test_every_level_but_the_last_gives_a_passkey_and_no_two_alike():
     words = [level.passkey for level in arenas()]  # D-075
-    assert words == ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI"]
+    assert words[:-1] == ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI"]
+    assert words[-1] is None  # Dragster, the last, opens nothing (D-332)
     assert len(set(words)) == len(words)
-    assert all(is_passkey(word) for word in words) and sandbox().passkey is None
+    assert all(is_passkey(word) for word in words[:-1]) and sandbox().passkey is None
     assert not is_passkey("sword") and not is_passkey("SWÖRD") and not is_passkey("A" * 11)
     data = a_level(passkey="lower")
     with pytest.raises(ValueError):
@@ -215,4 +216,4 @@ def test_every_shipped_levels_positions_are_whole_units_and_its_zone_a_size():
         data = json.loads(path.read_text())
         points = [data["start"]["at"], *(item["at"] for item in data["items"])]
         assert all(isinstance(v, int) for point in points for v in point), path.stem
-        assert data["version"] == FORMAT and data["board"]["zone"] in (19, 37), path.stem
+        assert data["version"] == FORMAT and data["board"]["zone"] in (7, 19, 37), path.stem
