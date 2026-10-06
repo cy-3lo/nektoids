@@ -161,10 +161,15 @@ class Router:
 
     def _word_won(self, index: int) -> str:
         """A level's word, once won, if it opens a next level: Chapters shows it (D-075)."""
-        last = len(self.levels) - 1
-        if index not in self.won or index >= last or not self.levels[index].passkey:
+        if index not in self.won or not self._word_opens(index):
             return ""
         return self.levels[index].passkey
+
+    def _word_opens(self, index: int) -> bool:
+        """Whether the word of the level at `index` opens the level after it: not the last's,
+        nor a chapter's last, whose next level opens a chapter, open from the start (D-325)."""
+        last = index + 1 >= len(self.levels)
+        return bool(self.levels[index].passkey) and not last and locate(index + 1)[1] > 0
 
     def _all_but(self, index: int) -> set[str]:
         """Every chapter's title but that of the route's level at `index`: Chapters as it opens
@@ -184,9 +189,9 @@ class Router:
         self.index = index
 
     def unlocked(self, index: int) -> bool:
-        """The first level, any level after one won, any a passkey opened, and the sandbox are
-        open (D-075)."""
-        first = index == 0 or index == self.sandbox_index
+        """Each chapter's first level, any level after one won, any a passkey opened, and the
+        sandbox are open (D-075, D-325)."""
+        first = index == self.sandbox_index or locate(index)[1] == 0
         return first or index - 1 in self.won or index in self.opened
 
     def unlock(self, word: str) -> int | None:
@@ -203,8 +208,8 @@ class Router:
 
     def next_passkey(self) -> tuple[str, str] | None:
         """The open level's word and the label of the level it opens, for its win card (D-075);
-        None in the sandbox, after the last level, or with no word."""
-        if self.in_sandbox or not self.has_next or not self.level.passkey:
+        None in the sandbox, or with no word that opens a level."""
+        if self.in_sandbox or not self._word_opens(self.index):
             return None
         return self.level.passkey, level_label(self.index + 1)
 

@@ -120,11 +120,20 @@ def test_levels_are_named_by_chapter_and_place():
     assert labels == ["1.1", "1.2", "1.3", "1.4", "2.1", "3.1", "3.2", "3.3", ""]
 
 
-def test_a_passkey_opens_the_next_level_across_chapters():
-    router = a_router()  # D-325: one route; Orbit's word opens Shadows, the next chapter's first
+def test_each_chapters_first_level_is_open_and_a_chapters_last_gives_no_word():
+    router = a_router()  # D-325: the next chapter's first level is open from the start
+    assert [router.state(k) for k in range(9)] == [
+        *("open", "locked", "locked", "locked"),
+        "open",
+        *("open", "locked", "locked"),
+        "sandbox",
+    ]
     router.index = 3  # Orbit
-    assert router.next_passkey() == ("MOON", "LEVEL 2.1")
-    assert router.unlock("moon") == 4 and router.state(4) == "open"
+    assert router.next_passkey() is None
+    router.mark_won()
+    assert router.rows()[3].passkey == ""
+    router.index = 5  # Greed: its word opens Patience
+    assert router.next_passkey() == ("GOLD", "LEVEL 3.2")
 
 
 def test_chapters_shows_the_chapter_being_played_and_folds_the_others_until_asked():
@@ -147,7 +156,7 @@ def test_chapters_shows_the_chapter_being_played_and_folds_the_others_until_aske
 def test_a_passkey_shows_the_chapter_of_the_level_it_opens():
     router = a_router()  # D-326
     assert "Chapter 3: Many lights" in router.folded
-    assert router.unlock("dark") == 5  # Shadows' word opens Greed, 3.1
+    assert router.unlock("gold") == 6  # Greed's word opens Patience, 3.2
     assert "Chapter 3: Many lights" not in router.folded
 
 
