@@ -1,0 +1,12 @@
+{
+  "version": 5,
+  "title": "Dragster",
+  "spec": "Go as fast as possible.",
+  "author": "@Cy-3LO",
+  "start": {"at": [-15, 0], "heading": 0},
+  "items": [{"kind": "mark", "at": [8, 0], "radius": 8}],
+  "board": {"zone": 7, "stock": {"source": 3, "thruster": 3}, "parts": [], "wires": []},
+  "time_limit": 4,
+  "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
+  "proof": {"board": "rcAmD6PrhXQv", "ticks": 302, "parts": 4}
+}

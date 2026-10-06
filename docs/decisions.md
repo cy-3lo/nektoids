@@ -2033,3 +2033,12 @@ level brings the author with the rest, someone's level staying theirs; Start fro
 plane leave it unsigned, a level started from another being its maker's to sign. Adding a key
 changes the format (D-201): files are version 5, written "author" after "spec", and version 4,
 which has none, is read unsigned.
+
+**D-332 — 2026-10-06 — Dragster, the physicist's level made in the Maker, ships as chapter 4's first, LEVEL 4.1, signed "@Cy-3LO": reach a mark 15 u ahead in 4 s with Sources and thrusters from the stock. Its proof is two drives on the body's axis, 2.52 s. Applies D-325, D-328, D-331.**
+The physicist made it in the Maker and put it in chapter 4, the levels made by players, signed
+by the studio. "Go as fast as possible.": the swimmer at (-15, 0) heading 0, a mark of 8 u at
+(8, 0), its centre to reach it in 4 s; a 7-cell board handing out three Sources and three
+thrusters. One Source on one thruster, 3 u/s, runs out of time; two, each on a thruster on the
+body's axis, back and front, win in 2.52 s, its proof; three would be faster, for more parts.
+It is the route's last level, after Two lights, so it gives no passkey and has no hints
+(D-329). Its file is `4-your-levels/dragster.json`.

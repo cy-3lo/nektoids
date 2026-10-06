@@ -117,15 +117,16 @@ def test_levels_are_named_by_chapter_and_place():
     assert level_label(0) == "LEVEL 1.1" and level_label(1) == "LEVEL 1.2"
     assert level_label(4) == "LEVEL 2.1" and level_label(7) == "LEVEL 3.3"  # D-325
     labels = [row.label for row in a_router().rows()]
-    assert labels == ["1.1", "1.2", "1.3", "1.4", "2.1", "3.1", "3.2", "3.3", ""]
+    assert labels == ["1.1", "1.2", "1.3", "1.4", "2.1", "3.1", "3.2", "3.3", "4.1", ""]
 
 
 def test_each_chapters_first_level_is_open_and_a_chapters_last_gives_no_word():
     router = a_router()  # D-325: the next chapter's first level is open from the start
-    assert [router.state(k) for k in range(9)] == [
+    assert [router.state(k) for k in range(10)] == [
         *("open", "locked", "locked", "locked"),
         "open",
         *("open", "locked", "locked"),
+        "open",
         "sandbox",
     ]
     router.index = 3  # Orbit
@@ -216,7 +217,7 @@ def test_a_passkey_opens_the_level_after_the_one_whose_win_gives_it_and_those_be
     assert [router.state(k) for k in range(4)] == ["open", "open", "open", "locked"]
     assert not router.won  # opened, not won: no score
     router.open(2)  # Love opens
-    assert router.unlock(router.levels[-1].passkey) is None  # the last's opens nothing yet
+    assert router.levels[-1].passkey is None  # the last gives no word (D-332)
     assert router.unlock("heart") == 3 and router.state(3) == "open"
 
 
