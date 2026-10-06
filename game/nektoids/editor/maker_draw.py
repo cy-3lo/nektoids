@@ -119,7 +119,7 @@ from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX, centre_in
 from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
 from nektoids.levels.making import BLANK_TIME, NEW, ZONES, lacks
-from nektoids.levels.objectives import Count, Target, Verb, settings
+from nektoids.levels.objectives import Count, Outcome, Target, Verb, at_start, settings
 from nektoids.sim.arena import LIGHT_RADIUS
 
 FOCUS_GAP = 4  # from an object's rim to the ring round it when focused [px]
@@ -149,6 +149,10 @@ WORD_NAME = {  # Goals' buttons (D-308), the targets as Objects names them
 }
 
 KEPT = "Its plane, goals and time replace the level's; the board stays as it is."  # D-310
+UNJUDGED = {  # the status line, while the level is decided where its swimmer starts (D-349)
+    Outcome.WON: "Won where the swimmer starts: move the start or change a goal.",
+    Outcome.LOST: "Lost where the swimmer starts: move the start or change a goal.",
+}
 SHARED = (  # Share level's box, once it has copied (D-346)
     "Copied: your level and its proof",
     (
@@ -364,6 +368,8 @@ def _share_says(scene: MakerScene) -> str:
     """The line under Share level (D-320): its score, once won as it stands; else how to win."""
     if scene.checking is not None:
         return f"Checking its proof: {round(100 * scene.checking[0].progress)}%"
+    if at_start(scene.level) is not None:  # D-349
+        return "Decided at its start: not judged"
     if scene.shareable:
         return f"Won in {scene.proof.ticks * DT:.2f} s, {scene.proof.parts} parts"
     return "Win it in Run first"  # D-321
@@ -579,10 +585,14 @@ def _about(scene: MakerScene, what: object) -> tuple[str, tuple[str, ...]]:
 
 
 def _draw_status(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """What a click or a key does now; why something was refused; what a passkey opened."""
+    """What a click or a key does now; why something was refused; that the level is decided
+    where its swimmer starts, while it is (D-349); what a passkey opened."""
     text, colour = scene.hint(), DIM_TEXT
+    start = at_start(scene.level)
     if scene.message:
         text, colour = scene.message, REFUSED
+    elif start is not None:
+        text, colour = UNJUDGED[start], REFUSED
     elif scene.said:
         text, colour = scene.said, LIT
     draw_status_line(screen, scene, fonts, text, colour)

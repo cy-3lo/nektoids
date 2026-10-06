@@ -2224,3 +2224,18 @@ may still be typed.
 Sources each on a thruster, 18 parts, won in 69 ticks, 0.575 s. Levels made by users come in no
 order, so chapter 4 is open from the start, as the tutorials are (D-335), and none of its levels
 gives a word; it has no hints (D-329). Its file is `4-made-by-users/dragster-ii.json`.
+
+**D-349 — 2026-10-06 — A level whose goals are won or lost where its swimmer starts is not judged: its run plays out its time, the Maker's status line says so and Share level refuses it. A level of bans alone is won when its time is up, none broken. Amends D-040, D-307, D-320.**
+The physicist found it in the Maker: Dragster II's goal turned to "Leave every ring", its
+swimmer starting out of the ring, and the run was over at once, "Done in 0.00 s", again after
+every rewind; to him it looked frozen, a failure he could not read (invariant 6). Goals are
+counted from where the swimmer starts, so a goal met there wins at the first tick: leave every
+ring or a ring from outside them, reach a ring from inside it; a ban broken there loses, "Stay
+inside the ring" from outside it. Such a level is now not judged: no banner at its start, Play
+runs it, and it ends when its time is up, the banner adding "Not judged: won where it starts".
+In the Maker the status line says "Won (or Lost) where the swimmer starts: move the start or
+change a goal." while it holds, and Share level refuses the level, whose run cannot be won. A
+ban was met while unbroken, so a level asking bans alone was won at once wherever it started;
+such a level is now won by keeping its bans until its time is up: "Reach none of the lights"
+alone is to keep off the light for the time allowed. No shipped level is decided at its start,
+a test says so, and none asks bans alone.

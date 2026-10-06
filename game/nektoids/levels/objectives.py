@@ -15,7 +15,9 @@ or (N, 1) when the targets are taken together; the run keeps something for each 
 marked), the time spent inside for stay. Each objective counts what it asks from what was kept,
 so many met out of so many needed (brief section 1: countable win conditions), and may lose the
 run. A run is lost as soon as an objective loses it, won when every objective is met, over when
-its time is up. Pure numbers, no pygame.
+its time is up; a level of bans alone is won when its time is up, none broken. A level whose
+goals are won or lost where its swimmer starts is not judged: its run plays out its time (D-349).
+Pure numbers, no pygame.
 """
 
 from __future__ import annotations
@@ -28,7 +30,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from nektoids.levels.lattice import Range
-from nektoids.sim.arena import LIGHT_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
 REACH = 1.05  # a light counts as reached this many times its touching distance away (D-043)
 EPS = 1e-9  # a timer this close to its seconds has reached them
@@ -325,16 +327,33 @@ def met(objective: Goal, kept: np.ndarray) -> bool:
 
 def outcome(level: Level, kept: Kept, tick: int, dt: float) -> Outcome | None:
     """How the run stands after `tick` ticks of `dt` [s]: lost as soon as an objective loses it,
-    won when the level has objectives and every one is met, else over when its time is up, else
-    still running (None)."""
+    won when every one is met, else over when its time is up, else still running (None). A level
+    of bans alone is won when its time is up, none broken; one whose goals are decided where its
+    swimmer starts is not judged, and only runs out of time (D-349)."""
+    judged = _judged(level, kept)
+    if judged is not None and at_start(level) is None:
+        return judged
+    if tick >= round(level.time_limit / dt):
+        bans = bool(level.objectives) and all(o.many is Count.NONE for o in level.objectives)
+        return Outcome.WON if bans and judged is None else Outcome.TIME_UP
+    return None
+
+
+def at_start(level: Level) -> Outcome | None:
+    """How the level's goals stand where its swimmer starts, before a tick: won or lost there,
+    which a level made in the Maker may be, and then no run of it is judged (D-349); else None."""
+    here, size = np.array([level.start[:2]], dtype=np.float64), np.full(1, BASE_RADIUS)
+    return _judged(level, begin(level, here, size))
+
+
+def _judged(level: Level, kept: Kept) -> Outcome | None:
+    """What the goals say of `kept`, time aside: lost if a ban is broken, won if every goal is
+    met and one at least is not a ban, else None."""
     pairs = list(zip(level.objectives, kept, strict=True))
     if any(o.lost(k) for o, k in pairs):
         return Outcome.LOST
-    if level.objectives and all(met(o, k) for o, k in pairs):
-        return Outcome.WON
-    if tick >= round(level.time_limit / dt):
-        return Outcome.TIME_UP
-    return None
+    asks = any(o.many is not Count.NONE for o in level.objectives)
+    return Outcome.WON if asks and all(met(o, k) for o, k in pairs) else None
 
 
 def settings(goal: Goal) -> tuple[tuple[str, Range], ...]:
