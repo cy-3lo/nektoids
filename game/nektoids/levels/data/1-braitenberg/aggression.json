@@ -7,15 +7,15 @@
   "items": [{"kind": "light", "at": [27, 21], "power": 8}],
   "board": {
     "zone": 19,
-    "stock": {"eye": 2, "thruster": 2},
+    "stock": {"eye": 2},
     "parts": [
-      {"kind": "eye", "cell": [-1, -1], "facing": "NE", "locked": false},
-      {"kind": "thruster", "cell": [2, -1], "facing": "E", "locked": false}
+      {"kind": "thruster", "cell": [1, -2], "facing": "E", "locked": true},
+      {"kind": "thruster", "cell": [-1, 2], "facing": "E", "locked": true}
     ],
-    "wires": [{"from": 0, "to": 1, "path": [[-1, -1], [0, -1], [1, -1], [2, -1]]}]
+    "wires": []
   },
   "time_limit": 20,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "SWORD",
-  "proof": {"board": "1jtrgg30ysHbVZY", "ticks": 1037, "parts": 4}
+  "proof": {"board": "1jkWQx9goWg6SD1", "ticks": 548, "parts": 4}
 }

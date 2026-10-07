@@ -1,6 +1,7 @@
 """Tutorials and hints (D-039). tutorial.py imports no pygame."""
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -64,6 +65,19 @@ def layout_on(screen: Screen, step=None, maker: bool = False):
 
 
 LEVELS = {level.title: level for level in arenas()}
+BEFORE = {  # Fear's and Aggression's boards as their tutorials (`tests/data`) were written for,
+    "Fear": {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []},
+    "Aggression": {  # before chapter 1's thrusters were locked on its sides (D-354)
+        "zone": 19,
+        "stock": {"eye": 2, "thruster": 2},
+        "parts": [
+            {"kind": "eye", "cell": [-1, -1], "facing": "NE", "locked": False},
+            {"kind": "thruster", "cell": [2, -1], "facing": "E", "locked": False},
+        ],
+        "wires": [{"from": 0, "to": 1, "path": [[-1, -1], [0, -1], [1, -1], [2, -1]]}],
+    },
+}
+LEVELS |= {title: replace(LEVELS[title], board=board) for title, board in BEFORE.items()}
 # The tutorials Fear and Aggression had until D-079, which built the board: the machinery they
 # need stays in tutorial.py, used by no level now, and is tested on them.
 BUILT = {

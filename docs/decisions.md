@@ -2270,3 +2270,20 @@ one may have them: chapters 0 to 3; chapter 4's, made by users, keep none, by it
 The ideas leave the level files, which take no `hints` key now; no file but the game's had one
 (D-310), so the format keeps its version 5. A tutorial's own shadow keeps its wires. Patience's
 parts take three lines, the most; the shadow's picture keeps its 140 px above the objectives.
+
+**D-354 — 2026-10-07 — Chapter 1's swimmers come with a thruster locked on each side, at (1, -2) and (-1, 2), straight above and below the centre on the board, both pushing forward, and no thruster to place; Aggression's board holds nothing else. New proofs for Aggression, Love and Orbit. Amends D-097, D-103, D-325, D-344.**
+The physicist's, watching a new player: with thrusters of his own to place, a player found
+better ways than Braitenberg's, a swimmer going sideways like a crab. Braitenberg's vehicles
+have their motors on their two sides; so have chapter 1's now, locked, the eyes and what wires
+them the player's. Aggression no longer comes half built: its free eye, thruster and wire, half
+of Fear's swimmer (D-103), go. The proofs, the scores to beat and the hints' shadows, are
+boards as Braitenberg drew them on those thrusters, picked from a search over the eyes' cells
+and facings: Fear's, the physicist's, already had them (2.03 s). Aggression: the eyes at the
+front corners, (2, -2) and (0, 2), looking ahead, crossed, 4.57 s, four parts, the fastest.
+Love, Braitenberg's 3a: the same eyes, each taken from its own Source in a Diff driving its own
+side, 7.28 s, eight parts; eyes turned in win sooner, 6.69 s, left for the player to find; a Source wired to two Diffs splits its beads between them, so one Source will not do,
+but one eye on the axis with a Source, both split over two Diffs, wins too, as the one
+thruster on the axis did, at the same tick. Orbit, the orbiter of D-097: the eye at the back
+left looking ahead on the left thruster, a Source on the right, 6.53 s, four parts. Tests that
+built on Fear's and Aggression's boards as they were, the old tutorials of `tests/data` and the
+board's text pinned on Fear's model, keep those boards as fixtures.

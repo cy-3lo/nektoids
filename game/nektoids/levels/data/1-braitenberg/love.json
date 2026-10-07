@@ -7,8 +7,11 @@
   "items": [{"kind": "light", "at": [25, 19], "power": 4}, {"kind": "mark", "at": [25, 19], "radius": 7}],
   "board": {
     "zone": 19,
-    "stock": {"eye": 2, "source": 2, "sum": 2, "difference": 2, "thruster": 2},
-    "parts": [],
+    "stock": {"eye": 2, "source": 2, "sum": 2, "difference": 2},
+    "parts": [
+      {"kind": "thruster", "cell": [1, -2], "facing": "E", "locked": true},
+      {"kind": "thruster", "cell": [-1, 2], "facing": "E", "locked": true}
+    ],
     "wires": []
   },
   "time_limit": 20,
@@ -17,5 +20,5 @@
     {"verb": "reach", "count": "none", "target": "light"}
   ],
   "passkey": "HEART",
-  "proof": {"board": "pe7UcDzhFWhwJH", "ticks": 1178, "parts": 4}
+  "proof": {"board": "1xGGeyhZtHEUuo23mWH6k5h0T", "ticks": 874, "parts": 8}
 }
