@@ -9,10 +9,12 @@ from nektoids.editor.buttons import (
     key_of,
     shown,
     states,
+    swaps,
 )
 from nektoids.editor.layout import board_view, make_layout
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import hex_disc, hex_distance, to_pixel
+from nektoids.levels.arenas import sandbox
 
 
 def test_every_button_and_part_has_a_place_of_its_own_off_the_largest_zone():
@@ -97,7 +99,19 @@ def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_focus(
     board.place(Kind.EYE, (1, 0))
     on_sum = look((0, 0))  # a sum focused: it moves, wires, may become a Double, never turns
     assert on_sum[Button.MOVE] is on_sum[Button.WIRE] is on_sum[Kind.DOUBLE] is State.LIT
-    assert on_sum[Button.TURN_LEFT] is on_sum[Kind.EYE] is on_sum[Kind.SUM] is State.GREYED
+    assert on_sum[Button.TURN_LEFT] is State.GREYED
+    assert on_sum[Kind.EYE] is on_sum[Kind.SUM] is State.PLAIN  # picked, for the clicks
     assert look((1, 0))[Button.TURN_RIGHT] is State.LIT  # an eye turns
     assert look()[Button.TURN_LEFT] is State.PLAIN  # an eye on the board: Turn may act
     assert look(chosen=Kind.EYE)[Kind.EYE] is State.CHOSEN
+
+
+def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
+    board = sandbox().new_board()
+    total, eye, thruster = (
+        board.place(k, c)
+        for k, c in ((Kind.SUM, (0, 0)), (Kind.EYE, (1, 0)), (Kind.THRUSTER, (2, 0)))
+    )
+    assert swaps(board, total.cell, frozenset(Kind)) == (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE)
+    assert swaps(board, eye.cell, frozenset({Kind.EYE, Kind.THRUSTER})) == ()  # no source here
+    assert swaps(board, thruster.cell, frozenset(Kind)) == ()  # alone in its group

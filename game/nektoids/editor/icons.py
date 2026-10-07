@@ -67,7 +67,6 @@ BUTTON_ICON = {  # the Board's buttons (D-401); a part's shows the part itself
 }
 LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.BOARD: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)
-    Drawer.TOOLS: "screwdriver-wrench",
     Drawer.PARTS: "puzzle-piece",
     Drawer.FILES: "floppy-disk",
     Drawer.DIAGNOSTIC: "stethoscope",

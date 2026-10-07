@@ -150,10 +150,6 @@ class EditButton(Enum):
     REDO = "redo"
 
 
-class BoardButton(Enum):  # Tools' last row, under undo and redo (D-321)
-    ERASE = "erase all"  # every wire and every part but the level's, off the board
-
-
 class GoalButton(Enum):  # Goals' last row, while the level asks fewer than two (D-308)
     ADD = "add"
 
@@ -175,6 +171,7 @@ class LevelButton(Enum):  # the accented switch at the bar's foot, to the other 
 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
     SAVE = "save"  # Copy a board: its text; the field to paste one is under it
+    ERASE = "erase all"  # under the field: every wire and part but the level's off (D-321, D-401)
     LEVEL = "level"  # the Editor's Files: Copy level, its JSON; a field under it (D-310)
     SHARE = "share"  # ... Share level: its JSON and its proof, once it is won (D-320)
 
@@ -190,7 +187,6 @@ class ViewButton(Enum):
 
 
 class Drawer(Enum):  # D-051
-    TOOLS = "tools"  # Write and Delete; undo and redo; the Wheel (D-068, D-069)
     PARTS = "parts"  # the parts the level hands out, and what each does
     FILES = "files"  # this session's winning boards, to put one back (D-059)
     DIAGNOSTIC = "diagnostic"  # the level, small, with the probe the Run preview runs at (D-058)
@@ -223,7 +219,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.BOARD: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.DIAGNOSTIC),  # no view to move
+    Env.BOARD: (Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC),  # the rest are buttons (D-401)
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
     Env.EDITOR: (
         Drawer.OBJECTS,
@@ -347,7 +343,6 @@ NEXT_TAB, LAST_TAB = "Tab", "Shift+Tab"  # what the tabs' tooltips show; F1 F2 F
 # the hand's (D-078).
 PASSKEY_KEY = "P"  # with Chapters open, a passkey to type, not Parts (D-075)
 DRAWER_KEYS = {
-    Drawer.TOOLS: "T",
     Drawer.PARTS: "P",
     Drawer.FILES: "F",
     Drawer.DIAGNOSTIC: "D",
@@ -394,9 +389,7 @@ class Layout:
     scroll: int  # how far the list is scrolled [px]
     scroll_max: int  # ... at most: how much of it does not fit [px]
     scroll_bar: Rect | None  # its track, while the rows do not fit
-    mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
-    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo; Objects' too
-    board_buttons: tuple[tuple[BoardButton, Rect], ...]  # ... then Tools' Erase all (D-321)
+    edit_buttons: tuple[tuple[EditButton, Rect], ...]  # the Editor's Objects: undo, redo
     action_at: Rect | None  # the Editor's: what a click does, atop the main screen
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
@@ -458,7 +451,7 @@ def make_layout(
     has, which Chapters lists in order, before the sandbox, as the Editor's Files does; goals:
     how many objectives the level has, at the foot of each of the run's drawers, before the time
     left; files: Files' groups, each a level's title and how many of its wins it lists (D-092);
-    wheel_folded: the picture of the cell folded, at the foot of Tools and of Parts; scroll: how
+    wheel_folded: the picture of the cell folded, at the foot of the Editor's Objects; scroll: how
     far the open drawer's rows are scrolled, kept within what they need (D-069, D-096);
     hint_lines: how many lines each hint taken shows under its row, in Hints, or None for a
     level with none to take; shadow: the shadow shows, in a picture under its row (D-078);
@@ -481,13 +474,11 @@ def make_layout(
     # The drawer's rows end here: 8 px clear of the objectives in the run, at its foot otherwise.
     floor = _goals_top(height, goals) - 16 if env is Env.RUN else height - FOOT_MARGIN
     rows = _Rows()
-    if drawer is Drawer.TOOLS:
-        rows.tools(height, wheel_folded, scroll, editor)
-    elif drawer is Drawer.PARTS and env is Env.EDITOR:
+    if drawer is Drawer.PARTS and env is Env.EDITOR:
         rows.editor_parts(folded)
         rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.PARTS:
-        rows.parts(folded, kinds, height, wheel_folded, scroll)
+        rows.parts(folded, kinds, floor, scroll)
     elif drawer is Drawer.OBJECTS:
         rows.objects(height, wheel_folded, scroll)
     elif drawer is Drawer.TEXT:
@@ -563,9 +554,7 @@ def make_layout(
         scroll=rows.scroll,
         scroll_max=rows.scroll_max,
         scroll_bar=rows.scroll_bar,
-        mode_buttons=tuple(rows.of(Mode)),
         edit_buttons=tuple(rows.of(EditButton)),
-        board_buttons=tuple(rows.of(BoardButton)),
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
         if env is Env.EDITOR  # the Editor's (D-314); the Board has its buttons (D-401)
         else None,
@@ -652,13 +641,12 @@ class _Rows:
         self,
         folded: frozenset[str],
         kinds: frozenset[Kind],
-        height: int,
-        wheel_folded: bool,
+        floor: int,
         scroll: int,
     ) -> None:
-        """The groups that fold, scrolled by `scroll` within the list's area; under it, down to
-        the drawer's foot, the cell (D-069)."""
-        bottom = self._wheel(height, wheel_folded) - SECTION_GAP
+        """The groups that fold, scrolled by `scroll` within the list's area, down to `floor`,
+        the drawer's foot: the Wheel left the Board (D-401)."""
+        bottom = floor
         groups = [
             (title, [kind for kind in group if kind in kinds]) for title, group in MENU_GROUPS
         ]
@@ -669,9 +657,9 @@ class _Rows:
     ) -> None:
         """Under its label, each level's wins, a group that folds and scrolls as Parts' do
         (D-092); at the drawer's foot, Save/Load: Copy a board, then a field to paste one into
-        (D-206)."""
+        (D-206), then Erase all (D-401)."""
         self.label("Wins this session")
-        foot = height - FOOT_MARGIN - TITLE_HEIGHT - 2 * ROW_PITCH
+        foot = height - FOOT_MARGIN - TITLE_HEIGHT - 3 * ROW_PITCH
         groups = [(title, [WinRow(g, k) for k in range(n)]) for g, (title, n) in enumerate(files)]
         self._folding(groups, folded, foot - SECTION_GAP, scroll)
         self.y = foot
@@ -679,6 +667,7 @@ class _Rows:
         self._row(FileButton.SAVE)
         self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH
+        self._row(FileButton.ERASE)
 
     def editor_parts(self, folded: frozenset[str]) -> None:
         """The Editor's Parts (D-315): under Board, its size; then the parts in the Board's Parts'
@@ -777,14 +766,6 @@ class _Rows:
         self.passkey, self.overview = _moved(self.passkey, up), _moved(self.overview, up)
         self.zoom_bar, self.level_field = _moved(self.zoom_bar, up), _moved(self.level_field, up)
         self.share_note = _moved(self.share_note, up)
-
-    def tools(self, height: int, wheel_folded: bool, scroll: int, editor: bool = False) -> None:
-        """Write and Delete, and on the sandbox Lock (D-319), then undo and redo, as rows,
-        scrolled above the Wheel if they do not fit; at the drawer's foot, the cell, as in Parts
-        (D-068, D-069)."""
-        modes = tuple(mode for mode in Mode if editor or mode is not Mode.LOCK)
-        edits = (*EditButton, BoardButton.ERASE)  # Erase all, under undo and redo (D-321)
-        self._over_wheel((("Mode", modes), ("Edit", edits)), height, wheel_folded, scroll)
 
     def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
         """The Editor's objects under their title, then undo and redo, which need none, as rows,
@@ -988,10 +969,6 @@ def main_view_for(drawer: Drawer | None) -> MainView:
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
     return next((d for d, rect in layout.drawer_buttons if contains(rect, point)), None)
-
-
-def board_button_at(layout: Layout, point: tuple[int, int]) -> BoardButton | None:
-    return _row_at(layout, layout.board_buttons, point)
 
 
 def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
@@ -1219,10 +1196,6 @@ def action_at(layout: Layout, point: tuple[int, int]) -> Shown | None:
     """The action shown atop the main screen, under `point`: a click on it opens Tools."""
     shown = layout.action_at is not None and contains(layout.action_at, point)
     return Shown.ACTION if shown else None
-
-
-def mode_button_at(layout: Layout, point: tuple[int, int]) -> Mode | None:
-    return _row_at(layout, layout.mode_buttons, point)
 
 
 def level_button_at(layout: Layout, point: tuple[int, int]) -> LevelButton | None:

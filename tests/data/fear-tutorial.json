@@ -38,38 +38,38 @@
       ]
     },
     {
-      "show": {"drawer": "tools"},
+      "show": {"area": "board"},
       "say": [
-        "Tools: Write builds and Delete removes, with",
-        "Undo and Redo. At its foot, the Wheel: what", "can be done on the cell you click."
+        "Round the board, its buttons: Select, Move,",
+        "Turn, Wire, Undo, Redo, Delete, and a button", "for each part the level hands out."
       ]
     },
     {
-      "show": [{"cell": [2, -1]}, {"wheel": "eye"}],
+      "show": [{"cell": [2, -1]}, {"button": "eye"}],
       "until": {"placed": {"kind": "eye", "cell": [2, -1]}},
       "say": [
         "The faint shapes show where each part goes",
-        "and which way it points. Click this cell, then", "the Eye on the Wheel, or press 1."
+        "and which way it points. Click this cell, then", "the Eye's button, or press 1."
       ]
     },
     {
-      "show": [{"wheel": "turn left"}, {"cell": [2, -1]}],
+      "show": [{"button": "turn left"}, {"cell": [2, -1]}],
       "until": {"facing": {"cell": [2, -1], "facing": "NW"}},
       "say": [
         "It looks forward, but this eye must look back",
-        "and to the left: Turn left on the Wheel, or L,",
+        "and to the left: the Turn left button, or L,",
         "twice. It turns by 60 degrees each time."
       ]
     },
     {
-      "show": [{"cell": [1, 1]}, {"wheel": "eye"}, {"wheel": "turn right"}],
+      "show": [{"cell": [1, 1]}, {"button": "eye"}, {"button": "turn right"}],
       "until": [
         {"placed": {"kind": "eye", "cell": [1, 1]}},
         {"facing": {"cell": [1, 1], "facing": "SW"}}
       ],
       "say": [
         "The second eye goes on this cell, looking back",
-        "and to the right: the Eye on the Wheel, or 1,", "then Turn right, or R, twice."
+        "and to the right: the Eye's button, or 1,", "then Turn right, or R, twice."
       ]
     },
     {

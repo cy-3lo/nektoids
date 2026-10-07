@@ -50,7 +50,6 @@ from nektoids.editor.hints import SHADOW as SHADOW_HINT
 from nektoids.editor.icons import (
     BUTTON_ICON,
     DRAWER_ICON,
-    EDIT_ICON,
     KIND_ICON,
     LEVEL_ICON,
     MODE_ICON,
@@ -59,25 +58,19 @@ from nektoids.editor.icons import (
     Icons,
 )
 from nektoids.editor.layout import (
-    ACTION_WIDTH,
     BAR_WIDTH,
     CAPTION_HEIGHT,
     DIAGNOSTIC_MAP,
     DRAWER_KEYS,
-    EDIT_KEYS,
     HINT_LINE,
     INFO_AT,
     LEVEL_KEYS,
-    LOCK_KEY,
     MARGIN,
-    MODE_KEY,
     PALETTE_TITLE,
     PASSKEY_KEY,
     SCREEN,
     STATUS_HEIGHT,
     TABS_HEIGHT,
-    WHEEL_TITLE,
-    BoardButton,
     Drawer,
     EditButton,
     FileButton,
@@ -122,7 +115,6 @@ from nektoids.editor.palette import (
     GREYED_FACE,
     GRID_LINE,
     HOVER,
-    ICON_EDGE,
     INTAKE,
     KEY_DARK,
     KEY_GREYED,
@@ -154,7 +146,6 @@ from nektoids.editor.parts import NAME, info, ports
 from nektoids.editor.probe import level_view
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
-from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -178,13 +169,8 @@ TIP = {
     ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    Mode.WRITE: "Click a cell: Tools and Parts show its Wheel. Click two parts to wire them, or"
-    " drag one to move it.",
-    Mode.DELETE: "A click removes the part under it, with its wires, or the wire under it.",
-    BoardButton.ERASE: "Takes every wire and every part off the board, but the level's own; Undo"
+    FileButton.ERASE: "Takes every wire and every part off the board, but the level's own; Undo"
     " brings them back.",
-    Mode.LOCK: "A click on a part makes it the level's: the player can neither move nor take it"
-    " off, and it uses no stock. A click on one of the level's parts frees it.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
     " into Paste a board, under this row, to bring it back, on this level or another.",
     FileButton.LEVEL: "Copies the level as text, its JSON, as the game's own level files hold it:"
@@ -194,7 +180,6 @@ TIP = {
     " pasted, the proof is run again, and the level is cleared if it wins.",
     LevelButton.RUN: "Run",
     LevelButton.BOARD: "Back to the board",
-    Drawer.TOOLS: "Tools",
     Drawer.PARTS: "Parts",
     Drawer.FILES: "Files",
     Drawer.DIAGNOSTIC: "Diagnostic",
@@ -225,7 +210,7 @@ HINT = (  # Hints' rows, in NAMES' order: their icon, a speech bubble, and what 
     ("comment", "The parts one way to win takes."),  # says (D-078, D-088, D-353)
     ("comment", "Where they go and the way they face, faint: here and on the board."),
 )
-BUILD_IT = ("Go to", Drawer.TOOLS, "Tools or", Drawer.PARTS, "Parts")  # under the shadow (D-088)
+BUILD_IT = ("Build it on the board",)  # under the shadow (D-088), with its buttons (D-401)
 ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's name
     Tool.ADD: "Add",
     Tool.WIRE: "Wire",
@@ -236,11 +221,8 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Tool.SWAP: "Swap",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    Mode.WRITE: "Write",
-    Mode.DELETE: "Delete",
-    Mode.LOCK: "Lock",
     FileButton.SAVE: "Copy a board",
-    BoardButton.ERASE: "Erase all",
+    FileButton.ERASE: "Erase all",
     FileButton.LEVEL: "Copy level",
     FileButton.SHARE: "Share level",
     GoalButton.ADD: "Add a goal",
@@ -317,14 +299,11 @@ def draw(
     (main or _draw_board)(screen, scene, fonts)
     if scene.main is MainView.DIAGRAM:  # the Run preview hides them: nothing to edit there
         _draw_buttons(screen, scene, fonts)
-    if scene.layout.action_at is not None and scene.main is MainView.DIAGRAM:  # D-068, D-069
-        _draw_action(screen, scene, fonts)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
     draw_drawer(screen, scene, fonts, _draw_rows, _draw_foot)
     draw_tooltip(screen, scene, fonts)
-    _draw_wheel_tip(screen, scene, fonts)
     draw_info(screen, scene, fonts, _about)
     if scene.dragging and scene.picked is not None:
         size = scene.view.size
@@ -424,6 +403,9 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
             fonts.icons.draw(
                 screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), GREYED if greyed else TEXT
             )
+    for b, centre in places.items():  # a tutorial's target, pulsing (D-337)
+        if f"button:{b.value}" in scene.lit:
+            pygame.draw.polygon(screen, scene.lit_ink, hexagon(centre, size), 3)
     for b, (x, y) in places.items():
         if looks[b] is State.LIT and scene.settings.key_hints:
             key = fonts.label.render(key_of(b, kinds), True, DARK)
@@ -432,46 +414,6 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
             left = scene.board.remaining(b)
             count = fonts.small.render(str(left), True, GREYED if left == 0 else TEXT)
             tag(screen, (x, y + size - TAG_INWARD), count, BAR, DIM_TEXT)
-
-
-def _draw_action(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """Atop the main screen: what the next click or Enter does (D-068), as a lit button with its
-    key beside it while key hints are on, and a line under it saying what it is. A click on it
-    opens Tools. Beside it, in the accent, its name and its key (D-069)."""
-    box = pygame.Rect(scene.layout.action_at)
-    what, key = scene.action()
-    draw_disc(screen, fonts, box.center, what, ACTIVE, LIT, ACTION_WIDTH / 2)  # as the Wheel's
-    shown = fonts.text.render(_named(scene, what, key), True, LIT)
-    at = shown.get_rect(midleft=(box.right + 10, box.centery))
-    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
-    screen.blit(shown, at)
-    says = fonts.small.render(_action_says(scene, what), True, TEXT)
-    at = says.get_rect(midtop=(box.centerx, box.bottom + 8))  # its patch clear of the disc
-    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
-    screen.blit(says, at)
-
-
-ACTION_SAYS = {  # under the action atop the main screen: what it is (D-068)
-    Mode.WRITE: "Write: a click on a cell shows what can be done there",
-    Mode.DELETE: "Delete: a click removes the part or the wire under it",
-    Mode.LOCK: "Lock: a click makes the part the level's, or frees it",
-    Tool.WIRE: "Wire: the next part clicked is wired to this one",
-    Tool.MOVE: "Move: the part goes to the next empty cell clicked, or with the arrows",
-    Tool.TURN_LEFT: "Turn left: the part turns 60° counter-clockwise",
-    Tool.TURN_RIGHT: "Turn right: the part turns 60° clockwise",
-    Tool.DELETE: "Delete: the part goes, and its wires with it",
-    Tool.SWAP: "Swap: the part becomes another of its group",
-}
-
-
-def _action_says(scene: BoardScene, what: Kind | Tool | Mode) -> str:
-    if not isinstance(what, Kind):
-        return ACTION_SAYS[what]
-    if scene.swapping:
-        return f"{NAME[what]}: Enter swaps the part for one"
-    if scene.picked is what:
-        return f"{NAME[what]}: a click on a cell places one there"
-    return f"{NAME[what]}: Enter places one on the cell"
 
 
 def draw_disc(
@@ -494,131 +436,6 @@ def _action_icon(what: Tool | Mode | Piece) -> str:
     if isinstance(what, Piece):
         return PIECE_ICON[what]
     return TOOL_ICON[what]
-
-
-def _draw_wheel(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """At the foot of Tools and of Parts (D-068, D-069): a rule, The Wheel's title, which folds;
-    unless folded, the Wheel: the focused cell, large, as the board has it, its icons round it, a
-    line under it saying what the cell holds."""
-    layout = scene.layout
-    fx, fy, fw, fh = layout.wheel_fold
-    pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
-    draw_fold_title(screen, fonts, WHEEL_TITLE, layout.wheel_fold, scene.wheel_folded, DIM_TEXT)
-    if layout.wheel_view is None:
-        return
-    x, y, w, h = layout.wheel_view
-    centre = scene.cell_centre()
-    corners = _small_hexagon(centre, WHEEL_HEX)
-    focused = scene.focused is not None
-    if focused:
-        pygame.draw.polygon(screen, ACTIVE, corners)
-        pygame.draw.polygon(screen, LIT, corners, 2)
-        node = scene.board.node_at(scene.focused)
-        if node is not None:
-            fill = DOOMED if node.id == scene.doomed()[0] else None
-            angle = placed_angle(node.kind, node.facing)
-            draw_part(screen, fonts, node.kind, angle, centre, WHEEL_HEX, node.locked, fill)
-    else:
-        pygame.draw.polygon(screen, RULE, corners, 1)
-    wheel = scene.wheel()
-    k = scene.choice if scene.going_round() and scene.choice is not None else len(wheel)
-    chosen = wheel[k] if k < len(wheel) else None
-    in_hand = scene.tool if scene.tool in (Tool.WIRE, Tool.MOVE) else None
-    radius = ICON * WHEEL_HEX
-    for slot in sorted(wheel, key=lambda s: -s.depth):  # down a pile, the further first, under
-        if slot.depth:  # piled: an empty disc, its edge showing past the one over it
-            turning = (slot.at[0] > centre[0]) == (scene.piling > 0) and scene.piling != 0
-            edge = LIT if turning else ICON_EDGE
-            draw_disc(screen, fonts, slot.at, None, BUTTON, edge, radius)
-            continue
-        lit = slot == chosen or slot.what is in_hand
-        fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
-        edge = LIT if lit else ICON_EDGE
-        if f"wheel:{slot.what.value}" in scene.lit:  # a tutorial's target, pulsing (D-338)
-            edge = scene.lit_ink
-        draw_disc(screen, fonts, slot.at, slot.what, fill, edge, radius)
-    lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
-    lit = scene.wheel_lit()  # the icon chosen or in hand, named in the accent (D-069)
-    says, ink = (_named(scene, lit.what, lit.key), LIT) if lit else (_cell_says(scene), DIM_TEXT)
-    line = fonts.small.render(_fitted(fonts.small, says, w), True, ink)
-    screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
-
-
-def _draw_tools(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """Tools' rows (D-068): Write and Delete, undo and redo."""
-    layout = scene.layout
-    for mode, rect in layout.mode_buttons:
-        status = ("key", LOCK_KEY if mode is Mode.LOCK else MODE_KEY)
-        icon = MODE_ICON[mode]
-        draw_row(
-            screen, scene, fonts, rect, mode, ROW_NAME[mode], status, mode is scene.mode, icon=icon
-        )
-    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
-    for button, rect in layout.edit_buttons:
-        status = ("key", EDIT_KEYS[button].replace("+", " "))
-        icon = EDIT_ICON[button]
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            ROW_NAME[button],
-            status,
-            False,
-            not can[button],
-            icon=icon,
-        )
-    empty = not any(not n.locked for n in scene.board.nodes.values()) and not scene.board.wires
-    for button, rect in layout.board_buttons:  # Erase all, greyed with nothing to erase (D-321)
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            ROW_NAME[button],
-            ("none", ""),
-            False,
-            empty,
-            icon="eraser",
-        )
-
-
-def _named(scene: BoardScene, what: Kind | Tool | Mode, key: str) -> str:
-    """An action, a Wheel's icon, named as the bar's tooltips name a drawer: its name, then its
-    key while the key hints are on (D-069)."""
-    if isinstance(what, Kind):
-        name = NAME[what]
-    else:
-        name = ROW_NAME[what]
-    return f"{name} ({key})" if scene.settings.key_hints else name
-
-
-def _draw_wheel_tip(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """The Wheel's icon under the mouse, named in a tooltip as the bar's are, after the same
-    rest (D-069), centred over the icon, kept clear of the bar."""
-    slot = scene.wheel_tip()
-    if slot is None:
-        return
-    text = _named(scene, slot.what, slot.key)
-    half = fonts.text.size(text)[0] // 2 + 8  # the box's half width
-    x = max(round(slot.at[0]), BAR_WIDTH + 4 + half)
-    draw_tip(screen, fonts, text, midbottom=(x, round(slot.at[1] - ICON * WHEEL_HEX - 10)))
-
-
-def _cell_says(scene: BoardScene) -> str:
-    """The line under the drawer's picture of the cell."""
-    if scene.mode is Mode.DELETE:
-        return "Click what goes"
-    if scene.focused is None:
-        return "Click a cell"
-    node = scene.board.node_at(scene.focused)
-    if node is None:
-        return "An empty cell" if scene.offered() else "Empty: no part left"
-    if scene.swapping:
-        return f"Swap the {NAME[node.kind].lower()} for:"
-    return NAME[node.kind] + (", the level's" if node.locked else "")
 
 
 def _draw_wire(screen, view: View, path: tuple[Cell, ...], colour, reach: float = 0.3) -> None:
@@ -964,10 +781,7 @@ def _small_hexagon(centre: tuple[float, float], radius: float) -> list[tuple[flo
 
 
 def _draw_foot(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """What stays at the foot of the Board's drawers: the Wheel, in Tools and Parts; the board
-    as text, in Files."""
-    if scene.layout.wheel_fold is not None:
-        _draw_wheel(screen, scene, fonts)
+    """What stays at the foot of the Board's drawers: the board as text, in Files."""
     if scene.layout.board_field is not None:
         _draw_board_text(screen, scene, fonts)
 
@@ -983,8 +797,12 @@ def _draw_board_text(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         if y + h <= top or y >= top + room:  # outside the wins' list, which is clipped
             shown = fonts.label.render(title.upper(), True, DIM_TEXT)
             screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
-    for button, rect in layout.file_buttons:
-        draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="copy")
+    empty = not any(not n.locked for n in scene.board.nodes.values()) and not scene.board.wires
+    for button, rect in layout.file_buttons:  # Erase all greyed with nothing to erase (D-321)
+        erase = button is FileButton.ERASE
+        icon, greyed = ("eraser", empty) if erase else ("copy", False)
+        name, none = ROW_NAME[button], ("none", "")
+        draw_row(screen, scene, fonts, rect, button, name, none, False, greyed, icon=icon)
     loading = scene.loading
     text, caret = (loading.text, loading.caret) if loading is not None else ("", None)
     draw_field(screen, fonts, layout.board_field, text, caret, "paste", "Paste a board")
@@ -993,8 +811,6 @@ def _draw_board_text(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
 def _draw_rows(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
     """The Board's own drawers' rows: Tools, Parts, Files; Diagnostic's map."""
     layout, board = scene.layout, scene.board
-    if layout.drawer is Drawer.TOOLS:
-        _draw_tools(screen, scene, fonts)
     if layout.drawer is Drawer.DIAGNOSTIC:
         _draw_diagnostic(screen, scene, fonts)
     if layout.drawer is Drawer.FILES:

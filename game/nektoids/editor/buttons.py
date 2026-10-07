@@ -18,8 +18,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from enum import Enum
 
-from nektoids.editor.layout import EDIT_KEYS, LOCK_KEY, TOOL_KEYS, EditButton, Tool
-from nektoids.editor.wheel import part_key, swaps
+from nektoids.editor.layout import EDIT_KEYS, LOCK_KEY, MENU_GROUPS, TOOL_KEYS, EditButton, Tool
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import Cell, from_pixel, hex_disc
 
@@ -82,6 +81,26 @@ KEYS = {  # each button's key; a part's is its number among those handed out (`k
 }
 
 
+def part_key(kind: Kind, kinds: frozenset[Kind]) -> str:
+    """A part's number key: its place among the parts the level hands out, as in Parts."""
+    ordered = [k for _, group in MENU_GROUPS for k in group if k in kinds]
+    return str(ordered.index(kind) + 1)
+
+
+def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
+    """What the part on `cell` may be swapped for (D-068): the other parts of its group in Parts
+    that the level still hands out, in Parts' order."""
+    node = board.node_at(cell)
+    if node is None or node.locked:
+        return ()
+    ordered = [k for _, group in MENU_GROUPS for k in group if k in kinds]
+    return tuple(
+        k
+        for k in ordered
+        if k.category is node.kind.category and k is not node.kind and board.remaining(k) != 0
+    )
+
+
 def shown(kinds: frozenset[Kind], editor: bool) -> tuple[Button | Kind, ...]:
     """The buttons a level shows, in PLACES' order: Lock on the board reached from the Editor
     only; the parts the level hands out."""
@@ -128,11 +147,11 @@ def states(
         if b is Button.SELECT:
             return None
         if isinstance(b, Kind):
-            if node is not None:
-                return b in swaps(board, node.cell, kinds)
+            if node is not None and b in swaps(board, node.cell, kinds):
+                return True  # the part focused becomes one
             if board.remaining(b) == 0:
                 return False
-            return True if on_cell else None
+            return True if on_cell else None  # else it is picked, for the clicks on the board
         if on_cell:
             return False  # an empty cell: nothing to move, turn, wire, delete or lock
         if node is not None:
