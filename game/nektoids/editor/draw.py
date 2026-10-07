@@ -30,6 +30,7 @@ import pygame
 
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.buttons import (
+    BUTTON_INSET,
     ICON_ON_BUTTON,
     PART_SMALLER,
     PLACES,
@@ -85,6 +86,7 @@ from nektoids.editor.layout import (
     FileButton,
     GoalButton,
     HintRow,
+    Layout,
     LevelButton,
     MainView,
     Mode,
@@ -109,6 +111,7 @@ from nektoids.editor.palette import (
     BODY,
     BODY_OUTLINE,
     BUTTON,
+    CLEAR,
     COMPONENT,
     DARK,
     DIM_TEXT,
@@ -306,10 +309,7 @@ def draw(
     """The Board: its main screen, the board on its grid, or what `main(screen, scene, fonts)`
     draws there instead (the Run preview, D-058); then the frame round it."""
     screen.fill(BACKGROUND)
-    (main or _draw_board)(screen, scene, fonts)
-    if scene.main is MainView.DIAGRAM:  # the Run preview hides them: nothing to edit there
-        _draw_buttons(screen, scene, fonts)
-        _draw_edges_by_buttons(screen, scene)
+    (main or _draw_board)(screen, scene, fonts)  # the Run preview hides the buttons
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
@@ -343,9 +343,13 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             pygame.draw.polygon(screen, mix(ZONE, scene.lit_ink, FOCUS_TINT), hexagon)
         else:
             pygame.draw.polygon(screen, HOVER if cell == scene.hover else ZONE, hexagon)
-        pygame.draw.polygon(screen, GRID_LINE if cell in zone else OUTSIDE_LINE, hexagon, 1)
     if board.cells:
-        draw_body(screen, board.cells, view.size, view.origin)
+        draw_body(screen, board.cells, view.size, view.origin, BODY_WIDTH)
+    screen.set_clip(None)
+    if scene.main is MainView.DIAGRAM:  # the Run preview hides them: nothing to edit there
+        _draw_buttons(screen, scene, fonts)
+    screen.set_clip(scene.layout.board_area)  # the grid over the buttons, under wires and parts
+    screen.blit(_grid(scene.layout, view, board.cells, screen.get_size()), (0, 0))
 
     wired = {(board.nodes[w.source].cell, board.nodes[w.target].cell) for w in board.wires}
     for start, end in scene.ghost_wires:  # the model's wires, faint, until each is made (D-074)
@@ -386,14 +390,34 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
     screen.set_clip(None)
 
 
-def _draw_edges_by_buttons(screen: pygame.Surface, scene: BoardScene) -> None:
-    """The lines of the zone's cells, over the buttons and their shadows, which cover them
-    otherwise: a cell is not to be mixed up with a button."""
-    view = scene.view
-    screen.set_clip(scene.layout.board_area)
-    for cell in scene.board.cells:
-        pygame.draw.polygon(screen, GRID_LINE, _hexagon(view, cell), 1)
-    screen.set_clip(None)
+BODY_WIDTH = 5  # the swimmer's symbol on the Board, under the grid [px]
+GRID_WIDTH = 2  # the cells' sides, the zone's and the pattern's round it [px]
+_grids: dict[tuple, pygame.Surface] = {}
+
+
+def _grid(layout: Layout, view: View, zone, size: tuple[int, int]) -> pygame.Surface:
+    """The grid, each side of a cell once, GRID_WIDTH px, anti-aliased: the pattern's sides,
+    then the zone's over them, lighter; made once for a board and a view, then kept."""
+    key = (layout.board_area, view, frozenset(zone), size)
+    layer = _grids.get(key)
+    if layer is not None:
+        return layer
+    layer = pygame.Surface(size, pygame.SRCALPHA)
+    layer.fill(CLEAR)
+    sides: dict[tuple, bool] = {}
+    for cell in visible_cells(layout, view):
+        corners = _hexagon(view, cell)
+        for k in range(6):
+            ends = (corners[k], corners[(k + 1) % 6])
+            key_ = tuple(sorted(tuple(round(v, 1) for v in end) for end in ends))
+            sides[key_] = sides.get(key_, False) or cell in zone
+    for in_zone, colour in ((False, OUTSIDE_LINE), (True, GRID_LINE)):
+        for (a, b), z in sides.items():
+            if z is in_zone:
+                pygame.draw.aaline(layer, colour, a, b, GRID_WIDTH)
+    _grids.clear()  # one board on screen at a time
+    _grids[key] = layer
+    return layer
 
 
 def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
@@ -403,11 +427,12 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
     size, origin, kinds = scene.view.size, scene.view.origin, scene.layout.kinds
     looks = scene.button_states()
     places = {b: to_pixel(PLACES[b], size, origin) for b in looks}
-    shadows(screen, [c for b, c in places.items() if looks[b] is not State.CHOSEN], size)
+    key_size = size - BUTTON_INSET  # clear of the grid's line
+    shadows(screen, [c for b, c in places.items() if looks[b] is not State.CHOSEN], key_size)
     for b, centre in places.items():
         look = looks[b]
         pygame.draw.polygon(
-            screen, ACTIVE if look is State.CHOSEN else OUTSIDE, hexagon(centre, size)
+            screen, ACTIVE if look is State.CHOSEN else OUTSIDE, hexagon(centre, key_size)
         )
         light, dark = {
             State.PLAIN: (KEY_LIGHT, KEY_DARK),
@@ -415,7 +440,7 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
             State.CHOSEN: (KEY_DARK, LIT),  # pressed in: the light falls on the far sides
             State.GREYED: (KEY_GREYED, KEY_DARK),
         }[look]
-        bevel(screen, centre, size, light, dark)
+        bevel(screen, centre, key_size, light, dark)
         at = (centre[0] + 1, centre[1] + 1) if look is State.CHOSEN else centre
         greyed = look is State.GREYED
         if isinstance(b, Kind):
@@ -428,7 +453,7 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
             )
     for b, centre in places.items():  # a tutorial's target, pulsing (D-337)
         if f"button:{b.value}" in scene.lit:
-            pygame.draw.polygon(screen, scene.lit_ink, hexagon(centre, size), 3)
+            pygame.draw.polygon(screen, scene.lit_ink, hexagon(centre, key_size), 3)
     for b, (x, y) in places.items():
         if looks[b] is State.LIT and scene.settings.key_hints:
             key = fonts.label.render(key_of(b, kinds), True, DARK)
@@ -488,10 +513,10 @@ def _draw_arrow(screen, at, angle: float, half: float, colour) -> None:
     pygame.draw.polygon(screen, colour, [tip, left, right])
 
 
-def draw_body(screen, zone: list[Cell], size: float, origin) -> None:
+def draw_body(screen, zone: list[Cell], size: float, origin, width: int = 3) -> None:
     """The swimmer's symbol behind a board, a corner forward (E): the body is the board (D-018)."""
     centre, radius = body_circle(zone, size, origin)
-    draw_symbol(screen, BODY_OUTLINE, centre, radius, 0.0, 3)
+    draw_symbol(screen, BODY_OUTLINE, centre, radius, 0.0, width)
 
 
 def draw_symbol(screen, colour, centre, radius: float, heading: float, width: int) -> None:

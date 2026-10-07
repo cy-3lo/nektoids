@@ -172,7 +172,7 @@ OUTSIDE_LINE = mix(P.deep, P.line, 0.3)
 GRID_LINE = mix(
     P.line, P.dim, 0.5
 )  # the zone's cells: lighter than the buttons' ground, not to mix with them
-BODY_OUTLINE = P.line  # the swimmer's symbol behind the board: which way is forward
+BODY_OUTLINE = P.raised  # the swimmer's symbol behind the board, a shade under the grid
 COMPONENT = P.parts
 LOCK_RING = mix(P.parts, P.bright, 0.4)
 EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)

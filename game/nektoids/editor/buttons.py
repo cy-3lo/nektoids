@@ -57,6 +57,7 @@ PLACES: dict[Button | Kind, Cell] = {
 }
 LARGEST_ZONE = 3  # the sandbox's, 37 cells (D-102, D-313)
 FRAME: tuple[Cell, ...] = (*hex_disc(LARGEST_ZONE), *PLACES.values())  # what the view shows whole
+BUTTON_INSET = 2  # a button inside its cell, clear of the grid's 2 px line [px]
 PART_SMALLER = 2.0  # a part on its button, against its darker ground making it look larger [px]
 ICON_ON_BUTTON = 0.75  # a tool's icon, over the hex size: about a part's reach
 TAG_INWARD = 6  # a key's tag and a count's, from the corner towards the centre [px]
