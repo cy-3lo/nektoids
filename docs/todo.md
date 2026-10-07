@@ -5,7 +5,8 @@ is left goes here, in the order it unblocks the rest; the PR that does an item r
 what was done is in git and in [`decisions.md`](decisions.md). Sections keep their numbers,
 which the decision log cites. Ideas for later go in [`ideas.md`](ideas.md). §11 is stage 1, a
 level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300); §13, the
-chapters, levels and tutorials made with it, done (D-325 to D-341); §14, the repository's face.
+chapters, levels and tutorials made with it, done (D-325 to D-341); §14, the repository's face;
+§15 is stage 2, the Board, built beside stage 1 on `stage/2-board` (D-400).
 
 ## 11. A level maker (stage 1, D-300)
 
@@ -82,7 +83,7 @@ chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users
   and its "collective behaviour", come from the jam's brief, when the game was to have many
   swimmers; it has one.
 
-## 15. The Board, built with fewer moves
+## 15. The Board, built with fewer moves (stage 2, D-400)
 
 - [ ] **A new Board**, the physicist's: players build their control boards in a more intuitive
   way, with less back and forth of the mouse or the keyboard.
@@ -111,11 +112,10 @@ chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users
       through them.
     - Turning is easy with the mouse wheel.
   - To settle before the plan (Claude's review, 2026-10-07):
-    - Scope: stage 1 is the level maker and its levels (D-300); a new Board is not in its list.
-      A decision puts it in stage 1, before v1.1, or opens a stage of its own (D-105).
+    - Scope, settled: a stage of its own, stage 2, shipped with v1.1 or after (D-400).
     - The size: with a drawer open the board has 664 × 554 px, the height binding. The 37 cells
-      with buttons right round them fit at 40 px, today's size; with an empty ring between,
-      at 32 px.
+      with buttons right round them fit at 40 px, today's size, only if the S side holds none:
+      the ring is 560 px tall, 500 without its S row. With an empty ring between, at 32 px.
     - The drawers: Tools and Parts become buttons. Where then go each part's count (2/2), its
       info box, Erase all, Swap (a Part on a selected part?), and the Wheel (D-068, D-070)?
       Diagnostic's Run preview on the main screen (D-058): the buttons hidden or kept?

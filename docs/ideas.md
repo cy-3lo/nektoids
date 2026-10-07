@@ -8,18 +8,20 @@ log as "post-jam".
 ## The order after the jam (D-105)
 
 The jam build shipped as v1.0 (D-106). Listen still: Camille's views and strangers' runs on
-itch.io (brief §3: do five strangers finish the real level?) may reorder what follows. Five
-stages, in this order.
+itch.io (brief §3: do five strangers finish the real level?) may reorder what follows. Six
+stages, in this order (D-105, D-400).
 Each opens with a decision that sets its scope, as the scope lock did for the jam, and each
 brings its own levels.
 
 0. **Foundations**: one table of part kinds, sensors in general, a level format with a version,
    saving and a board as text. Done (D-200 to D-206, #46).
 1. **A level maker**, for us and Camille first, then for players. Under way (D-300).
-2. **Memory**: tanks, valves, loops in the editor, lights that change in time.
-3. **Flows and flow sensing**: streams and vortices as items, a swimmer they carry, a sensor
+2. **The Board**, built with fewer moves: hex buttons round a board of one fixed size. Under
+   way beside stage 1 (D-400).
+3. **Memory**: tanks, valves, loops in the editor, lights that change in time.
+4. **Flows and flow sensing**: streams and vortices as items, a swimmer they carry, a sensor
    that reads them.
-4. **Actions other than moving**: a lamp first, and something that reads it.
+5. **Actions other than moving**: a lamp first, and something that reads it.
 
 Collectives, sensor layout, the score's histograms, sound and art come after; their sections
 close the file.
@@ -39,7 +41,11 @@ Later, from the board's locked parts (D-319): a level that starts with wires, or
 the player may move, as Diagnostic's prewired eye and thruster; the Maker places locked parts
 only, the player wiring them.
 
-## 2. Memory: the graph's vocabulary
+## 2. The Board
+
+In the todo, §15, since D-400: built on `stage/2-board`.
+
+## 3. Memory: the graph's vocabulary
 
 - **Tanks**: reservoirs that store signal, the memory (D-015, `.claude/rules/graph.md`). Their
   law (the physicist, 2026-10-04): T dh/dt = in − h, and the tank sends out its level h, with
@@ -78,7 +84,7 @@ only, the player wiring them.
     turns colours round, r → g → b → r.
   - Colours come from coloured lights, with eyes that send each colour as they receive it, and
     from Sources of a colour. They go to thrusters, which push with all their channels or with
-    their own colour only, and to the lamp (stage 4), which shines the colour it is fed, so a
+    their own colour only, and to the lamp (stage 5), which shines the colour it is fed, so a
     swimmer can signal.
   - Levels: go to the red light and flee the blue one; two lights a colour-blind circuit cannot
     tell apart.
@@ -90,7 +96,7 @@ only, the player wiring them.
     commonest colour-blind confusion. A bead shape for each colour as well?
   - Colours come in a chapter of their own, never in the first levels.
 
-## 3. Flows, and the other senses (brief §2)
+## 4. Flows, and the other senses (brief §2)
 
 - **Stokes flow round the swimmers.** Each swimmer a moving singularity (a stresslet ~1/r, or a
   source dipole ~1/r² for a local neighbourhood), the field summed analytically at each sensor.
@@ -123,7 +129,7 @@ only, the player wiring them.
   coarse grid. Two sensors give a gradient, one only a level.
 - **Optical flow**: it conflates egomotion with others' motion, and the player must subtract it.
 
-## 4. Actions other than moving
+## 5. Actions other than moving
 
 - **A lamp** (the physicist, 2026-10-04): a part whose rate sets the power of a light at its
   mount, read as D-019 reads lights: 1/r, a cosine, shadows; a light that moves, in
@@ -139,7 +145,7 @@ only, the player wiring them.
     (`.claude/rules/simulation.md`), but bodies with different graphs are new, and the first
     step to Collectives.
 - **Other actions**: loose discs to push (contacts exist, D-022); a pump, a source or a sink in
-  stage 3's flow that other bodies feel (the brief's reciprocal sensing).
+  stage 4's flow that other bodies feel (the brief's reciprocal sensing).
 
 ## Collectives
 

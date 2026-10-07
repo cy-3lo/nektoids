@@ -28,9 +28,9 @@ Claude writes the code, whole features included, in any package.
 - The humans may write in French: answer in the language of the prompt.
   Code, comments, commit messages and docs stay in English.
 
-## Scope: stage 1, a level maker (D-300)
+## Scope: stage 1, a level maker (D-300), and stage 2, the Board (D-400)
 
-After the jam come five stages (D-105). Each opens with a decision that sets its scope here, as
+After the jam come six stages (D-105, D-400). Each opens with a decision that sets its scope here, as
 the scope lock did for the jam. Changing this list requires an entry in `docs/decisions.md`.
 
 In: the game as it is on `main`. 2D top-down; one agent; two eyes that read light (1/r,
@@ -49,6 +49,9 @@ And stage 1, the todo's §11: a level maker, for us and Camille first (D-041), t
 the plane's lights, obstacles, marks (zones only the objectives read, D-306) and start, the
 board's zone, stock and locked parts, objectives and the time allowed, a clear check, levels
 and solutions shared as text, no server; and §13, the chapters, levels and tutorials made with it.
+And stage 2, built beside stage 1 on `stage/2-board`, the todo's §15: a Board built with fewer
+moves, hex buttons round a board of one fixed size, no Navigator, its gestures, and chapter 0's
+cards rewritten for them (D-400).
 
 Out: no new part or sense, and no new item but marks (D-306). The later stages, memory, flows, actions other than moving, and
 all after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,

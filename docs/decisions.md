@@ -2321,3 +2321,16 @@ light and each other, the start on the lower ring's edge, counted in. On the dia
 out, 2 u rings keep their size, none holds the start, and they lie on the circle: the orbiter
 wins in 9.43 s, and a tight orbit like the old one, inside them, no longer does. The orbiter with
 a Halve on each wire goes round the same circle at half the speed and wins too, in 18.9 s.
+
+**D-400 — 2026-10-07 — Stage 2, the Board, opens beside stage 1: built on `stage/2-board`, its scope the todo's §15, a Board built with fewer moves, and its decisions numbered from D-400. D-105's memory, flows and actions each move one stage down. Amends D-105.**
+The physicist's: the new Board of the todo's §15, hex buttons round a board of one fixed size and
+no Navigator, is a stage of its own; stage 1's list does not hold it (D-300). Stage 1 stays open
+for Camille's review of v1.1, his levels and the banner, and stage 2 is built beside it, as stage
+0 was built (D-200): each item a `feat/…` branch whose PR goes into the stage, and a stage built
+beside another takes the next hundred. Whether it ships with v1.1 or after is decided on how it
+goes and on Camille's response to v1.1; until then this opening stays on the stage's branch, not
+on `main`. In: the Board's layout, its buttons and its gestures, and chapter 0's cards rewritten
+for them. Out: all that stage 1 leaves out; no new part, sense or item; the model, the levels and
+their format stay as they are. Its design is chosen from mockups drawn with the game's own code,
+as D-051's was. Memory is now stage 3, flows stage 4 and actions stage 5; decisions before this
+one keep the numbers they were written with.
