@@ -15,7 +15,7 @@
         "until": {"screen": "edit"},
         "say": [
           "Swim to the light and touch it. To see it, the swimmer needs an **Eye**.",
-          "Press the **Editor** button or tab, or press Tab."
+          "Press the **Board** button or tab, or press Tab."
         ]
       },
       {

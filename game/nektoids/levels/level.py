@@ -202,7 +202,7 @@ def upgraded(data: Mapping) -> Mapping:
         lights = [item["at"] for item in items if item.get("kind") == "light"]
         sentences, marks = goals.upgraded(list(data["objectives"]), lights)
         if marks and any(item.get("kind") == "mark" for item in items):
-            raise ValueError("its rings would count its marks: make it again in the Maker")
+            raise ValueError("its rings would count its marks: make it again in the Editor")
         data = {**data, "items": items + marks, "objectives": sentences}
     if version < 4:
         data = {**data, "board": {**data["board"], "zone": _sized(data["board"]["zone"])}}

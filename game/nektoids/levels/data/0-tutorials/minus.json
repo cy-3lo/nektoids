@@ -23,7 +23,7 @@
         "until": {"screen": "edit"},
         "say": [
           "Stop in the ring round the light for 3 s, without touching it.",
-          "Press the **Editor** button or tab, or press Tab."
+          "Press the **Board** button or tab, or press Tab."
         ]
       },
       {

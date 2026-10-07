@@ -358,7 +358,7 @@ class MakerScene(Frame):
             return True
         refused = self.board.rehand(level.new_board())  # its zone, stock and locked parts
         if refused is not None:
-            self._refuse(f"{refused.reason}: take it off in the Editor first")
+            self._refuse(f"{refused.reason}: take it off on the Board first")
             return False
         return True
 

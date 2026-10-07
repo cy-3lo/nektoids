@@ -23,7 +23,7 @@
         "until": {"screen": "edit"},
         "say": [
           "This swimmer comes with an **Eye** wired to a **Thruster**, yet it does not move.",
-          "Press the **Editor** button or tab, or press Tab."
+          "Press the **Board** button or tab, or press Tab."
         ]
       },
       {

@@ -797,7 +797,7 @@ drawer.
 ## 16. Hints, asked for in turn (D-078, D-353)
 
 Read D-078 and D-353 first. Open Love, press ?, and take Hint 1, the parts, then Hint 2, the
-shadow, the parts without their wires; go to the Editor, where the shadow lies on the board too,
+shadow, the parts without their wires; go to the Board, where the shadow lies on the board too,
 and click Hint 2 to hide it.
 
 - [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.of` builds a level's proof

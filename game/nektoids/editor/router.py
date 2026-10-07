@@ -25,8 +25,8 @@ from nektoids.levels.score import Score, front
 
 SANDBOX_LABEL = "YOUR LEVEL"  # the sandbox's, before its title in the caption (D-341)
 MAKER_ROW = (  # the sandbox's row in Chapters, under Build your level: its name and info (D-341)
-    "Open Maker",
-    "Build your own level in the Maker: its objects, its goals, its parts. Try it, then share it.",
+    "Open Editor",
+    "Build your own level in the Editor: its objects, its goals, its parts. Try it, then share it.",
 )
 
 
@@ -266,14 +266,14 @@ class Router:
     def make(self) -> None:
         """The Maker, the sandbox's alone (D-301); ValueError on a level of the route."""
         if not self.in_sandbox:
-            raise ValueError("only the sandbox's level is made in the Maker")
+            raise ValueError("only the sandbox's level is made in the Editor")
         self.screen = Screen.MAKE
 
     def revise(self, level: Level) -> None:
         """The sandbox's level as the Maker leaves it (D-301), for the editor and the next run;
         its board stays as the player left it. ValueError on a level of the route."""
         if not self.in_sandbox:
-            raise ValueError("only the sandbox's level is made in the Maker")
+            raise ValueError("only the sandbox's level is made in the Editor")
         self.sandbox = level
 
     def reset(self, index: int) -> None:

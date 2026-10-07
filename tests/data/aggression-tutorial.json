@@ -16,7 +16,7 @@
       "until": {"screen": "edit"},
       "say": [
         "Fear turned away from the light. To charge it,",
-        "the same parts are wired the other way round:", "click the Editor tab."
+        "the same parts are wired the other way round:", "click the Board tab."
       ]
     },
     {

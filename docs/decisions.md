@@ -2297,3 +2297,16 @@ would open nothing: they leave their files. A player who has won every level in 
 one word to keep for them all, after Braitenberg's book, Vehicles: on the win card that
 completes the set, "Passkey for every level: VEHICLES", and in each won level's info box in
 Chapters. Typed, it opens every level of every chapter, none of them won.
+
+**D-356 — 2026-10-07 — The Editor is the Board, the tab where the player wires the control board; the Maker is the Editor, the level editor. The tabs read Run, Board and, on Build your level, Editor; the code follows. Amends D-301, D-303, D-341.**
+The physicist's: "Editor" fits the tool that makes levels, and the tab where the swimmer is wired
+shows its board. The tabs, their tips, the switch's tip, the banner's button ("Board (Tab)"),
+the status lines, the refusals, the Chapters row Open Editor and every tutorial card say so:
+"Press the **Board** button or tab". F1, F2 and F3 are Run, Board and Editor. The code's names
+follow, in two steps so that "editor" never means both: the Board's are `Env.BOARD`,
+`Screen.BOARD`, `LevelButton.BOARD`, `ArenaButton.BOARD`, `BoardScene`, `board_scene()` in
+`main.py`, a tutorial's `tab:board`, `level:board` and `{"screen": "board"}`; the Editor's,
+`Env.EDITOR`, `Screen.EDITOR`, `EditorScene` in `level_editor.py` and `level_editor_draw.py`,
+`editor()` in `main.py` and `tab:editor`. The package `nektoids/editor/`, the whole interface,
+keeps its name, and `levels/making.py`, about making a level, its own. Decisions before this one
+keep the names they were written with.

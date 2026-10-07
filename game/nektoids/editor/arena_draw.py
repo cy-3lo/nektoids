@@ -541,7 +541,7 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         note = "Click the swimmer to see its wiring"
     elif not scene.circuit.cells:
         back = "F7" if scene.developer else BUTTON_KEYS[ArenaButton.EDIT]
-        note = f"Your board is empty: build one in the editor ({back})"
+        note = f"Your board is empty: build it on the Board ({back})"
     else:
         circuit = scene.circuit
         screen.set_clip(DRAWER_BODY)
@@ -621,7 +621,7 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         screen.blit(line, line.get_rect(midtop=(box.centerx, top)))
         top += line.get_height() + 4
     for button, rect in banner_rects(scene.layout, scene.banner_buttons):
-        label = (scene.next_label or "Next level") if button is ArenaButton.NEXT else "Edit"
+        label = (scene.next_label or "Next level") if button is ArenaButton.NEXT else "Board"
         pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
         shown = fonts.name.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
         screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))
@@ -701,9 +701,9 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     keys = "Space: play.  .: a step.  0: again."  # F: fast, in its tooltip
     if scene.developer:
         cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
-        text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F7: editor."
+        text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F7: back."
     else:
-        text = f"{keys}  Tab: editor.  Esc: Chapters."
+        text = f"{keys}  Tab: board.  Esc: Chapters."
     text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
     if scene.said and not scene.message:  # a passkey that opened a level (D-075)
         text, colour = scene.said, LIGHT

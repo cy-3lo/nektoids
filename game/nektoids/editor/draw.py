@@ -192,7 +192,7 @@ TIP = {
     " score, the one to beat. Offered once the level, as it stands, has been won in the Run;"
     " pasted, the proof is run again, and the level is cleared if it wins.",
     LevelButton.RUN: "Run",
-    LevelButton.EDIT: "Back to the editor",
+    LevelButton.EDIT: "Back to the board",
     Drawer.TOOLS: "Tools",
     Drawer.PARTS: "Parts",
     Drawer.FILES: "Files",
@@ -252,8 +252,8 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.STREAMS: "Streams",
 }
 LIT_EDGE = 3  # the accent along the open drawer's icon, and over the open tab [px]
-TAB_NAME = {"editor": "Editor", "run": "Run", "maker": "Maker"}
-TAB_TIP = {"run": "Run", "editor": "Back to the editor", "maker": "Make the level"}  # D-301
+TAB_NAME = {"editor": "Board", "run": "Run", "maker": "Editor"}  # D-356
+TAB_TIP = {"run": "Run", "editor": "Back to the board", "maker": "Make the level"}  # D-301
 
 # How parts sit in the menu: eyes looking up (flat side up), thrusters pointing up
 # [degrees, counter-clockwise from E]. On the grid they point along their facing.

@@ -33,8 +33,8 @@
       {
         "show": {"tab": "maker"},
         "say": [
-          "This is the **Maker**, a new tab: build your own level here.",
-          "Place lights, obstacles and rings in **Objects**, choose the **Goals**, try it in the **Editor** and the **Run**, and share it from **Files**."
+          "This is the **Editor**, a new tab: build your own level here.",
+          "Place lights, obstacles and rings in **Objects**, choose the **Goals**, try it on the **Board** and in the **Run**, and share it from **Files**."
         ]
       }
     ]
