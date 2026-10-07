@@ -58,6 +58,9 @@ taken, when it starts.
   (D-324).
 - [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
   their JSON (D-310), shared with their proof (D-320).
+- [ ] **A long press on + or − in the Maker's Parts** (the physicist, 2026-10-07): after 1 s
+  the number keeps changing, 3 steps a second; both numbers to be tuned by trying. A
+  `feat/…` branch into `stage/1-level-maker`.
 
 ## 12. Checks and fixes on `main` (done, D-345)
 
@@ -83,12 +86,15 @@ chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users
   and its "collective behaviour", come from the jam's brief, when the game was to have many
   swimmers; it has one.
 
-## 15. The Board, built with fewer moves (stage 2, D-400)
+## 15. The Board, built with fewer moves (stage 2, D-400, on `main` since D-406)
 
 The physicist's: players build their control boards with less back and forth of the mouse and the
-keyboard, from buttons round a board of one size. Its look and places are D-401, decided from
-seven rounds of mockups; its gestures are D-402. Each item below is a `feat/…` branch into
-`stage/2-board`, planned when it starts.
+keyboard, from buttons round a board of one size. Its look and places are D-401 and D-406, decided
+from ten rounds of mockups; its gestures are D-402 to D-405, revised by D-406 after his first
+review.
 
-- [ ] **Chapter 0's cards**, rewritten for the buttons: today they point at the drawers, the bar
-  and the Wheel ("Move on the Wheel").
+- [ ] **Chapter 0's cards**, read again against the buttons: Wiring's and Turning's say how now
+  (D-406); the others, and Camille's reading of them, to come.
+- [ ] **The Editor's buttons** (the physicist, 2026-10-07): the Maker's tab given the Board's
+  buttons and gestures in place of its Wheel (D-314): a click picks, a drag picks, moves or acts
+  along a path it can go back on, the tools round its plane. Planned, and decided, when it starts.

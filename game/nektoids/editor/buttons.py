@@ -19,15 +19,24 @@ from __future__ import annotations
 from collections.abc import Sequence
 from enum import Enum
 
-from nektoids.editor.layout import EDIT_KEYS, LOCK_KEY, MENU_GROUPS, TOOL_KEYS, EditButton, Tool
+from nektoids.editor.layout import (
+    BOARD_HEX,
+    EDIT_KEYS,
+    LOCK_KEY,
+    MENU_GROUPS,
+    TOOL_KEYS,
+    EditButton,
+    Layout,
+    Tool,
+    View,
+)
 from nektoids.editor.picking import Pick, Picked, parts
 from nektoids.graph.board import Board, Kind
-from nektoids.graph.hexgrid import Cell, from_pixel, hex_disc
+from nektoids.graph.hexgrid import Cell, from_pixel, hex_disc, to_pixel
 
 
 class Button(Enum):
     SELECT = "select"
-    MOVE = "move"
     LOCK = "lock"
     UNDO = "undo"
     REDO = "redo"
@@ -39,11 +48,10 @@ class Button(Enum):
 
 PLACES: dict[Button | Kind, Cell] = {
     Button.SELECT: (1, -4),
-    Button.MOVE: (2, -4),
-    Button.LOCK: (3, -4),
-    Button.UNDO: (-3, 4),
-    Button.REDO: (-2, 4),
-    Button.DELETE: (-1, 4),
+    Button.LOCK: (2, -4),
+    Button.DELETE: (3, -4),
+    Button.UNDO: (-5, 3),
+    Button.REDO: (-4, 3),
     Button.TURN_LEFT: (-3, -2),
     Button.TURN_RIGHT: (-2, -2),
     Button.WIRE: (-3, -1),
@@ -57,6 +65,7 @@ PLACES: dict[Button | Kind, Cell] = {
 }
 LARGEST_ZONE = 3  # the sandbox's, 37 cells (D-102, D-313)
 FRAME: tuple[Cell, ...] = (*hex_disc(LARGEST_ZONE), *PLACES.values())  # what the view shows whole
+BUTTON_INSET = 2  # a button inside its cell, clear of the grid's 2 px line [px]
 PART_SMALLER = 2.0  # a part on its button, against its darker ground making it look larger [px]
 ICON_ON_BUTTON = 0.75  # a tool's icon, over the hex size: about a part's reach
 TAG_INWARD = 6  # a key's tag and a count's, from the corner towards the centre [px]
@@ -71,8 +80,7 @@ class State(Enum):
 
 
 KEYS = {  # each button's key; a part's is its number among those handed out (`key_of`)
-    Button.SELECT: "Esc",
-    Button.MOVE: TOOL_KEYS[Tool.MOVE],
+    Button.SELECT: "S",
     Button.LOCK: LOCK_KEY,
     Button.UNDO: EDIT_KEYS[EditButton.UNDO],
     Button.REDO: EDIT_KEYS[EditButton.REDO],
@@ -81,6 +89,16 @@ KEYS = {  # each button's key; a part's is its number among those handed out (`k
     Button.TURN_RIGHT: TOOL_KEYS[Tool.TURN_RIGHT],
     Button.WIRE: TOOL_KEYS[Tool.WIRE],
 }
+
+
+def board_view(layout: Layout) -> View:
+    """The Board's one view (D-401): BOARD_HEX, the largest zone and every button centred in the
+    board area, with a drawer open or not; nothing zooms or pans it."""
+    xs, ys = zip(*(to_pixel(cell, BOARD_HEX, (0.0, 0.0)) for cell in FRAME), strict=True)
+    x, y, w, h = layout.board_area
+    return View(
+        BOARD_HEX, (round(x + (w - min(xs) - max(xs)) / 2), round(y + (h - min(ys) - max(ys)) / 2))
+    )
 
 
 def part_key(kind: Kind, kinds: frozenset[Kind]) -> str:
@@ -93,7 +111,7 @@ def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
     """What the part on `cell` may be swapped for (D-068): the other parts of its group in Parts
     that the level still hands out, in Parts' order."""
     node = board.node_at(cell)
-    if node is None or node.locked:
+    if node is None or node.fixed:
         return ()
     ordered = [k for _, group in MENU_GROUPS for k in group if k in kinds]
     return tuple(
@@ -104,13 +122,9 @@ def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
 
 
 def shown(kinds: frozenset[Kind], editor: bool) -> tuple[Button | Kind, ...]:
-    """The buttons a level shows, in PLACES' order: Lock on the board reached from the Editor
-    only; the parts the level hands out."""
-    return tuple(
-        b
-        for b in PLACES
-        if (b is not Button.LOCK or editor) and (not isinstance(b, Kind) or b in kinds)
-    )
+    """The buttons a level shows, in PLACES' order: every tool, Lock the player's on every board
+    (D-406); the parts the level hands out. `editor`, the sandbox's, changes no button."""
+    return tuple(b for b in PLACES if not isinstance(b, Kind) or b in kinds)
 
 
 def button_at(
@@ -125,6 +139,20 @@ def key_of(button: Button | Kind, kinds: frozenset[Kind]) -> str:
     return part_key(button, kinds) if isinstance(button, Kind) else KEYS[button]
 
 
+def tip(button: Button | Kind, board: Board, kinds: frozenset[Kind], key_hints: bool = True) -> str:
+    """What a tooltip says over a button: its name and its key if Settings shows keys; a part's
+    also how many are left, if the level counts them."""
+    if isinstance(button, Kind):
+        text = button.spec.name
+    else:
+        text = button.value.capitalize()
+    if key_hints:
+        text += f" ({key_of(button, kinds)})"
+    if isinstance(button, Kind) and board.total(button) is not None:
+        text += f", {board.remaining(button)} left"
+    return text
+
+
 def states(
     board: Board,
     buttons: Sequence[Button | Kind],
@@ -133,12 +161,14 @@ def states(
     can_undo: bool,
     can_redo: bool,
     kinds: frozenset[Kind],
+    editor: bool = False,
 ) -> dict[Button | Kind, State]:
     """How each button looks, as the module's docstring says."""
     picked = parts(pick, board)
     cells = bool(pick) and pick.what is Picked.CELLS
     nodes = list(board.nodes.values())
-    free = [n for n in nodes if not n.locked]
+    free = [n for n in nodes if not n.fixed]
+    mine = [n for n in nodes if not n.locked]
 
     def acts(b: Button | Kind) -> bool | None:
         """True: it acts on the pick; False: it cannot act now; None: it may, on the board."""
@@ -157,19 +187,17 @@ def states(
         if cells:
             return False  # empty cells: nothing to move, turn, wire, delete or lock
         if picked:
-            loose = [n for n in picked if not n.locked]
+            loose = [n for n in picked if not n.fixed]
             return {
-                Button.MOVE: len(loose) == len(picked),  # the level's stay: all go, or none
                 Button.DELETE: bool(loose),
-                Button.LOCK: True,
+                Button.LOCK: editor or any(not n.locked for n in picked),
                 Button.TURN_LEFT: any(n.facing is not None for n in loose),
                 Button.TURN_RIGHT: any(n.facing is not None for n in loose),
                 Button.WIRE: len(nodes) > 1,
             }[b]
         able = {
-            Button.MOVE: bool(free),
             Button.DELETE: bool(free),
-            Button.LOCK: bool(nodes),
+            Button.LOCK: bool(nodes) if editor else bool(mine),
             Button.TURN_LEFT: any(n.facing is not None for n in free),
             Button.TURN_RIGHT: any(n.facing is not None for n in free),
             Button.WIRE: len(nodes) > 1,

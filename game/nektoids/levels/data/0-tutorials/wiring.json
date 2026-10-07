@@ -42,14 +42,14 @@
       {
         "show": {"area": "bar"},
         "say": [
-          "The nav bar opens the drawers: **Tools**, **Parts**, **Files**, **Diagnostic**, **Navigator**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**."
+          "The nav bar opens the drawers: **Parts**, **Files**, **Diagnostic**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**."
         ]
       },
       {
         "show": [{"cell": [0, 0]}, {"cell": [-1, 0]}, {"button": "wire"}],
         "say": [
           "A **Source** sends beads all the time; a thruster pushes as hard as beads come in.",
-          "Click the **Source**, then the **Thruster**, then the **Wire** button, or press W."
+          "Press the **Wire** button, or W, then click the **Source** and the **Thruster**."
         ],
         "until": {"wired": {"from": [0, 0], "to": [-1, 0]}}
       },

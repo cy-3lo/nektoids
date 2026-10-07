@@ -92,7 +92,7 @@ MARGIN = 16  # [px]
 BUTTON = 40  # a palette button's side, in the run view [px]
 PALETTE_TITLE = 24  # a section's title, in the run view and the drawers [px]
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
-BOARD_HEX = 38.0  # the Board's one size: the largest zone and its buttons fit by a drawer (D-401)
+BOARD_HEX = 40.0  # the Board's one size: the largest zone and its buttons fit by a drawer (D-401)
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
 
@@ -1234,12 +1234,6 @@ def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
     """Cell (0, 0) at the centre of the board area."""
     x, y, w, h = layout.board_area
     return View(size, (x + w / 2, y + h / 2))
-
-
-def board_view(layout: Layout) -> View:
-    """The Board's one view (D-401): BOARD_HEX, cell (0, 0) at the centre of the board area, with
-    a drawer open or not; nothing zooms or pans it."""
-    return centred_view(layout, BOARD_HEX)
 
 
 def moved_view(view: View, before: Layout, after: Layout) -> View:

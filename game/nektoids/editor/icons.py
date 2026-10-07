@@ -56,7 +56,6 @@ EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
 MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser", Mode.LOCK: "lock"}  # D-068, D-319
 BUTTON_ICON = {  # the Board's buttons (D-401); a part's shows the part itself
     Button.SELECT: "arrow-pointer",
-    Button.MOVE: TOOL_ICON[Tool.MOVE],
     Button.LOCK: MODE_ICON[Mode.LOCK],
     Button.UNDO: EDIT_ICON[EditButton.UNDO],
     Button.REDO: EDIT_ICON[EditButton.REDO],
