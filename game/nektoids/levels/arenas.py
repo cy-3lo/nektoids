@@ -2,13 +2,13 @@
 
 Each is a JSON file in `data/` (`level.py` says what it holds), a chapter's in its own folder,
 read once at startup. Lengths in u, the base body radius, in an open plane; what each holds fits
-in 40 x 38 u. The swimmer runs whatever board is in the editor, and each level says what it asks
+in 40 x 38 u. The swimmer runs whatever board is on the Board, and each level says what it asks
 (`objectives.py`). The chapters make one route: `arenas()` is its levels in order, and a level's
 place on it, its index, is all the rest of the game needs; `locate` gives its chapter.
 
-A level made in the Maker ships from Share level (D-320, D-328): its text, with its proof, saved
+A level made in the Editor ships from Share level (D-320, D-328): its text, with its proof, saved
 in its chapter's folder and named in its chapter below; its passkey, hints and tutorial, which
-the Maker does not set, written in the file by hand; then
+the Editor does not set, written in the file by hand; then
 `PYTHONPATH=game python -m nektoids.levels.level FILE` writes the file as the game does, which
 the tests ask. Every shipped level carries its proof, and the tests run it again.
 """
@@ -30,10 +30,11 @@ class Chapter:
     folder: str  # under `data/`
     names: tuple[str, ...]  # its levels' files, in the order they come
     all_open: bool = False  # every level open from the start, not one after another (D-335)
+    hints: bool = True  # its levels' hints, from their proofs, in the Hints drawer (D-353)
 
     @property
     def heading(self) -> str:
-        """Its title in Chapters and in the Maker's Files: "Chapter 1: Braitenberg"."""
+        """Its title in Chapters and in the Editor's Files: "Chapter 1: Braitenberg"."""
         return f"Chapter {self.number}: {self.title}"
 
 
@@ -48,13 +49,21 @@ CHAPTERS = (
     Chapter(1, "Braitenberg", "1-braitenberg", ("fear", "aggression", "love", "orbit")),
     Chapter(2, "Obstacles", "2-obstacles", ("shadows",)),
     Chapter(3, "Many lights", "3-many-lights", ("greed", "patience", "two-lights")),
-    Chapter(4, "Made by users", "4-made-by-users", ("dragster", "dragster-ii"), all_open=True),
+    Chapter(
+        4,
+        "Made by users",
+        "4-made-by-users",
+        ("dragster", "dragster-ii"),
+        all_open=True,
+        hints=False,
+    ),
 )  # Braitenberg's 2a, 2b, 3a and the brief's orbit (D-097); obstacles; then more lights, the
 # real level (D-098) and "Two lights, four obstacles", once too hard for level 2 (D-032), last
-# (D-324); levels made in the Maker, the physicist's Dragster first (D-332), every one open, as
+# (D-324); levels made in the Editor, the physicist's Dragster first (D-332), every one open, as
 # they come in no order (D-348). A chapter with no level yet is not listed.
 ORDER = tuple(f"{chapter.folder}/{name}" for chapter in CHAPTERS for name in chapter.names)
 SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)
+EVERY_LEVEL = "VEHICLES"  # the word for every level, once all are won: Braitenberg's (D-355)
 
 
 def locate(index: int) -> tuple[Chapter, int]:

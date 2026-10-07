@@ -12,11 +12,11 @@
       "say": ["Here the swimmer must swim to the light and", "touch it, as Objectives says."]
     },
     {
-      "show": [{"tab": "editor"}, {"level": "edit"}],
-      "until": {"screen": "edit"},
+      "show": [{"tab": "board"}, {"level": "board"}],
+      "until": {"screen": "board"},
       "say": [
         "Fear turned away from the light. To charge it,",
-        "the same parts are wired the other way round:", "click the Editor tab."
+        "the same parts are wired the other way round:", "click the Board tab."
       ]
     },
     {

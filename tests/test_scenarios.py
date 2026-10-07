@@ -56,13 +56,13 @@ def test_every_board_runs_and_stays_inside_the_cap(scenario):
         assert 0.0 <= y.min() and y.max() <= RATE_MAX
 
 
-def test_only_the_loop_boards_have_loops_and_the_editor_would_have_refused_them():
+def test_only_the_loop_boards_have_loops_and_the_board_would_have_refused_them():
     for scenario in ALL:
         net = Network.from_board(scenario.board)
         assert (topological_order(net) is None) == scenario.title.startswith(("Loop", "Toggle"))
 
 
-def test_the_editor_would_not_have_drawn_the_closing_wire():
+def test_the_board_would_not_have_drawn_the_closing_wire():
     for scenario in scenarios():  # fresh boards: this test takes a wire off
         if not scenario.title.startswith(("Loop", "Toggle")):
             continue

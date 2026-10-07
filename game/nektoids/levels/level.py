@@ -5,7 +5,7 @@ Items are to the plane what parts are to the board: each has a kind (`ItemKind`,
 its `Kind`), the point where it sits, and the one setting its kind takes, a light's power, an
 obstacle's radius or a mark's. A mark is a zone, a circle that only the objectives read: the
 arena, and so the simulation, never has it (D-306). An objective is a sentence (D-307,
-`objectives.py`). The Maker places items as the board editor
+`objectives.py`). The Editor places items as the Board
 places parts (D-302). `to_dict` and `from_dict` turn a level into JSON-able data and back, as
 `Board.to_dict` does (D-024); the shipped levels are JSON files in `data/`. Each file says the
 version of its format; `to_dict` writes `FORMAT`, and `from_dict` upgrades an older version
@@ -44,7 +44,6 @@ KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "time_limit",
     "objectives",
     "passkey",
-    "hints",
     "tutorial",
     "proof",
 )
@@ -102,7 +101,6 @@ class Level:
     objectives: tuple[Goal, ...] = ()  # each a sentence (D-307)
     tutorial: Mapping | None = field(default=None, repr=False)  # its ghosts and steps (D-039)
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
-    hints: Mapping | None = field(default=None, repr=False)  # its idea and shadow (D-078)
     proof: Mapping | None = field(default=None, repr=False)  # a level shared: its win (D-320)
     author: str | None = None  # who made it, as they sign: "@Cy-3LO" (D-331)
 
@@ -145,7 +143,6 @@ class Level:
                 "objectives": [objective_to_dict(o) for o in self.objectives],
             }
             | ({"passkey": self.passkey} if self.passkey else {})
-            | ({"hints": self.hints} if self.hints is not None else {})
             | ({"tutorial": self.tutorial} if self.tutorial is not None else {})
             | ({"proof": self.proof} if self.proof is not None else {})
         )
@@ -154,8 +151,8 @@ class Level:
     def from_dict(cls, data: Mapping) -> Level:
         """ValueError for data no level could hold: no version or a newer one than FORMAT, a
         key it does not know, an unknown kind, an item without its setting, items that overlap
-        as the arena refuses, a board that cannot be built. The keys of `board`, `hints` and
-        `tutorial` are theirs to check. An older version is upgraded first."""
+        as the arena refuses, a board that cannot be built. The keys of `board` and `tutorial`
+        are theirs to check. An older version is upgraded first."""
         data = upgraded(data)
         known(data, KEYS, "a level")
         known(data["start"], ("at", "heading"), "the start")
@@ -170,7 +167,6 @@ class Level:
             objectives=tuple(objective_from_dict(o) for o in data["objectives"]),
             tutorial=data.get("tutorial"),
             passkey=data.get("passkey"),
-            hints=data.get("hints"),
             proof=data.get("proof"),
             author=data.get("author"),
         )
@@ -206,7 +202,7 @@ def upgraded(data: Mapping) -> Mapping:
         lights = [item["at"] for item in items if item.get("kind") == "light"]
         sentences, marks = goals.upgraded(list(data["objectives"]), lights)
         if marks and any(item.get("kind") == "mark" for item in items):
-            raise ValueError("its rings would count its marks: make it again in the Maker")
+            raise ValueError("its rings would count its marks: make it again in the Editor")
         data = {**data, "items": items + marks, "objectives": sentences}
     if version < 4:
         data = {**data, "board": {**data["board"], "zone": _sized(data["board"]["zone"])}}

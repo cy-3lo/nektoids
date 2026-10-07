@@ -1,4 +1,4 @@
-"""Where the run puts its own things in the frame it shares with the editor (D-051, D-057), and
+"""Where the run puts its own things in the frame it shares with the Board (D-051, D-057), and
 what is under a given pixel.
 
 The frame (`layout.make_layout(env=Env.RUN)`) gives the bar, the drawers, the tabs, the level's
@@ -44,7 +44,7 @@ POLAR_RADIUS = 80  # of the plot's circle [px]
 
 
 class ArenaButton(Enum):
-    EDIT = "edit"  # back to the editor, the board as it was
+    BOARD = "board"  # back to the Board, the board as it was
     NEXT = "next"  # on to the next level, once this one is won: in the banner
     RESTART = "restart"
     PLAY = "play"  # play or pause, the one button
@@ -69,12 +69,12 @@ VIEW_BUTTON = {  # Navigator's rows, as the run's buttons
     ViewButton.MOTION: ArenaButton.MOTION,
     ViewButton.STREAMS: ArenaButton.STREAMS,
 }
-# One key, one meaning, in the editor and here: the view's keys are the editor's own, and no key
-# the editor uses means anything else here (R rotates there, so starting again is 0: t = 0). The
+# One key, one meaning, on the Board and here: the view's keys are the Board's own, and no key
+# the Board uses means anything else here (R rotates there, so starting again is 0: t = 0). The
 # drawers' keys may differ, each the initial of a drawer of its environment (D-069), and so may
-# Navigator's Motion and Streams, M and W, Move and Wire in the editor, which never shows them.
+# Navigator's Motion and Streams, M and W, Move and Wire on the Board, which never shows them.
 BUTTON_KEYS = {
-    ArenaButton.EDIT: "Tab",  # on to the next tab, the editor's, as from every tab (D-304)
+    ArenaButton.BOARD: "Tab",  # on to the next tab, the Board's, as from every tab (D-304)
     ArenaButton.NEXT: "Enter",
     ArenaButton.RESTART: "0",
     ArenaButton.PLAY: "Space",
@@ -83,7 +83,7 @@ BUTTON_KEYS = {
     **{button: VIEW_KEYS[view] for view, button in VIEW_BUTTON.items()},
 }
 # Keys with no button, for developers: turn the swimmer, the light map, the polar plot.
-TURN_KEYS = (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])  # the editor's: L, R
+TURN_KEYS = (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])  # the Board's: L, R
 MAP_KEY, POLAR_KEY = "I", "P"
 # Typed characters that press a button; Space, 0, Tab and Enter are matched on the physical key.
 KEY_BUTTONS = {key: b for b, key in BUTTON_KEYS.items() if len(key) == 1 and not key.isdigit()}

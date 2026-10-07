@@ -1,4 +1,4 @@
-"""The kinds of part, one entry each (D-202): what the board, the dynamics and the editor need to
+"""The kinds of part, one entry each (D-202): what the board, the dynamics and the interface need to
 know of a part, in one table, `SPEC`, which a test checks whole.
 
 An entry says where the part stands (sensor, operator, actuator), how it is wired (inputs and
@@ -6,7 +6,7 @@ outputs at most), where it points until turned (D-009), its law, what it does to
 through it (`laws.py`; a sensor has none), a sensor's sense, which gives its rate, and an
 actuator's action, what it does to the body (`sim/world.py`, D-203), and how the player reads
 it: a letter for the panels, a name and a paragraph for its info box (D-036, D-094), the icon
-on it and its outline, each by name, for the editor to draw. The table's order is the order of
+on it and its outline, each by name, for the interface to draw. The table's order is the order of
 the parts within each group of the menu (D-069). Pure Python, no pygame.
 """
 

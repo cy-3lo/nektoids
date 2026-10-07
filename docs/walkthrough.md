@@ -4,7 +4,7 @@ For Camille, for when you want to read the code behind what you play (D-041). Th
 map: read it with the code open beside it. It takes about half an hour, and nothing here needs
 Claude.
 
-Read the sections in order: run the editor, see what it does, follow the code in the order it
+Read the sections in order: run the game, see what it does, follow the code in the order it
 runs, then check yourself with the questions in section 3. Section 4 lists what is weak or
 untested, which is where your review matters most.
 
@@ -32,7 +32,7 @@ Press F2 for the developer view (section 6): the board as a running circuit, wit
 
 ## 1. What it does
 
-The editor lets the player place components (sensors, operators, actuators) on a small hex
+The Board lets the player place components (sensors, operators, actuators) on a small hex
 board and join them with directed wires, which route themselves around everything already there.
 The result is the agent's controller: a small graph that the simulation will later evaluate at
 every step.
@@ -45,7 +45,7 @@ At startup, `main.py` builds four objects:
 - the fonts (`Fonts.load()`, which also reads the icon font once);
 - a board (`free_board()`);
 - the screen layout (`make_layout()`);
-- the `EditorScene` that ties them together.
+- the `BoardScene` that ties them together.
 
 Then comes an `async` loop, which pygbag needs so the browser gets control back every frame.
 Each frame it:
@@ -94,8 +94,8 @@ that).
 
 **Operations:**
 - `place`, `remove_node`, `move_node`, `rotate`, `connect` and `remove_wire`.
-- Anything the player can get wrong returns `Refused(reason)` instead of raising, so the editor can show the reason on screen.
-- `preview` does every check `connect` does without changing anything: same component, output/input kinds, duplicate, loop (`_reaches` is a DFS), the input/output limits, then routing. The editor uses it for the ghost route.
+- Anything the player can get wrong returns `Refused(reason)` instead of raising, so the Board can show the reason on screen.
+- `preview` does every check `connect` does without changing anything: same component, output/input kinds, duplicate, loop (`_reaches` is a DFS), the input/output limits, then routing. The Board uses it for the ghost route.
 - `move_node` is all-or-nothing. It lifts the node's own wires, moves the node, and routes them again one by one. If any finds no path, it restores the node and the wires exactly as they were.
 
 **The crossing rule** is two small functions:
@@ -130,7 +130,7 @@ module has no pygame either (tested in `tests/test_layout.py`).
 
 ### 2.6 Input and interactive state: [`editor/scene.py`](../game/nektoids/editor/scene.py)
 
-`EditorScene` owns everything that changes while the player works:
+`BoardScene` owns everything that changes while the player works:
 - the current `tool` and the `view`;
 - what is being carried: `picked` and `dragging` for Add, `source`, `pressed` and `fresh` for Wire, `moving` for Move, `panning_from` for the hand, `cursor` and `carrying` for the keyboard;
 - what is under the mouse: `pointed` (any grid cell) and `hover` (only zone cells);
@@ -218,7 +218,7 @@ Because the cursor goes through the same code as the mouse, no tool has keyboard
 ## 3. Questions to answer after reading
 
 1. **Why is the router's state `(cell, heading)` and not just `cell`?** Find a case where two routes reach the same cell and only one of them may continue straight on. And what decides between two routes with the same steps and bends? (Look at the heap entries in `Board.route`.)
-2. **Who may change the board?** List every call to `place`, `remove_node`, `move_node`, `rotate`, `connect` and `remove_wire`, and check that they all come from `EditorScene`. Then check that nothing in `draw.py` changes state.
+2. **Who may change the board?** List every call to `place`, `remove_node`, `move_node`, `rotate`, `connect` and `remove_wire`, and check that they all come from `BoardScene`. Then check that nothing in `draw.py` changes state.
 3. **Trace the Wire tool by hand.** First case: press on A, move to B, release on B. Second case: click A, then click B. Which lines of `_wire` and `_end_wiring` run in each case, and what do `pressed` and `fresh` hold at each step?
 
 ## 4. Weak or untested
@@ -290,7 +290,7 @@ from tick to tick, and it goes into the hash of the run.
 
 ### 6.3 Loops
 
-The editor still refuses loops; the dynamics do not. A loop is feedback that the state remembers,
+The Board still refuses loops; the dynamics do not. A loop is feedback that the state remembers,
 so it always has a trajectory from rest. What it does depends on its gain:
 
 - below 1 (`contraction_factor`, in `network.py`), it settles to one value whatever its start;
@@ -299,7 +299,7 @@ so it always has a trajectory from rest. What it does depends on its gain:
   three inverting stages of gain 4 oscillates.
 
 That is memory without a tank (D-015), which is why loops are a scope decision (D-017) and why the
-editor still says "would close a loop".
+Board still says "would close a loop".
 
 ### 6.4 The beads
 
@@ -324,7 +324,7 @@ with a fixed spacing and a speed proportional to the flux, which does not do tha
 ### 6.6 Weak or untested
 
 - **`schematic.py` and `schematic_draw.py` have no automated tests,** for the same reason as the
-  editor. Everything pure in them (clock, sliders, beads, fitting) is tested.
+  Board. Everything pure in them (clock, sliders, beads, fitting) is tested.
 - **`TAU` is a game parameter, not only a number:** it sets the reaction time of every path and
   the speed of every loop. At 1/60 s a ring oscillates at about 11 Hz, too fast for beads to show.
 - **The sliders exist only in the developer view** (`DEV_VIEW` in `main.py`); the player's
@@ -343,11 +343,11 @@ it meets, so their density falls as 1/r, like the light, and a shadow is where n
 fans turn slowly, at random but the same at every run; X hides them or shows them again. I, a
 developer's key, shows the light as a smoothed map instead. Nothing else is drawn in the arena.
 
-Round the arena, since D-057, the editor's frame (section 15): the bar with Objectives, Inside,
+Round the arena, since D-057, the Board's frame (section 15): the bar with Objectives, Inside,
 Score and Navigator, the tabs with the level's line under them, and under the arena the
 controls (start again, play or pause, a step of 0.1 s, fast forward) and the timeline (D-033).
-Every button has a key, which its tooltip names; a key means the same here as in the editor
-(zoom, hand and centre are the editor's own keys, and with the hand the arrows drag the view, in
+Every button has a key, which its tooltip names; a key means the same here as on the Board
+(zoom, hand and centre are the Board's own keys, and with the hand the arrows drag the view, in
 both). Objectives counts each objective, with a bar (section 9); Inside shows the selected
 swimmer's wiring on its body, plain: beads on the wires, a meter by each eye and thruster, no
 numbers (F2 has those). Since D-022 it swims (section 8); paused, drag
@@ -499,7 +499,7 @@ swimmers give the same hash twice, and Braitenberg's fear and aggression behave.
 
 Read D-023 and D-024 first. In F3, wire the tutorial eyes crossed and press Space: after 8.7 s the
 swimmer reaches the light, the run stops and a banner says "Done in 8.59 s". Uncrossed, it runs
-out of time at 20 s. In the editor, F4 prints your board as one line of JSON in the terminal (in the browser, in
+out of time at 20 s. On the Board, F4 prints your board as one line of JSON in the terminal (in the browser, in
 pygbag's terminal on the page).
 
 ### 9.1 What it computes
@@ -560,10 +560,10 @@ Esc to change the board, and after a win Enter for the next level.
 - [`editor/router.py`](../game/nektoids/editor/router.py), pure: `Router` holds the open level
   (`index`), whether it is edited or run (`screen`), and each level's board, made from the
   level's data the first time (`Level.new_board`). `next` refuses to go past the last level.
-- [`main.py`](../game/main.py) turns the router into scenes: one `EditorScene` per level, kept
+- [`main.py`](../game/main.py) turns the router into scenes: one `BoardScene` per level, kept
   in `editors` (so undo history stays with its level), and a fresh `ArenaScene` for each run,
   with `developer=False`.
-- Scenes never call `main.py`; they set `request` ("run" in the editor; "edit" or "next" in
+- Scenes never call `main.py`; they set `request` ("run" on the Board; "board" or "next" in
   the run view), and the loop reads and clears it once a frame. That keeps the scenes free of
   any knowledge of each other.
 - [`editor/arena.py`](../game/nektoids/editor/arena.py): `developer` switches the player's run
@@ -579,7 +579,7 @@ Esc to change the board, and after a win Enter for the next level.
 
 ### 10.2 Questions to answer after reading
 
-1. **Why does each level get its own `EditorScene` instead of one editor whose board changes?**
+1. **Why does each level get its own `BoardScene` instead of one scene whose board changes?**
    What would undo do across levels otherwise?
 2. **Why is `request` a field read by the loop, not a callback the scene calls?**
 3. **What does F3 run, and why is it still useful once the player's run view exists?**
@@ -629,7 +629,7 @@ kept in [`tests/data`](../tests/data).
 - [`editor/tutorial_draw.py`](../game/nektoids/editor/tutorial_draw.py) draws the sparks out of
   each target (`tutorial.sparks`, D-080) and the box; the targets themselves are drawn in the
   accent by what draws them, from `panels`, set as the scene's `lit`; the ghosts by `draw.py`,
-  from `EditorScene.ghosts`, which `main.py` sets every frame, with `gate`, which the editor
+  from `BoardScene.ghosts`, which `main.py` sets every frame, with `gate`, which the Board
   and the run ask before each action that changes something (`_allowed`, `_ask`).
 - [`levels/objectives.py`](../game/nektoids/levels/objectives.py): objectives now keep their
   own marks, which is what lets Leave the ring sit beside Visit every light (section 13 makes
@@ -639,7 +639,7 @@ kept in [`tests/data`](../tests/data).
   failures, crossed and with the eyes looking forward.
 
 Questions: why does `follow` loop, rather than move one step? (Place an eye already turned.) Why
-does the tutorial live in `main.py` rather than in the editor's scene? Why does the editor ask
+does the tutorial live in `main.py` rather than in the Board's scene? Why does the Board ask
 the tutorial before acting, rather than `main.py` dropping the events a step does not want?
 (Drop a dragged eye on the wrong cell.)
 
@@ -687,7 +687,7 @@ those no other beats.
 Questions: `main.py` records the score on every frame the run stands won; why is that one
 point and not hundreds? Why are scores kept in ticks rather than seconds?
 
-## 15. The editor's frame: the activity bar and its drawers (D-051, D-053)
+## 15. The Board's frame: the activity bar and its drawers (D-051, D-053)
 
 Read D-051 and D-053 first, and look at the mockups. `python game/main.py`: the bar on the left,
 Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
@@ -747,7 +747,7 @@ The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc
 - [`main.py`](../game/main.py): `on_screen()`, the scene the tutorial's box and drawers follow;
   `run_drawer`, kept from one run to the next.
 
-Questions: what does `_slid` do in the editor, and in the run? Why is the controls strip not an
+Questions: what does `_slid` do on the Board, and in the run? Why is the controls strip not an
 "area" for the tutorial's box (`tutorial.is_area`)?
 
 The Run preview and Diagnostic, called Sense until D-069 (D-058). Open Diagnostic: the main
@@ -780,12 +780,12 @@ Question: why does `_put_back` not call `history.record` itself?
 The run opens paused, and Fear's tutorial opens in it (D-060).
 
 - [`editor/tutorial.py`](../game/nektoids/editor/tutorial.py): `Tutorial.start`, the screen a
-  tutorial opens on; `{"tab": "editor"}`, a target; `allows` lets the way to the screen a step
+  tutorial opens on; `{"tab": "board"}`, a target; `allows` lets the way to the screen a step
   waits for through, and "play" while it waits for a win.
 - [`main.py`](../game/main.py): `begun`, a card gone this frame, which opens Fear's run.
 - [`editor/layout.py`](../game/nektoids/editor/layout.py): `overview_view`, `shown_frame`,
   `centred_on`, Navigator's overview; [`probe.py`](../game/nektoids/editor/probe.py): `see`,
-  the preview through the editor's view.
+  the preview through the Board's view.
 
 Question: why must the run's controls ask the tutorial's gate, now that Fear starts in the run?
 
@@ -794,16 +794,16 @@ The objectives at the foot of every run drawer, and Navigator's zoom bar (D-065)
 `value_at`, the zoom on a log scale; `arena_draw._draw_rows` draws the objectives under any
 drawer.
 
-## 16. Hints, asked for in turn (D-078)
+## 16. Hints, asked for in turn (D-078, D-353)
 
-Read D-078 first. Open Love, press ?, and take Hint 1, the idea, Hint 2, the parts, then Hint
-3, the shadow; go to the Editor, where the shadow lies on the board too, and click Hint 3 to
-hide it.
+Read D-078 and D-353 first. Open Love, press ?, and take Hint 1, the parts, then Hint 2, the
+shadow, the parts without their wires; go to the Board, where the shadow lies on the board too,
+and click Hint 2 to hide it.
 
-- [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.from_dict` reads a level's
-  `hints`, its idea and its shadow (ghosts, as a tutorial writes them); `says` the lines under a
-  row; `parts_line` counts the shadow's parts; `build` makes the shadow for real on a board;
-  `Taken`, what the player has taken; `HintView`, what the drawer shows.
+- [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.of` builds a level's proof
+  on its blank board, the parts it adds the shadow's ghosts; `says` the lines under a row;
+  `parts_line` counts the shadow's parts; `Taken`, what the player has taken; `HintView`, what
+  the drawer shows. `Chapter.hints` says which chapters have them: all but the users'.
 - [`editor/layout.py`](../game/nektoids/editor/layout.py): `Drawer.HINTS` in `FOOT`,
   `_Rows.hints`, `HintRow`, `hint_row_at`; the picture's square shrinks to clear the run's
   objectives.
@@ -818,4 +818,4 @@ Questions: why is the Parts hint counted from the shadow rather than written in 
 file? Why is the shadow built once per level, and not every frame?
 
 Background: [`brief.md`](brief.md) sections 1 and 3 explain the design, and [`decisions.md`](decisions.md)
-explains every rule above (D-007 to D-014 cover the editor).
+explains every rule above (D-007 to D-014 cover the Board).

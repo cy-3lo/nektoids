@@ -9,22 +9,21 @@
     "zone": 7,
     "stock": {"eye": 1, "thruster": 1},
     "parts": [
-      {"kind": "eye", "cell": [1, 0], "facing": "W", "locked": false},
+      {"kind": "eye", "cell": [1, 0], "facing": "SW", "locked": false},
       {"kind": "thruster", "cell": [-1, 0], "facing": "E", "locked": false}
     ],
     "wires": [{"from": 0, "to": 1, "path": [[1, 0], [0, 0], [-1, 0]]}]
   },
   "time_limit": 15,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
-  "hints": {"idea": "Where does the eye look?"},
   "tutorial": {
     "steps": [
       {
-        "show": [{"tab": "editor"}, {"level": "edit"}],
-        "until": {"screen": "edit"},
+        "show": [{"tab": "board"}, {"level": "board"}],
+        "until": {"screen": "board"},
         "say": [
           "This swimmer comes with an **Eye** wired to a **Thruster**, yet it does not move.",
-          "Press the **Editor** button or tab, or press Tab."
+          "Press the **Board** button or tab, or press Tab."
         ]
       },
       {

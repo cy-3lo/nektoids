@@ -70,12 +70,12 @@ def test_the_timeline_runs_from_zero_to_the_limit_and_finds_a_time():
 
 
 def test_the_banner_holds_its_buttons_side_by_side_at_the_arenas_top_and_finds_them():
-    both = (ArenaButton.NEXT, ArenaButton.EDIT)
+    both = (ArenaButton.NEXT, ArenaButton.BOARD)
     (_, (x1, y1, w1, h1)), (_, (x2, y2, _, _)) = banner_rects(RUN, both)
     bx, by, bw, bh = banner_rect(RUN)
     assert y1 == y2 and x1 + w1 < x2 and bx < x1 and x2 + w1 < bx + bw and y1 + h1 < by + bh
     assert banner_button_at(RUN, both, (x1 + 5, y1 + 5)) is ArenaButton.NEXT
-    assert banner_button_at(RUN, (ArenaButton.EDIT,), (x1 + 5, y1 + 5)) is None  # centred
+    assert banner_button_at(RUN, (ArenaButton.BOARD,), (x1 + 5, y1 + 5)) is None  # centred
     arena = RUN.board_area
     assert contains(arena, (bx, by)) and contains(arena, (bx + bw, by + bh))
     assert contains(arena, polar_box(RUN)[:2])
@@ -87,15 +87,15 @@ def test_inside_and_score_draw_in_the_drawer_under_its_title():
     assert (x, w) == (dx, dw) and y > dy and y + h <= SCREEN[1]
 
 
-def test_a_key_means_the_same_here_as_in_the_editor():
+def test_a_key_means_the_same_here_as_in_the_board():
     for view, button in VIEW_BUTTON.items():  # Navigator's rows press the run's buttons
         assert BUTTON_KEYS[button] == VIEW_KEYS[view]
     assert set(VIEW_BUTTON) == set(ViewButton)
-    # Turning the swimmer left and right, as the editor turns a part (D-025).
+    # Turning the swimmer left and right, as the Board turns a part (D-025).
     assert TURN_KEYS == (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
     others = {*BUTTON_KEYS.values(), MAP_KEY, POLAR_KEY}
-    # Motion and Streams take Move's and Wire's letters, as the editor never shows them (D-069,
-    # D-076); nothing else means an editor tool here (D-021)
+    # Motion and Streams take Move's and Wire's letters, as the Board never shows them (D-069,
+    # D-076); nothing else means a Board tool here (D-021)
     shared = {BUTTON_KEYS[ArenaButton.MOTION], BUTTON_KEYS[ArenaButton.STREAMS]}
     assert (
         others & set(TOOL_KEYS.values()) == shared == {TOOL_KEYS[Tool.MOVE], TOOL_KEYS[Tool.WIRE]}

@@ -8,7 +8,7 @@ Wires may cross or turn in the same cell as long as no edge is used twice (D-010
 holds at most three. Wires are routed once, when drawn, and never move afterwards.
 
 Every operation that the player can trigger returns `Refused(reason)` instead of raising, so
-the editor can show the reason on screen. `to_dict` and `from_dict` turn a board into plain
+the Board can show the reason on screen. `to_dict` and `from_dict` turn a board into plain
 data and back (D-024). Pure Python, no pygame.
 """
 

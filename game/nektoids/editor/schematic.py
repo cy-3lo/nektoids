@@ -6,7 +6,7 @@ sources send. One scene per entry, built from a list of boards (yours first, the
 scenarios); Tab steps through them. Mutates nothing in the boards.
 
 Keys: Space pauses, `.` runs a step of 0.1 s while paused, W cycles the waveform the eyes follow, B
-switches the bead style, 0 starts again from rest (as in the arena; R rotates in the editor), Tab
+switches the bead style, 0 starts again from rest (as in the arena; R rotates on the Board), Tab
 and Shift-Tab change board. Drag a slider to set a sensor.
 """
 

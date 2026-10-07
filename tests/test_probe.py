@@ -14,14 +14,14 @@ from nektoids.levels.arenas import arenas
 from nektoids.sim.arena import BASE_RADIUS
 
 LEVELS = {level.title: level for level in arenas()}
-VIEW = View(34.0, (628.0, 335.0))  # as the editor shows the board
+VIEW = View(34.0, (628.0, 335.0))  # as the Board shows the board
 
 
 def wired(level):
     """An eye wired straight to a thruster, on the level's own board."""
     board = level.new_board()
     eye = board.place(Kind.EYE, (2, -1))
-    thruster = board.place(Kind.THRUSTER, (1, -2))
+    thruster = board.node_at((1, -2)) or board.place(Kind.THRUSTER, (1, -2))  # Fear's (D-354)
     board.connect(eye.id, thruster.id)
     return board
 
@@ -43,8 +43,8 @@ def test_the_eyes_read_the_light_where_the_probe_stands_and_the_circuit_follows(
     assert 0.0 < sent <= RATE_MAX
     for _ in range(400):
         probe.tick()
-    (thruster,) = probe.net.thrusters
-    assert probe.y[thruster] == pytest.approx(sent, abs=1e-3)  # settled: it passes the eye on
+    driven = max(probe.y[t] for t in probe.net.thrusters)  # Fear's other thruster, locked, is
+    assert driven == pytest.approx(sent, abs=1e-3)  # unwired (D-354); settled: it passes it on
 
 
 def test_the_probe_stays_out_of_the_obstacles():
@@ -56,7 +56,7 @@ def test_the_probe_stays_out_of_the_obstacles():
     assert gap >= disc.radius + BASE_RADIUS - 1e-9
 
 
-def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view():
+def test_the_preview_draws_the_board_where_the_board_does_and_follows_its_view():
     board = wired(LEVELS["Fear"])
     probe = Probe(board, LEVELS["Fear"], VIEW)
     (eye,) = probe.net.eyes

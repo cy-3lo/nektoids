@@ -2239,3 +2239,85 @@ ban was met while unbroken, so a level asking bans alone was won at once whereve
 such a level is now won by keeping its bans until its time is up: "Reach none of the lights"
 alone is to keep off the light for the time allowed. No shipped level is decided at its start,
 a test says so, and none asks bans alone.
+
+**D-350 — 2026-10-07 — A lit button filled in the accent, the switch at the bar's foot, pulses its fill: accent1's dark halfway to its medium and back, in step with the other targets' ink; its icon stays white. Amends D-337, D-338.**
+The physicist's, watching a new player: the Editor button's icon pulsed, where the colour that
+draws the eye is the button's own. Its fill now pulses and its icon keeps the text's white. The
+fill stops halfway to the medium: there the icon is 3.3:1 over it, above the 3:1 a graphic
+needs, where on the medium itself it would be 2.0:1. Play, a grey button, keeps its pulsing
+icon; tabs, bar icons and rows keep their pulsing ink, having no fill in the accent.
+
+**D-351 — 2026-10-07 — A tutorial closed on its last card leaves its shadow on the board, for the session; skipped, it takes it away. Amends D-334, D-339.**
+The physicist's, watching a new player: in 0.3 the shadow of the model, an eye ahead looking
+forward wired to a thruster behind, went with the last card, 3 / 3, just when the player was to
+build it. The tutorial now lends its ghosts once closed, after a tutorial still running and a
+hint's shadow shown, until Settings' Tutorial starts it again. Skip still ends it with its
+ghosts: the player asked for none. 0.1's and 0.2's ghosts are built over before their last card.
+
+**D-352 — 2026-10-07 — 0.6 Diagnostic's eye comes looking back and to the right, SW, a turn left off straight back. Amends D-335.**
+The physicist's, watching a new player: with the eye looking straight back, away from the light
+dead ahead, the probe in Diagnostic had to turn more than 90° before the eye read anything.
+Turned 60°, the light is still 120° off its axis at the start, so the swimmer still never moves;
+but three presses of L, or the wheel, 45° in all, and the eye reads, its beads running to the
+thruster; dragged beside the light, above it, it reads more. The proof, its eye turned forward,
+is unchanged.
+
+**D-353 — 2026-10-07 — Two hints, on every level of chapters 0 to 3: Hint 1, the parts one way to win adds; Hint 2, its shadow, those parts where they go and the way they face, without their wires. The idea is gone, and with it a level's `hints`. Chapter 4's levels, made by users, have none. Amends D-078, D-098, D-329.**
+The physicist's, watching a new player: the idea, a bit cryptic, did not help, and the shadow's
+wires gave the whole answer away. The parts and where they sit, turned as they should be, leave
+the wiring to the player. Both hints come from the level's proof, so every level that ships with
+one may have them: chapters 0 to 3; chapter 4's, made by users, keep none, by its `hints` flag.
+The ideas leave the level files, which take no `hints` key now; no file but the game's had one
+(D-310), so the format keeps its version 5. A tutorial's own shadow keeps its wires. Patience's
+parts take three lines, the most; the shadow's picture keeps its 140 px above the objectives.
+
+**D-354 — 2026-10-07 — Chapter 1's swimmers come with a thruster locked on each side, at (1, -2) and (-1, 2), straight above and below the centre on the board, both pushing forward, and no thruster to place; Aggression's board holds nothing else. New proofs for Aggression, Love and Orbit. Amends D-097, D-103, D-325, D-344.**
+The physicist's, watching a new player: with thrusters of his own to place, a player found
+better ways than Braitenberg's, a swimmer going sideways like a crab. Braitenberg's vehicles
+have their motors on their two sides; so have chapter 1's now, locked, the eyes and what wires
+them the player's. Aggression no longer comes half built: its free eye, thruster and wire, half
+of Fear's swimmer (D-103), go. The proofs, the scores to beat and the hints' shadows, are
+boards as Braitenberg drew them on those thrusters, picked from a search over the eyes' cells
+and facings: Fear's, the physicist's, already had them (2.03 s). Aggression: the eyes at the
+front corners, (2, -2) and (0, 2), looking ahead, crossed, 4.57 s, four parts, the fastest.
+Love, Braitenberg's 3a: the same eyes, each taken from its own Source in a Diff driving its own
+side, 7.28 s, eight parts; eyes turned in win sooner, 6.69 s, left for the player to find; a Source wired to two Diffs splits its beads between them, so one Source will not do,
+but one eye on the axis with a Source, both split over two Diffs, wins too, as the one
+thruster on the axis did, at the same tick. Orbit, the orbiter of D-097: the eye at the back
+left looking ahead on the left thruster, a Source on the right, 6.53 s, four parts. Tests that
+built on Fear's and Aggression's boards as they were, the old tutorials of `tests/data` and the
+board's text pinned on Fear's model, keep those boards as fixtures.
+
+**D-355 — 2026-10-07 — A passkey opens levels of its own chapter only: the level after the one whose win gives it, and those before it in that chapter; the other chapters stay as they are. Once every level is won, the last win gives VEHICLES, the word for every level, which opens them all. Amends D-075, D-325, D-326.**
+The physicist's: passkeys go chapter by chapter. Each chapter's first level is open, and the
+others open one after another, as won or by the word the level before gives. A word opened every
+level before it on the whole route: GOLD, Greed's, opened chapter 1's too; it now opens only
+Greed and Patience. MOON, DARK and GEMINI, each a chapter's last, were never given (D-326) and now
+would open nothing: they leave their files. A player who has won every level in a session gets
+one word to keep for them all, after Braitenberg's book, Vehicles: on the win card that
+completes the set, "Passkey for every level: VEHICLES", and in each won level's info box in
+Chapters. Typed, it opens every level of every chapter, none of them won.
+
+**D-356 — 2026-10-07 — The Editor is the Board, the tab where the player wires the control board; the Maker is the Editor, the level editor. The tabs read Run, Board and, on Build your level, Editor; the code follows. Amends D-301, D-303, D-341.**
+The physicist's: "Editor" fits the tool that makes levels, and the tab where the swimmer is wired
+shows its board. The tabs, their tips, the switch's tip, the banner's button ("Board (Tab)"),
+the status lines, the refusals, the Chapters row Open Editor and every tutorial card say so:
+"Press the **Board** button or tab". F1, F2 and F3 are Run, Board and Editor. The code's names
+follow, in two steps so that "editor" never means both: the Board's are `Env.BOARD`,
+`Screen.BOARD`, `LevelButton.BOARD`, `ArenaButton.BOARD`, `BoardScene`, `board_scene()` in
+`main.py`, `Router.open_board()`, a tutorial's `tab:board`, `level:board` and
+`{"screen": "board"}`; the Editor's, `Env.EDITOR`, `Screen.EDITOR`, `EditorScene` in
+`level_editor.py` and `level_editor_draw.py`, `editor()` in `main.py`, `Router.open_editor()`
+and `tab:editor`. The package `nektoids/editor/`, the whole interface,
+keeps its name, and `levels/making.py`, about making a level, its own. Decisions before this one
+keep the names they were written with.
+
+**D-357 — 2026-10-07 — Love's and Orbit's proofs are the physicist's: Love's, 18ZTtJNDZkXYA2nBggbmTZb7b, eight parts, 7.28 s; Orbit's, J1uA9PSzoTci9G, four parts, 9.43 s, the eye at the front looking ahead and to the left on the left thruster, a Source on the right. Orbit's four rings, of 2 u, move onto its circle, 9 u round the light, on the diagonals, at (±6, ±6) from it. Amends D-312, D-354.**
+The physicist's boards, as Fear's (D-344): Score's cross and the hints show them. Love's is the
+3a of D-354 laid out more tidily, won at the same tick. On the locked thrusters Orbit's orbiter
+goes round 9 u out, where the rings, 5 u out, never were: it passed 4 u from their centres. The
+physicist asked for larger rings; on the same centres they would have needed 5 u, reaching the
+light and each other, the start on the lower ring's edge, counted in. On the diagonals, 8.5 u
+out, 2 u rings keep their size, none holds the start, and they lie on the circle: the orbiter
+wins in 9.43 s, and a tight orbit like the old one, inside them, no longer does. The orbiter with
+a Halve on each wire goes round the same circle at half the speed and wins too, in 18.9 s.

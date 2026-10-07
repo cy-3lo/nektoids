@@ -23,15 +23,15 @@
       ]
     },
     {
-      "show": [{"tab": "editor"}, {"level": "edit"}],
-      "until": {"screen": "edit"},
+      "show": [{"tab": "board"}, {"level": "board"}],
+      "until": {"screen": "board"},
       "say": [
         "It has no eyes and no thrusters yet: it cannot",
-        "move. Click the Editor tab, or the Editor", "button at the bottom left, to build them."
+        "move. Click the Board tab, or the Board", "button at the bottom left, to build them."
       ]
     },
     {
-      "show": {"page": "editor"},
+      "show": {"page": "board"},
       "say": [
         "The board is your swimmer's body, its front to",
         "the right. Where you put a part is where it", "sits. Atop it: what a click does now."

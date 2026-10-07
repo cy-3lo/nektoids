@@ -21,7 +21,7 @@ GLYPH = {
     "caret-right": 0xF0DA,
     "infinity": 0xF534,
     "minus": 0xF068,
-    "shapes": 0xF61F,  # the Maker's Objects (D-301)
+    "shapes": 0xF61F,  # the Editor's Objects (D-301)
     "circle": 0xF111,  # an obstacle
     "location-arrow": 0xF124,  # the swimmer's start
     "circle-dot": 0xF192,  # a mark (D-306)
@@ -62,8 +62,8 @@ GLYPH = {
     "volume-high": 0xF028,
     "music": 0xF001,
     "border-all": 0xF84C,
-    "circle-plus": 0xF055,  # a mark, in the Maker (D-314)
-    "file": 0xF15B,  # a blank plane, in the Maker's Start from (D-310)
+    "circle-plus": 0xF055,  # a mark, in the Editor (D-314)
+    "file": 0xF15B,  # a blank plane, in the Editor's Start from (D-310)
     "list-check": 0xF0AE,
     "magnifying-glass": 0xF002,
     "trophy": 0xF091,

@@ -93,3 +93,14 @@ def test_the_tint_turns_to_the_light_hue_the_shorter_way_and_only_in_the_lights(
     assert tint(0.6, 150.0, 0.028)[1] == 150.0  # no light hue: one hue all along
     chromas = [tint(L, 273.0, 0.022)[0] for L in NEUTRAL_L]
     assert chromas[0] == pytest.approx(0.022) and chromas[-1] == pytest.approx(0.022 / 3)
+
+
+def test_a_lit_buttons_fill_pulses_from_its_own_fill_and_keeps_its_icon_legible():
+    """The switch's fill, lit, swings to ACTIVE and back each pulse, brightest when the ink of
+    the other targets is; its white icon keeps the 3:1 a graphic needs at the brightest (D-350)."""
+    frames = range(palette.PULSE_FRAMES + 1)
+    fills = [palette.pulse_fill(f) for f in frames]
+    assert fills[palette.PULSE_FRAMES // 2] == palette.ACTIVE
+    assert fills[0] == fills[-1] == max(fills, key=luminance)
+    assert len(set(fills)) > 10  # it moves
+    assert min(contrast(palette.TEXT, fill) for fill in fills) >= 3.0

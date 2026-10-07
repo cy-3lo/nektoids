@@ -28,16 +28,17 @@ from nektoids.editor.wheel import (
     swaps,
     turned,
 )
-from nektoids.graph.board import Kind
-from nektoids.levels.arenas import arenas, sandbox
+from nektoids.graph.board import Board, Kind
+from nektoids.levels.arenas import sandbox
 
 SIZE = 40.0
 CENTRE = (628.0, 335.0)
-FEAR = next(level for level in arenas() if level.title == "Fear")
+FEAR = {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []}
+# Fear's board before its thrusters were locked (D-354): two eyes and two thrusters to place
 
 
 def test_an_empty_cell_offers_the_parts_left_and_a_part_its_actions():
-    board = FEAR.new_board()
+    board = Board.from_dict(FEAR)
     kinds = frozenset({Kind.EYE, Kind.THRUSTER})
     assert offer(board, (0, 0), kinds) == (Kind.EYE, Kind.THRUSTER)
     eye = board.place(Kind.EYE, (0, 0))
@@ -189,7 +190,7 @@ def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
             assert lowest + LINE_BELOW + line <= y + h
 
 
-def test_the_wheel_takes_the_makers_keys_for_its_own_icons():
+def test_the_wheel_takes_the_editors_keys_for_its_own_icons():
     items = (Piece.LIGHT, Piece.OBSTACLE)  # an empty point of the plane (D-301)
     shown = slots(items, (100.0, 100.0), WHEEL_HEX, frozenset(), keys=KEYS)
     assert [(s.what, s.key) for s in shown] == [(Piece.LIGHT, "1"), (Piece.OBSTACLE, "2")]

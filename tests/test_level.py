@@ -6,7 +6,7 @@ import pytest
 
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import NE, hex_disc
-from nektoids.levels.arenas import DATA, ORDER, SANDBOX, arenas, sandbox
+from nektoids.levels.arenas import DATA, EVERY_LEVEL, ORDER, SANDBOX, arenas, sandbox
 from nektoids.levels.level import FORMAT, Item, ItemKind, Level, is_passkey, load, to_json
 from nektoids.levels.objectives import Count, Goal, Target, Verb
 from nektoids.levels.sandbox import tutorial_board
@@ -138,14 +138,16 @@ def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
     assert {level.author for level in (*arenas(), sandbox())} == {"@Cy-3LO"}
 
 
-def test_every_level_gives_a_passkey_but_the_tutorials_and_the_last():
+def test_every_level_gives_a_passkey_but_the_tutorials_a_chapters_last_and_the_users():
     words = {level.title: level.passkey for level in arenas()}  # D-075
     tutorials = [None] * 6  # every one open: no word to give (D-335)
-    shipped = ["LOVE", "SWORD", "HEART", "MOON", "DARK", "GOLD", "SNAIL", "GEMINI"]
+    braitenberg = ["LOVE", "SWORD", "HEART", None]  # its last opens nothing (D-325, D-355)
+    obstacles, many_lights = [None], ["GOLD", "SNAIL", None]
     made = [None, None]  # by users, every one open (D-348)
-    assert list(words.values()) == [*tutorials, *shipped, *made]
+    assert list(words.values()) == [*tutorials, *braitenberg, *obstacles, *many_lights, *made]
     given = [word for word in words.values() if word is not None]
-    assert len(set(given)) == len(given)
+    assert len(set(given)) == len(given) and EVERY_LEVEL not in given  # D-355
+    assert is_passkey(EVERY_LEVEL)
     assert all(is_passkey(word) for word in given) and sandbox().passkey is None
     assert not is_passkey("sword") and not is_passkey("SWÖRD") and not is_passkey("A" * 11)
     data = a_level(passkey="lower")

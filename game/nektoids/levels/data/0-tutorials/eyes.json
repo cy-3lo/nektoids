@@ -8,15 +8,14 @@
   "board": {"zone": 7, "stock": {"eye": 1, "thruster": 1}, "parts": [], "wires": []},
   "time_limit": 15,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
-  "hints": {"idea": "The eye drives what it is wired to."},
   "tutorial": {
     "steps": [
       {
-        "show": [{"tab": "editor"}, {"level": "edit"}],
-        "until": {"screen": "edit"},
+        "show": [{"tab": "board"}, {"level": "board"}],
+        "until": {"screen": "board"},
         "say": [
           "Swim to the light and touch it. To see it, the swimmer needs an **Eye**.",
-          "Press the **Editor** button or tab, or press Tab."
+          "Press the **Board** button or tab, or press Tab."
         ]
       },
       {

@@ -1,4 +1,4 @@
-"""The Maker's objects and its Wheel (D-301). objects.py imports no pygame."""
+"""The Editor's objects and its Wheel (D-301). objects.py imports no pygame."""
 
 from dataclasses import replace
 
@@ -89,7 +89,7 @@ def test_a_mark_is_grabbed_by_its_rim_or_its_centre_and_a_click_inside_finds_the
 
 
 def test_the_wheel_lights_move_on_an_object_more_on_a_new_one_and_the_arrows_go_round():
-    light, point = 0, Point((3.0, 3.0))  # D-314, as the Editor's Wheel (D-084)
+    light, point = 0, Point((3.0, 3.0))  # D-314, as the Board's Wheel (D-084)
     assert chosen(light, Tool.MOVE) == 1 and chosen(light, Tool.MORE) == 2
     assert chosen(Piece.START, Tool.MOVE) == 1 and chosen(Piece.START, Tool.MORE) is None
     assert chosen(point, Piece.MARK) == 2 and chosen(None, Tool.MOVE) is None
@@ -100,7 +100,7 @@ def test_the_wheel_lights_move_on_an_object_more_on_a_new_one_and_the_arrows_go_
     assert piece_of(LEVEL, Piece.START) is Piece.START and piece_of(LEVEL, point) is None
 
 
-def test_the_makers_wheel_sits_side_by_side_over_the_top_more_at_its_top():
+def test_the_editors_wheel_sits_side_by_side_over_the_top_more_at_its_top():
     assert angles(4) == [210.0, 150.0, 90.0, 30.0]  # D-314, D-316: no corner left empty
     on_item = slots(offer(0), (0.0, 0.0), 10.0, frozenset(), keys=KEYS)
     top = min(on_item, key=lambda slot: slot.at[1])  # the screen's y runs down

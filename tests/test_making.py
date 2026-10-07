@@ -44,7 +44,7 @@ from nektoids.levels.making import (
 )
 from nektoids.levels.objectives import Count, Goal, Target, Verb
 
-LEVEL = replace(sandbox(), tutorial=None)  # as the Maker holds it: the intro is main's (D-341)
+LEVEL = replace(sandbox(), tutorial=None)  # as the Editor holds it: the intro is main's (D-341)
 # two lights, four obstacles; the start at (15, 19), heading 20°
 
 
@@ -209,10 +209,10 @@ def test_a_level_copied_as_text_is_pasted_back_as_it_was():
     assert pasted(made, to_json(LEVEL)) == LEVEL  # and back: one step for undo each way
 
 
-def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_parts():
+def test_a_shipped_level_pasted_brings_its_plane_goals_time_handout_and_locked_parts():
     fear = next(
         level for level in arenas() if level.title == "Fear"
-    )  # its passkey, its hints, a board of its own
+    )  # its passkey, a board of its own, two thrusters locked on it (D-354)
     made = pasted(LEVEL, to_json(fear))
     assert (made.title, made.spec, made.start) == (fear.title, fear.spec, fear.start)
     assert (made.items, made.objectives, made.time_limit) == (
@@ -221,9 +221,10 @@ def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_
         fear.time_limit,
     )
     assert (made.board["zone"], made.board["stock"]) == (19, fear.board["stock"])  # D-315
-    assert made.board["parts"] == LEVEL.board["parts"]  # the board's own parts, none here
-    assert made.tutorial is None and made.passkey is None and made.hints is None
-    assert fear.passkey is not None and fear.hints is not None
+    assert made.board["parts"] == fear.board["parts"]  # the level's own, locked (D-319)
+    assert all(part["locked"] for part in fear.board["parts"])
+    assert made.tutorial is None and made.passkey is None
+    assert fear.passkey is not None
     wiring = next(level for level in arenas() if level.title == "Wiring")  # D-335: a tutorial
     assert wiring.tutorial is not None and pasted(LEVEL, to_json(wiring)).tutorial is None
 
@@ -296,7 +297,7 @@ def test_the_zone_is_a_hexagon_of_seven_to_thirty_seven_cells_one_ring_at_a_time
 
 
 def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
-    board = LEVEL.new_board()  # D-319: the Editor's
+    board = LEVEL.new_board()  # D-319: the Board's
     eye = board.place(Kind.EYE, (0, 0))
     board.place(Kind.THRUSTER, (1, 0))  # free: the player's, not the level's
     board.lock(eye.id)
@@ -307,6 +308,6 @@ def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
     assert made.board["wires"] == [] and pasted(LEVEL, to_json(made)) == made
     assert taken(LEVEL, made).board["parts"] == made.board["parts"]  # Start from, Paste
     assert blank(made).board["parts"] == []  # a blank plane places none
-    aggression = next(level for level in arenas() if level.title == "Aggression")  # its parts
+    diagnostic = next(level for level in arenas() if level.title == "Diagnostic")  # its parts
     # free, prewired: left out
-    assert taken(LEVEL, aggression).board["parts"] == []
+    assert taken(LEVEL, diagnostic).board["parts"] == []

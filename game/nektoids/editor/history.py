@@ -1,5 +1,5 @@
-"""Undo and redo for the editor (D-027): whole board states, not the edits that led to them;
-in the Maker, whole levels (D-301).
+"""Undo and redo for the Board (D-027): whole board states, not the edits that led to them;
+in the Editor, whole levels (D-301).
 
 Routes depend on the order the wires were drawn and never move (D-007), so replaying edits could
 route a wire differently; putting a saved state back cannot. A board holds a few dozen frozen

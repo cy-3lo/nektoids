@@ -1,11 +1,11 @@
-"""Drawing the Maker (D-301). Reads the scene; never changes it.
+"""Drawing the Editor (D-301). Reads the scene; never changes it.
 
 The plane at large, as the run shows it, over its grid: a dot wherever a position may fall,
 every whole u, 2 px wide, none where they would crowd (`dot_step`); a line every 5 u, no
 coordinate: the grid is enough (D-311). Over the grid the light's rays, as they stand when the
 run starts, the obstacles, the lights, and the swimmer where it starts, its wedge where it
 heads; the focus lit, a ring round its object or a cross on its point; what is in hand, where a
-click would put it; atop it, as in the Editor, what the next click or Enter does, or what is
+click would put it; atop it, as on the Board, what the next click or Enter does, or what is
 focused, its name and key beside it, a line under it (D-314). Round it, the frame (`draw.py`):
 the tabs and the level's caption, the bar, the open drawer, the status line. Objects as Parts
 draws its rows and its Wheel (D-068, D-069): each object and how many are on the plane, undo and
@@ -79,7 +79,7 @@ from nektoids.editor.layout import (
     slider_parts,
     step_buttons,
 )
-from nektoids.editor.maker import MakerScene, Paste
+from nektoids.editor.level_editor import EditorScene, Paste
 from nektoids.editor.objects import (
     KEYS,
     NAMES,
@@ -164,7 +164,7 @@ SHARED = (  # Share level's box, once it has copied (D-346)
 _dots_cache: dict[str, object] = {"key": None, "surface": None}
 
 
-def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def draw_level_editor(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     screen.fill(BACKGROUND)
     screen.set_clip(scene.arena_area)
     _draw_grid(screen, scene)
@@ -189,8 +189,8 @@ def draw_maker(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
     draw_info(screen, scene, fonts, _about)
 
 
-def _draw_action(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """Atop the plane, as atop the Editor's board (D-068, D-314): what the next click or Enter
+def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Atop the plane, as atop the Board (D-068, D-314): what the next click or Enter
     does, a lit disc, its name and key beside it, a line under it saying what it does; with no
     action, the object focused, plain; nothing with nothing focused."""
     if scene.layout.action_at is None:
@@ -215,7 +215,7 @@ def _draw_action(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> Non
     screen.blit(under, at)
 
 
-def _action_says(scene: MakerScene, action) -> str:
+def _action_says(scene: EditorScene, action) -> str:
     """What the action atop the plane does, in a short line (D-314, D-318)."""
     if isinstance(action, Piece) and scene.picked is action:
         return "Click the plane: place it"
@@ -230,7 +230,7 @@ def _action_says(scene: MakerScene, action) -> str:
     return f"Enter: {name(scene.level, scene.focus, action).lower()}"
 
 
-def _draw_focus(screen: pygame.Surface, scene: MakerScene) -> None:
+def _draw_focus(screen: pygame.Surface, scene: EditorScene) -> None:
     """The focus lit on the plane: a ring round its object, or a cross on its point."""
     focus = scene.focus
     if focus is None:
@@ -247,7 +247,7 @@ def _draw_focus(screen: pygame.Surface, scene: MakerScene) -> None:
     pygame.draw.circle(screen, LIT, (cx, cy), ring, 2)
 
 
-def _draw_in_hand(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_in_hand(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """A row of Objects picked: its object where a click would put it, under the mouse."""
     if scene.picked is None or not contains(scene.arena_area, scene.pointer):
         return
@@ -268,7 +268,7 @@ def _draw_object(screen: pygame.Surface, fonts: Fonts, kind: ItemKind, centre, r
         pygame.draw.circle(screen, OBSTACLE, centre, radius)
 
 
-def _draw_grid(screen: pygame.Surface, scene: MakerScene) -> None:
+def _draw_grid(screen: pygame.Surface, scene: EditorScene) -> None:
     """The plane as far as it shows: its dots, if they do not crowd, and a line every 5 u."""
     view, area = scene.view, pygame.Rect(scene.arena_area)
     dots = dot_step(view.scale)
@@ -285,7 +285,7 @@ def _draw_grid(screen: pygame.Surface, scene: MakerScene) -> None:
         pygame.draw.line(screen, PLANE_LINE, (area.left, py), (area.right, py))
 
 
-def _dotted(scene: MakerScene, area: pygame.Rect, step: float) -> pygame.Surface:
+def _dotted(scene: EditorScene, area: pygame.Rect, step: float) -> pygame.Surface:
     """The plane's ground with a dot every `step` [u], as `area` shows it; made again only when
     the view or the area changes."""
     view = scene.view
@@ -307,8 +307,8 @@ def _dotted(scene: MakerScene, area: pygame.Rect, step: float) -> pygame.Surface
     return _dots_cache["surface"]
 
 
-def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
-    """The Maker's own drawers: Objects' rows, each object and how many are on the plane, lit if
+def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The Editor's own drawers: Objects' rows, each object and how many are on the plane, lit if
     in hand or focused, then undo and redo; Goals'; Brief's fields; Files'; Navigator's rays,
     overview and zoom."""
     layout, level = scene.layout, scene.level
@@ -364,7 +364,7 @@ def _draw_rows(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         draw_overview(screen, scene, fonts, (*scene.pos[0], scene.heading))
 
 
-def _share_says(scene: MakerScene) -> str:
+def _share_says(scene: EditorScene) -> str:
     """The line under Share level (D-320): its score, once won as it stands; else how to win."""
     if scene.checking is not None:
         return f"Checking its proof: {round(100 * scene.checking[0].progress)}%"
@@ -375,7 +375,7 @@ def _share_says(scene: MakerScene) -> str:
     return "Win it in Run first"  # D-321
 
 
-def _draw_parts(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_parts(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Parts (D-315): the board's cells, then each part, its icon and name, then − and + either
     side of how many, the infinity sign for unlimited, greyed at the ends of what it may be."""
     board = scene.level.board
@@ -408,7 +408,7 @@ def _draw_parts(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None
             screen.blit(count, count.get_rect(center=middle))
 
 
-def _draw_goals(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_goals(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Goals (D-308): each goal's name, as the run will say it, its bin at the right; under it,
     its words' buttons, those it says lit, those that would aim at nothing dimmed; the sliders;
     Add a goal."""
@@ -434,7 +434,7 @@ def _draw_goals(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None
         draw_row(screen, scene, fonts, rect, button, ROW_NAME[button], ("none", ""), icon="plus")
 
 
-def _draw_knob(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, knob: Knob, rect) -> None:
+def _draw_knob(screen: pygame.Surface, scene: EditorScene, fonts: Fonts, knob: Knob, rect) -> None:
     """A slider of Goals: what it sets, at its left; its track, as Navigator's zoom; its value,
     in a box at its right, a field with a caret while it is typed in."""
     now, scale = scene.value(knob), scene.scale(knob)
@@ -473,7 +473,7 @@ def _draw_spec(screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int
         pygame.draw.line(screen, LIT, (x, top + 2), (x, top + HINT_LINE - 2), 2)
 
 
-def _draw_foot(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_foot(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """What the drawer's scrolled rows do not clip: at the foot of Objects, the Wheel; atop
     Files, Save/Load, over its rule."""
     if scene.layout.wheel_fold is not None:
@@ -482,7 +482,7 @@ def _draw_foot(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
         _draw_save_load(screen, scene, fonts)
 
 
-def _draw_save_load(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_save_load(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """Files' Save/Load (D-310, D-320): its title; Copy level, the field to paste a level into,
     Share level, greyed until it is won, and the line under it; the rule over the levels to
     start from, which scroll under it (D-322)."""
@@ -506,11 +506,11 @@ def _draw_save_load(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> 
     pygame.draw.line(screen, RULE, (x, y), (x + w, y), 2)  # the bar that divides, as the Wheel's
 
 
-def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_wheel(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """As Tools and Parts draw it (D-068, D-069): a rule, The Wheel's title, which folds; unless
     folded, the focus large at its hub, the Wheel's icons round it, the one Enter uses lit, a
     line under it saying what is focused and its setting, the action being named atop the plane
-    (D-314, D-317). The Maker's Wheel never folds: its title has no arrow."""
+    (D-314, D-317). The Editor's Wheel never folds: its title has no arrow."""
     layout = scene.layout
     fx, fy, fw, _ = layout.wheel_fold
     pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
@@ -537,7 +537,7 @@ def _draw_wheel(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None
     screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
 
 
-def _draw_hub(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, centre) -> None:
+def _draw_hub(screen: pygame.Surface, scene: EditorScene, fonts: Fonts, centre) -> None:
     """The focus drawn large at the Wheel's hub: a point's cross, the swimmer, a light, an
     obstacle as big as its radius says, within the hub."""
     focus = scene.focus
@@ -555,7 +555,7 @@ def _draw_hub(screen: pygame.Surface, scene: MakerScene, fonts: Fonts, centre) -
         _draw_object(screen, fonts, item.kind, centre, size * WHEEL_HEX)
 
 
-def _draw_wheel_tip(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_wheel_tip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """The Wheel's icon under the mouse, named in a tooltip as the bar's are (D-069): the less
     and the more as the focused item's kind says them, the key while key hints are on."""
     slot = scene.tooltip
@@ -568,8 +568,8 @@ def _draw_wheel_tip(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> 
     draw_tip(screen, fonts, text, midbottom=(x, round(slot.at[1] - ICON * WHEEL_HEX - 10)))
 
 
-def _about(scene: MakerScene, what: object) -> tuple[str, tuple[str, ...]]:
-    """What the Maker's info boxes say: an object's row, undo and redo, a view's button, a row
+def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
+    """What the Editor's info boxes say: an object's row, undo and redo, a view's button, a row
     of Start from; Share level's, once it has copied, how to share the level (D-346)."""
     if what is FileButton.SHARE and scene.shared:
         return SHARED
@@ -584,7 +584,7 @@ def _about(scene: MakerScene, what: object) -> tuple[str, tuple[str, ...]]:
     return ROW_NAME[what], (TIP[what],)
 
 
-def _draw_status(screen: pygame.Surface, scene: MakerScene, fonts: Fonts) -> None:
+def _draw_status(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """What a click or a key does now; why something was refused; that the level is decided
     where its swimmer starts, while it is (D-349); what a passkey opened."""
     text, colour = scene.hint(), DIM_TEXT

@@ -90,7 +90,7 @@ def step(
     sources: np.ndarray | None = None,
 ) -> np.ndarray:
     """`step_given` with the jam's two senses given as they are: eyes (N, n_eyes), and the
-    sources at SOURCE_RATE unless `sources` says otherwise (`given_rates`). The editor's demos,
+    sources at SOURCE_RATE unless `sources` says otherwise (`given_rates`). The Board's demos,
     its probe and the tests drive the graph so; a run reads every sense (`sim.world`, D-203)."""
     return step_given(net, y, given_rates(net, eyes, sources), dt)
 

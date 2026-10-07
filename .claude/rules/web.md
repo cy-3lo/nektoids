@@ -13,7 +13,7 @@ paths:
 - The page's JavaScript is reached only through `editor/clipboard.py`, its script put in once
   at startup (D-206); nothing else talks to the page.
 - Drawing reads simulation state; it never mutates it.
-- Editor space is scarce by design: each level's zone is small and fixed, and the canvas is not
+- Board space is scarce by design: each level's zone is small and fixed, and the canvas is not
   infinite. Zoom and pan move the view only, never the zone (D-013).
 - Click-to-inspect and beads on wires are core features, not polish.
 - Colours come only from `editor/palette.py`, named by their job; no RGB tuple or hex code

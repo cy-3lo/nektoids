@@ -42,7 +42,7 @@ nodes are wires, ×2, ÷2, sum and difference, plus a source (D-014); levels in 
 new levels, then Shadows; 3 Many lights, Greed, Patience, Two lights; 4 Made by users; each with a
 countable win condition (D-097); fixed seed, fully deterministic;
 complexity, the number of parts, is scored and every body stays a sphere of radius 1 u (D-045);
-undo and redo in the editor (D-027). Stage 0's foundations (D-200 to D-206): one table of part
+undo and redo on the Board (D-027). Stage 0's foundations (D-200 to D-206): one table of part
 kinds and their laws, senses and actions, a level format with a version, saved boards with
 their paths, a board as text, Save/Load in Files.
 And stage 1, the todo's §11: a level maker, for us and Camille first (D-041), then for players:

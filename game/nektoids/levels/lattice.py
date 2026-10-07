@@ -2,7 +2,7 @@
 15°, and each setting within its range, by its step, all of them whole numbers. A lattice keeps a
 level's text short and its
 layout legible; invariant 4 binds only the player's graph. A shipped level's values may lie off
-it: they stay so until the Maker changes them. Pure numbers.
+it: they stay so until the Editor changes them. Pure numbers.
 """
 
 from __future__ import annotations

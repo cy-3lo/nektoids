@@ -1,17 +1,19 @@
 """Load's field and loading a board's text (D-206). boardfield.py imports no pygame."""
 
 from nektoids.editor.boardfield import LONGEST, board_field, load
-from nektoids.graph.board import Kind
+from nektoids.graph.board import Board, Kind
 from nektoids.graph.boardtext import to_text
 from nektoids.graph.hexgrid import NW, SW
 from nektoids.levels.arenas import arenas
 from nektoids.levels.sandbox import tutorial_board
 
 LEVELS = {level.title: level for level in arenas()}
+FEAR_BEFORE = {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []}
+# Fear's board before its thrusters were locked (D-354): its four parts all the player's
 
 
 def fear():
-    board = LEVELS["Fear"].new_board()
+    board = Board.from_dict(FEAR_BEFORE)
     eyes = [board.place(Kind.EYE, c, facing=f) for c, f in (((2, -1), NW), ((1, 1), SW))]
     thrusters = [board.place(Kind.THRUSTER, cell) for cell in ((1, -2), (-1, 2))]
     for eye, thruster in zip(eyes, thrusters, strict=True):

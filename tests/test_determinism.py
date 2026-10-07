@@ -106,15 +106,25 @@ def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
     assert play(CROSSED, "Aggression")[1] == ticks  # the same tick, every run
 
 
-def test_aggressions_board_comes_uncrossed_and_wins_once_the_player_crosses_it():
-    board = LEVELS["Aggression"].new_board()  # one eye wired to its own side's thruster (D-103)
-    assert play(Network.from_board(board), "Aggression")[0] is Outcome.TIME_UP
-    board.remove_wire(board.wires[0])
-    eye = board.place(Kind.EYE, (-2, 1), facing=SE)
-    thruster = board.place(Kind.THRUSTER, (1, 1), facing=E)
-    board.connect(board.node_at((-1, -1)).id, thruster.id)
-    board.connect(eye.id, board.node_at((2, -1)).id)
-    assert play(Network.from_board(board), "Aggression")[0] is Outcome.WON
+SIDES = ((1, -2), (-1, 2))  # chapter 1's thrusters, locked: the body's left and right (D-354)
+
+
+@pytest.mark.parametrize("title", ["Fear", "Aggression", "Love", "Orbit"])
+def test_chapter_1_comes_with_a_thruster_locked_on_each_side_and_hands_out_none(title):
+    board = LEVELS[title].new_board()  # as Braitenberg's vehicles: no swimming sideways
+    assert [(n.kind, n.cell, n.facing, n.locked) for n in board.nodes.values()] == [
+        (Kind.THRUSTER, cell, E, True) for cell in SIDES
+    ]
+    assert board.wires == [] and board.remaining(Kind.THRUSTER) == 0
+
+
+def test_aggression_crossed_eyes_at_the_front_corners_win():
+    board = LEVELS["Aggression"].new_board()  # its proof (D-354)
+    left, right = (board.node_at(cell) for cell in SIDES)
+    upper, lower = (board.place(Kind.EYE, cell, facing=E) for cell in ((2, -2), (0, 2)))
+    for eye, thruster in ((upper, right), (lower, left)):
+        assert not isinstance(board.connect(eye.id, thruster.id), Refused)
+    assert play(Network.from_board(board), "Aggression")[:2] == (Outcome.WON, 548)
 
 
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
@@ -148,12 +158,12 @@ def test_shadows_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spare():
 
 def fear(upper, lower, crossed=False):
     """The fear tutorial's board (D-039): the eyes at the front, turned to `upper` and `lower`,
-    the thrusters at the back corners, pushing forward, each eye wired to its own side."""
+    the level's thrusters on the sides, pushing forward (D-354), each eye wired to its own side."""
     board = LEVELS["Fear"].new_board()
     eyes = [
         board.place(Kind.EYE, cell, facing=f) for cell, f in (((2, -1), upper), ((1, 1), lower))
     ]
-    thrusters = [board.place(Kind.THRUSTER, cell) for cell in ((1, -2), (-1, 2))]
+    thrusters = [board.node_at(cell) for cell in SIDES]
     for eye, thruster in zip(eyes, reversed(thrusters) if crossed else thrusters, strict=True):
         assert not isinstance(board.connect(eye.id, thruster.id), Refused)
     return Network.from_board(board)
@@ -180,7 +190,7 @@ def love(upper, lower, wiring="love"):
     eyes = [
         board.place(Kind.EYE, cell, facing=f) for cell, f in (((2, -1), upper), ((1, 1), lower))
     ]
-    thrusters = [board.place(Kind.THRUSTER, cell) for cell in ((1, -2), (-1, 2))]
+    thrusters = [board.node_at(cell) for cell in SIDES]  # the level's, locked (D-354)
     sources = []
     if wiring in ("love", "drive"):
         sources = [board.place(Kind.SOURCE, cell) for cell in ((0, -1), (-1, 1))]
@@ -201,14 +211,16 @@ def love(upper, lower, wiring="love"):
 
 def love_on_the_axis():
     """The smallest love (D-044): one eye at the front looking ahead, a Diff of a Source and the
-    eye, one thruster at the back, all on the body's axis."""
+    eye for each of the level's thrusters (D-354), the Source and the eye split between the two:
+    half the push on each side, as one thruster on the axis had it all."""
     board = LEVELS["Love"].new_board()
     eye = board.place(Kind.EYE, (2, 0), facing=E)
     source = board.place(Kind.SOURCE, (0, -1))
-    diff = board.place(Kind.DIFFERENCE, (1, 0))
-    thruster = board.place(Kind.THRUSTER, (-2, 0))
-    for a, b in ((source, diff), (eye, diff), (diff, thruster)):
-        assert not isinstance(board.connect(a.id, b.id), Refused)
+    left, right = (board.node_at(cell) for cell in SIDES)
+    upper, lower = (board.place(Kind.DIFFERENCE, cell) for cell in ((1, -1), (0, 1)))
+    for diff, thruster in ((upper, left), (lower, right)):
+        for a, b in ((source, diff), (eye, diff), (diff, thruster)):
+            assert not isinstance(board.connect(a.id, b.id), Refused)
     return Network.from_board(board)
 
 
@@ -232,7 +244,7 @@ def test_love_comes_to_the_light_stops_short_of_it_and_stays_with_time_and_room_
     assert last + 1.0 < LOVE_RING  # its whole body inside the dashed ring
 
 
-def test_love_with_one_eye_one_diff_and_one_thruster_on_the_axis_wins_too():
+def test_love_with_one_eye_on_the_axis_and_a_diff_for_each_thruster_wins_too():
     ended, ticks, _ = play(love_on_the_axis(), "Love")
     assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Love"].time_limit
     nearest, last = nearest_and_last(love_on_the_axis())
@@ -254,10 +266,14 @@ def test_without_a_diff_the_swimmer_touches_the_light_and_loses():
 
 
 def built(title, parts, wires):
-    """A board on the level's own stock: `parts`, (kind, cell, facing) each, placed in order,
-    then `wires` drawn between them by their places in `parts`."""
+    """A board on the level's own stock: `parts`, (kind, cell, facing) each, placed in order, a
+    part the level places there taken as it is, then `wires` drawn between them by their places
+    in `parts`."""
     board = LEVELS[title].new_board()
-    nodes = [board.place(kind, cell, facing=facing) for kind, cell, facing in parts]
+    nodes = [
+        board.node_at(cell) or board.place(kind, cell, facing=facing)
+        for kind, cell, facing in parts
+    ]
     assert not any(isinstance(node, Refused) for node in nodes), nodes
     for a, b in wires:
         assert not isinstance(board.connect(nodes[a].id, nodes[b].id), Refused), (a, b)
@@ -265,23 +281,25 @@ def built(title, parts, wires):
 
 
 THRUSTERS = [(Kind.THRUSTER, (2, -1), E), (Kind.THRUSTER, (1, 1), E)]  # front left, front right
-# The orbiter (D-097): an eye at the back left looking ahead pushes the left thruster; a Source
-# pushes the right one all the time, so the swimmer turns left until the light, seen ahead,
-# straightens it: it settles on a circle round the light, keeping it on its left.
+LOCKED = [(Kind.THRUSTER, cell, E) for cell in SIDES]  # chapter 1's, on the sides (D-354)
+# The orbiter (D-097), the physicist's (D-357): an eye at the front looking ahead and to the left
+# pushes the left thruster; a Source pushes the right one all the time, so the swimmer turns left
+# until the light, seen, straightens it: it settles on a circle 9 u round the light, keeping it
+# on its left, through the four rings on that circle.
 ORBITER = built(
-    "Orbit", [(Kind.EYE, (-1, -1), E), (Kind.SOURCE, (0, 0), None), *THRUSTERS], [(0, 2), (1, 3)]
+    "Orbit", [(Kind.EYE, (2, 0), NE), (Kind.SOURCE, (0, 0), None), *LOCKED], [(0, 2), (1, 3)]
 )
-# The brief's ÷2 on one side: eyes ahead, crossed, the left one halved; a Source on the right.
+# ... with a Halve on each wire: both pushes halved, their ratio kept, the same circle, slower.
 HALVED = built(
     "Orbit",
     [
-        (Kind.EYE, (-1, -1), E),
-        (Kind.EYE, (-2, 1), E),
-        *THRUSTERS,
+        (Kind.EYE, (2, 0), NE),
         (Kind.SOURCE, (0, 0), None),
-        (Kind.HALVE, (0, -1), None),
+        *LOCKED,
+        (Kind.HALVE, (1, -1), None),
+        (Kind.HALVE, (0, 1), None),
     ],
-    [(0, 5), (5, 3), (1, 2), (4, 3)],
+    [(0, 4), (4, 2), (1, 5), (5, 3)],
 )
 
 
@@ -291,12 +309,12 @@ def test_orbit_the_orbiter_goes_round_the_light_through_its_rings_well_clear_of_
     assert play(ORBITER, "Orbit")[1] == ticks  # the same tick, every run
     light = LEVELS["Orbit"].arena.light_xy[0]
     nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(ORBITER, "Orbit", ticks * DT))
-    assert nearest > 2 * TOUCH  # it orbits 5.2 u out: never near touching (D-004)
+    assert nearest > 8.5  # it goes round 9 u out, where its rings are (D-004, D-357)
 
 
-def test_orbit_halving_one_crossed_eye_orbits_too_and_faster():
+def test_orbit_halving_both_pushes_goes_round_the_same_circle_at_half_the_speed():
     ended, ticks, _ = play(HALVED, "Orbit")
-    assert ended is Outcome.WON and ticks < play(ORBITER, "Orbit")[1]
+    assert ended is Outcome.WON and 1.9 < ticks / play(ORBITER, "Orbit")[1] < 2.1
 
 
 def test_orbit_aggression_touches_the_light_and_a_bare_drive_or_fear_never_go_round_it():
@@ -391,7 +409,10 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # Love's and Patience's again when every setting did, Love's light power 4 and its ring 7 u, the
 # obstacles of 1.5 u 2 u (D-317): the same outcomes, a few ticks apart; Fear's winner again
 # when its ring went from 12 u to 8 u, the most a mark may be, its light to power 4 and its start
-# 3 u from it (D-318): out of the ring in about the time it took before.
+# 3 u from it (D-318): out of the ring in about the time it took before. Orbit's winners again
+# when chapter 1's thrusters were locked on the body's sides (D-354): Fear's and Love's boards
+# had theirs there already, and the smallest love's two halves push as its one thruster did.
+# Orbit's again when its rings went out onto the physicist's orbiter's circle (D-357).
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
@@ -403,8 +424,8 @@ BEFORE_SENTENCES = {
     ("Love", "love(E, E)"): (Outcome.WON, 882, ((1, 1, 1.0), (1, 1, 1.0))),  # D-317
     ("Love", "love_on_the_axis()"): (Outcome.WON, 1178, ((1, 1, 1.0), (1, 1, 1.0))),
     ("Love", "love(NE, SE)"): (Outcome.LOST, 381, ((0, 1, 0.29999999999999943), (0, 1, 0.0))),
-    ("Orbit", "ORBITER"): (Outcome.WON, 1093, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312
-    ("Orbit", "HALVED"): (Outcome.WON, 1038, ((4, 4, 1.0), (1, 1, 1.0))),
+    ("Orbit", "ORBITER"): (Outcome.WON, 1132, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312, D-357
+    ("Orbit", "HALVED"): (Outcome.WON, 2263, ((4, 4, 1.0), (1, 1, 1.0))),  # D-357
     ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
     ("Greed", "greedy()"): (Outcome.WON, 1202, ((2, 2, 1.0),)),  # D-313
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),

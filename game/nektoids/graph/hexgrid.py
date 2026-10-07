@@ -1,4 +1,4 @@
-"""Hex grid geometry for the editor board.
+"""Hex grid geometry for the board.
 
 Pointy-top hexes in axial coordinates (q, r). Screen y points down, so r grows downwards.
 Directions are indexed 0..5 so that opposite = (d + 3) % 6 and the three axes are d % 3:

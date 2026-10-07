@@ -4,7 +4,7 @@ fails, and the proof, which does, wins (`test_proof.py`). proof.py imports no py
 import pytest
 
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import E, W
+from nektoids.graph.hexgrid import SW, E, W
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.proof import Replay
@@ -58,9 +58,9 @@ def test_minus_an_eye_alone_or_a_source_alone_touches_the_light():
     assert ended("Minus", source, [((0, 0), (-1, 0))]) is Outcome.LOST
 
 
-def test_diagnostic_comes_with_an_eye_looking_back_and_never_moves():
-    board = LEVELS["Diagnostic"].new_board()
-    assert board.node_at((1, 0)).facing == W
+def test_diagnostic_comes_with_an_eye_looking_back_and_to_the_right_and_never_moves():
+    board = LEVELS["Diagnostic"].new_board()  # a turn off straight back: the light in a few
+    assert board.node_at((1, 0)).facing == SW  # clicks of the wheel, in Diagnostic (D-352)
     assert ended("Diagnostic", board=board) is Outcome.TIME_UP
 
 

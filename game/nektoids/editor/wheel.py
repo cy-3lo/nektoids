@@ -46,7 +46,7 @@ ACTIONS = (  # the wire at the top, the turns either side of the gap, delete las
 
 @dataclass(frozen=True)
 class Slot:
-    what: Enum  # a part to place, or an action on the part; in the Maker, its own (D-301)
+    what: Enum  # a part to place, or an action on the part; in the Editor, its own (D-301)
     at: tuple[float, float]  # the icon's centre [px]
     key: str
     depth: float = 0  # 0 on the rim; 1, 2... down a pile, the further the lower; between, sliding

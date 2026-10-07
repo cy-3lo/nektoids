@@ -3,7 +3,7 @@
 Not levels. They show what the dynamics do: Braitenberg wiring, a fork, saturation, a
 threshold-like |x - c|, and loops that settle, hold a value or latch. `Board.connect` refuses
 loops, so the loops are drawn with public calls only: `route` finds the path and the wire is
-appended by hand, which is how a test hand-draws one too. The editor never does this.
+appended by hand, which is how a test hand-draws one too. The Board never does this.
 """
 
 from __future__ import annotations

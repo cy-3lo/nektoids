@@ -26,6 +26,5 @@
   },
   "time_limit": 15,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
-  "passkey": "DARK",
   "proof": {"board": "h9AbgaRDZ0Pzfw6Ln", "ticks": 446, "parts": 5}
 }

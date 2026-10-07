@@ -49,7 +49,7 @@ must pass. This is the original contribution: most puzzle games reward hardcodin
 a solution to one level. Making generalisation the tested skill is both true to
 biology and, as far as I can tell, not something any game does.
 
-**Spatial scarcity in the editor.** LabVIEW is the cautionary tale: infinite
+**Spatial scarcity on the board.** LabVIEW is the cautionary tale: infinite
 canvas, and every real program becomes unreadable spaghetti. Small fixed grid,
 node budget, wire crossings expensive, area as a scored axis. Layout becomes part
 of the puzzle instead of a mess the player tolerates.
@@ -80,7 +80,7 @@ agent has. Physical sensors give ambiguity, and ambiguity is the puzzle.
 | **Flow sensing** | Direction and sign from field asymmetry | Analytic, see below |
 
 **Build order:** opacity → chemical → optical flow → flow sensing. Each is a new
-node in the same editor, so the game grows by addition rather than rewrite.
+node on the same board, so the game grows by addition rather than rewrite.
 
 ### Sensor layout as a second authored artifact
 

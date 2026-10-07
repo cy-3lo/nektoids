@@ -13,7 +13,7 @@ a swimmer its body's circle round a wedge, its tip forward, bright when selected
 segment for its velocity and an arc for its spin. When the run is over, a banner over the arena
 says how it ended: done, lost and why, or out of time.
 
-Round the arena, the frame the editor has too (D-051, D-057, `draw.py`): the bar, the open
+Round the arena, the frame the Board has too (D-051, D-057, `draw.py`): the bar, the open
 drawer, the tabs with the level's line under them. Under the arena, the controls, each with a
 tooltip naming it and its key; the timeline, the part of the time allowed already run in a
 lighter grey, the part played brighter, and a red mark where the run ended (D-033); the time.
@@ -123,7 +123,7 @@ from nektoids.sim.arena import LIGHT_RADIUS, Arena
 from nektoids.sim.optics import discs
 
 if TYPE_CHECKING:
-    from nektoids.editor.maker import MakerScene
+    from nektoids.editor.level_editor import EditorScene
 
 RAY_WIDTH = 2  # [px]
 BULB = 1.6  # the bulb's height on a light, in light radii (D-076)
@@ -142,7 +142,7 @@ PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 WIN_DOT = 4  # a win on that plot; this run's ring sits 4 px round it [px]
 MARK_CROSS = 5  # the arms of the cross on a mark's centre [px]
 ICON = {
-    ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the editor's Turn left
+    ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the Board's Turn left
     ArenaButton.STEP: "forward-step",
     ArenaButton.FAST: "forward",
 }
@@ -447,7 +447,7 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
 
 def draw_overview(
     screen: pygame.Surface,
-    scene: ArenaScene | MakerScene,
+    scene: ArenaScene | EditorScene,
     fonts: Fonts,
     pose: tuple[float, float, float],
 ) -> None:
@@ -540,8 +540,8 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     if scene.selected is None:
         note = "Click the swimmer to see its wiring"
     elif not scene.circuit.cells:
-        back = "F7" if scene.developer else BUTTON_KEYS[ArenaButton.EDIT]
-        note = f"Your board is empty: build one in the editor ({back})"
+        back = "F7" if scene.developer else BUTTON_KEYS[ArenaButton.BOARD]
+        note = f"Your board is empty: build it on the Board ({back})"
     else:
         circuit = scene.circuit
         screen.set_clip(DRAWER_BODY)
@@ -621,7 +621,7 @@ def _draw_banner(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         screen.blit(line, line.get_rect(midtop=(box.centerx, top)))
         top += line.get_height() + 4
     for button, rect in banner_rects(scene.layout, scene.banner_buttons):
-        label = (scene.next_label or "Next level") if button is ArenaButton.NEXT else "Edit"
+        label = (scene.next_label or "Next level") if button is ArenaButton.NEXT else "Board"
         pygame.draw.rect(screen, ACTIVE, rect, border_radius=6)
         shown = fonts.name.render(f"{label} ({BUTTON_KEYS[button]})", True, TEXT)
         screen.blit(shown, shown.get_rect(center=pygame.Rect(rect).center))
@@ -701,9 +701,9 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     keys = "Space: play.  .: a step.  0: again."  # F: fast, in its tooltip
     if scene.developer:
         cost = f" ({scene.map_ms:.1f} ms)" if scene.show_map else ""
-        text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F7: editor."
+        text = f"{keys}  I: map{cost}.  P: polar.  Wheel, L, R: turn.  Tab: arena.  F7: back."
     else:
-        text = f"{keys}  Tab: editor.  Esc: Chapters."
+        text = f"{keys}  Tab: board.  Esc: Chapters."
     text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
     if scene.said and not scene.message:  # a passkey that opened a level (D-075)
         text, colour = scene.said, LIGHT
