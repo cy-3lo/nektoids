@@ -203,6 +203,7 @@ class BoardScene(Frame):
         self.caption = caption  # the level's title and spec, under the tabs
         self.view = board_view(layout)  # one size, centred, never moved (D-401)
         self.dragging = False  # a part's row held since it was pressed in Parts
+        self.button_down: Button | Kind | None = None  # a part's button pressed: a click or a drag
         self.moving: int | None = None  # a part being dragged
         self.counted: Kind | None = None  # the part just placed: its count shows on its button
         self.count_frames = 0  # ... this many frames more (D-401)
@@ -459,6 +460,12 @@ class BoardScene(Frame):
             self.hover = hover
             self.run_frames = 0  # off the part the wheel turned: its run ends
             self._update_ghost()
+        if self.button_down is not None:  # off its button: the part is dragged to the board
+            over = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
+            if over != self.button_down:
+                kind, self.button_down = self.button_down, None
+                if self._editing() and self._hold(kind):
+                    self.dragging = True
         if self.press_cell is not None and pointed != self.press_cell and not self._dragged():
             start = self.press_cell
             picked = self.pick.what is Picked.PARTS and start in self.pick.cells
@@ -523,7 +530,10 @@ class BoardScene(Frame):
         if self.main is MainView.DIAGRAM:  # the buttons round the board (D-401)
             button = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
             if button is not None and contains(self.layout.board_area, pos):
-                self._press_button(button)
+                if isinstance(button, Kind):
+                    self.button_down = button  # a click, or a drag to the board: the release tells
+                else:
+                    self._press_button(button)
                 return
         if self.main is MainView.PREVIEW:  # the board runs here: a part clicked, to edit it
             cell = cell_at(self.layout, self.view, pos)
@@ -567,6 +577,11 @@ class BoardScene(Frame):
                 self._open_field()
         self.probing = False
         self.frame_release()
+        if self.button_down is not None:  # a part's button let go on itself: a click
+            button, self.button_down = self.button_down, None
+            if button_at(self.shown_buttons(), self.view.size, self.view.origin, pos) == button:
+                self._press_button(button)
+            return
         self.sweeping, self.swept = False, set()
         if self.pick_from is not None:  # Select on an empty cell: a click, unless a drag picked
             cell, self.pick_from, self.drag = self.pick_from, None, None
@@ -713,7 +728,7 @@ class BoardScene(Frame):
         self.dragging, self.sweeping, self.pick_from, self.group = False, False, None, ()
         self.drag = None
         self.source, self.right, self.lifted, self.ghost = None, None, None, None
-        self.moving, self.press_cell = None, None
+        self.moving, self.press_cell, self.button_down = None, None, None
 
     def _cancel(self) -> None:
         self._drop_gesture()
