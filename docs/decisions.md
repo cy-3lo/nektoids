@@ -2321,3 +2321,140 @@ light and each other, the start on the lower ring's edge, counted in. On the dia
 out, 2 u rings keep their size, none holds the start, and they lie on the circle: the orbiter
 wins in 9.43 s, and a tight orbit like the old one, inside them, no longer does. The orbiter with
 a Halve on each wire goes round the same circle at half the speed and wins too, in 18.9 s.
+
+**D-400 — 2026-10-07 — Stage 2, the Board, opens beside stage 1: built on `stage/2-board`, its scope the todo's §15, a Board built with fewer moves, and its decisions numbered from D-400. D-105's memory, flows and actions each move one stage down. Amends D-105.**
+The physicist's: the new Board of the todo's §15, hex buttons round a board of one fixed size and
+no Navigator, is a stage of its own; stage 1's list does not hold it (D-300). Stage 1 stays open
+for Camille's review of v1.1, his levels and the banner, and stage 2 is built beside it, as stage
+0 was built (D-200): each item a `feat/…` branch whose PR goes into the stage, and a stage built
+beside another takes the next hundred. Whether it ships with v1.1 or after is decided on how it
+goes and on Camille's response to v1.1; until then this opening stays on the stage's branch, not
+on `main`. In: the Board's layout, its buttons and its gestures, and chapter 0's cards rewritten
+for them. Out: all that stage 1 leaves out; no new part, sense or item; the model, the levels and
+their format stay as they are. Its design is chosen from mockups drawn with the game's own code,
+as D-051's was. Memory is now stage 3, flows stage 4 and actions stage 5; decisions before this
+one keep the numbers they were written with.
+
+**D-401 — 2026-10-07 — The Board's look: one hex size, 38 px, on every level; no zoom, no pan, nothing atop the board; buttons in the cells round it, at the same places on every level, as large as the cells and touching, drawn as keys with a 3 px bevel and a drop shadow. Tools, the Navigator and the Wheel leave the Board; Parts stays, for the counts and the info discs; Erase all goes to Files. Amends D-013, D-060, D-068, D-069, D-102, D-321.**
+Decided from seven rounds of mockups drawn with the game's own code (todo §15), as D-051 was,
+the renders kept outside the repository. At 38 px the 37 cells with a row of buttons above and
+below are 532 px tall, in the 554 px a drawer leaves (11 to spare), and 36 px clear at each side.
+The places, the board's centre at (0, 0), r down: at N, Select (1, -4), Move (2, -4) and Lock
+(3, -4), Lock on the board reached from the Editor only, its place empty elsewhere (D-319); at
+S, Undo, Redo and Delete, from (-3, 4) to (-1, 4); at W, Turn left (-3, -2) and Turn right
+(-2, -2) side by side, Wire (-3, -1) under them; at E, Eye (4, -3), Source (4, -2) and Thruster
+(4, -1), then Double (2, 2) and Halve (3, 2) side by side over Sum (1, 3) and Difference (2, 3).
+A kind the level does not hand out leaves its place empty. A button's bevel is lit from the top
+left, from the dim grey to the deepest, its shadow 2 px right and 3 px down. Chosen, it is
+pressed in: accent 1's dark, the bright on its far sides, no shadow. Lit, it applies to what is
+picked: its bevel in accent 1, its key on a light tag inside its top corner. Greyed, it cannot
+act now: its bevel dimmed, its icon greyed, an eye's face or a thruster's back in accent 1's
+dark. A tool's icon is three quarters of the hex; a part is drawn 2 px smaller than on a cell, as
+the button's darker ground makes it look larger. A part's count, what is left, shows on a dark
+tag inside the bottom corner for 1.5 s after one is placed; Parts lists them all, each with its
+info disc, and no longer holds the Wheel. Picked empty cells carry no number. The outside of the
+zone keeps its grid. Negative buttons, a gap between buttons, keys and counts beside the
+buttons, and a line of seven at N were tried and set aside.
+
+**D-402 — 2026-10-07 — The Board's gestures: one button chosen at a time, Select when none; with something picked a button acts on it at once, else on each click and along a drag; right clicks wire, the chain going on; the mouse wheel turns, up to the right. Amends D-068, D-090, D-304.**
+A Part stays chosen while one of its kind is left, then Select is. Keys choose as clicks do:
+Esc, M, Del, K, L, R, W, 1 to 7, Ctrl+Z and Ctrl+Y; Esc first drops what is picked, then
+chooses Select, then opens Chapters (D-304). Select: a click on an empty cell picks it, one
+after another; a click on a part picks parts instead, the first click saying which; a click on a
+picked one drops it, a click off the zone drops them all. A drag from an empty cell picks the
+empty cells it crosses; a drag from a picked part moves them all; a drag from another part
+moves it, as today (D-090). A group moved onto a taken cell is refused whole, the cells in the
+way flashing. With something picked, a lit button acts on it at once, in the order picked, and
+Select stays chosen with the pick kept: a Part fills the empty cells, the last left empty if the
+parts run out, or swaps a picked part for one of its group (D-068's Swap); Turn turns each part,
+again at each press; Delete deletes them; Wire chains them; Move is chosen, and the next click
+puts the first part picked there, the others keeping their places round it. With nothing picked,
+the chosen button acts on each click on a cell that allows it, and along a drag on each one
+crossed: a Part places one per empty cell, Delete and Turn act once on each part, Wire chains the
+parts in the order crossed, Move carries the part pressed; a Part on a taken cell is refused.
+Greyed is what cannot act now: on what is picked, if anything is, else on the board. Right
+clicks wire: A then B makes A→B, and the chain goes on from B; Esc, a left click or a right click
+off a part ends it; a right drag chains the parts it crosses. On the Board a right click no
+longer backs out (D-304). The mouse wheel over a part, or over a picked part with the rest of the
+pick, turns it 60° a notch, up to the right; a trackpad's small scrolls add up to a notch, with a
+short pause after each turn. One gesture is one undo step (D-027), a run of turns on one part
+one gesture. Diagnostic's Run preview hides the buttons. The Editor keeps its Wheel (D-314);
+touch keeps Wire and Turn on buttons, having no right click nor wheel.
+
+**D-403 — 2026-10-07 — Picking, as built: a second click on a part picks it too, so two parts clicked are no longer wired; the parts a fill places are picked; a click of the other kind starts a pick of its own; with one part picked, Wire is held to wire from it; a press on the held button puts it down. Amends D-026, D-091, D-402.**
+The physicist's answers, and what building D-402 asked. With Select held, a click on an empty
+cell picks it and a click on a part picks parts, one after another; a click of the other kind
+drops the pick for one of its own kind; a click on a picked one drops it, one off the zone drops
+all. Wiring is now a button's: two parts picked and Wire, which chains them in the order picked;
+one part picked and Wire, held to wire from it; or Wire held, a part clicked, then the next, the
+chain going on from the last; an empty cell ends it. The clicks that wired two parts (D-026) and
+the rule that a chain wires on only forward (D-091) go. A part's button on picked cells fills
+them in order and picks the parts it placed, so L or Wire act on them at once; on picked parts it
+swaps those that may become one. Turn and Delete leave the level's parts out; Lock makes all the
+level's, or frees all; Move is refused with one of the level's picked, and refused whole, the
+first cell in the way flashing, if a cell the group would land on is taken or off the zone. With
+something picked, a button that cannot act on it but may on the board is held, the pick dropped;
+a press on the held button holds Select again. With nothing picked, Move held lifts a part
+clicked and puts it on the empty cell clicked next. Esc backs out of a wire's chain or a part
+lifted, then the pick, then the held button, then opens Chapters (D-304). The keyboard has a
+cursor: the arrows move it, Enter clicks there. Wiring's and Turning's cards say so.
+
+**D-404 — 2026-10-07 — Drags and right clicks, as built: a held button acts along a drag on each cell it enters; with Select, a drag from an empty cell picks the empty cells it crosses and one from a picked part moves the pick, let go off the body it goes; right clicks wire whatever is held, and a left click ends their chain and acts. Amends D-072, D-085, D-090, D-304, D-402.**
+A press acts as a click does; then each cell the drag enters, once: a part's button places one
+on each empty cell while one is left, then Select is held; Delete, Turn and Lock act on each part
+crossed; Wire chains the parts crossed in that order, the empty cells between leaving the chain
+as it is. With Select, a drag from an empty cell picks the empty cells it crosses, the parts it
+crosses left out; one from a part not picked moves it alone, as before (D-090), but Wire held no
+longer draws one wire by a drag (D-072): it chains. A drag from a picked part moves the whole
+pick, worked out from the board as it was picked up (D-086); a step refused leaves it where it
+last could go, the cell in the way flashing; let go off the body, every picked part goes, with
+its wires, darkened while it is off (D-085), the physicist's: one Undo brings them back. Right
+clicks wire whatever button is held, which stays held: a part right-clicked starts the chain, the
+next is wired to it and the chain goes on from there; a right drag chains the parts it crosses;
+a right click off a part, Esc, or a left click ends the chain, the left click acting too, the
+physicist's. On the Board a right click no longer backs out (D-304). A drag, or a right drag, is
+one step for undo (D-027).
+
+**D-405 — 2026-10-07 — The mouse wheel, as built: over a part it turns it 60° a notch, up to the right; over a picked part, every picked part that turns; a trackpad's small scrolls add up to a notch, then rest 0.15 s; turns on the same parts, less than 0.5 s apart, are one step for undo. Applies D-402.**
+A wheel's notch is a turn at once; a trackpad's scrolls, fractions of a notch, add up, and the
+one that makes a notch turns the part, then the scrolls are let go for 9 frames, so that a flick
+of two fingers turns it once (`notches.py`). Up is the wheel's own: with natural scrolling the
+system's flip is undone, so that up turns to the right on a mouse and on a trackpad alike. The
+level's parts and the operators do not turn, and say so. A run of turns on the same parts is one
+step for undo, kept once the wheel has rested 30 frames, or at once when the mouse leaves the part
+or anything else is done. Over an empty cell or off the board the wheel does what it did. The
+probe in Diagnostic keeps its own way, up counter-clockwise (D-058).
+
+**D-406 — 2026-10-07 — The Board after the physicist's first review: a click picks one thing, Shift or Cmd adds; a drag picks, places or wires along a path it can go back on; no Move button, the Board at 40 px; Esc is Chapters' key only; Lock on every Board, the player's own; the grid in 2 px over the buttons' shadows; stage 2 goes to `main`. Amends D-304, D-319, D-400, D-401, D-402, D-403, D-404.**
+The look, from three more rounds of mockups: the cells' sides are 2 px anti-aliased strokes, the
+zone's a lighter grey than the pattern round it, drawn over the buttons' shadows and under the
+buttons, wires and parts; a button is drawn 2 px inside its cell, clear of the line; the
+swimmer's symbol is 5 px wide, a shade darker, under the grid. Tried and dropped: an edge round
+the zone in an accent (Benjamin's, in accent2, which is the refusals' colour), a gap between the
+board and its buttons, and rounded corners where three cells meet. Each button has a tooltip: its
+name, its key, and for a part how many are left; Select's key is S. Move goes: a drag moves a part
+or the pick, and Shift with an arrow moves the picked parts a cell. Select, Lock and Delete sit at
+N, Undo and Redo at SW across from Sum and Difference, and the Board grows to 40 px, the view
+centring the largest zone and its buttons together. Select is in hand whenever the Board's tab
+opens.
+
+Picking: a click picks the one cell or part clicked, a click on the only thing picked drops it,
+and Shift or Cmd adds one to the pick or drops it. A drag picks along its path: going back onto a
+cell of the path cuts the path back to it, however far; a drag of empty cells that meets a part
+picks parts from there. From a part, the drag's first step decides: into a part not picked it
+picks parts, the empty cells passed over; else it moves the part, or the pick. Placing: a part's
+button acts when let go, and dragged onto the board places one, as a row of Parts does; with a
+part held, a drag places one in each empty cell, going back taking them away, and a drag from a
+part moves it, after which Select is in hand again, as after wiring by right clicks. Wiring: a
+chain is a path, and going back to one of its parts undoes the wires made after it; wiring over a
+wire takes it away; a wire refused ends the chain; a drag's chain, left or right, ends when let
+go; a right click off a part ends the chain and drops the pick. Ctrl+click is a right click, for
+trackpads without one, and every right click's work has another way: Wire or W, and the clicks.
+Delete, clicked on a part's rim, takes the short wire to its neighbour there.
+
+Esc opens and folds Chapters, and only that, on the Board; the captions point to S and the clicks
+instead. Lock is on every Board and is the player's: a part locked stays put, as it is, not moved,
+turned, swapped or deleted, its wires free to come and go; ringed in the accent, where the level's
+ring is light; Erase all spares it; saved boards keep it, the board's text does not, as it keeps
+no lock. On the sandbox, Shift+Lock makes a part the level's, as Lock did (D-319). Stage 2 goes
+to `main` now, the physicist's, before Camille's review of v1.1 (D-400 left it open).

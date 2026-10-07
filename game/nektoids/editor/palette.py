@@ -141,6 +141,12 @@ TOOLTIP_BG = mix(P.surface, P.raised, 0.5)
 BUTTON = P.raised
 HOVER = mix(P.raised, P.line, 0.5)
 ACTIVE = P.accent1.dark  # the tool in hand, the menu row picked, a toggle that is on
+# The Board's buttons, keys in a bevel lit from the top left (D-401)
+KEY_LIGHT = P.dim  # a button's bevel, the sides facing the light
+KEY_DARK = P.deep  # ... the sides away from it
+KEY_GREYED = mix(P.deep, P.dim, 0.4)  # a greyed button's light sides: the bevel dimmed
+KEY_SHADOW = (0, 0, 0, 150)  # under a button, 2 px right and 3 px down
+GREYED_FACE = P.accent1.dark  # an eye's face, a thruster's back, on a greyed button
 RULE = P.line  # separators between columns and between sets of buttons
 SCROLL_THUMB = P.dim  # a scroll bar's thumb, over its track in RULE (D-069)
 SWATCH_OFF = P.raised  # colour picker, not active yet
@@ -163,10 +169,13 @@ PULSE_FILL_TOP = 0.5  # a lit button's fill: accent1's dark at most so far to it
 ZONE = P.surface  # cells of the level's zone
 OUTSIDE = P.deep  # cells outside it
 OUTSIDE_LINE = mix(P.deep, P.line, 0.3)
-GRID_LINE = P.line
-BODY_OUTLINE = P.line  # the swimmer's symbol behind the board: which way is forward
+GRID_LINE = mix(
+    P.line, P.dim, 0.5
+)  # the zone's cells: lighter than the buttons' ground, not to mix with them
+BODY_OUTLINE = P.raised  # the swimmer's symbol behind the board, a shade under the grid
 COMPONENT = P.parts
 LOCK_RING = mix(P.parts, P.bright, 0.4)
+PIN_RING = P.accent1.mid  # a part the player locked: theirs, in the accent (D-406)
 EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)
 THRUSTER_BACK = P.accent1.mid  # the back a thruster pushes from
 WIRE = mix(P.dim, P.parts, 0.4)

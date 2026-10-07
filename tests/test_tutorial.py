@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from nektoids.editor.buttons import PLACES, Button, State, board_view, states
+from nektoids.editor.buttons import shown as shown_buttons
 from nektoids.editor.layout import (
     SCREEN,
     Drawer,
@@ -16,6 +18,7 @@ from nektoids.editor.layout import (
     contains,
     make_layout,
 )
+from nektoids.editor.picking import NOTHING, clicked
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     CHARS,
@@ -39,20 +42,19 @@ from nektoids.editor.tutorial import (
     outline_kept,
     panels,
     runs,
-    shows_wheel,
     skip_rect,
     target_rects,
     target_spots,
+    worked_on,
 )
 from nektoids.editor.tutorial import shown as visible
-from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import NW, SW, E
+from nektoids.graph.hexgrid import NW, SW, E, to_pixel
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.objectives import Outcome
 
 LAYOUT = make_layout()
-VIEW = centred_view(LAYOUT)
+VIEW = board_view(LAYOUT)  # the Board's one view (D-401)
 RUN_LAYOUT = make_layout(Drawer.INSIDE, env=Env.RUN, goals=1)  # the run's frame (D-057)
 
 
@@ -96,8 +98,8 @@ def fear(until=None, show=None) -> int:
 
 
 TAB = fear({"screen": "board"})  # from the run to the Board (D-060)
-BOARD, TOOLS = fear(show={"page": "board"}), fear(show={"drawer": "tools"})
-EYE = fear({"placed": {"kind": "eye", "cell": [2, -1]}})  # from the Wheel
+BOARD, BUTTONS = fear(show={"page": "board"}), fear(show={"area": "board"})
+EYE = fear({"placed": {"kind": "eye", "cell": [2, -1]}})  # from its button (D-401)
 TURN = fear({"facing": {"cell": [2, -1], "facing": "NW"}})
 SECOND = fear(  # the second eye, placed and turned on one card (D-071)
     [{"placed": {"kind": "eye", "cell": [1, 1]}}, {"facing": {"cell": [1, 1], "facing": "SW"}}]
@@ -117,21 +119,6 @@ def conditions(step) -> list:
     """What `step` waits for, one or several (D-071), as a list."""
     until = step.until or []
     return until if isinstance(until, list) else [until]
-
-
-def wheel_for(step, layout):
-    """The Wheel as it shows while `step` waits, round its cell, and that cell: the parts for
-    an empty cell, the eye's actions for an eye to turn; none for a step that shows no Wheel."""
-    if not shows_wheel(step) or layout.wheel_view is None:
-        return Live()
-    board = LEVELS["Fear"].new_board()
-    cell = next(tuple(one["cell"]) for one in step.show if "cell" in one)
-    if any("facing" in until for until in conditions(step)) and not any(
-        "placed" in until for until in conditions(step)
-    ):
-        board.place(Kind.EYE, cell)  # an eye to turn; a card that also places it starts empty
-    items = offer(board, cell, FEAR_KINDS)
-    return Live(slots(items, centre_in(layout.wheel_view), WHEEL_HEX, FEAR_KINDS), cell)
 
 
 def on_screen(rect):
@@ -270,7 +257,7 @@ def test_wirings_introduction_shows_the_objective_the_tabs_the_bar_leads_the_wir
     assert allows(tutorial.step, Action("tool", tool=Tool.WIRE))
     source, thruster = (board.node_at(cell).id for cell in ((0, 0), (-1, 0)))
     board.connect(source, thruster)
-    tutorial.follow(context(Screen.BOARD, Drawer.TOOLS))
+    tutorial.follow(context(Screen.BOARD, Drawer.PARTS))
     assert tutorial.step.until == {"screen": "run"}
     assert tutorial.step.show == [{"tab": "run"}, {"level": "run"}]  # the tab and the button
     tutorial.follow(context(Screen.RUN))
@@ -294,26 +281,26 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
         assert tutorial.step.show == {"run": shown} and tutorial.explains
         tutorial.next()
     assert tutorial.step.until == {"screen": "board"}  # the Board tab
-    for _ in range(2):  # the Board's page, Tools and its Wheel: Next
+    for _ in range(2):  # the Board's page, then its buttons: Next
         tutorial.follow(context())
         tutorial.next()
     assert tutorial.step.until == {"placed": {"kind": "eye", "cell": [2, -1]}}
-    assert_wheel_offers(tutorial.step, board)  # the Eye, round the empty cell (D-070)
+    assert_buttons_light(tutorial.step, board)  # the Eye, round the empty cell (D-070)
     upper = board.place(Kind.EYE, (2, -1))
     tutorial.follow(context())
     assert "facing" in tutorial.step.until
-    assert_wheel_offers(tutorial.step, board)  # Turn left, round the eye
+    assert_buttons_light(tutorial.step, board)  # Turn left, round the eye
     board.rotate(upper.id, 1)  # NE: not yet
     tutorial.follow(context(Tool.TURN_LEFT))
     assert "facing" in tutorial.step.until
     board.rotate(upper.id, 1)  # NW
     tutorial.follow(context(Tool.TURN_LEFT))
     assert tutorial.index == SECOND  # the second eye: one card to place and turn it (D-071)
-    assert_wheel_offers(tutorial.step, board)  # the Eye first
+    assert_buttons_light(tutorial.step, board)  # the Eye first
     lower = board.place(Kind.EYE, (1, 1))
     tutorial.follow(context())
     assert tutorial.index == SECOND  # placed, not turned yet
-    assert_wheel_offers(tutorial.step, board)  # then Turn right
+    assert_buttons_light(tutorial.step, board)  # then Turn right
     board.rotate(lower.id, -1)
     board.rotate(lower.id, -1)  # SW
     tutorial.follow(context())
@@ -342,16 +329,17 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
     assert [g.facing for g in tutorial.ghosts][:2] == [NW, SW]
 
 
-def assert_wheel_offers(step, board):
-    """Every Wheel's icon `step` shows for the stage its cell is at, a part to place on it while
-    it is empty, an action once a part is on it, is one the Wheel offers there on `board`."""
+def assert_buttons_light(step, board):
+    """Every button `step` shows for the stage its cell is at, a part to place on it while it is
+    empty, an action once a part is on it, lights when that cell is picked (D-401, D-402)."""
     cell = next(tuple(one["cell"]) for one in step.show if "cell" in one)
-    offered = {what.value for what in offer(board, cell, FEAR_KINDS)}
+    buttons, pick = shown_buttons(FEAR_KINDS, False), clicked(NOTHING, board, cell)
+    looks = states(board, buttons, Button.SELECT, pick, False, False, FEAR_KINDS)
     parts = {kind.value for kind in Kind}
     empty = board.node_at(cell) is None
-    icons = [one["wheel"] for one in step.show if "wheel" in one]
-    stage = [icon for icon in icons if (icon in parts) == empty]
-    assert stage and all(icon in offered for icon in stage), (stage, offered)
+    names = [one["button"] for one in step.show if "button" in one]
+    stage = [Kind(n) if n in parts else Button(n) for n in names if (n in parts) == empty]
+    assert stage and all(looks[b] is State.LIT for b in stage), (stage, looks)
 
 
 def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_inside_it():
@@ -365,7 +353,7 @@ def test_the_box_sits_beside_its_targets_on_screen_clear_of_them_with_next_insid
     for step in Tutorial.from_dict(BUILT["fear"]).steps:  # never over what it shows
         for screen in (Screen.BOARD, Screen.RUN):
             layout = layout_on(screen, step)
-            targets = target_rects(step.show, screen, layout, VIEW, wheel_for(step, layout))
+            targets = target_rects(step.show, screen, layout, VIEW)
             narrow = [t for t in targets if not is_area(t)]  # an area may lie under the box
             if narrow:
                 box = box_rect(targets, len(step.lines), layout.board_area)
@@ -466,13 +454,13 @@ def test_a_step_that_waits_for_next_lets_nothing_through_and_a_hint_lets_all():
     assert all(allows(None, action) for action in ANYTHING)  # no tutorial, or over
 
 
-def test_a_placing_step_shows_where_its_part_comes_from_its_row_or_the_wheel():
-    for step in FEAR:  # the eyes from the Wheel, the thrusters from Parts (D-070)
+def test_a_placing_step_shows_where_its_part_comes_from_its_row_or_its_button():
+    for step in FEAR:  # the eyes from their button, the thrusters from Parts (D-401)
         for until in conditions(step):
             if "placed" in until:
                 kind = until["placed"]["kind"]
-                assert {"menu": kind} in step.show or {"wheel": kind} in step.show
-    assert {"wheel": "eye"} in FEAR[EYE].show and {"menu": "thruster"} in FEAR[THRUSTER].show
+                assert {"menu": kind} in step.show or {"button": kind} in step.show
+    assert {"button": "eye"} in FEAR[EYE].show and {"menu": "thruster"} in FEAR[THRUSTER].show
 
 
 def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
@@ -490,7 +478,7 @@ def test_the_overlay_knows_a_cell_a_panel_and_anything_else():
     (upper, shape), (lower, _) = target_spots({"area": "bar"}, Screen.BOARD, layout, None)
     assert shape == "spot" and upper[1] + upper[3] < lower[1]  # the bar's two groups (D-080)
     icons = dict(layout.drawer_buttons)
-    assert contains(upper, icons[Drawer.TOOLS][:2]) and contains(lower, icons[Drawer.HINTS][:2])
+    assert contains(upper, icons[Drawer.PARTS][:2]) and contains(lower, icons[Drawer.HINTS][:2])
     switch = layout.level_buttons[0][1]
     assert contains(lower, (switch[0] + switch[2] - 1, switch[1] + switch[3] - 1))
 
@@ -514,9 +502,8 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
         step, done = tutorial.step, tutorial.before
         for screen in (Screen.BOARD, Screen.RUN):
             frame = layout_on(screen, step)
-            live = wheel_for(step, frame)  # the Wheel's icon it shows, as it sits (D-070)
-            targets = target_rects(step.show, screen, frame, view, live)
-            before = [] if done is None else target_rects(done.show, screen, frame, view)
+            targets = target_rects(step.show, screen, frame, view)
+            before = [] if done is None else target_rects(worked_on(done.show), screen, frame, view)
             narrow = [t for t in targets if not is_area(t)]  # an area (board, arena) may lie under
             if not narrow:
                 continue
@@ -554,7 +541,7 @@ def test_a_step_that_waits_for_next_moves_on_at_any_key_or_click_but_on_skip():
     box = (300, 300, 360, 100)
     skip, nxt = skip_rect(box), next_rect(box)
     centre = lambda r: (r[0] + r[2] // 2, r[1] + r[3] // 2)  # noqa: E731
-    for index in (0, TOOLS):  # before the first action and after it alike (D-081)
+    for index in (0, BUTTONS):  # before the first action and after it alike (D-081)
         tutorial.index = index
         assert answer(tutorial, box, None) == "next"  # any key
         assert answer(tutorial, box, (5, 5)) == answer(tutorial, box, centre(nxt)) == "next"
@@ -576,7 +563,7 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
         TAB: {"tab:board", "level:board"},  # the switch too, now that sparks are gone (D-338)
         BOARD: set(),
     }  # that explain
-    expected |= {TOOLS: {"tools"}, THRUSTER: {"parts", "menu:thruster"}, EYE: {"wheel:eye"}}
+    expected |= {BUTTONS: {"board"}, THRUSTER: {"parts", "menu:thruster"}, EYE: {"button:eye"}}
     expected |= {RUN: {"tab:run", "level:run"}, PLAY: {"play", "arena"}, INSIDE: {"inside"}}
     for index, names in expected.items():
         tutorial.index = index
@@ -590,15 +577,14 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
         named.append(panels(intro))
     tabs = [set(), {"objectives"}, {"tab:board", "level:board"}, {"bar"}]  # D-095, D-336
     run = {"tab:run", "level:run"}  # D-339
-    assert named == [*tabs, set(), run, {"play"}, {"hints"}]  # the wire, the run, Hints
+    assert named == [*tabs, {"button:wire"}, run, {"play"}, {"hints"}]  # the wire, the run, Hints
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
     steps = FEAR
-    assert drawer_for(steps[TOOLS]) is Drawer.TOOLS
+    assert drawer_for(steps[BUTTONS]) is None  # the board and the buttons round it (D-401)
     assert drawer_for(steps[THRUSTER]) is Drawer.PARTS  # its row, then its cell
-    assert drawer_for(steps[EYE]) is Drawer.TOOLS  # the Wheel: Tools, or Parts if open (D-070)
-    assert drawer_for(steps[EYE], Drawer.PARTS) is Drawer.PARTS
+    assert drawer_for(steps[EYE]) is None  # its button: no drawer to open
     assert drawer_for(steps[1]) is None  # the objectives, under any drawer (D-065)
     assert drawer_for(steps[BOARD]) is drawer_for(steps[RUN]) is drawer_for(None) is None
     assert drawer_for(steps[INSIDE]) is Drawer.INSIDE  # the run's, with its icon (D-071)
@@ -648,41 +634,31 @@ def test_a_step_that_asks_for_an_action_lights_its_cells_and_one_that_explains_n
     assert focus_cells(tutorial) == frozenset() and focus_cells(None) == frozenset()
 
 
-def test_a_wheel_icon_is_a_target_while_the_steps_cell_is_focused_and_only_then():
-    # D-070: the Wheel at the drawer's foot, round the focused cell
-    board, cell, kinds = LEVELS["Fear"].new_board(), (2, -1), frozenset({Kind.EYE, Kind.THRUSTER})
-    tools = make_layout(Drawer.TOOLS, kinds=kinds)
-    wheel = tuple(slots(offer(board, cell, kinds), centre_in(tools.wheel_view), WHEEL_HEX, kinds))
-    show = [{"cell": [2, -1]}, {"wheel": "eye"}]
-    spots = target_spots(show, Screen.BOARD, tools, VIEW, Live(wheel, focused=cell))
-    (_, disc), (icon, shape), (wheel_area, none) = spots  # the box keeps clear of the Wheel
-    assert none == "none" and wheel_area[1] < tools.wheel_fold[1]  # its title and rule too
-    assert contains(wheel_area, tools.wheel_view[:2]) and contains(wheel_area, icon[:2])
-    eye = next(slot for slot in wheel if slot.what is Kind.EYE)
-    r = ICON * WHEEL_HEX
-    assert shape == "icon" and disc == "disc" and icon[2] == icon[3] == round(2 * r)
-    assert contains(icon, tuple(round(v) for v in eye.at)) and contains(tools.drawer_area, icon[:2])
-    elsewhere = target_rects(show, Screen.BOARD, tools, VIEW, Live(wheel, focused=(1, 1)))
-    assert len(elsewhere) == 1  # on another cell the Wheel's Eye would place there: not shown
-    assert target_rects(show, Screen.RUN, tools, VIEW, Live(wheel, focused=cell)) == []
-    assert (
-        target_rects([{"wheel": "turn left"}], Screen.BOARD, tools, VIEW, Live(wheel)) == []
-    )  # not offered
+def test_a_button_is_a_target_where_the_level_shows_it_as_a_cell_is():
+    # D-401: the buttons round the board, at their places on every level
+    kinds = frozenset({Kind.EYE, Kind.THRUSTER})
+    layout = make_layout(kinds=kinds)
+    show = [{"cell": [2, -1]}, {"button": "eye"}]
+    (_, disc), (rect, shape) = target_spots(show, Screen.BOARD, layout, VIEW)
+    assert disc == shape == "disc" and contains(layout.board_area, rect[:2])
+    x, y = to_pixel(PLACES[Kind.EYE], VIEW.size, VIEW.origin)
+    assert contains(rect, (round(x), round(y))) and rect[3] == round(2 * VIEW.size)
+    assert target_rects(show, Screen.RUN, layout, VIEW) == []
+    assert target_rects([{"button": "sum"}], Screen.BOARD, layout, VIEW) == []  # not handed out
+    lock = [{"button": "lock"}]  # on every board, the player's (D-406)
+    assert len(target_rects(lock, Screen.BOARD, layout, VIEW)) == 1
 
 
-def test_a_drawer_a_step_explains_is_outlined_with_its_icon_and_a_wheels_step_keeps_it():
-    tools, parts = make_layout(Drawer.TOOLS), make_layout(Drawer.PARTS)
-    explain = {"drawer": "tools"}  # D-071: the drawer joined to its icon in the bar
-    ((rect, shape),) = target_spots(explain, Screen.BOARD, tools, VIEW)
-    assert rect == tools.drawer_area and shape == Docked(dict(tools.drawer_buttons)[Drawer.TOOLS])
-    icon = dict(parts.drawer_buttons)[Drawer.TOOLS]  # closed: its icon alone, to open it
+def test_a_drawer_a_step_explains_is_outlined_with_its_icon():
+    files, parts = make_layout(Drawer.FILES), make_layout(Drawer.PARTS)
+    explain = {"drawer": "files"}  # D-071: the drawer joined to its icon in the bar
+    ((rect, shape),) = target_spots(explain, Screen.BOARD, files, VIEW)
+    assert rect == files.drawer_area and shape == Docked(dict(files.drawer_buttons)[Drawer.FILES])
+    icon = dict(parts.drawer_buttons)[Drawer.FILES]  # closed: its icon alone, to open it
     assert target_spots(explain, Screen.BOARD, parts, VIEW) == [(icon, "spot")]  # D-074
-    assert drawer_for(Step(("Tools",), explain)) is Drawer.TOOLS
-    place = Step(("Place",), [{"cell": [2, -1]}, {"wheel": "eye"}], {"placed": {}})
-    assert shows_wheel(place) and not shows_wheel(Step(("Tools",), explain))
-    assert drawer_for(place, Drawer.PARTS) is Drawer.PARTS  # the Wheel is at the foot of both
-    assert drawer_for(place, Drawer.TOOLS) is Drawer.TOOLS
-    assert drawer_for(place, Drawer.FILES) is drawer_for(place) is Drawer.TOOLS
+    assert drawer_for(Step(("Files",), explain)) is Drawer.FILES
+    place = Step(("Place",), [{"cell": [2, -1]}, {"button": "eye"}], {"placed": {}})
+    assert drawer_for(place) is None  # a button needs no drawer (D-401)
 
 
 def test_the_boards_page_is_outlined_with_its_tab_and_the_swimmer_by_a_box_from_the_run():
@@ -760,7 +736,7 @@ def test_a_step_may_wait_for_a_drawer_to_open_which_it_never_opens_itself():
     assert drawer_for(step) is None  # the player opens it
     assert allows(step, Action("view")) and not allows(step, Action("run"))
     board = LEVELS["Fear"].new_board()
-    assert not met(step.until, Context(board, Tool.ADD, Screen.BOARD, drawer=Drawer.TOOLS))
+    assert not met(step.until, Context(board, Tool.ADD, Screen.BOARD, drawer=Drawer.PARTS))
     assert met(step.until, Context(board, Tool.ADD, Screen.BOARD, drawer=Drawer.DIAGNOSTIC))
     icon = dict(LAYOUT.drawer_buttons)[Drawer.DIAGNOSTIC]
     assert target_spots(step.show, Screen.BOARD, LAYOUT, VIEW) == [(icon, "spot")]
@@ -798,7 +774,7 @@ def test_the_aggression_tutorial_moves_on_as_the_player_builds_tries_and_runs_it
         LEVELS["Aggression"].blank_board(),  # the board that tutorial built from, empty
     )
 
-    def context(screen=Screen.BOARD, drawer=Drawer.TOOLS, outcome=None):
+    def context(screen=Screen.BOARD, drawer=Drawer.PARTS, outcome=None):
         return Context(board, Tool.ADD, screen, outcome, 0.0, drawer)
 
     tutorial.next()  # the swimmer and its objective: Next

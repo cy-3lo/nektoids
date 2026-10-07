@@ -75,6 +75,7 @@ GLYPH = {
     "stethoscope": 0xF0F1,
     "life-ring": 0xF1CD,  # Hints (D-078)
     "comment": 0xF075,  # each of its rows, a hint (D-088)
+    "arrow-pointer": 0xF245,  # Select, among the Board's buttons (D-401)
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.

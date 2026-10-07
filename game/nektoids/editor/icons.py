@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pygame
 
+from nektoids.editor.buttons import Button
 from nektoids.editor.glyphs import GLYPH, POINTS_TO
 from nektoids.editor.layout import (
     Drawer,
@@ -53,9 +54,18 @@ PIECE_ICON = {
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
 MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser", Mode.LOCK: "lock"}  # D-068, D-319
+BUTTON_ICON = {  # the Board's buttons (D-401); a part's shows the part itself
+    Button.SELECT: "arrow-pointer",
+    Button.LOCK: MODE_ICON[Mode.LOCK],
+    Button.UNDO: EDIT_ICON[EditButton.UNDO],
+    Button.REDO: EDIT_ICON[EditButton.REDO],
+    Button.DELETE: TOOL_ICON[Tool.DELETE],
+    Button.TURN_LEFT: TOOL_ICON[Tool.TURN_LEFT],
+    Button.TURN_RIGHT: TOOL_ICON[Tool.TURN_RIGHT],
+    Button.WIRE: TOOL_ICON[Tool.WIRE],
+}
 LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.BOARD: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)
-    Drawer.TOOLS: "screwdriver-wrench",
     Drawer.PARTS: "puzzle-piece",
     Drawer.FILES: "floppy-disk",
     Drawer.DIAGNOSTIC: "stethoscope",
