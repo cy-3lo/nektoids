@@ -2287,3 +2287,13 @@ thruster on the axis did, at the same tick. Orbit, the orbiter of D-097: the eye
 left looking ahead on the left thruster, a Source on the right, 6.53 s, four parts. Tests that
 built on Fear's and Aggression's boards as they were, the old tutorials of `tests/data` and the
 board's text pinned on Fear's model, keep those boards as fixtures.
+
+**D-355 — 2026-10-07 — A passkey opens levels of its own chapter only: the level after the one whose win gives it, and those before it in that chapter; the other chapters stay as they are. Once every level is won, the last win gives VEHICLES, the word for every level, which opens them all. Amends D-075, D-325, D-326.**
+The physicist's: passkeys go chapter by chapter. Each chapter's first level is open, and the
+others open one after another, as won or by the word the level before gives. A word opened every
+level before it on the whole route: GOLD, Greed's, opened chapter 1's too; it now opens only
+Greed and Patience. MOON, DARK and GEMINI, each a chapter's last, were never given (D-326) and now
+would open nothing: they leave their files. A player who has won every level in a session gets
+one word to keep for them all, after Braitenberg's book, Vehicles: on the win card that
+completes the set, "Passkey for every level: VEHICLES", and in each won level's info box in
+Chapters. Typed, it opens every level of every chapter, none of them won.

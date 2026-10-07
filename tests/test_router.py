@@ -6,7 +6,7 @@ import pytest
 
 from nektoids.editor.router import ChapterRow, Router, Screen, level_label
 from nektoids.graph.board import Kind
-from nektoids.levels.arenas import arenas, sandbox
+from nektoids.levels.arenas import EVERY_LEVEL, arenas, sandbox
 from nektoids.levels.score import Score
 
 
@@ -247,10 +247,37 @@ def test_a_passkey_opens_the_level_after_the_one_whose_win_gives_it_and_those_be
     assert router.unlock("  sword ") == love  # any case, spaces round it
     states = [router.state(k) for k in range(fear, orbit + 1)]
     assert states == ["open", "open", "open", "locked"]
-    assert router.state(1) == "open" and not router.won  # every level before it, none won
+    assert not router.won  # every level before it in its chapter, none won
     router.open(love)  # Love opens
     assert router.levels[-1].passkey is None  # the last gives no word (D-332)
     assert router.unlock("heart") == orbit and router.state(orbit) == "open"
+
+
+def test_a_passkey_opens_levels_of_its_own_chapter_and_leaves_the_others_as_they_are():
+    router = a_router()  # D-355: SNAIL, Patience's word, opens Two lights, 3.3
+    assert router.unlock("snail") == AT["Two lights"]
+    assert [router.state(AT[t]) for t in ("Greed", "Patience", "Two lights")] == ["open"] * 3
+    assert [router.state(AT[t]) for t in ("Aggression", "Love", "Orbit")] == ["locked"] * 3
+    assert router.unlock("moon") is None  # a chapter's last gives no word, and has none
+
+
+def test_the_word_for_every_level_is_given_once_all_are_won_and_opens_them_all():
+    router = a_router()  # D-355
+    assert not router.unlock_every("snail") and router.state(AT["Orbit"]) == "locked"
+    for k in range(len(router.levels) - 1):  # all won but the last
+        router.index = k
+        router.mark_won()
+    assert not router.all_won and router.rows()[0].every_level == ""
+    router.index = len(router.levels) - 1  # its win completes the set: the card says so
+    assert router.next_passkey() is None
+    router.mark_won()
+    assert router.all_won and router.next_passkey() == (EVERY_LEVEL, "every level")
+    assert router.rows()[AT["Fear"]].every_level == EVERY_LEVEL
+    router.open(router.sandbox_index)
+    assert router.next_passkey() is None  # the sandbox gives none
+    fresh = a_router()  # another session: typed, it opens every level, none of them won
+    assert fresh.unlock_every(" vehicles ")
+    assert {fresh.state(k) for k in range(len(fresh.levels))} == {"open"} and not fresh.won
 
 
 def test_a_win_card_names_the_word_for_the_next_level_and_chapters_once_it_is_won():

@@ -63,6 +63,7 @@ CHAPTERS = (
 # they come in no order (D-348). A chapter with no level yet is not listed.
 ORDER = tuple(f"{chapter.folder}/{name}" for chapter in CHAPTERS for name in chapter.names)
 SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)
+EVERY_LEVEL = "VEHICLES"  # the word for every level, once all are won: Braitenberg's (D-355)
 
 
 def locate(index: int) -> tuple[Chapter, int]:

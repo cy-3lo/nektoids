@@ -25,6 +25,5 @@
     {"verb": "reach", "count": "all", "target": "mark"},
     {"verb": "reach", "count": "none", "target": "light"}
   ],
-  "passkey": "MOON",
   "proof": {"board": "Q9WeCdErrNR6U9", "ticks": 784, "parts": 4}
 }

@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.board import Board, BoardState
-from nektoids.levels.arenas import CHAPTERS, locate
+from nektoids.levels.arenas import CHAPTERS, EVERY_LEVEL, locate
 from nektoids.levels.level import Level
 from nektoids.levels.score import Score, front
 
@@ -54,6 +54,7 @@ class ChapterRow:
     best: Score | None  # the fastest win this session
     current: bool  # the place open now
     passkey: str = ""  # won: the word its win gave, which opens the next level (D-075)
+    every_level: str = ""  # won, and every level with it: the word that opens them all (D-355)
 
 
 @dataclass(frozen=True)
@@ -161,6 +162,7 @@ class Router:
                 self.best(k),
                 k == self.index,
                 self._word_won(k),
+                EVERY_LEVEL if self.all_won and k in self.won else "",
             )
             for k, place in enumerate(places)
         )
@@ -202,22 +204,41 @@ class Router:
         chapter, k = locate(index)
         return k == 0 or chapter.all_open or index - 1 in self.won or index in self.opened
 
+    @property
+    def all_won(self) -> bool:
+        """Whether every level of every chapter has been won this session (D-355)."""
+        return self.won >= set(range(len(self.levels)))
+
     def unlock(self, word: str) -> int | None:
         """A passkey typed (D-075): the level after the one whose win gives `word`, in any case,
-        opens, with every level before it, none of them won; that level's index, or None if no
-        level's word opens one (the last level's opens nothing yet)."""
+        opens, with every level before it in its chapter, none of them won; the other chapters
+        are left as they are (D-355). That level's index, or None if no level's word opens one
+        (a chapter's last level gives none)."""
         word = word.strip().upper()
-        for k, level in enumerate(self.levels[:-1]):
-            if level.passkey == word:
-                self.opened |= set(range(k + 2))
+        for k, level in enumerate(self.levels):
+            if level.passkey == word and self._word_opens(k):
+                self.opened |= set(range(k - locate(k)[1], k + 2))  # from its chapter's first
                 self.folded -= {locate(k + 1)[0].heading}  # it shows, open, in Chapters
                 return k + 1
         return None
 
+    def unlock_every(self, word: str) -> bool:
+        """The word for every level typed, in any case: every level of every chapter opens, none
+        of them won (D-355). False for any other word."""
+        if word.strip().upper() != EVERY_LEVEL:
+            return False
+        self.opened |= set(range(len(self.levels)))
+        return True
+
     def next_passkey(self) -> tuple[str, str] | None:
-        """The open level's word and the label of the level it opens, for its win card (D-075);
-        None in the sandbox, or with no word that opens a level."""
-        if self.in_sandbox or not self._word_opens(self.index):
+        """The word for the open level's win card, and what it opens (D-075): the word for every
+        level once all are won (D-355), else the level's own and the label of the level it
+        opens; None in the sandbox, or with no word that opens a level."""
+        if self.in_sandbox:
+            return None
+        if self.all_won:
+            return EVERY_LEVEL, "every level"
+        if not self._word_opens(self.index):
             return None
         return self.level.passkey, level_label(self.index + 1)
 
