@@ -1,18 +1,18 @@
-"""The Maker (D-301): the sandbox's own environment, where its level is made while the editor and
+"""The Editor (D-301): the sandbox's own environment, where its level is made while the Board and
 the run try it.
 
 The main screen shows the level's plane at large over its grid, the lattice its positions fall
 on: its lights, obstacles, marks and rays, and the swimmer where it starts, facing where it
-heads. Round it, the frame the editor and the run have (`frame.Frame`, D-051): Objects, as Parts
+heads. Round it, the frame the Board and the run have (`frame.Frame`, D-051): Objects, as Parts
 is the board's: the objects as rows, undo and redo, and at its foot the Wheel round what is
 focused (D-068, D-069, `objects.py`); Goals, the time allowed and the goals, each a sentence
 whose words are buttons, with a slider for its setting (D-308); Text, the level's title and
 spec (D-305); Files, the level copied as text, another's text pasted, or a blank plane or a
 shipped level to start from (D-310); Parts, the board's size and how many of each part, which
-the Editor's board takes at once, or refuses while it has more (D-315); Navigator, with
+the Board takes at once, or refuses while it has more (D-315); Navigator, with
 the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
 
-The Wheel works as the Editor's (D-314): atop the plane, what the next click or Enter does. A
+The Wheel works as the Board's (D-314): atop the plane, what the next click or Enter does. A
 click on an object focuses it with Move in hand, so the next click on the open plane moves it
 there; a drag moves it too, on the lattice. An object just placed is focused with More lit,
 the least to begin with, so Enter makes it more. A click on the open plane, inside a mark too,
@@ -26,7 +26,7 @@ makes it more or less, or turns the swimmer. Keys: 1, 2, 3 a light, an obstacle,
 Move; L and R turn; < and > less and more; Delete; Ctrl+Z and Ctrl+Y undo and redo; Esc puts
 down what is in hand, then lets go of the focus, then opens Chapters (D-304); + and - zoom, C
 centres, X shows or hides the rays; Tab the next tab, Space the run. Each change is a new `Level`
-(`making.py`), which `main.py` hands to the router, the editor and the next run.
+(`making.py`), which `main.py` hands to the router, the Board and the next run.
 """
 
 from __future__ import annotations
@@ -167,8 +167,8 @@ from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
 ARROW_PAN = 2.0  # an arrow drags the view this far [u]
 CLICK = 4  # a press that moves less than this is a click, not a drag [px]
-MAKER_VIEW = (ViewButton.ZOOM_IN, ViewButton.ZOOM_OUT, ViewButton.CENTRE, ViewButton.RAYS)
-VIEWS = {VIEW_KEYS[b]: b for b in MAKER_VIEW}  # the keys the Maker's view answers: + - C X
+EDITOR_VIEW = (ViewButton.ZOOM_IN, ViewButton.ZOOM_OUT, ViewButton.CENTRE, ViewButton.RAYS)
+VIEWS = {VIEW_KEYS[b]: b for b in EDITOR_VIEW}  # the keys the Editor's view answers: + - C X
 ACTIONS = (Tool.MOVE, Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.LESS, Tool.MORE)
 ACTION_KEYS = {TOOL_KEYS[a]: a for a in ACTIONS}  # M L R < >; Delete on its physical key
 DIGITS = POINT_PIECES  # 1, 2, 3, on their physical keys, as Parts' numbers
@@ -178,11 +178,11 @@ LEVEL_LONGEST = 20_000  # what a level's text, pasted in Files, may run to (D-31
 CHECK_TICKS = 120  # a pasted level's proof run so many ticks a frame, a second of it (D-320)
 
 
-class Paste(Enum):  # the field of the Maker's Files: a level's text pasted there (D-310)
+class Paste(Enum):  # the field of the Editor's Files: a level's text pasted there (D-310)
     LEVEL = "level"
 
 
-class MakerScene(Frame):
+class EditorScene(Frame):
     def __init__(
         self,
         level: Level,
@@ -193,11 +193,11 @@ class MakerScene(Frame):
         starts: Sequence[tuple[str, Level]] = (),
         board: Board | None = None,
     ):
-        layout = make_layout(drawer, env=Env.MAKER, chapters=chapters, maker=True)
-        self._start_frame(layout, settings)  # also `request`: "run", "edit"... for main.py
+        layout = make_layout(drawer, env=Env.EDITOR, chapters=chapters, editor=True)
+        self._start_frame(layout, settings)  # also `request`: "run", "board"... for main.py
         self.label = label  # "YOUR LEVEL", before its title in the caption (D-341)
         self.starts = tuple(starts)  # Start from's levels, each with its label: "1.2", or ""
-        self.board = board  # the Editor's board, which takes what the level hands out (D-315)
+        self.board = board  # the Board, which takes what the level hands out (D-315)
         self.proof: Proof | None = None  # the board that won the level, its score (D-320)
         self.proved: Level | None = None  # ... the level as it was won: shared while it holds
         self.checking: tuple[Replay, Proof, Level] | None = None  # a pasted proof, run again
@@ -218,13 +218,13 @@ class MakerScene(Frame):
         self.dragged = False  # ... and the mouse has moved: the object follows it
         self.before: Level | None = None  # the level as the drag began: one step for undo
         self.history: History[Level] = History()  # D-027
-        self.wheel_folded = False  # the Maker's Wheel never folds, unlike the Editor's (D-317)
+        self.wheel_folded = False  # the Editor's Wheel never folds, unlike the Board's (D-317)
         self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse
         self.writing: Brief | Knob | Paste | None = None  # a field typed in: Brief's, a box...
         self.field: TextField | None = None  # ... what it holds (D-305)
         self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
-        self.folded: set[str] = set()  # Parts' groups shown closed, as the Editor's (D-315),
+        self.folded: set[str] = set()  # Parts' groups shown closed, as the Board's (D-315),
         self.folded |= {title for title, _ in chapters}  # and Start from's chapters (D-342)
         self._take(level)
         self._open_view()
@@ -244,9 +244,9 @@ class MakerScene(Frame):
         return make_layout(
             drawer,
             self._folded(drawer, self.folded),
-            env=Env.MAKER,
+            env=Env.EDITOR,
             chapters=self.layout.chapters,
-            maker=True,
+            editor=True,
             wheel_folded=self.wheel_folded,
             scroll=self.scrolls.get(drawer, 0),  # D-096
             made=tuple(bool(settings(goal)) for goal in self.level.objectives),  # D-308
@@ -341,8 +341,8 @@ class MakerScene(Frame):
         return True
 
     def follow_board(self) -> None:
-        """Once a frame: the level placing what the Editor's board has locked, as the maker locks
-        or frees its parts there (D-319); a step for the Maker's undo, which frees it again."""
+        """Once a frame: the level placing what the Board has locked, as the maker locks
+        or frees its parts there (D-319); a step for the Editor's undo, which frees it again."""
         if self.board is None:
             return
         level = boarded(self.level, self.board)
@@ -351,14 +351,14 @@ class MakerScene(Frame):
             self._take(level)
 
     def _handed(self, level: Level) -> bool:
-        """The Editor's board handed out what `level` hands out, its zone and its parts, at once;
+        """The Board handed out what `level` hands out, its zone and its parts, at once;
         False, refused with its reason, while the board has more of a part or lies outside, which
-        is the player's to take off in the Editor (D-315)."""
+        is the player's to take off on the Board (D-315)."""
         if self.board is None or level.board == self.level.board:
             return True
         refused = self.board.rehand(level.new_board())  # its zone, stock and locked parts
         if refused is not None:
-            self._refuse(f"{refused.reason}: take it off in the Editor first")
+            self._refuse(f"{refused.reason}: take it off on the Board first")
             return False
         return True
 
@@ -393,7 +393,7 @@ class MakerScene(Frame):
         if what not in offer(focus):
             self._refuse(_why_not(focus, what))
             return
-        self.choice = chosen(focus, what)  # lit, as the Editor's Wheel lights it (D-314)
+        self.choice = chosen(focus, what)  # lit, as the Board's Wheel lights it (D-314)
         if isinstance(what, Piece):  # on an empty point
             self._place(what, focus.at)
         elif what is Tool.MOVE:
@@ -469,7 +469,7 @@ class MakerScene(Frame):
 
     def extent(self) -> tuple[float, float, float, float]:
         """What Navigator's overview shows, and the most the plane may: what matters, never less
-        than as the Maker opened, widened to the main screen's shape."""
+        than as the Editor opened, widened to the main screen's shape."""
         _, _, w, h = self.arena_area
         return widened(union(self._needed(), self._floor), w / h)
 
@@ -487,7 +487,7 @@ class MakerScene(Frame):
         return extent(points, reach, w / h, room)
 
     def _open_view(self) -> None:
-        """The view as the Maker opens on the level: what matters, centred; the overview never
+        """The view as the Editor opens on the level: what matters, centred; the overview never
         less than that view, a step farther out."""
         self.view = self._opening()
         self._floor = union(self._needed(), grown(shown(self.view, self.arena_area), ZOOM_STEP))
@@ -783,7 +783,7 @@ class MakerScene(Frame):
 
     def _step(self, what: Stepper, steps: int) -> None:
         """A − or a + of Parts: the board a ring smaller or bigger, or a part handed out one
-        fewer or more, the Editor's board with it."""
+        fewer or more, the Board with it."""
         if what.kind is None:
             self._make(lambda level: zoned(level, steps))
         else:
@@ -883,8 +883,8 @@ class MakerScene(Frame):
             self.said = f"Started from {self.level.title}."
 
     def open_blank(self) -> None:
-        """The Maker opened for the first time: a blank plane to make (D-317), two of each part
-        unless the Editor's board holds more, when the parts stay as they were; the sandbox's
+        """The Editor opened for the first time: a blank plane to make (D-317), two of each part
+        unless the Board holds more, when the parts stay as they were; the sandbox's
         plane one undo away."""
         if self._made_anew(blank):
             self.said = "A blank plane to make.  Ctrl+Z: the plane of two lights."
@@ -895,7 +895,7 @@ class MakerScene(Frame):
 
     def _made_anew(self, change: Callable[[Level], Level]) -> bool:
         """`change`, a level made anew, as `_make` makes any; once made, nothing is focused or
-        in hand, and the view opens on it as the Maker opens."""
+        in hand, and the view opens on it as the Editor opens."""
         if not self._make(change):
             return False
         self.focus, self.picked, self.moving, self.choice = None, None, False, None
@@ -932,7 +932,7 @@ class MakerScene(Frame):
             return
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         typed = KEY_ALIASES.get(event.unicode, event.unicode).upper()
-        drawer = drawer_key(Env.MAKER, typed)  # the character first: AZERTY's ? is on the comma
+        drawer = drawer_key(Env.EDITOR, typed)  # the character first: AZERTY's ? is on the comma
         digits = DIGIT_SCANCODES + KEYPAD_SCANCODES
         if arrow is not None:
             self._arrow(arrow)

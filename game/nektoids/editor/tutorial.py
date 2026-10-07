@@ -18,7 +18,7 @@ tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial, its ghos
 closed on its last card, its ghosts stay on the board (D-351). Settings' Tutorial
 starts the open level's again. On a step that waits for Next, any key or click moves
 on and does nothing else, but a click on Skip (D-081). While a step leads, only the means to
-what it waits for go through (`allows`); the editor and the run ask before they act. Pure
+what it waits for go through (`allows`); the Board and the run ask before they act. Pure
 Python, no pygame: what the step waits for is read from a `Context`, the screen's geometry from
 the layouts.
 """
@@ -85,7 +85,7 @@ class Step:
     @property
     def lines(self) -> tuple[str, ...]:
         """What the box shows: each paragraph wrapped to CHARS of what shows, ragged right
-        (D-094), a game's word marked "**Editor**" keeping its marks for the accent (D-337)."""
+        (D-094), a game's word marked "**Board**" keeping its marks for the accent (D-337)."""
         return tuple(line for text in self.say for line in _wrapped(text))
 
 
@@ -116,7 +116,7 @@ class Context:
 
 @dataclass(frozen=True)
 class Live:
-    """What the scene on screen shows now that its layout cannot say: in the editor, the Wheel's
+    """What the scene on screen shows now that its layout cannot say: on the Board, the Wheel's
     icons round the focused cell (D-070); in the run, the swimmer, a box round it (D-071)."""
 
     wheel: tuple[Slot, ...] = ()
@@ -137,7 +137,7 @@ class Tutorial:
     ) -> None:
         self.ghosts, self.steps = ghosts, steps
         self.ghost_wires = ghost_wires  # the model's wires, from a cell to a cell (D-074)
-        self.starts_in = starts_in  # the editor's drawer it begins in; None: the run (D-103)
+        self.starts_in = starts_in  # the Board's drawer it begins in; None: the run (D-103)
         self.index = 0
         self.skipped = False  # Skip ended it: its ghosts go with it (D-351)
 
@@ -209,8 +209,8 @@ class Tutorial:
 def panels(tutorial: Tutorial | None) -> frozenset[str]:
     """What a leading step shows, by name, drawn in the accent, the only highlight (D-050,
     D-336): an area, a drawer or a part of the run by its own name, its titles lit; a drawer's
-    icon in the bar by the drawer's name, the bar lighting them all; a tab as "tab:editor"; the
-    switch as "level:edit", a row of Parts as "menu:eye", a Wheel's icon as "wheel:turn left"."""
+    icon in the bar by the drawer's name, the bar lighting them all; a tab as "tab:board"; the
+    switch as "level:board", a row of Parts as "menu:eye", a Wheel's icon as "wheel:turn left"."""
     if tutorial is None or not tutorial.leads:
         return frozenset()
     names = set()
@@ -300,12 +300,12 @@ def _allows(until: Mapping, action: Action) -> bool:
         ends = {_cell(until["wired"]["from"]), _cell(until["wired"]["to"])}
         wire = verb == "wire" and {action.cell, action.other} == ends
         return wire or (verb == "tool" and action.tool is Tool.WIRE)
-    if "screen" in until:  # the way there: Run, or back to the editor (D-060)
-        return verb == {Screen.RUN: "run", Screen.EDIT: "edit"}.get(Screen(until["screen"]))
+    if "screen" in until:  # the way there: Run, or back to the Board (D-060)
+        return verb == {Screen.RUN: "run", Screen.BOARD: "board"}.get(Screen(until["screen"]))
     if "drawer" in until:  # a drawer to open: Diagnostic asks to (D-058, D-074)
         return verb == "view"
-    if "outcome" in until or "time" in until:  # the run and its controls, and back to the editor
-        return verb in ("run", "edit", "play")
+    if "outcome" in until or "time" in until:  # the run and its controls, and back to the Board
+        return verb in ("run", "board", "play")
     return False
 
 
@@ -370,13 +370,13 @@ def target_spots(
     that its layout cannot say."""
     shows = [] if show is None else show if isinstance(show, list) else [show]
     cells = frozenset(_cell(one["cell"]) for one in shows if "cell" in one)
-    running, editing = screen is Screen.RUN, screen is Screen.EDIT
+    running, editing = screen is Screen.RUN, screen is Screen.BOARD
     spots = []
     for one in shows:
         if one.get("run") == "arena" and running and layout.env is Env.RUN:
             spots += _page(layout, Env.RUN)
-        elif one.get("page") == "editor":  # the Editor tab, the level's line, the board
-            spots += _page(layout, Env.EDITOR) if editing and layout.env is Env.EDITOR else []
+        elif one.get("page") == "board":  # the Board tab, the level's line, the board
+            spots += _page(layout, Env.BOARD) if editing and layout.env is Env.BOARD else []
         elif one.get("run") == "swimmer":  # a box round it, nothing else (D-071)
             spots.append((live.swimmer if running else None, "spot"))
         elif one.get("area") == "bar":  # its two groups of icons, each on its own (D-080)
@@ -397,7 +397,7 @@ def target_spots(
 
 @dataclass(frozen=True)
 class Page:
-    """A page as a step explains it, the run's (D-062) or the editor's (D-071): its tab on top,
+    """A page as a step explains it, the run's (D-062) or the Board's (D-071): its tab on top,
     then the level's line and the arena or the board, outlined as one shape."""
 
     tab: Rect
@@ -461,15 +461,15 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         return None
     if "run" in show:
         return _run_target(show["run"], layout) if screen is Screen.RUN else None
-    if "tab" in show:  # over the main screen, in the editor and in the run alike
-        return dict(layout.tabs)[show["tab"]] if screen in (Screen.EDIT, Screen.RUN) else None
-    if "level" in show:  # the switch, Run in the editor, Editor in the run
-        on = screen in (Screen.EDIT, Screen.RUN)
+    if "tab" in show:  # over the main screen, on the Board and in the run alike
+        return dict(layout.tabs)[show["tab"]] if screen in (Screen.BOARD, Screen.RUN) else None
+    if "level" in show:  # the switch, Run on the Board, Board in the run
+        on = screen in (Screen.BOARD, Screen.RUN)
         return dict(layout.level_buttons).get(LevelButton(show["level"])) if on else None
     if "icon" in show:  # a drawer's icon in the bar, alone: it opens nothing (D-079)
-        on = screen in (Screen.EDIT, Screen.RUN)
+        on = screen in (Screen.BOARD, Screen.RUN)
         return dict(layout.drawer_buttons).get(Drawer(show["icon"])) if on else None
-    if screen is not Screen.EDIT:
+    if screen is not Screen.BOARD:
         return None
     if "area" in show:  # the board, the Parts drawer, the activity bar (D-051)
         return {
@@ -643,7 +643,7 @@ def next_rect(box: Rect) -> Rect:
 
 
 def answer(tutorial: Tutorial, box: Rect, click: tuple[int, int] | None) -> str | None:
-    """What a key (`click` None) or a click at `click` does to the tutorial, before the editor or
+    """What a key (`click` None) or a click at `click` does to the tutorial, before the Board or
     the run sees it: "skip" on Skip; on a step that waits for Next, "next" at any other key or
     click, which does nothing else (D-081); otherwise None, and the press goes on."""
     last = tutorial.index == len(tutorial.steps) - 1

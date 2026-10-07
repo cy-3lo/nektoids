@@ -1,13 +1,13 @@
 """Where the player is: the title card, a level being built or watched, the end.
 
-The loop of the brief (§1): the spec and the board in the editor, Run, watch the run, back to
-the editor to change the mechanism, or on to the next level once won (D-030). Around it (D-035,
+The loop of the brief (§1): the spec and the board on the Board, Run, watch the run, back to
+the Board to change the mechanism, or on to the next level once won (D-030). Around it (D-035,
 D-054): the game opens on the first level under a title card; the Chapters drawer lists the
 levels by chapter, one route through them all (D-325), and the sandbox, each level opening once
 the one before it is won; after the last level comes the end. A level opened from Chapters or by
 Next level comes up under its card, which says what it asks, then on its run, paused, the board
-as it stands (D-069). On the sandbox, a third screen, the Maker, makes its level, which the
-editor and the run try (D-301). Each level keeps its board for the session, so going back finds
+as it stands (D-069). On the sandbox, a third screen, the Editor, makes its level, which the
+Board and the run try (D-301). Each level keeps its board for the session, so going back finds
 it as it was left, and the scores of its wins (D-028); nothing is kept after it. Pure Python, no
 pygame: `main.py` turns the state into scenes.
 """
@@ -24,9 +24,9 @@ from nektoids.levels.level import Level
 from nektoids.levels.score import Score, front
 
 SANDBOX_LABEL = "YOUR LEVEL"  # the sandbox's, before its title in the caption (D-341)
-MAKER_ROW = (  # the sandbox's row in Chapters, under Build your level: its name and info (D-341)
-    "Open Maker",
-    "Build your own level in the Maker: its objects, its goals, its parts. Try it, then share it.",
+EDITOR_ROW = (  # the sandbox's row in Chapters, under Build your level: its name and info (D-341)
+    "Open Editor",
+    "Build your own level in the Editor: its objects, its goals, its parts. Try it, then share it.",
 )
 
 
@@ -79,9 +79,9 @@ class WinGroup:
 class Screen(Enum):
     TITLE = "title"  # the card over the first level, gone at the first click
     SPEC = "spec"  # a level's card: its name and what it asks, gone at the first click
-    EDIT = "edit"  # a level's board in the editor
+    BOARD = "board"  # a level's board, to wire, on the Board
     RUN = "run"  # the level's board swimming in its arena
-    MAKE = "make"  # the sandbox's level, made in the Maker (D-301)
+    EDITOR = "editor"  # the sandbox's level, made in the Editor (D-301)
     END = "end"  # after the route's last level
 
 
@@ -156,8 +156,8 @@ class Router:
             ChapterRow(
                 k,
                 "" if k == self.sandbox_index else level_number(k),
-                MAKER_ROW[0] if k == self.sandbox_index else place.title,
-                MAKER_ROW[1] if k == self.sandbox_index else place.spec,
+                EDITOR_ROW[0] if k == self.sandbox_index else place.title,
+                EDITOR_ROW[1] if k == self.sandbox_index else place.spec,
                 self.state(k),
                 self.best(k),
                 k == self.index,
@@ -250,30 +250,30 @@ class Router:
         self.screen = Screen.RUN
 
     def open(self, index: int) -> None:
-        """A place from Chapters, under its card; the sandbox, Open Maker, straight on the Maker,
+        """A place from Chapters, under its card; the sandbox, Open Editor, straight on the Editor,
         no card (D-341). ValueError if it is still locked."""
         if not self.unlocked(index):
             raise ValueError(f"{level_label(index)} opens once the level before it is won")
         self._go(index)
-        self.screen = Screen.MAKE if self.in_sandbox else Screen.SPEC
+        self.screen = Screen.EDITOR if self.in_sandbox else Screen.SPEC
 
     def run(self) -> None:
         self.screen = Screen.RUN
 
-    def edit(self) -> None:
-        self.screen = Screen.EDIT
+    def open_board(self) -> None:
+        self.screen = Screen.BOARD
 
-    def make(self) -> None:
-        """The Maker, the sandbox's alone (D-301); ValueError on a level of the route."""
+    def open_editor(self) -> None:
+        """The Editor, the sandbox's alone (D-301); ValueError on a level of the route."""
         if not self.in_sandbox:
-            raise ValueError("only the sandbox's level is made in the Maker")
-        self.screen = Screen.MAKE
+            raise ValueError("only the sandbox's level is made in the Editor")
+        self.screen = Screen.EDITOR
 
     def revise(self, level: Level) -> None:
-        """The sandbox's level as the Maker leaves it (D-301), for the editor and the next run;
+        """The sandbox's level as the Editor leaves it (D-301), for the Board and the next run;
         its board stays as the player left it. ValueError on a level of the route."""
         if not self.in_sandbox:
-            raise ValueError("only the sandbox's level is made in the Maker")
+            raise ValueError("only the sandbox's level is made in the Editor")
         self.sandbox = level
 
     def reset(self, index: int) -> None:

@@ -196,7 +196,7 @@ RUN_SO_FAR = mix(P.dim, P.line, 0.3)  # the timeline's part already run, ahead o
 EYE_SHADES = (P.bright, P.dim)  # one per eye in the polar plot, in turn
 WIN = P.accent1.bright  # a win on Score's plot that no other beats: the Pareto front
 
-# The Maker's plane (D-301): its grid, under the rays
+# The Editor's plane (D-301): its grid, under the rays
 PLANE_DOT = mix(P.deep, P.dim, 0.35)  # where a position may fall, every whole u (D-311)
 PLANE_LINE = mix(P.deep, P.line, 0.6)  # a line every 5 u
 MARK = mix(P.muted, P.dim, 0.5)  # a mark, an empty circle and its centre, in every view (D-306)

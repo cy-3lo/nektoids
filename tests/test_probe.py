@@ -14,7 +14,7 @@ from nektoids.levels.arenas import arenas
 from nektoids.sim.arena import BASE_RADIUS
 
 LEVELS = {level.title: level for level in arenas()}
-VIEW = View(34.0, (628.0, 335.0))  # as the editor shows the board
+VIEW = View(34.0, (628.0, 335.0))  # as the Board shows the board
 
 
 def wired(level):
@@ -56,7 +56,7 @@ def test_the_probe_stays_out_of_the_obstacles():
     assert gap >= disc.radius + BASE_RADIUS - 1e-9
 
 
-def test_the_preview_draws_the_board_where_the_editor_does_and_follows_its_view():
+def test_the_preview_draws_the_board_where_the_board_does_and_follows_its_view():
     board = wired(LEVELS["Fear"])
     probe = Probe(board, LEVELS["Fear"], VIEW)
     (eye,) = probe.net.eyes

@@ -1,24 +1,24 @@
-"""Where everything sits on the 960 x 640 screen, editor or run, and what is under a pixel (D-051).
+"""Where everything sits on the 960 x 640 screen, Board or run, and what is under a pixel (D-051).
 
 - Left, the activity bar: an icon for each drawer, Parts, Tools and Navigator at the top in the
-  editor, Objectives, Inside, Score and Navigator in the run, Objects, Parts, Goals, Brief,
-  Files and Navigator in the Maker; Hints, Settings and Chapters at its foot, over the accented
-  switch to the run, or from the run to the editor (`Env`).
+  Board, Objectives, Inside, Score and Navigator in the run, Objects, Parts, Goals, Brief,
+  Files and Navigator in the Editor; Hints, Settings and Chapters at its foot, over the accented
+  switch to the run, or from the run to the Board (`Env`).
 - Beside it, one drawer at a time, or none: its title, then rows all alike (icon, name, an
   info disc, then a count or a key). Parts: the groups (sensors, actuators, operators) that fold
   under their title, only the parts the level hands out; Tools: Mode (Write, Delete), Edit
   (undo, redo); Files: each level's wins, groups that fold as Parts' do (D-092), then
   Save/Load: Copy a board, Paste a board (D-206); Navigator: the view's buttons; Hints: the
   level's, asked for in turn (D-078); Settings: what the player sets (D-054); Chapters: the
-  levels, then the sandbox, which replaces the full-screen map. Goals, in the Maker: the time
+  levels, then the sandbox, which replaces the full-screen map. Goals, in the Editor: the time
   allowed, a slider, then each goal's name over three rows of buttons, its words (D-308);
-  Files, in the Maker: Copy level, then a field to paste a level's text into (D-310); Parts,
-  in the Maker: the board's size and how many of each part, each with − and + (D-315).
+  Files, in the Editor: Copy level, then a field to paste a level's text into (D-310); Parts,
+  in the Editor: the board's size and how many of each part, each with − and + (D-315).
   Rows that do not fit scroll, above the Wheel in Tools and Parts and above the objectives in
   the run (D-096). An arrow on the drawer's edge folds it.
-- The rest is the main screen: the tabs over it (Run, Editor, and on the sandbox the Maker,
+- The rest is the main screen: the tabs over it (Run, Board, and on the sandbox the Editor,
   D-301), the level's caption under them, then the board's hex grid, in the run the arena with
-  its controls under it, in the Maker the plane; one status line at its foot. A drawer opening
+  its controls under it, in the Editor the plane; one status line at its foot. A drawer opening
   pushes the main screen aside.
 
 The View says how big a hex is and where the grid sits in the board's area; zoom and pan change
@@ -44,10 +44,10 @@ BAR_WIDTH = 48  # the activity bar, down the left edge [px]
 BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]
-ACTION_WIDTH = 50  # atop the editor's main screen, what a click does: a Wheel's icon, square [px]
+ACTION_WIDTH = 50  # atop the Board's main screen, what a click does: a Wheel's icon, square [px]
 ACTION_ROOM = 96  # from the board's top: the action, the line under it, a little more [px]
 DRAWER_WIDTH = 248  # [px]
-AT_WIDTH = 18  # the Maker's Author field: its "@" stands outside it, this wide [px] (D-341)
+AT_WIDTH = 18  # the Editor's Author field: its "@" stands outside it, this wide [px] (D-341)
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
 ROW_HEIGHT = 40  # a drawer's row [px]
 OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
@@ -70,7 +70,7 @@ WORD_GAP = 4  # ... between two, either way; under a slider [px]
 SLIDER_HEIGHT = 30  # a slider of Goals: its label, its track, its value [px]
 KNOB_LABEL = 64  # ... its label, at its left [px]
 KNOB_VALUE = 56  # ... its value's box, at its right [px]
-STEP_BUTTON = 28  # a row of the Maker's Parts: its − and +, square, the count between [px]
+STEP_BUTTON = 28  # a row of the Editor's Parts: its − and +, square, the count between [px]
 SHADOW_GAP = 6  # from the shadow's picture to the line under it [px]
 SHADOW_LEAST = 140  # the shadow's picture shrinks to fit Hints, no smaller: then it scrolls [px]
 ROW_PITCH = 46  # from one row to the next [px]
@@ -81,12 +81,12 @@ INFO_AT = 156  # a row's info disc: its centre, this far from the row's left [px
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
 HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
 TABS_HEIGHT = 32  # the strip of tabs over the board [px]
-CAPTION_HEIGHT = 26  # under the tabs, inside the Editor's: the level's title and spec [px]
+CAPTION_HEIGHT = 26  # under the tabs, inside the Board's: the level's title and spec [px]
 TOP = TABS_HEIGHT + CAPTION_HEIGHT  # the board's top edge [px]
-TABS = ("run", "editor")  # a level's tabs, Run first (D-069)
-MAKER_TABS = (*TABS, "maker")  # the sandbox's: the Maker makes its level (D-301)
-TAB_WIDTHS = {"run": 64, "editor": 84, "maker": 80}  # [px]
-TAB_KEYS = {"run": "F1", "editor": "F2", "maker": "F3"}  # each tab's key, in their order (D-303)
+TABS = ("run", "board")  # a level's tabs, Run first (D-069)
+EDITOR_TABS = (*TABS, "editor")  # the sandbox's: the Editor makes its level (D-301)
+TAB_WIDTHS = {"run": 64, "board": 80, "editor": 84}  # [px]: Board, Editor (D-356)
+TAB_KEYS = {"run": "F1", "board": "F2", "editor": "F3"}  # each tab's key, in their order (D-303)
 STATUS_HEIGHT = 28  # [px]
 CONTROLS_HEIGHT = 48  # the run's controls, a strip under the arena [px]
 MARGIN = 16  # [px]
@@ -117,7 +117,7 @@ class Tool(Enum):
     TURN_RIGHT = "turn right"  # clockwise
     PAN = "pan"  # moves the view, not a component; the hand among the view buttons
     SWAP = "swap"  # the focused part for another of its group in Parts (D-068)
-    LESS = "less"  # the Maker's: the focused light dimmer, the obstacle smaller (D-301)
+    LESS = "less"  # the Editor's: the focused light dimmer, the obstacle smaller (D-301)
     MORE = "more"  # ... brighter, bigger
 
 
@@ -133,14 +133,14 @@ PALETTE_TOOLS = (
 TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-clockwise
 
 
-class Piece(Enum):  # Objects' rows: what the Maker puts on the plane (D-301)
+class Piece(Enum):  # Objects' rows: what the Editor puts on the plane (D-301)
     LIGHT = "light"
     OBSTACLE = "obstacle"
     MARK = "mark"  # a zone, which only the objectives read (D-306)
     START = "start"  # the swimmer's start: always one, moved and turned, never placed
 
 
-class Brief(Enum):  # Text's fields, in the Maker: the level's name, what it asks, its maker
+class Brief(Enum):  # Text's fields, in the Editor: the level's name, what it asks, its maker
     TITLE = "title"  # D-305
     SPEC = "spec"
     AUTHOR = "author"  # D-331
@@ -159,7 +159,7 @@ class GoalButton(Enum):  # Goals' last row, while the level asks fewer than two 
     ADD = "add"
 
 
-class Shown(Enum):  # atop the editor's main screen (D-068)
+class Shown(Enum):  # atop the Board's main screen (D-068)
     ACTION = "action"  # what the next click or Enter does, and its key; a click opens Tools
 
 
@@ -170,13 +170,13 @@ class Mode(Enum):  # what a click on the board does (D-068)
 
 
 class LevelButton(Enum):  # the accented switch at the bar's foot, to the other environment
-    RUN = "run"  # in the editor: the board, swimming in its arena
-    EDIT = "edit"  # in the run: back to the board as it was left
+    RUN = "run"  # on the Board: the board, swimming in its arena
+    BOARD = "board"  # in the run: back to the board as it was left
 
 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
     SAVE = "save"  # Copy a board: its text; the field to paste one is under it
-    LEVEL = "level"  # the Maker's Files: Copy level, its JSON; a field under it (D-310)
+    LEVEL = "level"  # the Editor's Files: Copy level, its JSON; a field under it (D-310)
     SHARE = "share"  # ... Share level: its JSON and its proof, once it is won (D-320)
 
 
@@ -201,20 +201,20 @@ class Drawer(Enum):  # D-051
     HINTS = "hints"  # at the bar's foot: the level's hints, asked for in turn (D-078)
     SETTINGS = "settings"  # at the bar's foot: what the player sets (D-054)
     CHAPTERS = "chapters"  # at the bar's foot, over the switch: the levels and the sandbox
-    OBJECTS = "objects"  # the Maker's: the plane's objects, undo and redo, the Wheel (D-301)
-    TEXT = "text"  # the Maker's: the level's title and spec, its Brief (D-305; named so, D-318)
-    GOALS = "goals"  # the Maker's: the time allowed and the goals, as sentences (D-308)
+    OBJECTS = "objects"  # the Editor's: the plane's objects, undo and redo, the Wheel (D-301)
+    TEXT = "text"  # the Editor's: the level's title and spec, its Brief (D-305; named so, D-318)
+    GOALS = "goals"  # the Editor's: the time allowed and the goals, as sentences (D-308)
 
 
-class MainView(Enum):  # what the editor's main screen shows, by the drawer open (D-058, D-069)
+class MainView(Enum):  # what the Board's main screen shows, by the drawer open (D-058, D-069)
     DIAGRAM = "diagram"  # the board on its hex grid, to edit
     PREVIEW = "preview"  # the Run preview: the board as it runs, where the probe stands
 
 
 class Env(Enum):  # the environments, each a tab over the main screen (D-051)
-    EDITOR = "editor"
+    BOARD = "board"
     RUN = "run"
-    MAKER = "maker"  # the sandbox's own: its level, made (D-301)
+    EDITOR = "editor"  # the sandbox's own: its level, made (D-301)
 
 
 DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a square [px]
@@ -224,11 +224,11 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.EDITOR: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
+    Env.BOARD: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
-    Env.MAKER: (
+    Env.EDITOR: (
         Drawer.OBJECTS,
-        Drawer.PARTS,  # the Maker's: the board's size, the parts handed out (D-315)
+        Drawer.PARTS,  # the Editor's: the board's size, the parts handed out (D-315)
         Drawer.GOALS,
         Drawer.TEXT,
         Drawer.FILES,
@@ -236,7 +236,7 @@ DRAWERS = {  # each environment's drawers, in the bar's order from the top
     ),
 }
 FOOT = (Drawer.HINTS, Drawer.SETTINGS, Drawer.CHAPTERS)  # the drawers whose icons sit at its foot
-SWITCH_TO = {Env.EDITOR: LevelButton.RUN, Env.RUN: LevelButton.EDIT, Env.MAKER: LevelButton.RUN}
+SWITCH_TO = {Env.BOARD: LevelButton.RUN, Env.RUN: LevelButton.BOARD, Env.EDITOR: LevelButton.RUN}
 
 
 @dataclass(frozen=True)
@@ -264,7 +264,7 @@ class Goal:
 
 @dataclass(frozen=True)
 class MadeGoal:
-    """A goal's name in the Maker's Goals, over its words: the level's objective `index`."""
+    """A goal's name in the Editor's Goals, over its words: the level's objective `index`."""
 
     index: int
 
@@ -279,7 +279,7 @@ class Word:
 
 @dataclass(frozen=True)
 class Stepper:
-    """A row of the Maker's Parts: how many of `kind` the level hands out, or, for None, its
+    """A row of the Editor's Parts: how many of `kind` the level hands out, or, for None, its
     board's size; − and + at its right end (D-315)."""
 
     kind: Kind | None
@@ -287,7 +287,7 @@ class Stepper:
 
 @dataclass(frozen=True)
 class Start:
-    """A row of the Maker's Start from: the shipped level `index`, or, for None, a blank plane
+    """A row of the Editor's Start from: the shipped level `index`, or, for None, a blank plane
     (D-310)."""
 
     index: int | None
@@ -319,7 +319,7 @@ TOOL_KEYS = {
     Tool.TURN_LEFT: "L",
     Tool.TURN_RIGHT: "R",
     Tool.SWAP: "S",
-    Tool.LESS: "<",  # the Maker's (D-301); + and - zoom
+    Tool.LESS: "<",  # the Editor's (D-301); + and - zoom
     Tool.MORE: ">",
 }
 VIEW_KEYS = {
@@ -328,21 +328,21 @@ VIEW_KEYS = {
     ViewButton.PAN: "H",
     ViewButton.CENTRE: "C",
     ViewButton.RAYS: "X",  # as in x-rays: L turns left (D-025)
-    ViewButton.MOTION: "M",  # Move in the editor, where these three do not show (D-069)
-    ViewButton.STREAMS: "W",  # as in wind, its icon; Wire in the editor
+    ViewButton.MOTION: "M",  # Move on the Board, where these three do not show (D-069)
+    ViewButton.STREAMS: "W",  # as in wind, its icon; Wire on the Board
 }
 RUN_VIEWS = (ViewButton.RAYS, ViewButton.MOTION, ViewButton.STREAMS)  # Navigator's, in the run
-MAKER_VIEWS = (ViewButton.RAYS,)  # ... in the Maker: the light, which the plane's shadows show
+EDITOR_VIEWS = (ViewButton.RAYS,)  # ... in the Editor: the light, which the plane's shadows show
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
 MODE_KEY = "E"  # Write and Delete in turn (as in erase); Esc goes back to Write
 LOCK_KEY = "K"  # Lock and Write in turn, on the sandbox (D-319)
 # On the physical key: Space runs, as the arena's play (D-021); from the run, Tab goes on to the
-# next tab, the editor's, as it does from every tab, Shift+Tab back (D-304).
-LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.EDIT: "Tab"}
+# next tab, the Board's, as it does from every tab, Shift+Tab back (D-304).
+LEVEL_KEYS = {LevelButton.RUN: "Space", LevelButton.BOARD: "Tab"}
 NEXT_TAB, LAST_TAB = "Tab", "Shift+Tab"  # what the tabs' tooltips show; F1 F2 F3 work too
 # Each drawer's key, its initial (D-069): it opens the drawer, or folds it. A letter may mean
-# something else in the other environment, F Fast forward in the run, S Swap in the editor, since
+# something else in the other environment, F Fast forward in the run, S Swap on the Board, since
 # the two never show together. Esc opens the levels, or folds them, once it has nothing left to
 # back out of (D-304); the comma Settings, with Ctrl or Cmd too; the question mark Hints, H being
 # the hand's (D-078).
@@ -359,7 +359,7 @@ DRAWER_KEYS = {
     Drawer.SETTINGS: ",",
     Drawer.CHAPTERS: "Esc",
     Drawer.OBJECTS: "O",
-    Drawer.TEXT: "T",  # Tools' key in the Editor, which the Maker has not
+    Drawer.TEXT: "T",  # Tools' key on the Board, which the Editor has not
     Drawer.GOALS: "G",
 }
 KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layouts
@@ -367,8 +367,8 @@ KEY_ALIASES = {"=": "+", "_": "-"}  # the same keys, shift or not, on most layou
 
 @dataclass(frozen=True)
 class Layout:
-    env: Env  # the editor's frame, the run's or the Maker's
-    maker: bool  # the sandbox: a third tab, the Maker, makes its level (D-301)
+    env: Env  # the Board's frame, the run's or the Editor's
+    editor: bool  # the sandbox: a third tab, the Editor, makes its level (D-301)
     kinds: frozenset[Kind]  # the parts the level hands out: the only ones Parts shows
     drawer: Drawer | None  # the drawer open, if one is
     chapters: tuple[tuple[str, int], ...]  # each chapter's title and how many levels it has
@@ -383,7 +383,7 @@ class Layout:
     foot_titles: tuple[tuple[str, Rect], ...]  # ... those at the foot, over the run's objectives
     group_titles: tuple[tuple[str, Rect], ...]  # Parts, Files: a click folds or unfolds its group
     menu_items: tuple[tuple[Kind, Rect], ...]  # Parts' rows
-    piece_rows: tuple[tuple[Piece, Rect], ...]  # Objects' rows, in the Maker (D-301)
+    piece_rows: tuple[tuple[Piece, Rect], ...]  # Objects' rows, in the Editor (D-301)
     brief_fields: tuple[tuple[Brief, Rect], ...]  # Brief's: the title's, the spec's (D-305)
     goal_heads: tuple[tuple[MadeGoal, Rect], ...]  # Goals': each goal's name and bin (D-308)
     goal_words: tuple[tuple[Word, Rect], ...]  # ... under it, its words' buttons
@@ -398,7 +398,7 @@ class Layout:
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo; Objects' too
     board_buttons: tuple[tuple[BoardButton, Rect], ...]  # ... then Tools' Erase all (D-321)
-    action_at: Rect | None  # the editor's and the Maker's: what a click does, atop the main screen
+    action_at: Rect | None  # the Board's and the Editor's: what a click does, atop the main screen
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
     goal_area: Rect | None  # ... at the foot of the open drawer, whichever it is (D-065)
@@ -412,13 +412,13 @@ class Layout:
     passkey_field: Rect | None  # Chapters' foot: a level's passkey typed there (D-075)
     file_buttons: tuple[tuple[FileButton, Rect], ...]  # Files' foot: Save (D-206)
     board_field: Rect | None  # ... under it, Load: a board's text pasted or typed there
-    level_field: Rect | None  # the Maker's Files: a level's text pasted there (D-310)
+    level_field: Rect | None  # the Editor's Files: a level's text pasted there (D-310)
     share_note: Rect | None  # ... under Share level, a line: won, or how to win it (D-320)
     files_rule: Rect | None  # ... under it, the rule over the levels to start from (D-322)
     start_rows: tuple[tuple[Start, Rect], ...]  # ... under it, Start from: a blank plane, a level
-    steppers: tuple[tuple[Stepper, Rect], ...]  # the Maker's Parts: the zone, each part (D-315)
+    steppers: tuple[tuple[Stepper, Rect], ...]  # the Editor's Parts: the zone, each part (D-315)
     info_buttons: tuple[tuple[object, Rect], ...]  # one per row: what its info box tells of
-    tabs: tuple[tuple[str, Rect], ...]  # "run", "editor", and on the sandbox "maker"
+    tabs: tuple[tuple[str, Rect], ...]  # "run", "board", and on the sandbox "editor"
     board_area: Rect  # the main screen: the board, or in the run the arena
     controls_area: Rect | None  # in the run, a strip under the arena: play, a step, the timeline
     overview: Rect | None  # Navigator's: the whole board, or level, small (D-060)
@@ -441,31 +441,31 @@ def make_layout(
     folded: frozenset[str] = frozenset(),
     kinds: frozenset[Kind] = frozenset(Kind),
     chapters: tuple[tuple[str, int], ...] = (),
-    env: Env = Env.EDITOR,
+    env: Env = Env.BOARD,
     goals: int = 0,
     files: tuple[tuple[str, int], ...] = (),
     wheel_folded: bool = False,
     scroll: int = 0,
     hint_lines: tuple[int, ...] | None = None,
     shadow: bool = False,
-    maker: bool = False,
+    editor: bool = False,
     made: tuple[bool, ...] = (),
     addable: bool = False,
     starts: int = 0,
 ) -> Layout:
-    """The bar, the open drawer's rows and the main screen, for the editor or the run. folded:
+    """The bar, the open drawer's rows and the main screen, for the Board or the run. folded:
     the groups shown closed, Parts', Files' or Chapters'; kinds: the parts the level hands out,
     the only ones Parts shows (D-039); chapters: each chapter's title and how many levels it
-    has, which Chapters lists in order, before the sandbox, as the Maker's Files does; goals:
+    has, which Chapters lists in order, before the sandbox, as the Editor's Files does; goals:
     how many objectives the level has, at the foot of each of the run's drawers, before the time
     left; files: Files' groups, each a level's title and how many of its wins it lists (D-092);
     wheel_folded: the picture of the cell folded, at the foot of Tools and of Parts; scroll: how
     far the open drawer's rows are scrolled, kept within what they need (D-069, D-096);
     hint_lines: how many lines each hint taken shows under its row, in Hints, or None for a
     level with none to take; shadow: the shadow shows, in a picture under its row (D-078);
-    maker: the sandbox, whose tabs end with the Maker's (D-301); made: in Goals, each goal, by
+    editor: the sandbox, whose tabs end with the Editor's (D-301); made: in Goals, each goal, by
     whether its verb takes a setting; addable: the level may ask one more (D-308); starts: in
-    the Maker's Files, how many shipped levels it may start from, after a blank plane (D-310)."""
+    the Editor's Files, how many shipped levels it may start from, after a blank plane (D-310)."""
     width, height = SCREEN
     bar = (0, 0, BAR_WIDTH, height)
     side = (BAR_WIDTH - BAR_BUTTON) // 2
@@ -483,9 +483,9 @@ def make_layout(
     floor = _goals_top(height, goals) - 16 if env is Env.RUN else height - FOOT_MARGIN
     rows = _Rows()
     if drawer is Drawer.TOOLS:
-        rows.tools(height, wheel_folded, scroll, maker)
-    elif drawer is Drawer.PARTS and env is Env.MAKER:
-        rows.maker_parts(folded)
+        rows.tools(height, wheel_folded, scroll, editor)
+    elif drawer is Drawer.PARTS and env is Env.EDITOR:
+        rows.editor_parts(folded)
         rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds, height, wheel_folded, scroll)
@@ -498,8 +498,8 @@ def make_layout(
         rows.scrolled(floor, scroll)  # D-096
     elif drawer is Drawer.DIAGNOSTIC:
         rows.label("The level")
-    elif drawer is Drawer.FILES and env is Env.MAKER:
-        rows.maker_files(starts, chapters, folded, height, scroll)
+    elif drawer is Drawer.FILES and env is Env.EDITOR:
+        rows.editor_files(starts, chapters, folded, height, scroll)
     elif drawer is Drawer.FILES:
         rows.files(files, folded, height, scroll)
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
@@ -529,7 +529,7 @@ def make_layout(
         rows.sections += foot.sections
         foot_titles = foot.sections
     tabs, x = [], left
-    for name in MAKER_TABS if maker else TABS:
+    for name in EDITOR_TABS if editor else TABS:
         tabs.append((name, (x, 0, TAB_WIDTHS[name], TABS_HEIGHT)))
         x += TAB_WIDTHS[name]
     open_ = drawer is not None
@@ -537,7 +537,7 @@ def make_layout(
     main = height - STATUS_HEIGHT - (CONTROLS_HEIGHT if env is Env.RUN else 0)  # its foot
     return Layout(
         env=env,
-        maker=maker,
+        editor=editor,
         kinds=kinds,
         drawer=drawer,
         chapters=chapters,
@@ -568,7 +568,7 @@ def make_layout(
         edit_buttons=tuple(rows.of(EditButton)),
         board_buttons=tuple(rows.of(BoardButton)),
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
-        if env in (Env.EDITOR, Env.MAKER)  # the Maker's since D-314
+        if env in (Env.BOARD, Env.EDITOR)  # the Editor's since D-314
         else None,
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
@@ -681,8 +681,8 @@ class _Rows:
         self.board_field = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
         self.y += ROW_PITCH
 
-    def maker_parts(self, folded: frozenset[str]) -> None:
-        """The Maker's Parts (D-315): under Board, its size; then the parts in the Editor's
+    def editor_parts(self, folded: frozenset[str]) -> None:
+        """The Editor's Parts (D-315): under Board, its size; then the parts in the Board's Parts'
         groups, sensors, actuators, operators, each under a title that folds it (D-069); a row
         each, with − and + at its right end."""
         self._title("Board", self.sections)
@@ -699,7 +699,7 @@ class _Rows:
         self.steppers.append((what, (BAR_WIDTH + ROW_INSET, self.y, width, ROW_HEIGHT)))
         self.y += ROW_PITCH
 
-    def maker_files(
+    def editor_files(
         self,
         starts: int,
         chapters: tuple[tuple[str, int], ...],
@@ -707,8 +707,8 @@ class _Rows:
         height: int,
         scroll: int,
     ) -> None:
-        """The Maker's Files (D-310): under Save/Load, Copy level, a field to paste a level's
-        text into, as the editor's Files has for a board (D-206), then Share level and a line
+        """The Editor's Files (D-310): under Save/Load, Copy level, a field to paste a level's
+        text into, as the Board's Files has for a board (D-206), then Share level and a line
         under it (D-320, D-321), which stay; under a rule, the levels to start from, a list of
         its own that scrolls: Blank level, then each chapter's levels under titles that fold,
         as Chapters lists them (D-322, D-326), the sandbox's plane no longer among them (D-342)."""
@@ -779,16 +779,16 @@ class _Rows:
         self.zoom_bar, self.level_field = _moved(self.zoom_bar, up), _moved(self.level_field, up)
         self.share_note = _moved(self.share_note, up)
 
-    def tools(self, height: int, wheel_folded: bool, scroll: int, maker: bool = False) -> None:
+    def tools(self, height: int, wheel_folded: bool, scroll: int, editor: bool = False) -> None:
         """Write and Delete, and on the sandbox Lock (D-319), then undo and redo, as rows,
         scrolled above the Wheel if they do not fit; at the drawer's foot, the cell, as in Parts
         (D-068, D-069)."""
-        modes = tuple(mode for mode in Mode if maker or mode is not Mode.LOCK)
+        modes = tuple(mode for mode in Mode if editor or mode is not Mode.LOCK)
         edits = (*EditButton, BoardButton.ERASE)  # Erase all, under undo and redo (D-321)
         self._over_wheel((("Mode", modes), ("Edit", edits)), height, wheel_folded, scroll)
 
     def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
-        """The Maker's objects under their title, then undo and redo, which need none, as rows,
+        """The Editor's objects under their title, then undo and redo, which need none, as rows,
         scrolled above the Wheel if they do not fit; at the drawer's foot, the Wheel round what
         is focused on the plane (D-301, D-306)."""
         self._over_wheel((("Plane", Piece), ("", EditButton)), height, wheel_folded, scroll)
@@ -862,9 +862,9 @@ class _Rows:
 
     def view(self, env: Env) -> None:
         """The view's options as rows, in the run the rays, the swimmer's motion and its streams
-        (D-076), in the Maker the rays; then the overview and, under it, the zoom: a bar between
+        (D-076), in the Editor the rays; then the overview and, under it, the zoom: a bar between
         its two buttons (D-065)."""
-        options = {Env.RUN: RUN_VIEWS, Env.MAKER: MAKER_VIEWS}.get(env, ())
+        options = {Env.RUN: RUN_VIEWS, Env.EDITOR: EDITOR_VIEWS}.get(env, ())
         if options:
             self._title("View", self.sections)
             for button in options:
@@ -922,7 +922,7 @@ class _Rows:
                     self._row(k)
                 self.y += SECTION_GAP
         self._title("Build your level", self.sections)  # once Free play (D-341)
-        self._row(sum(count for _, count in chapters))  # the sandbox: Open Maker
+        self._row(sum(count for _, count in chapters))  # the sandbox: Open Editor
         self.y += SECTION_GAP
         self._title("Passkey", self.sections)  # a level's word typed: it opens (D-075)
         self.passkey = (BAR_WIDTH + ROW_INSET, self.y, DRAWER_WIDTH - 2 * ROW_INSET, ROW_HEIGHT)
@@ -982,7 +982,7 @@ def drawer_key(env: Env, typed: str) -> Drawer | None:
 
 
 def main_view_for(drawer: Drawer | None, last: MainView) -> MainView:
-    """What the editor's main screen shows with `drawer` open (D-069): the Run preview in
+    """What the Board's main screen shows with `drawer` open (D-069): the Run preview in
     Diagnostic, what it showed before (`last`) in Navigator, which only moves the view; else the
     board."""
     if drawer is Drawer.DIAGNOSTIC:
@@ -1003,12 +1003,12 @@ def file_button_at(layout: Layout, point: tuple[int, int]) -> FileButton | None:
 
 
 def level_field_at(layout: Layout, point: tuple[int, int]) -> bool:
-    """Whether `point` is on the Maker's field for a level's text, in its Files (D-310)."""
+    """Whether `point` is on the Editor's field for a level's text, in its Files (D-310)."""
     return layout.level_field is not None and contains(layout.level_field, point)  # it stays
 
 
 def step_buttons(row: Rect) -> tuple[Rect, Rect]:
-    """A row of the Maker's Parts: its − and its +, at its right end, the count between them."""
+    """A row of the Editor's Parts: its − and its +, at its right end, the count between them."""
     x, y, w, h = row
     top = y + (h - STEP_BUTTON) // 2
     plus = (x + w - STEP_BUTTON - 6, top, STEP_BUTTON, STEP_BUTTON)
@@ -1016,7 +1016,7 @@ def step_buttons(row: Rect) -> tuple[Rect, Rect]:
 
 
 def stepper_at(layout: Layout, point: tuple[int, int]) -> tuple[Stepper, int] | None:
-    """The − or the + of the Maker's Parts under `point`: its row, and -1 or 1 (D-315)."""
+    """The − or the + of the Editor's Parts under `point`: its row, and -1 or 1 (D-315)."""
     if not _listed(layout, point):
         return None
     for what, rect in layout.steppers:
@@ -1027,7 +1027,7 @@ def stepper_at(layout: Layout, point: tuple[int, int]) -> tuple[Stepper, int] | 
 
 
 def start_row_at(layout: Layout, point: tuple[int, int]) -> Start | None:
-    """The row of the Maker's Start from under `point`, where the drawer shows its rows."""
+    """The row of the Editor's Start from under `point`, where the drawer shows its rows."""
     return _row_at(layout, layout.start_rows, point)
 
 
@@ -1330,7 +1330,7 @@ def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
 
 
 def opening_view(layout: Layout, cells: Sequence[Cell]) -> View:
-    """How the editor first shows a zone: cell (0, 0) at the centre, at HEX_SIZE, or smaller if
+    """How the Board first shows a zone: cell (0, 0) at the centre, at HEX_SIZE, or smaller if
     the zone's hexes would reach under the action atop the board or past its sides (D-102)."""
     _, _, w, h = layout.board_area
     points = [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells] or [(0.0, 0.0)]

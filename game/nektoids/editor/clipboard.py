@@ -5,9 +5,9 @@ pasted into: Safari sends no copy or paste event when nothing on the page is sel
 refuses `navigator.clipboard.readText`. So the page does it, with a few lines of JavaScript put
 in once at startup (`install`): Save writes the text with `navigator.clipboard.writeText` on a
 click; Load focuses a text field of the page's own, invisible, once the click is over, which
-Cmd/Ctrl+V pastes into and whose keys never reach the game; the editor reads it once a frame.
-Natively, `pygame.scrap` does both, and the editor hands the field pygame's keys. The page's
-own F1 and F3, help and find, are stopped: they are the Run's and the Maker's tabs (D-303).
+Cmd/Ctrl+V pastes into and whose keys never reach the game; the Board reads it once a frame.
+Natively, `pygame.scrap` does both, and the Board hands the field pygame's keys. The page's
+own F1 and F3, help and find, are stopped: they are the Run's and the Editor's tabs (D-303).
 """
 
 from __future__ import annotations

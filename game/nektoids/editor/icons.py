@@ -41,7 +41,7 @@ TOOL_ICON = {
     Tool.MOVE: "up-down-left-right",
     Tool.DELETE: "trash-can",
     Tool.SWAP: "arrow-right-arrow-left",
-    Tool.LESS: "minus",  # the Maker's (D-301)
+    Tool.LESS: "minus",  # the Editor's (D-301)
     Tool.MORE: "plus",
 }
 PIECE_ICON = {
@@ -53,13 +53,13 @@ PIECE_ICON = {
 # Hooked arrows for undo and redo: the round ones are the turn tools'.
 EDIT_ICON = {EditButton.UNDO: "reply", EditButton.REDO: "share"}
 MODE_ICON = {Mode.WRITE: "pencil", Mode.DELETE: "eraser", Mode.LOCK: "lock"}  # D-068, D-319
-LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.EDIT: "diagram-project"}
+LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.BOARD: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)
     Drawer.TOOLS: "screwdriver-wrench",
     Drawer.PARTS: "puzzle-piece",
     Drawer.FILES: "floppy-disk",
     Drawer.DIAGNOSTIC: "stethoscope",
-    Drawer.INSIDE: "stethoscope",  # the run's Diagnostic, as the editor's (D-089)
+    Drawer.INSIDE: "stethoscope",  # the run's Diagnostic, as the Board's (D-089)
     Drawer.SCORE: "trophy",
     Drawer.NAVIGATOR: "compass",
     Drawer.HINTS: "life-ring",

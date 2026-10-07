@@ -35,7 +35,7 @@ class Circuit:
     ):
         """area: where to draw it [px]; margin: room kept round it [hex sizes]. body: fit the
         swimmer's whole body too, not only the parts and the wires. view: drawn through this
-        view instead, as the editor shows the board (the Run preview, D-060). travelling: beads
+        view instead, as the Board shows the board (the Run preview, D-060). travelling: beads
         that keep their speed once out (`beads.Travelling`), as a part's entry runs them."""
         self.board = board
         self.net = net = Network.from_board(board)

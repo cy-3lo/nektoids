@@ -98,7 +98,7 @@ def sensible(verb: Verb, count: Count, target: Target) -> str | None:
 
 
 def reworded(goal: Goal, word: Verb | Count | Target) -> Goal:
-    """The goal with `word` in its place, as the Maker's choosers put it (D-308), the other
+    """The goal with `word` in its place, as the Editor's choosers put it (D-308), the other
     words moved as little as makes the sentence say something: a leave or a stay aims at marks,
     a stay at one or all, never none; a target or a "none" the verb cannot take puts the verb
     back to reach, which takes any. A setting stays with its verb; a new verb's is at
@@ -341,7 +341,7 @@ def outcome(level: Level, kept: Kept, tick: int, dt: float) -> Outcome | None:
 
 def at_start(level: Level) -> Outcome | None:
     """How the level's goals stand where its swimmer starts, before a tick: won or lost there,
-    which a level made in the Maker may be, and then no run of it is judged (D-349); else None."""
+    which a level made in the Editor may be, and then no run of it is judged (D-349); else None."""
     here, size = np.array([level.start[:2]], dtype=np.float64), np.full(1, BASE_RADIUS)
     return _judged(level, begin(level, here, size))
 

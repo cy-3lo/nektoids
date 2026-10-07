@@ -1,4 +1,4 @@
-"""A field of text typed or pasted in (D-206, D-305): Paste a board at Files' foot, the Maker's
+"""A field of text typed or pasted in (D-206, D-305): Paste a board at Files' foot, the Editor's
 title and spec in Text (D-318).
 
 It holds its text and a caret, where the next character goes. Natively the scene hands it

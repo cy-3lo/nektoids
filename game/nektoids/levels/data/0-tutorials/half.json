@@ -16,11 +16,11 @@
   "tutorial": {
     "steps": [
       {
-        "show": [{"tab": "editor"}, {"level": "edit"}],
-        "until": {"screen": "edit"},
+        "show": [{"tab": "board"}, {"level": "board"}],
+        "until": {"screen": "board"},
         "say": [
           "Stay 3 s in the ring. At full push the swimmer crosses it in 2 s: too fast.",
-          "Press the **Editor** button or tab, or press Tab."
+          "Press the **Board** button or tab, or press Tab."
         ]
       },
       {

@@ -1,7 +1,7 @@
 """What the player sets in the Settings drawer (D-051, D-054, D-067): fast forward's speed,
 whether the drawers show keys; how soon a tooltip shows, fixed for now. And what the run's
 Navigator shows of the swimmer at work, its motion and its streams (D-076). One object for the
-session, shared by the editor and the run; nothing is kept after it. Pure Python, no pygame.
+session, shared by the Board and the run; nothing is kept after it. Pure Python, no pygame.
 """
 
 from __future__ import annotations

@@ -32,12 +32,12 @@
         ]
       },
       {
-        "show": [{"tab": "editor"}, {"level": "edit"}],
+        "show": [{"tab": "board"}, {"level": "board"}],
         "say": [
-          "The window has two tabs: Run plays the level and the **Editor** builds the control board.",
-          "Click the **Editor** tab or button, or press Tab."
+          "The window has two tabs: Run plays the level, and on the **Board** you build its control board.",
+          "Click the **Board** tab or button, or press Tab."
         ],
-        "until": {"screen": "edit"}
+        "until": {"screen": "board"}
       },
       {
         "show": {"area": "bar"},

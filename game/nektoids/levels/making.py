@@ -2,9 +2,9 @@
 swimmer's start moved or turned; its title or its spec written (D-305); the time allowed set; a
 goal added, a word of it chosen, its setting set, or taken out (D-308); another level's text
 pasted, of which it takes all but the board's free parts (D-310); how many of a part the board
-hands out, and its zone's size (D-315); the parts it places, locked on the Editor's board
+hands out, and its zone's size (D-315); the parts it places, locked on the Board
 (D-319). Each change returns a new `Level`, the old
-one untouched, so the Maker's undo keeps whole levels (D-027), and each lands on the lattice
+one untouched, so the Editor's undo keeps whole levels (D-027), and each lands on the lattice
 (`lattice.py`). A change the level could not hold is refused with its reason, for the status
 line: a light touching an obstacle, as the arena refuses it, the swimmer starting inside one, a
 title or a spec with nothing in it, a goal aiming at something the level has none of, a
@@ -139,7 +139,7 @@ def goal_removed(level: Level, index: int) -> Level:
 
 def lacks(level: Level, index: int, word: Verb | Count | Target) -> str | None:
     """Why goal `index` cannot take `word`: the sentence it makes (`reworded`) aims at something
-    the level has none of; None if it can. The Maker dims such a word (D-308)."""
+    the level has none of; None if it can. The Editor dims such a word (D-308)."""
     target = reworded(level.objectives[index], word).target
     if _has(level, target):
         return None
@@ -239,7 +239,7 @@ def taken(level: Level, other: Level) -> Level:
 
 def boarded(level: Level, board: Board) -> Level:
     """The level placing the parts `board` has locked, where they are, and no wire: the
-    Editor's board as the maker locks its parts (D-319)."""
+    Board as the maker locks its parts (D-319)."""
     parts = [part for part in board.to_dict()["parts"] if part["locked"]]
     return replace(level, board={**level.board, "parts": parts, "wires": []})
 

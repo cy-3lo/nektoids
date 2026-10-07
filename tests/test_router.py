@@ -34,8 +34,8 @@ def test_run_and_back_to_edit_keeps_the_board_as_it_was_left():
     eye = board.place(Kind.EYE, (0, 0))
     router.run()
     assert router.screen is Screen.RUN
-    router.edit()
-    assert router.screen is Screen.EDIT and router.board is board and eye.id in board.nodes
+    router.open_board()
+    assert router.screen is Screen.BOARD and router.board is board and eye.id in board.nodes
 
 
 def test_a_level_opens_once_the_one_before_it_is_won_and_the_sandbox_always():
@@ -76,10 +76,10 @@ def test_a_level_opened_comes_up_under_its_card_and_one_returned_to_does_not():
     router.begin()
     assert router.screen is Screen.RUN  # a level opens on its run (D-069)
     router.run()
-    router.edit()  # Edit after a run
-    assert router.screen is Screen.EDIT
+    router.open_board()  # Edit after a run
+    assert router.screen is Screen.BOARD
     router.open(router.sandbox_index)
-    assert router.screen is Screen.MAKE  # Open Maker: straight on the Maker, no card (D-341)
+    assert router.screen is Screen.EDITOR  # Open Editor: straight on the Editor, no card (D-341)
 
 
 def test_the_sandbox_has_no_next_and_is_never_won():
@@ -295,22 +295,22 @@ def test_a_win_card_names_the_word_for_the_next_level_and_chapters_once_it_is_wo
     assert router.next_passkey() is None
 
 
-def test_the_maker_opens_on_the_sandbox_alone_and_the_editor_and_the_run_go_on_from_it():
+def test_the_editor_opens_on_the_sandbox_alone_and_the_board_and_the_run_go_on_from_it():
     router = a_router()  # D-301
     with pytest.raises(ValueError, match="only the sandbox"):
-        router.make()
+        router.open_editor()
     router.open(router.sandbox_index)
     router.begin()
-    router.make()
-    assert router.screen is Screen.MAKE and router.label == "YOUR LEVEL"
+    router.open_editor()
+    assert router.screen is Screen.EDITOR and router.label == "YOUR LEVEL"
     router.run()
     assert router.screen is Screen.RUN
-    router.make()
-    router.edit()
-    assert router.screen is Screen.EDIT
+    router.open_editor()
+    router.open_board()
+    assert router.screen is Screen.BOARD
 
 
-def test_the_maker_revises_the_sandboxs_level_alone_and_its_board_stays():
+def test_the_editor_revises_the_sandboxs_level_alone_and_its_board_stays():
     router = a_router()  # D-301
     with pytest.raises(ValueError, match="only the sandbox"):
         router.revise(router.level)

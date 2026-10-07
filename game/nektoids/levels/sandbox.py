@@ -1,4 +1,4 @@
-"""Two starting boards for trying the editor, until real levels exist.
+"""Two starting boards for trying the Board, until real levels exist.
 
 The zone is the hexagon of 19 cells around (0, 0). Eyes and thrusters are all alike; what makes
 one a "left" eye is where it looks. The agent's left is up on screen (forward = E, D-008), so

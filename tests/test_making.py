@@ -44,7 +44,7 @@ from nektoids.levels.making import (
 )
 from nektoids.levels.objectives import Count, Goal, Target, Verb
 
-LEVEL = replace(sandbox(), tutorial=None)  # as the Maker holds it: the intro is main's (D-341)
+LEVEL = replace(sandbox(), tutorial=None)  # as the Editor holds it: the intro is main's (D-341)
 # two lights, four obstacles; the start at (15, 19), heading 20°
 
 
@@ -297,7 +297,7 @@ def test_the_zone_is_a_hexagon_of_seven_to_thirty_seven_cells_one_ring_at_a_time
 
 
 def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
-    board = LEVEL.new_board()  # D-319: the Editor's
+    board = LEVEL.new_board()  # D-319: the Board's
     eye = board.place(Kind.EYE, (0, 0))
     board.place(Kind.THRUSTER, (1, 0))  # free: the player's, not the level's
     board.lock(eye.id)

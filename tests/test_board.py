@@ -611,7 +611,7 @@ def test_adopt_refuses_a_board_this_level_cannot_hold_and_changes_nothing():
 
 
 def test_a_board_handed_out_anew_keeps_its_parts_unless_they_no_longer_fit():
-    board = Board(hex_disc(2), {Kind.EYE: 2, Kind.THRUSTER: 2})  # D-315: the Maker's Parts
+    board = Board(hex_disc(2), {Kind.EYE: 2, Kind.THRUSTER: 2})  # D-315: the Editor's Parts
     eye = board.place(Kind.EYE, (2, 0))
     board.place(Kind.EYE, (0, 0))
     board.connect(eye.id, board.place(Kind.THRUSTER, (1, 0)).id)
