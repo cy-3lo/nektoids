@@ -2261,3 +2261,12 @@ Turned 60°, the light is still 120° off its axis at the start, so the swimmer 
 but three presses of L, or the wheel, 45° in all, and the eye reads, its beads running to the
 thruster; dragged beside the light, above it, it reads more. The proof, its eye turned forward,
 is unchanged.
+
+**D-353 — 2026-10-07 — Two hints, on every level of chapters 0 to 3: Hint 1, the parts one way to win adds; Hint 2, its shadow, those parts where they go and the way they face, without their wires. The idea is gone, and with it a level's `hints`. Chapter 4's levels, made by users, have none. Amends D-078, D-098, D-329.**
+The physicist's, watching a new player: the idea, a bit cryptic, did not help, and the shadow's
+wires gave the whole answer away. The parts and where they sit, turned as they should be, leave
+the wiring to the player. Both hints come from the level's proof, so every level that ships with
+one may have them: chapters 0 to 3; chapter 4's, made by users, keep none, by its `hints` flag.
+The ideas leave the level files, which take no `hints` key now; no file but the game's had one
+(D-310), so the format keeps its version 5. A tutorial's own shadow keeps its wires. Patience's
+parts take three lines, the most; the shadow's picture keeps its 140 px above the objectives.

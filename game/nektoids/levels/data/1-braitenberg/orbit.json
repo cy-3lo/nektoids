@@ -23,6 +23,5 @@
     {"verb": "reach", "count": "none", "target": "light"}
   ],
   "passkey": "MOON",
-  "hints": {"idea": "One side pushes always."},
   "proof": {"board": "Q94CnG3c2C6fsL", "ticks": 1093, "parts": 4}
 }

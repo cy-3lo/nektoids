@@ -14,7 +14,6 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 ## 0.1 Wiring
 
 - Spec: Get into the ring ahead.
-- Hint 1, the idea: A Source pushes all the time.
 - Opens on: the Run
 - Ghosts: a wire from (0, 0) to (-1, 0)
 
@@ -32,7 +31,6 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 ## 0.2 Turning
 
 - Spec: Reach the ring by turning round the obstacle.
-- Hint 1, the idea: Off the centre, a push turns.
 - Opens on: the Run
 - Ghosts: thruster on (-1, 1) pointing E
 
@@ -46,7 +44,6 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 ## 0.3 Eyes
 
 - Spec: Swim to the light and touch it.
-- Hint 1, the idea: The eye drives what it is wired to.
 - Opens on: the Run
 - Ghosts: eye on (1, 0) pointing E; thruster on (-1, 0) pointing E; a wire from (1, 0) to (-1, 0)
 
@@ -59,7 +56,6 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 ## 0.4 Half
 
 - Spec: Stay in the ring for 3 s.
-- Hint 1, the idea: Slower stays longer.
 - Opens on: the Run
 - Ghosts: none
 
@@ -71,7 +67,6 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 ## 0.5 Minus
 
 - Spec: Stay 3 s in the ring round the light, without touching it.
-- Hint 1, the idea: The light takes the push away.
 - Opens on: the Run
 - Ghosts: none
 
@@ -83,7 +78,6 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 ## 0.6 Diagnostic
 
 - Spec: Swim to the light and touch it.
-- Hint 1, the idea: Where does the eye look?
 - Opens on: the Run
 - Ghosts: none
 
@@ -96,7 +90,6 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 ## Build your level: the Maker
 
 - Spec: No goal: try any wiring.
-- Hint 1, the idea: —
 - Opens on: the Maker, Objects open
 - Ghosts: none
 

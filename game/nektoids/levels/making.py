@@ -232,7 +232,6 @@ def taken(level: Level, other: Level) -> Level:
         objectives=other.objectives,
         tutorial=None,
         passkey=None,
-        hints=None,
         author=None,
     )
     return _checked(specified(titled(made, other.title), other.spec))

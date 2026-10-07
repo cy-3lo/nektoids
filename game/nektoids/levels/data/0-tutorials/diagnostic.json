@@ -16,7 +16,6 @@
   },
   "time_limit": 15,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
-  "hints": {"idea": "Where does the eye look?"},
   "tutorial": {
     "steps": [
       {

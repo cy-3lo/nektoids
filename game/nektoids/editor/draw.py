@@ -221,9 +221,8 @@ SETTING = {  # Settings' rows: their name, icon and what their info box says (D-
     Setting.MUSIC: ("Music", "music", "There is no music yet."),
 }
 HINT = (  # Hints' rows, in NAMES' order: their icon, a speech bubble, and what their info box
-    ("comment", "An idea to start from, a bit cryptic."),  # says (D-078, D-088)
-    ("comment", "The parts one way to win takes."),
-    ("comment", "One way to win, faint: here and on the board."),
+    ("comment", "The parts one way to win takes."),  # says (D-078, D-088, D-353)
+    ("comment", "Where they go and the way they face, faint: here and on the board."),
 )
 BUILD_IT = ("Go to", Drawer.TOOLS, "Tools or", Drawer.PARTS, "Parts")  # under the shadow (D-088)
 ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's name
@@ -1034,7 +1033,7 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         _draw_shadow(screen, hints.board, layout.shadow_picture)
         _draw_with_icons(screen, fonts, BUILD_IT, layout.shadow_line)
     note = None
-    if hints is None:  # the sandbox, and the levels after the first five (D-098)
+    if hints is None:  # the sandbox, and the levels made by users (D-353)
         note = "No hints here."
     elif hints.locked:
         note = "Skip or finish the tutorial for hints."
@@ -1066,7 +1065,7 @@ def _draw_with_icons(
 
 def _draw_shadow(screen: pygame.Surface, board: Board, rect) -> None:
     """The shadow's picture (D-078): the level's board, small, the shadow on it as the editor's
-    board draws one, its parts and wires faint."""
+    board draws one, its parts faint, no wire (D-353)."""
     area = pygame.Rect(rect)
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     view = fitted_view(rect, [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in board.cells], 1.2)
@@ -1075,9 +1074,6 @@ def _draw_shadow(screen: pygame.Surface, board: Board, rect) -> None:
         pygame.draw.polygon(screen, ZONE, hexagon)
         pygame.draw.polygon(screen, GRID_LINE, hexagon, 1)
     draw_body(screen, board.cells, view.size, view.origin)
-    for wire in board.wires:
-        reach = extent(board.nodes[wire.target].kind)
-        _draw_wire(screen, view, wire.path, GHOST_FILL, reach)
     for node in board.nodes.values():
         angle = placed_angle(node.kind, node.facing)
         shape = _shape(node.kind, angle, _centre(view, node.cell), view.size)

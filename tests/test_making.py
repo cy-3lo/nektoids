@@ -222,8 +222,8 @@ def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_
     )
     assert (made.board["zone"], made.board["stock"]) == (19, fear.board["stock"])  # D-315
     assert made.board["parts"] == LEVEL.board["parts"]  # the board's own parts, none here
-    assert made.tutorial is None and made.passkey is None and made.hints is None
-    assert fear.passkey is not None and fear.hints is not None
+    assert made.tutorial is None and made.passkey is None
+    assert fear.passkey is not None
     wiring = next(level for level in arenas() if level.title == "Wiring")  # D-335: a tutorial
     assert wiring.tutorial is not None and pasted(LEVEL, to_json(wiring)).tutorial is None
 

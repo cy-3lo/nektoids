@@ -16,7 +16,6 @@
   },
   "time_limit": 10,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
-  "hints": {"idea": "Off the centre, a push turns."},
   "tutorial": {
     "ghosts": [{"kind": "thruster", "cell": [-1, 1], "facing": "E"}],
     "steps": [

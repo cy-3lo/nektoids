@@ -1,4 +1,5 @@
-"""A level's hints (D-078): an idea, the parts, the shadow. hints.py imports no pygame."""
+"""A level's hints (D-078, D-353): the parts, then the shadow, without its wires. hints.py imports
+no pygame."""
 
 from dataclasses import replace
 
@@ -7,7 +8,6 @@ from test_determinism import play
 
 from nektoids.editor.hints import (
     CHARS,
-    IDEA,
     NAMES,
     PARTS,
     SHADOW,
@@ -26,14 +26,14 @@ from nektoids.levels.objectives import Outcome
 from nektoids.levels.proof import Proof
 
 LEVELS = {level.title: level for level in arenas()}
-HINTED = [title for title, level in LEVELS.items() if level.hints is not None]
+HINTED = [title for k, title in enumerate(LEVELS) if locate(k)[0].hints]
 
 
-def test_the_levels_of_chapters_0_and_1_have_hints_and_the_others_none():
-    chapters = [locate(k)[0].number for k in range(len(LEVELS))]  # D-329
-    assert HINTED == [title for title, n in zip(LEVELS, chapters, strict=True) if n <= 1]
-    tutorials = ["Wiring", "Turning", "Eyes", "Half", "Minus", "Diagnostic"]  # D-335
-    assert HINTED == [*tutorials, "Fear", "Aggression", "Love", "Orbit"]
+def test_the_levels_of_chapters_0_to_3_have_hints_and_those_made_by_users_none():
+    chapters = [locate(k)[0].number for k in range(len(LEVELS))]  # D-353
+    assert HINTED == [title for title, n in zip(LEVELS, chapters, strict=True) if n <= 3]
+    assert "Shadows" in HINTED and "Two lights" in HINTED
+    assert "Dragster" not in HINTED and "Dragster II" not in HINTED  # D-348
 
 
 @pytest.mark.parametrize("title", HINTED)
@@ -49,9 +49,8 @@ def test_every_level_has_hints_and_its_shadow_wins_it(title):
 @pytest.mark.parametrize("title", HINTED)
 def test_each_hint_fits_the_drawer_and_the_shadow_says_nothing(title):
     hints = Hints.of(LEVELS[title])
-    for index in (IDEA, PARTS):
-        assert 1 <= len(hints.says(index)) <= 2
-        assert all(len(line) <= CHARS for line in hints.says(index))
+    assert 1 <= len(hints.says(PARTS)) <= 3  # Patience's, the longest: five kinds
+    assert all(len(line) <= CHARS for line in hints.says(PARTS))
     assert hints.says(SHADOW) == ()
 
 
@@ -81,27 +80,23 @@ def test_the_shadow_goes_over_the_parts_the_level_places_and_adds_only_the_rest(
     board = Board(hex_disc(1), {})  # D-329: as 0.1 will be, a Source and a thruster locked
     source = board.place(Kind.SOURCE, (0, 0), locked=True)
     thruster = board.place(Kind.THRUSTER, (-1, 0), locked=True)
-    level = replace(LEVELS["Fear"], board=board.to_dict(), hints={"idea": "Wire them."})
+    level = replace(LEVELS["Fear"], board=board.to_dict())
     board.connect(source.id, thruster.id)
     level = replace(level, proof=Proof(boardtext.to_text(board), 600, 2).to_dict())
     hints = Hints.of(level)
-    assert hints.ghosts == () and hints.ghost_wires == (((0, 0), (-1, 0)),)
+    assert hints.ghosts == () and hints.ghost_wires == ()  # the shadow draws no wire (D-353)
     assert len(hints.board.wires) == 1 and all(n.locked for n in hints.board.nodes.values())
     assert " ".join(hints.says(PARTS)) == "No part to add: only wires."
-    with pytest.raises(ValueError, match="a level's hints takes no 'shadow'"):
-        Hints.of(replace(level, hints={"idea": "Wire them.", "shadow": {}}))
 
 
 def test_hints_are_taken_in_turn_and_the_shadow_shows_or_hides():
     taken = Taken()
-    assert taken.take(PARTS) == "take Hint 1 first" and taken.count == 0
-    assert taken.take(IDEA) is None and taken.count == 1
-    assert taken.take(SHADOW) == "take Hint 2 first"
-    assert taken.take(IDEA) is None and taken.count == 1  # taken already: it stays
-    taken.take(PARTS)
+    assert taken.take(SHADOW) == "take Hint 1 first" and taken.count == 0
+    assert taken.take(PARTS) is None and taken.count == 1
+    assert taken.take(PARTS) is None and taken.count == 1  # taken already: it stays
     assert not taken.shown
     taken.take(SHADOW)
-    assert taken.count == 3 and taken.shown
+    assert taken.count == 2 and taken.shown
     taken.take(SHADOW)
     assert not taken.shown
     taken.take(SHADOW)

@@ -509,25 +509,24 @@ def test_chapters_lists_the_levels_then_the_sandbox_and_settings_its_rows_by_sec
 def test_hints_lists_its_rows_each_taken_ones_lines_under_it_and_the_shadow_last():
     assert make_layout(Drawer.HINTS).hint_rows == ()  # a level with none: a note only (D-078)
     fresh = make_layout(Drawer.HINTS, hint_lines=())
-    assert [row for row, _ in fresh.hint_rows] == [HintRow(0), HintRow(1), HintRow(2)]
+    assert [row for row, _ in fresh.hint_rows] == [HintRow(0), HintRow(1)]  # D-353
     assert fresh.hint_texts == () and fresh.shadow_picture is None
     for row, rect in fresh.hint_rows:
         assert hint_row_at(fresh, centre(rect)) == row and hint_row_at(LAYOUT, centre(rect)) is None
         assert info_at(fresh, centre(dict(fresh.info_buttons)[row])) == row
-    taken = make_layout(Drawer.HINTS, hint_lines=(1, 2, 0), shadow=True)
+    taken = make_layout(Drawer.HINTS, hint_lines=(2, 0), shadow=True)
     rows, texts = [rect for _, rect in taken.hint_rows], dict(taken.hint_texts)
-    assert list(texts) == [0, 1]  # the shadow's says nothing: its picture does
-    for k, lines in ((0, 1), (1, 2)):
-        x, y, w, h = texts[k]
-        assert rows[k][1] + rows[k][3] <= y and y + h < rows[k + 1][1] and h == lines * HINT_LINE
-        assert contains(taken.drawer_area, (x, y)) and contains(taken.drawer_area, (x + w - 1, y))
+    assert list(texts) == [0]  # the shadow's says nothing: its picture does
+    x, y, w, h = texts[0]
+    assert rows[0][1] + rows[0][3] <= y and y + h < rows[1][1] and h == 2 * HINT_LINE
+    assert contains(taken.drawer_area, (x, y)) and contains(taken.drawer_area, (x + w - 1, y))
     x, y, w, h = taken.shadow_picture
-    assert w == h == DRAWER_WIDTH - 32 and rows[2][1] + rows[2][3] < y  # a square, under it
+    assert w == h == DRAWER_WIDTH - 32 and rows[1][1] + rows[1][3] < y  # a square, under it
     assert y + h < SCREEN[1] and contains(taken.drawer_area, (x, y))
     lx, ly, lw, lh = taken.shadow_line  # under the picture: where to build it (D-088)
     assert y + h < ly and ly + lh < SCREEN[1] and lh == HINT_LINE
     assert contains(taken.drawer_area, (lx, ly)) and contains(taken.drawer_area, (lx + lw - 1, ly))
-    hidden = make_layout(Drawer.HINTS, hint_lines=(1, 2, 0))
+    hidden = make_layout(Drawer.HINTS, hint_lines=(2, 0))
     assert hidden.shadow_picture is None and hidden.shadow_line is None
 
 

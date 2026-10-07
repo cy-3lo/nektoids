@@ -794,16 +794,16 @@ The objectives at the foot of every run drawer, and Navigator's zoom bar (D-065)
 `value_at`, the zoom on a log scale; `arena_draw._draw_rows` draws the objectives under any
 drawer.
 
-## 16. Hints, asked for in turn (D-078)
+## 16. Hints, asked for in turn (D-078, D-353)
 
-Read D-078 first. Open Love, press ?, and take Hint 1, the idea, Hint 2, the parts, then Hint
-3, the shadow; go to the Editor, where the shadow lies on the board too, and click Hint 3 to
-hide it.
+Read D-078 and D-353 first. Open Love, press ?, and take Hint 1, the parts, then Hint 2, the
+shadow, the parts without their wires; go to the Editor, where the shadow lies on the board too,
+and click Hint 2 to hide it.
 
-- [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.from_dict` reads a level's
-  `hints`, its idea and its shadow (ghosts, as a tutorial writes them); `says` the lines under a
-  row; `parts_line` counts the shadow's parts; `build` makes the shadow for real on a board;
-  `Taken`, what the player has taken; `HintView`, what the drawer shows.
+- [`editor/hints.py`](../game/nektoids/editor/hints.py), pure: `Hints.of` builds a level's proof
+  on its blank board, the parts it adds the shadow's ghosts; `says` the lines under a row;
+  `parts_line` counts the shadow's parts; `Taken`, what the player has taken; `HintView`, what
+  the drawer shows. `Chapter.hints` says which chapters have them: all but the users'.
 - [`editor/layout.py`](../game/nektoids/editor/layout.py): `Drawer.HINTS` in `FOOT`,
   `_Rows.hints`, `HintRow`, `hint_row_at`; the picture's square shrinks to clear the run's
   objectives.

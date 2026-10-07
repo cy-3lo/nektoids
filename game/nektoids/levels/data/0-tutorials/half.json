@@ -13,7 +13,6 @@
   },
   "time_limit": 15,
   "objectives": [{"verb": "stay", "count": "one", "target": "mark", "seconds": 3}],
-  "hints": {"idea": "Slower stays longer."},
   "tutorial": {
     "steps": [
       {
