@@ -347,10 +347,15 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
     if board.cells:
         draw_body(screen, board.cells, view.size, view.origin, BODY_WIDTH)
     screen.set_clip(None)
-    if scene.main is MainView.DIAGRAM:  # the Run preview hides them: nothing to edit there
-        _draw_buttons(screen, scene, fonts)
-    screen.set_clip(scene.layout.board_area)  # the grid over the buttons, under wires and parts
+    shown = scene.main is MainView.DIAGRAM  # the Run preview hides the buttons: no editing there
+    if shown:
+        _draw_button_shadows(screen, scene)
+    screen.set_clip(scene.layout.board_area)  # the grid over the shadows, under the rest
     screen.blit(_grid(scene.layout, view, board.cells, screen.get_size()), (0, 0))
+    screen.set_clip(None)
+    if shown:
+        _draw_buttons(screen, scene, fonts)
+    screen.set_clip(scene.layout.board_area)
 
     wired = {(board.nodes[w.source].cell, board.nodes[w.target].cell) for w in board.wires}
     for start, end in scene.ghost_wires:  # the model's wires, faint, until each is made (D-074)
@@ -431,6 +436,15 @@ def _grid(layout: Layout, view: View, zone, size: tuple[int, int]) -> pygame.Sur
     return layer
 
 
+def _draw_button_shadows(screen: pygame.Surface, scene: BoardScene) -> None:
+    """The buttons' shadows, under the grid, which shows through them; a chosen one, pressed
+    in, casts none."""
+    size, origin = scene.view.size, scene.view.origin
+    looks = scene.button_states()
+    centres = [to_pixel(PLACES[b], size, origin) for b in looks if looks[b] is not State.CHOSEN]
+    shadows(screen, centres, size - BUTTON_INSET)
+
+
 def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
     """The Board's buttons round the board, keys in a bevel (D-401): chosen, pressed in; lit, a
     teal bevel and the key on a light tag, if Settings shows keys; greyed, dimmed, a part's face
@@ -439,7 +453,6 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
     looks = scene.button_states()
     places = {b: to_pixel(PLACES[b], size, origin) for b in looks}
     key_size = size - BUTTON_INSET  # clear of the grid's line
-    shadows(screen, [c for b, c in places.items() if looks[b] is not State.CHOSEN], key_size)
     for b, centre in places.items():
         look = looks[b]
         pygame.draw.polygon(
