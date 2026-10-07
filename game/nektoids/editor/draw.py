@@ -53,7 +53,6 @@ from nektoids.editor.icons import (
     MODE_ICON,
     PIECE_ICON,
     TOOL_ICON,
-    VIEW_ICON,
     Icons,
 )
 from nektoids.editor.layout import (
@@ -68,14 +67,12 @@ from nektoids.editor.layout import (
     LEVEL_KEYS,
     LOCK_KEY,
     MARGIN,
-    MAX_HEX,
     MODE_KEY,
     PALETTE_TITLE,
     PASSKEY_KEY,
     SCREEN,
     STATUS_HEIGHT,
     TABS_HEIGHT,
-    VIEW_KEYS,
     WHEEL_TITLE,
     BoardButton,
     Drawer,
@@ -93,10 +90,7 @@ from nektoids.editor.layout import (
     ViewButton,
     WinRow,
     fitted_view,
-    level_of,
-    overview_view,
     scroll_thumb,
-    shown_frame,
     tab_key_to,
     visible_cells,
 )
@@ -418,7 +412,6 @@ ACTION_SAYS = {  # under the action atop the main screen: what it is (D-068)
     Tool.TURN_RIGHT: "Turn right: the part turns 60° clockwise",
     Tool.DELETE: "Delete: the part goes, and its wires with it",
     Tool.SWAP: "Swap: the part becomes another of its group",
-    Tool.PAN: "Hand: a drag on the board moves the view",
 }
 
 
@@ -451,7 +444,7 @@ def _action_icon(what: Tool | Mode | Piece) -> str:
         return MODE_ICON[what]
     if isinstance(what, Piece):
         return PIECE_ICON[what]
-    return VIEW_ICON[ViewButton.PAN] if what is Tool.PAN else TOOL_ICON[what]
+    return TOOL_ICON[what]
 
 
 def _draw_wheel(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
@@ -549,7 +542,7 @@ def _named(scene: BoardScene, what: Kind | Tool | Mode, key: str) -> str:
     if isinstance(what, Kind):
         name = NAME[what]
     else:
-        name = ROW_NAME[ViewButton.PAN] if what is Tool.PAN else ROW_NAME[what]
+        name = ROW_NAME[what]
     return f"{name} ({key})" if scene.settings.key_hints else name
 
 
@@ -873,21 +866,6 @@ def draw_track(screen: pygame.Surface, rect, level: float, held: bool = False) -
     pygame.draw.circle(screen, DARK, knob, 6, 1)
 
 
-def _draw_overview(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """Navigator's overview (D-060): the whole board small, its parts as dots, and a frame round
-    what the main screen shows; a press or a drag there moves the view."""
-    area = pygame.Rect(scene.layout.overview)
-    pygame.draw.rect(screen, SHADOW, area, border_radius=6)
-    small = overview_view(scene.layout, sorted(scene.board.cells))
-    with clipped(screen, area):
-        for cell in scene.board.cells:
-            pygame.draw.polygon(screen, ZONE, _hexagon(small, cell))
-        for node in scene.board.nodes.values():
-            pygame.draw.circle(screen, COMPONENT, _centre(small, node.cell), 0.45 * small.size)
-        pygame.draw.rect(screen, LIT, shown_frame(scene.layout, scene.view, small), 1)
-    pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
-
-
 def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
     """Diagnostic (D-058, D-069): the level small, its obstacles, its marks, its lights,
     and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076), its
@@ -963,7 +941,7 @@ def _draw_board_text(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
 
 
 def _draw_rows(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """The Board's own drawers' rows: Tools, Parts, Files, Navigator; Diagnostic's map."""
+    """The Board's own drawers' rows: Tools, Parts, Files; Diagnostic's map."""
     layout, board = scene.layout, scene.board
     if layout.drawer is Drawer.TOOLS:
         _draw_tools(screen, scene, fonts)
@@ -971,9 +949,6 @@ def _draw_rows(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
         _draw_diagnostic(screen, scene, fonts)
     if layout.drawer is Drawer.FILES:
         _draw_files(screen, scene, fonts)
-    if layout.overview is not None:
-        _draw_overview(screen, scene, fonts)
-        draw_zoom(screen, scene, fonts, level_of(scene.view.size, scene.least_zoom(), MAX_HEX))
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
@@ -991,20 +966,6 @@ def _draw_rows(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
             left == 0,
             part=kind,
             lit=lit,
-        )
-    for button, rect in layout.view_buttons:
-        active = button is ViewButton.PAN and scene.tool is Tool.PAN
-        key = ("key", VIEW_KEYS[button])
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            ROW_NAME[button],
-            key,
-            active,
-            icon=VIEW_ICON[button],
         )
 
 

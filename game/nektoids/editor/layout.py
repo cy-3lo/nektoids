@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel, to_pixel
+from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel
 from nektoids.graph.kinds import Category
 from nektoids.levels.objectives import Count, Target, Verb
 
@@ -45,7 +45,6 @@ BAR_BUTTON = 40  # an icon's square in it [px]
 BAR_PITCH = 48  # from one icon to the next [px]
 SWITCH = 36  # the accented switch at its foot, square [px]
 ACTION_WIDTH = 50  # atop the Board's main screen, what a click does: a Wheel's icon, square [px]
-ACTION_ROOM = 96  # from the board's top: the action, the line under it, a little more [px]
 DRAWER_WIDTH = 248  # [px]
 AT_WIDTH = 18  # the Editor's Author field: its "@" stands outside it, this wide [px] (D-341)
 DRAWER_TOP = 40  # the first row or section title, under the drawer's own title [px]
@@ -93,6 +92,7 @@ MARGIN = 16  # [px]
 BUTTON = 40  # a palette button's side, in the run view [px]
 PALETTE_TITLE = 24  # a section's title, in the run view and the drawers [px]
 HEX_SIZE = 40.0  # centre-to-corner size of a hex in the default view [px]
+BOARD_HEX = 38.0  # the Board's one size: the largest zone and its buttons fit by a drawer (D-401)
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
 
@@ -115,7 +115,6 @@ class Tool(Enum):
     DELETE = "delete"
     TURN_LEFT = "turn left"  # counter-clockwise, 60° a click
     TURN_RIGHT = "turn right"  # clockwise
-    PAN = "pan"  # moves the view, not a component; the hand among the view buttons
     SWAP = "swap"  # the focused part for another of its group in Parts (D-068)
     LESS = "less"  # the Editor's: the focused light dimmer, the obstacle smaller (D-301)
     MORE = "more"  # ... brighter, bigger
@@ -224,7 +223,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a 
     DRAWER_WIDTH - 2 * MARGIN,
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
-    Env.BOARD: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.DIAGNOSTIC, Drawer.NAVIGATOR),
+    Env.BOARD: (Drawer.PARTS, Drawer.TOOLS, Drawer.FILES, Drawer.DIAGNOSTIC),  # no view to move
     Env.RUN: (Drawer.INSIDE, Drawer.SCORE, Drawer.NAVIGATOR),  # the objectives under each
     Env.EDITOR: (
         Drawer.OBJECTS,
@@ -981,13 +980,10 @@ def drawer_key(env: Env, typed: str) -> Drawer | None:
     return next((d for d in (*DRAWERS[env], *FOOT) if DRAWER_KEYS[d] == typed), None)
 
 
-def main_view_for(drawer: Drawer | None, last: MainView) -> MainView:
+def main_view_for(drawer: Drawer | None) -> MainView:
     """What the Board's main screen shows with `drawer` open (D-069): the Run preview in
-    Diagnostic, what it showed before (`last`) in Navigator, which only moves the view; else the
-    board."""
-    if drawer is Drawer.DIAGNOSTIC:
-        return MainView.PREVIEW
-    return last if drawer is Drawer.NAVIGATOR else MainView.DIAGRAM
+    Diagnostic, else the board."""
+    return MainView.PREVIEW if drawer is Drawer.DIAGNOSTIC else MainView.DIAGRAM
 
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:
@@ -1258,69 +1254,7 @@ def value_at(level: float, low: float, high: float) -> float:
     return low * (high / low) ** min(1.0, max(0.0, level))
 
 
-Bounds = tuple[float, float, float, float]  # x0, y0, x1, y1 [hex sizes], cell (0, 0) at 0
-ROOM = 1.5  # the overview shows this many times the zone, each way (D-066)
-
-
-def board_extent(layout: Layout, cells: Sequence[Cell]) -> Bounds:
-    """What the overview shows of the board, and the most the main screen may (D-066): the zone,
-    its hexes whole, ROOM times over, and at least what the main screen shows at HEX_SIZE,
-    centred on cell (0, 0) and widened to the main screen's aspect."""
-    _, _, w, h = layout.board_area
-    points = [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells] or [(0.0, 0.0)]
-    reach = 1.0  # a hex's own half, and a little [hex sizes]
-    half_w = max(ROOM * (max(abs(x) for x, _ in points) + reach), w / HEX_SIZE / 2)
-    half_h = max(ROOM * (max(abs(y) for _, y in points) + reach), h / HEX_SIZE / 2)
-    half_w, half_h = max(half_w, half_h * w / h), max(half_h, half_w * h / w)
-    return (-half_w, -half_h, half_w, half_h)
-
-
-def board_view_of(area: Rect, bounds: Bounds) -> View:
-    """The view that shows `bounds` whole in `area`, centred."""
-    x, y, w, h = area
-    x0, y0, x1, y1 = bounds
-    size = min(w / (x1 - x0), h / (y1 - y0))
-    return View(size, (x + w / 2 - size * (x0 + x1) / 2, y + h / 2 - size * (y0 + y1) / 2))
-
-
-def kept_on_board(layout: Layout, view: View, bounds: Bounds) -> View:
-    """The view, zoomed in if it showed more than `bounds`, slid so that it shows nothing
-    outside them: what the overview frames stays inside it (D-066)."""
-    least = board_view_of(layout.board_area, bounds).size
-    x, y, w, h = layout.board_area
-    if view.size < least:
-        k = least / view.size
-        cx, cy = x + w / 2, y + h / 2
-        view = View(least, (cx + k * (view.origin[0] - cx), cy + k * (view.origin[1] - cy)))
-    x0, y0, x1, y1 = bounds
-    s, (ox, oy) = view.size, view.origin
-    left, right, top, bottom = (x - ox) / s, (x + w - ox) / s, (y - oy) / s, (y + h - oy) / s
-    dx = (x0 - left) if left < x0 else (x1 - right) if right > x1 else 0.0
-    dy = (y0 - top) if top < y0 else (y1 - bottom) if bottom > y1 else 0.0
-    return View(s, (ox - dx * s, oy - dy * s))
-
-
-def overview_view(layout: Layout, cells: Sequence[Cell]) -> View:
-    """The board's extent seen small in Navigator's overview (D-060, D-066)."""
-    return board_view_of(layout.overview, board_extent(layout, cells))
-
-
-def shown_frame(layout: Layout, view: View, small: View) -> Rect:
-    """What the main screen shows of the board, as a frame in the overview seen through
-    `small`."""
-    x, y, w, h = layout.board_area
-    k = small.size / view.size
-    left = small.origin[0] + k * (x - view.origin[0])
-    top = small.origin[1] + k * (y - view.origin[1])
-    return (round(left), round(top), round(k * w), round(k * h))
-
-
-def centred_on(layout: Layout, view: View, small: View, point: tuple[int, int]) -> View:
-    """The view, at its zoom, centred where a press at `point` falls in the overview."""
-    px = (point[0] - small.origin[0]) / small.size
-    py = (point[1] - small.origin[1]) / small.size
-    x, y, w, h = layout.board_area
-    return View(view.size, (x + w / 2 - view.size * px, y + h / 2 - view.size * py))
+ROOM = 1.5  # the overview shows this many times what matters, each way (D-066)
 
 
 def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
@@ -1329,15 +1263,10 @@ def centred_view(layout: Layout, size: float = HEX_SIZE) -> View:
     return View(size, (x + w / 2, y + h / 2))
 
 
-def opening_view(layout: Layout, cells: Sequence[Cell]) -> View:
-    """How the Board first shows a zone: cell (0, 0) at the centre, at HEX_SIZE, or smaller if
-    the zone's hexes would reach under the action atop the board or past its sides (D-102)."""
-    _, _, w, h = layout.board_area
-    points = [to_pixel(cell, 1.0, (0.0, 0.0)) for cell in cells] or [(0.0, 0.0)]
-    high = max(abs(y) for _, y in points) + 1.0  # to a hex's top corner [hex sizes]
-    wide = max(abs(x) for x, _ in points) + SQRT3 / 2  # to its side
-    size = min(HEX_SIZE, (h / 2 - ACTION_ROOM) / high, (w / 2 - MARGIN) / wide)
-    return centred_view(layout, size)
+def board_view(layout: Layout) -> View:
+    """The Board's one view (D-401): BOARD_HEX, cell (0, 0) at the centre of the board area, with
+    a drawer open or not; nothing zooms or pans it."""
+    return centred_view(layout, BOARD_HEX)
 
 
 def moved_view(view: View, before: Layout, after: Layout) -> View:

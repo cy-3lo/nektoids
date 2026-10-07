@@ -3,10 +3,11 @@
 import pytest
 
 from nektoids.editor.arena_layout import BUTTON_KEYS
+from nektoids.editor.buttons import FRAME
 from nektoids.editor.layout import (
-    ACTION_ROOM,
     ACTION_WIDTH,
     BAR_WIDTH,
+    BOARD_HEX,
     CAPTION_HEIGHT,
     DRAWER_KEYS,
     DRAWER_WIDTH,
@@ -16,7 +17,6 @@ from nektoids.editor.layout import (
     FIELD_PAD,
     FOOT,
     FOOT_MARGIN,
-    HEX_SIZE,
     HINT_LINE,
     LEVEL_KEYS,
     MAX_HEX,
@@ -53,19 +53,16 @@ from nektoids.editor.layout import (
     Start,
     Stepper,
     Tool,
-    View,
     ViewButton,
     action_at,
     along,
     bin_at,
     bin_rect,
     board_button_at,
-    board_extent,
     board_field_at,
-    board_view_of,
+    board_view,
     brief_field_at,
     cell_at,
-    centred_on,
     centred_view,
     chapter_row_at,
     contains,
@@ -78,7 +75,6 @@ from nektoids.editor.layout import (
     group_at,
     hint_row_at,
     info_at,
-    kept_on_board,
     knob_at,
     level_button_at,
     level_field_at,
@@ -89,8 +85,6 @@ from nektoids.editor.layout import (
     mode_button_at,
     moved_view,
     on_fold_handle,
-    opening_view,
-    overview_view,
     palette_target_at,
     pan,
     passkey_at,
@@ -99,7 +93,6 @@ from nektoids.editor.layout import (
     scroll_for,
     scroll_thumb,
     setting_row_at,
-    shown_frame,
     slider_parts,
     start_row_at,
     step_buttons,
@@ -118,7 +111,7 @@ from nektoids.editor.layout import (
     zoom_button_at,
 )
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import hex_disc, to_pixel
+from nektoids.graph.hexgrid import SQRT3, hex_disc, to_pixel
 from nektoids.levels.arenas import arenas
 from nektoids.levels.objectives import Count, Target, Verb
 from nektoids.levels.sandbox import free_board, tutorial_board
@@ -127,7 +120,6 @@ LAYOUT = make_layout()  # Parts open, every part handed out, the cell under the 
 LIST = make_layout(wheel_folded=True)  # the same, the cell folded: the whole list shows
 VIEW = centred_view(LAYOUT)
 FILES = make_layout(Drawer.FILES, files=(("1.2 Aggression", 2), ("1.1 Fear", 1)))
-NAVIGATOR = make_layout(Drawer.NAVIGATOR)
 FOLDED = make_layout(None)
 RUN_NAVIGATOR = make_layout(Drawer.NAVIGATOR, env=Env.RUN)  # its rays, its objectives
 
@@ -353,8 +345,7 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
     assert LAYOUT.mode_buttons == LAYOUT.edit_buttons == ()  # Parts open: Tools' rows are not
     assert make_layout(env=Env.RUN).action_at is None
     assert [title for title, _ in FILES.section_titles] == ["Wins this session", "Save/Load"]
-    assert [title for title, _ in NAVIGATOR.section_titles] == ["Overview"]  # no option yet
-    assert NAVIGATOR.view_buttons == ()  # the Board's view has no option yet (D-065)
+    assert Drawer.NAVIGATOR not in DRAWERS[Env.BOARD]  # the Board's view never moves (D-401)
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
     assert [title for title, _ in run.section_titles] == ["View", "Overview", "Objectives"]
     assert [button for button, _ in run.view_buttons] == list(RUN_VIEWS)  # rays, motion, streams
@@ -397,8 +388,7 @@ def test_the_grid_still_fills_the_area_zoomed_out():
 
 
 def test_every_tool_and_view_button_has_its_own_key_and_the_bar_its_tooltips():
-    views = [VIEW_KEYS[b] for b in ViewButton if b not in RUN_VIEWS]  # the Board's own
-    keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS] + views
+    keys = [TOOL_KEYS[tool] for tool in PALETTE_TOOLS]  # no view keys: the view is fixed (D-401)
     keys.append(MODE_KEY)  # Write and Delete in turn (D-068)
     assert len(set(keys)) == len(keys)
     assert all(len(key) == 1 for key in keys if key != TOOL_KEYS[Tool.DELETE])  # one character
@@ -420,10 +410,8 @@ def test_each_drawer_opens_by_its_initial_and_no_key_means_two_things_in_one_env
     for drawer, key in DRAWER_KEYS.items():
         named = Drawer.INSIDE  # shown as Diagnostic in the run: D, as the Board's (D-089)
         assert key == drawer.value[0].upper() or drawer in (Drawer.HINTS, named, *FOOT[1:])
-    views = [VIEW_KEYS[b] for b in ViewButton if b not in RUN_VIEWS]  # rays, motion: the run's
     board_scene = [
         *(TOOL_KEYS[t] for t in PALETTE_TOOLS),
-        *views,
         MODE_KEY,
         LEVEL_KEYS[LevelButton.RUN],
     ]
@@ -570,13 +558,11 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]
 
 
-def test_the_main_screen_shows_the_run_preview_only_in_diagnostic_and_navigator_keeps_it():
+def test_the_main_screen_shows_the_run_preview_only_in_diagnostic():
     # D-069: no switch; the drawer says what the Board's main screen shows
-    assert main_view_for(Drawer.DIAGNOSTIC, MainView.DIAGRAM) is MainView.PREVIEW
-    for last in MainView:
-        assert main_view_for(Drawer.NAVIGATOR, last) is last  # it only moves the view
+    assert main_view_for(Drawer.DIAGNOSTIC) is MainView.PREVIEW
     for drawer in (Drawer.TOOLS, Drawer.PARTS, Drawer.FILES, *FOOT, None):
-        assert main_view_for(drawer, MainView.PREVIEW) is MainView.DIAGRAM
+        assert main_view_for(drawer) is MainView.DIAGRAM
     x, y, w, _ = LAYOUT.board_area  # nothing in the main screen's corner names a view any more
     assert palette_target_at(LAYOUT, (x + w - 30, y + 26)) is None
 
@@ -617,8 +603,8 @@ def test_files_list_scrolls_above_the_board_as_text_whose_save_and_field_still_a
     assert win_row_at(bottom, centre(bottom.win_rows[-1][1])) == bottom.win_rows[-1][0]
 
 
-def test_navigators_overview_frames_what_the_main_screen_shows_and_a_press_moves_it_there():
-    for env in Env:
+def test_navigators_overview_sits_over_its_zoom_bar_between_its_buttons():
+    for env in (Env.RUN, Env.EDITOR):  # the Board has none (D-401)
         layout = make_layout(Drawer.NAVIGATOR, env=env)
         x, y, w, h = layout.overview
         above = [rect[1] + rect[3] for _, rect in layout.view_buttons] or [0]
@@ -633,41 +619,22 @@ def test_navigators_overview_frames_what_the_main_screen_shows_and_a_press_moves
         assert zoom_bar_at(layout, (bx, oy + oh + 20)) is None
     assert level_of(MIN_HEX, MIN_HEX, MAX_HEX) == 0.0 and level_of(MAX_HEX, MIN_HEX, MAX_HEX) == 1
     assert value_at(level_of(34.0, MIN_HEX, MAX_HEX), MIN_HEX, MAX_HEX) == pytest.approx(34.0)
-    small = overview_view(NAVIGATOR, list(hex_disc(2)))
-    frame = shown_frame(NAVIGATOR, VIEW, small)
-    centre_cell = to_pixel((0, 0), small.size, small.origin)
-    assert contains(frame, (round(centre_cell[0]), round(centre_cell[1])))  # the view shows it
-    moved = centred_on(NAVIGATOR, VIEW, small, (round(centre_cell[0]) + 10, round(centre_cell[1])))
-    assert moved.size == VIEW.size and moved.origin[0] < VIEW.origin[0]  # the board slides left
     assert make_layout(Drawer.PARTS).overview is None
 
 
-def test_the_overview_shows_the_zone_half_as_much_again_and_the_view_never_shows_more():
-    big = list(hex_disc(5))  # a zone bigger than what HEX_SIZE shows
-    bounds = board_extent(NAVIGATOR, big)
-    x0, y0, x1, y1 = bounds
-    reach = max(abs(to_pixel(c, 1.0, (0.0, 0.0))[0]) for c in big) + 1.0
-    assert x1 >= 1.5 * reach and x0 == -x1 and y0 == -y1  # 150 % of the zone, or more (D-066)
-    _, _, w, h = NAVIGATOR.board_area
-    assert (x1 - x0) / (y1 - y0) == pytest.approx(w / h)  # the main screen's shape
-    far = View(MIN_HEX, VIEW.origin)
-    kept = kept_on_board(NAVIGATOR, far, bounds)
-    assert kept.size == pytest.approx(board_view_of(NAVIGATOR.board_area, bounds).size)
-    off = kept_on_board(NAVIGATOR, View(60.0, (VIEW.origin[0] + 5000, VIEW.origin[1])), bounds)
-    small = overview_view(NAVIGATOR, big)
-    frame = shown_frame(NAVIGATOR, off, small)
-    ox, oy, ow, oh = NAVIGATOR.overview
-    assert ox - 1 <= frame[0] and frame[0] + frame[2] <= ox + ow + 1  # its frame inside
-    small_zone = board_extent(NAVIGATOR, list(hex_disc(1)))
-    assert small_zone[2] == pytest.approx(w / HEX_SIZE / 2)  # at least what HEX_SIZE shows
-
-
-def test_the_board_opens_a_zone_clear_of_the_action_atop_the_board():
-    layout = make_layout(Drawer.TOOLS)
-    assert opening_view(layout, hex_disc(2)).size == HEX_SIZE  # the levels' zone, as before
-    big = opening_view(layout, hex_disc(3))  # the sandbox's (D-102)
-    _, y, _, h = layout.board_area
-    assert big.size < HEX_SIZE and big.origin[1] - 5.5 * big.size >= y + ACTION_ROOM - 1e-9
+def test_the_board_shows_at_one_size_centred_the_largest_zone_and_every_button_whole():
+    # D-401: 38 px, cell (0, 0) at the centre, with a drawer open or not; nothing moves it
+    for layout, side in ((make_layout(None), 159), (LAYOUT, 35)):
+        view = board_view(layout)
+        x, y, w, h = layout.board_area
+        assert view.size == BOARD_HEX and view.origin == (x + w / 2, y + h / 2)
+        points = [to_pixel(cell, view.size, view.origin) for cell in FRAME]
+        reach_x, reach_y = SQRT3 / 2 * view.size, view.size  # a pointy-top hex's half
+        left = min(px for px, _ in points) - reach_x - x
+        right = x + w - max(px for px, _ in points) - reach_x
+        top = min(py for _, py in points) - reach_y - y
+        bottom = y + h - max(py for _, py in points) - reach_y
+        assert min(top, bottom) >= 11 - 1e-9 and min(left, right) >= side
 
 
 def test_the_sandbox_has_a_third_tab_the_editor_with_its_own_drawers_and_switch_to_the_run():
