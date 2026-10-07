@@ -20,7 +20,9 @@ With Select, a drag from an empty cell picks the empty cells it crosses; one fro
 moves the pick, one from another part moves it, their wires following while they find a path
 (D-011); let go off the body, what was dragged goes (D-085). Right clicks wire whatever is held:
 a part right-clicked, then another, wired, the chain going on from it, or a right drag through
-them; Esc, a left click, which acts too, or a right click off a part ends the chain.
+them; Esc, a left click, which acts too, or a right click off a part ends the chain. The mouse
+wheel over a part turns it 60° a notch, up to the right, the whole pick if it is picked; a
+trackpad's small scrolls add up to a notch (`notches.py`, D-405).
 
 Keyboard: the arrows move a cursor from cell to cell and Enter clicks there; the keys press the
 buttons: M, L, R, W, Backspace or Delete, K on the sandbox, a part's number. Esc goes back one
@@ -84,6 +86,7 @@ from nektoids.editor.layout import (
     menu_item_at,
     win_row_at,
 )
+from nektoids.editor.notches import RUN, Notches
 from nektoids.editor.picking import (
     NOTHING,
     Pick,
@@ -187,6 +190,9 @@ class BoardScene(Frame):
         self.group_offset: Cell = (0, 0)  # how far it has moved them
         self.right: int | None = None  # right clicks' chain: the part the next is wired from
         self.right_down = False  # the right button down: a drag chains the parts crossed
+        self.notches = Notches()  # the mouse wheel's scrolls, made turns (D-405)
+        self.turning: frozenset[int] = frozenset()  # the parts the wheel has been turning
+        self.run_frames = 0  # ... frames left before that run of turns is one step for undo
         self.keyboard = False  # the keyboard drives, until the mouse moves
         self.wins: tuple[WinGroup, ...] = ()  # this session's wins, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
@@ -241,6 +247,11 @@ class BoardScene(Frame):
             self.flash_frames -= 1
         if self.count_frames > 0:
             self.count_frames -= 1
+        self.notches.tick()
+        if self.run_frames > 0:
+            self.run_frames -= 1
+            if self.run_frames == 0:  # the wheel's run of turns ends: one step for undo
+                self._keep()
         self.frame_update()
         if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.DIAGNOSTIC:
             self._probe_now()
@@ -302,6 +313,8 @@ class BoardScene(Frame):
             return
         if event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
             self.keyboard = False  # the mouse takes over
+        if event.type not in (pygame.MOUSEWHEEL, pygame.MOUSEMOTION):
+            self.run_frames = 0  # anything else ends the wheel's run of turns
         if event.type == pygame.MOUSEMOTION:
             self._track(event.pos)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -320,6 +333,8 @@ class BoardScene(Frame):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif event.type == pygame.MOUSEWHEEL and self.frame_wheel(self.mouse, event.y):
             pass  # the drawer's rows scrolled (D-096)
+        elif event.type == pygame.MOUSEWHEEL:
+            self._wheel_turn(event)
         elif event.type == pygame.KEYDOWN and self.loading is not None:  # natively (D-206)
             self._field_key(event)
         elif event.type == pygame.KEYDOWN and self.typing is not None:  # a passkey (D-075)
@@ -329,8 +344,8 @@ class BoardScene(Frame):
                 self.toggle_drawer(Drawer.CHAPTERS)
         elif event.type == pygame.KEYDOWN:
             self._key(event)
-        if not self.pressed and not self.right_down:  # between gestures (D-027)
-            self._keep()
+        if not self.pressed and not self.right_down and self.run_frames == 0:  # D-027
+            self._keep()  # between gestures
 
     # Keyboard
 
@@ -428,6 +443,7 @@ class BoardScene(Frame):
         hover = pointed if pointed in self.board.cells else None
         if hover != self.hover:
             self.hover = hover
+            self.run_frames = 0  # off the part the wheel turned: its run ends
             self._update_ghost()
         if self.press_cell is not None and pointed != self.press_cell and not self._dragged():
             start = self.press_cell
@@ -1071,6 +1087,35 @@ class BoardScene(Frame):
             self._click(cell, (round(x), round(y)))
         elif node is not None and held is Button.WIRE:
             self._wire_click(cell)
+
+    def _wheel_turn(self, event: pygame.event.Event) -> None:
+        """The mouse wheel over a part turns it 60° a notch, up to the right; over a picked part,
+        each picked part that turns (D-402, D-405). A run of turns on the same parts is one step
+        for undo, kept once the wheel has rested RUN frames."""
+        node = self.board.node_at(self.hover) if self.hover is not None else None
+        if node is None or self.main is not MainView.DIAGRAM:
+            return
+        up = getattr(event, "precise_y", event.y)  # a trackpad's scrolls are small
+        if getattr(event, "flipped", False):  # natural scrolling: the wheel's own way back
+            up = -up
+        steps = self.notches.feed(up)
+        if steps == 0:
+            return
+        picked = parts(self.pick, self.board)
+        targets = picked if node.id in {n.id for n in picked} else [node]
+        turning = [n for n in targets if n.facing is not None and not n.locked]
+        if not turning:
+            self._refuse(
+                "nothing here turns: only an eye or a thruster, not the level's", node.cell
+            )
+            return
+        ids = frozenset(n.id for n in turning)
+        if ids != self.turning:  # other parts: the run before is a step of its own
+            self._keep()
+            self.turning = ids
+        for n in turning:
+            self._turn(n.cell, -steps)  # up: to the right, clockwise
+        self.run_frames = RUN
 
     def _right_press(self, pos: tuple[int, int]) -> None:
         """A right click wires (D-402, D-404): on a part, the chain's first, or the next, wired
