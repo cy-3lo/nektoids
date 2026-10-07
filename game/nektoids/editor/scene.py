@@ -89,10 +89,12 @@ from nektoids.editor.layout import (
 from nektoids.editor.notches import RUN, Notches
 from nektoids.editor.picking import (
     NOTHING,
+    Drag,
     Pick,
     Picked,
-    along,
+    begin,
     clicked,
+    extend,
     kept,
     moved,
     of_parts,
@@ -117,6 +119,7 @@ from nektoids.graph.hexgrid import (
 from nektoids.levels.level import Level
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
+ADD_KEYS = pygame.KMOD_SHIFT | pygame.KMOD_META  # held, a click or a drag adds to the pick
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
 KEY_BUTTONS = {key: b for b, key in KEYS.items() if len(key) == 1}  # M, K, L, R, W (D-402)
 TOOL_OF = {  # the tool a held button stands for, as a tutorial's step reads it (D-048)
@@ -184,6 +187,8 @@ class BoardScene(Frame):
         self.swept: set[Cell] = set()  # the cells it has acted on
         self.pick_from: Cell | None = None  # Select pressed on an empty cell: a click or a drag
         self.picked_along = False  # ... which has picked cells along it
+        self.drag: Drag | None = None  # ... the path it has made, to be cut back
+        self.adding = False  # the add key (Shift or Cmd) down at the press: the pick is added to
         self.group: tuple[int, ...] = ()  # the picked parts a drag moves together
         self.group_from: Cell | None = None  # the cell it was pressed on
         self.group_pick: Pick = NOTHING  # the pick as the drag began
@@ -411,6 +416,7 @@ class BoardScene(Frame):
             self.cursor = self._start_cell()
             self._track(self._cursor_pos())
             return
+        self.adding = bool(pygame.key.get_mods() & ADD_KEYS)
         self._click(self.cursor, self._cursor_pos())
 
     def _start_cell(self) -> Cell:
@@ -456,7 +462,10 @@ class BoardScene(Frame):
         if self.press_cell is not None and pointed != self.press_cell and not self._dragged():
             start = self.press_cell
             picked = self.pick.what is Picked.PARTS and start in self.pick.cells
-            if picked and len(self.pick.cells) > 1:
+            if self._picks_along(pointed):
+                self.press_cell, self.pick_from = None, start  # a pick of parts along the drag
+                self.picked_along, self.drag = False, None
+            elif picked and len(self.pick.cells) > 1:
                 self._grab_group(start)  # a drag from a picked part: the pick moves (D-404)
             else:
                 self._grab(start)  # the press was the start of a drag: a move (D-068)
@@ -465,7 +474,7 @@ class BoardScene(Frame):
             self._drag_to(pointed)  # off the body, it waits, to go if let go there (D-085)
         if on_board and self.group:
             self._group_to(pointed)
-        if on_board and self.pick_from is not None and pointed != self.pick_from:
+        if on_board and self.pick_from is not None:
             self._pick_along(pointed)
         if on_board and self.sweeping and pointed not in self.swept:
             self.swept.add(pointed)
@@ -526,10 +535,11 @@ class BoardScene(Frame):
             return
         cell, held = self.hover, self.held
         node = self.board.node_at(cell) if cell is not None else None
+        self.adding = bool(pygame.key.get_mods() & ADD_KEYS)
         if node is not None and held in (Button.SELECT, Button.MOVE):
             self.press_cell = cell  # a click, or the start of a drag: the release tells
         elif cell is not None and held is Button.SELECT:
-            self.pick_from, self.picked_along = cell, False  # a click, or a drag picking cells
+            self.pick_from, self.picked_along, self.drag = cell, False, None  # click or drag
         else:
             self._click(self.pointed, pos)  # the others act as the button goes down
             if cell is not None and held is not Button.SELECT and held is not Button.MOVE:
@@ -559,9 +569,9 @@ class BoardScene(Frame):
         self.frame_release()
         self.sweeping, self.swept = False, set()
         if self.pick_from is not None:  # Select on an empty cell: a click, unless a drag picked
-            cell, self.pick_from = self.pick_from, None
+            cell, self.pick_from, self.drag = self.pick_from, None, None
             if not self.picked_along:
-                self.pick = clicked(self.pick, self.board, cell)
+                self.pick = clicked(self.pick, self.board, cell, self.adding)
             return
         if self.group:  # the pick dragged: let go off the body, it goes (D-085, D-404)
             ids, self.group, self.press_cell = self.group, (), None
@@ -701,6 +711,7 @@ class BoardScene(Frame):
     def _drop_gesture(self) -> None:
         """Whatever was under way, a part dragged, a wire's chain or a part carried, given up."""
         self.dragging, self.sweeping, self.pick_from, self.group = False, False, None, ()
+        self.drag = None
         self.source, self.right, self.lifted, self.ghost = None, None, None, None
         self.moving, self.press_cell = None, None
 
@@ -835,7 +846,7 @@ class BoardScene(Frame):
         """A click on the board, or Enter on the cursor: what the held button does there."""
         held = self.held
         if held is Button.SELECT:
-            self.pick = clicked(self.pick, self.board, cell)
+            self.pick = clicked(self.pick, self.board, cell, self.adding)
         elif isinstance(held, Kind):
             self._place_held(cell)
         elif held is Button.DELETE:
@@ -1078,11 +1089,22 @@ class BoardScene(Frame):
         self.pick, self.message = kept(self.pick, self.board), ""
 
     def _pick_along(self, cell: Cell) -> None:
-        """A drag with Select from an empty cell: the empty cells it crosses picked (D-404)."""
-        if not self.picked_along:
+        """A drag with Select: the cells it crosses picked, those of the kind it started on,
+        and going back over its path cuts the path back (D-404)."""
+        if self.drag is None:
             self.picked_along = True
-            self.pick = along(self.pick, self.board, self.pick_from)
-        self.pick = along(self.pick, self.board, cell)
+            self.drag = begin(self.pick, self.board, self.pick_from, self.adding)
+        self.drag = extend(self.drag, self.board, cell)
+        self.pick = self.drag.pick
+
+    def _picks_along(self, cell: Cell | None) -> bool:
+        """Whether a drag from a part, its first step into `cell`, picks parts rather than moves
+        the part: it does if `cell` holds a part not picked; into an empty cell or a picked part,
+        it moves (D-404)."""
+        if self.held is not Button.SELECT or cell is None or cell not in self.board.cells:
+            return False
+        picked = self.pick.cells if self.pick.what is Picked.PARTS else ()
+        return self.board.node_at(cell) is not None and cell not in picked
 
     def _sweep(self, cell: Cell) -> None:
         """The held button along a drag, on a cell it enters (D-404): a part's on an empty cell,
@@ -1352,7 +1374,7 @@ class BoardScene(Frame):
             return "A part's button, or its number, puts one in each, in the order picked."
         if picked:
             return "The lit buttons act on what is picked. Esc drops it."
-        return "Click cells or parts to pick them, or a button round the board."
+        return "Click or drag over cells or parts to pick them, Shift adds; or press a button."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason

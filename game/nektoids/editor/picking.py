@@ -1,9 +1,10 @@
-"""What is picked on the Board (D-402): empty cells, or parts, one after another, in the order
-clicked, which the code keeps and the screen does not show (D-401). The first click says which:
-a click of the other kind starts a pick of its own; a click on a picked one drops it; a click off
-the zone drops them all. A drag from an empty cell picks the empty cells it crosses, the parts
-it crosses left out (D-404). A part's pick follows its parts by their cells. Pure Python, no
-pygame.
+"""What is picked on the Board (D-402): empty cells, or parts, in the order picked, which the
+code keeps and the screen does not show (D-401). A click picks the one thing clicked, and a click
+on the only thing picked drops it; with the add key (Shift or Cmd), it adds the thing to the pick,
+or drops it from it, a click of the other kind starting a pick of its own. A click off the zone
+drops the pick. A drag picks along its path, the empty cells or the parts it crosses, whichever
+it starts on, the others left out; going back over its path cuts it back to the cell entered
+(`Drag`). A part's pick follows its parts by their cells. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -33,11 +34,15 @@ class Pick:
 NOTHING = Pick()
 
 
-def clicked(pick: Pick, board: Board, cell: Cell | None) -> Pick:
-    """The pick after a click with Select on `cell`, None or off the zone dropping it all."""
+def clicked(pick: Pick, board: Board, cell: Cell | None, add: bool = False) -> Pick:
+    """The pick after a click with Select on `cell`: that one thing, or none if it was the only
+    one picked; with `add`, it is added to the pick, or dropped from it. A click off the zone
+    drops the pick, or leaves it as it was with `add`."""
     if cell is None or cell not in board.cells:
-        return NOTHING
+        return pick if add else NOTHING
     what = Picked.PARTS if board.node_at(cell) is not None else Picked.CELLS
+    if not add:
+        return NOTHING if pick == Pick(what, (cell,)) else Pick(what, (cell,))
     if what is not pick.what:
         return Pick(what, (cell,))
     if cell in pick.cells:
@@ -46,13 +51,36 @@ def clicked(pick: Pick, board: Board, cell: Cell | None) -> Pick:
     return Pick(what, (*pick.cells, cell))
 
 
-def along(pick: Pick, board: Board, cell: Cell) -> Pick:
-    """The pick of a drag that picks cells, as it enters `cell`: added if it is an empty cell of
-    the zone not picked yet; a part, or a cell picked already, leaves it as it was (D-404)."""
-    if cell not in board.cells or board.node_at(cell) is not None:
-        return pick
-    cells = pick.cells if pick.what is Picked.CELLS else ()
-    return pick if cell in cells else Pick(Picked.CELLS, (*cells, cell))
+@dataclass(frozen=True)
+class Drag:
+    """A drag with Select: the cells it crossed, from the one it started on, of the kind that
+    one is, empty cells or parts; with `base`, what was picked before, kept (the add key)."""
+
+    what: Picked
+    path: tuple[Cell, ...]
+    base: tuple[Cell, ...] = ()
+
+    @property
+    def pick(self) -> Pick:
+        return Pick(self.what, tuple(dict.fromkeys((*self.base, *self.path))))
+
+
+def begin(pick: Pick, board: Board, cell: Cell, add: bool = False) -> Drag:
+    """A drag begun on `cell`: a part's starts a pick of parts, an empty cell's of cells."""
+    what = Picked.PARTS if board.node_at(cell) is not None else Picked.CELLS
+    return Drag(what, (cell,), pick.cells if add and pick.what is what else ())
+
+
+def extend(drag: Drag, board: Board, cell: Cell) -> Drag:
+    """The drag after it enters `cell`: a cell of its path cuts the path back to it, however far
+    back; a cell of its kind not on it is added; the other kind, or off the zone, leaves it."""
+    if cell in drag.path:
+        return Drag(drag.what, drag.path[: drag.path.index(cell) + 1], drag.base)
+    if cell not in board.cells:
+        return drag
+    if (board.node_at(cell) is not None) is not (drag.what is Picked.PARTS):
+        return drag
+    return Drag(drag.what, (*drag.path, cell), drag.base)
 
 
 def of_parts(cells: Iterable[Cell]) -> Pick:
