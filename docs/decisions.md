@@ -2239,3 +2239,10 @@ ban was met while unbroken, so a level asking bans alone was won at once whereve
 such a level is now won by keeping its bans until its time is up: "Reach none of the lights"
 alone is to keep off the light for the time allowed. No shipped level is decided at its start,
 a test says so, and none asks bans alone.
+
+**D-350 — 2026-10-07 — A lit button filled in the accent, the switch at the bar's foot, pulses its fill: accent1's dark halfway to its medium and back, in step with the other targets' ink; its icon stays white. Amends D-337, D-338.**
+The physicist's, watching a new player: the Editor button's icon pulsed, where the colour that
+draws the eye is the button's own. Its fill now pulses and its icon keeps the text's white. The
+fill stops halfway to the medium: there the icon is 3.3:1 over it, above the 3:1 a graphic
+needs, where on the medium itself it would be 2.0:1. Play, a grey button, keeps its pulsing
+icon; tabs, bar icons and rows keep their pulsing ink, having no fill in the accent.

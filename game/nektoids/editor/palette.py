@@ -156,6 +156,8 @@ VEIL = (0, 0, 0, 150)  # over a level's board under its card; over all but a tut
 CLEAR = (0, 0, 0, 0)  # a hole in a veil
 LIT = P.accent1.bright  # a tutorial's target, drawn in it, and its box while it leads
 PULSE_FRAMES = 72  # a tutorial's target pulses, bright to medium and back: 1.2 s (D-337)
+PULSE_FILL_TOP = 0.5  # a lit button's fill: accent1's dark at most so far to its medium, its
+# white icon 3.3:1 over it at the brightest, 3:1 the least for a graphic (D-350)
 
 # The board
 ZONE = P.surface  # cells of the level's zone
@@ -210,5 +212,16 @@ MOTION = P.accent1.bright  # its velocity and its spin, in the swimmer's own col
 def pulse(frame: int) -> Colour:
     """A tutorial's target's colour at `frame`, drawing only: accent1, bright to medium and back
     every PULSE_FRAMES, a cosine's smoothness, in place of the sparks (D-337)."""
-    t = 0.5 + 0.5 * math.cos(2 * math.pi * frame / PULSE_FRAMES)
-    return mix(P.accent1.mid, P.accent1.bright, t)
+    return mix(P.accent1.mid, P.accent1.bright, _swing(frame))
+
+
+def pulse_fill(frame: int) -> Colour:
+    """A tutorial's target's fill at `frame`, where the target is a button filled in the accent,
+    the switch: from its own fill, accent1's dark, toward its medium and back, in step with
+    `pulse`; its icon stays as it is (D-350)."""
+    return mix(P.accent1.dark, P.accent1.mid, PULSE_FILL_TOP * _swing(frame))
+
+
+def _swing(frame: int) -> float:
+    """1 at frame 0, 0 half a pulse on, 1 again every PULSE_FRAMES: a cosine's smoothness."""
+    return 0.5 + 0.5 * math.cos(2 * math.pi * frame / PULSE_FRAMES)
