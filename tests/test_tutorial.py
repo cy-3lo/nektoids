@@ -46,7 +46,7 @@ from nektoids.editor.tutorial import (
 from nektoids.editor.tutorial import shown as visible
 from nektoids.editor.wheel import ICON, WHEEL_HEX, centre_in, offer, slots
 from nektoids.graph.board import Kind
-from nektoids.graph.hexgrid import NW, SW, E, W
+from nektoids.graph.hexgrid import NW, SW, E
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.objectives import Outcome
 
@@ -216,7 +216,7 @@ def test_diagnostics_tutorial_takes_its_prewired_board_to_diagnostic_and_lets_it
     level = LEVELS["Diagnostic"]  # Aggression's cards, moved to 0.6 (D-334, D-335)
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
     parts = [(n.kind, n.cell, n.facing, n.locked) for n in board.nodes.values()]
-    assert parts == [(Kind.EYE, (1, 0), W, False), (Kind.THRUSTER, (-1, 0), E, False)]
+    assert parts == [(Kind.EYE, (1, 0), SW, False), (Kind.THRUSTER, (-1, 0), E, False)]
     assert (
         len(board.wires) == 1 and board.remaining(Kind.EYE) == board.remaining(Kind.THRUSTER) == 0
     )
