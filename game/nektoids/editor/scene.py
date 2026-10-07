@@ -157,6 +157,7 @@ MAX_WINS = 10  # the wins Files lists of each level, the best first
 PROBE_TURN = math.radians(15.0)  # the mouse wheel, L or R, on the probe in Diagnostic
 NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [hex sizes]
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
+PART_REACH = 0.55  # a click this close to a part's centre is on the part, not on a wire [hex sizes]
 
 
 class BoardScene(Frame):
@@ -1247,7 +1248,13 @@ class BoardScene(Frame):
         """What deleting at `pos`, on `cell`, removes: the part there and its wires, unless the
         level placed it; or, on a wire, that wire."""
         node = self.board.node_at(cell) if cell is not None else None
+        size, origin = self.view.size, self.view.origin
         if node is not None:
+            x, y = to_pixel(node.cell, size, origin)
+            if math.hypot(pos[0] - x, pos[1] - y) > PART_REACH * size:  # the part's rim: a wire?
+                wire = nearest_wire(pos, self.board.wires, size, origin, WIRE_HIT * size)
+                if wire is not None:  # the short one to a neighbour (D-068)
+                    return None, [wire]
             if node.locked:
                 return None, []
             return node.id, [w for w in self.board.wires if node.id in (w.source, w.target)]
