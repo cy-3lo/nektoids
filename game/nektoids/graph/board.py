@@ -225,6 +225,39 @@ class Board:
             return Refused("the wires here would find no way round")
         return self.nodes[node_id]
 
+    def move_group(self, node_ids: Iterable[int], offset: Cell) -> Refused | None:
+        """The parts `node_ids` moved together by `offset`, (dq, dr), each keeping its place
+        among the others (D-402); their wires, and those crossing a cell they come to, routed
+        again in the order they were drawn. Refused whole, nothing changing, if one is the
+        level's, a target is off the zone or holds a part that stays, or a wire finds no way."""
+        moving = {i: self.nodes[i] for i in node_ids}
+        if not moving or offset == (0, 0):
+            return None
+        if any(node.locked for node in moving.values()):
+            return Refused("placed by the level")
+        dq, dr = offset
+        targets = {i: (node.cell[0] + dq, node.cell[1] + dr) for i, node in moving.items()}
+        if any(cell not in self._on_board for cell in targets.values()):
+            return Refused("outside the zone")
+        staying = {node.cell for i, node in self.nodes.items() if i not in moving}
+        if any(cell in staying for cell in targets.values()):
+            return Refused("cell taken")
+        nodes, saved = dict(self.nodes), list(self.wires)
+        for i, node in moving.items():
+            self.nodes[i] = replace(node, cell=targets[i])
+        landed = set(targets.values())
+        again = [
+            k
+            for k, wire in enumerate(saved)
+            if wire.source in moving
+            or wire.target in moving
+            or any(cell in landed for cell in wire.path[1:-1])
+        ]
+        if self._route_again(saved, again) is not None:
+            self.nodes, self.wires = nodes, saved
+            return Refused("their wires would find no free path")
+        return None
+
     def rotate(self, node_id: int, steps: int) -> Node | Refused:
         """Turn an eye or a thruster by `steps` x 60°: counter-clockwise on screen if positive."""
         node = self.nodes[node_id]

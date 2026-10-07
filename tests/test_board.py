@@ -670,3 +670,24 @@ def test_erase_all_takes_every_wire_and_every_part_but_the_levels_own():
     assert board.clear() == (2, 1) and list(board.nodes) == [eye.id] and not board.wires
     assert board.remaining(Kind.EYE) == 2 and board.remaining(Kind.THRUSTER) == 2
     assert board.clear() == (0, 0)  # nothing left to erase
+
+
+def test_a_group_moves_together_its_wires_following_or_not_at_all():
+    board = Board(hex_disc(2))  # D-402: picked parts move together
+    eye, total, thruster = (
+        board.place(k, c)
+        for k, c in ((Kind.EYE, (1, 0)), (Kind.SUM, (0, 0)), (Kind.THRUSTER, (-1, 0)))
+    )
+    board.connect(eye.id, total.id)
+    board.connect(total.id, thruster.id)
+    assert board.move_group([eye.id, total.id], (0, -1)) is None  # up and to the right, both
+    assert board.nodes[eye.id].cell == (1, -1) and board.nodes[total.id].cell == (0, -1)
+    assert all(w.path[0] == board.nodes[w.source].cell for w in board.wires)  # wires follow
+    assert len(board.wires) == 2
+    before = board.snapshot()
+    assert board.move_group([eye.id, total.id], (2, 0)).reason == "outside the zone"
+    assert board.move_group([eye.id, total.id], (-1, 1)).reason == "cell taken"  # the thruster
+    assert board.snapshot() == before  # refused whole: nothing moved
+    assert board.move_group([eye.id, total.id], (0, 0)) is None and board.snapshot() == before
+    locked = board.place(Kind.SOURCE, (0, 1), locked=True)
+    assert board.move_group([locked.id], (0, 1)).reason == "placed by the level"
