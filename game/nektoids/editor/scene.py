@@ -672,6 +672,8 @@ class BoardScene(Frame):
                 elif node is not None:  # a picked part keeps its place in the pick
                     swapped = tuple(node.cell if c == cell else c for c in self.pick.cells)
                     self.pick = kept(Pick(self.pick.what, swapped), self.board)
+                if isinstance(self.held, Kind) and self.board.snapshot() != self._grabbed:
+                    self.held = Button.SELECT  # a part moved: placing is over
             else:
                 self._click(cell, pos)
             return
@@ -1262,7 +1264,10 @@ class BoardScene(Frame):
         if self.right_chain is None:
             self.right = node.id
         else:
+            wires = list(self.board.wires)
             self.right_chain = self._chain_to(self.right_chain, node)
+            if isinstance(self.held, Kind) and self.board.wires != wires:
+                self.held = Button.SELECT  # wiring made: placing is over
         self._update_ghost()
 
     def doomed(self) -> tuple[frozenset[int], list[Wire]]:
