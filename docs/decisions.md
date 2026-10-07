@@ -2246,3 +2246,10 @@ draws the eye is the button's own. Its fill now pulses and its icon keeps the te
 fill stops halfway to the medium: there the icon is 3.3:1 over it, above the 3:1 a graphic
 needs, where on the medium itself it would be 2.0:1. Play, a grey button, keeps its pulsing
 icon; tabs, bar icons and rows keep their pulsing ink, having no fill in the accent.
+
+**D-351 — 2026-10-07 — A tutorial closed on its last card leaves its shadow on the board, for the session; skipped, it takes it away. Amends D-334, D-339.**
+The physicist's, watching a new player: in 0.3 the shadow of the model, an eye ahead looking
+forward wired to a thruster behind, went with the last card, 3 / 3, just when the player was to
+build it. The tutorial now lends its ghosts once closed, after a tutorial still running and a
+hint's shadow shown, until Settings' Tutorial starts it again. Skip still ends it with its
+ghosts: the player asked for none. 0.1's and 0.2's ghosts are built over before their last card.

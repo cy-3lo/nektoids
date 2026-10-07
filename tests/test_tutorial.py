@@ -382,6 +382,20 @@ def test_skip_ends_the_tutorial_and_a_restart_passes_over_what_the_board_holds()
     assert "facing" in tutorial.step.until  # the eye is there already: on to turning it
 
 
+def test_closed_on_its_last_card_a_tutorials_ghosts_stay_but_skipped_they_go():
+    """0.3 Eyes: its shadow, the eye ahead wired to the thruster behind, stays on the board once
+    its last card is closed; Skip takes it away; a restart leads again (D-351)."""
+    eyes = Tutorial.from_dict(LEVELS["Eyes"].tutorial)
+    eyes.index = len(eyes.steps) - 1  # 3 / 3, which waits for Next: Close
+    assert not eyes.lasting
+    eyes.next()
+    assert eyes.step is None and eyes.lasting and eyes.ghosts and eyes.ghost_wires
+    eyes.restart()
+    assert not eyes.lasting  # it leads again
+    eyes.skip()
+    assert eyes.step is None and not eyes.lasting
+
+
 def test_skip_sits_left_of_next_both_inside_the_box():
     box = (100, 100, 360, 120)
     skip, nxt = skip_rect(box), next_rect(box)
