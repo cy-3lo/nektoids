@@ -195,6 +195,8 @@ class BoardScene(Frame):
         self.group_offset: Cell = (0, 0)  # how far it has moved them
         self.right: int | None = None  # right clicks' chain: the part the next is wired from
         self.right_down = False  # the right button down: a drag chains the parts crossed
+        self.right_dragged = False  # ... and has chained one: the chain ends when it is let go
+        self.ctrl_down = False  # a left press with Ctrl held, a right click's stand-in
         self.notches = Notches()  # the mouse wheel's scrolls, made turns (D-405)
         self.turning: frozenset[int] = frozenset()  # the parts the wheel has been turning
         self.run_frames = 0  # ... frames left before that run of turns is one step for undo
@@ -331,6 +333,13 @@ class BoardScene(Frame):
             self.run_frames = 0  # anything else ends the wheel's run of turns
         if event.type == pygame.MOUSEMOTION:
             self._track(event.pos)
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self._ctrl():
+            self.ctrl_down = True  # Ctrl+click: a right click, for a trackpad without one
+            self._track(event.pos)
+            self._right_press(event.pos)
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.ctrl_down:
+            self.ctrl_down = False
+            self._right_release()
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self._track(event.pos)
             self.pressed = True
@@ -342,7 +351,7 @@ class BoardScene(Frame):
             self._track(event.pos)
             self._right_press(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
-            self.right_down = False
+            self._right_release()
         elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif event.type == pygame.MOUSEWHEEL and self.frame_wheel(self.mouse, event.y):
@@ -489,6 +498,7 @@ class BoardScene(Frame):
         if on_board and self.right_down:
             node = self.board.node_at(pointed)
             if node is not None and node.id != self.right:
+                self.right_dragged = True
                 self._right_to(node)  # a right drag chains the parts it crosses
 
     def _press(self, pos: tuple[int, int]) -> None:
@@ -577,6 +587,9 @@ class BoardScene(Frame):
                 self._open_field()
         self.probing = False
         self.frame_release()
+        if self.held is Button.WIRE and len(self.swept) > 1:  # a drag's chain ends with it
+            self.source = None
+            self._update_ghost()
         if self.button_down is not None:  # a part's button let go on itself: a click
             button, self.button_down = self.button_down, None
             if button_at(self.shown_buttons(), self.view.size, self.view.origin, pos) == button:
@@ -906,6 +919,8 @@ class BoardScene(Frame):
             self.source = node.id
         elif self._try_wire(source, node, cell):
             self.source = node.id  # on from the part just wired to
+        else:
+            self.source = None  # a wire refused: the chain ends, the reason said
         self._update_ghost()
 
     def _move_click(self, cell: Cell | None) -> None:
@@ -1162,24 +1177,42 @@ class BoardScene(Frame):
             self._turn(n.cell, -steps)  # up: to the right, clockwise
         self.run_frames = RUN
 
+    def _ctrl(self) -> bool:
+        return bool(pygame.key.get_mods() & pygame.KMOD_CTRL)
+
     def _right_press(self, pos: tuple[int, int]) -> None:
         """A right click wires (D-402, D-404): on a part, the chain's first, or the next, wired
-        to the one before; off a part, the chain ends. The held button stays as it is."""
+        to the one before. Off a part it ends the chains and, with Select or Move held, drops
+        the pick and puts back the part carried; the held button stays as it is."""
         if self.main is not MainView.DIAGRAM or not contains(self.layout.board_area, pos):
             return
         node = self.board.node_at(self.hover) if self.hover is not None else None
-        self.right_down = node is not None
+        self.right_down, self.right_dragged = node is not None, False
         if node is None:
             self.right = None
+            if self.held in (Button.SELECT, Button.MOVE):
+                self.pick, self.lifted = NOTHING, None
             self._update_ghost()
         else:
             self._right_to(node)
 
+    def _right_release(self) -> None:
+        """The right button let go: a drag's chain ends here; a click's goes on."""
+        if self.right_dragged:
+            self.right = None
+            self._update_ghost()
+        self.right_down = self.right_dragged = False
+
     def _right_to(self, node: Node) -> None:
-        """The right clicks' chain on to `node`: wired from the part before, if there is one."""
+        """The right clicks' chain on to `node`: wired from the part before, if there is one; a
+        wire refused ends it, the reason said."""
         source = self.board.nodes.get(self.right) if self.right is not None else None
-        if source is None or source.id == node.id or self._try_wire(source, node, node.cell):
+        if source is None or source.id == node.id:
             self.right = node.id
+        elif self._try_wire(source, node, node.cell):
+            self.right = node.id
+        else:
+            self.right = None
         self._update_ghost()
 
     def doomed(self) -> tuple[frozenset[int], list[Wire]]:
@@ -1366,7 +1399,7 @@ class BoardScene(Frame):
         if self._dropping():
             return "Let go and what you drag goes, with its wires; back on the body, it stays."
         if self.right is not None:
-            return "Right-click the part to wire to; the chain goes on. Esc ends it."
+            return "Right-click or Ctrl+click the part to wire to; the chain goes on. Esc ends it."
         if held is Button.WIRE:
             if self.source is None:
                 return "Click the part a wire starts from. Esc: back."
