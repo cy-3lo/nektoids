@@ -158,7 +158,7 @@ from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
-from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.graph.hexgrid import Cell, hex_distance, to_pixel
 from nektoids.graph.network import label
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
@@ -309,6 +309,7 @@ def draw(
     (main or _draw_board)(screen, scene, fonts)
     if scene.main is MainView.DIAGRAM:  # the Run preview hides them: nothing to edit there
         _draw_buttons(screen, scene, fonts)
+        _draw_edges_by_buttons(screen, scene)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
@@ -382,6 +383,18 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
         pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
     for cell in outlined:  # picked, or at hand (D-402)
         pygame.draw.polygon(screen, LIT, _hexagon(view, cell), 2)
+    screen.set_clip(None)
+
+
+def _draw_edges_by_buttons(screen: pygame.Surface, scene: BoardScene) -> None:
+    """The lines of the zone's cells next to a button, over it and its shadow, which cover them
+    otherwise: a cell is not to be mixed up with a button."""
+    view = scene.view
+    places = [PLACES[b] for b in scene.button_states()]
+    screen.set_clip(scene.layout.board_area)
+    for cell in scene.board.cells:
+        if any(hex_distance(cell, place) == 1 for place in places):
+            pygame.draw.polygon(screen, GRID_LINE, _hexagon(view, cell), 1)
     screen.set_clip(None)
 
 
