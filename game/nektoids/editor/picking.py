@@ -2,8 +2,8 @@
 code keeps and the screen does not show (D-401). A click picks the one thing clicked, and a click
 on the only thing picked drops it; with the add key (Shift or Cmd), it adds the thing to the pick,
 or drops it from it, a click of the other kind starting a pick of its own. A click off the zone
-drops the pick. A drag picks along its path, the empty cells or the parts it crosses, whichever
-it starts on, the others left out; going back over its path cuts it back to the cell entered
+drops the pick. A drag picks along its path, the empty cells or the parts it crosses; one that
+meets a part picks parts from there; going back over its path cuts it back to the cell entered
 (`Drag`). A part's pick follows its parts by their cells. Pure Python, no pygame.
 """
 
@@ -73,12 +73,16 @@ def begin(pick: Pick, board: Board, cell: Cell, add: bool = False) -> Drag:
 
 def extend(drag: Drag, board: Board, cell: Cell) -> Drag:
     """The drag after it enters `cell`: a cell of its path cuts the path back to it, however far
-    back; a cell of its kind not on it is added; the other kind, or off the zone, leaves it."""
+    back; a cell of its kind not on it is added. A drag of empty cells that meets a part picks
+    parts from there, the cells dropped; a drag of parts passes over empty cells."""
     if cell in drag.path:
         return Drag(drag.what, drag.path[: drag.path.index(cell) + 1], drag.base)
     if cell not in board.cells:
         return drag
-    if (board.node_at(cell) is not None) is not (drag.what is Picked.PARTS):
+    part = board.node_at(cell) is not None
+    if part and drag.what is Picked.CELLS:  # a part met: the drag picks parts from here
+        return Drag(Picked.PARTS, (cell,))
+    if not part and drag.what is Picked.PARTS:
         return drag
     return Drag(drag.what, (*drag.path, cell), drag.base)
 

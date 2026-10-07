@@ -68,11 +68,13 @@ def drag_over(board: Board, cells, add=False, before=NOTHING):
     return drag
 
 
-def test_a_drag_picks_the_empty_cells_it_crosses_and_leaves_the_parts_out():
+def test_a_drag_picks_the_empty_cells_it_crosses_and_parts_from_the_first_part_it_meets():
     board = board_with_two_parts()  # D-404
-    drag = drag_over(board, [(-1, 0), (0, 0), (0, 1)])  # the sum between: left out
-    assert drag.pick == Pick(Picked.CELLS, ((-1, 0), (0, 1)))
+    drag = drag_over(board, [(-1, 0), (-1, 1)])
+    assert drag.pick == Pick(Picked.CELLS, ((-1, 0), (-1, 1)))
     assert extend(drag, board, (5, 5)) == drag  # off the zone
+    met = drag_over(board, [(-1, 1), (0, 1), (0, 0), (0, 1), (1, 0)])  # the sum, then the eye
+    assert met.pick == Pick(Picked.PARTS, ((0, 0), (1, 0)))  # the cells dropped, (0, 1) passed
 
 
 def test_a_drag_going_back_over_its_path_cuts_it_back_however_far():
