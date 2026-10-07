@@ -261,6 +261,14 @@ class BoardScene(Frame):
             for _ in range(TICKS_PER_FRAME):
                 self.probe.tick()
 
+    def _tip_target(self, pos: tuple[int, int]) -> object | None:
+        """The bar's icons, and the buttons round the board (D-401)."""
+        if self.main is MainView.DIAGRAM and contains(self.layout.board_area, pos):
+            button = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
+            if button is not None:
+                return button
+        return super()._tip_target(pos)
+
     def _probe_now(self) -> None:
         """The probe, made again if the board changed since; it stays where it stood."""
         if self.level is None:

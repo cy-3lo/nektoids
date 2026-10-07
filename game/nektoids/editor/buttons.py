@@ -125,6 +125,20 @@ def key_of(button: Button | Kind, kinds: frozenset[Kind]) -> str:
     return part_key(button, kinds) if isinstance(button, Kind) else KEYS[button]
 
 
+def tip(button: Button | Kind, board: Board, kinds: frozenset[Kind], key_hints: bool = True) -> str:
+    """What a tooltip says over a button: its name and its key if Settings shows keys; a part's
+    also how many are left, if the level counts them."""
+    if isinstance(button, Kind):
+        text = button.spec.name
+    else:
+        text = button.value.capitalize()
+    if key_hints:
+        text += f" ({key_of(button, kinds)})"
+    if isinstance(button, Kind) and board.total(button) is not None:
+        text += f", {board.remaining(button)} left"
+    return text
+
+
 def states(
     board: Board,
     buttons: Sequence[Button | Kind],

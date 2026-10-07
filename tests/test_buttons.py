@@ -10,6 +10,7 @@ from nektoids.editor.buttons import (
     shown,
     states,
     swaps,
+    tip,
 )
 from nektoids.editor.layout import board_view, make_layout
 from nektoids.editor.picking import NOTHING, clicked
@@ -122,3 +123,13 @@ def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
     assert swaps(board, total.cell, frozenset(Kind)) == (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE)
     assert swaps(board, eye.cell, frozenset({Kind.EYE, Kind.THRUSTER})) == ()  # no source here
     assert swaps(board, thruster.cell, frozenset(Kind)) == ()  # alone in its group
+
+
+def test_a_tooltip_names_the_button_its_key_and_what_is_left_of_a_part():
+    board = Board(hex_disc(2), {Kind.EYE: 2, Kind.SUM: None, Kind.DOUBLE: None})
+    kinds = frozenset({Kind.EYE, Kind.SUM, Kind.DOUBLE})
+    assert tip(Button.UNDO, board, kinds) == "Undo (Ctrl+Z)"
+    assert tip(Button.TURN_LEFT, board, kinds) == "Turn left (L)"
+    assert tip(Button.UNDO, board, kinds, key_hints=False) == "Undo"
+    assert tip(Kind.EYE, board, kinds) == "Eye (1), 2 left"
+    assert tip(Kind.SUM, board, kinds, key_hints=False) == "Sum"  # unlimited: no count

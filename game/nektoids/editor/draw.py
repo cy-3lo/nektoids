@@ -29,7 +29,16 @@ import numpy as np
 import pygame
 
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
-from nektoids.editor.buttons import ICON_ON_BUTTON, PART_SMALLER, PLACES, TAG_INWARD, State, key_of
+from nektoids.editor.buttons import (
+    ICON_ON_BUTTON,
+    PART_SMALLER,
+    PLACES,
+    TAG_INWARD,
+    Button,
+    State,
+    key_of,
+    tip,
+)
 from nektoids.editor.buttons_draw import bevel, hexagon, shadows, tag
 from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
@@ -1139,6 +1148,15 @@ def draw_tooltip(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     another tab's, under it, with its key: Tab or Shift+Tab (D-304)."""
     target = scene.tooltip
     if target is None:
+        return
+    if isinstance(target, Button | Kind):  # a button round the board (D-401)
+        size, origin = scene.view.size, scene.view.origin
+        x, y = to_pixel(PLACES[target], size, origin)
+        text = tip(target, scene.board, scene.layout.kinds, scene.settings.key_hints)
+        shown = fonts.text.render(text, True, TEXT)
+        box = shown.get_rect(midbottom=(x, y - size - 6)).inflate(16, 10)
+        box.clamp_ip(pygame.Rect(scene.layout.board_area))
+        draw_tip(screen, fonts, text, center=box.center)
         return
     if isinstance(target, str):  # another tab
         x, y, _, h = dict(scene.layout.tabs)[target]
