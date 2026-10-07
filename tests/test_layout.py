@@ -324,7 +324,7 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_atop():
+def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_editor_its_action():
     tools = make_layout(Drawer.TOOLS)  # D-068: second in the bar, Parts first (D-321)
     assert DRAWERS[Env.BOARD][:2] == (Drawer.PARTS, Drawer.TOOLS)
     assert [title for title, _ in tools.section_titles] == ["Mode", "Edit"]
@@ -337,11 +337,13 @@ def test_tools_holds_write_delete_undo_redo_then_the_cell_and_the_action_sits_at
     for button, rect in rows:
         found = mode_button_at(tools, centre(rect)) or edit_button_at(tools, centre(rect))
         assert found is button
-    for layout in (tools, LAYOUT, make_layout(None)):  # the action, centred atop the main screen
-        x, y, w, h = layout.action_at  # as tall as the disc drawn there: its line clear of it
-        bx, by, bw, _ = layout.board_area
-        assert abs(x + w / 2 - (bx + bw / 2)) <= 1 and y > by and w == h == ACTION_WIDTH
-        assert action_at(layout, (x + 5, y + 5)) is Shown.ACTION
+    for layout in (tools, LAYOUT, make_layout(None)):  # the Board has its buttons instead (D-401)
+        assert layout.action_at is None and action_at(layout, centre(layout.board_area)) is None
+    editor = make_layout(Drawer.OBJECTS, env=Env.EDITOR, editor=True)
+    x, y, w, h = editor.action_at  # the Editor's, centred atop its main screen (D-314)
+    bx, by, bw, _ = editor.board_area
+    assert abs(x + w / 2 - (bx + bw / 2)) <= 1 and y > by and w == h == ACTION_WIDTH
+    assert action_at(editor, (x + 5, y + 5)) is Shown.ACTION
     assert LAYOUT.mode_buttons == LAYOUT.edit_buttons == ()  # Parts open: Tools' rows are not
     assert make_layout(env=Env.RUN).action_at is None
     assert [title for title, _ in FILES.section_titles] == ["Wins this session", "Save/Load"]

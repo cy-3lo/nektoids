@@ -29,6 +29,8 @@ import numpy as np
 import pygame
 
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
+from nektoids.editor.buttons import ICON_ON_BUTTON, PART_SMALLER, PLACES, TAG_INWARD, State, key_of
+from nektoids.editor.buttons_draw import bevel, hexagon, shadows, tag
 from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.entry import ENTRY_AREA
@@ -46,6 +48,7 @@ from nektoids.editor.geometry import (
 from nektoids.editor.hints import NAMES
 from nektoids.editor.hints import SHADOW as SHADOW_HINT
 from nektoids.editor.icons import (
+    BUTTON_ICON,
     DRAWER_ICON,
     EDIT_ICON,
     KIND_ICON,
@@ -116,10 +119,14 @@ from nektoids.editor.palette import (
     GHOST_FILL,
     GHOST_OK,
     GREYED,
+    GREYED_FACE,
     GRID_LINE,
     HOVER,
     ICON_EDGE,
     INTAKE,
+    KEY_DARK,
+    KEY_GREYED,
+    KEY_LIGHT,
     LIGHT,
     LIT,
     LOCK_RING,
@@ -308,6 +315,8 @@ def draw(
     draws there instead (the Run preview, D-058); then the frame round it."""
     screen.fill(BACKGROUND)
     (main or _draw_board)(screen, scene, fonts)
+    if scene.main is MainView.DIAGRAM:  # the Run preview hides them: nothing to edit there
+        _draw_buttons(screen, scene, fonts)
     if scene.layout.action_at is not None and scene.main is MainView.DIAGRAM:  # D-068, D-069
         _draw_action(screen, scene, fonts)
     draw_tabs(screen, scene, fonts)
@@ -383,6 +392,46 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
     if scene.focused is not None:  # the cell Tools and Parts show (D-068, D-069)
         pygame.draw.polygon(screen, LIT, _hexagon(view, scene.focused), 2)
     screen.set_clip(None)
+
+
+def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
+    """The Board's buttons round the board, keys in a bevel (D-401): chosen, pressed in; lit, a
+    teal bevel and the key on a light tag, if Settings shows keys; greyed, dimmed, a part's face
+    too. A part's count shows on a dark tag a moment after one is placed."""
+    size, origin, kinds = scene.view.size, scene.view.origin, scene.layout.kinds
+    looks = scene.button_states()
+    places = {b: to_pixel(PLACES[b], size, origin) for b in looks}
+    shadows(screen, [c for b, c in places.items() if looks[b] is not State.CHOSEN], size)
+    for b, centre in places.items():
+        look = looks[b]
+        pygame.draw.polygon(
+            screen, ACTIVE if look is State.CHOSEN else OUTSIDE, hexagon(centre, size)
+        )
+        light, dark = {
+            State.PLAIN: (KEY_LIGHT, KEY_DARK),
+            State.LIT: (LIT, ACTIVE),
+            State.CHOSEN: (KEY_DARK, LIT),  # pressed in: the light falls on the far sides
+            State.GREYED: (KEY_GREYED, KEY_DARK),
+        }[look]
+        bevel(screen, centre, size, light, dark)
+        at = (centre[0] + 1, centre[1] + 1) if look is State.CHOSEN else centre
+        greyed = look is State.GREYED
+        if isinstance(b, Kind):
+            fill, face = (GREYED, GREYED_FACE) if greyed else (None, None)
+            angle = placed_angle(b, b.default_facing)
+            draw_part(screen, fonts, b, angle, at, size - PART_SMALLER, False, fill, face)
+        else:
+            fonts.icons.draw(
+                screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), GREYED if greyed else TEXT
+            )
+    for b, (x, y) in places.items():
+        if looks[b] is State.LIT and scene.settings.key_hints:
+            key = fonts.label.render(key_of(b, kinds), True, DARK)
+            tag(screen, (x, y - size + TAG_INWARD), key, LIT)
+        if b == scene.counted and scene.count_frames > 0 and scene.board.total(b) is not None:
+            left = scene.board.remaining(b)
+            count = fonts.small.render(str(left), True, GREYED if left == 0 else TEXT)
+            tag(screen, (x, y + size - TAG_INWARD), count, BAR, DIM_TEXT)
 
 
 def _draw_action(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
@@ -625,13 +674,14 @@ def draw_part(
     size: float,
     locked: bool,
     fill=None,
+    face=None,
 ):
     fill = fill or COMPONENT
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if kind in FACE:  # the closing edge, astride the outline
         width = max(2, round(FACE_WIDTH * size))
-        pygame.draw.line(screen, FACE[kind], outline[-1], outline[0], width)
+        pygame.draw.line(screen, face or FACE[kind], outline[-1], outline[0], width)
     if locked:
         pygame.draw.polygon(screen, LOCK_RING, _shape(kind, angle, centre, 1.25 * size), 2)
     icon_size = max(10, round(ICON_SCALE.get(kind, 0.5) * size))

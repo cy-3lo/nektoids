@@ -397,7 +397,7 @@ class Layout:
     mode_buttons: tuple[tuple[Mode, Rect], ...]  # Tools' rows: Write, Delete
     edit_buttons: tuple[tuple[EditButton, Rect], ...]  # ... then undo, redo; Objects' too
     board_buttons: tuple[tuple[BoardButton, Rect], ...]  # ... then Tools' Erase all (D-321)
-    action_at: Rect | None  # the Board's and the Editor's: what a click does, atop the main screen
+    action_at: Rect | None  # the Editor's: what a click does, atop the main screen
     view_buttons: tuple[tuple[ViewButton, Rect], ...]  # Navigator's rows
     goal_rows: tuple[tuple[Goal, Rect], ...]  # in the run: each objective, the time left
     goal_area: Rect | None  # ... at the foot of the open drawer, whichever it is (D-065)
@@ -567,7 +567,7 @@ def make_layout(
         edit_buttons=tuple(rows.of(EditButton)),
         board_buttons=tuple(rows.of(BoardButton)),
         action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
-        if env in (Env.BOARD, Env.EDITOR)  # the Editor's since D-314
+        if env is Env.EDITOR  # the Editor's (D-314); the Board has its buttons (D-401)
         else None,
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
