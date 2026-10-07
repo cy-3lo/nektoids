@@ -1,39 +1,36 @@
 """The Board's state and input handling. Mutates the board only through its methods.
 
-The focus and its Wheel (D-068, D-069): a click focuses a cell, lit on the board; Tools and
-Parts show it large at their foot, the Wheel's icons round it: what can be done there
-(`wheel.py`). Whatever the drawer, what a click or Enter would do shows atop the main screen
-with its key, and a click on it opens Tools. Round an empty cell, the parts still handed out: a
-click on one places it there, facing its default way. Round a part, its actions: turn left and
-turn right (eyes and thrusters, 60° at once, D-009), wire, move, delete. Wire is chosen as a
-part is clicked, so the next click on another part wires the two, either way round (D-026), and
-the focus goes to that part. A part focused without a click, placed or just wired to, wires on
-only forward, along the signal: a chain goes on, eye to sum to thruster, but from a thruster a
-click on an eye only focuses it. A drag from a part moves it, its wires following while they
-find a path (D-011). A click on the focused cell, or off the zone, drops the focus. While the
-mouse is on Delete, what it would remove is darkened. A part dragged from Parts still lands
-where it is dropped.
+The focus (D-068): a click focuses a cell, lit on the board, and the buttons round the board
+(D-401, `buttons.py`) light for what they would do there. On a part, Move, Turn, Wire, Delete and
+Lock act on it at once, as their keys do, and a part's button swaps it for another of its group;
+on an empty cell, a part's button places one there, facing its default way (the focus stands for
+what is picked until picking comes, D-402). A click on a part chooses Wire too, so the next click
+on another part wires the two, either way round (D-026), and the focus goes to that part. A part
+focused without a click, placed or just wired to, wires on only forward, along the signal: a
+chain goes on, eye to sum to thruster, but from a thruster a click on an eye only focuses it. A
+drag from a part moves it, its wires following while they find a path (D-011). A click on the
+focused cell, or off the zone, drops the focus.
 
-Write and Delete (D-068), rows in Tools, E to go from one to the other: all the above is Write.
-In Delete there is no focus and no Wheel: a click removes the part under it with its wires, or
-the wire under it, darkened while the mouse is on it; Enter does the same on the keyboard's
-focus. Esc, or any action of Write, goes back to Write.
+With nothing focused, Delete and Lock are chosen for the clicks on the board: a click removes the
+part under it with its wires, or the wire under it, darkened while the mouse is on it; or locks
+it, on the sandbox (D-319). A part's button, or its row dragged from Parts, puts that part in
+hand, and each click on an empty cell places one while one is left (D-402). Select drops whatever
+is in hand.
 
-Keyboard, Tools open or not: the arrows move the focus from cell to cell; Enter opens its Wheel,
-the arrows go round it and Enter takes the icon chosen; a part's number places it on the focused
-cell. Round a part the Wheel starts on "nothing", so a second Enter closes it. L, R, W, M and
-Backspace or Delete act on the focused part: after W the arrows go to the part to wire to and
-Enter wires it; after M they carry the part and Enter puts it down. Esc, or a right click, goes
-back one step: from a gesture to the Wheel, from the Wheel to nothing. H takes the hand, which
-drags the view (D-013); the arrows drag it too.
+Keyboard: the arrows move the focus from cell to cell, and Enter clicks there; the keys do what
+the buttons do: M, L, R, W, Backspace or Delete, K on the sandbox, a part's number, Esc for
+Select. After W the arrows go to the part to wire to and Enter wires it; after M they carry the
+part and Enter puts it down. Esc, or a right click, goes back one step. The board shows at one
+size, centred, and nothing moves the view (D-401).
 
-Undo and Redo (D-027), rows in Tools under Write and Delete, also Ctrl+Z, Ctrl+Shift+Z and
-Ctrl+Y (Cmd on a Mac): one step is one gesture, from press to release, so a whole drag goes back
+Undo and Redo (D-027), two buttons, also Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on a Mac): one
+step is one gesture, from press to release, so a whole drag goes back
 at once. Space asks `main.py` for a run, Tab opens Chapters: the scene sets `request` and
 `main.py` acts on it. A part's info disc in Parts opens a box that says what the part does; the
 next click or key closes it and does nothing else (D-036). Every refusal flashes the cell and
 puts the reason in the status line. At Files' foot, Save/Load: Copy a board puts its text on the
-clipboard, and Paste a board, a field, takes one, which Enter puts on the board (D-205, D-206).
+clipboard, and Paste a board, a field, takes one, which Enter puts on the board (D-205, D-206);
+under it, Erase all (D-321, D-401).
 """
 
 from __future__ import annotations
@@ -45,6 +42,16 @@ import pygame
 
 from nektoids.editor import clipboard
 from nektoids.editor.boardfield import board_field, load
+from nektoids.editor.buttons import (
+    COUNT_FRAMES,
+    KEYS,
+    Button,
+    State,
+    button_at,
+    shown,
+    states,
+    swaps,
+)
 from nektoids.editor.devdrive import TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
@@ -53,79 +60,36 @@ from nektoids.editor.layout import (
     DIAGNOSTIC_MAP,
     KEY_ALIASES,
     LOCK_KEY,
-    MAX_HEX,
     MENU_GROUPS,
-    MODE_KEY,
-    RUN_VIEWS,
-    TOOL_KEYS,
     TURNS,
-    VIEW_KEYS,
-    ZOOM_STEP,
-    BoardButton,
-    Bounds,
     Drawer,
     EditButton,
+    FileButton,
     Layout,
     MainView,
     Mode,
     Tool,
-    ViewButton,
     WinRow,
-    action_at,
-    board_button_at,
-    board_extent,
     board_field_at,
-    board_view_of,
+    board_view,
     cell_at,
-    centred_on,
-    centred_view,
     contains,
     drawer_key,
-    edit_button_at,
     file_button_at,
     group_at,
-    kept_on_board,
     main_view_for,
     make_layout,
     menu_item_at,
-    mode_button_at,
-    moved_view,
-    opening_view,
-    overview_at,
-    overview_view,
-    pan,
-    value_at,
-    view_button_at,
-    wheel_fold_at,
     win_row_at,
-    zoom,
-    zoom_bar_at,
-    zoom_button_at,
 )
 from nektoids.editor.probe import Probe, level_view
 from nektoids.editor.router import WinGroup
 from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
 from nektoids.editor.tutorial import REFUSAL, Action
-from nektoids.editor.wheel import (
-    SLIDE,
-    WHEEL_HEX,
-    Slot,
-    centre_in,
-    cycled,
-    offer,
-    part_key,
-    pile_at,
-    slid,
-    slot_at,
-    slots,
-    swaps,
-    turned,
-)
 from nektoids.graph import boardtext
 from nektoids.graph.board import Board, BoardState, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
-    SQRT3,
     Cell,
     E,
     W,
@@ -137,12 +101,8 @@ from nektoids.graph.hexgrid import (
 from nektoids.levels.level import Level
 
 FLASH_FRAMES = 30  # how long a refused cell stays red [frames]
-PILE_FRAMES = 30  # the mouse resting on a pile turns the Wheel one icon this often: 0.5 s [frames]
 TOOLTIP_FRAMES = 60  # hover this long over a palette button to see its name and key [frames]
-KEY_TOOLS = {key: tool for tool, key in TOOL_KEYS.items()}
-KEY_VIEWS = {  # the rays, the motion and the streams are the run's: M and W are tools here
-    key: button for button, key in VIEW_KEYS.items() if button not in RUN_VIEWS
-}
+KEY_BUTTONS = {key: b for b, key in KEYS.items() if len(key) == 1}  # M, K, L, R, W (D-402)
 # Arrows, Enter and digits are matched on their scancode, the physical key, which every platform
 # reports alike: Safari on macOS tags the arrows as keypad keys (its `key` for the right arrow is
 # keypad 6), and the digits are shifted on AZERTY. The key code is only a fallback.
@@ -182,29 +142,16 @@ class BoardScene(Frame):
         self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
         self._probed = None  # the board as the probe was made for it
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
-        self.overviewing = False  # Navigator's overview held: the view follows the mouse
-        self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
-        self.wheel_folded = False  # the picture of the cell folded, in Tools and Parts (D-069)
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
-        self.focused: Cell | None = None  # the cell the Wheel is round, the keyboard's too (D-068)
-        self.wheel_open = False  # the Wheel shows round the focus
-        self.wheel_keys = False  # the keyboard opened it: the arrows go round it
-        self.choice: int | None = None  # the Wheel's icon the keyboard is on; None: nothing
-        self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse, in Tools or Parts
+        self.focused: Cell | None = None  # the cell clicked, the keyboard's too (D-068)
         self.press_cell: Cell | None = None  # a part pressed: a click or a drag, told on release
         self.drawing = False  # Wire chosen, a drag from a part: it draws a wire (D-072)
         self.keyboard = False  # the keyboard drives, until the mouse moves
-        self.swapping = False  # Swap chosen: the Wheel offers the parts the focused one may become
-        self.turn = 0  # the Wheel's turn: its first icon on the rim, the others piled
-        self.slide_from = 0.0  # the turn the Wheel showed when its slide to `turn` began
-        self.slide_left = 0  # the frames left in that slide (D-083)
-        self.wire_chosen = False  # Wire chosen by its key or in the Wheel, not only at hand
-        self.piling = 0  # the mouse on a pile of the Wheel: the way it turns the Wheel, -1 or 1
-        self.pile_frames = 0  # how long it has rested there
+        self.wire_chosen = False  # Wire chosen by its button or key, not only at hand
         self.onward = False  # the focus came on to the part just wired to: it wires only forward
         self.wins: tuple[WinGroup, ...] = ()  # this session's wins, for Files; main.py's
         self.caption = caption  # the level's title and spec, under the tabs
-        self.view = opening_view(layout, sorted(board.cells))
+        self.view = board_view(layout)  # one size, centred, never moved (D-401)
         self.mode = Mode.WRITE  # what a click on the board does: Write, Delete, Lock (D-319)
         self.tool = Tool.ADD
         self.picked: Kind | None = None  # Add: the menu kind in hand
@@ -212,7 +159,8 @@ class BoardScene(Frame):
         self.source: int | None = None  # Wire: the focused part, wired to the next one clicked
         self.moving: int | None = None  # Move: node id being dragged
         self.selected: int | None = None  # what the turn buttons and keys act on
-        self.panning_from: tuple[int, int] | None = None  # Pan: last mouse position
+        self.counted: Kind | None = None  # the part just placed: its count shows on its button
+        self.count_frames = 0  # ... this many frames more (D-401)
         self.ghost: tuple[Cell, ...] | Refused | None = None  # Wire: route to the hovered cell
         self.ghost_connects = False  # Wire: the ghost ends on a target it may connect to
         self.ghost_way: tuple[Cell, ...] | None = None  # ... over a part it cannot: the way only
@@ -241,18 +189,13 @@ class BoardScene(Frame):
                 self._field_done(ended)
         if self.flash_frames > 0:
             self.flash_frames -= 1
+        if self.count_frames > 0:
+            self.count_frames -= 1
         self.frame_update()
-        if self.piling:  # the Wheel turns slowly while the mouse rests on a pile (D-068)
-            self.pile_frames += 1
-            if self.pile_frames % PILE_FRAMES == PILE_FRAMES // 2:
-                self._turn_wheel(turned(self.turn + self.piling, None, len(self.offered())))
-        if self.slide_left:  # after any step this frame: a slide shows SLIDE frames
-            self.slide_left -= 1
-        self.view = kept_on_board(self.layout, self.view, self.extent())  # D-066
         if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.DIAGNOSTIC:
             self._probe_now()
         if self.probe is not None:
-            self.probe.see(self.view)  # the board's own scale and place, zoomed or panned
+            self.probe.see(self.view)  # the board's own scale and place
         if self.main is MainView.PREVIEW:
             for _ in range(TICKS_PER_FRAME):
                 self.probe.tick()
@@ -269,8 +212,8 @@ class BoardScene(Frame):
 
     def open_drawer(self, drawer: Drawer | None) -> None:
         """As the frame opens it; the main screen follows (D-069): the Run preview in Diagnostic,
-        what it showed before in Navigator, the board otherwise. Diagnostic stays shut while a
-        tutorial step leads, and with no level to run the board in."""
+        the board otherwise. Diagnostic stays shut while a tutorial step leads, and with no level
+        to run the board in."""
         if drawer is Drawer.DIAGNOSTIC:
             if self.level is None:
                 self._refuse("there is no level to run the board in")
@@ -278,7 +221,7 @@ class BoardScene(Frame):
             if not self._allowed(Action("view")):
                 return
         super().open_drawer(drawer)
-        view = main_view_for(drawer, self.main)
+        view = main_view_for(drawer)
         if view is not self.main:
             self._cancel()
             self.main = view
@@ -286,13 +229,9 @@ class BoardScene(Frame):
     def _editing(self) -> bool:
         """Whether the board is on screen to edit; if the Run preview shows, say so (D-069)."""
         if self.main is MainView.PREVIEW:
-            self._refuse("the Run preview shows: open Tools or Parts to edit")
+            self._refuse("the Run preview shows: shut Diagnostic to edit")
             return False
         return True
-
-    def _on_wheel(self, pos: tuple[int, int]) -> bool:
-        """Whether `pos` is on Tools' picture of the focused cell, its Wheel round it."""
-        return self.layout.wheel_view is not None and contains(self.layout.wheel_view, pos)
 
     def _on_map(self, pos: tuple[int, int]) -> bool:
         """Whether `pos` is on Diagnostic's map of the level, with a probe to move."""
@@ -320,8 +259,6 @@ class BoardScene(Frame):
             self._press(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._release(event.pos)
-        elif event.type == pygame.MOUSEWHEEL and self._on_wheel(self.mouse):
-            self._turn_wheel(turned(self.turn - event.y, None, len(self.offered())))  # it turns
         elif event.type == pygame.MOUSEWHEEL and self._on_map(self.mouse):
             self.probe.turn(event.y * PROBE_TURN)  # up: counter-clockwise
         elif event.type == pygame.MOUSEWHEEL and self.frame_wheel(self.mouse, event.y):
@@ -356,7 +293,7 @@ class BoardScene(Frame):
         self.keyboard = True
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         if arrow is not None:
-            if self.tool is Tool.PAN or self._editing():  # the hand moves the preview's view too
+            if self._editing():
                 self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
             if self._editing():
@@ -365,31 +302,19 @@ class BoardScene(Frame):
             self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # the next tab, or the one before (D-304)
             self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
-        elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
-            self._choose(Tool.DELETE)
+        elif event.scancode in DELETE_SCANCODES:  # Delete's key, on the physical key
+            self._press_button(Button.DELETE)
         elif event.scancode in DIGIT_SCANCODES + KEYPAD_SCANCODES:
             self._digit((DIGIT_SCANCODES + KEYPAD_SCANCODES).index(event.scancode) % 9)
         elif self._turns_probe(event.unicode):
-            sign = 1.0 if event.unicode.upper() == TOOL_KEYS[Tool.TURN_LEFT] else -1.0
+            sign = 1.0 if event.unicode.upper() == KEYS[Button.TURN_LEFT] else -1.0
             self.probe.turn(sign * PROBE_TURN)
         else:
             self._shortcut(event.unicode)
 
     def _arrow(self, key: int) -> None:
-        """Round the open Wheel, if the keyboard opened it; else from cell to cell, the focus
-        with them, carrying a part being moved; with the hand, the view dragged one cell."""
+        """From cell to cell, the focus with them, carrying a part being moved."""
         left, right, up, _ = ARROWS
-        if self.tool is Tool.PAN:
-            sx, sy = SQRT3 * self.view.size, 1.5 * self.view.size
-            dx, dy = {left: (-sx, 0), right: (sx, 0), up: (0, -sy)}.get(key, (0, sy))
-            self.view = pan(self.view, dx, dy)
-            return
-        items = self.offered()
-        if self.going_round() and items:
-            step = 1 if key in (right, ARROWS[3]) else -1
-            self.choice = cycled(items, self.choice, step)
-            self._turn_wheel(turned(self.turn, self.choice, len(items)))  # brought round
-            return
         if self.focused is None:
             self._focus_key(self._start_cell())
             return
@@ -405,16 +330,16 @@ class BoardScene(Frame):
             node = self._focused_node()
             if node is not None and self._move_to(node, step):
                 self.focused = step
-        elif self.tool is Tool.WIRE and self.source is not None and not self.wheel_open:
+        elif self.tool is Tool.WIRE and self.source is not None and self.wire_chosen:
             self.focused = step  # wiring by keyboard: the focus goes to the part to wire to
         else:
             self._focus_key(step)
         self._track(self._focus_pos())
 
     def _enter(self) -> None:
-        """The keyboard's click: on a cell, its Wheel; in the Wheel, the icon chosen, or, on
-        "nothing", the Wheel closed; a part carried is put down; while wiring, the wire made to
-        the part the focus is on."""
+        """The keyboard's click on the focused cell: what Delete or Lock does there; a part in
+        hand placed there; a part carried put down; while wiring, the wire made to the part the
+        focus is on."""
         if self.focused is None:
             self._focus_key(self._start_cell())
             return
@@ -428,7 +353,10 @@ class BoardScene(Frame):
             self.carrying, self.tool = False, Tool.ADD
             return
         node = self._focused_node()
-        if self.tool is Tool.WIRE and not self.wheel_open and self.source is not None:
+        if self.picked is not None:
+            self._add(self.focused)
+            return
+        if self.tool is Tool.WIRE and self.wire_chosen and self.source is not None:
             source = self.board.nodes.get(self.source)
             if node is None or source is None:
                 self._refuse("a wire runs from a part to a part", self.focused)
@@ -438,16 +366,6 @@ class BoardScene(Frame):
                 self._focus_key(node.cell)  # on to the part wired to
                 return
             self._focus_key(self.focused)  # the attempt ends: Wire goes, the cursor stays
-            return
-        items = self.offered()
-        if not self.wheel_open or not self.wheel_keys:
-            self.wheel_open, self.wheel_keys = True, True
-            self.choice = 0 if items and node is None else None
-            return
-        if self.choice is None or self.choice >= len(items):
-            self.wheel_open, self.wheel_keys = False, False  # "nothing": the Wheel closes
-            return
-        self._use(items[self.choice])
 
     def _start_cell(self) -> Cell:
         if self.hover is not None:
@@ -459,21 +377,10 @@ class BoardScene(Frame):
         return (round(x), round(y))
 
     def _digit(self, k: int) -> None:
-        """A number: on a focused empty cell, that part placed there (its key in the Wheel);
-        elsewhere, that part picked, for a click to place (D-068)."""
+        """A number: that part's button, among the parts the level hands out (D-402)."""
         kinds = [kind for _, group in MENU_GROUPS for kind in group if kind in self.layout.kinds]
-        if k >= len(kinds) or not self._editing():
-            return
-        cell = self.focused
-        if self.swapping and kinds[k] in self.offered():
-            self._swap(kinds[k])
-        elif self.swapping:
-            self._refuse("it may become only a part of its group, still left", cell)
-        elif cell is not None and cell in self.board.cells and self.board.node_at(cell) is None:
-            self._place(kinds[k], cell)
-        else:
-            self._pick(kinds[k])
-            self.dragging = False  # placed with a click, not by releasing a button
+        if k < len(kinds):
+            self._press_button(kinds[k])
 
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
@@ -482,35 +389,18 @@ class BoardScene(Frame):
             pass
         elif drawer is not None:  # not refused in the preview: the way out of it (D-069)
             self.toggle_drawer(drawer)
-        elif key == MODE_KEY:
-            self._set_mode(Mode.DELETE if self.mode is Mode.WRITE else Mode.WRITE)
-        elif key == LOCK_KEY and self.layout.editor:  # the sandbox's (D-319)
-            self._set_mode(Mode.LOCK if self.mode is not Mode.LOCK else Mode.WRITE)
-        elif key in KEY_TOOLS:
-            self._choose(KEY_TOOLS[key])
-        elif key in KEY_VIEWS:
-            self._view_button(KEY_VIEWS[key])
+        elif key == LOCK_KEY and self.layout.editor and self.mode is Mode.LOCK:
+            self._set_mode(Mode.WRITE)  # K again: Lock put down
+        elif key in KEY_BUTTONS and KEY_BUTTONS[key] in self.shown_buttons():
+            self._press_button(KEY_BUTTONS[key])
 
     # Mouse
 
     def _track(self, pos: tuple[int, int]) -> None:
-        if self.panning_from is not None:
-            dx, dy = pos[0] - self.panning_from[0], pos[1] - self.panning_from[1]
-            self.view, self.panning_from = pan(self.view, dx, dy), pos
         self.mouse = pos
         self.frame_track(pos)
         if self.probing and self.probe is not None:
             self._probe_to(pos)
-        if self.overviewing:
-            self._overview_to(pos)
-        if self.zooming:
-            self._zoom_to(pos)
-        self.wheel_hover = slot_at(self.wheel(), pos, WHEEL_HEX)
-        piling = 0
-        if self.layout.wheel_view is not None:
-            piling = pile_at(len(self.offered()), self.turn, self.cell_centre(), WHEEL_HEX, pos)
-        if piling != self.piling:
-            self.piling, self.pile_frames = piling, 0
         pointed = cell_at(self.layout, self.view, pos)
         moved_on = pointed != self.pointed
         self.pointed = pointed
@@ -536,47 +426,20 @@ class BoardScene(Frame):
         if board_field_at(self.layout, pos):
             self.field_pressed = True  # it opens when the click is over: Safari wants it so
             return
-        if file_button_at(self.layout, pos) is not None:
+        filed = file_button_at(self.layout, pos)
+        if filed is FileButton.ERASE:  # Erase all, under the field (D-321, D-401)
+            self._erase_all()
+            return
+        if filed is not None:
             self._save()
             return
         if self._on_map(pos):
             self.probing = True
             self._probe_to(pos)
             return
-        if overview_at(self.layout, pos):
-            self.overviewing = True
-            self._overview_to(pos)
-            return
-        step = zoom_button_at(self.layout, pos)
-        if step is not None:
-            self._view_button(step)
-            return
-        if zoom_bar_at(self.layout, pos) is not None:
-            self.zooming = True
-            self._zoom_to(pos)
-            return
         won = win_row_at(self.layout, pos)
         if won is not None:
             self._put_back(won)
-            return
-        mode = mode_button_at(self.layout, pos)
-        if mode is not None:
-            self._set_mode(mode)
-            return
-        if board_button_at(self.layout, pos) is BoardButton.ERASE:  # Erase all (D-321)
-            self._erase_all()
-            return
-        edit = edit_button_at(self.layout, pos)
-        if edit is not None:
-            self._edit(edit)
-            return
-        button = view_button_at(self.layout, pos)
-        if button is not None:
-            self._view_button(button)
-            return
-        if wheel_fold_at(self.layout, pos):  # The Wheel's title, in Tools or Parts (D-069)
-            self.wheel_folded = not self.wheel_folded
-            self.layout = self._relayout(self.layout.drawer)
             return
         title = group_at(self.layout, pos)
         if title is not None:
@@ -587,27 +450,18 @@ class BoardScene(Frame):
         if kind is not None:
             self._pick(kind)
             return
-        slot = slot_at(self.wheel(), pos, WHEEL_HEX)
-        if slot is not None:  # an icon of the Wheel, in Tools or Parts
-            self._use(slot.what)
-            return
-        shown = self.main is MainView.DIAGRAM  # the action atop shows only with the board
-        if shown and action_at(self.layout, pos) is not None:  # the action: Tools, to see it all
-            self.open_drawer(Drawer.TOOLS)
-            return
-        if self.main is MainView.PREVIEW:  # the board runs here: a part clicked goes to Tools
-            if self.tool is Tool.PAN:  # the hand moves the view, the preview's as the board's
-                self.panning_from = pos
+        if self.main is MainView.DIAGRAM:  # the buttons round the board (D-401)
+            button = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
+            if button is not None and contains(self.layout.board_area, pos):
+                self._press_button(button)
                 return
+        if self.main is MainView.PREVIEW:  # the board runs here: a part clicked, to edit it
             cell = cell_at(self.layout, self.view, pos)
-            if cell is not None and self.board.node_at(cell) is not None:  # to edit it (D-339)
-                self.open_drawer(Drawer.TOOLS)
+            if cell is not None and self.board.node_at(cell) is not None:  # D-339
+                self.open_drawer(Drawer.PARTS)  # the board back, its buttons round it
                 self._focus(cell)
             return
         if not contains(self.layout.board_area, pos):
-            return
-        if self.tool is Tool.PAN:
-            self.panning_from = pos
             return
         if self.mode is Mode.DELETE:
             self._erase(self.hover, pos)
@@ -639,38 +493,16 @@ class BoardScene(Frame):
 
     def _turns_probe(self, typed: str) -> bool:
         """L and R turn the probe while Diagnostic shows it with the Run preview; else the parts."""
-        turns = typed.upper() in (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
+        turns = typed.upper() in (KEYS[Button.TURN_LEFT], KEYS[Button.TURN_RIGHT])
         shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.DIAGNOSTIC
         return turns and shown and self.probe is not None
-
-    def extent(self) -> Bounds:
-        """What Navigator's overview shows of the board, and the most the main screen may."""
-        return board_extent(self.layout, sorted(self.board.cells))
-
-    def least_zoom(self) -> float:
-        """The farthest the zoom goes: the main screen shows the overview's extent [px]."""
-        return board_view_of(self.layout.board_area, self.extent()).size
-
-    def _overview_to(self, pos: tuple[int, int]) -> None:
-        """The view, at its zoom, centred where the mouse is on Navigator's overview (D-060)."""
-        small = overview_view(self.layout, sorted(self.board.cells))
-        moved = centred_on(self.layout, self.view, small, pos)
-        self.view = kept_on_board(self.layout, moved, self.extent())
-
-    def _zoom_to(self, pos: tuple[int, int]) -> None:
-        """The zoom where the mouse is along Navigator's zoom bar, about the board's centre."""
-        x, _, w, _ = self.layout.zoom_bar
-        size = value_at((pos[0] - x) / w, self.least_zoom(), MAX_HEX)
-        bx, by, bw, bh = self.layout.board_area
-        self.view = zoom(self.view, size / self.view.size, (bx + bw / 2, by + bh / 2))
 
     def _release(self, pos: tuple[int, int]) -> None:
         if self.field_pressed:
             self.field_pressed = False
             if board_field_at(self.layout, pos):
                 self._open_field()
-        self.probing, self.overviewing, self.zooming = False, False, False
-        self.panning_from = None
+        self.probing = False
         self.frame_release()
         if self.press_cell is not None:  # a press on a part: a drag moved it, or drew a wire,
             cell, self.press_cell = self.press_cell, None  # or it was a click
@@ -695,9 +527,9 @@ class BoardScene(Frame):
             self._add(self.pointed)
 
     def _slid(self, before: Layout, after: Layout) -> None:
-        """The board moved: the view slides with its centre, so nothing jumps; the Run preview
-        fits its new room."""
-        self.view = moved_view(self.view, before, after)
+        """The board area changed: the board stays centred in it, and the Run preview fits its new
+        room."""
+        self.view = board_view(after)
         if self.probe is not None:
             self.probe.see(self.view)
 
@@ -710,7 +542,6 @@ class BoardScene(Frame):
             self.layout.kinds,
             self.layout.chapters,
             files=tuple((group.title, len(group.wins)) for group in self.wins),
-            wheel_folded=self.wheel_folded,
             scroll=self.scrolls.get(drawer, 0),
             editor=self.layout.editor,
             **self._hint_layout(),
@@ -732,12 +563,6 @@ class BoardScene(Frame):
     def _relayout_on(self, layout: Layout) -> Layout:
         self.layout = layout
         return self._relayout(layout.drawer)
-
-    def unfold_wheel(self) -> None:
-        """The Wheel unfolded, if it was folded: a tutorial's step shows one of its icons."""
-        if self.wheel_folded:
-            self.wheel_folded = False
-            self.layout = self._relayout(self.layout.drawer)
 
     def set_wins(self, groups: tuple[WinGroup, ...]) -> None:
         """Every level's wins this session, as Files lists them: at most MAX_WINS a level
@@ -816,29 +641,11 @@ class BoardScene(Frame):
         self.picked, self.dragging = None, False
         self.source, self.ghost = None, None
         self.moving, self.carrying, self.press_cell, self.drawing = None, False, None, False
-        self.swapping = False
-        if self.tool is not Tool.PAN:
-            self.tool = Tool.ADD
+        self.tool = Tool.ADD
 
     def _cancel(self) -> None:
         self._drop_gesture()
         self.message = ""
-
-    # View
-
-    def _view_button(self, button: ViewButton) -> None:
-        if button is ViewButton.PAN:
-            if not self._allowed(Action("tool", tool=Tool.PAN)):
-                return
-            self._cancel()
-            self.tool = Tool.PAN
-            return
-        if button is ViewButton.CENTRE:
-            self.view = centred_view(self.layout, self.view.size)
-            return
-        x, y, w, h = self.layout.board_area
-        factor = ZOOM_STEP if button is ViewButton.ZOOM_IN else 1.0 / ZOOM_STEP
-        self.view = zoom(self.view, factor, (x + w / 2, y + h / 2))
 
     # Undo (D-027)
 
@@ -868,24 +675,13 @@ class BoardScene(Frame):
     # Tools
 
     def _choose(self, tool: Tool) -> None:
-        """A tool's key, on the focus (D-068): A opens the parts' Wheel of an empty cell; L, R, W,
-        M and Backspace or Delete (D-069) act on the focused part; H takes the hand or puts it
-        down."""
-        if tool is Tool.PAN:
-            self._drop_gesture()
-            self.tool = Tool.ADD if self.tool is Tool.PAN else Tool.PAN
-            return
+        """Move, Turn, Wire or Delete on the focused part (D-068, D-401), its button or its key."""
         if not self._editing():
             return
         if tool is not Tool.DELETE:
             self.mode = Mode.WRITE  # writing again
-        if tool is Tool.ADD:
-            if self.focused is not None and self._focused_node() is None:
-                self.wheel_open, self.wheel_keys, self.choice = True, True, 0
-            return
         if not self._allowed(Action("tool", tool=tool)):
             return
-        self.wheel_keys = self.wheel_keys or self.keyboard
         self._act(tool)
 
     def _pick(self, kind: Kind) -> None:
@@ -901,11 +697,15 @@ class BoardScene(Frame):
         self.picked, self.dragging = kind, True
 
     def _add(self, cell: Cell) -> None:
-        """The part picked in Parts placed on `cell`, then focused."""
-        if self.picked is None:
+        """The part picked in Parts placed on `cell`, then focused; it stays picked while one of
+        its kind is left, so that clicks repeat it (D-402)."""
+        kind = self.picked
+        if kind is None:
             self._refuse("pick a part in Parts first", None)
             return
-        self._place(self.picked, cell)
+        self._place(kind, cell)
+        if self.board.remaining(kind) != 0 and self.board.node_at(cell) is not None:
+            self.picked = kind
 
     def _turn(self, cell: Cell, steps: int) -> None:
         """Turn the part on `cell` by `steps` x 60° (counter-clockwise if positive)."""
@@ -932,7 +732,7 @@ class BoardScene(Frame):
         self.drawing = True
         if node.id != self.source:  # from the part pressed, which wires either way round
             self.focused, self.source, self.selected = cell, node.id, node.id
-            self.onward, self.turn, self.slide_left = False, 0, 0
+            self.onward = False
         self._update_ghost()
 
     def _drawn_to(self, cell: Cell | None) -> None:
@@ -992,7 +792,7 @@ class BoardScene(Frame):
     def doomed(self) -> tuple[int | None, list[Wire]]:
         """What a deletion would remove, darkened before it happens: in Delete, what is under the
         mouse, or on the keyboard's focus; in Write, the focused part and its wires, while the
-        mouse or the keyboard is on its Wheel's Delete; a part dragged off the body (D-085)."""
+        mouse is on the Delete button (D-401); a part dragged off the body (D-085)."""
         if self._dropping():
             return self.moving, [w for w in self.board.wires if self.moving in (w.source, w.target)]
         if self.mode is Mode.DELETE:
@@ -1001,11 +801,9 @@ class BoardScene(Frame):
             if not contains(self.layout.board_area, self.mouse):
                 return None, []
             return self._under(self.hover, self.mouse)
-        hovered = None if self.wheel_hover is None else self.wheel_hover.what
-        if self.keyboard and self.going_round() and self.choice is not None:
-            items = self.offered()
-            hovered = items[self.choice] if self.choice < len(items) else None
-        if hovered is not Tool.DELETE:
+        size, origin = self.view.size, self.view.origin
+        on_delete = button_at(self.shown_buttons(), size, origin, self.mouse) is Button.DELETE
+        if self.keyboard or not on_delete or self.focused is None:
             return None, []
         return self._under(self.focused, self._focus_pos())
 
@@ -1050,114 +848,106 @@ class BoardScene(Frame):
 
     # The focus and its Wheel (D-068)
 
-    def offered(self) -> tuple[Kind | Tool, ...]:
-        """What the focused cell offers, its Wheel's icons in order, whether a drawer shows them or
-        not: none in Delete, or while the Run preview shows."""
-        if self.focused is None or self.mode is not Mode.WRITE or self.main is not MainView.DIAGRAM:
-            return ()
-        if self.swapping:
-            return swaps(self.board, self.focused, self.layout.kinds)
-        return offer(self.board, self.focused, self.layout.kinds)
+    # The buttons (D-401)
 
-    def _tip_target(self, pos: tuple[int, int]) -> object | None:
-        """As the frame's, and the Wheel's icon under the mouse (D-069)."""
-        return super()._tip_target(pos) or slot_at(self.wheel(), pos, WHEEL_HEX)
+    def shown_buttons(self) -> tuple[Button | Kind, ...]:
+        return shown(self.layout.kinds, self.layout.editor)
 
-    def wheel_tip(self) -> Slot | None:
-        """The Wheel's icon whose tooltip shows, after the bar's rest, or at once after another
-        tooltip (D-069): none while the keyboard drives, or once the Wheel has changed under it."""
-        tip = self.tooltip
-        if self.keyboard or not isinstance(tip, Slot):
-            return None
-        return tip if tip in self.wheel() else None
+    def chosen_button(self) -> Button | Kind:
+        """The button in hand: what a click on the board does now."""
+        if self.mode is Mode.DELETE:
+            return Button.DELETE
+        if self.mode is Mode.LOCK:
+            return Button.LOCK
+        if self.picked is not None:
+            return self.picked
+        if self.carrying or self.tool is Tool.MOVE:
+            return Button.MOVE
+        if self.tool is Tool.WIRE and self.wire_chosen:
+            return Button.WIRE
+        return Button.SELECT
 
-    def wheel_lit(self) -> Slot | None:
-        """The Wheel's lit icon, which the line under it names in the accent (D-069): the
-        keyboard's choice going round, else the tool in hand, Wire or Move; none otherwise."""
-        wheel = self.wheel()
-        if self.going_round() and self.choice is not None and self.choice < len(wheel):
-            return wheel[self.choice]
-        in_hand = self.tool if self.tool in (Tool.WIRE, Tool.MOVE) else None
-        return next((s for s in wheel if s.what is in_hand and not s.depth), None)
+    def button_states(self) -> dict[Button | Kind, State]:
+        history = self.history
+        return states(
+            self.board,
+            self.shown_buttons(),
+            self.chosen_button(),
+            self.focused,
+            history.can_undo or self.board.snapshot() != self._kept,
+            history.can_redo,
+            self.layout.kinds,
+        )
 
-    def going_round(self) -> bool:
-        """Whether the keyboard goes round the Wheel: opened with Enter, until an icon is taken."""
-        return self.wheel_keys and self.wheel_open
-
-    def wheel(self) -> list[Slot]:
-        """The focused cell's Wheel as Tools and Parts draw it, round their picture of the cell;
-        none while neither shows the picture (D-069)."""
-        if self.layout.wheel_view is None:
-            return []
-        turn = slid(self.slide_from, self.turn, self.slide_left)  # as it shows, sliding
-        return slots(self.offered(), self.cell_centre(), WHEEL_HEX, self.layout.kinds, turn)
-
-    def _turn_wheel(self, turn: int) -> None:
-        """The Wheel turned to `turn`, sliding there in SLIDE frames; a step taken during a
-        slide goes straight on, from where the Wheel shows (D-083)."""
-        if turn != self.turn:
-            self.slide_from = slid(self.slide_from, self.turn, self.slide_left)
-            self.turn, self.slide_left = turn, SLIDE
-
-    def cell_centre(self) -> tuple[float, float]:
-        """Where Tools, or Parts, draws the focused cell (D-069)."""
-        return centre_in(self.layout.wheel_view)
-
-    def action(self) -> tuple[Kind | Tool | Mode, str]:
-        """What the next click on the board, or Enter, does, and its key: shown atop the main
-        screen while Tools is folded (D-068)."""
-        items = self.offered()
-        if self.tool is Tool.PAN:
-            what: Kind | Tool | Mode = Tool.PAN
-        elif self._dropping():  # a part dragged off the body: letting go deletes it (D-085)
-            what = Tool.DELETE
-        elif self.mode in (Mode.DELETE, Mode.LOCK):
-            what = self.mode
-        elif self.going_round() and self.choice is not None and self.choice < len(items):
-            what = items[self.choice]
-        elif self.swapping:
-            what = Tool.SWAP
-        elif self.carrying or self.tool is Tool.MOVE:
-            what = Tool.MOVE
-        elif self.tool is Tool.WIRE and self.source is not None:
-            what = Tool.WIRE
-        elif self.picked is not None:
-            what = self.picked
+    def _press_button(self, button: Button | Kind) -> None:
+        """A button clicked. On the focused part, the pick until picking comes (D-402), Move,
+        Turn, Wire, Delete and Lock act at once, as their keys do, and a part swaps it; on a
+        focused empty cell, a part goes there. Else Delete and Lock are chosen for the clicks on
+        the board, and a part is picked for them; Select drops whatever is in hand."""
+        node = self._focused_node()
+        if button is Button.SELECT:
+            self._set_mode(Mode.WRITE)
+        elif button in (Button.UNDO, Button.REDO):
+            self._edit(EditButton.UNDO if button is Button.UNDO else EditButton.REDO)
+        elif button is Button.DELETE and node is None:
+            self._set_mode(Mode.DELETE)
+        elif button is Button.LOCK:
+            if node is not None:
+                self._lock(node.cell)
+            else:
+                self._set_mode(Mode.LOCK)
+        elif isinstance(button, Kind):
+            self._part_button(button, node)
         else:
-            what = Mode.WRITE
-        if isinstance(what, Kind):
-            return what, part_key(what, self.layout.kinds)
-        if isinstance(what, Mode):
-            return what, LOCK_KEY if what is Mode.LOCK else MODE_KEY
-        return what, VIEW_KEYS[ViewButton.PAN] if what is Tool.PAN else TOOL_KEYS[what]
+            tool = {
+                Button.MOVE: Tool.MOVE,
+                Button.DELETE: Tool.DELETE,
+                Button.TURN_LEFT: Tool.TURN_LEFT,
+                Button.TURN_RIGHT: Tool.TURN_RIGHT,
+                Button.WIRE: Tool.WIRE,
+            }[button]
+            if node is None:
+                self._refuse("click a part first, then its button", None)
+            else:
+                self._choose(tool)
+
+    def _part_button(self, kind: Kind, node: Node | None) -> None:
+        """A part's button: the focused part swapped for it, if it may become one; on a focused
+        empty cell, it placed there; else it picked, for the clicks on the board."""
+        cell = self.focused
+        if node is not None and kind in swaps(self.board, node.cell, self.layout.kinds):
+            self._swap(kind)
+        elif node is None and cell is not None and cell in self.board.cells and self._editing():
+            self._place(kind, cell)
+            if self.board.remaining(kind) != 0 and self.board.node_at(cell) is not None:
+                self.picked = kind  # it stays in hand while one is left (D-402)
+        else:
+            self._pick(kind)
+            self.dragging = False  # placed by a click, not by releasing the button
 
     def _focused_node(self) -> Node | None:
         return self.board.node_at(self.focused) if self.focused is not None else None
 
     def _focus(self, cell: Cell | None, keys: bool = False, onward: bool = False) -> None:
-        """Focus `cell` (None: nothing), its Wheel open: round a part, Wire chosen for the mouse,
-        nothing for the keyboard; round an empty cell, its parts, the first chosen. `onward`: the
-        focus goes on to the part just wired to, which wires on only forward (D-068, D-091)."""
+        """Focus `cell` (None: nothing), the buttons lit for it: on a part clicked, Wire chosen at
+        hand, not for the keyboard (`keys`). `onward`: the focus goes on to the part just wired
+        to, which wires on only forward (D-068, D-091)."""
         self._drop_gesture()
         self.focused, self.onward = cell, onward
         self.wire_chosen = False
-        self.turn, self.slide_left = 0, 0  # the Wheel at its start, at once
-        self.wheel_open, self.wheel_keys = cell is not None, keys
         node = self._focused_node()
         self.selected = None if node is None else node.id
-        self.choice = None if node is not None or cell is None else 0
         if node is not None and not keys:  # a click on a part: wiring, from it, at hand
             self.tool, self.source = Tool.WIRE, node.id
         self._update_ghost()
 
     def _focus_key(self, cell: Cell) -> None:
-        """The keyboard's focus moves to `cell`, its Wheel closed until Enter."""
+        """The keyboard's focus moves to `cell`."""
         self._focus(cell, keys=True)
-        self.wheel_open = False
 
     def _set_mode(self, mode: Mode) -> None:
-        """Write or Delete (D-068): what a click on the board does. The hand is put down, the
-        Wheel closes; the keyboard's focus stays where it is."""
+        """Write, Delete or Lock (D-068, D-319): what a click on the board does; the keyboard's
+        focus stays where it is."""
         if not self._editing():
             return
         if mode is Mode.DELETE and not self._allowed(Action("tool", tool=Tool.DELETE)):
@@ -1168,15 +958,6 @@ class BoardScene(Frame):
             self._focus_key(kept)
         self.mode, self.tool = mode, Tool.ADD
         self.message = ""
-
-    def _use(self, what: Kind | Tool) -> None:
-        """An icon of the Wheel, clicked or chosen with Enter: a part placed, or an action."""
-        if isinstance(what, Kind) and self.swapping:
-            self._swap(what)
-        elif isinstance(what, Kind):
-            self._place(what, self.focused)
-        else:
-            self._act(what)
 
     def _place(self, kind: Kind, cell: Cell) -> None:
         """`kind` placed on `cell`, facing its default way; then the focus on it, its actions."""
@@ -1189,7 +970,8 @@ class BoardScene(Frame):
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
             return
-        self.message, keys = "", self.wheel_keys
+        self.message, keys = "", self.keyboard
+        self.counted, self.count_frames = kind, COUNT_FRAMES
         self._focus(cell, keys=keys)
 
     def _act(self, tool: Tool) -> None:
@@ -1205,29 +987,14 @@ class BoardScene(Frame):
         elif tool is Tool.WIRE:
             if self._allowed(Action("tool", tool=Tool.WIRE)):
                 self.tool, self.source, self.wire_chosen = Tool.WIRE, node.id, True
-                if self.wheel_keys:  # the keyboard: the arrows go to the part to wire to
-                    self.wheel_open = False
         elif tool is Tool.MOVE:
             if self._allowed(Action("move", cell=node.cell), node.cell):
                 self.tool = Tool.MOVE
-                if self.wheel_keys:  # the keyboard: the arrows carry it, Enter puts it down
-                    self.wheel_open, self.carrying = False, True
+                if self.keyboard:  # the arrows carry it, Enter puts it down
+                    self.carrying = True
                     self._grabbed = self._landed = self.board.snapshot()
         elif tool is Tool.DELETE:
             self._delete_part(node)
-        elif tool is Tool.SWAP:
-            if not self._allowed(Action("tool", tool=Tool.SWAP), node.cell):
-                return
-            if not swaps(self.board, node.cell, self.layout.kinds):
-                self._refuse("no other part of its group left", node.cell)
-                return
-            self.swapping, self.turn, self.slide_left = True, 0, 0  # it offers what it may become
-            self.choice = 0 if self.going_round() else None
-            return
-        if self.wheel_keys and self.wheel_open:
-            items = self.offered()
-            self.choice = next((k for k, what in enumerate(items) if what is tool), self.choice)
-            self._turn_wheel(turned(self.turn, self.choice, len(items)))
 
     def _swap(self, kind: Kind) -> None:
         """The focused part swapped for one of `kind`, in its place (D-068); the wires it cannot
@@ -1239,7 +1006,7 @@ class BoardScene(Frame):
             return
         _, lost = result
         if self.keyboard:
-            self._focus(node.cell, keys=True)  # its actions, the keyboard on "nothing"
+            self._focus(node.cell, keys=True)
         else:
             self._focus(node.cell)
         if lost:
@@ -1395,20 +1162,13 @@ class BoardScene(Frame):
             self._refuse("placed by the level", cell)
 
     def _escape(self) -> bool:
-        """Esc, or a right click: back one step, from a gesture, to the Wheel, to nothing; False
+        """Esc, or a right click: back one step, from a gesture to the focus, to nothing; False
         if there was nothing to back out of."""
-        if self.tool is Tool.PAN:
-            self.tool = Tool.ADD
-        elif self.swapping:
-            self.swapping, self.turn, self.slide_left = False, 0, 0  # back to the part's actions
-            self.choice = None
-        elif self.mode in (Mode.DELETE, Mode.LOCK):
+        if self.mode in (Mode.DELETE, Mode.LOCK):
             self.mode = Mode.WRITE
-        elif self.carrying or (self.tool is Tool.WIRE and not self.wheel_open and self.source):
+        elif self.carrying or (self.tool is Tool.WIRE and self.wire_chosen and self.source):
             self.carrying, self.tool, self.source = False, Tool.ADD, None
             self._update_ghost()
-        elif self.wheel_open and self.focused is not None and self.wheel_keys:
-            self.wheel_open, self.wheel_keys = False, False
         elif self.focused is not None or self.picked is not None or self.tool is not Tool.ADD:
             self._focus(None)  # and whatever was in hand
         else:
@@ -1418,28 +1178,25 @@ class BoardScene(Frame):
 
     def hint(self) -> str:
         """What the status line says the player can do now."""
-        if self.tool is Tool.PAN:
-            return "Drag the board to move the view. H or Esc puts the hand down."
         if self.main is MainView.PREVIEW:  # nothing to edit here (D-069)
-            return "Drag an eye's knob to set what it reads. Tools or Parts to edit."
+            return "Drag an eye's knob to set what it reads. Shut Diagnostic to edit."
         if self._dropping():
             return "Let go and the part goes, with its wires; back on the body, it stays."
         if self.carrying:
             return "The arrows carry the part; Enter puts it down."
-        if self.tool is Tool.WIRE and not self.wheel_open and self.source is not None:
-            return "The arrows to the part to wire to, then Enter. Esc gives up."
+        if self.tool is Tool.WIRE and self.wire_chosen and self.source is not None:
+            return "Click the part to wire to, or the arrows to it then Enter. Esc gives up."
         if self.mode is Mode.DELETE:
-            return "Click a part or a wire to delete it. E or Esc: back to Write."
+            return "Click a part or a wire to delete it. Select or Esc: back."
         if self.mode is Mode.LOCK:
-            return "Click a part to lock it, or to free it. K or Esc: back to Write."
-        if self.swapping:
-            return "Pick what it becomes in the Wheel, or press its number. Esc: back."
-        node = self._focused_node()
-        if node is not None:
-            return "Click or drag to another part to wire it; M moves it."
+            return "Click a part to lock it, or to free it. Select or Esc: back."
+        if self.picked is not None:
+            return "Click empty cells to place it, while one is left. Select or Esc: back."
+        if self._focused_node() is not None:
+            return "Click another part to wire it to; the lit buttons act on it."
         if self.focused is not None:
-            return "Pick a part in the Wheel, or press its number."
-        return "Click a cell, or drag a part from Parts onto the board."
+            return "A part's button, or its number, places it here."
+        return "Click a cell or a part, or a button round the board."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason

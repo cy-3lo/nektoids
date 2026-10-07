@@ -117,31 +117,31 @@ def test_settings_step_through_their_choices_and_the_tutorial_is_asked_for():
 
 def test_an_icons_tooltip_shows_once_the_mouse_has_rested_on_it():
     scene = Scene()
-    scene.frame_track(icon(scene, Drawer.NAVIGATOR))
+    scene.frame_track(icon(scene, Drawer.DIAGNOSTIC))
     for _ in range(scene.settings.tooltip_frames - 1):
         scene.frame_update()
     assert scene.tooltip is None
     scene.frame_update()
-    assert scene.tooltip is Drawer.NAVIGATOR
+    assert scene.tooltip is Drawer.DIAGNOSTIC
     scene.frame_track(centre(scene.layout.board_area))
     assert scene.tooltip is None and scene.tip_frames == 0
 
 
 def test_once_a_tooltip_shows_the_next_icons_shows_at_once_across_the_gap_between_them():
     scene = Scene()  # D-069
-    scene.frame_track(icon(scene, Drawer.NAVIGATOR))
+    scene.frame_track(icon(scene, Drawer.DIAGNOSTIC))
     for _ in range(scene.settings.tooltip_frames):
         scene.frame_update()
-    assert scene.tooltip is Drawer.NAVIGATOR
-    x, y = icon(scene, Drawer.NAVIGATOR)
+    assert scene.tooltip is Drawer.DIAGNOSTIC
+    x, y = icon(scene, Drawer.DIAGNOSTIC)
     scene.frame_track((x, y - 23))  # between two icons: nothing under the mouse
     scene.frame_update()
-    scene.frame_track(icon(scene, Drawer.DIAGNOSTIC))
-    assert scene.tooltip is Drawer.DIAGNOSTIC  # at once
+    scene.frame_track(icon(scene, Drawer.FILES))
+    assert scene.tooltip is Drawer.FILES  # at once
     scene.frame_track(centre(scene.layout.board_area))
     for _ in range(WARM_FRAMES):
         scene.frame_update()
-    scene.frame_track(icon(scene, Drawer.FILES))
+    scene.frame_track(icon(scene, Drawer.PARTS))
     assert scene.tooltip is None  # rested long enough off the bar: the wait again
 
 

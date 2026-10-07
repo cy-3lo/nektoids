@@ -141,6 +141,12 @@ TOOLTIP_BG = mix(P.surface, P.raised, 0.5)
 BUTTON = P.raised
 HOVER = mix(P.raised, P.line, 0.5)
 ACTIVE = P.accent1.dark  # the tool in hand, the menu row picked, a toggle that is on
+# The Board's buttons, keys in a bevel lit from the top left (D-401)
+KEY_LIGHT = P.dim  # a button's bevel, the sides facing the light
+KEY_DARK = P.deep  # ... the sides away from it
+KEY_GREYED = mix(P.deep, P.dim, 0.4)  # a greyed button's light sides: the bevel dimmed
+KEY_SHADOW = (0, 0, 0, 150)  # under a button, 2 px right and 3 px down
+GREYED_FACE = P.accent1.dark  # an eye's face, a thruster's back, on a greyed button
 RULE = P.line  # separators between columns and between sets of buttons
 SCROLL_THUMB = P.dim  # a scroll bar's thumb, over its track in RULE (D-069)
 SWATCH_OFF = P.raised  # colour picker, not active yet

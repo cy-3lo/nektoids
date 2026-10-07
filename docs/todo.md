@@ -90,12 +90,8 @@ keyboard, from buttons round a board of one size. Its look and places are D-401,
 seven rounds of mockups; its gestures are D-402. Each item below is a `feat/…` branch into
 `stage/2-board`, planned when it starts.
 
-- [ ] **Buttons and a fixed view** (D-401): the board at 38 px on every level, with no zoom nor
-  pan; the buttons drawn at their places, chosen by a click or their key; Tools, the Navigator,
-  the Wheel and the action atop the board gone; Parts without the Wheel; Erase all in Files; the
-  counts' tags; Diagnostic's Run preview without the buttons.
 - [ ] **Picking** (D-402): empty cells and parts picked, the buttons acting at once on what is
-  picked, lit and greyed.
+  picked, lit and greyed. Until then the cell or part clicked, the focus, stands for the pick.
 - [ ] **Drags and right clicks** (D-402): each button along a drag, a picked group moved, right
   clicks wiring with the chain going on.
 - [ ] **The mouse wheel** (D-402): 60° a notch, up to the right, a trackpad's scrolls added up.

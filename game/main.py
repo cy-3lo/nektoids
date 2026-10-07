@@ -56,9 +56,9 @@ from nektoids.editor.tutorial import (
     drawer_for,
     focus_cells,
     panels,
-    shows_wheel,
     target_rects,
     target_spots,
+    worked_on,
 )
 from nektoids.editor.tutorial_draw import draw_tutorial
 from nektoids.graph.board import Board, Kind
@@ -119,18 +119,15 @@ def hints() -> tuple[Hints, Board, Taken] | None:
 
 
 def tutorial_box(guide: Tutorial, scene: BoardScene | ArenaScene) -> tuple:
-    """Where the step's target and its box are, on the screen now open: `scene`'s; in the
-    Board, the Wheel's icons round the focused cell are targets too (D-070)."""
-    if isinstance(scene, BoardScene):
-        live = Live(wheel=tuple(scene.wheel()), focused=scene.focused)
-    elif isinstance(scene, ArenaScene):  # the run: the swimmer, as a step may outline (D-071)
+    """Where the step's target and its box are, on the screen now open: `scene`'s."""
+    if isinstance(scene, ArenaScene):  # the run: the swimmer, as a step may outline (D-071)
         live = Live(swimmer=scene.swimmer_box())
-    else:  # the Editor: its tabs, and nothing that moves (D-341)
+    else:  # the Board, the Editor: nothing that moves beyond their layouts (D-341, D-401)
         live = Live()
     where = (router.screen, scene.layout, scene.view, live)
     spots = target_spots(guide.step.show, *where)
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
-    before = [] if done is None else target_rects(done.show, *where)
+    before = [] if done is None else target_rects(worked_on(done.show), *where)
     beside = scene.layout.board_area  # the board, or the arena
     parts = []  # what the box must not hide: the parts on the Board (D-103)
     if isinstance(scene, BoardScene):
@@ -427,14 +424,12 @@ async def main() -> None:
                 tutored = free.tutorial if router.in_sandbox else router.level.tutorial
                 scene.tutored = tutored is not None
         scene = on_screen()
-        wanted = drawer_for(guide.step, scene.layout.drawer) if guide is not None else None
+        wanted = drawer_for(guide.step) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on
         if wanted in here and opened_for.get(router.index) != guide.index:
             opened_for[router.index] = guide.index  # once a step: then the player's to change
             if scene.layout.drawer is not wanted:
                 scene.open_drawer(wanted)
-            if shows_wheel(guide.step) and isinstance(scene, BoardScene):
-                scene.unfold_wheel()  # its icon must show (D-070)
         gate = None if guide is None else lambda action, g=guide: allows(g.step, action)
         board_scene().gate = gate  # only what the step asks goes through (D-048)
         board_scene().lit = panels(guide)  # the panels a step explains, titles lit (D-050)

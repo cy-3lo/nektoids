@@ -4,7 +4,8 @@ the player has done what they ask, or presses Next (D-039).
 A level's data may carry one: its ghosts, the parts the tutorial builds drawn faintly in their
 cells, facing the way they should, and its steps. A step says a few short lines; shows a target,
 or a list of them, which the overlay leaves lit while it dims the rest: an area ("board",
-"parts", "bar"), a part's row, a drawer's icon, the switch, a cell, or a part of the run ("arena",
+"parts", "bar"), a part's row, a drawer's icon, the switch, a cell, one of the buttons round the
+board, or a part of the run ("arena",
 "controls", "play", "timeline", and the drawers "objectives", "inside", "score"); and waits,
 until a part is placed in a cell, a part faces a way, a tool is taken, a wire runs from one cell
 to another, the run starts, or the run is won. A step with no target is a hint: nothing is
@@ -12,7 +13,7 @@ dimmed. A step with nothing to wait for waits for Next, and only such a step has
 that waits for an action moves on when it is done, never before (D-048). Only Fear has one, an
 introduction that builds nothing and shows once a session (D-079); every level's hints are asked
 for in the Hints drawer (`hints.py`, D-078). What a tutorial that builds needs, the waits for a
-part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, for chapter 0's
+part placed, turned or wired, the ghosts, the buttons as targets (D-401), stays, for chapter 0's
 first two levels, which lead the player through what they teach (D-334), and is tested on the
 tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial, its ghosts with it;
 closed on its last card, its ghosts stay on the board (D-351). Settings' Tutorial
@@ -31,6 +32,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from nektoids.editor import arena_layout
+from nektoids.editor.buttons import PLACES, Button
+from nektoids.editor.buttons import shown as buttons_shown
 from nektoids.editor.layout import (
     DRAWERS,
     SCREEN,
@@ -44,7 +47,6 @@ from nektoids.editor.layout import (
     View,
 )
 from nektoids.editor.router import Screen
-from nektoids.editor.wheel import ICON, WHEEL_HEX, Slot
 from nektoids.graph.board import FACING_NAMES, Board, Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, to_pixel
 from nektoids.levels.level import known
@@ -116,11 +118,9 @@ class Context:
 
 @dataclass(frozen=True)
 class Live:
-    """What the scene on screen shows now that its layout cannot say: on the Board, the Wheel's
-    icons round the focused cell (D-070); in the run, the swimmer, a box round it (D-071)."""
+    """What the scene on screen shows now that its layout cannot say: in the run, the swimmer, a
+    box round it (D-071)."""
 
-    wheel: tuple[Slot, ...] = ()
-    focused: Cell | None = None
     swimmer: Rect | None = None
 
 
@@ -210,13 +210,13 @@ def panels(tutorial: Tutorial | None) -> frozenset[str]:
     """What a leading step shows, by name, drawn in the accent, the only highlight (D-050,
     D-336): an area, a drawer or a part of the run by its own name, its titles lit; a drawer's
     icon in the bar by the drawer's name, the bar lighting them all; a tab as "tab:board"; the
-    switch as "level:board", a row of Parts as "menu:eye", a Wheel's icon as "wheel:turn left"."""
+    switch as "level:board", a row of Parts as "menu:eye", a button as "button:turn left"."""
     if tutorial is None or not tutorial.leads:
         return frozenset()
     names = set()
     for one in _shows(tutorial.step):
         names.add(one.get("area") or one.get("drawer") or one.get("run") or one.get("icon"))
-        for key in ("tab", "level", "menu", "wheel"):
+        for key in ("tab", "level", "menu", "button"):
             names.add(f"{key}:{one[key]}" if key in one else None)
     return frozenset(names - {None})
 
@@ -231,10 +231,10 @@ def focus_cells(tutorial: Tutorial | None) -> frozenset[Cell]:
     return frozenset(_cell(one["cell"]) for one in shows if "cell" in one)
 
 
-def drawer_for(step: Step | None, open_now: Drawer | None = None) -> Drawer | None:
+def drawer_for(step: Step | None) -> Drawer | None:
     """The drawer a step's targets are in, which it opens as it shows: the drawer it explains;
-    Parts for a part's row; for a Wheel's icon, Tools or Parts, whichever is open (`open_now`),
-    else Tools; the run's drawer it explains; None if it needs none (D-051, D-057, D-070)."""
+    Parts for a part's row; the run's drawer it explains; None if it needs none, a button round
+    the board for one (D-051, D-057, D-401)."""
     shows = _shows(step)
     explained = next((Drawer(one["drawer"]) for one in shows if "drawer" in one), None)
     awaited = {Drawer(u["drawer"]) for u in _conditions(step) if "drawer" in u}
@@ -242,14 +242,7 @@ def drawer_for(step: Step | None, open_now: Drawer | None = None) -> Drawer | No
         return explained
     if any("menu" in one or one.get("area") == "parts" for one in shows):
         return Drawer.PARTS
-    if shows_wheel(step):  # the Wheel is at the foot of both
-        return open_now if open_now in (Drawer.TOOLS, Drawer.PARTS) else Drawer.TOOLS
     return next((RUN_DRAWERS[one["run"]] for one in shows if one.get("run") in RUN_DRAWERS), None)
-
-
-def shows_wheel(step: Step | None) -> bool:
-    """Whether a step shows one of the Wheel's icons: the Wheel, folded, unfolds for it."""
-    return any("wheel" in one for one in _shows(step))
 
 
 def _conditions(step: Step | None) -> list:
@@ -345,6 +338,13 @@ def met(until: Mapping | list, context: Context) -> bool:
 # Where things are
 
 
+def worked_on(show: Mapping | list | None) -> list:
+    """What a step's work was done on, which the next step's box keeps clear of (D-048): its
+    targets on the board, not the buttons round it that did the work (D-401)."""
+    shows = [] if show is None else show if isinstance(show, list) else [show]
+    return [one for one in shows if "button" not in one]
+
+
 def target_rects(
     show: Mapping | list | None,
     screen: Screen,
@@ -363,13 +363,12 @@ def target_spots(
     view: View,
     live: Live = NOTHING_LIVE,
 ) -> list:
-    """The same, each with the shape the overlay outlines: "disc" round a cell, "icon" round
-    a Wheel's icon, "panel" for an area or a part of the run view, on its own edges, a `Page`
+    """The same, each with the shape the overlay outlines: "disc" round a cell or a button,
+    "panel" for an area or a part of the run view, on its own edges, a `Page`
     for a page and its tab, a `Docked` for a drawer and its icon, "spot" round anything else, a
     button, a row, the swimmer (D-048, D-050, D-062, D-070, D-071). `live`: what the scene shows
     that its layout cannot say."""
     shows = [] if show is None else show if isinstance(show, list) else [show]
-    cells = frozenset(_cell(one["cell"]) for one in shows if "cell" in one)
     running, editing = screen is Screen.RUN, screen is Screen.BOARD
     spots = []
     for one in shows:
@@ -384,12 +383,6 @@ def target_spots(
             spots += [(group, "spot") for group in _bar_groups(layout)] if on else []
         elif "drawer" in one:  # the drawer joined to its icon in the bar (D-071)
             spots.append(_docked(layout, Drawer(one["drawer"])))
-        elif "wheel" in one:
-            on = editing and (not cells or live.focused in cells)
-            icon = _wheel_icon(one["wheel"], live.wheel) if on else None
-            spots.append((icon, "icon"))
-            if icon is not None and (_wheel_area(layout), "none") not in spots:
-                spots.append((_wheel_area(layout), "none"))  # the box keeps clear of the Wheel
         else:
             spots.append((target_rect(one, screen, layout, view), _shape(one)))
     return [(rect, shape) for rect, shape in spots if rect is not None]
@@ -446,10 +439,8 @@ def _around(rects: list[Rect]) -> Rect:
 
 
 def _shape(show: Mapping) -> str:
-    if "cell" in show:
+    if "cell" in show or "button" in show:
         return "disc"
-    if "wheel" in show:
-        return "icon"
     if "area" in show or show.get("run") in RUN_PANELS:
         return "panel"
     return "spot"
@@ -479,6 +470,13 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
         }[show["area"]]
     if "menu" in show:  # a part's row in the Parts drawer
         return dict(layout.menu_items).get(Kind(show["menu"]))
+    if "button" in show:  # one of the buttons round the board, where the level shows it (D-401)
+        button = _button(show["button"])
+        if button not in buttons_shown(layout.kinds, layout.editor):
+            return None
+        x, y = to_pixel(PLACES[button], view.size, view.origin)
+        half_w, half_h = SQRT3 / 2 * view.size, view.size
+        return (round(x - half_w), round(y - half_h), round(2 * half_w), round(2 * half_h))
     if "cell" in show:
         x, y = to_pixel(_cell(show["cell"]), view.size, view.origin)
         half_w, half_h = SQRT3 / 2 * view.size, view.size
@@ -486,22 +484,9 @@ def target_rect(show: Mapping | None, screen: Screen, layout: Layout, view: View
     raise ValueError(f"a step cannot show {dict(show)!r}")
 
 
-def _wheel_area(layout: Layout) -> Rect:
-    """The Wheel at the drawer's foot, its title and the rule over it included (D-071)."""
-    x, top, w, _ = layout.wheel_fold
-    _, y, _, h = layout.wheel_view
-    return (x, top - 4, w, y + h - top + 4)
-
-
-def _wheel_icon(name: str, wheel: tuple[Slot, ...]) -> Rect | None:
-    """A Wheel's icon, a part or an action, by its name, while the Wheel shows it on its rim
-    (D-070): the square round its disc. Not on the rim, or not offered: not on screen."""
-    what = Kind(name) if name in {kind.value for kind in Kind} else Tool(name)
-    slot = next((s for s in wheel if s.what is what and not s.depth), None)
-    if slot is None:
-        return None
-    r, (x, y) = ICON * WHEEL_HEX, slot.at
-    return (round(x - r), round(y - r), round(2 * r), round(2 * r))
+def _button(name: str) -> Button | Kind:
+    """A button by its name: a part's, "eye", or another's, "turn left" (D-401)."""
+    return Kind(name) if name in {kind.value for kind in Kind} else Button(name)
 
 
 def _run_target(name: str, layout: Layout) -> Rect | None:

@@ -28,10 +28,10 @@
         ]
       },
       {
-        "show": [{"cell": [-1, 0]}, {"cell": [-1, 1]}, {"wheel": "move"}],
+        "show": [{"cell": [-1, 0]}, {"cell": [-1, 1]}, {"button": "move"}],
         "say": [
           "Behind the **Source**, the **Thruster** pushes straight ahead. Off the centre, a push turns the swimmer.",
-          "Move the **Thruster** to the swimmer's right: drag it, or click it, then **Move** on the **Wheel**."
+          "Move the **Thruster** to the swimmer's right: drag it, or click it, then the **Move** button."
         ],
         "until": {"moved": {"kind": "thruster", "cell": [-1, 1]}}
       },
