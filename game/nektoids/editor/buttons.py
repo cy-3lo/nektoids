@@ -8,9 +8,10 @@ side over Sum and Difference. A kind the level does not hand out leaves its plac
 board shows at one size, centred, so that the largest zone and every button fit beside a drawer.
 
 Each button looks chosen, lit, greyed or plain. Chosen is the one in hand. Lit and greyed say
-what a press would do to the part or cell focused, the pick until picking comes (D-402): lit,
-it acts there; greyed, it cannot. With nothing focused, greyed is what nothing on the board could
-take: Turn with no part to turn, Redo with nothing undone, a part none of which is left.
+what a press would do to what is picked (D-402): lit, it acts on it at once; greyed, it cannot.
+With nothing picked, greyed is what nothing on the board could take: Turn with no part to turn,
+Redo with nothing undone, a part none of which is left; plain, the button is chosen for the
+clicks on the board.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from collections.abc import Sequence
 from enum import Enum
 
 from nektoids.editor.layout import EDIT_KEYS, LOCK_KEY, MENU_GROUPS, TOOL_KEYS, EditButton, Tool
+from nektoids.editor.picking import Pick, Picked, parts
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import Cell, from_pixel, hex_disc
 
@@ -127,19 +129,19 @@ def states(
     board: Board,
     buttons: Sequence[Button | Kind],
     chosen: Button | Kind,
-    focused: Cell | None,
+    pick: Pick,
     can_undo: bool,
     can_redo: bool,
     kinds: frozenset[Kind],
 ) -> dict[Button | Kind, State]:
     """How each button looks, as the module's docstring says."""
-    node = board.node_at(focused) if focused is not None else None
-    on_cell = focused is not None and focused in board.cells and node is None
+    picked = parts(pick, board)
+    cells = bool(pick) and pick.what is Picked.CELLS
     nodes = list(board.nodes.values())
     free = [n for n in nodes if not n.locked]
 
     def acts(b: Button | Kind) -> bool | None:
-        """True: it acts on the focus; False: it cannot act now; None: it may, on the board."""
+        """True: it acts on the pick; False: it cannot act now; None: it may, on the board."""
         if b is Button.UNDO:
             return None if can_undo else False
         if b is Button.REDO:
@@ -147,20 +149,21 @@ def states(
         if b is Button.SELECT:
             return None
         if isinstance(b, Kind):
-            if node is not None and b in swaps(board, node.cell, kinds):
-                return True  # the part focused becomes one
+            if any(b in swaps(board, n.cell, kinds) for n in picked):
+                return True  # a part picked becomes one
             if board.remaining(b) == 0:
                 return False
-            return True if on_cell else None  # else it is picked, for the clicks on the board
-        if on_cell:
-            return False  # an empty cell: nothing to move, turn, wire, delete or lock
-        if node is not None:
+            return True if cells else None  # into the cells picked; else picked for the clicks
+        if cells:
+            return False  # empty cells: nothing to move, turn, wire, delete or lock
+        if picked:
+            loose = [n for n in picked if not n.locked]
             return {
-                Button.MOVE: not node.locked,
-                Button.DELETE: not node.locked,
+                Button.MOVE: len(loose) == len(picked),  # the level's stay: all go, or none
+                Button.DELETE: bool(loose),
                 Button.LOCK: True,
-                Button.TURN_LEFT: node.facing is not None and not node.locked,
-                Button.TURN_RIGHT: node.facing is not None and not node.locked,
+                Button.TURN_LEFT: any(n.facing is not None for n in loose),
+                Button.TURN_RIGHT: any(n.facing is not None for n in loose),
                 Button.WIRE: len(nodes) > 1,
             }[b]
         able = {

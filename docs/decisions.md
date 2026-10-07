@@ -2380,3 +2380,21 @@ pick, turns it 60° a notch, up to the right; a trackpad's small scrolls add up 
 short pause after each turn. One gesture is one undo step (D-027), a run of turns on one part
 one gesture. Diagnostic's Run preview hides the buttons. The Editor keeps its Wheel (D-314);
 touch keeps Wire and Turn on buttons, having no right click nor wheel.
+
+**D-403 — 2026-10-07 — Picking, as built: a second click on a part picks it too, so two parts clicked are no longer wired; the parts a fill places are picked; a click of the other kind starts a pick of its own; with one part picked, Wire is held to wire from it; a press on the held button puts it down. Amends D-026, D-091, D-402.**
+The physicist's answers, and what building D-402 asked. With Select held, a click on an empty
+cell picks it and a click on a part picks parts, one after another; a click of the other kind
+drops the pick for one of its own kind; a click on a picked one drops it, one off the zone drops
+all. Wiring is now a button's: two parts picked and Wire, which chains them in the order picked;
+one part picked and Wire, held to wire from it; or Wire held, a part clicked, then the next, the
+chain going on from the last; an empty cell ends it. The clicks that wired two parts (D-026) and
+the rule that a chain wires on only forward (D-091) go. A part's button on picked cells fills
+them in order and picks the parts it placed, so L or Wire act on them at once; on picked parts it
+swaps those that may become one. Turn and Delete leave the level's parts out; Lock makes all the
+level's, or frees all; Move is refused with one of the level's picked, and refused whole, the
+first cell in the way flashing, if a cell the group would land on is taken or off the zone. With
+something picked, a button that cannot act on it but may on the board is held, the pick dropped;
+a press on the held button holds Select again. With nothing picked, Move held lifts a part
+clicked and puts it on the empty cell clicked next. Esc backs out of a wire's chain or a part
+lifted, then the pick, then the held button, then opens Chapters (D-304). The keyboard has a
+cursor: the arrows move it, Enter clicks there. Wiring's and Turning's cards say so.

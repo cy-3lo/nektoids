@@ -143,6 +143,7 @@ from nektoids.editor.palette import (
     mix,
 )
 from nektoids.editor.parts import NAME, info, ports
+from nektoids.editor.picking import Picked
 from nektoids.editor.probe import level_view
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
@@ -305,10 +306,10 @@ def draw(
     draw_drawer(screen, scene, fonts, _draw_rows, _draw_foot)
     draw_tooltip(screen, scene, fonts)
     draw_info(screen, scene, fonts, _about)
-    if scene.dragging and scene.picked is not None:
-        size = scene.view.size
-        angle = placed_angle(scene.picked, scene.picked.default_facing)  # as it will land
-        draw_part(screen, fonts, scene.picked, angle, scene.mouse, size, locked=False)
+    if scene.dragging and scene.in_hand is not None:  # a part's row dragged from Parts
+        size, kind = scene.view.size, scene.in_hand
+        angle = placed_angle(kind, kind.default_facing)  # as it will land
+        draw_part(screen, fonts, kind, angle, scene.mouse, size, locked=False)
 
 
 # Board
@@ -317,6 +318,8 @@ def draw(
 def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
     view, board = scene.view, scene.board
     zone = set(board.cells)
+    picked = scene.pick.what is Picked.CELLS  # empty cells, filled in the accent (D-402)
+    outlined = [*scene.pick.cells, *scene.at_hand()]  # what is picked, a chain's or a move's part
     screen.set_clip(scene.layout.board_area)
     for cell in visible_cells(scene.layout, view):
         hexagon = _hexagon(view, cell)
@@ -324,7 +327,7 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             pygame.draw.polygon(screen, FLASH, hexagon)
         elif cell not in zone:
             pygame.draw.polygon(screen, OUTSIDE, hexagon)
-        elif cell == scene.focused:  # the Wheel's cell, the keyboard's (D-068)
+        elif picked and cell in scene.pick.cells:
             pygame.draw.polygon(screen, ACTIVE, hexagon)
         elif cell in scene.guide_cells:  # a cell a tutorial's step acts on, pulsing (D-337)
             pygame.draw.polygon(screen, mix(ZONE, scene.lit_ink, FOCUS_TINT), hexagon)
@@ -341,7 +344,7 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             target = board.node_at(end) or next((g for g in scene.ghosts if g.cell == end), None)
             reach = extent(target.kind) if target is not None else 0.3
             _draw_wire(screen, view, path, GHOST_FILL, reach)
-    doomed_node, doomed_wires = scene.doomed()  # what a Delete click would take, darkened
+    doomed_nodes, doomed_wires = scene.doomed()  # what a Delete would take, darkened
     for wire in board.wires:
         colour = DOOMED if wire in doomed_wires else WIRE
         _draw_wire(screen, view, wire.path, colour, extent(board.nodes[wire.target].kind))
@@ -358,7 +361,7 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
     for node in board.nodes.values():
         centre = _centre(view, node.cell)
         angle = placed_angle(node.kind, node.facing)
-        fill = DOOMED if node.id == doomed_node else None
+        fill = DOOMED if node.id in doomed_nodes else None
         draw_part(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
@@ -368,8 +371,8 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             pygame.draw.polygon(screen, GHOST_OK, outline, 2)
     if isinstance(scene.ghost, Refused) and scene.hover is not None:
         pygame.draw.polygon(screen, REFUSED, _hexagon(view, scene.hover), 2)
-    if scene.focused is not None:  # the cell Tools and Parts show (D-068, D-069)
-        pygame.draw.polygon(screen, LIT, _hexagon(view, scene.focused), 2)
+    for cell in outlined:  # picked, or at hand (D-402)
+        pygame.draw.polygon(screen, LIT, _hexagon(view, cell), 2)
     screen.set_clip(None)
 
 
@@ -818,7 +821,7 @@ def _draw_rows(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
     for kind, rect in layout.menu_items:
         left = board.remaining(kind)
         status = ("infinity", "") if left is None else ("count", f"{left}/{board.total(kind)}")
-        picked = kind == scene.picked
+        picked = kind == scene.in_hand
         lit = scene.lit_ink if f"menu:{kind.value}" in scene.lit else None  # pulsing (D-338)
         draw_row(
             screen,
