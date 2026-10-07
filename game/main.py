@@ -263,6 +263,7 @@ async def main() -> None:
         return editor() if router.screen is Screen.EDITOR else board_scene()
 
     pointer = (0, 0)  # where the mouse is, for the end's button [px]
+    shown_screen = router.screen  # the screen last frame, to see the Board's tab open again
     frame = 0  # frames drawn: what a tutorial's target pulses by (D-337), drawing only
     while running:
         frame += 1
@@ -423,6 +424,9 @@ async def main() -> None:
                 scene.set_chapters(router.rows(), frozenset(router.folded))
                 tutored = free.tutorial if router.in_sandbox else router.level.tutorial
                 scene.tutored = tutored is not None
+        if router.screen is Screen.BOARD and shown_screen is not Screen.BOARD:
+            board_scene().arrive()  # Select in hand again
+        shown_screen = router.screen
         scene = on_screen()
         wanted = drawer_for(guide.step) if guide is not None else None
         here = (*DRAWERS[scene.layout.env], *FOOT)  # a step opens a drawer of the screen it is on

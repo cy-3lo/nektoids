@@ -78,7 +78,7 @@ def test_each_button_has_its_own_key():
     kinds = frozenset(Kind)
     keys = [key_of(b, kinds) for b in shown(kinds, editor=True)]
     assert len(set(keys)) == len(keys)
-    assert key_of(Button.SELECT, kinds) == "Esc" and key_of(Kind.EYE, kinds) == "1"
+    assert key_of(Button.SELECT, kinds) == "S" and key_of(Kind.EYE, kinds) == "1"
 
 
 def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_pick():

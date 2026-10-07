@@ -302,6 +302,12 @@ class BoardScene(Frame):
         if view is not self.main:
             self._cancel()
             self.main = view
+            self.held = Button.SELECT
+
+    def arrive(self) -> None:
+        """The Board's tab opened again: Select is in hand, whatever was before."""
+        self._cancel()
+        self.held = Button.SELECT
 
     def _editing(self) -> bool:
         """Whether the board is on screen to edit; if the Run preview shows, say so (D-069)."""
@@ -1422,7 +1428,7 @@ class BoardScene(Frame):
             return "A part's button, or its number, puts one in each, in the order picked."
         if picked:
             return "The lit buttons act on what is picked. Esc drops it."
-        return "Click or drag over cells or parts to pick them, Shift adds; or press a button."
+        return "Click or drag to pick cells or parts; Shift adds. Or press a button."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason

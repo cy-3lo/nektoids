@@ -71,7 +71,7 @@ class State(Enum):
 
 
 KEYS = {  # each button's key; a part's is its number among those handed out (`key_of`)
-    Button.SELECT: "Esc",
+    Button.SELECT: "S",
     Button.MOVE: TOOL_KEYS[Tool.MOVE],
     Button.LOCK: LOCK_KEY,
     Button.UNDO: EDIT_KEYS[EditButton.UNDO],

@@ -169,7 +169,9 @@ PULSE_FILL_TOP = 0.5  # a lit button's fill: accent1's dark at most so far to it
 ZONE = P.surface  # cells of the level's zone
 OUTSIDE = P.deep  # cells outside it
 OUTSIDE_LINE = mix(P.deep, P.line, 0.3)
-GRID_LINE = P.line
+GRID_LINE = mix(
+    P.line, P.dim, 0.5
+)  # the zone's cells: lighter than the buttons' ground, not to mix with them
 BODY_OUTLINE = P.line  # the swimmer's symbol behind the board: which way is forward
 COMPONENT = P.parts
 LOCK_RING = mix(P.parts, P.bright, 0.4)
