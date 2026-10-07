@@ -1,34 +1,33 @@
 """The Board's state and input handling. Mutates the board only through its methods.
 
-One button is held at a time (D-401, D-402, `buttons.py`): Select when no other is. With Select,
-a click on an empty cell picks it, and the next ones too; a click on a part picks parts instead,
-the first click saying which; a click on a picked one drops it, a click off the zone drops them
-all (`picking.py`). With something picked, a lit button acts on it at once, in the order picked,
-and Select stays held with the pick kept: a part's button fills the empty cells, the new parts
-picked then, or swaps the picked parts for one of its group; Turn turns each part, at each press;
-Delete deletes them; Wire chains them, or with one part picked is held to wire from it; Move is
-held, and the next click puts the first part picked there, the others keeping their places round
-it, refused whole if a cell is taken. With nothing picked, a button is held for the clicks on the
-board: a part's places one on each empty cell clicked while one is left, Delete and Turn act on
-each part clicked, Lock locks or frees it (D-319), Wire chains the parts clicked, the chain going
-on from the last, and Move carries a part clicked to the empty cell clicked next. A press on the
-held button puts it down.
+One button is held at a time (D-401, D-402, `buttons.py`): Select when no other is, and on
+arriving on the Board. With Select, a click picks the one cell or part clicked, a click on the
+only thing picked drops it, Shift or Cmd adds to the pick or drops from it (`picking.py`). With
+something picked, a lit button acts on it at once, in the order picked, and Select stays held
+with the pick kept: a part's button fills the empty cells, the new parts picked then, or swaps the
+picked parts for one of its group; Turn turns each part, at each press; Delete deletes them; Wire
+chains them, or with one part picked is held to wire from it. With nothing picked, a button is
+held for the clicks on the board: a part's places one on each empty cell clicked while one is
+left, Delete and Turn act on each part clicked, Lock locks or frees it (D-319), Wire chains the
+parts clicked (`wiring.py`). A press on the held button puts it down.
 
-Drags (D-402, D-404): a held button acts along a drag on each cell it enters, a part's on each
-empty cell, Delete, Turn and Lock once on each part, Wire chaining the parts in the order crossed.
-With Select, a drag from an empty cell picks the empty cells it crosses; one from a picked part
-moves the pick, one from another part moves it, their wires following while they find a path
-(D-011); let go off the body, what was dragged goes (D-085). Right clicks wire whatever is held:
-a part right-clicked, then another, wired, the chain going on from it, or a right drag through
-them; Esc, a left click, which acts too, or a right click off a part ends the chain. The mouse
-wheel over a part turns it 60° a notch, up to the right, the whole pick if it is picked; a
-trackpad's small scrolls add up to a notch (`notches.py`, D-405).
+Drags (D-402, D-404): a held button acts along a drag. A part's places one on each empty cell,
+going back over the path taking them away; a drag from a part moves it. Delete, Turn and Lock act
+once on each part; Wire chains the parts crossed, going back undoing. With Select, a drag from an
+empty cell picks the cells it crosses, then parts once it meets one, going back cutting the pick;
+from a part, its first step says: into a part not picked, it picks parts; else it moves the part,
+or the pick if it is picked, their wires following while they find a path (D-011); let go off
+the body, what was dragged goes (D-085). Right clicks, or Ctrl+clicks, wire whatever is held: a
+part right-clicked, then another, wired, the chain going on from it; a right drag through them,
+its chain ending when let go; a left click, which acts too, or a right click off a part ends the
+chain, the latter dropping the pick too. Wiring over a wire takes it away. The mouse wheel over a
+part turns it 60° a notch, up to the right, the whole pick if it is picked; a trackpad's small
+scrolls add up to a notch (`notches.py`, D-405).
 
-Keyboard: the arrows move a cursor from cell to cell and Enter clicks there; the keys press the
-buttons: M, L, R, W, Backspace or Delete, K on the sandbox, a part's number. Esc goes back one
-step: a wire's chain or a part carried, then the pick, then the held button, then, with nothing
-left, it opens Chapters (D-304). The board shows at one size, centred, and
-nothing moves the view (D-401).
+Keyboard: the arrows move a cursor from cell to cell and Enter clicks there; Shift and an arrow
+move the picked parts a cell; the keys press the buttons: S, L, R, W, Backspace or Delete, K, a
+part's number. Esc opens or folds Chapters, and only that (D-304). The board shows at one size,
+its buttons round it centred, and nothing moves the view (D-401).
 
 Undo and Redo (D-027), two buttons, also Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on a Mac): one
 step is one gesture, from press to release, so a whole drag goes back at once. Space asks
@@ -389,8 +388,7 @@ class BoardScene(Frame):
         elif event.type == pygame.KEYDOWN and self.typing is not None:  # a passkey (D-075)
             self.type_key(pygame.key.name(event.key), event.unicode)
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            if not self._escape():  # nothing left to back out of: the levels (D-304)
-                self.toggle_drawer(Drawer.CHAPTERS)
+            self.toggle_drawer(Drawer.CHAPTERS)  # Esc is the levels' key only, on the Board
         elif event.type == pygame.KEYDOWN:
             self._key(event)
         if not self.pressed and not self.right_down and self.run_frames == 0:  # D-027
@@ -1410,22 +1408,6 @@ class BoardScene(Frame):
         elif cell is not None and self.board.node_at(cell) is not None:
             self._refuse("placed by the level", cell)
 
-    def _escape(self) -> bool:
-        """Esc: back one step (D-402): a wire's chain, the right clicks' too, or a part carried;
-        then the pick; then the held button, Select held again; False if there was nothing left."""
-        if self.source is not None or self.right is not None:
-            self.source = self.right = None
-            self._update_ghost()
-        elif self.pick:
-            self.pick = NOTHING
-        elif self.held is not Button.SELECT:
-            self.held = Button.SELECT
-            self._cancel()
-        else:
-            return False
-        self.message = ""
-        return True
-
     def hint(self) -> str:
         """What the status line says the player can do now."""
         held, picked = self.held, parts(self.pick, self.board)
@@ -1434,23 +1416,23 @@ class BoardScene(Frame):
         if self._dropping():
             return "Let go and what you drag goes, with its wires; back on the body, it stays."
         if self.right is not None:
-            return "Right-click or Ctrl+click the part to wire to; the chain goes on. Esc ends it."
+            return "Right-click the next part to wire it, one before to undo; a cell stops."
         if held is Button.WIRE:
             if self.source is None:
-                return "Click the part a wire starts from. Esc: back."
-            return "Click the part to wire to; the chain goes on from it. Esc ends it."
+                return "Click the part a wire starts from. S: back to Select."
+            return "Click the next part to wire it, one before to undo; a cell stops."
         if held is Button.DELETE:
-            return "Click a part or a wire to delete it. Esc: back."
+            return "Click a part or a wire to delete it. S: back to Select."
         if held is Button.LOCK:
-            return "Click a part to lock it, or to free it. Esc: back."
+            return "Click a part to lock it, or to free it. S: back to Select."
         if held in TURNING:
-            return "Click an eye or a thruster to turn it. Esc: back."
+            return "Click an eye or a thruster to turn it. S: back to Select."
         if isinstance(held, Kind):
-            return "Click empty cells to place one each, while one is left. Esc: back."
+            return "Click or drag over empty cells to place them. S: back to Select."
         if self.pick.what is Picked.CELLS:
             return "A part's button, or its number, puts one in each, in the order picked."
         if picked:
-            return "The lit buttons act on what is picked. Esc drops it."
+            return "The lit buttons act on what is picked. Right-click a cell: none."
         return "Click or drag to pick cells or parts; Shift adds. Or press a button."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
