@@ -12,6 +12,7 @@ from nektoids.editor.buttons import (
     swaps,
 )
 from nektoids.editor.layout import board_view, make_layout
+from nektoids.editor.picking import NOTHING, clicked
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import hex_disc, hex_distance, to_pixel
 from nektoids.levels.arenas import sandbox
@@ -79,31 +80,37 @@ def test_each_button_has_its_own_key():
     assert key_of(Button.SELECT, kinds) == "Esc" and key_of(Kind.EYE, kinds) == "1"
 
 
-def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_focus():
+def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_pick():
     board = Board(hex_disc(2), {Kind.EYE: 2, Kind.SUM: None, Kind.DOUBLE: None, Kind.SOURCE: 0})
     kinds = frozenset({Kind.EYE, Kind.SUM, Kind.DOUBLE, Kind.SOURCE})
     buttons = shown(kinds, editor=True)
 
-    def look(focused=None, chosen=Button.SELECT, undo=False, redo=False):
-        return states(board, buttons, chosen, focused, undo, redo, kinds)
+    def look(*cells, held=Button.SELECT, undo=False, redo=False):
+        pick = NOTHING
+        for cell in cells:
+            pick = clicked(pick, board, cell)
+        return states(board, buttons, held, pick, undo, redo, kinds)
 
-    empty = look()  # nothing on the board, nothing focused
+    empty = look()  # nothing on the board, nothing picked
     assert empty[Button.SELECT] is State.CHOSEN
     for b in (Button.UNDO, Button.REDO, Button.MOVE, Button.TURN_LEFT, Button.WIRE, Kind.SOURCE):
         assert empty[b] is State.GREYED
     assert empty[Kind.EYE] is State.PLAIN and look(undo=True)[Button.UNDO] is State.PLAIN
-    on_cell = look((0, 0))  # an empty cell focused: the parts left may go there
-    assert on_cell[Kind.EYE] is State.LIT and on_cell[Kind.SOURCE] is State.GREYED
-    assert on_cell[Button.MOVE] is State.GREYED and on_cell[Button.LOCK] is State.GREYED
+    cells = look((0, 0), (1, 0))  # empty cells picked: the parts left may fill them
+    assert cells[Kind.EYE] is State.LIT and cells[Kind.SOURCE] is State.GREYED
+    assert cells[Button.MOVE] is State.GREYED and cells[Button.LOCK] is State.GREYED
     board.place(Kind.SUM, (0, 0))
     board.place(Kind.EYE, (1, 0))
-    on_sum = look((0, 0))  # a sum focused: it moves, wires, may become a Double, never turns
+    on_sum = look((0, 0))  # a sum picked: it moves, wires, may become a Double, never turns
     assert on_sum[Button.MOVE] is on_sum[Button.WIRE] is on_sum[Kind.DOUBLE] is State.LIT
     assert on_sum[Button.TURN_LEFT] is State.GREYED
-    assert on_sum[Kind.EYE] is on_sum[Kind.SUM] is State.PLAIN  # picked, for the clicks
-    assert look((1, 0))[Button.TURN_RIGHT] is State.LIT  # an eye turns
-    assert look()[Button.TURN_LEFT] is State.PLAIN  # an eye on the board: Turn may act
-    assert look(chosen=Kind.EYE)[Kind.EYE] is State.CHOSEN
+    assert on_sum[Kind.EYE] is on_sum[Kind.SUM] is State.PLAIN  # held, for the clicks
+    both = look((0, 0), (1, 0))  # the eye with it: Turn acts on the eye
+    assert both[Button.TURN_RIGHT] is both[Button.DELETE] is State.LIT
+    board.lock(board.node_at((1, 0)).id)
+    assert look((0, 0), (1, 0))[Button.MOVE] is State.GREYED  # the level's stays: all or none
+    assert look()[Button.TURN_LEFT] is State.GREYED  # the only eye is the level's now
+    assert look(held=Kind.EYE)[Kind.EYE] is State.CHOSEN
 
 
 def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():

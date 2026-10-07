@@ -31,7 +31,7 @@
         "show": [{"cell": [-1, 0]}, {"cell": [-1, 1]}, {"button": "move"}],
         "say": [
           "Behind the **Source**, the **Thruster** pushes straight ahead. Off the centre, a push turns the swimmer.",
-          "Move the **Thruster** to the swimmer's right: drag it, or click it, then the **Move** button."
+          "Move the **Thruster** to the swimmer's right: drag it, or click it, then the **Move** button, then the cell where it goes."
         ],
         "until": {"moved": {"kind": "thruster", "cell": [-1, 1]}}
       },

@@ -19,6 +19,7 @@ from nektoids.editor.layout import (
     contains,
     make_layout,
 )
+from nektoids.editor.picking import NOTHING, clicked
 from nektoids.editor.router import Screen
 from nektoids.editor.tutorial import (
     CHARS,
@@ -331,10 +332,10 @@ def test_the_fear_tutorial_moves_on_as_the_player_builds_the_board():
 
 def assert_buttons_light(step, board):
     """Every button `step` shows for the stage its cell is at, a part to place on it while it is
-    empty, an action once a part is on it, lights when that cell is focused (D-401)."""
+    empty, an action once a part is on it, lights when that cell is picked (D-401, D-402)."""
     cell = next(tuple(one["cell"]) for one in step.show if "cell" in one)
-    buttons = shown_buttons(FEAR_KINDS, False)
-    looks = states(board, buttons, Button.SELECT, cell, False, False, FEAR_KINDS)
+    buttons, pick = shown_buttons(FEAR_KINDS, False), clicked(NOTHING, board, cell)
+    looks = states(board, buttons, Button.SELECT, pick, False, False, FEAR_KINDS)
     parts = {kind.value for kind in Kind}
     empty = board.node_at(cell) is None
     names = [one["button"] for one in step.show if "button" in one]
@@ -577,7 +578,7 @@ def test_a_step_names_what_it_shows_for_it_to_be_drawn_in_the_accent():
         named.append(panels(intro))
     tabs = [set(), {"objectives"}, {"tab:board", "level:board"}, {"bar"}]  # D-095, D-336
     run = {"tab:run", "level:run"}  # D-339
-    assert named == [*tabs, set(), run, {"play"}, {"hints"}]  # the wire, the run, Hints
+    assert named == [*tabs, {"button:wire"}, run, {"play"}, {"hints"}]  # the wire, the run, Hints
 
 
 def test_a_step_opens_the_drawer_its_targets_are_in():
