@@ -45,6 +45,9 @@ only, the player wiring them.
 
 In the todo, §15, since D-400: built on `stage/2-board`.
 
+Later, from D-402: the Editor given buttons as the Board's; it keeps its Wheel meanwhile
+(D-314).
+
 ## 3. Memory: the graph's vocabulary
 
 - **Tanks**: reservoirs that store signal, the memory (D-015, `.claude/rules/graph.md`). Their

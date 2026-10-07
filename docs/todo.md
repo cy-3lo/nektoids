@@ -85,51 +85,19 @@ chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users
 
 ## 15. The Board, built with fewer moves (stage 2, D-400)
 
-- [ ] **A new Board**, the physicist's: players build their control boards in a more intuitive
-  way, with less back and forth of the mouse or the keyboard.
-  - The Board's Navigator goes, and so does the action atop the board (the icon at the top
-    middle). The hex size is fixed so that the largest board, 37 cells, fits: about the
-    Navigator's second zoom tick today, 32 px.
-  - That leaves plenty of cells round the board, N, NW, SW, NE and SE, for buttons, some in pairs
-    side by side. The buttons are hexes as the cells are, in another colour and outline, so that
-    they never read as cells.
-    - N, Tools: Select, Move, Delete, and Lock on a board reached from the Editor (D-319, D-356).
-    - NW and SW, Actions: Undo/Redo, Turn left/Turn right, Wire.
-    - NE and SE, Parts: Eye, Source, Thruster, Double/Halve, Sum/Diff, for now.
-  - How they behave, a "button" being any of the Tools, Actions or Parts:
-    - With no button chosen, Select is.
-    - With a button chosen, a left click on a cell that allows it does it there, and the button
-      stays chosen while it can (a part of that kind is left, for one), so that clicks repeat it.
-      Click and drag does it on every allowed cell the mouse crosses.
-    - Select: a click on an empty cell selects it, one after another; a Part chosen then fills
-      them in the order they were clicked, the last left empty if the parts run out. Click and
-      drag selects the empty cells along the way, if all are empty. With empty cells selected,
-      the Parts that may go there light up, with their keys if Settings shows them. A click on a
-      part selects parts instead (the first cell clicked says which, empty or not), and lights the
-      Actions that apply (Move, Turn, Wire...) and the Parts it may be swapped for; selected
-      parts also move by click and drag on one of them.
-    - Wiring is easy once the parts are placed: right-click them in turn, or right-click and drag
-      through them.
-    - Turning is easy with the mouse wheel.
-  - To settle before the plan (Claude's review, 2026-10-07):
-    - Scope, settled: a stage of its own, stage 2, shipped with v1.1 or after (D-400).
-    - The size: with a drawer open the board has 664 × 554 px, the height binding. The 37 cells
-      with buttons right round them fit at 40 px, today's size, only if the S side holds none:
-      the ring is 560 px tall, 500 without its S row. With an empty ring between, at 32 px.
-    - The drawers: Tools and Parts become buttons. Where then go each part's count (2/2), its
-      info box, Erase all, Swap (a Part on a selected part?), and the Wheel (D-068, D-070)?
-      Diagnostic's Run preview on the main screen (D-058): the buttons hidden or kept?
-    - Smaller boards, 7 and 19 cells: the buttons where they are for 37, the same on every level,
-      or round each zone?
-    - With a selection, does a button act on it at once, Select staying chosen, or become the
-      chosen button?
-    - Drag, for each button: Turn turns each part crossed once; Delete deletes them; Wire chains
-      A→B→C in the order crossed. How does a group of selected parts move, when a cell it would
-      go to is taken?
-    - Right-click wiring: a wire from the first part to the second; does a third go on from the
-      second, and what ends the chain (Esc, a click on the board)?
-    - The mouse wheel: a trackpad sends many small scrolls, so a turn of 60° needs a threshold.
-      A touch screen has no right click nor wheel (Camille's touch notes, `ideas.md`): Wire and
-      Turn keep their buttons for it.
-    - Chapter 0's cards point at the drawers, the nav bar and the Wheel ("Move on the Wheel"):
-      rewritten with it. The Editor's Wheel (D-314): left as it is, or given the same buttons?
+The physicist's: players build their control boards with less back and forth of the mouse and the
+keyboard, from buttons round a board of one size. Its look and places are D-401, decided from
+seven rounds of mockups; its gestures are D-402. Each item below is a `feat/…` branch into
+`stage/2-board`, planned when it starts.
+
+- [ ] **Buttons and a fixed view** (D-401): the board at 38 px on every level, with no zoom nor
+  pan; the buttons drawn at their places, chosen by a click or their key; Tools, the Navigator,
+  the Wheel and the action atop the board gone; Parts without the Wheel; Erase all in Files; the
+  counts' tags; Diagnostic's Run preview without the buttons.
+- [ ] **Picking** (D-402): empty cells and parts picked, the buttons acting at once on what is
+  picked, lit and greyed.
+- [ ] **Drags and right clicks** (D-402): each button along a drag, a picked group moved, right
+  clicks wiring with the chain going on.
+- [ ] **The mouse wheel** (D-402): 60° a notch, up to the right, a trackpad's scrolls added up.
+- [ ] **Chapter 0's cards**, rewritten for the buttons: today they point at the drawers, the bar
+  and the Wheel ("Move on the Wheel").

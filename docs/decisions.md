@@ -2334,3 +2334,49 @@ for them. Out: all that stage 1 leaves out; no new part, sense or item; the mode
 their format stay as they are. Its design is chosen from mockups drawn with the game's own code,
 as D-051's was. Memory is now stage 3, flows stage 4 and actions stage 5; decisions before this
 one keep the numbers they were written with.
+
+**D-401 — 2026-10-07 — The Board's look: one hex size, 38 px, on every level; no zoom, no pan, nothing atop the board; buttons in the cells round it, at the same places on every level, as large as the cells and touching, drawn as keys with a 3 px bevel and a drop shadow. Tools, the Navigator and the Wheel leave the Board; Parts stays, for the counts and the info discs; Erase all goes to Files. Amends D-013, D-060, D-068, D-069, D-102, D-321.**
+Decided from seven rounds of mockups drawn with the game's own code (todo §15), as D-051 was,
+the renders kept outside the repository. At 38 px the 37 cells with a row of buttons above and
+below are 532 px tall, in the 554 px a drawer leaves (11 to spare), and 36 px clear at each side.
+The places, the board's centre at (0, 0), r down: at N, Select (1, -4), Move (2, -4) and Lock
+(3, -4), Lock on the board reached from the Editor only, its place empty elsewhere (D-319); at
+S, Undo, Redo and Delete, from (-3, 4) to (-1, 4); at W, Turn left (-3, -2) and Turn right
+(-2, -2) side by side, Wire (-3, -1) under them; at E, Eye (4, -3), Source (4, -2) and Thruster
+(4, -1), then Double (2, 2) and Halve (3, 2) side by side over Sum (1, 3) and Difference (2, 3).
+A kind the level does not hand out leaves its place empty. A button's bevel is lit from the top
+left, from the dim grey to the deepest, its shadow 2 px right and 3 px down. Chosen, it is
+pressed in: accent 1's dark, the bright on its far sides, no shadow. Lit, it applies to what is
+picked: its bevel in accent 1, its key on a light tag inside its top corner. Greyed, it cannot
+act now: its bevel dimmed, its icon greyed, an eye's face or a thruster's back in accent 1's
+dark. A tool's icon is three quarters of the hex; a part is drawn 2 px smaller than on a cell, as
+the button's darker ground makes it look larger. A part's count, what is left, shows on a dark
+tag inside the bottom corner for 1.5 s after one is placed; Parts lists them all, each with its
+info disc, and no longer holds the Wheel. Picked empty cells carry no number. The outside of the
+zone keeps its grid. Negative buttons, a gap between buttons, keys and counts beside the
+buttons, and a line of seven at N were tried and set aside.
+
+**D-402 — 2026-10-07 — The Board's gestures: one button chosen at a time, Select when none; with something picked a button acts on it at once, else on each click and along a drag; right clicks wire, the chain going on; the mouse wheel turns, up to the right. Amends D-068, D-090, D-304.**
+A Part stays chosen while one of its kind is left, then Select is. Keys choose as clicks do:
+Esc, M, Del, K, L, R, W, 1 to 7, Ctrl+Z and Ctrl+Y; Esc first drops what is picked, then
+chooses Select, then opens Chapters (D-304). Select: a click on an empty cell picks it, one
+after another; a click on a part picks parts instead, the first click saying which; a click on a
+picked one drops it, a click off the zone drops them all. A drag from an empty cell picks the
+empty cells it crosses; a drag from a picked part moves them all; a drag from another part
+moves it, as today (D-090). A group moved onto a taken cell is refused whole, the cells in the
+way flashing. With something picked, a lit button acts on it at once, in the order picked, and
+Select stays chosen with the pick kept: a Part fills the empty cells, the last left empty if the
+parts run out, or swaps a picked part for one of its group (D-068's Swap); Turn turns each part,
+again at each press; Delete deletes them; Wire chains them; Move is chosen, and the next click
+puts the first part picked there, the others keeping their places round it. With nothing picked,
+the chosen button acts on each click on a cell that allows it, and along a drag on each one
+crossed: a Part places one per empty cell, Delete and Turn act once on each part, Wire chains the
+parts in the order crossed, Move carries the part pressed; a Part on a taken cell is refused.
+Greyed is what cannot act now: on what is picked, if anything is, else on the board. Right
+clicks wire: A then B makes A→B, and the chain goes on from B; Esc, a left click or a right click
+off a part ends it; a right drag chains the parts it crosses. On the Board a right click no
+longer backs out (D-304). The mouse wheel over a part, or over a picked part with the rest of the
+pick, turns it 60° a notch, up to the right; a trackpad's small scrolls add up to a notch, with a
+short pause after each turn. One gesture is one undo step (D-027), a run of turns on one part
+one gesture. Diagnostic's Run preview hides the buttons. The Editor keeps its Wheel (D-314);
+touch keeps Wire and Turn on buttons, having no right click nor wheel.
