@@ -42,7 +42,7 @@ from nektoids.editor.layout import (
     tab_at,
     tab_beside,
 )
-from nektoids.editor.palette import LIT
+from nektoids.editor.palette import ACTIVE, LIT
 from nektoids.editor.router import ChapterRow
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import REFUSAL, Action
@@ -72,6 +72,7 @@ class Frame:
         self.message = ""  # the last refusal, until something succeeds
         self.lit: frozenset[str] = frozenset()  # what a tutorial step explains (D-050); main.py's
         self.lit_ink = LIT  # ... the colour it is drawn in now, pulsing (D-337); main.py's
+        self.lit_fill = ACTIVE  # ... a lit button's fill, the switch's, pulsing (D-350); main.py's
         self.gate: Callable[[Action], bool] | None = None  # what it lets through; main.py's
         self.typing: str | None = None  # a passkey being typed in Chapters; None: not (D-075)
         self.asked_passkey: str | None = None  # a passkey typed: main.py's to try and clear

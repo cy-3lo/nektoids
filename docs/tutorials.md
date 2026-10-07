@@ -7,8 +7,8 @@ lines itself. What a card highlights or waits for may be changed too, in words: 
 it into the file's terms.
 
 Open: the tab and the drawer on screen while the card shows. Highlighted: what the card
-draws in accent1, pulsing, the only highlight (D-336, D-337); a highlighted card lets through only
-what it waits for, and one with none lets all through. Waits for: what moves it on. A cell
+draws in accent1, pulsing, the only highlight (D-336, D-337), the switch its fill (D-350); a
+highlighted card lets through only what it waits for, and one with none lets all through. Waits for: what moves it on. A cell
 is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 
 ## 0.1 Wiring

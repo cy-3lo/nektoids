@@ -708,9 +708,10 @@ def draw_bar(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         fonts.icons.draw(screen, DRAWER_ICON[drawer], box.center, 22, ink)
     for button, rect in layout.level_buttons:  # the switch
         box = pygame.Rect(rect)
-        pygame.draw.rect(screen, ACTIVE, box, border_radius=8)
-        lit = f"level:{button.value}" in scene.lit  # a tutorial's target, pulsing (D-338)
-        fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 18, scene.lit_ink if lit else TEXT)
+        lit = f"level:{button.value}" in scene.lit  # a tutorial's target (D-338) ...
+        fill = scene.lit_fill if lit else ACTIVE  # ... its fill pulsing, not its icon (D-350)
+        pygame.draw.rect(screen, fill, box, border_radius=8)
+        fonts.icons.draw(screen, LEVEL_ICON[button], box.center, 18, TEXT)
 
 
 @contextmanager

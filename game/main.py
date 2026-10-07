@@ -37,7 +37,7 @@ from nektoids.editor.hints import Hints, Taken, hint_view
 from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
 from nektoids.editor.maker import MakerScene
 from nektoids.editor.maker_draw import draw_maker
-from nektoids.editor.palette import pulse
+from nektoids.editor.palette import pulse, pulse_fill
 from nektoids.editor.preview_draw import draw_preview
 from nektoids.editor.router import Router, Screen, level_label, level_number
 from nektoids.editor.scene import EditorScene
@@ -432,13 +432,16 @@ async def main() -> None:
         editor().gate = gate  # only what the step asks goes through (D-048)
         editor().lit = panels(guide)  # the panels a step explains, titles lit (D-050)
         editor().lit_ink = pulse(frame)  # ... in the accent, pulsing (D-337)
+        editor().lit_fill = pulse_fill(frame)  # ... the switch's fill, pulsing (D-350)
         editor().guide_cells = focus_cells(guide)  # the cells a step acts on, lit (D-063)
         if router.screen is Screen.MAKE:  # the Maker's introduction (D-341)
             maker().gate, maker().lit, maker().lit_ink = gate, panels(guide), pulse(frame)
+            maker().lit_fill = pulse_fill(frame)
         if playing is not None:
             playing.gate = gate
             playing.lit = panels(guide)
             playing.lit_ink = pulse(frame)
+            playing.lit_fill = pulse_fill(frame)
             explaining = guide is not None and guide.explains
             if explaining and not playing.clock.paused:  # it holds the run still (D-050)
                 playing.clock.paused, held = True, playing
