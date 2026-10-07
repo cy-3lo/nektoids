@@ -52,12 +52,12 @@ def test_the_tools_sit_at_n_in_a_row_undo_across_from_sum_and_the_pairs_side_by_
     assert all(PLACES[b][0] < 0 for b in (Button.TURN_LEFT, Button.TURN_RIGHT, Button.WIRE))
 
 
-def test_a_level_shows_its_own_parts_and_lock_only_on_the_editors_board():
+def test_a_level_shows_its_own_parts_and_every_tool_lock_included():
     kinds = frozenset({Kind.EYE, Kind.SUM})
     level = shown(kinds, editor=False)
-    assert Button.LOCK not in level and Button.SELECT in level
+    assert Button.LOCK in level and Button.SELECT in level  # the player's lock (D-406)
     assert [b for b in level if isinstance(b, Kind)] == [Kind.EYE, Kind.SUM]
-    assert Button.LOCK in shown(kinds, editor=True)
+    assert shown(kinds, editor=True) == level
 
 
 def test_a_click_finds_the_button_under_it_and_nothing_between_or_off_them():
@@ -72,7 +72,7 @@ def test_a_click_finds_the_button_under_it_and_nothing_between_or_off_them():
     x, y = to_pixel((0, 0), view.size, view.origin)
     assert button_at(buttons, view.size, view.origin, (x, y)) is None  # the board's centre
     level = shown(frozenset({Kind.EYE}), editor=False)
-    x, y = to_pixel(PLACES[Button.LOCK], view.size, view.origin)
+    x, y = to_pixel(PLACES[Kind.SUM], view.size, view.origin)
     assert button_at(level, view.size, view.origin, (x, y)) is None  # not shown: an empty place
 
 

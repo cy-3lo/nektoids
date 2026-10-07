@@ -691,3 +691,24 @@ def test_a_group_moves_together_its_wires_following_or_not_at_all():
     assert board.move_group([eye.id, total.id], (0, 0)) is None and board.snapshot() == before
     locked = board.place(Kind.SOURCE, (0, 1), locked=True)
     assert board.move_group([locked.id], (0, 1)).reason == "placed by the level"
+
+
+def test_a_part_the_player_locks_stays_put_its_wires_free_and_survives_erase_all_and_saving():
+    board = Board(hex_disc(2))  # D-406
+    eye, total = board.place(Kind.EYE, (0, 0)), board.place(Kind.SUM, (1, 0))
+    assert board.pin(eye.id) is None and board.nodes[eye.id].fixed
+    for refused in (
+        board.move_node(eye.id, (0, 1)),
+        board.rotate(eye.id, 1),
+        board.remove_node(eye.id),
+        board.replace(eye.id, Kind.SOURCE),
+        board.move_group([eye.id, total.id], (0, 1)),
+    ):
+        assert refused.reason == "locked: free it first"
+    assert not isinstance(board.connect(eye.id, total.id), Refused)  # its wires come and go
+    saved = Board.from_dict(board.to_dict())
+    assert [n.pinned for n in saved.nodes.values()] == [True, False]
+    assert board.clear() == (1, 1) and list(board.nodes) == [eye.id]  # Erase all spares it
+    assert board.pin(eye.id, False) is None and board.remove_node(eye.id) is None
+    level = board.place(Kind.EYE, (0, 1), locked=True)
+    assert board.pin(level.id).reason == "placed by the level"

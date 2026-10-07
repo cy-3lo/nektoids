@@ -140,6 +140,7 @@ from nektoids.editor.palette import (
     OUTSIDE,
     OUTSIDE_LINE,
     PANEL,
+    PIN_RING,
     REFUSED,
     RULE,
     SCROLL_THUMB,
@@ -376,7 +377,17 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
         centre = _centre(view, node.cell)
         angle = placed_angle(node.kind, node.facing)
         fill = DOOMED if node.id in doomed_nodes else None
-        draw_part(screen, fonts, node.kind, angle, centre, view.size, node.locked, fill)
+        draw_part(
+            screen,
+            fonts,
+            node.kind,
+            angle,
+            centre,
+            view.size,
+            node.locked,
+            fill,
+            pinned=node.pinned,
+        )
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
         if node is not None and node.kind is ghost.kind and node.facing != ghost.facing:
@@ -540,6 +551,7 @@ def draw_part(
     locked: bool,
     fill=None,
     face=None,
+    pinned: bool = False,
 ):
     fill = fill or COMPONENT
     outline = _shape(kind, angle, centre, size)
@@ -547,8 +559,9 @@ def draw_part(
     if kind in FACE:  # the closing edge, astride the outline
         width = max(2, round(FACE_WIDTH * size))
         pygame.draw.line(screen, face or FACE[kind], outline[-1], outline[0], width)
-    if locked:
-        pygame.draw.polygon(screen, LOCK_RING, _shape(kind, angle, centre, 1.25 * size), 2)
+    if locked or pinned:  # the level's ring, or the player's lock in the accent (D-406)
+        ring = LOCK_RING if locked else PIN_RING
+        pygame.draw.polygon(screen, ring, _shape(kind, angle, centre, 1.25 * size), 2)
     icon_size = max(10, round(ICON_SCALE.get(kind, 0.5) * size))
     if kind in KIND_ICON:
         ahead = ICON_AHEAD.get(kind, 0.0) * size

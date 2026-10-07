@@ -40,6 +40,12 @@ class Node:
     cell: Cell
     locked: bool = False  # pre-placed by the level: cannot be removed
     facing: int | None = None  # hex direction on the body (eyes, thrusters); None for the rest
+    pinned: bool = False  # locked by the player: stays put, as it is, until freed (D-406)
+
+    @property
+    def fixed(self) -> bool:
+        """Whether it may not be moved, turned, swapped or deleted: the level's, or locked."""
+        return self.locked or self.pinned
 
 
 @dataclass(frozen=True)
@@ -159,8 +165,8 @@ class Board:
     def remove_node(self, node_id: int) -> Refused | None:
         """Remove a node and every wire attached to it; its stock comes back."""
         node = self.nodes[node_id]
-        if node.locked:
-            return Refused("placed by the level")
+        if node.fixed:
+            return Refused(_why_fixed(node))
         self.wires = [wire for wire in self.wires if node_id not in (wire.source, wire.target)]
         del self.nodes[node_id]
         left = self.remaining(node.kind)
@@ -173,8 +179,8 @@ class Board:
         turn, with each of its wires the new part can take, routed again in the order they were
         drawn. Returns the new node and how many wires could not follow, which go."""
         old = self.nodes[node_id]
-        if old.locked:
-            return Refused("placed by the level")
+        if old.fixed:
+            return Refused(_why_fixed(old))
         if self.remaining(kind) == 0:
             return Refused("none left")
         before = self.snapshot()
@@ -202,8 +208,8 @@ class Board:
         no free path, nothing changes.
         """
         node = self.nodes[node_id]
-        if node.locked:
-            return Refused("placed by the level")
+        if node.fixed:
+            return Refused(_why_fixed(node))
         if cell == node.cell:
             return node
         if cell not in self._on_board:
@@ -233,8 +239,9 @@ class Board:
         moving = {i: self.nodes[i] for i in node_ids}
         if not moving or offset == (0, 0):
             return None
-        if any(node.locked for node in moving.values()):
-            return Refused("placed by the level")
+        fixed = next((node for node in moving.values() if node.fixed), None)
+        if fixed is not None:
+            return Refused(_why_fixed(fixed))
         dq, dr = offset
         targets = {i: (node.cell[0] + dq, node.cell[1] + dr) for i, node in moving.items()}
         if any(cell not in self._on_board for cell in targets.values()):
@@ -263,8 +270,8 @@ class Board:
         node = self.nodes[node_id]
         if node.facing is None:
             return Refused(f"{node.kind.value}s have no direction")
-        if node.locked:
-            return Refused("placed by the level")
+        if node.fixed:
+            return Refused(_why_fixed(node))
         turned = replace(node, facing=(node.facing + steps) % 6)
         self.nodes[node_id] = turned
         return turned
@@ -379,11 +386,11 @@ class Board:
         return None
 
     def clear(self) -> tuple[int, int]:
-        """Erase all (D-321): every wire and every part but the level's locked ones, their stock
-        back; how many parts and wires went."""
-        free = [n for n in self.nodes.values() if not n.locked]
+        """Erase all (D-321): every wire and every part but the level's and those the player
+        locked (D-406), their stock back; how many parts and wires went."""
+        free = [n for n in self.nodes.values() if not n.fixed]
         wires = len(self.wires)
-        self.nodes = {n.id: n for n in self.nodes.values() if n.locked}
+        self.nodes = {n.id: n for n in self.nodes.values() if n.fixed}
         self.wires = []
         self.restore(self.snapshot())  # the stock left counted again
         return len(free), wires
@@ -400,6 +407,15 @@ class Board:
             return Refused(f"the level hands out no more {name}: give one more in Parts")
         self.nodes[node_id] = replace(node, locked=locked)
         self.restore(self.snapshot())  # the stock left counted again
+        return None
+
+    def pin(self, node_id: int, pinned: bool = True) -> Refused | None:
+        """A part locked by the player, or freed (D-406): it stays put, as it is, its wires still
+        free to come and go. Refused for the level's parts, fixed already."""
+        node = self.nodes[node_id]
+        if node.locked:
+            return Refused("placed by the level")
+        self.nodes[node_id] = replace(node, pinned=pinned)
         return None
 
     def adopt(self, state: BoardState) -> Refused | None:
@@ -438,6 +454,7 @@ class Board:
                     "cell": list(node.cell),
                     "facing": None if node.facing is None else FACING_NAMES[node.facing],
                     "locked": node.locked,
+                    **({"pinned": True} if node.pinned else {}),
                 }
                 for node in (self.nodes[i] for i in ids)
             ],
@@ -470,6 +487,8 @@ class Board:
             )
             if isinstance(placed, Refused):
                 raise ValueError(f"part {part}: {placed.reason}")
+            if part.get("pinned"):
+                board.pin(placed.id)
         for wire in data["wires"]:
             path = tuple(tuple(cell) for cell in wire["path"]) if "path" in wire else None
             drawn = board.connect(wire["from"], wire["to"], path)
@@ -652,3 +671,7 @@ def _misfit(state: BoardState, zone: set[Cell], total) -> Refused | None:
 def _where(node: Node) -> tuple[Kind, Cell, int | None]:
     """A part as placed, whatever its id: its kind, its cell, its facing."""
     return node.kind, node.cell, node.facing
+
+
+def _why_fixed(node: Node) -> str:
+    return "placed by the level" if node.locked else "locked: free it first"

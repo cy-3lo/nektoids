@@ -645,9 +645,8 @@ def test_a_button_is_a_target_where_the_level_shows_it_as_a_cell_is():
     assert contains(rect, (round(x), round(y))) and rect[3] == round(2 * VIEW.size)
     assert target_rects(show, Screen.RUN, layout, VIEW) == []
     assert target_rects([{"button": "sum"}], Screen.BOARD, layout, VIEW) == []  # not handed out
-    lock = [{"button": "lock"}]  # on the sandbox's board alone (D-319)
-    assert target_rects(lock, Screen.BOARD, layout, VIEW) == []
-    assert len(target_rects(lock, Screen.BOARD, make_layout(kinds=kinds, editor=True), VIEW)) == 1
+    lock = [{"button": "lock"}]  # on every board, the player's (D-406)
+    assert len(target_rects(lock, Screen.BOARD, layout, VIEW)) == 1
 
 
 def test_a_drawer_a_step_explains_is_outlined_with_its_icon():

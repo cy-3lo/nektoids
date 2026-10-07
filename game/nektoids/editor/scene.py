@@ -457,8 +457,9 @@ class BoardScene(Frame):
         else:
             step = vertical_step(first, -1 if key == up else 1)
         offset = (step[0] - first[0], step[1] - first[1])
-        if any(n.locked for n in picked):
-            self._refuse("placed by the level", next(n.cell for n in picked if n.locked))
+        fixed = next((n for n in picked if n.fixed), None)
+        if fixed is not None:
+            self._refuse(self._why_fixed(fixed), fixed.cell)
             return
         if not all(self._allowed(Action("move", cell=n.cell), n.cell) for n in picked):
             return
@@ -817,6 +818,7 @@ class BoardScene(Frame):
             history.can_undo or self.board.snapshot() != self._kept,
             history.can_redo,
             self.layout.kinds,
+            self.layout.editor,
         )
 
     def _press_button(self, button: Button | Kind) -> None:
@@ -876,7 +878,7 @@ class BoardScene(Frame):
         """A lit button on what is picked, at once, in the order picked (D-402); Select stays
         held, the pick kept, or the parts just placed picked."""
         picked = parts(self.pick, self.board)
-        loose = [n for n in picked if not n.locked]
+        loose = [n for n in picked if not n.fixed]
         if isinstance(button, Kind) and self.pick.what is Picked.CELLS:
             self._fill(button)
         elif isinstance(button, Kind):
@@ -891,10 +893,16 @@ class BoardScene(Frame):
         elif button is Button.DELETE:
             for node in loose:
                 self._delete_part(node)
-        elif button is Button.LOCK:
+        elif button is Button.LOCK and self._level_lock():
             locking = any(not n.locked for n in picked)  # all the level's, or all freed
             for node in picked:
                 if node.locked != locking:
+                    self._lock(node.cell)
+        elif button is Button.LOCK:  # the player's lock (D-406): all locked, or all freed
+            mine = [n for n in picked if not n.locked]
+            pinning = any(not n.pinned for n in mine)
+            for node in mine:
+                if node.pinned != pinning:
                     self._lock(node.cell)
         elif button is Button.WIRE and len(picked) == 1:  # held, to wire from it (D-402)
             if self._hold(Button.WIRE):
@@ -1070,8 +1078,8 @@ class BoardScene(Frame):
             self.press_cell = None
             return
         node = self.board.node_at(cell)
-        if node is None or node.locked:
-            self._refuse("placed by the level", cell)
+        if node is None or node.fixed:
+            self._refuse("placed by the level" if node is None else self._why_fixed(node), cell)
             self.press_cell = None
             return
         self.moving, self.message = node.id, ""
@@ -1111,8 +1119,9 @@ class BoardScene(Frame):
         """A drag from a picked part: the pick moves with the mouse, together (D-404), if none
         is the level's and the tutorial lets each go."""
         picked = parts(self.pick, self.board)
-        if any(n.locked for n in picked):
-            self._refuse("placed by the level", cell)
+        fixed = next((n for n in picked if n.fixed), None)
+        if fixed is not None:
+            self._refuse(self._why_fixed(fixed), cell)
             self.press_cell = None
             return
         if not all(self._allowed(Action("move", cell=n.cell), n.cell) for n in picked):
@@ -1207,7 +1216,7 @@ class BoardScene(Frame):
             return
         picked = parts(self.pick, self.board)
         targets = picked if node.id in {n.id for n in picked} else [node]
-        turning = [n for n in targets if n.facing is not None and not n.locked]
+        turning = [n for n in targets if n.facing is not None and not n.fixed]
         if not turning:
             self._refuse(
                 "nothing here turns: only an eye or a thruster, not the level's", node.cell
@@ -1275,7 +1284,7 @@ class BoardScene(Frame):
         on_delete = button_at(self.shown_buttons(), size, origin, self.mouse) is Button.DELETE
         if self.keyboard or not on_delete:
             return frozenset(), []
-        ids = frozenset(n.id for n in parts(self.pick, self.board) if not n.locked)
+        ids = frozenset(n.id for n in parts(self.pick, self.board) if not n.fixed)
         return ids, [w for w in self.board.wires if w.source in ids or w.target in ids]
 
     def _under(self, cell: Cell | None, pos: tuple[int, int]) -> tuple[int | None, list[Wire]]:
@@ -1289,7 +1298,7 @@ class BoardScene(Frame):
                 wire = nearest_wire(pos, self.board.wires, size, origin, WIRE_HIT * size)
                 if wire is not None:  # the short one to a neighbour (D-068)
                     return None, [wire]
-            if node.locked:
+            if node.fixed:
                 return None, []
             return node.id, [w for w in self.board.wires if node.id in (w.source, w.target)]
         wire = self._wire_near(pos, cell)
@@ -1367,14 +1376,27 @@ class BoardScene(Frame):
         s = "s" * (parts_off != 1), "s" * (wires != 1)
         self.said = f"Erased: {parts_off} part{s[0]}, {wires} wire{s[1]}."
 
+    def _level_lock(self) -> bool:
+        """Whether Lock makes parts the level's: Shift held, on the board reached from the
+        Editor (D-319, D-406); else Lock is the player's own."""
+        return self.layout.editor and bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+
+    @staticmethod
+    def _why_fixed(node: Node) -> str:
+        return "placed by the level" if node.locked else "locked: free it first"
+
     def _lock(self, cell: Cell | None) -> None:
-        """Lock, clicked on `cell` or on a pick: its part made the level's, fixed and using no
-        stock, or freed again (D-319); the Editor's level follows the board."""
+        """Lock, clicked on `cell` or on a pick: its part locked by the player, staying put as
+        it is, or freed (D-406); with Shift on the sandbox, made the level's, fixed and using no
+        stock, or freed again (D-319), the Editor's level following the board."""
         node = self.board.node_at(cell) if cell is not None else None
         if node is None:
             self._refuse("click a part to lock it, or to free it", cell)
             return
-        refused = self.board.lock(node.id, not node.locked)
+        if self._level_lock():
+            refused = self.board.lock(node.id, not node.locked)
+        else:
+            refused = self.board.pin(node.id, not node.pinned)
         if refused is not None:
             self._refuse(refused.reason, cell)
             return

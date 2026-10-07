@@ -111,7 +111,7 @@ def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
     """What the part on `cell` may be swapped for (D-068): the other parts of its group in Parts
     that the level still hands out, in Parts' order."""
     node = board.node_at(cell)
-    if node is None or node.locked:
+    if node is None or node.fixed:
         return ()
     ordered = [k for _, group in MENU_GROUPS for k in group if k in kinds]
     return tuple(
@@ -122,13 +122,9 @@ def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
 
 
 def shown(kinds: frozenset[Kind], editor: bool) -> tuple[Button | Kind, ...]:
-    """The buttons a level shows, in PLACES' order: Lock on the board reached from the Editor
-    only; the parts the level hands out."""
-    return tuple(
-        b
-        for b in PLACES
-        if (b is not Button.LOCK or editor) and (not isinstance(b, Kind) or b in kinds)
-    )
+    """The buttons a level shows, in PLACES' order: every tool, Lock the player's on every board
+    (D-406); the parts the level hands out. `editor`, the sandbox's, changes no button."""
+    return tuple(b for b in PLACES if not isinstance(b, Kind) or b in kinds)
 
 
 def button_at(
@@ -165,12 +161,14 @@ def states(
     can_undo: bool,
     can_redo: bool,
     kinds: frozenset[Kind],
+    editor: bool = False,
 ) -> dict[Button | Kind, State]:
     """How each button looks, as the module's docstring says."""
     picked = parts(pick, board)
     cells = bool(pick) and pick.what is Picked.CELLS
     nodes = list(board.nodes.values())
-    free = [n for n in nodes if not n.locked]
+    free = [n for n in nodes if not n.fixed]
+    mine = [n for n in nodes if not n.locked]
 
     def acts(b: Button | Kind) -> bool | None:
         """True: it acts on the pick; False: it cannot act now; None: it may, on the board."""
@@ -189,17 +187,17 @@ def states(
         if cells:
             return False  # empty cells: nothing to move, turn, wire, delete or lock
         if picked:
-            loose = [n for n in picked if not n.locked]
+            loose = [n for n in picked if not n.fixed]
             return {
                 Button.DELETE: bool(loose),
-                Button.LOCK: True,
+                Button.LOCK: editor or any(not n.locked for n in picked),
                 Button.TURN_LEFT: any(n.facing is not None for n in loose),
                 Button.TURN_RIGHT: any(n.facing is not None for n in loose),
                 Button.WIRE: len(nodes) > 1,
             }[b]
         able = {
             Button.DELETE: bool(free),
-            Button.LOCK: bool(nodes),
+            Button.LOCK: bool(nodes) if editor else bool(mine),
             Button.TURN_LEFT: any(n.facing is not None for n in free),
             Button.TURN_RIGHT: any(n.facing is not None for n in free),
             Button.WIRE: len(nodes) > 1,

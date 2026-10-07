@@ -175,6 +175,7 @@ GRID_LINE = mix(
 BODY_OUTLINE = P.raised  # the swimmer's symbol behind the board, a shade under the grid
 COMPONENT = P.parts
 LOCK_RING = mix(P.parts, P.bright, 0.4)
+PIN_RING = P.accent1.mid  # a part the player locked: theirs, in the accent (D-406)
 EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)
 THRUSTER_BACK = P.accent1.mid  # the back a thruster pushes from
 WIRE = mix(P.dim, P.parts, 0.4)
