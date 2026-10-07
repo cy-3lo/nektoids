@@ -410,7 +410,9 @@ async def main() -> None:
             if scene is not None:
                 scene.set_hints(hinted)
         shadow = given if took is not None and took.shown else None
-        model = guide if guide is not None else shadow  # the tutorial's, else the hint's shadow
+        done = tutorials.get(router.index)  # closed on its last card, its ghosts stay (D-351)
+        kept = done if done is not None and done.lasting else None
+        model = guide or shadow or kept  # the tutorial's, else the hint's shadow, else the kept
         editor().ghosts = model.ghosts if model is not None else ()
         editor().ghost_wires = model.ghost_wires if model is not None else ()  # D-074
         editor().set_wins(router.files())  # what Files shows: every level's wins (D-092)

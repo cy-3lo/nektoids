@@ -14,7 +14,8 @@ introduction that builds nothing and shows once a session (D-079); every level's
 for in the Hints drawer (`hints.py`, D-078). What a tutorial that builds needs, the waits for a
 part placed, turned or wired, the ghosts, the Wheel's icons as targets, stays, for chapter 0's
 first two levels, which lead the player through what they teach (D-334), and is tested on the
-tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial; Settings' Tutorial
+tutorials Fear and Aggression had (`tests/data`). Skip ends a tutorial, its ghosts with it;
+closed on its last card, its ghosts stay on the board (D-351). Settings' Tutorial
 starts the open level's again. On a step that waits for Next, any key or click moves
 on and does nothing else, but a click on Skip (D-081). While a step leads, only the means to
 what it waits for go through (`allows`); the editor and the run ask before they act. Pure
@@ -138,6 +139,7 @@ class Tutorial:
         self.ghost_wires = ghost_wires  # the model's wires, from a cell to a cell (D-074)
         self.starts_in = starts_in  # the editor's drawer it begins in; None: the run (D-103)
         self.index = 0
+        self.skipped = False  # Skip ended it: its ghosts go with it (D-351)
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Tutorial:
@@ -172,6 +174,12 @@ class Tutorial:
         return self.leads and self.waits_for_next
 
     @property
+    def lasting(self) -> bool:
+        """Whether it is over, closed on its last card, not skipped: its ghosts stay on the board
+        (D-351)."""
+        return self.step is None and not self.skipped
+
+    @property
     def waits_for_next(self) -> bool:
         """Whether this step has a Next: it waits for nothing the player does."""
         return self.step is not None and not self.step.until
@@ -185,12 +193,12 @@ class Tutorial:
 
     def skip(self) -> None:
         """Skip pressed: the tutorial ends here, its ghosts with it."""
-        self.index = len(self.steps)
+        self.index, self.skipped = len(self.steps), True
 
     def restart(self) -> None:
         """From the first step again, finished or skipped, `follow` passing over what the board
         already holds."""
-        self.index = 0
+        self.index, self.skipped = 0, False
 
     def follow(self, context: Context) -> None:
         """On past every step whose wait is over: the player did what it asked."""
