@@ -3,7 +3,7 @@
 import pytest
 
 from nektoids.editor.arena_layout import BUTTON_KEYS
-from nektoids.editor.buttons import FRAME, KEYS
+from nektoids.editor.buttons import FRAME, KEYS, board_view
 from nektoids.editor.layout import (
     ACTION_WIDTH,
     BAR_WIDTH,
@@ -55,7 +55,6 @@ from nektoids.editor.layout import (
     bin_at,
     bin_rect,
     board_field_at,
-    board_view,
     brief_field_at,
     cell_at,
     centred_view,
@@ -584,18 +583,19 @@ def test_navigators_overview_sits_over_its_zoom_bar_between_its_buttons():
 
 
 def test_the_board_shows_at_one_size_centred_the_largest_zone_and_every_button_whole():
-    # D-401: 38 px, cell (0, 0) at the centre, with a drawer open or not; nothing moves it
-    for layout, side in ((make_layout(None), 159), (LAYOUT, 35)):
+    # D-401: 40 px, the largest zone and its buttons centred, with a drawer open or not
+    for layout in (make_layout(None), LAYOUT):
         view = board_view(layout)
         x, y, w, h = layout.board_area
-        assert view.size == BOARD_HEX and view.origin == (x + w / 2, y + h / 2)
+        assert view.size == BOARD_HEX == 40.0
         points = [to_pixel(cell, view.size, view.origin) for cell in FRAME]
         reach_x, reach_y = SQRT3 / 2 * view.size, view.size  # a pointy-top hex's half
         left = min(px for px, _ in points) - reach_x - x
         right = x + w - max(px for px, _ in points) - reach_x
         top = min(py for _, py in points) - reach_y - y
         bottom = y + h - max(py for _, py in points) - reach_y
-        assert min(top, bottom) >= 11 - 1e-9 and min(left, right) >= side
+        assert abs(left - right) <= 1 and abs(top - bottom) <= 1  # centred
+        assert min(left, right) >= 19 and min(top, bottom) >= 26  # whole, a drawer open too
 
 
 def test_the_sandbox_has_a_third_tab_the_editor_with_its_own_drawers_and_switch_to_the_run():

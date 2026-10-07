@@ -5,6 +5,7 @@ from nektoids.editor.buttons import (
     PLACES,
     Button,
     State,
+    board_view,
     button_at,
     key_of,
     shown,
@@ -12,7 +13,7 @@ from nektoids.editor.buttons import (
     swaps,
     tip,
 )
-from nektoids.editor.layout import board_view, make_layout
+from nektoids.editor.layout import make_layout
 from nektoids.editor.picking import NOTHING, clicked
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import hex_disc, hex_distance, to_pixel
@@ -28,15 +29,16 @@ def test_every_button_and_part_has_a_place_of_its_own_off_the_largest_zone():
     assert set(FRAME) == zone | set(PLACES.values())
 
 
-def test_the_tools_sit_at_n_and_s_in_rows_and_the_pairs_side_by_side():
-    n = [Button.SELECT, Button.MOVE, Button.LOCK]
-    s = [Button.UNDO, Button.REDO, Button.DELETE]
-    for row, r in ((n, -4), (s, 4)):
-        cells = [PLACES[b] for b in row]
-        assert all(cell[1] == r for cell in cells)
-        assert [q for q, _ in cells] == list(range(cells[0][0], cells[0][0] + len(cells)))
-    xs = [to_pixel(PLACES[b], 1.0, (0.0, 0.0))[0] for b in s]
-    assert sum(xs) / len(xs) == 0.0  # S centred under the board
+def test_the_tools_sit_at_n_in_a_row_undo_across_from_sum_and_the_pairs_side_by_side():
+    n = [Button.SELECT, Button.LOCK, Button.DELETE]
+    cells = [PLACES[b] for b in n]
+    assert all(cell[1] == -4 for cell in cells)
+    assert [q for q, _ in cells] == list(range(cells[0][0], cells[0][0] + len(cells)))
+    undo, diff = (
+        to_pixel(PLACES[Button.UNDO], 1.0, (0.0, 0.0)),
+        to_pixel(PLACES[Kind.DIFFERENCE], 1.0, (0.0, 0.0)),
+    )
+    assert undo == (-diff[0], diff[1])  # Undo and Redo at SW, mirroring Sum and Difference
     pairs = (
         (Button.TURN_LEFT, Button.TURN_RIGHT),
         (Kind.DOUBLE, Kind.HALVE),
@@ -94,22 +96,21 @@ def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_pick()
 
     empty = look()  # nothing on the board, nothing picked
     assert empty[Button.SELECT] is State.CHOSEN
-    for b in (Button.UNDO, Button.REDO, Button.MOVE, Button.TURN_LEFT, Button.WIRE, Kind.SOURCE):
+    for b in (Button.UNDO, Button.REDO, Button.DELETE, Button.TURN_LEFT, Button.WIRE, Kind.SOURCE):
         assert empty[b] is State.GREYED
     assert empty[Kind.EYE] is State.PLAIN and look(undo=True)[Button.UNDO] is State.PLAIN
     cells = look((0, 0), (1, 0))  # empty cells picked: the parts left may fill them
     assert cells[Kind.EYE] is State.LIT and cells[Kind.SOURCE] is State.GREYED
-    assert cells[Button.MOVE] is State.GREYED and cells[Button.LOCK] is State.GREYED
+    assert cells[Button.DELETE] is State.GREYED and cells[Button.LOCK] is State.GREYED
     board.place(Kind.SUM, (0, 0))
     board.place(Kind.EYE, (1, 0))
-    on_sum = look((0, 0))  # a sum picked: it moves, wires, may become a Double, never turns
-    assert on_sum[Button.MOVE] is on_sum[Button.WIRE] is on_sum[Kind.DOUBLE] is State.LIT
+    on_sum = look((0, 0))  # a sum picked: it goes, wires, may become a Double, never turns
+    assert on_sum[Button.DELETE] is on_sum[Button.WIRE] is on_sum[Kind.DOUBLE] is State.LIT
     assert on_sum[Button.TURN_LEFT] is State.GREYED
     assert on_sum[Kind.EYE] is on_sum[Kind.SUM] is State.PLAIN  # held, for the clicks
     both = look((0, 0), (1, 0))  # the eye with it: Turn acts on the eye
     assert both[Button.TURN_RIGHT] is both[Button.DELETE] is State.LIT
     board.lock(board.node_at((1, 0)).id)
-    assert look((0, 0), (1, 0))[Button.MOVE] is State.GREYED  # the level's stays: all or none
     assert look()[Button.TURN_LEFT] is State.GREYED  # the only eye is the level's now
     assert look(held=Kind.EYE)[Kind.EYE] is State.CHOSEN
 

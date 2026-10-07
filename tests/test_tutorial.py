@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from nektoids.editor.buttons import PLACES, Button, State, states
+from nektoids.editor.buttons import PLACES, Button, State, board_view, states
 from nektoids.editor.buttons import shown as shown_buttons
 from nektoids.editor.layout import (
     SCREEN,
@@ -14,7 +14,6 @@ from nektoids.editor.layout import (
     Env,
     LevelButton,
     Tool,
-    board_view,
     centred_view,
     contains,
     make_layout,

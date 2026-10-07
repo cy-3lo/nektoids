@@ -19,15 +19,24 @@ from __future__ import annotations
 from collections.abc import Sequence
 from enum import Enum
 
-from nektoids.editor.layout import EDIT_KEYS, LOCK_KEY, MENU_GROUPS, TOOL_KEYS, EditButton, Tool
+from nektoids.editor.layout import (
+    BOARD_HEX,
+    EDIT_KEYS,
+    LOCK_KEY,
+    MENU_GROUPS,
+    TOOL_KEYS,
+    EditButton,
+    Layout,
+    Tool,
+    View,
+)
 from nektoids.editor.picking import Pick, Picked, parts
 from nektoids.graph.board import Board, Kind
-from nektoids.graph.hexgrid import Cell, from_pixel, hex_disc
+from nektoids.graph.hexgrid import Cell, from_pixel, hex_disc, to_pixel
 
 
 class Button(Enum):
     SELECT = "select"
-    MOVE = "move"
     LOCK = "lock"
     UNDO = "undo"
     REDO = "redo"
@@ -39,11 +48,10 @@ class Button(Enum):
 
 PLACES: dict[Button | Kind, Cell] = {
     Button.SELECT: (1, -4),
-    Button.MOVE: (2, -4),
-    Button.LOCK: (3, -4),
-    Button.UNDO: (-3, 4),
-    Button.REDO: (-2, 4),
-    Button.DELETE: (-1, 4),
+    Button.LOCK: (2, -4),
+    Button.DELETE: (3, -4),
+    Button.UNDO: (-5, 3),
+    Button.REDO: (-4, 3),
     Button.TURN_LEFT: (-3, -2),
     Button.TURN_RIGHT: (-2, -2),
     Button.WIRE: (-3, -1),
@@ -73,7 +81,6 @@ class State(Enum):
 
 KEYS = {  # each button's key; a part's is its number among those handed out (`key_of`)
     Button.SELECT: "S",
-    Button.MOVE: TOOL_KEYS[Tool.MOVE],
     Button.LOCK: LOCK_KEY,
     Button.UNDO: EDIT_KEYS[EditButton.UNDO],
     Button.REDO: EDIT_KEYS[EditButton.REDO],
@@ -82,6 +89,16 @@ KEYS = {  # each button's key; a part's is its number among those handed out (`k
     Button.TURN_RIGHT: TOOL_KEYS[Tool.TURN_RIGHT],
     Button.WIRE: TOOL_KEYS[Tool.WIRE],
 }
+
+
+def board_view(layout: Layout) -> View:
+    """The Board's one view (D-401): BOARD_HEX, the largest zone and every button centred in the
+    board area, with a drawer open or not; nothing zooms or pans it."""
+    xs, ys = zip(*(to_pixel(cell, BOARD_HEX, (0.0, 0.0)) for cell in FRAME), strict=True)
+    x, y, w, h = layout.board_area
+    return View(
+        BOARD_HEX, (round(x + (w - min(xs) - max(xs)) / 2), round(y + (h - min(ys) - max(ys)) / 2))
+    )
 
 
 def part_key(kind: Kind, kinds: frozenset[Kind]) -> str:
@@ -174,7 +191,6 @@ def states(
         if picked:
             loose = [n for n in picked if not n.locked]
             return {
-                Button.MOVE: len(loose) == len(picked),  # the level's stay: all go, or none
                 Button.DELETE: bool(loose),
                 Button.LOCK: True,
                 Button.TURN_LEFT: any(n.facing is not None for n in loose),
@@ -182,7 +198,6 @@ def states(
                 Button.WIRE: len(nodes) > 1,
             }[b]
         able = {
-            Button.MOVE: bool(free),
             Button.DELETE: bool(free),
             Button.LOCK: bool(nodes),
             Button.TURN_LEFT: any(n.facing is not None for n in free),
