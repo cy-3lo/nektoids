@@ -1,7 +1,7 @@
 """How the arena is seen: from the sim's u (y up) to screen pixels (y down), and back.
 
 Also the rays drawn from the lights, the grid of the light map (the other way to show the light)
-and the grey level of a reading, which swimmer is under the mouse, and the Maker's grid, the
+and the grey level of a reading, which swimmer is under the mouse, and the Editor's grid, the
 lattice a level's positions fall on (D-301). The plane is open
 (D-028): a view frames what a level holds, and shows as much of the plane as its area allows;
 rays and the light map go as far as it shows. Pure numbers, no pygame.
@@ -68,13 +68,13 @@ def pan_view(view: ArenaView, dx: float, dy: float) -> ArenaView:
     return ArenaView(view.scale, (view.origin[0] + dx, view.origin[1] + dy))
 
 
-DOT_STEP = 1.0  # the Maker's grid: a dot wherever a position may fall, whole u (D-311) [u]
+DOT_STEP = 1.0  # the Editor's grid: a dot wherever a position may fall, whole u (D-311) [u]
 LINE_STEP = 5.0  # ... and a line every so often; no coordinate, the grid is enough (D-311) [u]
 DOT_LEAST = 8.0  # dots closer than this on screen are not drawn [px]
 
 
 def dot_step(scale: float) -> float | None:
-    """The Maker's grid at `scale` [px/u]: the dots' step [u], DOT_STEP, or None where they
+    """The Editor's grid at `scale` [px/u]: the dots' step [u], DOT_STEP, or None where they
     would crowd; the lines every LINE_STEP stay."""
     return DOT_STEP if DOT_STEP * scale >= DOT_LEAST else None
 

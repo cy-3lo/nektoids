@@ -2305,8 +2305,9 @@ the status lines, the refusals, the Chapters row Open Editor and every tutorial 
 "Press the **Board** button or tab". F1, F2 and F3 are Run, Board and Editor. The code's names
 follow, in two steps so that "editor" never means both: the Board's are `Env.BOARD`,
 `Screen.BOARD`, `LevelButton.BOARD`, `ArenaButton.BOARD`, `BoardScene`, `board_scene()` in
-`main.py`, a tutorial's `tab:board`, `level:board` and `{"screen": "board"}`; the Editor's,
-`Env.EDITOR`, `Screen.EDITOR`, `EditorScene` in `level_editor.py` and `level_editor_draw.py`,
-`editor()` in `main.py` and `tab:editor`. The package `nektoids/editor/`, the whole interface,
+`main.py`, `Router.open_board()`, a tutorial's `tab:board`, `level:board` and
+`{"screen": "board"}`; the Editor's, `Env.EDITOR`, `Screen.EDITOR`, `EditorScene` in
+`level_editor.py` and `level_editor_draw.py`, `editor()` in `main.py`, `Router.open_editor()`
+and `tab:editor`. The package `nektoids/editor/`, the whole interface,
 keeps its name, and `levels/making.py`, about making a level, its own. Decisions before this one
 keep the names they were written with.

@@ -1,4 +1,4 @@
-"""The frame the editor and the run share (D-051, D-054). frame.py imports no pygame."""
+"""The frame the Board and the run share (D-051, D-054). frame.py imports no pygame."""
 
 from nektoids.editor.frame import LEAVE, WARM_FRAMES, Frame
 from nektoids.editor.layout import (
@@ -21,13 +21,13 @@ class Scene(Frame):
     def __init__(
         self,
         drawer: Drawer | None = Drawer.PARTS,
-        env: Env = Env.EDITOR,
+        env: Env = Env.BOARD,
         chapters: tuple[tuple[str, int], ...] = (("Chapter 1", 3),),
         goals: int = 0,
-        maker: bool = False,
+        editor: bool = False,
     ):
         self.goals = goals  # the level's objectives, under the run's drawers
-        layout = make_layout(drawer, chapters=chapters, env=env, goals=goals, maker=maker)
+        layout = make_layout(drawer, chapters=chapters, env=env, goals=goals, editor=editor)
         self._start_frame(layout, None)
         self.slid: list[tuple[Drawer | None, Drawer | None]] = []
 
@@ -39,7 +39,7 @@ class Scene(Frame):
             env=self.layout.env,
             goals=self.goals,
             scroll=self.scrolls.get(drawer, 0),
-            maker=self.layout.maker,
+            editor=self.layout.editor,
         )
 
     def _slid(self, before: Layout, after: Layout) -> None:
@@ -75,7 +75,7 @@ def test_an_icon_opens_its_drawer_and_folds_it_again_and_the_main_screen_follows
 def test_the_other_tab_and_the_switch_ask_for_the_run_unless_the_tutorial_holds_them():
     scene = Scene()
     tabs = dict(scene.layout.tabs)
-    assert scene.frame_press(centre(tabs["editor"])) and scene.request is None  # already there
+    assert scene.frame_press(centre(tabs["board"])) and scene.request is None  # already there
     assert scene.frame_press(centre(tabs["run"])) and scene.request == "run"
     scene.request = None
     switch = dict(scene.layout.level_buttons)[LevelButton.RUN]
@@ -146,7 +146,7 @@ def test_once_a_tooltip_shows_the_next_icons_shows_at_once_across_the_gap_betwee
 
 
 def test_a_scenes_own_tooltip_waits_as_the_bars_do():
-    class Wheel(Scene):  # a scene adding a target of its own, as the editor adds its Wheel's icons
+    class Wheel(Scene):  # a scene adding a target of its own, as the Board adds its Wheel's icons
         def _tip_target(self, pos):
             return super()._tip_target(pos) or ("icon" if pos == (600, 600) else None)
 
@@ -168,7 +168,7 @@ def test_the_other_tab_says_what_the_switch_says_and_this_one_nothing():
     for _ in range(scene.settings.tooltip_frames):
         scene.frame_update()
     assert scene.tooltip == "run"  # drawn as the switch's: "Run (Space)" (D-060)
-    scene.frame_track(centre(tabs["editor"]))
+    scene.frame_track(centre(tabs["board"]))
     assert scene.tip_target is None
 
 
@@ -256,10 +256,10 @@ def test_the_scroll_bar_held_drags_the_rows_until_it_is_let_go():
 
 
 def test_on_the_sandbox_each_tab_asks_for_its_own_screen_and_shows_its_tooltip():
-    for env, here in ((Env.EDITOR, "editor"), (Env.RUN, "run"), (Env.MAKER, "maker")):  # D-301
-        scene = Scene(None, env=env, maker=True)
+    for env, here in ((Env.BOARD, "board"), (Env.RUN, "run"), (Env.EDITOR, "editor")):  # D-301
+        scene = Scene(None, env=env, editor=True)
         tabs = dict(scene.layout.tabs)
-        for name, asked in (("run", "run"), ("editor", "edit"), ("maker", "make")):
+        for name, asked in (("run", "run"), ("board", "board"), ("editor", "editor")):
             scene.request = None
             assert scene.frame_press(centre(tabs[name]))
             assert scene.request == (None if name == here else asked)
@@ -267,30 +267,30 @@ def test_on_the_sandbox_each_tab_asks_for_its_own_screen_and_shows_its_tooltip()
             assert scene.tip_target == (None if name == here else name)
 
 
-def test_f1_f2_f3_ask_for_run_editor_and_the_maker_as_their_tabs_and_f3_off_the_sandbox_says_why():
-    for env, here in ((Env.EDITOR, "editor"), (Env.RUN, "run"), (Env.MAKER, "maker")):  # D-303
-        scene = Scene(None, env=env, maker=True)
-        for key, asked in (("f1", "run"), ("f2", "edit"), ("f3", "make")):
+def test_f1_f2_f3_ask_for_run_board_and_the_editor_as_their_tabs_and_f3_off_the_sandbox_says_why():
+    for env, here in ((Env.BOARD, "board"), (Env.RUN, "run"), (Env.EDITOR, "editor")):  # D-303
+        scene = Scene(None, env=env, editor=True)
+        for key, asked in (("f1", "run"), ("f2", "board"), ("f3", "editor")):
             scene.request = None
             assert scene.tab_key(key)
             assert scene.request == (None if LEAVE[here] == asked else asked)
     scene = Scene(None, env=Env.RUN)  # a level of the chapter: two tabs
     assert scene.tab_key("f3") and scene.request is None and "Chapters" in scene.message
     assert not scene.tab_key("f4") and not scene.tab_key("space")
-    scene.gate = lambda action: action.verb != "edit"  # a tutorial's step holds it
+    scene.gate = lambda action: action.verb != "board"  # a tutorial's step holds it
     assert scene.tab_key("f2") and scene.request is None and scene.message == REFUSAL
 
 
 def test_tab_asks_for_the_next_tab_shift_tab_the_one_before_as_a_click_on_it():
-    scene = Scene(None, env=Env.EDITOR, maker=True)  # D-304: Run, Editor, Maker
+    scene = Scene(None, env=Env.BOARD, editor=True)  # D-304: Run, Board, Editor
     scene.next_tab()
-    assert scene.request == "make"
+    assert scene.request == "editor"
     scene.request = None
     scene.next_tab(back=True)
     assert scene.request == "run"
-    level = Scene(None, env=Env.RUN)  # Run, Editor
+    level = Scene(None, env=Env.RUN)  # Run, Board
     level.next_tab()
-    assert level.request == "edit"
-    level.request, level.gate = None, (lambda action: action.verb != "edit")
+    assert level.request == "board"
+    level.request, level.gate = None, (lambda action: action.verb != "board")
     level.next_tab()
     assert level.request is None and level.message == REFUSAL

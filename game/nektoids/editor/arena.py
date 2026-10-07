@@ -1,13 +1,13 @@
 """The arena view: a swimmer running your board in a lit arena (D-018, D-019).
 
-Two modes. The player's (`developer=False`): one level, opened by Run in the editor; Edit (Tab)
+Two modes. The player's (`developer=False`): one level, opened by Run on the Board; Board (Tab)
 goes back to it, and once the level is won the banner's Next level (Enter) moves on. Nothing
 touches the programmed swimmer: no dragging or turning it, and none of the developer's tools.
 The developer's (F7): every level, Tab between them, and the tools below.
 
 Left, the arena: the light as rays (or, with I, as a map), the obstacles and the lights, and the
 swimmer as a circle round a wedge; its eyes and thrusters sit where the board puts them on it.
-Round it, the frame the editor has (`frame.Frame`, D-057): Objectives, how many of each are met;
+Round it, the frame the Board has (`frame.Frame`, D-057): Objectives, how many of each are met;
 Inside, the selected swimmer's wiring, live: its eyes read the light every tick and every node
 follows with its lag (D-017); Score; Navigator; under the arena the controls and the timeline.
 The thrusters push against Stokes drag (D-022): the swimmer swims, sliding round the obstacles,
@@ -18,8 +18,8 @@ looks.
 
 Mouse: the frame, Navigator's rows, the controls; click the swimmer to show its wiring (it is
 shown to begin with), click beside it to hide it, drag it to move it (with the hand, drag the
-view); the wheel turns it by 15°, as do L (left, counter-clockwise) and R, the editor's turn
-keys. Keys (`arena_layout.BUTTON_KEYS`, named in the tooltips), the same as the editor's
+view); the wheel turns it by 15°, as do L (left, counter-clockwise) and R, the Board's turn
+keys. Keys (`arena_layout.BUTTON_KEYS`, named in the tooltips), the same as the Board's
 wherever they do the same: 0 starts again, Space plays or pauses, `.` runs a step of 0.1 s, F
 fast forwards, + and - zoom, H takes the hand (then the arrows drag the view), C centres, X
 shows or hides the rays; and I (light map), P (polar plot), Tab and Shift-Tab (arena). The
@@ -171,13 +171,13 @@ class ArenaScene(Frame):
         drawer: Drawer | None = Drawer.INSIDE,
         chapters: tuple[tuple[str, int], ...] = (),
         passkey: tuple[str, str] | None = None,
-        maker: bool = False,
+        editor: bool = False,
     ):
         self.levels = list(levels)
         self.index = 0
-        goals = len(self.level.objectives)  # the sandbox's tabs end with the Maker's (D-301)
-        layout = make_layout(drawer, env=Env.RUN, goals=goals, chapters=chapters, maker=maker)
-        self._start_frame(layout, settings)  # also `request`: "edit", "next"... for main.py
+        goals = len(self.level.objectives)  # the sandbox's tabs end with the Editor's (D-301)
+        layout = make_layout(drawer, env=Env.RUN, goals=goals, chapters=chapters, editor=editor)
+        self._start_frame(layout, settings)  # also `request`: "board", "next"... for main.py
         self.label = label  # "LEVEL 1.2": the player's level; None for its place in `levels`
         self.developer = developer  # the developer's tools, every level; or the player's run
         self.next_label = next_label  # what the banner's next button says after a win; None: none
@@ -245,7 +245,7 @@ class ArenaScene(Frame):
             goals=goals,
             chapters=chapters,
             scroll=scroll,
-            maker=self.layout.maker,
+            editor=self.layout.editor,
             **self._hint_layout(),
         )
 
@@ -459,8 +459,8 @@ class ArenaScene(Frame):
         if self.outcome is None:
             return ()
         if self.outcome is Outcome.WON and (self.developer or self.next_label):
-            return (ArenaButton.NEXT, ArenaButton.EDIT)
-        return (ArenaButton.EDIT,)
+            return (ArenaButton.NEXT, ArenaButton.BOARD)
+        return (ArenaButton.BOARD,)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if self.info is not None and event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
@@ -537,8 +537,8 @@ class ArenaScene(Frame):
     def press(self, button: ArenaButton) -> None:
         if button in CONTROLS and not self._allowed(Action("play")):
             return  # a step that leads holds the run, unless it asks for Play (D-060)
-        if button is ArenaButton.EDIT:
-            self._ask("edit")
+        if button is ArenaButton.BOARD:
+            self._ask("board")
         elif button is ArenaButton.NEXT:
             if ArenaButton.NEXT not in self.banner_buttons:
                 return
@@ -594,7 +594,7 @@ class ArenaScene(Frame):
         elif event.scancode in (pygame.KSCAN_0, pygame.KSCAN_KP_0):  # "à" on AZERTY, unshifted
             self.press(ArenaButton.RESTART)
         elif event.key == pygame.K_ESCAPE and self.developer:
-            self.press(ArenaButton.EDIT)  # back to the editor, as F7
+            self.press(ArenaButton.BOARD)  # back to the Board, as F7
         elif event.key == pygame.K_ESCAPE:  # DRAWER_KEYS[CHAPTERS]: nothing to back out of here
             self.toggle_drawer(Drawer.CHAPTERS)
         elif event.scancode in (pygame.KSCAN_RETURN, pygame.KSCAN_KP_ENTER):
@@ -603,7 +603,7 @@ class ArenaScene(Frame):
             drawer = drawer_key(Env.RUN, typed)  # the character first: AZERTY's ? is on the comma
             if drawer is None and event.key == pygame.K_COMMA:  # with Ctrl or Cmd, none is typed
                 drawer = Drawer.SETTINGS
-            if event.scancode == pygame.KSCAN_TAB:  # the next tab, the editor's (D-304)
+            if event.scancode == pygame.KSCAN_TAB:  # the next tab, the Board's (D-304)
                 self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
             elif self.start_passkey(typed):  # P in Chapters: a passkey (D-075)
                 pass

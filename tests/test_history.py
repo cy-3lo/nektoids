@@ -65,7 +65,7 @@ def test_only_the_last_states_are_kept():
     assert undone[:3] == [boards[k].snapshot() for k in (4, 3, 2)] and undone[3] is None
 
 
-def test_the_makers_history_keeps_whole_levels_as_the_editors_keeps_boards():
+def test_the_editors_history_keeps_whole_levels_as_the_boards_keeps_boards():
     level = sandbox()  # D-301: any frozen state
     turned = replace(level, start=(15.0, 19.0, 30.0))
     history: History = History()

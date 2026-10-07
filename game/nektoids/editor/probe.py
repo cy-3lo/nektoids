@@ -46,7 +46,7 @@ class Track(NamedTuple):
 
 class Probe:
     def __init__(self, board: Board, level: Level, view: View, pose: Pose | None = None):
-        """view: how the circuit is drawn, the editor's own, so that the board keeps its scale
+        """view: how the circuit is drawn, the Board's own, so that the board keeps its scale
         and its place (D-060); pose: where the probe stands, else the level's start."""
         self.board, self.level = board, level
         self.circuit = Circuit(board, NO_AREA, 0.0, view=view)

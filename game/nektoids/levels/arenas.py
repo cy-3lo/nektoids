@@ -2,13 +2,13 @@
 
 Each is a JSON file in `data/` (`level.py` says what it holds), a chapter's in its own folder,
 read once at startup. Lengths in u, the base body radius, in an open plane; what each holds fits
-in 40 x 38 u. The swimmer runs whatever board is in the editor, and each level says what it asks
+in 40 x 38 u. The swimmer runs whatever board is on the Board, and each level says what it asks
 (`objectives.py`). The chapters make one route: `arenas()` is its levels in order, and a level's
 place on it, its index, is all the rest of the game needs; `locate` gives its chapter.
 
-A level made in the Maker ships from Share level (D-320, D-328): its text, with its proof, saved
+A level made in the Editor ships from Share level (D-320, D-328): its text, with its proof, saved
 in its chapter's folder and named in its chapter below; its passkey, hints and tutorial, which
-the Maker does not set, written in the file by hand; then
+the Editor does not set, written in the file by hand; then
 `PYTHONPATH=game python -m nektoids.levels.level FILE` writes the file as the game does, which
 the tests ask. Every shipped level carries its proof, and the tests run it again.
 """
@@ -34,7 +34,7 @@ class Chapter:
 
     @property
     def heading(self) -> str:
-        """Its title in Chapters and in the Maker's Files: "Chapter 1: Braitenberg"."""
+        """Its title in Chapters and in the Editor's Files: "Chapter 1: Braitenberg"."""
         return f"Chapter {self.number}: {self.title}"
 
 
@@ -59,7 +59,7 @@ CHAPTERS = (
     ),
 )  # Braitenberg's 2a, 2b, 3a and the brief's orbit (D-097); obstacles; then more lights, the
 # real level (D-098) and "Two lights, four obstacles", once too hard for level 2 (D-032), last
-# (D-324); levels made in the Maker, the physicist's Dragster first (D-332), every one open, as
+# (D-324); levels made in the Editor, the physicist's Dragster first (D-332), every one open, as
 # they come in no order (D-348). A chapter with no level yet is not listed.
 ORDER = tuple(f"{chapter.folder}/{name}" for chapter in CHAPTERS for name in chapter.names)
 SANDBOX = "sandbox"  # no objective: the old "Two lights, four obstacles" (D-035)

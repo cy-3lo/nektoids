@@ -1,4 +1,4 @@
-"""The Maker's objects on the plane and its Wheel (D-301), as Parts and the Wheel are the board's
+"""The Editor's objects on the plane and its Wheel (D-301), as Parts and the Wheel are the board's
 (D-068, D-069).
 
 What a click focuses on the plane: an empty point of the lattice, an item by its place in the
@@ -7,7 +7,7 @@ mark, as an empty cell offers the parts; round an item, less, move, more, delete
 over the top, More at its top (D-314); round the swimmer, turn left, move, turn right. What is
 under the mouse: the swimmer, a light or an obstacle under it, else a mark by its rim or its
 centre, so that a click inside a zone still finds the point there (D-306).
-Which of the Wheel's icons is lit, as the Editor's (D-314): Move on an object clicked, More on one
+Which of the Wheel's icons is lit, as the Board's (D-314): Move on an object clicked, More on one
 just placed, none on a point until the arrows choose; the arrows go round, stopping at the ends
 (D-084). What the line under the Wheel says. Pure numbers, no pygame.
 """

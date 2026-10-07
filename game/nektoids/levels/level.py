@@ -5,7 +5,7 @@ Items are to the plane what parts are to the board: each has a kind (`ItemKind`,
 its `Kind`), the point where it sits, and the one setting its kind takes, a light's power, an
 obstacle's radius or a mark's. A mark is a zone, a circle that only the objectives read: the
 arena, and so the simulation, never has it (D-306). An objective is a sentence (D-307,
-`objectives.py`). The Maker places items as the board editor
+`objectives.py`). The Editor places items as the Board
 places parts (D-302). `to_dict` and `from_dict` turn a level into JSON-able data and back, as
 `Board.to_dict` does (D-024); the shipped levels are JSON files in `data/`. Each file says the
 version of its format; `to_dict` writes `FORMAT`, and `from_dict` upgrades an older version

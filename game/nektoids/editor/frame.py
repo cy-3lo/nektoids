@@ -1,4 +1,4 @@
-"""What the editor and the run share (D-051): the activity bar, one drawer at a time, the tabs
+"""What the Board and the run share (D-051): the activity bar, one drawer at a time, the tabs
 and the switch between them, the rows' info discs, Hints, Chapters and Settings, the bar's
 tooltips, and the scrolling of a drawer whose rows do not fit (D-096).
 
@@ -8,9 +8,9 @@ of the mouse wheel, and `frame_update` once a frame; it gives `_relayout` (its l
 another drawer open, scrolled as `scrolls` says), and may give `_slid` (what follows the main
 screen when a drawer opens or folds), `_cancel` (a gesture under way ends) and `_refuse` (says
 why not).
-What the player asks of `main.py` is left in `request` ("run", "edit", "make", "tutorial"), `chosen`
-(a place picked in Chapters), `asked_fold` (a chapter's title clicked there) or `asked_hint` (a
-row of Hints), which `main.py` clears. Pure Python, no pygame.
+What the player asks of `main.py` is left in `request` ("run", "board", "editor", "tutorial"),
+`chosen` (a place picked in Chapters), `asked_fold` (a chapter's title clicked there) or
+`asked_hint` (a row of Hints), which `main.py` clears. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.graph.board import Kind
 from nektoids.levels.level import PASSKEY_LENGTH
 
-LEAVE = {"editor": "edit", "run": "run", "maker": "make"}  # what a tab asks for: its screen
+LEAVE = {"board": "board", "run": "run", "editor": "editor"}  # what a tab asks for: its screen
 WARM_FRAMES = 18  # after a tooltip, the next one shows at once for this long: 0.3 s [frames]
 
 
@@ -59,7 +59,7 @@ class Frame:
     def _start_frame(self, layout: Layout, settings: Settings | None) -> None:
         self.layout = layout
         self.settings = settings if settings is not None else Settings()  # the session's
-        self.request: str | None = None  # "run", "edit", "make", "tutorial": main.py's to clear
+        self.request: str | None = None  # "run", "board", "editor", "tutorial": main.py's to clear
         self.chosen: int | None = None  # a place picked in Chapters: main.py's to clear
         self.chapters: tuple[ChapterRow, ...] = ()  # what Chapters shows; main.py's
         self.shut: frozenset[str] = frozenset()  # ... the chapters it shows closed; main.py's
@@ -154,7 +154,7 @@ class Frame:
             return True
         level = level_button_at(self.layout, pos)
         if level is not None:
-            self._ask(level.value)  # "run" or "edit": the switch
+            self._ask(level.value)  # "run" or "board": the switch
             return True
         what = info_at(self.layout, pos)  # inside its row: before the row's own action
         if what is not None:
@@ -179,8 +179,8 @@ class Frame:
         return False
 
     def tab_key(self, name: str) -> bool:
-        """F1, F2 or F3, by pygame's name for the key: its tab, Run, Editor or the Maker, as a
-        click on it (D-303); off the sandbox, F3 says where the Maker is. False for any other."""
+        """F1, F2 or F3, by pygame's name for the key: its tab, Run, Board or the Editor, as a
+        click on it (D-303); off the sandbox, F3 says where the Editor is. False for any other."""
         tab = next((tab for tab, key in TAB_KEYS.items() if key.lower() == name), None)
         if tab is None:
             return False
@@ -191,7 +191,7 @@ class Frame:
         return True
 
     def next_tab(self, back: bool = False) -> None:
-        """Tab: the next tab, Run, Editor, then the Maker on the sandbox, round to the first;
+        """Tab: the next tab, Run, Board, then the Editor on the sandbox, round to the first;
         Shift+Tab, the one before (D-304). As a click on it, so a tutorial's step may hold it."""
         self._ask(LEAVE[tab_beside(self.layout, back)])
 
@@ -311,7 +311,7 @@ class Frame:
 
     def _tip_target(self, pos: tuple[int, int]) -> object | None:
         """What a tooltip would name under `pos`: the bar's icon, another tab; a scene may add
-        its own, as the editor adds the Wheel's icons (D-069)."""
+        its own, as the Board adds the Wheel's icons (D-069)."""
         return palette_target_at(self.layout, pos)
 
     def _slid(self, before: Layout, after: Layout) -> None:

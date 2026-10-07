@@ -190,7 +190,7 @@ def test_the_wheel_fits_its_room_at_the_drawers_foot_with_its_line_under_it():
             assert lowest + LINE_BELOW + line <= y + h
 
 
-def test_the_wheel_takes_the_makers_keys_for_its_own_icons():
+def test_the_wheel_takes_the_editors_keys_for_its_own_icons():
     items = (Piece.LIGHT, Piece.OBSTACLE)  # an empty point of the plane (D-301)
     shown = slots(items, (100.0, 100.0), WHEEL_HEX, frozenset(), keys=KEYS)
     assert [(s.what, s.key) for s in shown] == [(Piece.LIGHT, "1"), (Piece.OBSTACLE, "2")]

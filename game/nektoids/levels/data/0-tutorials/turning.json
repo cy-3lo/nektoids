@@ -20,8 +20,8 @@
     "ghosts": [{"kind": "thruster", "cell": [-1, 1], "facing": "E"}],
     "steps": [
       {
-        "show": [{"tab": "editor"}, {"level": "edit"}],
-        "until": {"screen": "edit"},
+        "show": [{"tab": "board"}, {"level": "board"}],
+        "until": {"screen": "board"},
         "say": [
           "Reach the ring by turning round the obstacle.",
           "Press the **Board** button or tab, or press Tab."

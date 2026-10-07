@@ -1,7 +1,7 @@
 """Load's field at Files' foot, and what loading a board's text does (D-206).
 
 The field, a `TextField`, holds what is pasted or typed into it. On the web the page's own text
-field takes the keys and the paste (`clipboard.py`); natively the editor hands it pygame's keys.
+field takes the keys and the paste (`clipboard.py`); natively the Board hands it pygame's keys.
 Enter loads: the text gives a board (D-205), which goes on the open level as a win of another
 level does (`Board.adopt`, D-092), or the status line says why it does not. Pure Python, no
 pygame.

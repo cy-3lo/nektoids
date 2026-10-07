@@ -1,4 +1,4 @@
-"""Editor state and input handling. Mutates the board only through its methods.
+"""The Board's state and input handling. Mutates the board only through its methods.
 
 The focus and its Wheel (D-068, D-069): a click focuses a cell, lit on the board; Tools and
 Parts show it large at their foot, the Wheel's icons round it: what can be done there
@@ -166,7 +166,7 @@ NODE_HIT = 0.5  # a click this close to a component's centre is on its shape [he
 WIRE_HIT = 0.2  # a click this close to a drawn wire is on it [hex sizes]
 
 
-class EditorScene(Frame):
+class BoardScene(Frame):
     def __init__(
         self,
         board: Board,
@@ -484,7 +484,7 @@ class EditorScene(Frame):
             self.toggle_drawer(drawer)
         elif key == MODE_KEY:
             self._set_mode(Mode.DELETE if self.mode is Mode.WRITE else Mode.WRITE)
-        elif key == LOCK_KEY and self.layout.maker:  # the sandbox's (D-319)
+        elif key == LOCK_KEY and self.layout.editor:  # the sandbox's (D-319)
             self._set_mode(Mode.LOCK if self.mode is not Mode.LOCK else Mode.WRITE)
         elif key in KEY_TOOLS:
             self._choose(KEY_TOOLS[key])
@@ -712,12 +712,12 @@ class EditorScene(Frame):
             files=tuple((group.title, len(group.wins)) for group in self.wins),
             wheel_folded=self.wheel_folded,
             scroll=self.scrolls.get(drawer, 0),
-            maker=self.layout.maker,
+            editor=self.layout.editor,
             **self._hint_layout(),
         )
 
     def revise(self, level: Level, caption: tuple[str, str]) -> None:
-        """The level made again in the Maker (D-301): the caption follows, and the Run preview's
+        """The level made again in the Editor (D-301): the caption follows, and the Run preview's
         probe is made again on its plane, where it stood. Handed out anew, the board's size or
         its parts (D-315), Parts shows what it now hands out, and undo starts afresh: its steps
         were taken on a board handing out other parts."""
@@ -1351,7 +1351,7 @@ class EditorScene(Frame):
 
     def _lock(self, cell: Cell | None) -> None:
         """Lock, clicked or entered on `cell`: its part made the level's, fixed and using no
-        stock, or freed again (D-319); the Maker's level follows the board."""
+        stock, or freed again (D-319); the Editor's level follows the board."""
         node = self.board.node_at(cell) if cell is not None else None
         if node is None:
             self._refuse("click a part to lock it, or to free it", cell)

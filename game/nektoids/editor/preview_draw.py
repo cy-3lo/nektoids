@@ -1,4 +1,4 @@
-"""Drawing the Run preview on the editor's main screen (D-058): the board as it runs where the
+"""Drawing the Run preview on the Board's main screen (D-058): the board as it runs where the
 probe stands, on its body, plain, as Inside draws it in the run: beads on the wires, a meter by
 each eye and thruster, no numbers (D-052), and no handle on them (D-339). Reads the scene;
 never changes it.
@@ -10,10 +10,10 @@ import pygame
 
 from nektoids.editor.draw import Fonts, draw_body, draw_circuit
 from nektoids.editor.palette import BACKGROUND, DIM_TEXT
-from nektoids.editor.scene import EditorScene
+from nektoids.editor.scene import BoardScene
 
 
-def draw_preview(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+def draw_preview(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
     area = pygame.Rect(scene.layout.board_area)
     pygame.draw.rect(screen, BACKGROUND, area)
     probe = scene.probe

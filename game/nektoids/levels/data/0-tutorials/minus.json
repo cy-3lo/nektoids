@@ -19,8 +19,8 @@
   "tutorial": {
     "steps": [
       {
-        "show": [{"tab": "editor"}, {"level": "edit"}],
-        "until": {"screen": "edit"},
+        "show": [{"tab": "board"}, {"level": "board"}],
+        "until": {"screen": "board"},
         "say": [
           "Stop in the ring round the light for 3 s, without touching it.",
           "Press the **Board** button or tab, or press Tab."

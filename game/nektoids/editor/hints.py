@@ -1,6 +1,6 @@
 """A level's hints, asked for one after another in the Hints drawer (D-078, D-353): the parts
 one solution takes; then the shadow of that solution, its parts drawn faintly where they go and
-the way they face, without its wires, in a picture in the drawer and on the editor's board.
+the way they face, without its wires, in a picture in the drawer and on the Board.
 
 The solution is the level's proof, the board that won it (D-320, D-329), put on the level's own
 board over the parts the level places. The parts the player adds are counted from it, so the two
@@ -84,7 +84,7 @@ class HintView:
 
     lines: tuple[tuple[str, ...], ...]  # each hint taken, its lines under its row, in order
     locked: bool  # a tutorial leads: no hint may be taken yet
-    shadow: bool  # the shadow shows, in its picture and on the editor's board
+    shadow: bool  # the shadow shows, in its picture and on the Board
     board: Board | None = field(default=None, compare=False)  # the shadow built, for the picture
 
 

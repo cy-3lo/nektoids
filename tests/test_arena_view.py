@@ -260,7 +260,7 @@ def test_the_runs_extent_grows_by_union_and_a_frame_at_its_border_touches_it():
     assert not touches((1.0, 1.0, 9.0, 4.0), a)  # inside, clear of every side
 
 
-def test_the_makers_grid_shows_where_a_position_may_fall_unless_its_dots_would_crowd():
+def test_the_editors_grid_shows_where_a_position_may_fall_unless_its_dots_would_crowd():
     assert DOT_STEP == 1.0 and LINE_STEP == 5.0  # D-311: whole u, a line every 5
     assert dot_step(16.0) == 1.0  # the opening zoom (D-101): a dot every 16 px
     assert dot_step(DOT_LEAST / DOT_STEP) == 1.0
