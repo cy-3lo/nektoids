@@ -209,10 +209,10 @@ def test_a_level_copied_as_text_is_pasted_back_as_it_was():
     assert pasted(made, to_json(LEVEL)) == LEVEL  # and back: one step for undo each way
 
 
-def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_parts():
+def test_a_shipped_level_pasted_brings_its_plane_goals_time_handout_and_locked_parts():
     fear = next(
         level for level in arenas() if level.title == "Fear"
-    )  # its passkey, its hints, a board of its own
+    )  # its passkey, a board of its own, two thrusters locked on it (D-354)
     made = pasted(LEVEL, to_json(fear))
     assert (made.title, made.spec, made.start) == (fear.title, fear.spec, fear.start)
     assert (made.items, made.objectives, made.time_limit) == (
@@ -221,7 +221,8 @@ def test_a_shipped_level_pasted_brings_its_plane_goals_time_and_handout_not_its_
         fear.time_limit,
     )
     assert (made.board["zone"], made.board["stock"]) == (19, fear.board["stock"])  # D-315
-    assert made.board["parts"] == LEVEL.board["parts"]  # the board's own parts, none here
+    assert made.board["parts"] == fear.board["parts"]  # the level's own, locked (D-319)
+    assert all(part["locked"] for part in fear.board["parts"])
     assert made.tutorial is None and made.passkey is None
     assert fear.passkey is not None
     wiring = next(level for level in arenas() if level.title == "Wiring")  # D-335: a tutorial
@@ -307,6 +308,6 @@ def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
     assert made.board["wires"] == [] and pasted(LEVEL, to_json(made)) == made
     assert taken(LEVEL, made).board["parts"] == made.board["parts"]  # Start from, Paste
     assert blank(made).board["parts"] == []  # a blank plane places none
-    aggression = next(level for level in arenas() if level.title == "Aggression")  # its parts
+    diagnostic = next(level for level in arenas() if level.title == "Diagnostic")  # its parts
     # free, prewired: left out
-    assert taken(LEVEL, aggression).board["parts"] == []
+    assert taken(LEVEL, diagnostic).board["parts"] == []

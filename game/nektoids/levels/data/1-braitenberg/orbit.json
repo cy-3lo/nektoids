@@ -13,8 +13,11 @@
   ],
   "board": {
     "zone": 19,
-    "stock": {"eye": 2, "source": 1, "halve": 2, "thruster": 2},
-    "parts": [],
+    "stock": {"eye": 2, "source": 1, "halve": 2},
+    "parts": [
+      {"kind": "thruster", "cell": [1, -2], "facing": "E", "locked": true},
+      {"kind": "thruster", "cell": [-1, 2], "facing": "E", "locked": true}
+    ],
     "wires": []
   },
   "time_limit": 20,
@@ -23,5 +26,5 @@
     {"verb": "reach", "count": "none", "target": "light"}
   ],
   "passkey": "MOON",
-  "proof": {"board": "Q94CnG3c2C6fsL", "ticks": 1093, "parts": 4}
+  "proof": {"board": "Q9WeCdErrNR6U9", "ticks": 784, "parts": 4}
 }

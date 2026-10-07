@@ -71,8 +71,8 @@ def test_all_taken_in_the_run_they_fit_above_the_objectives_and_the_picture_stay
 
 def test_the_parts_are_counted_from_the_shadow_in_parts_order():
     love, aggression = (Hints.of(LEVELS[t]) for t in ("Love", "Aggression"))
-    assert parts_line(love.ghosts) == "One Eye, one Source, one Thruster, one Diff."
-    assert parts_line(aggression.ghosts) == "Two Eyes, two Thrusters."
+    assert parts_line(love.ghosts) == "Two Eyes, two Sources, two Diffs."  # D-354
+    assert parts_line(aggression.ghosts) == "Two Eyes."  # its thrusters are the level's
     assert parts_line(()) == "No part to add: only wires."
 
 

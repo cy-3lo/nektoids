@@ -11,6 +11,8 @@ from nektoids.graph.hexgrid import NW, SW, E, hex_disc, offset_rect
 from nektoids.levels.arenas import arenas
 
 LEVELS = {level.title: level for level in arenas()}
+FEAR_BEFORE = {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []}
+# Fear's board before its thrusters were locked (D-354): its four parts all the player's
 
 
 def parts_and_wires(board):
@@ -23,8 +25,9 @@ def parts_and_wires(board):
 
 
 def fear():
-    """Fear's model board (D-039): eyes at the front looking out, each to its own side."""
-    board = LEVELS["Fear"].new_board()
+    """Fear's model board (D-039): eyes at the front looking out, each to its own side; on
+    Fear's board as it was, every part placed, the board the text below is pinned on."""
+    board = Board.from_dict(FEAR_BEFORE)
     eyes = [board.place(Kind.EYE, c, facing=f) for c, f in (((2, -1), NW), ((1, 1), SW))]
     thrusters = [board.place(Kind.THRUSTER, cell) for cell in ((1, -2), (-1, 2))]
     for eye, thruster in zip(eyes, thrusters, strict=True):
@@ -158,8 +161,7 @@ def test_a_board_read_from_text_goes_on_a_level_as_a_win_does_or_says_why_not():
     for a, b in ((eyes[0], doubles[0]), (doubles[0], thrusters[1])):
         greed.connect(a.id, b.id)
     read = from_text(to_text(greed))
-    assert (
-        LEVELS["Fear"].new_board().adopt(read.snapshot()).reason
-        == "this level hands out no doubles"
+    assert Board.from_dict(FEAR_BEFORE).adopt(read.snapshot()).reason == (
+        "this level hands out no doubles"
     )
     assert LEVELS["Greed"].new_board().adopt(from_text(to_text(fear())).snapshot()) is None

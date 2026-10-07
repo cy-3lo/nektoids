@@ -36,7 +36,7 @@ Later, from Share level (D-320): a pasted level's score to beat in the run's Sco
 a shipped level's shows there (D-330).
 
 Later, from the board's locked parts (D-319): a level that starts with wires, or with parts
-the player may move, as Aggression's prewired eye and thruster; the Maker places locked parts
+the player may move, as Diagnostic's prewired eye and thruster; the Maker places locked parts
 only, the player wiring them.
 
 ## 2. Memory: the graph's vocabulary
