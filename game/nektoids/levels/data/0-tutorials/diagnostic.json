@@ -9,7 +9,7 @@
     "zone": 7,
     "stock": {"eye": 1, "thruster": 1},
     "parts": [
-      {"kind": "eye", "cell": [1, 0], "facing": "W", "locked": false},
+      {"kind": "eye", "cell": [1, 0], "facing": "SW", "locked": false},
       {"kind": "thruster", "cell": [-1, 0], "facing": "E", "locked": false}
     ],
     "wires": [{"from": 0, "to": 1, "path": [[1, 0], [0, 0], [-1, 0]]}]

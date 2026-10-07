@@ -2253,3 +2253,11 @@ forward wired to a thruster behind, went with the last card, 3 / 3, just when th
 build it. The tutorial now lends its ghosts once closed, after a tutorial still running and a
 hint's shadow shown, until Settings' Tutorial starts it again. Skip still ends it with its
 ghosts: the player asked for none. 0.1's and 0.2's ghosts are built over before their last card.
+
+**D-352 — 2026-10-07 — 0.6 Diagnostic's eye comes looking back and to the right, SW, a turn left off straight back. Amends D-335.**
+The physicist's, watching a new player: with the eye looking straight back, away from the light
+dead ahead, the probe in Diagnostic had to turn more than 90° before the eye read anything.
+Turned 60°, the light is still 120° off its axis at the start, so the swimmer still never moves;
+but three presses of L, or the wheel, 45° in all, and the eye reads, its beads running to the
+thruster; dragged beside the light, above it, it reads more. The proof, its eye turned forward,
+is unchanged.
