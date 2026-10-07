@@ -62,7 +62,7 @@ from nektoids.editor.tutorial import (
 )
 from nektoids.editor.tutorial_draw import draw_tutorial
 from nektoids.graph.board import Board, Kind
-from nektoids.levels.arenas import CHAPTERS, arenas, sandbox
+from nektoids.levels.arenas import CHAPTERS, arenas, locate, sandbox
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.scenarios import Scenario, scenarios
 from nektoids.levels.score import Score
@@ -109,8 +109,8 @@ def tutorial_start() -> Drawer | None:
 
 def hints() -> tuple[Hints, Board, Taken] | None:
     """The open level's hints, its shadow built once, and what of them is taken this session;
-    None in the sandbox, which has none (D-078)."""
-    if router.in_sandbox or router.level.hints is None:
+    None in the sandbox and in a chapter of levels made by users, which have none (D-353)."""
+    if router.in_sandbox or not locate(router.index)[0].hints:
         return None
     if router.index not in shadows:
         read = Hints.of(router.level)

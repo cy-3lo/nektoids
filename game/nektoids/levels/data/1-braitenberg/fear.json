@@ -9,6 +9,5 @@
   "time_limit": 10,
   "objectives": [{"verb": "leave", "count": "all", "target": "mark"}],
   "passkey": "LOVE",
-  "hints": {"idea": "Each eye its thruster."},
   "proof": {"board": "3C4tsBWoGsoQcW4i", "ticks": 244, "parts": 4}
 }

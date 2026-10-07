@@ -8,7 +8,6 @@
   "board": {"zone": 7, "stock": {"eye": 1, "thruster": 1}, "parts": [], "wires": []},
   "time_limit": 15,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
-  "hints": {"idea": "The eye drives what it is wired to."},
   "tutorial": {
     "steps": [
       {

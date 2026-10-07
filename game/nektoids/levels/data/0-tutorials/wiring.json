@@ -16,7 +16,6 @@
   },
   "time_limit": 10,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
-  "hints": {"idea": "A Source pushes all the time."},
   "tutorial": {
     "ghost_wires": [{"from": [0, 0], "to": [-1, 0]}],
     "steps": [

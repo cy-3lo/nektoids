@@ -17,6 +17,5 @@
   "time_limit": 20,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "SWORD",
-  "hints": {"idea": "Cross the wires."},
   "proof": {"board": "1jtrgg30ysHbVZY", "ticks": 1037, "parts": 4}
 }
