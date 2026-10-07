@@ -105,6 +105,7 @@ from nektoids.editor.router import WinGroup
 from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
 from nektoids.editor.tutorial import REFUSAL, Action
+from nektoids.editor.wiring import Chain, chain_to
 from nektoids.graph import boardtext
 from nektoids.graph.board import Board, BoardState, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
@@ -179,7 +180,7 @@ class BoardScene(Frame):
         self.held: Button | Kind = Button.SELECT  # the button in hand (D-401, D-402)
         self.pick: Pick = NOTHING  # what Select has picked, in the order clicked (D-402)
         self.cursor: Cell | None = None  # the keyboard's cell: the arrows move it, Enter clicks
-        self.source: int | None = None  # Wire held: the part the next one clicked is wired from
+        self.wire_chain: Chain | None = None  # Wire held: the parts clicked, wired one to the next
         self.press_cell: Cell | None = None  # a part pressed: a click or a drag, told on release
         self.pressed = False  # the left button down: a gesture under way, one step for undo
         self.sweeping = False  # ... with a button held that acts along it (D-404)
@@ -192,7 +193,7 @@ class BoardScene(Frame):
         self.group_from: Cell | None = None  # the cell it was pressed on
         self.group_pick: Pick = NOTHING  # the pick as the drag began
         self.group_offset: Cell = (0, 0)  # how far it has moved them
-        self.right: int | None = None  # right clicks' chain: the part the next is wired from
+        self.right_chain: Chain | None = None  # the right clicks' chain, alike
         self.right_down = False  # the right button down: a drag chains the parts crossed
         self.right_dragged = False  # ... and has chained one: the chain ends when it is let go
         self.ctrl_down = False  # a left press with Ctrl held, a right click's stand-in
@@ -225,6 +226,24 @@ class BoardScene(Frame):
         self.field_pressed = False  # a press on it: it opens when the click is over
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
         self.ghost_wires: tuple = ()  # ... and its wires, cell to cell (D-074); main.py's too
+
+    @property
+    def source(self) -> int | None:
+        """Wire held: the part the next one clicked is wired from, the chain's last."""
+        return None if self.wire_chain is None else self.wire_chain.last
+
+    @source.setter
+    def source(self, node_id: int | None) -> None:
+        self.wire_chain = None if node_id is None else Chain((node_id,))
+
+    @property
+    def right(self) -> int | None:
+        """The right clicks' chain's last part: the next one right-clicked is wired from it."""
+        return None if self.right_chain is None else self.right_chain.last
+
+    @right.setter
+    def right(self, node_id: int | None) -> None:
+        self.right_chain = None if node_id is None else Chain((node_id,))
 
     @property
     def tool(self) -> Tool:
@@ -876,8 +895,10 @@ class BoardScene(Frame):
                 self._update_ghost()
             return
         elif button is Button.WIRE:  # a chain, in the order picked
-            for source, target in zip(picked, picked[1:], strict=False):
-                if not self._try_wire(source, target, target.cell):
+            chain: Chain | None = Chain((picked[0].id,))
+            for node in picked[1:]:
+                chain = self._chain_to(chain, node)
+                if chain is None:
                     break
         self.pick = kept(self.pick, self.board)
 
@@ -930,21 +951,32 @@ class BoardScene(Frame):
             self.held = Button.SELECT
 
     def _wire_click(self, cell: Cell | None) -> None:
-        """Wire held: a part clicked starts the chain, the next is wired to it, and the chain
-        goes on from there (D-402); an empty cell ends it."""
+        """Wire held: a part clicked starts the chain, the next is wired to it, or unwired, and
+        the chain goes on from there; a part of the chain clicked again takes it back there
+        (D-402, `wiring`); an empty cell ends it."""
         node = self.board.node_at(cell) if cell is not None else None
-        source = self.board.nodes.get(self.source) if self.source is not None else None
         if node is None:
-            if source is not None:
-                self._refuse("a wire runs from a part to a part", cell)
-            self.source = None
-        elif source is None or source.id == node.id:
+            self.wire_chain = None
+        elif self.wire_chain is None:
             self.source = node.id
-        elif self._try_wire(source, node, cell):
-            self.source = node.id  # on from the part just wired to
         else:
-            self.source = None  # a wire refused: the chain ends, the reason said
+            self.wire_chain = self._chain_to(self.wire_chain, node)
         self._update_ghost()
+
+    def _chain_to(self, chain: Chain, node: Node) -> Chain | None:
+        """A chain on to `node` (`wiring.chain_to`), the scene saying why if it is refused."""
+
+        def make(a: int, b: int) -> Wire | None:
+            return self._try_wire(self.board.nodes[a], self.board.nodes[b], node.cell)
+
+        def cut(wire: Wire) -> bool:
+            if not self._allowed(Action("delete", cell=node.cell), node.cell):
+                return False
+            self.board.remove_wire(wire)
+            self.message = ""
+            return True
+
+        return chain_to(chain, self.board, node.id, make, cut)
 
     def _in_the_way(self, picked: list[Node], offset: Cell) -> Cell | None:
         """The first cell a group moved by `offset` would land on that it may not: off the zone,
@@ -1197,13 +1229,10 @@ class BoardScene(Frame):
     def _right_to(self, node: Node) -> None:
         """The right clicks' chain on to `node`: wired from the part before, if there is one; a
         wire refused ends it, the reason said."""
-        source = self.board.nodes.get(self.right) if self.right is not None else None
-        if source is None or source.id == node.id:
-            self.right = node.id
-        elif self._try_wire(source, node, node.cell):
+        if self.right_chain is None:
             self.right = node.id
         else:
-            self.right = None
+            self.right_chain = self._chain_to(self.right_chain, node)
         self._update_ghost()
 
     def doomed(self) -> tuple[frozenset[int], list[Wire]]:
@@ -1245,18 +1274,18 @@ class BoardScene(Frame):
         wire = self._wire_near(pos, cell)
         return None, [] if wire is None else [wire]
 
-    def _try_wire(self, source: Node, target: Node, cell: Cell) -> bool:
+    def _try_wire(self, source: Node, target: Node, cell: Cell) -> Wire | None:
         """A wire between two parts, either way round (D-026), if the tutorial and the board
-        let it; False, with the reason, if not."""
+        let it; None, with the reason, if not."""
         ends = source.cell, target.cell
         if not self._allowed(Action("wire", cell=ends[0], other=ends[1]), cell):
-            return False
+            return None
         result = self.board.connect(*self.board.orient(source.id, target.id))
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
-            return False
+            return None
         self.message = ""
-        return True
+        return result
 
     def _step(self, node_id: int, cell: Cell) -> Node | Refused:
         """The part moved to `cell`; while a drag or the keyboard carries it, worked out from the
