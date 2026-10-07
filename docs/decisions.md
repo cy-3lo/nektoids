@@ -2424,3 +2424,37 @@ level's parts and the operators do not turn, and say so. A run of turns on the s
 step for undo, kept once the wheel has rested 30 frames, or at once when the mouse leaves the part
 or anything else is done. Over an empty cell or off the board the wheel does what it did. The
 probe in Diagnostic keeps its own way, up counter-clockwise (D-058).
+
+**D-406 — 2026-10-07 — The Board after the physicist's first review: a click picks one thing, Shift or Cmd adds; a drag picks, places or wires along a path it can go back on; no Move button, the Board at 40 px; Esc is Chapters' key only; Lock on every Board, the player's own; the grid in 2 px over the buttons' shadows; stage 2 goes to `main`. Amends D-304, D-319, D-400, D-401, D-402, D-403, D-404.**
+The look, from three more rounds of mockups: the cells' sides are 2 px anti-aliased strokes, the
+zone's a lighter grey than the pattern round it, drawn over the buttons' shadows and under the
+buttons, wires and parts; a button is drawn 2 px inside its cell, clear of the line; the
+swimmer's symbol is 5 px wide, a shade darker, under the grid. Tried and dropped: an edge round
+the zone in an accent (Benjamin's, in accent2, which is the refusals' colour), a gap between the
+board and its buttons, and rounded corners where three cells meet. Each button has a tooltip: its
+name, its key, and for a part how many are left; Select's key is S. Move goes: a drag moves a part
+or the pick, and Shift with an arrow moves the picked parts a cell. Select, Lock and Delete sit at
+N, Undo and Redo at SW across from Sum and Difference, and the Board grows to 40 px, the view
+centring the largest zone and its buttons together. Select is in hand whenever the Board's tab
+opens.
+
+Picking: a click picks the one cell or part clicked, a click on the only thing picked drops it,
+and Shift or Cmd adds one to the pick or drops it. A drag picks along its path: going back onto a
+cell of the path cuts the path back to it, however far; a drag of empty cells that meets a part
+picks parts from there. From a part, the drag's first step decides: into a part not picked it
+picks parts, the empty cells passed over; else it moves the part, or the pick. Placing: a part's
+button acts when let go, and dragged onto the board places one, as a row of Parts does; with a
+part held, a drag places one in each empty cell, going back taking them away, and a drag from a
+part moves it, after which Select is in hand again, as after wiring by right clicks. Wiring: a
+chain is a path, and going back to one of its parts undoes the wires made after it; wiring over a
+wire takes it away; a wire refused ends the chain; a drag's chain, left or right, ends when let
+go; a right click off a part ends the chain and drops the pick. Ctrl+click is a right click, for
+trackpads without one, and every right click's work has another way: Wire or W, and the clicks.
+Delete, clicked on a part's rim, takes the short wire to its neighbour there.
+
+Esc opens and folds Chapters, and only that, on the Board; the captions point to S and the clicks
+instead. Lock is on every Board and is the player's: a part locked stays put, as it is, not moved,
+turned, swapped or deleted, its wires free to come and go; ringed in the accent, where the level's
+ring is light; Erase all spares it; saved boards keep it, the board's text does not, as it keeps
+no lock. On the sandbox, Shift+Lock makes a part the level's, as Lock did (D-319). Stage 2 goes
+to `main` now, the physicist's, before Camille's review of v1.1 (D-400 left it open).

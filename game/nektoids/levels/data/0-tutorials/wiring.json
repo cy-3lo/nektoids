@@ -42,7 +42,7 @@
       {
         "show": {"area": "bar"},
         "say": [
-          "The nav bar opens the drawers: **Tools**, **Parts**, **Files**, **Diagnostic**, **Navigator**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**."
+          "The nav bar opens the drawers: **Parts**, **Files**, **Diagnostic**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**."
         ]
       },
       {

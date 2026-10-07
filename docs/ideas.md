@@ -41,12 +41,16 @@ Later, from the board's locked parts (D-319): a level that starts with wires, or
 the player may move, as Diagnostic's prewired eye and thruster; the Maker places locked parts
 only, the player wiring them.
 
+Later, the items themselves (the physicist, 2026-10-07): lights that are obstacles too, so a
+swimmer bumps into a light it reaches; then objectives to "reach the light" need a radius
+larger than the light's. And obstacles that give a little: held by a stiff linear spring, moving
+2 to 3 px on a head-on hit. A spring needs damping, or it rings; if the aim is to see the hit, a
+recoil only drawn would leave every level's solutions as they are.
+
 ## 2. The Board
 
-In the todo, §15, since D-400: built on `stage/2-board`.
-
-Later, from D-402: the Editor given buttons as the Board's; it keeps its Wheel meanwhile
-(D-314).
+In the todo, §15, since D-400: built on `stage/2-board`, on `main` since D-406. The Editor
+given the Board's buttons is in the todo too; it keeps its Wheel meanwhile (D-314).
 
 ## 3. Memory: the graph's vocabulary
 

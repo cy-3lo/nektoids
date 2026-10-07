@@ -49,7 +49,7 @@ And stage 1, the todo's §11: a level maker, for us and Camille first (D-041), t
 the plane's lights, obstacles, marks (zones only the objectives read, D-306) and start, the
 board's zone, stock and locked parts, objectives and the time allowed, a clear check, levels
 and solutions shared as text, no server; and §13, the chapters, levels and tutorials made with it.
-And stage 2, built beside stage 1 on `stage/2-board`, the todo's §15: a Board built with fewer
+And stage 2, built beside stage 1 on `stage/2-board` and on `main` since D-406, the todo's §15: a Board built with fewer
 moves, hex buttons round a board of one fixed size, no Navigator, its gestures, and chapter 0's
 cards rewritten for them (D-400).
 
