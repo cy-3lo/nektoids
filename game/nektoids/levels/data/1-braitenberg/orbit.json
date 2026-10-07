@@ -6,10 +6,10 @@
   "start": {"at": [25, 9], "heading": 0},
   "items": [
     {"kind": "light", "at": [25, 19], "power": 8},
-    {"kind": "mark", "at": [30, 19], "radius": 2},
-    {"kind": "mark", "at": [25, 24], "radius": 2},
-    {"kind": "mark", "at": [20, 19], "radius": 2},
-    {"kind": "mark", "at": [25, 14], "radius": 2}
+    {"kind": "mark", "at": [31, 25], "radius": 2},
+    {"kind": "mark", "at": [19, 25], "radius": 2},
+    {"kind": "mark", "at": [19, 13], "radius": 2},
+    {"kind": "mark", "at": [31, 13], "radius": 2}
   ],
   "board": {
     "zone": 19,
@@ -25,5 +25,5 @@
     {"verb": "reach", "count": "all", "target": "mark"},
     {"verb": "reach", "count": "none", "target": "light"}
   ],
-  "proof": {"board": "Q9WeCdErrNR6U9", "ticks": 784, "parts": 4}
+  "proof": {"board": "J1uA9PSzoTci9G", "ticks": 1132, "parts": 4}
 }
