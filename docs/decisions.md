@@ -2398,3 +2398,19 @@ a press on the held button holds Select again. With nothing picked, Move held li
 clicked and puts it on the empty cell clicked next. Esc backs out of a wire's chain or a part
 lifted, then the pick, then the held button, then opens Chapters (D-304). The keyboard has a
 cursor: the arrows move it, Enter clicks there. Wiring's and Turning's cards say so.
+
+**D-404 — 2026-10-07 — Drags and right clicks, as built: a held button acts along a drag on each cell it enters; with Select, a drag from an empty cell picks the empty cells it crosses and one from a picked part moves the pick, let go off the body it goes; right clicks wire whatever is held, and a left click ends their chain and acts. Amends D-072, D-085, D-090, D-304, D-402.**
+A press acts as a click does; then each cell the drag enters, once: a part's button places one
+on each empty cell while one is left, then Select is held; Delete, Turn and Lock act on each part
+crossed; Wire chains the parts crossed in that order, the empty cells between leaving the chain
+as it is. With Select, a drag from an empty cell picks the empty cells it crosses, the parts it
+crosses left out; one from a part not picked moves it alone, as before (D-090), but Wire held no
+longer draws one wire by a drag (D-072): it chains. A drag from a picked part moves the whole
+pick, worked out from the board as it was picked up (D-086); a step refused leaves it where it
+last could go, the cell in the way flashing; let go off the body, every picked part goes, with
+its wires, darkened while it is off (D-085), the physicist's: one Undo brings them back. Right
+clicks wire whatever button is held, which stays held: a part right-clicked starts the chain, the
+next is wired to it and the chain goes on from there; a right drag chains the parts it crosses;
+a right click off a part, Esc, or a left click ends the chain, the left click acting too, the
+physicist's. On the Board a right click no longer backs out (D-304). A drag, or a right drag, is
+one step for undo (D-027).

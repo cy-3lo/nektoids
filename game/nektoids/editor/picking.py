@@ -1,7 +1,9 @@
 """What is picked on the Board (D-402): empty cells, or parts, one after another, in the order
 clicked, which the code keeps and the screen does not show (D-401). The first click says which:
 a click of the other kind starts a pick of its own; a click on a picked one drops it; a click off
-the zone drops them all. A part's pick follows its parts by their cells. Pure Python, no pygame.
+the zone drops them all. A drag from an empty cell picks the empty cells it crosses, the parts
+it crosses left out (D-404). A part's pick follows its parts by their cells. Pure Python, no
+pygame.
 """
 
 from __future__ import annotations
@@ -42,6 +44,15 @@ def clicked(pick: Pick, board: Board, cell: Cell | None) -> Pick:
         rest = tuple(c for c in pick.cells if c != cell)
         return Pick(what, rest) if rest else NOTHING
     return Pick(what, (*pick.cells, cell))
+
+
+def along(pick: Pick, board: Board, cell: Cell) -> Pick:
+    """The pick of a drag that picks cells, as it enters `cell`: added if it is an empty cell of
+    the zone not picked yet; a part, or a cell picked already, leaves it as it was (D-404)."""
+    if cell not in board.cells or board.node_at(cell) is not None:
+        return pick
+    cells = pick.cells if pick.what is Picked.CELLS else ()
+    return pick if cell in cells else Pick(Picked.CELLS, (*cells, cell))
 
 
 def of_parts(cells: Iterable[Cell]) -> Pick:

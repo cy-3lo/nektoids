@@ -1,6 +1,16 @@
 """What is picked on the Board (D-402): empty cells, or parts, in the order clicked."""
 
-from nektoids.editor.picking import NOTHING, Pick, Picked, clicked, kept, moved, of_parts, parts
+from nektoids.editor.picking import (
+    NOTHING,
+    Pick,
+    Picked,
+    along,
+    clicked,
+    kept,
+    moved,
+    of_parts,
+    parts,
+)
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import hex_disc
 
@@ -44,3 +54,15 @@ def test_the_pick_follows_the_board_its_parts_moved_and_what_went_dropped():
     board.place(Kind.SUM, (0, 1))
     assert kept(cells, board) == Pick(Picked.CELLS, ((-1, 1),))  # filled: no longer empty
     assert of_parts([]) == NOTHING and kept(NOTHING, board) == NOTHING
+
+
+def test_a_drag_picks_the_empty_cells_it_crosses_and_leaves_the_parts_out():
+    board = board_with_two_parts()  # D-404
+    pick = along(NOTHING, board, (-1, 0))
+    pick = along(pick, board, (0, 0))  # the sum: left out
+    pick = along(pick, board, (0, 1))
+    pick = along(pick, board, (-1, 0))  # crossed again: picked once
+    assert pick == Pick(Picked.CELLS, ((-1, 0), (0, 1)))
+    assert along(pick, board, (5, 5)) == pick  # off the zone
+    parts_picked = clicked(NOTHING, board, (1, 0))
+    assert along(parts_picked, board, (0, 1)) == Pick(Picked.CELLS, ((0, 1),))  # cells instead
