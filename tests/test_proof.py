@@ -23,7 +23,7 @@ load(ORBITER, Proof.from_dict(ORBIT.proof).board)  # its proof's board, which wi
 
 
 def test_a_proof_is_its_boards_text_and_its_score_and_refuses_what_it_does_not_know():
-    proof = Proof(boardtext.to_text(ORBITER), 784, 4)
+    proof = Proof(boardtext.to_text(ORBITER), 1132, 4)
     assert Proof.from_dict(json.loads(json.dumps(proof.to_dict()))) == proof
     with pytest.raises(ValueError, match="takes no 'time'"):
         Proof.from_dict({**proof.to_dict(), "time": 9.1})
@@ -35,14 +35,14 @@ def test_a_winning_board_run_again_wins_at_the_tick_it_won_at_a_few_ticks_a_fram
     replay = Replay(ORBIT, ORBITER, DT)
     while replay.advance(120) is None:  # a second of the run a frame
         assert 0.0 < replay.progress < 1.0
-    assert replay.outcome is Outcome.WON and replay.tick == 784  # as the pinned run (D-354)
-    assert replay.advance(120) is Outcome.WON and replay.tick == 784  # over: no further
+    assert replay.outcome is Outcome.WON and replay.tick == 1132  # as the pinned run (D-357)
+    assert replay.advance(120) is Outcome.WON and replay.tick == 1132  # over: no further
     empty = Replay(ORBIT, ORBIT.blank_board(), DT)  # no part: it stays where it starts
     assert empty.advance(10_000) is Outcome.TIME_UP and empty.progress == 1.0
 
 
 def test_a_level_shared_carries_its_proof_through_its_text():
-    proof = Proof(boardtext.to_text(ORBITER), 784, 4)
+    proof = Proof(boardtext.to_text(ORBITER), 1132, 4)
     shared = replace(ORBIT, proof=proof.to_dict())
     again = read_level(to_json(shared))
     assert again == shared and Proof.from_dict(again.proof) == proof

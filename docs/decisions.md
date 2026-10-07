@@ -2311,3 +2311,13 @@ follow, in two steps so that "editor" never means both: the Board's are `Env.BOA
 and `tab:editor`. The package `nektoids/editor/`, the whole interface,
 keeps its name, and `levels/making.py`, about making a level, its own. Decisions before this one
 keep the names they were written with.
+
+**D-357 — 2026-10-07 — Love's and Orbit's proofs are the physicist's: Love's, 18ZTtJNDZkXYA2nBggbmTZb7b, eight parts, 7.28 s; Orbit's, J1uA9PSzoTci9G, four parts, 9.43 s, the eye at the front looking ahead and to the left on the left thruster, a Source on the right. Orbit's four rings, of 2 u, move onto its circle, 9 u round the light, on the diagonals, at (±6, ±6) from it. Amends D-312, D-354.**
+The physicist's boards, as Fear's (D-344): Score's cross and the hints show them. Love's is the
+3a of D-354 laid out more tidily, won at the same tick. On the locked thrusters Orbit's orbiter
+goes round 9 u out, where the rings, 5 u out, never were: it passed 4 u from their centres. The
+physicist asked for larger rings; on the same centres they would have needed 5 u, reaching the
+light and each other, the start on the lower ring's edge, counted in. On the diagonals, 8.5 u
+out, 2 u rings keep their size, none holds the start, and they lie on the circle: the orbiter
+wins in 9.43 s, and a tight orbit like the old one, inside them, no longer does. The orbiter with
+a Halve on each wire goes round the same circle at half the speed and wins too, in 18.9 s.

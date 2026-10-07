@@ -282,23 +282,24 @@ def built(title, parts, wires):
 
 THRUSTERS = [(Kind.THRUSTER, (2, -1), E), (Kind.THRUSTER, (1, 1), E)]  # front left, front right
 LOCKED = [(Kind.THRUSTER, cell, E) for cell in SIDES]  # chapter 1's, on the sides (D-354)
-# The orbiter (D-097): an eye at the back left looking ahead pushes the left thruster; a Source
-# pushes the right one all the time, so the swimmer turns left until the light, seen ahead,
-# straightens it: it settles on a circle round the light, keeping it on its left.
+# The orbiter (D-097), the physicist's (D-357): an eye at the front looking ahead and to the left
+# pushes the left thruster; a Source pushes the right one all the time, so the swimmer turns left
+# until the light, seen, straightens it: it settles on a circle 9 u round the light, keeping it
+# on its left, through the four rings on that circle.
 ORBITER = built(
-    "Orbit", [(Kind.EYE, (-1, -1), E), (Kind.SOURCE, (0, 0), None), *LOCKED], [(0, 2), (1, 3)]
+    "Orbit", [(Kind.EYE, (2, 0), NE), (Kind.SOURCE, (0, 0), None), *LOCKED], [(0, 2), (1, 3)]
 )
-# The brief's ÷2 on one side: eyes ahead, crossed, the left one halved; a Source on the right.
+# ... with a Halve on each wire: both pushes halved, their ratio kept, the same circle, slower.
 HALVED = built(
     "Orbit",
     [
-        (Kind.EYE, (-1, -1), E),
-        (Kind.EYE, (-2, 1), E),
-        *LOCKED,
+        (Kind.EYE, (2, 0), NE),
         (Kind.SOURCE, (0, 0), None),
-        (Kind.HALVE, (0, -1), None),
+        *LOCKED,
+        (Kind.HALVE, (1, -1), None),
+        (Kind.HALVE, (0, 1), None),
     ],
-    [(0, 5), (5, 3), (1, 2), (4, 3)],
+    [(0, 4), (4, 2), (1, 5), (5, 3)],
 )
 
 
@@ -308,12 +309,12 @@ def test_orbit_the_orbiter_goes_round_the_light_through_its_rings_well_clear_of_
     assert play(ORBITER, "Orbit")[1] == ticks  # the same tick, every run
     light = LEVELS["Orbit"].arena.light_xy[0]
     nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(ORBITER, "Orbit", ticks * DT))
-    assert nearest > TOUCH + 1.5  # it passes 4.1 u out, 2 u clear of touching (D-004, D-354)
+    assert nearest > 8.5  # it goes round 9 u out, where its rings are (D-004, D-357)
 
 
-def test_orbit_halving_one_crossed_eye_orbits_too_and_faster():
+def test_orbit_halving_both_pushes_goes_round_the_same_circle_at_half_the_speed():
     ended, ticks, _ = play(HALVED, "Orbit")
-    assert ended is Outcome.WON and ticks < play(ORBITER, "Orbit")[1]
+    assert ended is Outcome.WON and 1.9 < ticks / play(ORBITER, "Orbit")[1] < 2.1
 
 
 def test_orbit_aggression_touches_the_light_and_a_bare_drive_or_fear_never_go_round_it():
@@ -411,6 +412,7 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # 3 u from it (D-318): out of the ring in about the time it took before. Orbit's winners again
 # when chapter 1's thrusters were locked on the body's sides (D-354): Fear's and Love's boards
 # had theirs there already, and the smallest love's two halves push as its one thruster did.
+# Orbit's again when its rings went out onto the physicist's orbiter's circle (D-357).
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
@@ -422,8 +424,8 @@ BEFORE_SENTENCES = {
     ("Love", "love(E, E)"): (Outcome.WON, 882, ((1, 1, 1.0), (1, 1, 1.0))),  # D-317
     ("Love", "love_on_the_axis()"): (Outcome.WON, 1178, ((1, 1, 1.0), (1, 1, 1.0))),
     ("Love", "love(NE, SE)"): (Outcome.LOST, 381, ((0, 1, 0.29999999999999943), (0, 1, 0.0))),
-    ("Orbit", "ORBITER"): (Outcome.WON, 784, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312, D-354
-    ("Orbit", "HALVED"): (Outcome.WON, 729, ((4, 4, 1.0), (1, 1, 1.0))),  # D-354
+    ("Orbit", "ORBITER"): (Outcome.WON, 1132, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312, D-357
+    ("Orbit", "HALVED"): (Outcome.WON, 2263, ((4, 4, 1.0), (1, 1, 1.0))),  # D-357
     ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
     ("Greed", "greedy()"): (Outcome.WON, 1202, ((2, 2, 1.0),)),  # D-313
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
