@@ -2414,3 +2414,13 @@ next is wired to it and the chain goes on from there; a right drag chains the pa
 a right click off a part, Esc, or a left click ends the chain, the left click acting too, the
 physicist's. On the Board a right click no longer backs out (D-304). A drag, or a right drag, is
 one step for undo (D-027).
+
+**D-405 — 2026-10-07 — The mouse wheel, as built: over a part it turns it 60° a notch, up to the right; over a picked part, every picked part that turns; a trackpad's small scrolls add up to a notch, then rest 0.15 s; turns on the same parts, less than 0.5 s apart, are one step for undo. Applies D-402.**
+A wheel's notch is a turn at once; a trackpad's scrolls, fractions of a notch, add up, and the
+one that makes a notch turns the part, then the scrolls are let go for 9 frames, so that a flick
+of two fingers turns it once (`notches.py`). Up is the wheel's own: with natural scrolling the
+system's flip is undone, so that up turns to the right on a mouse and on a trackpad alike. The
+level's parts and the operators do not turn, and say so. A run of turns on the same parts is one
+step for undo, kept once the wheel has rested 30 frames, or at once when the mouse leaves the part
+or anything else is done. Over an empty cell or off the board the wheel does what it did. The
+probe in Diagnostic keeps its own way, up counter-clockwise (D-058).

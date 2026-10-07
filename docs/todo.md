@@ -90,6 +90,5 @@ keyboard, from buttons round a board of one size. Its look and places are D-401,
 seven rounds of mockups; its gestures are D-402. Each item below is a `feat/…` branch into
 `stage/2-board`, planned when it starts.
 
-- [ ] **The mouse wheel** (D-402): 60° a notch, up to the right, a trackpad's scrolls added up.
 - [ ] **Chapter 0's cards**, rewritten for the buttons: today they point at the drawers, the bar
   and the Wheel ("Move on the Wheel").
