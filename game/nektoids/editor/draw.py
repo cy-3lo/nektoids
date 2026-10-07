@@ -1345,6 +1345,8 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
             lines += (f"Fastest win: {place.best.ticks * DT:.2f} s, {place.best.parts} parts.",)
         if place.passkey:  # won: its word, to copy down (D-075)
             lines += (f"Passkey: {place.passkey}, opens {level_label(place.index + 1)}.",)
+        if place.every_level:  # all won: the word for them all (D-355)
+            lines += (f"Passkey for every level: {place.every_level}.",)
     else:
         name, lines = about(scene, what)
     rows = [fonts.name.render(name, True, TEXT)]

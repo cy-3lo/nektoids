@@ -319,6 +319,7 @@ async def main() -> None:
         if playing is not None:
             if playing.outcome is Outcome.WON and playing.ended_at is not None:
                 router.mark_won()  # the next level opens in Chapters
+                playing.passkey = router.next_passkey()  # the last of all: every level's (D-355)
                 score = Score(playing.parts, playing.ended_at)  # once: a set
                 router.record(score, router.board.snapshot())  # the board that won, for Files
                 made = makers.get(router.index)
@@ -381,8 +382,9 @@ async def main() -> None:
         for scene in frames:  # a passkey typed in Chapters (D-075)
             if scene is not None and scene.asked_passkey is not None:
                 word, scene.asked_passkey = scene.asked_passkey, None
-                opened = router.unlock(word)
-                if opened is None:
+                if router.unlock_every(word):  # D-355
+                    scene.said = f"{word} opens every level: they are open in Chapters"
+                elif (opened := router.unlock(word)) is None:
                     scene.message = "no level has that word"
                 else:
                     title = router.levels[opened].title
