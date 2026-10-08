@@ -114,6 +114,7 @@ from nektoids.editor.palette import (
     BODY,
     BODY_OUTLINE,
     BUTTON,
+    CHAPTER,
     CLEAR,
     COMPONENT,
     DARK,
@@ -741,13 +742,13 @@ def _draw_sections(screen: pygame.Surface, scene: Frame, fonts: Fonts, ink, at_f
 
 def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -> None:
     """A title that folds what is under it, as Parts' groups and The Wheel (D-069): a caret, right
-    while folded, down while open, then the title in upper case; a chapter's as it is written,
-    larger and brighter, "1. Braitenberg" (D-420)."""
+    while folded, down while open, then the title in upper case; a chapter's larger and lighter,
+    "1. BRAITENBERG" (D-420)."""
     x, y, _, h = rect
     caret = "caret-right" if folded else "caret-down"
     fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
     if title in CHAPTER_HEADINGS:
-        shown = fonts.heading.render(title, True, TEXT if ink == DIM_TEXT else ink)
+        shown = fonts.heading.render(title.upper(), True, CHAPTER if ink == DIM_TEXT else ink)
     else:
         shown = fonts.label.render(title.upper(), True, ink)
     screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
