@@ -113,13 +113,12 @@ def test_a_made_level_reads_back_as_written_by_to_json():
     assert again == made and to_json(again) == text
 
 
-def test_a_title_and_a_spec_are_written_their_spaces_squeezed_and_never_left_empty():
+def test_a_title_and_a_spec_are_written_their_spaces_squeezed_the_spec_never_left_empty():
     made = specified(titled(LEVEL, "  Two   lights "), "Touch\nboth lights.")
     assert (made.title, made.spec) == ("Two lights", "Touch both lights.")
     assert made.items == LEVEL.items and len(titled(LEVEL, "x" * 99).title) == TITLE_LONGEST
     assert len(specified(LEVEL, "y" * 999).spec) == SPEC_LONGEST
-    with pytest.raises(Unmade, match="needs a title"):
-        titled(LEVEL, "   ")
+    assert titled(LEVEL, "   ").title == ""  # no title: YOUR LEVEL in the caption (D-419)
     with pytest.raises(Unmade, match="what the level asks"):
         specified(LEVEL, "")
 
@@ -269,7 +268,7 @@ def test_a_text_no_level_could_hold_is_refused_with_its_reason():
 def test_a_blank_plane_has_no_item_no_goal_the_swimmer_at_the_origin_two_of_each_part():
     made = blank(goal_added(LEVEL))  # D-310, D-315
     assert (made.items, made.objectives, made.start) == ((), (), (0.0, 0.0, 0.0))
-    assert made.time_limit == BLANK_TIME and made.title == "New level" and made.spec
+    assert made.time_limit == BLANK_TIME and made.title == "" and made.spec
     assert made.board["stock"] == {kind.value: BLANK_STOCK for kind in Kind}
     assert made.board["zone"] == LEVEL.board["zone"] and pasted(LEVEL, to_shared(made)) == made
 

@@ -44,7 +44,7 @@ LABELS = ("Title", "Author", "Description", "Level", "Board")
 WORDS = ("Level", "Board")  # a word, its first run of characters: what follows is left out
 LABEL = re.compile(r"(?:^|(?<=\s))(" + "|".join(LABELS) + r"):")
 BOARD_TAGS = ("zone", "parts", "cell", "kind", "facing", "wire", "how", "step")  # its questions
-UNTITLED = ("New level", "Say what the level asks.")  # a text without them (making.blank)
+UNTITLED = ("", "Say what the level asks.")  # a text without them, as a blank level (D-419)
 
 Choose = Callable[[str, Sequence], object]
 

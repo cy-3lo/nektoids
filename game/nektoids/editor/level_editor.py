@@ -118,6 +118,7 @@ from nektoids.editor.plane_pick import (
     clicked,
     items,
 )
+from nektoids.editor.router import captioned
 from nektoids.editor.scene import (
     ARROW_SCANCODES,
     ARROWS,
@@ -251,8 +252,9 @@ class EditorScene(Frame):
 
     @property
     def caption(self) -> tuple[str, str]:
-        """The level's place and title, and what it asks: under the tabs (D-056)."""
-        return f"{self.label}. {self.level.title}", self.level.spec
+        """The level's title, or YOUR LEVEL while it has none, and what it asks: under the tabs
+        (D-056, D-419)."""
+        return captioned(self.label, self.level.title), self.level.spec
 
     @property
     def arena_area(self) -> Rect:
@@ -986,7 +988,7 @@ class EditorScene(Frame):
             return
         if not self._made_anew(lambda level: replace(taken(level, other), author=other.author)):
             return
-        self.said = f"Pasted: {self.level.title}."
+        self.said = f"Pasted: {self.level.title or 'a level with no title'}."
         if other.proof is not None:
             proof, board = Proof.from_dict(other.proof), self.level.new_board()
             fits, why = load(board, proof.board)

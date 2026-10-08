@@ -407,7 +407,8 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
             at = fonts.text.render("@", True, TEXT)
             screen.blit(at, at.get_rect(midright=(rect[0] - 4, rect[1] + rect[3] // 2)))
         if field is not Brief.SPEC:  # the title's, the author's (D-331)
-            draw_field(screen, fonts, rect, text, caret, anchor=anchor)
+            hint = "Title" if field is Brief.TITLE else ""  # dimmed, while it has none (D-419)
+            draw_field(screen, fonts, rect, text, caret, hint=hint, anchor=anchor)
         else:
             _draw_spec(screen, fonts, rect, text, caret, anchor)
     _draw_goals(screen, scene, fonts)

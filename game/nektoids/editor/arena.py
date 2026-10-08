@@ -97,7 +97,7 @@ from nektoids.editor.layout import (
 )
 from nektoids.editor.notches import Notches
 from nektoids.editor.recording import Recording
-from nektoids.editor.router import level_label
+from nektoids.editor.router import captioned, level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import Action
@@ -228,7 +228,7 @@ class ArenaScene(Frame):
     @property
     def caption(self) -> tuple[str, str]:
         """The level's number and title, and what it asks: under the tabs (D-034, D-056)."""
-        return f"{self.label or level_label(self.index)}. {self.level.title}", self.level.spec
+        return captioned(self.label or level_label(self.index), self.level.title), self.level.spec
 
     @property
     def control_tip(self) -> ArenaButton | str | None:

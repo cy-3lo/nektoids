@@ -4,7 +4,14 @@ from dataclasses import replace
 
 import pytest
 
-from nektoids.editor.router import ChapterRow, Router, Screen, level_label
+from nektoids.editor.router import (
+    SANDBOX_LABEL,
+    ChapterRow,
+    Router,
+    Screen,
+    captioned,
+    level_label,
+)
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import EVERY_LEVEL, arenas, sandbox
 from nektoids.levels.score import Score
@@ -321,3 +328,9 @@ def test_the_editor_revises_the_sandboxs_level_alone_and_its_board_stays():
     router.revise(made)
     assert router.level is made and router.sandbox is made
     assert router.board is board and eye.id in board.nodes  # the plane changed round it
+
+
+def test_the_sandbox_is_captioned_by_its_title_or_your_level_while_it_has_none():
+    assert captioned(SANDBOX_LABEL, "") == "YOUR LEVEL"  # D-419
+    assert captioned(SANDBOX_LABEL, "Dragster") == "Dragster"
+    assert captioned("LEVEL 1.2", "Fear") == "LEVEL 1.2. Fear"  # D-034

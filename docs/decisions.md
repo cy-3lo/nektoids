@@ -2618,3 +2618,9 @@ characters are all one width, measured once at startup. On the web the page's fi
 repeats and selects with the keys; the game now reads the selection's other end from it too, and
 a click or drag in the game's field selects in the page's. Every field takes it: the Editor's
 title, spec, author and typed values, Paste a level and Paste a board.
+
+**D-419 — 2026-10-08 — Build your level is captioned by its level's title alone, or YOUR LEVEL while it has none, in the Run, the Board and the Editor; a blank level starts with no title, its field showing "Title", dimmed. Amends D-310, D-341.**
+The physicist's, before v1.1: "YOUR LEVEL. New level" said the same thing twice. A level made
+in the Editor may have no title; the chapters' levels keep "LEVEL 1.2. Fear" (D-034). A level
+shared with no title is read back with none (D-413), and so captioned YOUR LEVEL where it is
+pasted.
