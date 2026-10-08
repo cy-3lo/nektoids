@@ -2520,3 +2520,10 @@ there; notches as the Board's (D-405). Keys: S, H, 0 to 3, < and >, + and -, Del
 Ctrl+V, Ctrl+X; the arrows move the pick 1 u, else the view; Esc opens Chapters (D-406). The swimmer is
 drawn with lines 0.15 of its radius on screen, 2 px at least, in the run, the Editor, their maps
 and on its key, the physicist's.
+
+**D-411 — 2026-10-08 — In the run, a drag moves the view, left or right, and the mouse wheel zooms about the mouse, as in the Editor (D-410). Amends D-065, D-066.**
+The physicist's. A left press on the arena that moves 4 px or more moves the view; one let go
+where it was is a click, which inspects, as before; the developer's drag still moves the swimmer.
+A right drag moves the view whatever the press would do. The wheel over the arena zooms about the
+mouse, a trackpad's small scrolls adding up to a notch (D-405); in the developer view it still
+turns the swimmer. The Hand and Navigator's zoom stay.
