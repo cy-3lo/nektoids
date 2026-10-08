@@ -516,6 +516,48 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
                 ), step.say
 
 
+@pytest.mark.parametrize("title", [t for t, level in LEVELS.items() if level.tutorial])
+def test_a_box_on_the_board_hides_none_of_its_targets_nor_a_button_but_undo_and_redo(title):
+    # D-406: the buttons are kept clear of as the parts are (D-103); where a card fits nowhere
+    # else by a drawer, over Undo and Redo, which a tutorial's step needs least
+    level = LEVELS[title]
+    tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
+    kinds = frozenset(k for k in Kind if board.total(k) != 0)
+    on_board = tutorial.starts_in is not None  # the steps shown on the Board, as main.py does
+    for index, step in enumerate(tutorial.steps):
+        waits = step.until if isinstance(step.until, dict) else {}
+        if not on_board:
+            on_board = waits.get("screen") == "board"
+            continue
+        if waits.get("screen") == "run":
+            on_board = False
+        if any(tutorial.steps[k].until == {"drawer": "diagnostic"} for k in range(index)):
+            continue  # the Run preview: no buttons (D-058)
+        tutorial.index = index
+        layout = make_layout(drawer_for(step) or Drawer.PARTS, kinds=kinds)
+        view, where = board_view(layout), (Screen.BOARD, layout)
+        targets = [t for t in target_rects(step.show, *where, view) if not is_area(t)]
+        done = tutorial.before
+        before = [] if done is None else target_rects(worked_on(done.show), *where, view)
+        parts = target_rects([{"cell": list(n.cell)} for n in board.nodes.values()], *where, view)
+        shown = shown_buttons(kinds, False)
+        last = (Button.UNDO, Button.REDO)
+        keep = [{"button": b.value} for b in shown if b not in last]
+        buttons = target_rects([{"button": b.value} for b in shown], *where, view)
+        spare = target_rects([{"button": b.value} for b in last], *where, view)
+        clear_of = parts + target_rects(keep, *where, view)
+        box = box_rect(targets, len(step.lines), layout.board_area, before, clear_of, spare)
+
+        assert not any(overlap(box, t) for t in targets), (title, index)
+        spare = {Button.UNDO.value, Button.REDO.value}
+        hidden = [
+            b.value
+            for b, r in zip(shown_buttons(kinds, False), buttons, strict=True)
+            if overlap(box, r)
+        ]
+        assert set(hidden) <= spare, (title, index, hidden)
+
+
 def grown(rect, by):
     x, y, w, h = rect
     return (x - by, y - by, w + 2 * by, h + 2 * by)

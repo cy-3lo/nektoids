@@ -24,7 +24,13 @@
         ]
       },
       {
-        "show": [{"drawer": "parts"}, {"menu": "halve"}, {"menu": "double"}],
+        "show": [
+          {"drawer": "parts"},
+          {"menu": "halve"},
+          {"menu": "double"},
+          {"button": "halve"},
+          {"button": "double"}
+        ],
         "say": [
           "The **Halve** sends half the beads that come in, the **Double** twice as many. No wire carries more than a **Source** sends."
         ]

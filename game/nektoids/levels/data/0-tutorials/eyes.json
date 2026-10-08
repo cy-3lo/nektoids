@@ -19,7 +19,7 @@
         ]
       },
       {
-        "show": [{"drawer": "parts"}, {"menu": "eye"}],
+        "show": [{"drawer": "parts"}, {"menu": "eye"}, {"button": "eye"}],
         "say": [
           "An **Eye** sends beads as fast as it sees light: more from a light near it and in front of it.",
           "Here the light is straight ahead."
@@ -27,7 +27,8 @@
       },
       {
         "say": [
-          "Put an **Eye** and a **Thruster** on the board, both pointing forward, and wire the **Eye** to the **Thruster**. Then run it."
+          "Drag the **Eye** and the **Thruster** buttons onto their ghosts, facing forward as they do.",
+          "Then press **W**, click the **Eye**, then the **Thruster**: they are wired. Run it."
         ]
       }
     ],

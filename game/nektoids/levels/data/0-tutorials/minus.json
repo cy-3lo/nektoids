@@ -27,7 +27,7 @@
         ]
       },
       {
-        "show": {"menu": "difference"},
+        "show": [{"menu": "difference"}, {"button": "difference"}],
         "say": [
           "The **Diff** sends the difference of its two inputs.",
           "A **Source** less an eye: a full push in the dark, none once the eye sees all the light it can."

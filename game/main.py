@@ -31,6 +31,7 @@ import pygame
 from nektoids.editor import clipboard
 from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
+from nektoids.editor.buttons import Button
 from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.hints import Hints, Taken, hint_view
@@ -129,11 +130,17 @@ def tutorial_box(guide: Tutorial, scene: BoardScene | ArenaScene) -> tuple:
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = [] if done is None else target_rects(worked_on(done.show), *where)
     beside = scene.layout.board_area  # the board, or the arena
-    parts = []  # what the box must not hide: the parts on the Board (D-103)
+    parts = []  # what the box must not hide: the parts on the Board (D-103), its buttons (D-406)
     if isinstance(scene, BoardScene):
         parts = target_rects([{"cell": list(n.cell)} for n in scene.board.nodes.values()], *where)
+    spare = []  # what it hides last: Undo and Redo, which a step needs least (D-406)
+    if isinstance(scene, BoardScene) and scene.main is MainView.DIAGRAM:
+        buttons = scene.shown_buttons()
+        last = (Button.UNDO, Button.REDO)
+        parts += target_rects([{"button": b.value} for b in buttons if b not in last], *where)
+        spare = target_rects([{"button": b.value} for b in buttons if b in last], *where)
     lines = len(guide.step.lines)
-    return spots, box_rect([rect for rect, _ in spots], lines, beside, before, parts)
+    return spots, box_rect([rect for rect, _ in spots], lines, beside, before, parts, spare)
 
 
 def choose_place(index: int) -> None:

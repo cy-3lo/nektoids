@@ -508,49 +508,81 @@ def _run_target(name: str, layout: Layout) -> Rect | None:
 
 
 def box_rect(
-    targets: list, lines: int, hint_at: Rect, before: list = (), clear_of: list = ()
+    targets: list,
+    lines: int,
+    hint_at: Rect,
+    before: list = (),
+    clear_of: list = (),
+    spare: list = (),
 ) -> Rect:
-    """The step's box. A hint's, with no target, at the foot of `hint_at` (the board or the
-    arena). A leading step's keeps clear of its targets, of the hand's way from each to the
-    next, of the same for the step `before`, the work just done (D-048), and of `clear_of`,
-    what it must not hide, the parts on the board (D-103): beside a target,
-    the last first, trying its right, its left, under it, over it; else the clear spot of a
-    grid over the screen nearest the last target. Each spot is brought onto the screen. An area
-    (the board, the arena) is too big to keep clear of: the box may lie over part of it."""
+    """The step's box. A leading step's keeps clear of its targets, of the hand's way from each
+    to the next, of the same for the step `before`, the work just done (D-048), of `clear_of`,
+    what it must not hide, the parts on the board (D-103) and the Board's buttons (D-406), and of
+    `spare`, what it hides last, Undo and Redo: beside a target, the last first, trying its
+    right, its left, under it, over it; else the clear spot of a grid over the screen nearest the
+    last target. Where none is clear, it gives up the ways first, then `spare`, then `clear_of`,
+    then the work just done: never its targets. Each spot is brought onto the screen. An area
+    (the board, the arena) is too big to keep clear of: the box may lie over part of it. A hint's,
+    with no target, takes the first spot clear of `clear_of` and `spare`, then of `clear_of`,
+    from the foot of `hint_at` (the board or the arena) up, each row from its left; at its foot's
+    left if none is."""
     height = 2 * PAD + lines * LINE + 8 + BUTTON[1]
+    keep, last = tuple(map(tuple, clear_of)), tuple(map(tuple, spare))
     if not targets:
         x, y, w, h = hint_at
-        return (x + 16, y + h - height - 16, BOX_WIDTH, height)
-    parts = tuple(map(tuple, clear_of))
-    return _placed(tuple(map(tuple, targets)), tuple(map(tuple, before)), height, parts)
+        rows = range(y + h - height - 16, y + 15, -8)  # from the foot up
+        spots = [
+            (x + 16 + dx, top, BOX_WIDTH, height)
+            for top in rows
+            for dx in range(0, max(1, w - BOX_WIDTH - 31), 8)
+        ]
+        for rects in ((*keep, *last), keep):
+            clear = next((s for s in spots if not any(_meet(s, r) for r in rects)), None)
+            if clear is not None:
+                return clear
+        return spots[0]
+    return _placed(tuple(map(tuple, targets)), tuple(map(tuple, before)), height, keep, last)
 
 
 @lru_cache(maxsize=32)  # drawn every frame; the grid is slow to search
-def _placed(targets: tuple, before: tuple, height: int, clear_of: tuple = ()) -> Rect:
+def _placed(
+    targets: tuple, before: tuple, height: int, clear_of: tuple = (), spare: tuple = ()
+) -> Rect:
     kept, kept_before = _narrow(targets), _narrow(before)  # an area cannot be cleared
-    rects, paths = (*kept, *kept_before, *clear_of), (*_paths(kept), *_paths(kept_before))
+    paths = (*_paths(kept), *_paths(kept_before))
 
-    def clear(spot: Rect) -> bool:
-        return not any(_meet(spot, r) for r in rects) and not any(_crosses(spot, *p) for p in paths)
+    def clear_of_rects(spot: Rect, rects: tuple) -> bool:
+        return not any(_meet(spot, r) for r in rects)
 
     beside = [
         _kept_on_screen(spot)
         for target in reversed(targets)
         for spot in _beside(target, BOX_WIDTH, height)
     ]
-    for spot in beside:
-        if clear(spot):
-            return spot
     goal = _centre(targets[-1])
     grid = [
         (x, y, BOX_WIDTH, height)
         for y in range(8, SCREEN[1] - 8 - height + 1, GRID)
         for x in range(8, SCREEN[0] - 8 - BOX_WIDTH + 1, GRID)
     ]
-    free = [spot for spot in grid if clear(spot)]
-    if not free:
-        return beside[0]
-    return min(free, key=lambda s: (math.dist(_centre(s), goal), s[1], s[0]))
+    everything = (*kept, *kept_before, *clear_of, *spare)
+    tests = (  # what it keeps clear of, giving up the least first: the targets, never (D-406)
+        lambda spot: (
+            clear_of_rects(spot, everything) and not any(_crosses(spot, *p) for p in paths)
+        ),
+        lambda spot: clear_of_rects(spot, everything),
+        lambda spot: clear_of_rects(spot, (*kept, *kept_before, *clear_of)),
+        lambda spot: clear_of_rects(spot, (*kept, *kept_before)),
+        lambda spot: clear_of_rects(spot, kept),
+    )
+    for clear in tests:
+        for spot in beside:
+            if clear(spot):
+                return spot
+        free = [spot for spot in grid if clear(spot)]
+        if free:
+            return min(free, key=lambda s: (math.dist(_centre(s), goal), s[1], s[0]))
+    return beside[0]
 
 
 def is_area(rect: Rect) -> bool:
