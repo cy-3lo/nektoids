@@ -27,7 +27,6 @@ import numpy as np
 import pygame
 
 from nektoids.editor.arena_draw import (
-    SYMBOL_WIDTH,
     draw_items,
     draw_light,
     draw_mark,
@@ -57,6 +56,7 @@ from nektoids.editor.draw import (
     draw_tip,
     draw_tooltip,
     draw_track,
+    swimmer_width,
 )
 from nektoids.editor.editor_keys import Key, confirm_box, key_at, places, tip
 from nektoids.editor.icons import EDIT_ICON, PIECE_ICON, VIEW_ICON
@@ -171,8 +171,9 @@ def draw_level_editor(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) 
     if not scene.start_off:  # cut off the plane, until its key places it again (D-410)
         centre = scene.view.to_screen(*scene.pos[0])
         radius = float(scene.radius[0]) * scene.view.scale
-        draw_symbol(screen, DARK, centre, radius + 1, scene.heading, SYMBOL_WIDTH + 2)
-        draw_symbol(screen, BODY, centre, radius, scene.heading, SYMBOL_WIDTH)
+        width = swimmer_width(radius)  # in proportion (D-410)
+        draw_symbol(screen, DARK, centre, radius + 1, scene.heading, width + 2)
+        draw_symbol(screen, BODY, centre, radius, scene.heading, width)
     _draw_pick(screen, scene)
     _draw_box(screen, scene)
     _draw_in_hand(screen, scene, fonts)
@@ -204,7 +205,6 @@ KEY_ICON = {  # the Editor's keys (D-410); an object's is its own (PIECE_ICON)
     Key.ERASE: "eraser",
 }
 KEY_ICON_SIZE = 0.6  # an icon on its key, over the key's side
-SWIMMER_LINE = 0.2  # the swimmer icon's lines, over its radius
 BOX_CROSS = 7  # the half-length of a rectangle's + at its corners [px]
 COUNT_BELOW = 14  # a value's tag under its object's rim [px]
 
@@ -250,7 +250,7 @@ def _draw_key_tip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
 
 def draw_swimmer_icon(screen: pygame.Surface, centre, radius: float, colour) -> None:
     """The swimmer's symbol as an icon, pointing right: a circle round a wedge (D-410)."""
-    draw_symbol(screen, colour, centre, radius, 0.0, max(1, round(SWIMMER_LINE * radius)))
+    draw_symbol(screen, colour, centre, radius, 0.0, swimmer_width(radius))
 
 
 def _draw_box(screen: pygame.Surface, scene: EditorScene) -> None:

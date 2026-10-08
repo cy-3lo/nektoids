@@ -2517,4 +2517,6 @@ and every goal, which would aim at nothing, the swimmer and the time allowed sta
 shows a moment under an object placed or set, as the Board's count (D-401). The mouse wheel over
 an item sizes it, the pick if it is picked, over the swimmer turns it, over the open plane zooms
 there; notches as the Board's (D-405). Keys: S, H, 0 to 3, < and >, + and -, Del cuts, Ctrl+C,
-Ctrl+V, Ctrl+X; the arrows move the pick 1 u, else the view; Esc opens Chapters (D-406).
+Ctrl+V, Ctrl+X; the arrows move the pick 1 u, else the view; Esc opens Chapters (D-406). The swimmer is
+drawn with lines 0.15 of its radius on screen, 2 px at least, in the run, the Editor, their maps
+and on its key, the physicist's.
