@@ -707,16 +707,19 @@ Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
   its own small circuit (`DEMOS`), its light and flames (`light`, `flames`), run by
   `Frame.frame_update` while its box is open and drawn by `draw_info` with `draw_circuit`, as
   Inside draws a board; its beads are `beads.Travelling`. Open a part's (i) in Parts.
-- [`editor/wheel.py`](../game/nektoids/editor/wheel.py), pure: the Wheel at the foot of Tools
-  and Parts (D-068, D-069). `offer` is what a cell offers; `slots` places the icons at a turn,
-  a fraction while the Wheel slides from one turn to the next, eased by `slid` (D-083). The
-  scene keeps the turn an integer and starts each slide in `_turn_wheel`. Open the sandbox,
-  click an empty cell, and turn its seven parts with the mouse wheel.
+- [`editor/buttons.py`](../game/nektoids/editor/buttons.py) and
+  [`editor/editor_keys.py`](../game/nektoids/editor/editor_keys.py), pure: the keys that took
+  the Wheel's place (D-401, D-410), round the Board's board and at the Editor's plane's edges;
+  each one's place, key, tooltip, and how it looks given what is picked (`states`).
+  [`editor/picking.py`](../game/nektoids/editor/picking.py) and
+  [`editor/plane_pick.py`](../game/nektoids/editor/plane_pick.py), pure: what a click or a drag
+  picks, on the Board's cells and on the Editor's plane. Open the sandbox, pick two parts with
+  Shift, and press Turn right.
 
 Questions: why is an info disc asked before its row, in `_press`? What would the player see if
 `open_drawer` did not slide the view? Why do ×2's beads leave in step with those coming in
-(`Entry._keep_time`), when no other wire's beads keep time with another's? Why does
-`_turn_wheel` start a slide from the turn shown, not from the turn before?
+(`Entry._keep_time`), when no other wire's beads keep time with another's? Why does a drag that
+goes back over its path cut the pick back, not add to it (`plane_pick.crossed`)?
 
 Settings and Chapters (D-054) sit at the bar's foot. Open Settings and click Fast forward, then
 Chapters (Tab) and a locked level.

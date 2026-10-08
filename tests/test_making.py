@@ -19,14 +19,19 @@ from nektoids.levels.making import (
     TIME,
     TITLE_LONGEST,
     Unmade,
+    added,
     adjusted,
     authored,
     blank,
     boarded,
+    erased,
     goal_added,
     goal_removed,
     goal_set,
     goal_worded,
+    group_adjusted,
+    group_moved,
+    group_removed,
     lacks,
     moved,
     number,
@@ -311,3 +316,36 @@ def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
     diagnostic = next(level for level in arenas() if level.title == "Diagnostic")  # its parts
     # free, prewired: left out
     assert taken(LEVEL, diagnostic).board["parts"] == []
+
+
+def test_a_group_moves_resizes_and_goes_together_refused_whole():
+    # D-410: the Editor's pick acts on all its objects at once, one step for undo
+    level = LEVEL
+    moved_ = group_moved(level, [0, 2], True, (1.0, -2.0))
+    assert moved_.items[0].at == (29.0, 22.0) and moved_.items[2].at == (22.0, 19.0)
+    assert moved_.start[:2] == (16.0, 17.0) and moved_.items[1] == level.items[1]
+    with pytest.raises(Unmade):  # the light onto an obstacle: nothing moves
+        group_moved(level, [1], False, (13.0, 13.0))
+    bigger = group_adjusted(level, [2, 3], 2)
+    assert [i.value for i in bigger.items[2:4]] == [3.0, 3.0]
+    assert group_adjusted(level, [0], 5).items[0].value == SETTING[ItemKind.LIGHT].hi
+    gone = group_removed(level, [1, 3])
+    assert [i.at for i in gone.items] == [(28.0, 24.0), (21.0, 21.0), (14.0, 28.0), (31.0, 10.0)]
+    assert group_removed(level, range(len(level.items))).items == ()  # Erase all
+
+
+def test_a_paste_adds_copies_moved_onto_the_lattice_last_in_order():
+    level = LEVEL
+    pasted_ = added(level, level.items[2:4], (0.4, 1.6))
+    assert pasted_.items[:6] == level.items
+    assert [(i.kind, i.at, i.value) for i in pasted_.items[6:]] == [
+        (ItemKind.OBSTACLE, (21.0, 23.0), 1.0),
+        (ItemKind.OBSTACLE, (24.0, 17.0), 1.0),
+    ]
+
+
+def test_erase_all_takes_every_item_and_every_goal_the_swimmer_and_the_time_stay():
+    level = next(lv for lv in arenas() if lv.objectives and lv.items)  # D-410
+    gone = erased(level)
+    assert gone.items == () and gone.objectives == ()
+    assert gone.start == level.start and gone.time_limit == level.time_limit

@@ -1,101 +1,29 @@
-"""The Editor's objects on the plane and its Wheel (D-301), as Parts and the Wheel are the board's
-(D-068, D-069).
-
-What a click focuses on the plane: an empty point of the lattice, an item by its place in the
-level, or the swimmer's start. The Wheel round an empty point offers a light, an obstacle and a
-mark, as an empty cell offers the parts; round an item, less, move, more, delete, side by side
-over the top, More at its top (D-314); round the swimmer, turn left, move, turn right. What is
-under the mouse: the swimmer, a light or an obstacle under it, else a mark by its rim or its
-centre, so that a click inside a zone still finds the point there (D-306).
-Which of the Wheel's icons is lit, as the Board's (D-314): Move on an object clicked, More on one
-just placed, none on a point until the arrows choose; the arrows go round, stopping at the ends
-(D-084). What the line under the Wheel says. Pure numbers, no pygame.
+"""The Editor's objects on the plane (D-301): what the keys round the plane and Objects' rows name
+them (D-410), and what is under the mouse: the swimmer, a light or an obstacle under it, else a
+mark by its rim or its centre, so that a press inside a zone still finds the open plane there
+(D-306). Pure numbers, no pygame.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 
 import numpy as np
 
 from nektoids.editor.arena_view import ArenaView, body_at
-from nektoids.editor.layout import TOOL_KEYS, Piece, Tool
+from nektoids.editor.layout import Piece
 from nektoids.levels.level import ItemKind, Level
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
-
-@dataclass(frozen=True)
-class Point:
-    """An empty point of the plane, on the lattice."""
-
-    at: tuple[float, float]  # [u]
-
-
-Focus = Point | int | Piece  # an empty point; an item, by its index in the level; Piece.START
-
 PLACED = {Piece.LIGHT: ItemKind.LIGHT, Piece.OBSTACLE: ItemKind.OBSTACLE, Piece.MARK: ItemKind.MARK}
 ONE = {Piece.LIGHT: "a light", Piece.OBSTACLE: "an obstacle", Piece.MARK: "a mark"}
-POINT_PIECES = (Piece.LIGHT, Piece.OBSTACLE, Piece.MARK)  # what an empty point's Wheel offers
-KEYS = {**TOOL_KEYS, **{p: str(k + 1) for k, p in enumerate(POINT_PIECES)}}  # 1 2 3; its tips'
 MARK_GRAB = 6.0  # a mark is grabbed this near its rim, or its centre [px]
-ITEM_ACTIONS = (Tool.LESS, Tool.MOVE, Tool.MORE, Tool.DELETE)  # More at the top (D-314)
-START_ACTIONS = (Tool.TURN_LEFT, Tool.MOVE, Tool.TURN_RIGHT)
-WORDS = {  # the less and the more, as each kind of item says them
-    ItemKind.LIGHT: ("Dimmer", "Brighter", "A light, power {:g}"),
-    ItemKind.OBSTACLE: ("Smaller", "Bigger", "An obstacle, radius {:g}"),  # no unit (D-318)
-    ItemKind.MARK: ("Smaller", "Bigger", "A mark, radius {:g}"),
-}
 NAMES = {
     Piece.LIGHT: "Light",
     Piece.OBSTACLE: "Obstacle",
     Piece.MARK: "Mark",
     Piece.START: "Swimmer",  # its start; "Swimmer's start" runs into the row's info disc
-    Tool.LESS: "Less",
-    Tool.MORE: "More",
-    Tool.MOVE: "Move",
-    Tool.DELETE: "Delete",
-    Tool.TURN_LEFT: "Turn left",
-    Tool.TURN_RIGHT: "Turn right",
 }
-
-
-def offer(focus: Focus | None) -> tuple[Piece | Tool, ...]:
-    """What the Wheel round `focus` offers: on an empty point, what may be placed there; on an
-    item, its actions; on the swimmer's start, its turns and Move; nothing with no focus."""
-    if focus is None:
-        return ()
-    if isinstance(focus, Point):
-        return POINT_PIECES
-    return START_ACTIONS if focus is Piece.START else ITEM_ACTIONS
-
-
-def piece_of(level: Level, focus: Focus | None) -> Piece | None:
-    """The object focused, as Objects' rows name it: Light, Obstacle, Mark or Swimmer; None for
-    a point or no focus."""
-    if focus is Piece.START:
-        return focus
-    if isinstance(focus, int):
-        return next(p for p, kind in PLACED.items() if kind is level.items[focus].kind)
-    return None
-
-
-def chosen(focus: Focus | None, what: Piece | Tool) -> int | None:
-    """Where `what` sits among the Wheel's icons round `focus`, or None if it is not offered:
-    the icon lit (D-314)."""
-    offered = offer(focus)
-    return offered.index(what) if what in offered else None
-
-
-def turned_to(focus: Focus | None, choice: int | None, step: int) -> int | None:
-    """The icon lit after an arrow: the next round the Wheel (step 1) or the one before,
-    stopping at the first and the last; from none, the first or the last (D-084, D-314)."""
-    n = len(offer(focus))
-    if not n:
-        return None
-    if choice is None:
-        return 0 if step > 0 else n - 1
-    return min(max(choice + step, 0), n - 1)
 
 
 def object_at(level: Level, view: ArenaView, point: tuple[float, float]) -> int | Piece | None:
@@ -129,31 +57,8 @@ def reach(level: Level, focus: int | Piece) -> float:
     return LIGHT_RADIUS if item.kind is ItemKind.LIGHT else item.value  # an obstacle's, a mark's
 
 
-def where(level: Level, focus: Focus) -> tuple[float, float]:
-    """Where `focus` sits on the plane [u]."""
-    if isinstance(focus, Point):
-        return focus.at
-    if focus is Piece.START:
+def where(level: Level, obj: int | Piece) -> tuple[float, float]:
+    """Where the object `obj` sits on the plane [u]."""
+    if obj is Piece.START:
         return level.start[:2]
-    return level.items[focus].at
-
-
-def says(level: Level, focus: Focus | None) -> str:
-    """The line under the Wheel: what is focused, and its setting."""
-    if focus is None:
-        return "Click the plane"
-    if isinstance(focus, Point):
-        return f"({focus.at[0]:g}, {focus.at[1]:g}): empty"
-    if focus is Piece.START:
-        return f"Swimmer, heading {level.start[2]:g}°"
-    item = level.items[focus]
-    return WORDS[item.kind][2].format(item.value)
-
-
-def name(level: Level, focus: Focus | None, what: Piece | Tool) -> str:
-    """An icon of the Wheel, or a row of Objects, named: the less and the more as the focused
-    item's kind says them."""
-    if what in (Tool.LESS, Tool.MORE) and isinstance(focus, int):
-        dimmer, brighter, _ = WORDS[level.items[focus].kind]
-        return dimmer if what is Tool.LESS else brighter
-    return NAMES[what]
+    return level.items[obj].at

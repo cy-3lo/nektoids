@@ -12,21 +12,23 @@ shipped level to start from (D-310); Parts, the board's size and how many of eac
 the Board takes at once, or refuses while it has more (D-315); Navigator, with
 the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's foot.
 
-The Wheel works as the Board's (D-314): atop the plane, what the next click or Enter does. A
-click on an object focuses it with Move in hand, so the next click on the open plane moves it
-there; a drag moves it too, on the lattice. An object just placed is focused with More lit,
-the least to begin with, so Enter makes it more. A click on the open plane, inside a mark too,
-focuses its nearest lattice point, whose Wheel offers a light, an obstacle and a mark to put
-there (D-306); a drag there moves the view. With something focused the arrows go round the
-Wheel, stopping at its ends, and Enter uses the icon lit: less and more and the turns at once,
-again at each Enter; Move in hand, when the arrows carry the object 1 u at a time until Enter
-or Esc puts it down; Delete. With nothing focused the arrows move the view. A row of Objects
-picks what the next click puts on the plane, or is dragged there. The mouse wheel on an object
-makes it more or less, or turns the swimmer. Keys: 1, 2, 3 a light, an obstacle, a mark; M
-Move; L and R turn; < and > less and more; Delete; Ctrl+Z and Ctrl+Y undo and redo; Esc puts
-down what is in hand, then lets go of the focus, then opens Chapters (D-304); + and - zoom, C
-centres, X shows or hides the rays; Tab the next tab, Space the run. Each change is a new `Level`
-(`making.py`), which `main.py` hands to the router, the Board and the next run.
+Round the plane, its keys (D-410, `editor_keys.py`), floating over it at its edges: at its left
+the tools in pairs, Select and Hand, Bigger and Smaller, Zoom in and out, Undo and Redo, Copy
+and Paste, Cut and Erase all; at its right the objects, Light, Obstacle, Mark and the Swimmer.
+With Select, a click picks the object clicked, Shift or Cmd adds one, a click on the open plane
+drops the pick (`plane_pick.py`); a drag from the open plane picks the objects it crosses, going
+back cutting its path back; a drag from an object moves it, or the whole pick if it is picked,
+on the lattice. With Hand, a drag moves the view; a right drag does, whatever is held. An
+object's key held, each click on the plane places one, the least of its kind, while it stays
+held; dragged from its key or its row onto the plane, one lands there and it is held. The
+Swimmer's key picks the swimmer's start; dragged, it moves it. Bigger, Smaller, Cut and Copy act
+on the items picked; Paste puts the copied ones where the mouse is, else beside them; Erase all
+asks first. A value shows a moment under an object placed or set. The mouse wheel over an item
+makes it more or less, over the swimmer turns it, over the open plane zooms there. Keys: S, H,
+1 to 4, < and >, + and -, Del, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z and Ctrl+Y; the arrows move what
+is picked, else the view; L and R turn the swimmer while it is picked; C centres, X shows or
+hides the rays; Esc opens Chapters (D-406); Tab the next tab, Space the run. Each change is a new
+`Level` (`making.py`), which `main.py` hands to the router, the Board and the next run.
 """
 
 from __future__ import annotations
@@ -59,7 +61,9 @@ from nektoids.editor.arena_view import (
     zoom_view,
 )
 from nektoids.editor.boardfield import load
+from nektoids.editor.buttons import COUNT_FRAMES, State
 from nektoids.editor.devdrive import DT
+from nektoids.editor.editor_keys import Key, confirm_box, key_at, states
 from nektoids.editor.frame import Frame
 from nektoids.editor.history import History
 from nektoids.editor.layout import (
@@ -80,13 +84,11 @@ from nektoids.editor.layout import (
     Stepper,
     Tool,
     ViewButton,
-    action_at,
     along,
     bin_at,
     brief_field_at,
     contains,
     drawer_key,
-    edit_button_at,
     file_button_at,
     goal_button_at,
     group_at,
@@ -104,18 +106,16 @@ from nektoids.editor.layout import (
     zoom_bar_at,
     zoom_button_at,
 )
-from nektoids.editor.objects import (
-    KEYS,
-    ONE,
-    PLACED,
-    POINT_PIECES,
-    Focus,
-    Point,
-    chosen,
-    object_at,
-    offer,
-    turned_to,
-    where,
+from nektoids.editor.notches import RUN, Notches
+from nektoids.editor.objects import ONE, PLACED, object_at, reach
+from nektoids.editor.plane_pick import (
+    NOTHING,
+    Object,
+    Pick,
+    after_removal,
+    boxed,
+    clicked,
+    items,
 )
 from nektoids.editor.scene import (
     ARROW_SCANCODES,
@@ -126,11 +126,10 @@ from nektoids.editor.scene import (
 )
 from nektoids.editor.settings import Settings
 from nektoids.editor.textfield import TextField
-from nektoids.editor.wheel import WHEEL_HEX, Slot, centre_in, slot_at, slots
 from nektoids.graph import boardtext
 from nektoids.graph.board import Board, complexity
-from nektoids.levels.lattice import POSITION, Range, snapped
-from nektoids.levels.level import Level, to_json
+from nektoids.levels.lattice import POSITION, Range
+from nektoids.levels.level import Item, Level, to_json
 from nektoids.levels.making import (
     AUTHOR_LONGEST,
     GOALS_MOST,
@@ -138,19 +137,21 @@ from nektoids.levels.making import (
     TIME,
     TITLE_LONGEST,
     Unmade,
-    adjusted,
+    added,
     authored,
     blank,
     boarded,
+    erased,
     goal_added,
     goal_removed,
     goal_set,
     goal_worded,
-    moved,
+    group_adjusted,
+    group_moved,
+    group_removed,
     number,
     placed,
     read_level,
-    removed,
     specified,
     start_moved,
     stocked,
@@ -169,9 +170,12 @@ ARROW_PAN = 2.0  # an arrow drags the view this far [u]
 CLICK = 4  # a press that moves less than this is a click, not a drag [px]
 EDITOR_VIEW = (ViewButton.ZOOM_IN, ViewButton.ZOOM_OUT, ViewButton.CENTRE, ViewButton.RAYS)
 VIEWS = {VIEW_KEYS[b]: b for b in EDITOR_VIEW}  # the keys the Editor's view answers: + - C X
-ACTIONS = (Tool.MOVE, Tool.TURN_LEFT, Tool.TURN_RIGHT, Tool.LESS, Tool.MORE)
-ACTION_KEYS = {TOOL_KEYS[a]: a for a in ACTIONS}  # M L R < >; Delete on its physical key
-DIGITS = POINT_PIECES  # 1, 2, 3, on their physical keys, as Parts' numbers
+KEYS_TYPED = {"S": Key.SELECT, "H": Key.HAND, "<": Key.SMALLER, ">": Key.BIGGER}  # D-410
+TURN_KEYS = {TOOL_KEYS[Tool.TURN_LEFT]: 1, TOOL_KEYS[Tool.TURN_RIGHT]: -1}  # the start, picked
+DIGITS = (Piece.LIGHT, Piece.OBSTACLE, Piece.MARK)  # 1 to 3, on their physical keys; 0 swims
+PASTE_BESIDE = (2.0, 0.0)  # a paste with the mouse off the plane: beside what was copied [u]
+ADD_KEYS = pygame.KMOD_SHIFT | pygame.KMOD_META  # held, a click or a drag adds to the pick
+_copied: tuple[Item, ...] = ()  # what Copy and Cut keep, for every level of the session (D-410)
 NUMBER = frozenset("0123456789.")  # what a slider's box takes, typed (D-308)
 NUMBER_LONGEST = 5  # ... and how long it grows: 300, 12.5
 LEVEL_LONGEST = 20_000  # what a level's text, pasted in Files, may run to (D-310)
@@ -204,22 +208,33 @@ class EditorScene(Frame):
         self.shared = False  # Share level's box says how to share what it copied (D-346)
         self.show_rays = True  # the light's rays, drawn or not
         self.pointer = (0, 0)  # where the mouse is [px]
-        self.panning: tuple[int, int] | None = None  # where a drag on the plane last was
+        self.panning: tuple[int, int] | None = None  # a drag moving the view: where it last was
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
-        self.focus: Focus | None = None  # what the Wheel is round (D-068)
-        self.picked: Piece | None = None  # a row of Objects picked: the next click puts it
-        self.carrying = False  # ... the mouse still held since: let go on the plane, it lands
-        self.moving = False  # Move in hand: a click on the plane, or an arrow, moves the focus
-        self.choice: int | None = None  # the Wheel's icon lit: what Enter does (D-314)
-        self.arming = False  # a press on an object: Move in hand once the click is over
+        self.held: Key | Piece = Key.SELECT  # the key in hand (D-410)
+        self.pick: Pick = NOTHING  # the objects picked, in the order picked
+        self.box_from: tuple[int, int] | None = None  # a drag from the open plane: a rectangle
+        self.box_to: tuple[int, int] | None = None  # ... its other corner, under the mouse
+        self.start_off = False  # the swimmer cut off the plane, to be placed again (D-410)
+        self.laid: list[int] = []  # the items a drag with an object's key held has placed
+        self.clicking = False  # ... the key used by clicks: a drag now is Select's (D-410)
+        self.waiting = False  # ... a press whose release places one, unless it drags
+        self.adding = False  # the add key down at the press
         self.press_at: tuple[int, int] | None = None  # a press on the plane: click, or drag?
-        self.grab: tuple[float, float] | None = None  # ... on an object: from the mouse to it [u]
-        self.dragged = False  # ... and the mouse has moved: the object follows it
-        self.before: Level | None = None  # the level as the drag began: one step for undo
-        self.history: History[Level] = History()  # D-027
-        self.wheel_folded = False  # the Editor's Wheel never folds, unlike the Board's (D-317)
-        self.wheel_hover: Slot | None = None  # the Wheel's icon under the mouse
+        self.press_on: Object | None = None  # ... on an object
+        self.grab_from: tuple[float, float] | None = None  # ... where on the plane [u]
+        self.moving: tuple[Object, ...] = ()  # the objects a drag moves together
+        self.before: Level | None = None  # the level as a drag began: one step for undo
+        self.key_down: Key | Piece | None = None  # an object's key pressed: a click, or a drag
+        self.right_at: tuple[int, int] | None = None  # a right press: a click, or a drag?
+        self.carrying: Piece | None = None  # an object dragged from its key or its row
+        self.confirming = False  # Erase all asked: Confirm or Cancel, Cancel the default
+        self.counted: Object | None = None  # an object whose value shows a moment (D-410)
+        self.count_frames = 0
+        self.notches = Notches()  # the mouse wheel's scrolls, made steps (D-405)
+        self.run_frames = 0  # ... frames left before a run of them is one step for undo
+        self.history: History[tuple[Level, bool]] = History()  # the level, the swimmer off
+        self.wheel_folded = False  # the Wheel left the Editor (D-410)
         self.writing: Brief | Knob | Paste | None = None  # a field typed in: Brief's, a box...
         self.field: TextField | None = None  # ... what it holds (D-305)
         self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
@@ -271,8 +286,7 @@ class EditorScene(Frame):
         self.pos = np.array([[x, y]])  # (1, 2) [u]
         self.heading = math.radians(heading)  # [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (1,) [u]
-        if isinstance(self.focus, int) and self.focus >= len(level.items):
-            self.focus, self.choice, self.moving = None, None, False
+        self.pick = tuple(o for o in self.pick if not isinstance(o, int) or o < len(level.items))
         if self.layout.drawer is Drawer.GOALS:
             self.layout = self._relayout(Drawer.GOALS)
 
@@ -286,6 +300,10 @@ class EditorScene(Frame):
                 self._field_done(ended)
         self._check_proof()
         self.frame_update()
+        self.count_frames = max(0, self.count_frames - 1)
+        self.notches.tick()
+        if self.run_frames > 0:
+            self.run_frames -= 1
         self.shared = self.shared and self.info is FileButton.SHARE  # while its box is open
         self.view = kept_in(self.view, self.arena_area, self.extent())
 
@@ -312,15 +330,19 @@ class EditorScene(Frame):
             return "No goal: a run ends only when its time is up.  Add one, two at most."
         if self.layout.drawer is Drawer.GOALS:
             return "Click a word to change a goal.  Drag a slider to set it.  Space: run."
-        if self.picked is not None:
-            return f"Click the plane: {ONE[self.picked]} goes there.  Esc: put it back."
-        if self.moving:
-            return "Click where it goes, or move it with the arrows.  Enter or Esc: done."
-        if self.focus is None:
-            return "Click an object, or the plane.  Drag an object to move it.  Space: run."
-        if isinstance(self.focus, Point):
-            return "1, 2, 3: a light, an obstacle, a mark here.  Or the arrows, then Enter."
-        return "Arrows: round the Wheel.  Enter: what is lit.  Drag it to move it."
+        if self.confirming:
+            return "Erase every object?  Erase all erases them; Cancel, Enter or Esc keeps them."
+        if self.held is Piece.START:
+            return "Click the plane: the swimmer starts there."
+        if isinstance(self.held, Piece):
+            return f"Click the plane: {ONE[self.held]} at each click; drag, a row.  S: Select."
+        if self.start_off:
+            return "The swimmer is off the plane: 0, or its key, then a click places it."
+        if self.held is Key.HAND:
+            return "Drag the plane to move it.  S: back to Select."
+        if self.pick:
+            return "Drag to move what is picked.  Arrows: 1 u.  The lit keys act on it."
+        return "Click or drag over objects to pick them, Shift adds.  Or press a key."
 
     # Making
 
@@ -336,7 +358,7 @@ class EditorScene(Frame):
             if not self._handed(level):
                 return False
             if record:
-                self.history.record(self.level)
+                self.history.record((self.level, self.start_off))
             self._take(level)
         return True
 
@@ -347,7 +369,7 @@ class EditorScene(Frame):
             return
         level = boarded(self.level, self.board)
         if level != self.level:
-            self.history.record(self.level)
+            self.history.record((self.level, self.start_off))
             self._take(level)
 
     def _handed(self, level: Level) -> bool:
@@ -362,108 +384,149 @@ class EditorScene(Frame):
             return False
         return True
 
-    def action(self) -> Piece | Tool | None:
-        """What the next click or Enter does, shown atop the plane (D-314): the object in hand,
-        Move while it is in hand, the Wheel's lit icon; else nothing."""
-        if self.picked is not None:
-            return self.picked
-        if self.moving:
-            return Tool.MOVE
-        offered = offer(self.focus)
-        return offered[self.choice] if self.choice is not None else None
-
-    def _place(self, piece: Piece, at: tuple[float, float]) -> None:
+    def _place(self, piece: Piece, at: tuple[float, float], record: bool = True) -> bool:
         """A light, an obstacle or a mark at the lattice point nearest `at` [u], the least of
-        its kind, focused once there with More lit: Enter makes it more (D-314)."""
-        if self._make(lambda level: placed(level, PLACED[piece], at)):
-            self.focus, self.picked, self.moving = len(self.level.items) - 1, None, False
-            self.choice = chosen(self.focus, Tool.MORE)
+        its kind, picked, its value shown a moment; the swimmer, if it was off the plane, and
+        Select in hand again: a level has one (D-410)."""
+        if piece is Piece.START:
+            if self._make(lambda level: start_moved(level, at), record):
+                self.start_off, self.held, self.pick = False, Key.SELECT, (Piece.START,)
+                return True
+            return False
+        if self._make(lambda level: placed(level, PLACED[piece], at), record):
+            self.pick = (len(self.level.items) - 1,)
+            self._count(self.pick[0])
+            return True
+        return False
 
-    def _move_to(self, at: tuple[float, float], record: bool = True) -> None:
-        """The focused object at the lattice point nearest `at` [u]."""
-        focus = self.focus
-        if focus is Piece.START:
-            self._make(lambda level: start_moved(level, at), record)
-        elif isinstance(focus, int):
-            self._make(lambda level: moved(level, focus, at), record)
+    def _object_at(self, pos: tuple[int, int]) -> Object | None:
+        """The object under `pos`: the swimmer only while it is on the plane."""
+        found = object_at(self.level, self.view, pos)
+        return None if found is Piece.START and self.start_off else found
 
-    def _do(self, what: Piece | Tool) -> None:
-        """An icon of the Wheel, or its key, on the focus: what it offers, else refused."""
-        focus = self.focus
-        if what not in offer(focus):
-            self._refuse(_why_not(focus, what))
+    def _ask(self, request: str) -> None:
+        """As the frame's; the run refused while the swimmer is off the plane (D-410)."""
+        if request == "run" and self.start_off:
+            self._refuse("the swimmer is off the plane: place it with its key, 0")
             return
-        self.choice = chosen(focus, what)  # lit, as the Board's Wheel lights it (D-314)
-        if isinstance(what, Piece):  # on an empty point
-            self._place(what, focus.at)
-        elif what is Tool.MOVE:
-            self.moving = not self.moving
-        elif what is Tool.DELETE:
-            at = self.level.items[focus].at
-            if self._make(lambda level: removed(level, focus)):  # its point, to put another
-                self.focus, self.moving, self.choice = Point(snapped(at)), False, None
-        elif what in (Tool.LESS, Tool.MORE):
-            steps = 1 if what is Tool.MORE else -1
-            self._make(lambda level: adjusted(level, focus, steps))
+        super()._ask(request)
+
+    def _count(self, obj: Object) -> None:
+        """`obj`'s value under it, a moment, as the Board's count of parts left (D-401, D-410)."""
+        self.counted, self.count_frames = obj, COUNT_FRAMES
+
+    def key_states(self) -> dict:
+        return states(
+            self.level,
+            self.held,
+            self.pick,
+            self.history.can_undo,
+            self.history.can_redo,
+            bool(_copied),
+            self.start_off,
+        )
+
+    def _press_key(self, key: Key | Piece) -> None:
+        """A key round the plane, clicked or by its key (D-410)."""
+        looks = self.key_states()
+        if key in (Key.SELECT, Key.HAND):
+            self.held = key
+        elif key is Piece.START and looks[key] is State.GREYED:
+            self._refuse("the swimmer is on the plane: drag it, or cut it first")
+        elif isinstance(key, Piece):  # held for the clicks on the plane; pressed again, put down
+            self.held = Key.SELECT if self.held is key else key
+            self.clicking = False  # its first gesture says: a drag lays a row, a click clicks
+        elif key is Key.ZOOM_IN:
+            self._view(ViewButton.ZOOM_IN)
+        elif key is Key.ZOOM_OUT:
+            self._view(ViewButton.ZOOM_OUT)
+        elif key in (Key.UNDO, Key.REDO):
+            self._edit(EditButton.UNDO if key is Key.UNDO else EditButton.REDO)
+        elif looks[key].value == "greyed":
+            self._refuse(_why_not(key))
+        elif key in (Key.BIGGER, Key.SMALLER):
+            self._resize(items(self.pick), 1 if key is Key.BIGGER else -1)
+        elif key is Key.COPY:
+            self._copy()
+        elif key is Key.PASTE:
+            self._paste()
+        elif key is Key.CUT:
+            self._cut()
+        elif key is Key.ERASE:  # asked first: the goals go too (D-410)
+            self.confirming = True
+
+    def _resize(self, chosen: list[int], steps: int) -> None:
+        """Items `chosen` set `steps` more, or less; the first one's value shown."""
+        if chosen and self._make(lambda level: group_adjusted(level, chosen, steps)):
+            self._count(chosen[0])
+
+    def _copy(self) -> None:
+        """The items picked kept, for Paste, in any level of the session (D-410)."""
+        global _copied
+        _copied = tuple(self.level.items[k] for k in items(self.pick))
+        self.said = f"Copied: {len(_copied)} object{'s' * (len(_copied) != 1)}."
+
+    def _paste(self) -> None:
+        """Copies of what was copied, centred where the mouse is on the plane, else beside where
+        they were; picked once there."""
+        if not _copied:
+            self._refuse(_why_not(Key.PASTE))
+            return
+        over = contains(self.arena_area, self.pointer)
+        if over and key_at(self.arena_area, self.pointer) is None:
+            x, y = self.view.to_world(*self.pointer)
+            cx = sum(i.at[0] for i in _copied) / len(_copied)
+            cy = sum(i.at[1] for i in _copied) / len(_copied)
+            offset = (x - cx, y - cy)
         else:
-            steps = 1 if what is Tool.TURN_LEFT else -1  # counter-clockwise
-            self._make(lambda level: turned(level, steps))
+            offset = PASTE_BESIDE
+        first = len(self.level.items)
+        if self._make(lambda level: added(level, _copied, offset)):
+            self.pick = tuple(range(first, len(self.level.items)))
+
+    def _cut(self) -> None:
+        """The items picked kept, as Copy keeps them, and taken off the plane; the swimmer, if
+        picked, taken off too, to be placed again with its key (D-410). One step for undo."""
+        chosen, swimmer = items(self.pick), Piece.START in self.pick and not self.start_off
+        kept = tuple(self.level.items[k] for k in chosen)
+        if chosen:
+            if not self._make(lambda level: group_removed(level, chosen)):
+                return
+            global _copied
+            _copied = kept
+        elif swimmer:
+            self.history.record((self.level, self.start_off))
+        self.start_off = self.start_off or swimmer
+        self.pick = after_removal(tuple(o for o in self.pick if o is not Piece.START), chosen)
+
+    def _erase(self) -> None:
+        """Erase all, confirmed: every item and every goal, one step for undo; the swimmer
+        stays."""
+        self.confirming = False
+        if self._make(erased):
+            self.pick = tuple(o for o in self.pick if not isinstance(o, int))
+            self.said = "Erased.  Ctrl+Z brings them back."
 
     def _edit(self, button: EditButton) -> None:
         """Undo or redo (D-027): the level as it was before the last change, or after."""
-        if button is EditButton.UNDO:
-            level = self.history.undo(self.level)
-        else:
-            level = self.history.redo(self.level)
+        now = (self.level, self.start_off)
+        made = self.history.undo(now) if button is EditButton.UNDO else self.history.redo(now)
         self.said = ""  # "Pasted" no longer holds (D-310)
-        if level is None:
+        if made is None:
             self._refuse(f"nothing to {button.value}")
-        elif not self._handed(level):  # the history put back as it was
+        elif not self._handed(made[0]):  # the history put back as it was
             back = self.history.redo if button is EditButton.UNDO else self.history.undo
-            back(level)
+            back(made)
         else:
-            self._take(level)
+            self.start_off = made[1]
+            self._take(made[0])
 
-    def wheel(self) -> list[Slot]:
-        """The Wheel's icons round the focus, where Objects draws it; none elsewhere."""
-        view = self.layout.wheel_view
-        if view is None:
-            return []
-        return slots(offer(self.focus), centre_in(view), WHEEL_HEX, frozenset(), keys=KEYS)
-
-    def _pick(self, piece: Piece) -> None:
-        """A row of Objects: the swimmer's start focused; a light or an obstacle in hand, for the
-        next click on the plane, or put back if it was."""
-        self.moving = False
-        if piece is Piece.START:  # focused as a click on it focuses it: Move in hand (D-314)
-            self.focus, self.picked, self.moving = Piece.START, None, True
-            self.choice = chosen(Piece.START, Tool.MOVE)
-        else:  # in hand, the Wheel has nothing to show
-            self.picked = None if self.picked is piece else piece
-            self.carrying = self.picked is not None
-            self.focus = None if self.picked is not None else self.focus
-
-    def _escape(self) -> bool:
-        """Esc: what is in hand put down, then the focus let go; False if there was nothing."""
-        if self.picked is not None:
-            self.picked = None
-        elif self.moving or self.choice is not None:  # nothing lit: the Wheel's empty tool
-            self.moving, self.choice = False, None
-        elif self.focus is not None:
-            self.focus, self.choice = None, None
-        else:
-            return False
-        return True
-
-    def _enter(self) -> None:
-        """Enter: Move put down while it is in hand; else the Wheel's lit icon used, or, with
-        none lit, the first lit (D-084, D-314)."""
-        if self.moving:
-            self.moving = False
-        elif self.focus is not None and self.choice is None:
-            self.choice = turned_to(self.focus, None, 1)
-        elif self.focus is not None:
-            self._do(offer(self.focus)[self.choice])
+    def _move_pick(self, offset: tuple[float, float], record: bool = True) -> bool:
+        """The objects picked moved together by `offset` [u], from the level before the drag if
+        one is under way."""
+        chosen, start = items(self.moving or self.pick), Piece.START in (self.moving or self.pick)
+        base = self.before if self.before is not None else self.level
+        return self._make(lambda _: group_moved(base, chosen, start, offset), record)
 
     # The view, as the run's (D-066, D-101)
 
@@ -532,8 +595,8 @@ class EditorScene(Frame):
     # Input
 
     def _tip_target(self, pos: tuple[int, int]) -> object | None:
-        """As the frame's, and the Wheel's icon under the mouse (D-069)."""
-        return super()._tip_target(pos) or slot_at(self.wheel(), pos, WHEEL_HEX)
+        """As the frame's, and the key round the plane under the mouse (D-410)."""
+        return super()._tip_target(pos) or key_at(self.arena_area, pos)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if self.info is not None and event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
@@ -541,15 +604,26 @@ class EditorScene(Frame):
             return
         if event.type in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
             self.message = ""
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        if self.confirming and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self._confirm_press(event.pos)
+        elif self.confirming and event.type == pygame.KEYDOWN:
+            self.confirming = False  # Cancel, the default: Enter, Esc or any key (D-410)
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self._press(event.pos)
         elif event.type == pygame.MOUSEMOTION:
             self._track(event.pos)
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._release(event.pos)
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            if contains(self.arena_area, event.pos):  # a right drag moves the view (D-410)
+                self.panning = self.right_at = event.pos
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+            if self.right_at is not None and math.dist(event.pos, self.right_at) < CLICK:
+                self.held, self.pick = Key.SELECT, NOTHING  # a right click: put it all down
+            self.panning = self.right_at = None
         elif event.type == pygame.MOUSEWHEEL:
             if not self.frame_wheel(self.pointer, event.y):  # else the drawer's rows (D-096)
-                self._wheel_on(self.pointer, 1 if event.y > 0 else -1)
+                self._wheel_on(event)
         elif event.type == pygame.KEYDOWN and self.field is not None:  # natively (D-206)
             self._field_key(event)
         elif event.type == pygame.KEYDOWN:
@@ -567,14 +641,15 @@ class EditorScene(Frame):
         if field is not None:
             self.field_pressed = None if field == self.writing else field
             return
-        slot = slot_at(self.wheel(), pos, WHEEL_HEX)
-        if self.moving and slot is None and not contains(self.arena_area, pos):
-            self.moving, self.choice = False, None  # anything off the plane drops Move (D-317)
         if self.frame_press(pos):
             return
         piece = piece_row_at(self.layout, pos)
-        edit = edit_button_at(self.layout, pos)
-        if overview_at(self.layout, pos):
+        key = key_at(self.arena_area, pos) if contains(self.arena_area, pos) else None
+        if key is not None and isinstance(key, Piece):  # a click, or a drag: the release tells
+            self.key_down = key
+        elif key is not None:
+            self._press_key(key)
+        elif overview_at(self.layout, pos):
             self.overviewing = True
             self._overview_to(pos)
         elif (step := zoom_button_at(self.layout, pos)) is not None:
@@ -584,12 +659,8 @@ class EditorScene(Frame):
             self._zoom_to(pos)
         elif (button := view_button_at(self.layout, pos)) is not None:
             self._view(button)
-        elif slot is not None:
-            self._do(slot.what)
-        elif piece is not None:
-            self._pick(piece)
-        elif edit is not None:
-            self._edit(edit)
+        elif piece is not None:  # a row of Objects: as its key, and dragged onto the plane
+            self.key_down = piece
         elif file_button_at(self.layout, pos) is FileButton.LEVEL:  # Files (D-310)
             self._copy_level()
         elif file_button_at(self.layout, pos) is FileButton.SHARE:  # ... with its proof (D-320)
@@ -610,77 +681,146 @@ class EditorScene(Frame):
         elif (knob := knob_at(self.layout, pos)) is not None:  # its track: followed while held
             self.sliding, self.before = knob[0], self.level
             self._slide(pos[0])
-        elif action_at(self.layout, pos) is not None:  # atop the plane: Objects, its Wheel
-            self.open_drawer(Drawer.OBJECTS)
         elif contains(self.arena_area, pos):
             self._press_plane(pos)
 
     def _press_plane(self, pos: tuple[int, int]) -> None:
-        """A press on the plane: what is in hand put down; an object focused, Move lit, and
-        grabbed, a drag moving it; with Move in hand, the open plane where it goes; else the
-        open plane, a click focusing its point and a drag moving the view (D-302, D-314)."""
+        """A press on the plane: with an object's key held, one placed there; with Hand, the
+        view held; with Select, an object pressed, to pick it or drag it, or the open plane, to
+        drop the pick or sweep a pick along a drag (D-410)."""
         at = self.view.to_world(*pos)
-        target = object_at(self.level, self.view, pos)
-        if self.picked is not None:
-            self._place(self.picked, at)
-        elif target is not None:  # Move in hand once the click is over, unless it was already
-            self.arming = not (self.moving and target != self.focus)  # ... on another (D-317)
-            self.focus, self.moving = target, self.moving and target == self.focus
-            self.choice = chosen(target, Tool.MOVE) if self.arming else None
-            self.press_at, self.before = pos, self.level
-            x, y = where(self.level, target)
-            self.grab, self.dragged = (x - at[0], y - at[1]), False
-        elif self.moving:
-            self._move_to(at)
-        else:
-            self.press_at = self.panning = pos
+        self.adding = bool(pygame.key.get_mods() & ADD_KEYS)
+        if isinstance(self.held, Piece) and self.clicking:  # a click places; a drag selects
+            self.press_at, self.before, self.waiting = pos, self.level, True
+            self.press_on, self.grab_from = self._object_at(pos), at
+            return
+        if isinstance(self.held, Piece):  # one here; a drag lays more along its way
+            self.press_at, self.before, self.laid = pos, self.level, []
+            if self._place(self.held, at) and self.held is not Key.SELECT:
+                self.laid = [len(self.level.items) - 1]
+            return
+        if self.held is Key.HAND:
+            self.panning = pos
+            return
+        self.press_at, self.before = pos, self.level
+        self.press_on = self._object_at(pos)
+        self.grab_from = at
 
     def _track(self, pos: tuple[int, int]) -> None:
-        """The mouse moved: the tooltip, a held overview, zoom bar or plane, a dragged object."""
+        """The mouse moved: the tooltip, a held overview, zoom bar or slider; the view dragged;
+        an object's key dragged off it; the pick swept, or moved, on the lattice."""
         self.pointer = pos
         self.frame_track(pos)
-        self.wheel_hover = slot_at(self.wheel(), pos, WHEEL_HEX)
+        if self.key_down is not None and key_at(self.arena_area, pos) != self.key_down:
+            if piece_row_at(self.layout, pos) != self.key_down:  # off its key, or its row
+                self.carrying, self.key_down = self.key_down, None
         if self.overviewing:
             self._overview_to(pos)
         elif self.zooming:
             self._zoom_to(pos)
         elif self.sliding is not None:
             self._slide(pos[0])
-        elif self.grab is not None:
-            if self.dragged or math.dist(pos, self.press_at) >= CLICK:
-                self.dragged = True
-                x, y = self.view.to_world(*pos)
-                self._move_to((x + self.grab[0], y + self.grab[1]), record=False)
         elif self.panning is not None:
             dx, dy = pos[0] - self.panning[0], pos[1] - self.panning[1]
             self.view = pan_view(self.view, dx, dy)
             self.panning = pos
+        elif self.press_at is not None and math.dist(pos, self.press_at) >= CLICK:
+            self._drag(pos)
+
+    def _drag(self, pos: tuple[int, int]) -> None:
+        """A drag on the plane with Select: from an object, it moves, with the pick if it is
+        picked; from the open plane, the objects it crosses are picked."""
+        if self.waiting:  # clicks placed some: a drag puts the key down, Select's (D-410)
+            self.held, self.waiting = Key.SELECT, False
+        if isinstance(self.held, Piece):
+            self._lay(pos)
+            return
+        if self.press_on is None:  # a rectangle, its first corner where the press was
+            self.box_from, self.box_to = self.press_at, pos
+            return
+        if not self.moving:
+            self.moving = self.pick if self.press_on in self.pick else (self.press_on,)
+            self.pick = self.moving
+        x, y = self.view.to_world(*pos)
+        offset = (round(x - self.grab_from[0]), round(y - self.grab_from[1]))
+        self._move_pick(offset, record=False)
+
+    def _lay(self, pos: tuple[int, int]) -> None:
+        """An object's key held, the drag on: one more each time the mouse is a width past the
+        last laid, touching it; back over one laid before, those laid after it go, however far
+        back, as the Board's parts (D-404, D-410)."""
+        at = self.view.to_world(*pos)
+        for k, index in enumerate(self.laid[:-1]):
+            if math.dist(at, self.level.items[index].at) < reach(self.level, index):
+                gone = self.laid[k + 1 :]
+                self._make(lambda level, gone=gone: group_removed(level, gone), record=False)
+                self.laid = self.laid[: k + 1]
+                self.pick = (self.laid[-1],)
+                return
+        if self.laid:
+            last = self.laid[-1]
+            if math.dist(at, self.level.items[last].at) < 2 * reach(self.level, last):
+                return
+        if self._place(self.held, at, record=False):
+            self.laid.append(len(self.level.items) - 1)
+        else:
+            self.message = ""  # a point the level refuses along the way: passed over quietly
+
+    def centres(self) -> dict:
+        """Each object's centre on the screen [px], the swimmer while it is on the plane."""
+        found = {k: self.view.to_screen(*item.at) for k, item in enumerate(self.level.items)}
+        if not self.start_off:
+            found[Piece.START] = self.view.to_screen(*self.level.start[:2])
+        return found
 
     def _release(self, pos: tuple[int, int]) -> None:
-        """The mouse let go: a row carried lands where it is let go on the plane; a dragged
-        object's move, or a slider's, is one step for undo; a click on the open plane focuses
-        its point; a point or an object chosen opens Objects, its Wheel showing (D-317); a field
-        pressed opens, now the click is over: Safari wants it so (D-206)."""
+        """The mouse let go: an object's key let go on itself, a click; carried onto the plane,
+        one lands there; a drag's move, or a slider's, one step for undo; a click on the plane
+        picks, or drops the pick; a field pressed opens, now the click is over: Safari wants it
+        so (D-206)."""
         if self.field_pressed is not None:
             self._open_field(self.field_pressed)
             self.field_pressed = None
-        if self.carrying and contains(self.arena_area, pos):
-            self._place(self.picked, self.view.to_world(*pos))
-        held = self.grab is not None or self.sliding is not None
-        if held and self.before is not None and self.level != self.before:
-            self.history.record(self.before)
-        clicked = self.press_at is not None and math.dist(pos, self.press_at) < CLICK
-        if clicked and self.grab is not None:  # a click on an object: Move in hand (D-314)
-            self.moving = self.arming
-        elif clicked:
-            self.focus, self.moving = Point(snapped(self.view.to_world(*self.press_at))), False
-            self.choice = None
-        chose = clicked or self.grab is not None  # a point or an object, not the view dragged
-        if chose and self.layout.drawer is not Drawer.OBJECTS:
-            self.open_drawer(Drawer.OBJECTS)  # the plane clicked: its Wheel shows (D-317)
-        self.carrying = self.overviewing = self.zooming = False
-        self.panning = self.press_at = self.grab = self.before = self.sliding = None
+        if self.key_down is not None:  # let go on its key, or its row: a click
+            self._press_key(self.key_down)
+        elif self.carrying is not None and contains(self.arena_area, pos):
+            if key_at(self.arena_area, pos) is None:
+                at = self.view.to_world(*pos)
+                if self.carrying is not Piece.START:
+                    self.held = self.carrying
+                self._place(self.carrying, at)
+        if self.box_from is not None:  # the rectangle's pick, once let go
+            self.pick = boxed(self.pick, self.centres(), self.box_from, pos, self.adding)
+        if self.waiting:  # a click with the key used by clicks: one placed where it was pressed
+            self.waiting = False
+            self._place(self.held, self.view.to_world(*self.press_at))
+            self.press_at = None
+        laying = isinstance(self.held, Piece) and self.press_at is not None
+        moved = self.moving or self.sliding is not None or laying
+        if moved and self.before is not None and self.level != self.before:
+            self.history.record((self.before, self.start_off))
+        clicked_ = self.press_at is not None and math.dist(pos, self.press_at) < CLICK
+        if laying and len(self.laid) > 1:  # a drag laid a row: Select in hand again (D-410)
+            self.held = Key.SELECT
+        elif laying:  # a click: the key used by clicks from now on
+            self.clicking = True
+        elif clicked_ and not laying:
+            self.pick = clicked(self.pick, self.press_on, self.adding)
+        self.overviewing = self.zooming = False
+        self.key_down = self.carrying = self.box_from = self.box_to = None
+        self.laid = []
+        self.panning = self.press_at = self.press_on = self.grab_from = None
+        self.before = self.sliding = None
+        self.moving = ()
         self.frame_release()
+
+    def _confirm_press(self, pos: tuple[int, int]) -> None:
+        """Erase all's box: Confirm erases; Cancel, or a click anywhere else, keeps it all."""
+        _, _, erase = confirm_box(self.arena_area)
+        if contains(erase, pos):
+            self._erase()
+        else:
+            self.confirming = False
 
     # Goals' sliders (D-308)
 
@@ -898,23 +1038,38 @@ class EditorScene(Frame):
         in hand, and the view opens on it as the Editor opens."""
         if not self._make(change):
             return False
-        self.focus, self.picked, self.moving, self.choice = None, None, False, None
+        self.pick, self.held = NOTHING, Key.SELECT
         self._open_view()
         return True
 
-    def _wheel_on(self, pos: tuple[int, int], steps: int) -> None:
-        """The mouse wheel on an object: a light brighter or dimmer, an obstacle bigger or
-        smaller, the swimmer turned; it is focused."""
-        if not contains(self.arena_area, pos):
+    def _wheel_on(self, event: pygame.event.Event) -> None:
+        """The mouse wheel: over an item, more or less of it, the whole pick if it is picked;
+        over the swimmer, turned; over the open plane, the view zoomed about the mouse (D-410).
+        A trackpad's small scrolls add up to a notch (D-405); a run of steps on the same objects
+        is one step for undo."""
+        pos = self.pointer
+        if not contains(self.arena_area, pos) or key_at(self.arena_area, pos) is not None:
             return
-        target = object_at(self.level, self.view, pos)
+        up = getattr(event, "precise_y", event.y)
+        if getattr(event, "flipped", False):
+            up = -up
+        steps = self.notches.feed(up)
+        if steps == 0:
+            return
+        target = self._object_at(pos)
         if target is None:
+            self.view = zoom_view(self.view, ZOOM_STEP**steps, pos)
             return
-        self.focus = target
+        if self.run_frames == 0:  # a new run: one step for undo, the level as it was
+            self.history.record((self.level, self.start_off))
+        self.run_frames = RUN
         if target is Piece.START:
-            self._make(lambda level: turned(level, steps))
-        else:
-            self._make(lambda level: adjusted(level, target, steps))
+            self._make(lambda level: turned(level, steps), record=False)
+            self._count(target)
+            return
+        chosen = items(self.pick) if target in self.pick else [target]
+        if self._make(lambda level: group_adjusted(level, chosen, steps), record=False):
+            self._count(target)
 
     def _key(self, event: pygame.event.Event) -> None:
         if event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
@@ -922,6 +1077,12 @@ class EditorScene(Frame):
                 self._edit(EditButton.REDO if event.mod & pygame.KMOD_SHIFT else EditButton.UNDO)
             elif event.key == pygame.K_y:
                 self._edit(EditButton.REDO)
+            elif event.key == pygame.K_c:
+                self._press_key(Key.COPY)
+            elif event.key == pygame.K_v:
+                self._press_key(Key.PASTE)
+            elif event.key == pygame.K_x:
+                self._press_key(Key.CUT)
             elif event.key == pygame.K_COMMA:  # Settings, as in desktop apps (D-069)
                 self.toggle_drawer(Drawer.SETTINGS)
             return  # no other shortcut with Ctrl or Cmd: they are the browser's
@@ -940,55 +1101,43 @@ class EditorScene(Frame):
             self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # the next tab, or the one before (D-304)
             self.next_tab(bool(event.mod & pygame.KMOD_SHIFT))
-        elif event.key == pygame.K_ESCAPE and not self._escape():  # nothing left: the levels
+        elif event.key == pygame.K_ESCAPE:  # Chapters' key only, as on the Board (D-406)
             self.toggle_drawer(Drawer.CHAPTERS)
-        elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):  # the Wheel's lit icon (D-314)
-            self._enter()
-        elif event.scancode in DELETE_SCANCODES:  # TOOL_KEYS[DELETE], on the physical key
-            self._do(Tool.DELETE)
+        elif event.scancode in DELETE_SCANCODES:  # Cut, on the physical key (D-410)
+            self._press_key(Key.CUT)
+        elif event.scancode in (pygame.KSCAN_0, pygame.KSCAN_KP_0):  # the swimmer (D-410)
+            self._press_key(Piece.START)
         elif event.scancode in digits and digits.index(event.scancode) % 9 < len(DIGITS):
-            piece = DIGITS[digits.index(event.scancode) % 9]  # on a point, put; else in hand
-            if isinstance(self.focus, Point):
-                self._do(piece)
-            else:
-                self._pick(piece)
+            self._press_key(DIGITS[digits.index(event.scancode) % 9])
         elif self.start_passkey(typed):  # P in Chapters: a passkey (D-075)
             pass
         elif drawer is not None:  # its initial, or the comma (D-069)
             self.toggle_drawer(drawer)
-        elif typed in ACTION_KEYS:
-            self._do(ACTION_KEYS[typed])
+        elif typed in KEYS_TYPED:
+            self._press_key(KEYS_TYPED[typed])
+        elif typed in TURN_KEYS and Piece.START in self.pick:
+            self._make(lambda level: turned(level, TURN_KEYS[typed]))
+            self._count(Piece.START)
         elif typed in VIEWS:
             self._view(VIEWS[typed])
 
     def _arrow(self, key: int) -> None:
-        """With Move in hand, the focus moved 1 u the way of the arrow, a step for undo each;
-        with something else focused, the Wheel's next icon lit, → and ↓ on, ← and ↑ back
-        (D-084, D-314); else the view dragged a step, as the mouse would."""
-        left, right, up, down = ARROWS
-        if self.moving and self.focus is not None:
+        """What is picked moved 1 u the way of the arrow, a step for undo each; with nothing
+        picked, the view dragged a step, as the mouse would."""
+        left, right, up, _ = ARROWS
+        if self.pick:
             dx, dy = {left: (-1, 0), right: (1, 0), up: (0, 1)}.get(key, (0, -1))  # y up
-            x, y = where(self.level, self.focus)
-            self._move_to((x + dx * POSITION, y + dy * POSITION))
-            return
-        if offer(self.focus):
-            self.choice = turned_to(self.focus, self.choice, 1 if key in (right, down) else -1)
+            self._move_pick((dx * POSITION, dy * POSITION))
             return
         step = ARROW_PAN * self.view.scale
         dx, dy = {left: (-step, 0.0), right: (step, 0.0), up: (0.0, -step)}.get(key, (0.0, step))
         self.view = pan_view(self.view, dx, dy)
 
 
-def _why_not(focus: Focus | None, what: Piece | Tool) -> str:
-    """Why the Wheel's key `what` does nothing on `focus`, for the status line."""
-    if focus is None:
-        return "click an object, or the plane, first"
-    if isinstance(focus, Point):
-        return "click an object first"
-    if isinstance(what, Piece):
-        return "click an empty point of the plane first"
-    if what is Tool.DELETE:
-        return "the swimmer's start stays: move it or turn it"
-    if what in (Tool.TURN_LEFT, Tool.TURN_RIGHT):
-        return "only the swimmer turns"
-    return "the swimmer's start has no setting"
+def _why_not(key: Key) -> str:
+    """Why a greyed key does nothing now, for the status line (D-410)."""
+    if key is Key.PASTE:
+        return "nothing copied yet: pick objects, then Copy"
+    if key is Key.ERASE:
+        return "nothing to erase"
+    return "pick a light, an obstacle or a mark first"

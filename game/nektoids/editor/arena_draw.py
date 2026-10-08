@@ -83,6 +83,7 @@ from nektoids.editor.draw import (
     draw_tip,
     draw_tooltip,
     draw_zoom,
+    swimmer_width,
 )
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, Rect, ViewButton, level_of
@@ -127,7 +128,6 @@ if TYPE_CHECKING:
 
 RAY_WIDTH = 2  # [px]
 BULB = 1.6  # the bulb's height on a light, in light radii (D-076)
-SYMBOL_WIDTH = 2  # [px]
 MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
 PLAYHEAD = 6  # [px]
 END_MARK = 3  # the red mark across the timeline where the run ended [px]
@@ -296,8 +296,9 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
         )
         if scene.settings.streams:
             draw_under(screen, view, body)
-        draw_symbol(screen, DARK, centre, radius + 1, heading, SYMBOL_WIDTH + 2)  # on a light map
-        draw_symbol(screen, colour, centre, radius, heading, SYMBOL_WIDTH)
+        width = swimmer_width(radius)  # in proportion (D-410)
+        draw_symbol(screen, DARK, centre, radius + 1, heading, width + 2)  # on a light map
+        draw_symbol(screen, colour, centre, radius, heading, width)
         draw_parts(screen, view, body)
         if scene.settings.motion:
             draw_motion(screen, view, body.velocity, body.spin)

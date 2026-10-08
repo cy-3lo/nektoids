@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Sequence
 from dataclasses import replace
 from itertools import product
 
@@ -77,6 +78,52 @@ def removed(level: Level, index: int) -> Level:
     """Item `index` gone; those after it move up in order. The last of a kind a goal aims at
     stays (D-307)."""
     return _checked(replace(level, items=level.items[:index] + level.items[index + 1 :]))
+
+
+def group_moved(
+    level: Level, indices: Sequence[int], start: bool, offset: tuple[float, float]
+) -> Level:
+    """Items `indices`, and the swimmer's start if `start`, moved together by `offset` [u], each
+    onto the lattice; refused whole if the level could not hold it (D-410)."""
+    dx, dy = offset
+    items = list(level.items)
+    for k in indices:
+        x, y = items[k].at
+        items[k] = replace(items[k], at=snapped((x + dx, y + dy)))
+    x, y, heading = level.start
+    begins = (*snapped((x + dx, y + dy)), heading) if start else level.start
+    return _checked(replace(level, items=tuple(items), start=begins))
+
+
+def group_adjusted(level: Level, indices: Sequence[int], steps: int) -> Level:
+    """Each of items `indices` set `steps` steps more, or less, within its range (D-410)."""
+    items = list(level.items)
+    for k in indices:
+        item = items[k]
+        items[k] = replace(item, value=SETTING[item.kind].stepped(item.value, steps))
+    return _checked(replace(level, items=tuple(items)))
+
+
+def group_removed(level: Level, indices: Sequence[int]) -> Level:
+    """Items `indices` gone, the others keeping their order; refused whole if a goal aims at the
+    last of a kind (D-307, D-410). Every index removed: Erase all."""
+    gone = set(indices)
+    return _checked(
+        replace(level, items=tuple(i for k, i in enumerate(level.items) if k not in gone))
+    )
+
+
+def erased(level: Level) -> Level:
+    """Erase all: every item gone, and every goal with them, which would aim at nothing; the
+    swimmer's start and the time allowed stay (D-410)."""
+    return _checked(replace(level, items=(), objectives=()))
+
+
+def added(level: Level, items: Sequence[Item], offset: tuple[float, float]) -> Level:
+    """Copies of `items` moved by `offset` [u], onto the lattice, last in order: a paste (D-410)."""
+    dx, dy = offset
+    new = tuple(replace(i, at=snapped((i.at[0] + dx, i.at[1] + dy))) for i in items)
+    return _checked(replace(level, items=(*level.items, *new)))
 
 
 def start_moved(level: Level, at: tuple[float, float]) -> Level:

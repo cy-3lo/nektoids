@@ -18,6 +18,8 @@ GLYPH = {
     "up-down-left-right": 0xF0B2,
     "trash-can": 0xF2ED,
     "caret-down": 0xF0D7,
+    "caret-up": 0xF0D8,
+    "scissors": 0xF0C4,
     "caret-right": 0xF0DA,
     "infinity": 0xF534,
     "minus": 0xF068,

@@ -542,6 +542,16 @@ def draw_body(screen, zone: list[Cell], size: float, origin, width: int = 3) -> 
     draw_symbol(screen, BODY_OUTLINE, centre, radius, 0.0, width)
 
 
+SWIMMER_LINE = 0.15  # the swimmer's lines, over its radius on screen (D-410)
+SWIMMER_LEAST = 2  # ... never thinner than this [px]
+
+
+def swimmer_width(radius: float) -> int:
+    """How thick the swimmer's symbol is drawn at `radius` [px], in the run, the Editor and their
+    maps: in proportion, never under SWIMMER_LEAST (D-410)."""
+    return max(SWIMMER_LEAST, round(SWIMMER_LINE * radius))
+
+
 def draw_symbol(screen, colour, centre, radius: float, heading: float, width: int) -> None:
     """The swimmer's symbol: a circle of `radius` [px] round a wedge, the two sides of an
     equilateral triangle that meet at its tip, at `heading` [rad, counter-clockwise on screen];
@@ -771,7 +781,8 @@ def draw_level_map(
         x, y, heading = pose
         if body is not None:
             draw_under(screen, view, body)
-        draw_symbol(screen, BODY, view.to_screen(x, y), BASE_RADIUS * view.scale, heading, 2)
+        radius = BASE_RADIUS * view.scale
+        draw_symbol(screen, BODY, view.to_screen(x, y), radius, heading, swimmer_width(radius))
         if body is not None:
             draw_over(screen, view, body)
         if frame is not None:

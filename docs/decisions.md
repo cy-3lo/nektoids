@@ -2490,3 +2490,37 @@ The physicist's. The run's Diagnostic called its board "The swimmer's wiring", t
 board at work": both are now "Active board". Under the Board's map, a note: "You can drag the
 swimmer anywhere; the wheel, or L and R, turn it." Its room is taken from the active board, now
 248 px high, the map moved up over the note.
+
+**D-410 — 2026-10-08 — The Editor's keys: square keys fixed on the screen, floating over the plane at its edges, tools at its left, objects at its right, in place of the Wheel and the action atop the plane; a click picks, Shift adds, a drag draws a rectangle that picks or moves the pick, a held object is laid along a drag, the Hand pans, the wheel sizes or zooms; the swimmer can be cut and placed again; Erase all takes the goals too. Amends D-301, D-302, D-307, D-314, D-316, D-317.**
+The physicist's, from four rounds of mockups and a review: the Board's buttons sit round a fixed
+board, the Editor's plane pans and zooms, so its keys are squares fixed on the screen, 36 px so
+that their icons are the bar's size, 20 px inside the plane's edges, clear of the drawer's
+handle, with nothing under them but the plane. At the left, two columns: Select and Hand; Bigger
+and Smaller, carets up and down; Zoom in and out; Undo and Redo; Copy and Paste; Cut, which takes
+the place of Delete, and Erase all. At the right: the Swimmer, drawn as its symbol, key 0, then
+Light, Obstacle and Mark, 1 to 3; Objects' rows in that order. Each looks as the Board's buttons
+do (D-401): chosen, lit, greyed; each has its tooltip, its name and key. The Wheel, the action
+atop the plane and the undo rows of Objects go.
+With Select, a click picks the object clicked, Shift or Cmd adds one, the open plane drops the
+pick; a drag from the open plane draws a rectangle, a + at its first corner and at the mouse,
+which picks the objects whose centres lie inside it; a drag from an object moves it, or the pick
+it is in, on the lattice, one step for undo. The Hand pans; a right drag pans whatever is held.
+An object's key held, each click on the plane places one; a drag lays them along its way, each
+touching the last, going back taking them away, as the Board's parts (D-404), and lets go with
+Select in hand; dragged onto the plane from its key or its row, one lands there. A level has one
+swimmer: its key is greyed while it is on the plane; Cut takes it off, the run refused until its
+key, or 0, places it again; Undo puts it back. Bigger, Smaller, Cut and Copy act on the items
+picked; Paste puts copies where the mouse is, else 2 u beside, and picks them; what is copied
+lasts the session, for any level. Erase all asks "Are you sure you want to erase all the
+objects?", Cancel the default, Enter, Esc or a click elsewhere cancelling; it takes every item
+and every goal, which would aim at nothing, the swimmer and the time allowed staying. A value
+shows a moment under an object placed or set, as the Board's count (D-401). The mouse wheel over
+an item sizes it, the pick if it is picked, over the swimmer turns it, over the open plane zooms
+there; notches as the Board's (D-405). Keys: S, H, 0 to 3, < and >, + and -, Del cuts, Ctrl+C,
+Ctrl+V, Ctrl+X; the arrows move the pick 1 u, else the view; Esc opens Chapters (D-406). The swimmer is
+drawn with lines 0.15 of its radius on screen, 2 px at least, in the run, the Editor, their maps
+and on its key, the physicist's. A click with an object's key held stays a click though the
+mouse moves a little: only a drag that lays a second object lets the key go. A right click, not
+a drag, puts the key down and drops the pick, Select in hand. An object's key, its first gesture
+says how it is used: a drag lays a row; a click places one, and then each click places one, a
+drag putting the key down to move the object under it, or pick with a rectangle, as Select.

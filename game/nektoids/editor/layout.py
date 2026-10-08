@@ -484,7 +484,7 @@ def make_layout(
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds, floor, scroll)
     elif drawer is Drawer.OBJECTS:
-        rows.objects(height, wheel_folded, scroll)
+        rows.objects(floor, scroll)
     elif drawer is Drawer.TEXT:
         rows.brief()
     elif drawer is Drawer.GOALS:
@@ -529,7 +529,6 @@ def make_layout(
         tabs.append((name, (x, 0, TAB_WIDTHS[name], TABS_HEIGHT)))
         x += TAB_WIDTHS[name]
     open_ = drawer is not None
-    centre = left + (width - left) // 2  # the main screen's
     main = height - STATUS_HEIGHT - (CONTROLS_HEIGHT if env is Env.RUN else 0)  # its foot
     return Layout(
         env=env,
@@ -561,9 +560,7 @@ def make_layout(
         scroll_max=rows.scroll_max,
         scroll_bar=rows.scroll_bar,
         edit_buttons=tuple(rows.of(EditButton)),
-        action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
-        if env is Env.EDITOR  # the Editor's (D-314); the Board has its buttons (D-401)
-        else None,
+        action_at=None,  # the Board and the Editor have their buttons (D-401, D-410)
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
         goal_area=goal_area,
@@ -773,11 +770,14 @@ class _Rows:
         self.zoom_bar, self.level_field = _moved(self.zoom_bar, up), _moved(self.level_field, up)
         self.share_note = _moved(self.share_note, up)
 
-    def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
-        """The Editor's objects under their title, then undo and redo, which need none, as rows,
-        scrolled above the Wheel if they do not fit; at the drawer's foot, the Wheel round what
-        is focused on the plane (D-301, D-306)."""
-        self._over_wheel((("Plane", Piece), ("", EditButton)), height, wheel_folded, scroll)
+    def objects(self, floor: int, scroll: int) -> None:
+        """The Editor's objects under their title, scrolled down to `floor`, the drawer's foot:
+        the Wheel and the undo rows left it for the keys round the plane (D-410)."""
+        self._title("Plane", self.sections)
+        for piece in (Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK):  # as the keys (D-410)
+            self._row(piece)
+        self.y -= ROW_PITCH - ROW_HEIGHT  # what lies under the last row
+        self.scrolled(floor, scroll)
 
     def brief(self) -> None:
         """The level's title, a field a row high, its spec, a field SPEC_LINES high, then its
@@ -823,28 +823,6 @@ class _Rows:
         width = DRAWER_WIDTH - 2 * ROW_INSET
         self.knobs.append((knob, (BAR_WIDTH + ROW_INSET, self.y, width, SLIDER_HEIGHT)))
         self.y += SLIDER_HEIGHT + WORD_GAP
-
-    def _over_wheel(self, sections: tuple, height: int, wheel_folded: bool, scroll: int) -> None:
-        """Each section's title and rows, scrolled above the Wheel if they do not fit, the gaps
-        after the last row not counted: blank, they never make it scroll (D-323)."""
-        for title, rows in sections:
-            if title:
-                self._title(title, self.sections)
-            for what in rows:
-                self._row(what)
-            self.y += SECTION_GAP
-        self.y -= SECTION_GAP + ROW_PITCH - ROW_HEIGHT  # what lies under the last row
-        self.scrolled(self._wheel(height, wheel_folded) - SECTION_GAP, scroll)
-
-    def _wheel(self, height: int, folded: bool) -> int:
-        """At the drawer's foot, The Wheel's title, which folds, then, unless folded, the Wheel:
-        the focused cell drawn large, its icons round it (D-069); the title's top [px]."""
-        width = DRAWER_WIDTH - 2 * MARGIN
-        top = height - FOOT_MARGIN - TITLE_HEIGHT - (0 if folded else WHEEL_HEIGHT)
-        self.wheel_fold = (BAR_WIDTH + MARGIN, top, width, TITLE_HEIGHT)
-        if not folded:
-            self.wheel_view = (BAR_WIDTH + MARGIN, top + TITLE_HEIGHT, width, WHEEL_HEIGHT)
-        return top
 
     def view(self, env: Env) -> None:
         """The view's options as rows, in the run the rays, the swimmer's motion and its streams
