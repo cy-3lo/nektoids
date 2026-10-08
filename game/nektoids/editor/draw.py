@@ -175,6 +175,8 @@ from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 
+TITLE_SIZE = 24  # [px] a drawer's title: its headings are 20 (D-420)
+
 TIP = {
     Tool.ADD: "Add a part",
     Tool.WIRE: "Wire",
@@ -302,6 +304,7 @@ class Fonts:
     big: pygame.font.Font  # the cards' titles, the end's thanks
     icons: Icons
     heading: pygame.font.Font  # a drawer's headings: sections, groups, chapters (D-420)
+    title: pygame.font.Font  # a drawer's own title, over its headings (D-420)
 
     @classmethod
     def load(cls) -> Fonts:
@@ -318,6 +321,7 @@ class Fonts:
             big=pygame.font.Font(None, 64),
             icons=Icons(),
             heading=pygame.font.Font(None, 20),  # a drawer's headings, under its title (D-420)
+            title=pygame.font.Font(None, TITLE_SIZE),
         )
 
 
@@ -1228,7 +1232,7 @@ def draw_title(
 ) -> None:
     """A section's title, as every view writes them: upper case, dimmed, centred in `height`;
     in the accent, `ink`, while a tutorial step explains its panel (D-050, D-337)."""
-    text = fonts.name.render(title.upper(), True, ink)
+    text = fonts.title.render(title.upper(), True, ink)
     screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 
