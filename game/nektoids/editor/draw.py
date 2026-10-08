@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 import pygame
 
-from nektoids.editor import streams
+from nektoids.editor import fieldfont, streams
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.buttons import (
     BUTTON_INSET,
@@ -149,6 +149,7 @@ from nektoids.editor.palette import (
     REFUSED,
     RULE,
     SCROLL_THUMB,
+    SELECTED,
     SHADOW,
     TAB_STRIP,
     TEXT,
@@ -166,6 +167,7 @@ from nektoids.editor.probe import level_view
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
 from nektoids.editor.streams import DIAGNOSTIC_REACH
+from nektoids.editor.textfield import shown_from
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -301,10 +303,14 @@ class Fonts:
 
     @classmethod
     def load(cls) -> Fonts:
-        """Call once at startup, after pygame.init() (web.md: every asset at startup)."""
+        """Call once at startup, after pygame.init() (web.md: every asset at startup); it records
+        how wide a character of the fields' fonts is (`fieldfont.py`, D-418)."""
+        text = pygame.font.Font(TEXT_FONT_FILE, 17)
+        small = pygame.font.Font(TEXT_FONT_FILE, 15)
+        fieldfont.ADVANCE.update(text=text.size("M")[0], small=small.size("M")[0])
         return cls(
-            text=pygame.font.Font(TEXT_FONT_FILE, 17),
-            small=pygame.font.Font(TEXT_FONT_FILE, 15),
+            text=text,
+            small=small,
             name=pygame.font.Font(None, 22),
             label=pygame.font.Font(None, 18),
             big=pygame.font.Font(None, 64),
@@ -903,7 +909,10 @@ def _draw_board_text(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         draw_row(screen, scene, fonts, rect, button, name, none, False, greyed, icon=icon)
     loading = scene.loading
     text, caret = (loading.text, loading.caret) if loading is not None else ("", None)
-    draw_field(screen, fonts, layout.board_field, text, caret, "paste", "Paste a board")
+    anchor = loading.anchor if loading is not None else None
+    draw_field(
+        screen, fonts, layout.board_field, text, caret, "paste", "Paste a board", anchor=anchor
+    )
 
 
 def _draw_rows(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
@@ -1067,11 +1076,13 @@ def draw_field(
     icon: str | None = None,
     hint: str = "",
     row: bool = False,
+    anchor: int | None = None,
 ) -> None:
     """A field of text (D-075, D-206, D-305): a box, outlined in the accent while typed in, its
     icon if it has one; the text, slid left as far as the caret needs to show, the caret a bar
-    where it is while typed in; with no text and not typed in, `hint`, dimmed, or drawn as a
-    row's name if the field is a `row` among buttons (D-413)."""
+    where it is while typed in, the selection from `anchor` lit behind it (D-418); with no text
+    and not typed in, `hint`, dimmed, or drawn as a row's name if the field is a `row` among
+    buttons (D-413)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, BUTTON, box, border_radius=6)
     if caret is not None:
@@ -1086,12 +1097,14 @@ def draw_field(
         shown = named.render(_fitted(named, hint, room), True, ink)
         screen.blit(shown, (left, box.centery - shown.get_height() // 2))
         return
-    start = 0
-    while caret is not None and start < caret and font.size(text[start:caret])[0] > room:
-        start += 1  # the caret always shows: the text slides left
+    start = shown_from(text, caret, lambda part: font.size(part)[0] <= room)  # the caret shows
     end = len(text)
     while end > start and font.size(text[start:end])[0] > room:
         end -= 1
+    if caret is not None and anchor is not None and anchor != caret:
+        lo, hi = (min(max(i, start), end) for i in sorted((anchor, caret)))
+        x0, x1 = (left + font.size(text[start:i])[0] for i in (lo, hi))
+        pygame.draw.rect(screen, SELECTED, (x0, box.centery - 10, x1 - x0, 20))
     shown = font.render(text[start:end], True, ink)
     screen.blit(shown, (left, box.centery - shown.get_height() // 2))
     if caret is not None:

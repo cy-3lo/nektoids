@@ -2607,3 +2607,14 @@ deterministic (invariant 1): a flash that goes dark, lights that switch on in tu
 the eyes read now is not enough. Valves, out = max(0, a − b), need ports first and stay in the
 ideas, as do the threshold node and colours. The todo's §16 lists the work; each item is planned,
 and its decisions taken, when it starts.
+
+**D-418 — 2026-10-08 — A field of text repeats a key held and selects: Shift with the arrows, Home and End, Ctrl or Cmd+A, a drag in the open field; what is typed or pasted replaces the selection, Backspace and Delete take it out, Ctrl or Cmd+C and X copy and cut it. Amends D-206, D-305.**
+The physicist's, before v1.1: deleting a word took a key press a letter, and nothing could be
+selected. Natively a key held repeats after 0.4 s, every 35 ms, while a field is open and only
+then, so the game's own keys still act once a press. A field holds an anchor beside its caret;
+the selection between them is drawn behind the text in the accent's dark. A click in the open
+field puts the caret on the place nearest it, found as the field draws its text: IBM Plex Mono's
+characters are all one width, measured once at startup. On the web the page's field already
+repeats and selects with the keys; the game now reads the selection's other end from it too, and
+a click or drag in the game's field selects in the page's. Every field takes it: the Editor's
+title, spec, author and typed values, Paste a level and Paste a board.

@@ -105,6 +105,7 @@ from nektoids.editor.palette import (
     PLANE_LINE,
     REFUSED,
     RULE,
+    SELECTED,
     SHADOW,
     TEXT,
     TOOLTIP_BG,
@@ -399,14 +400,16 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         writing = scene.writing is field
         author = (level.author or "").removeprefix("@")  # its "@" outside the field (D-341)
         said = {Brief.TITLE: level.title, Brief.SPEC: level.spec}.get(field, author)
-        text, caret = (scene.field.text, scene.field.caret) if writing else (said, None)
+        field_now = scene.field if writing else None
+        text, caret = (field_now.text, field_now.caret) if field_now else (said, None)
+        anchor = field_now.anchor if field_now else None
         if field is Brief.AUTHOR:  # the "@", fixed, before the field (D-341)
             at = fonts.text.render("@", True, TEXT)
             screen.blit(at, at.get_rect(midright=(rect[0] - 4, rect[1] + rect[3] // 2)))
         if field is not Brief.SPEC:  # the title's, the author's (D-331)
-            draw_field(screen, fonts, rect, text, caret)
+            draw_field(screen, fonts, rect, text, caret, anchor=anchor)
         else:
-            _draw_spec(screen, fonts, rect, text, caret)
+            _draw_spec(screen, fonts, rect, text, caret, anchor)
     _draw_goals(screen, scene, fonts)
     _draw_parts(screen, scene, fonts)
     for start, rect in layout.start_rows:  # under the rule, scrolled (D-322)
@@ -506,7 +509,8 @@ def _draw_knob(screen: pygame.Surface, scene: EditorScene, fonts: Fonts, knob: K
     level = (min(max(now, scale.lo), scale.hi) - scale.lo) / (scale.hi - scale.lo)
     draw_track(screen, track, level, held=scene.sliding == knob)
     if scene.writing == knob:
-        draw_field(screen, fonts, value, scene.field.text, scene.field.caret)
+        field = scene.field
+        draw_field(screen, fonts, value, field.text, field.caret, anchor=field.anchor)
         return
     box = pygame.Rect(value)
     pygame.draw.rect(screen, BUTTON, box, border_radius=6)
@@ -514,9 +518,12 @@ def _draw_knob(screen: pygame.Surface, scene: EditorScene, fonts: Fonts, knob: K
     screen.blit(shown, shown.get_rect(center=box.center))
 
 
-def _draw_spec(screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int | None) -> None:
+def _draw_spec(
+    screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int | None, anchor=None
+) -> None:
     """Brief's spec (D-305): its text wrapped to the box, SPEC_LINES lines of it, those round the
-    caret while it is typed in, the caret a bar; the box outlined in the accent then."""
+    caret while it is typed in, the caret a bar, the selection lit behind it (D-418); the box
+    outlined in the accent then."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, BUTTON, box, border_radius=6)
     if caret is not None:
@@ -525,8 +532,13 @@ def _draw_spec(screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int
     lines = wrapped(text, lambda line: font.size(line.rstrip())[0] <= room)
     line, along = caret_at(lines, caret) if caret is not None else (0, 0)
     first = max(0, line - SPEC_LINES + 1)
-    for n, (_, words) in enumerate(lines[first : first + SPEC_LINES]):
+    span = None if caret is None or anchor in (None, caret) else sorted((anchor, caret))
+    for n, (start, words) in enumerate(lines[first : first + SPEC_LINES]):
         top = box.top + FIELD_PAD + n * HINT_LINE
+        if span is not None and span[0] < start + len(words) and span[1] > start:
+            lo, hi = max(span[0], start) - start, min(span[1], start + len(words)) - start
+            x0, x1 = left + font.size(words[:lo])[0], left + font.size(words[:hi])[0]
+            pygame.draw.rect(screen, SELECTED, (x0, top + 1, x1 - x0, HINT_LINE - 2))
         screen.blit(font.render(words, True, TEXT), (left, top + 1))
     if caret is not None:
         x = left + font.size(lines[line][1][:along])[0]
@@ -558,8 +570,12 @@ def _draw_save_load(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) ->
     note = cached_text(fonts.small, _share_says(scene), LIT if scene.shareable else DIM_TEXT)
     screen.blit(note, (x + 4, y + (h - note.get_height()) // 2))
     pasting = scene.writing is Paste.LEVEL
-    text, caret = (scene.field.text, scene.field.caret) if pasting else ("", None)
-    draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level", row=True)
+    field = scene.field if pasting else None
+    text, caret, anchor = (field.text, field.caret, field.anchor) if field else ("", None, None)
+    hint = "Paste a level"
+    draw_field(
+        screen, fonts, layout.level_field, text, caret, "paste", hint, row=True, anchor=anchor
+    )
     x, y, w, _ = layout.files_rule
     pygame.draw.line(screen, RULE, (x, y), (x + w, y), 2)  # the bar that divides, as the Wheel's
 
