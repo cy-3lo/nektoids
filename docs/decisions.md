@@ -2484,3 +2484,9 @@ their ghosts, then W and the two parts. The tutorials' shadows, parts and wires,
 grey, a shade darker, not to be taken for a wire. Settings' Tutorial row is named Redo
 tutorial, which is what it does (D-334): from the first step, on the board as it stands. Minus
 hands out a Sum too, the physicist's, so that Sum and Difference sit side by side, to choose.
+
+**D-409 — 2026-10-08 — Diagnostic's board is titled "Active board", in the run and on the Board; on the Board, a note under the map says it can be dragged. Amends D-089, D-407.**
+The physicist's. The run's Diagnostic called its board "The swimmer's wiring", the Board's "The
+board at work": both are now "Active board". Under the Board's map, a note: "You can drag the
+swimmer anywhere; the wheel, or L and R, turn it." Its room is taken from the active board, now
+248 px high, the map moved up over the note.

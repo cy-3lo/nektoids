@@ -835,6 +835,8 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
+    note = "You can drag the swimmer anywhere; the wheel, or L and R, turn it."
+    draw_note(screen, fonts, note, (area.left, area.bottom + 8), area.width)
 
 
 def draw_note(

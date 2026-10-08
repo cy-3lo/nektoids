@@ -209,17 +209,18 @@ class Env(Enum):  # the environments, each a tab over the main screen (D-051)
 
 NOTE_AT = (BAR_WIDTH + MARGIN, DRAWER_TOP + TITLE_HEIGHT + 4)  # a drawer's note, under its title
 NOTE_WIDTH = DRAWER_WIDTH - 2 * MARGIN  # [px]
-DIAGNOSTIC_BODY: Rect = (  # the board at work in Diagnostic, under its title, as Run's (D-089)
+MAP_NOTE = 60  # the note under Diagnostic's map: three lines [px]
+DIAGNOSTIC_MAP: Rect = (  # the level, small, at Diagnostic's foot, its note under it: a square
+    BAR_WIDTH + MARGIN,
+    SCREEN[1] - 12 - MAP_NOTE - 8 - (DRAWER_WIDTH - 2 * MARGIN),
+    DRAWER_WIDTH - 2 * MARGIN,
+    DRAWER_WIDTH - 2 * MARGIN,
+)
+DIAGNOSTIC_BODY: Rect = (  # the active board in Diagnostic, under its title, as Run's (D-089)
     BAR_WIDTH,
     DRAWER_TOP + TITLE_HEIGHT,
     DRAWER_WIDTH,
-    300,
-)
-DIAGNOSTIC_MAP: Rect = (  # the level, small, at Diagnostic's foot, under its label: a square [px]
-    BAR_WIDTH + MARGIN,
-    SCREEN[1] - MARGIN - (DRAWER_WIDTH - 2 * MARGIN),
-    DRAWER_WIDTH - 2 * MARGIN,
-    DRAWER_WIDTH - 2 * MARGIN,
+    DIAGNOSTIC_MAP[1] - TITLE_HEIGHT - 8 - (DRAWER_TOP + TITLE_HEIGHT),
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.BOARD: (Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC),  # the rest are buttons (D-401)
@@ -489,8 +490,8 @@ def make_layout(
     elif drawer is Drawer.GOALS:
         rows.made_goals(made, addable)
         rows.scrolled(floor, scroll)  # D-096
-    elif drawer is Drawer.DIAGNOSTIC:  # the board at work, then the map at the foot (D-407)
-        rows.label("The board at work")
+    elif drawer is Drawer.DIAGNOSTIC:  # the active board, then the map at the foot (D-407)
+        rows.label("Active board")
         rows.y = DIAGNOSTIC_MAP[1] - TITLE_HEIGHT
         rows.label("The level")
     elif drawer is Drawer.FILES and env is Env.EDITOR:
@@ -498,7 +499,7 @@ def make_layout(
     elif drawer is Drawer.FILES:
         rows.files(files, folded, height, scroll)
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
-        rows.label("The swimmer's wiring")
+        rows.label("Active board")  # as the Board's Diagnostic names it (D-407)
     elif drawer is Drawer.SCORE:
         rows.label("Your wins")
     elif drawer in (Drawer.NAVIGATOR, Drawer.SETTINGS, Drawer.CHAPTERS) or (
