@@ -432,7 +432,7 @@ BEFORE_SENTENCES = {
     ("Greed", "greedy()"): (Outcome.WON, 1118, ((2, 2, 1.0),)),  # D-313; round a light, D-424
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1197, ((3, 3, 1.0),)),  # D-317, D-424
+    ("Patience", "patient()"): (Outcome.WON, 1196, ((3, 3, 1.0),)),  # D-317, D-424
     ("Patience", "patient(True)"): (Outcome.WON, 1152, ((3, 3, 1.0),)),  # D-424
 }
 

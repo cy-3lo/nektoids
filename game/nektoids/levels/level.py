@@ -31,7 +31,7 @@ from nektoids.levels.objectives import Goal, objective_from_dict, objective_to_d
 from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
-START_NUDGE = (1e-4, -1e-4)  # [u] a run's swimmer starts so far off its whole start (D-425)
+START_NUDGE = (1e-3, -1e-3)  # [u] a run's swimmer starts so far off its whole start (D-425)
 FORMAT = 5  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
 # 4 a zone written as its size (D-313), 5 an author (D-331)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
