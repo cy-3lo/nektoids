@@ -95,6 +95,7 @@ from nektoids.editor.layout import (
     zoom_bar_at,
     zoom_button_at,
 )
+from nektoids.editor.notches import Notches
 from nektoids.editor.recording import Recording
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import ARROW_SCANCODES, ARROWS
@@ -149,6 +150,9 @@ class Snapshot:
     phase: tuple[float, ...]
 
 
+CLICK = 4  # a press on the arena that moves less than this is a click: it inspects [px]
+
+
 class Count(NamedTuple):
     """An objective as the run stands: so many met of so many, its bar, whether it lost."""
 
@@ -195,6 +199,8 @@ class ArenaScene(Frame):
         self.show_polar = False  # the polar plot of the light at the eyes (developer)
         self.hand = False  # dragging moves the view, not a swimmer
         self.panning: tuple[int, int] | None = None  # where the hand last was, while it drags
+        self.notches = Notches()  # the mouse wheel's scrolls, made zoom steps (D-411)
+        self.press_at: tuple[int, int] | None = None  # a press on the arena: click, or drag?
         self.overviewing = False  # Navigator's overview held: the view follows the mouse
         self.zooming = False  # Navigator's zoom bar held: the zoom follows the mouse
         self.seek_to: int | None = None  # the tick the run races ahead to, if it does
@@ -320,6 +326,7 @@ class ArenaScene(Frame):
 
     def update(self) -> None:
         self.frame_update()
+        self.notches.tick()
         self._follow_extent()
         kept = kept_in(self.view, self.arena_area, self.extent())  # D-066
         if kept != self.view:
@@ -485,14 +492,30 @@ class ArenaScene(Frame):
                 self.panning = event.pos
             elif self.dragging is not None:
                 self._drag(event.pos)
+            elif self.press_at is not None and math.dist(event.pos, self.press_at) >= CLICK:
+                dx, dy = event.pos[0] - self.press_at[0], event.pos[1] - self.press_at[1]
+                self._look(pan_view(self.view, dx, dy))  # a drag, not a click: the view moves
+                self.panning, self.press_at = event.pos, None
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            self.dragging = self.panning = None
+            self.dragging = self.panning = self.press_at = None
             self.scrubbing = self.overviewing = self.zooming = False
             self.frame_release()
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            if contains(self.arena_area, event.pos):  # a right drag moves the view (D-411)
+                self.panning = event.pos
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+            self.panning = None
         elif event.type == pygame.MOUSEWHEEL and self.frame_wheel(self.pointer, event.y):
             pass  # the drawer's rows scrolled (D-096)
         elif event.type == pygame.MOUSEWHEEL and self.developer:
             self._turn(float(event.y))
+        elif event.type == pygame.MOUSEWHEEL and contains(self.arena_area, self.pointer):
+            up = getattr(event, "precise_y", event.y)  # a trackpad's small scrolls (D-405)
+            if getattr(event, "flipped", False):
+                up = -up
+            steps = self.notches.feed(up)
+            if steps:  # the view zoomed about the mouse, as in the Editor (D-411)
+                self._look(zoom_view(self.view, ZOOM_STEP**steps, self.pointer))
         elif event.type == pygame.KEYDOWN:
             self._key(event)
 
@@ -530,9 +553,10 @@ class ArenaScene(Frame):
             return
         elif self.hand:
             self.panning = pos
-        else:
+        else:  # a click inspects; a drag moves the view (D-411), or, for a developer, the swimmer
             self.selected = body_at(self.view, self.pos, self.radius, pos)
             self.dragging = self.selected if self.developer else None
+            self.press_at = pos if self.dragging is None else None
 
     def press(self, button: ArenaButton) -> None:
         if button in CONTROLS and not self._allowed(Action("play")):

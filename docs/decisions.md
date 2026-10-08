@@ -2524,3 +2524,10 @@ mouse moves a little: only a drag that lays a second object lets the key go. A r
 a drag, puts the key down and drops the pick, Select in hand. An object's key, its first gesture
 says how it is used: a drag lays a row; a click places one, and then each click places one, a
 drag putting the key down to move the object under it, or pick with a rectangle, as Select.
+
+**D-411 — 2026-10-08 — In the run, a drag moves the view, left or right, and the mouse wheel zooms about the mouse, as in the Editor (D-410). Amends D-065, D-066.**
+The physicist's. A left press on the arena that moves 4 px or more moves the view; one let go
+where it was is a click, which inspects, as before; the developer's drag still moves the swimmer.
+A right drag moves the view whatever the press would do. The wheel over the arena zooms about the
+mouse, a trackpad's small scrolls adding up to a notch (D-405); in the developer view it still
+turns the swimmer. The Hand and Navigator's zoom stay.
