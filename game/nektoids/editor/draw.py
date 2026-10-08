@@ -1062,21 +1062,24 @@ def draw_field(
     caret: int | None,
     icon: str | None = None,
     hint: str = "",
+    row: bool = False,
 ) -> None:
     """A field of text (D-075, D-206, D-305): a box, outlined in the accent while typed in, its
     icon if it has one; the text, slid left as far as the caret needs to show, the caret a bar
-    where it is while typed in; with no text and not typed in, `hint`, dimmed."""
+    where it is while typed in; with no text and not typed in, `hint`, dimmed, or drawn as a
+    row's name if the field is a `row` among buttons (D-413)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, BUTTON, box, border_radius=6)
     if caret is not None:
         pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
-    ink = TEXT if caret is not None or text else DIM_TEXT
+    ink = TEXT if caret is not None or text or row else DIM_TEXT
     left = box.left + (42 if icon else 12)
     if icon:
         fonts.icons.draw(screen, icon, (box.left + 20, box.centery), 16, ink)
     font, room = fonts.text, box.right - 10 - left
     if not text and caret is None:
-        shown = font.render(_fitted(font, hint, room), True, DIM_TEXT)
+        named = fonts.name if row else font
+        shown = named.render(_fitted(named, hint, room), True, ink)
         screen.blit(shown, (left, box.centery - shown.get_height() // 2))
         return
     start = 0
