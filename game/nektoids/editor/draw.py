@@ -28,6 +28,7 @@ from pathlib import Path
 import numpy as np
 import pygame
 
+from nektoids.editor import streams
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.buttons import (
     BUTTON_INSET,
@@ -120,6 +121,7 @@ from nektoids.editor.palette import (
     DOOMED,
     EYE_FACE,
     FLAME,
+    FLAME_FAINT,
     FLASH,
     FOCUS_TINT,
     FULL,
@@ -130,6 +132,7 @@ from nektoids.editor.palette import (
     GRID_LINE,
     HOVER,
     INTAKE,
+    INTAKE_FAINT,
     KEY_DARK,
     KEY_GREYED,
     KEY_LIGHT,
@@ -162,6 +165,7 @@ from nektoids.editor.picking import Picked
 from nektoids.editor.probe import level_view
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
+from nektoids.editor.streams import DIAGNOSTIC_REACH
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -821,10 +825,10 @@ def draw_track(screen: pygame.Surface, rect, level: float, held: bool = False) -
 
 def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
     """Diagnostic (D-058, D-407): at its top the board at work where the probe stands, on its
-    body, plain, as Run's Diagnostic draws it (D-089): beads on the wires, a meter by each eye
-    and thruster, no numbers (D-052); at its foot the level small, its obstacles, its marks, its
-    lights, and the probe, the swimmer to drag and turn, at work (D-076), its streams no shorter
-    on screen than LEAST_STREAM (D-345)."""
+    body, plain, as Run's Diagnostic draws it (D-089): beads on the wires, faint streams behind
+    each eye and thruster (D-415), no numbers (D-052); at its foot the level small, its
+    obstacles, its marks, its lights, and the probe, the swimmer to drag and turn, at work
+    (D-076), its streams no shorter on screen than LEAST_STREAM (D-345)."""
     probe, level = scene.probe, scene.level
     if probe is None or not probe.circuit.cells:
         note = "Your board is empty: place a part to see it run."
@@ -833,7 +837,7 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         circuit = probe.circuit
         screen.set_clip(DIAGNOSTIC_BODY)
         draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
-        draw_circuit(screen, circuit, probe.y, fonts, plain=True)
+        draw_working(screen, circuit, probe.y, probe.ticks // TICKS_PER_FRAME, fonts)
         screen.set_clip(None)
     area = pygame.Rect(DIAGNOSTIC_MAP)
     if level is not None and probe is not None:
@@ -1307,9 +1311,7 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
         place = pygame.Rect(box.centerx - circuit_w // 2, y + INFO_PAD - 4, circuit_w, circuit_h)
         pygame.draw.rect(screen, PANEL, place, border_radius=6)
         inside = screen.subsurface(place)
-        for specks, colour in ((entry.light(), INTAKE), (entry.flames(), FLAME)):
-            for sx, sy in specks:  # on the grid of the run's specks (D-076)
-                inside.fill(colour, (sx // SPECK * SPECK, sy // SPECK * SPECK, SPECK, SPECK))
+        draw_streams(inside, ((entry.light(), INTAKE), (entry.flames(), FLAME)))
         draw_circuit(inside, entry.circuit, entry.y, fonts, plain=True, meters=False)
 
 
@@ -1368,6 +1370,25 @@ def cached_text(font: pygame.font.Font, text: str, colour: tuple[int, int, int])
             _TEXT_CACHE.clear()
         _TEXT_CACHE[key] = font.render(text, True, colour)
     return _TEXT_CACHE[key]
+
+
+def draw_working(
+    screen: pygame.Surface, circuit: Circuit, y: np.ndarray, frame: int, fonts: Fonts
+) -> None:
+    """Diagnostic's circuit, the Board's and Run's (D-089, D-407): behind it, faint and short,
+    the light each eye draws in and each thruster's flame, as many as the rates; then the
+    wires, the beads and the parts, plain (D-415)."""
+    light = streams.light(circuit, y, frame, DIAGNOSTIC_REACH, 0)
+    flames = streams.flames(circuit, y, frame, DIAGNOSTIC_REACH, 0)
+    draw_streams(screen, ((light, INTAKE_FAINT), (flames, FLAME_FAINT)))
+    draw_circuit(screen, circuit, y, fonts, plain=True, meters=False)
+
+
+def draw_streams(screen: pygame.Surface, specks) -> None:
+    """Each list of specks [px] in its colour, on the grid of the run's specks (D-076)."""
+    for points, colour in specks:
+        for sx, sy in points:
+            screen.fill(colour, (sx // SPECK * SPECK, sy // SPECK * SPECK, SPECK, SPECK))
 
 
 def draw_circuit(

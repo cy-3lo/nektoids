@@ -2568,3 +2568,12 @@ and lists `docs/`; it names no contributor but Cy-3LO, and says nothing of how t
 `ideas.md` held thoughts for later, not for strangers: it is taken out of the repository, its
 history left as it is, and CLAUDE.md no longer counts it among the files strangers read. The
 banner, the todo's other item, comes later.
+
+**D-415 — 2026-10-08 — Diagnostic's circuit, the Board's and Run's, shows each eye's light and each thruster's flame behind it, faint and short, in place of the level meters. Amends D-052, D-089.**
+The physicist's: a meter, a bar of the faces' accent beside a part, was hard to read and taken
+for the part's accented face. Behind the wires and the parts, the specks the run draws (D-076)
+now come into each eye's face and out of each thruster's back, as many as the rates, the way the
+part faces: at most 1.4 hex sizes from the face, against 1.8 in a part's entry (D-082), in the
+run's colours taken 30% towards the panel's, the variant he chose of three. The entry's specks
+and Diagnostic's are drawn by one module, `editor/streams.py`, any facing; the entry's are the
+same as before, speck for speck. The developer view keeps its meters beside its numbers.
