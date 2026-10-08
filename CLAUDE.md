@@ -57,6 +57,7 @@ And stage 3, decided by D-500, built on `stage/3-memory` from `main` once #125 i
 todo's §16: tanks, a part whose level lags what comes in, T dh/dt = in − h, its level drawn;
 loops on the board; lights whose power follows a fixed schedule in time; and their levels.
 
+Lights are solid and obstacles give on springs (D-424).
 Out: no new part but the tank, no new sense, and no new item but marks (D-306): a schedule is a
 light's setting. Valves, and the later stages, flows, actions other than moving, and
 all after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,

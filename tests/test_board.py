@@ -600,7 +600,7 @@ def test_adopt_refuses_a_board_this_level_cannot_hold_and_changes_nothing():
     before = fear.snapshot()
     assert fear.adopt(love.snapshot()) == Refused("this level hands out no sums")
     one_eye = Board(RECT, {Kind.EYE: 1, Kind.THRUSTER: 2})
-    reason = "this level hands out one eye; the board has two"
+    reason = "this level hands out one eye. The board has two"
     assert one_eye.adopt(a_vehicle(None).snapshot()) == Refused(reason)
     small = Board(offset_rect(3, 7))  # the thrusters at column 4 are off its zone
     assert small.adopt(a_vehicle(None).snapshot()).reason.startswith("the board goes outside")
@@ -617,7 +617,7 @@ def test_a_board_handed_out_anew_keeps_its_parts_unless_they_no_longer_fit():
     board.connect(eye.id, board.place(Kind.THRUSTER, (1, 0)).id)
     before = board.snapshot()
     fewer = board.rehand(Board(hex_disc(2), {Kind.EYE: 1}))
-    assert fewer.reason == "this level hands out one eye; the board has two"
+    assert fewer.reason == "this level hands out one eye. The board has two"
     assert "outside" in board.rehand(Board(hex_disc(1), {Kind.EYE: 9, Kind.THRUSTER: 9})).reason
     assert board.snapshot() == before  # refused: nothing changed
     assert board.rehand(Board(hex_disc(3), {Kind.EYE: 3, Kind.THRUSTER: None})) is None

@@ -9,6 +9,7 @@ from nektoids.graph.dynamics import TAU, initial_state
 from nektoids.graph.hexgrid import NE, NW, SE, SW, E
 from nektoids.graph.network import Network
 from nektoids.levels.arenas import arenas
+from nektoids.levels.level import START_NUDGE
 from nektoids.levels.objectives import REACH, Outcome, begin, follow, outcome
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
@@ -49,12 +50,12 @@ def run(net, title, seconds, start=None):
     heading [rad], the level's own if None. Yields (pos, heading, y) after each tick."""
     arena = LEVELS[title].arena
     if start is None:
-        x, y, heading = LEVELS[title].start
+        (x, y), heading = LEVELS[title].start_at, LEVELS[title].start[2]  # nudged (D-425)
         start = np.array([[x, y, math.radians(heading)]])
     pos, heading, radius = start[:, :2], start[:, 2], np.ones(len(start))
     y = initial_state(net, len(start))
     for _ in range(round(seconds / DT)):
-        pos, heading, y = step(arena, net, pos, heading, radius, y, DT)
+        pos, heading, y, arena = step(arena, net, pos, heading, radius, y, DT)  # D-424
         yield pos, heading, y
 
 
@@ -66,7 +67,7 @@ def play(net, title):
     """Run the level until it is over, as the arena view does: (outcome, ticks, kept), what its
     objectives keep, followed tick by tick (D-038, D-040)."""
     level = LEVELS[title]
-    kept = begin(level, np.array([level.start[:2]]), np.ones(1))
+    kept = begin(level, np.array([level.start_at]), np.ones(1))
     for tick, (pos, _, _) in enumerate(run(net, title, level.time_limit), start=1):
         kept = follow(level, kept, pos, np.ones(1), DT)
         ended = outcome(level, kept, tick, DT)
@@ -124,7 +125,7 @@ def test_aggression_crossed_eyes_at_the_front_corners_win():
     upper, lower = (board.place(Kind.EYE, cell, facing=E) for cell in ((2, -2), (0, 2)))
     for eye, thruster in ((upper, right), (lower, left)):
         assert not isinstance(board.connect(eye.id, thruster.id), Refused)
-    assert play(Network.from_board(board), "Aggression")[:2] == (Outcome.WON, 548)
+    assert play(Network.from_board(board), "Aggression")[:2] == (Outcome.WON, 549)  # D-425
 
 
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
@@ -142,7 +143,7 @@ def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
 def test_shadows_the_eyes_see_nothing_and_a_swimmer_without_a_drive_never_moves():
     level = LEVELS["Shadows"]
     pos, _, y = last(run(CROSSED, "Shadows", 5.0))
-    assert pos.tolist() == [list(level.start[:2])]
+    assert pos.tolist() == [list(level.start_at)]  # where it started, nudged (D-425)
     assert np.all(y[:, CROSSED.eyes] == 0.0)
 
 
@@ -153,7 +154,7 @@ def test_shadows_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spare():
     assert play(DRIVEN, title)[1] == ticks  # the same tick, every run
     light = LEVELS[title].arena.light_xy[0]
     nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(DRIVEN, title, ticks * DT + 2.0))
-    assert nearest < 0.5 * (LIGHT_RADIUS + 1.0)  # deep in, not grazing it (D-004)
+    assert nearest < 1.001 * (LIGHT_RADIUS + 1.0)  # against it, a light being solid (D-424)
 
 
 def fear(upper, lower, crossed=False):
@@ -372,7 +373,7 @@ def test_patience_a_halved_drive_gets_out_of_the_dark_and_touches_all_three_ligh
 def test_patience_without_a_drive_nothing_moves_and_with_a_full_one_it_overshoots():
     level = LEVELS["Patience"]
     pos, _, y = last(run(CROSSED, "Patience", 5.0))
-    assert pos.tolist() == [list(level.start[:2])] and np.all(y[:, CROSSED.eyes] == 0.0)
+    assert pos.tolist() == [list(level.start_at)] and np.all(y[:, CROSSED.eyes] == 0.0)
     doubled_drive = built(
         "Patience",
         [*EYES, *THRUSTERS, *DOUBLES, (Kind.SOURCE, (-1, 0), None)],
@@ -393,8 +394,9 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
     net = Network.from_edges([Kind.SOURCE, Kind.THRUSTER, Kind.THRUSTER], [(0, 1), (0, 2)])
     pos, heading, _ = last(run(net, "Aggression", 15.0))  # from (9, 15), heading E
     lag = SPEED * TAU  # the thrusters take TAU to reach their rate (D-017)
-    assert pos[0, 0] == pytest.approx(9.0 + SPEED * 15.0 - lag, abs=1e-9)  # far past x = 40
-    assert pos[0, 1] == 15.0 and heading.tolist() == [0.0]
+    nudged = 9.0 + START_NUDGE[0]  # D-425
+    assert pos[0, 0] == pytest.approx(nudged + SPEED * 15.0 - lag, abs=1e-9)  # far past x = 40
+    assert pos[0, 1] == 15.0 + START_NUDGE[1] and heading.tolist() == [0.0]  # straight on
 
 
 # Objectives as sentences (D-307): every level's runs end as they did, to the tick and the bit.
@@ -416,7 +418,7 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
-    ("Shadows", "DRIVEN"): (Outcome.WON, 446, ((1, 1, 1.0),)),  # D-317
+    ("Shadows", "DRIVEN"): (Outcome.WON, 439, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
     ("Fear", "fear(NW, SW)"): (Outcome.WON, 382, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
@@ -427,11 +429,11 @@ BEFORE_SENTENCES = {
     ("Orbit", "ORBITER"): (Outcome.WON, 1132, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312, D-357
     ("Orbit", "HALVED"): (Outcome.WON, 2263, ((4, 4, 1.0), (1, 1, 1.0))),  # D-357
     ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
-    ("Greed", "greedy()"): (Outcome.WON, 1202, ((2, 2, 1.0),)),  # D-313
+    ("Greed", "greedy()"): (Outcome.WON, 1118, ((2, 2, 1.0),)),  # D-313; round a light, D-424
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1213, ((3, 3, 1.0),)),  # D-317
-    ("Patience", "patient(True)"): (Outcome.WON, 1188, ((3, 3, 1.0),)),
+    ("Patience", "patient()"): (Outcome.WON, 1196, ((3, 3, 1.0),)),  # D-317, D-424
+    ("Patience", "patient(True)"): (Outcome.WON, 1152, ((3, 3, 1.0),)),  # D-424
 }
 
 

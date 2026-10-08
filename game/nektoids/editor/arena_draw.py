@@ -98,6 +98,7 @@ from nektoids.editor.palette import (
     BUTTON,
     DARK,
     DIM_TEXT,
+    DIVIDER,
     EYE_SHADES,
     FULL,
     LIGHT,
@@ -212,10 +213,10 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
 
 
 def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Arena) -> None:
-    """The plane's items: the obstacles, grey discs; the lights, white discs with a bulb."""
-    for disc in arena.obstacles:
-        centre = view.to_screen(disc.x, disc.y)
-        pygame.draw.circle(screen, OBSTACLE, centre, disc.radius * view.scale)
+    """The plane's items: the obstacles, grey discs, where their springs have them (D-424); the
+    lights, white discs with a bulb."""
+    for (x, y), radius in zip(arena.disc_xy, arena.disc_radius, strict=True):
+        pygame.draw.circle(screen, OBSTACLE, view.to_screen(x, y), radius * view.scale)
     for light in arena.lights:
         draw_light(screen, fonts, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale)
 
@@ -413,7 +414,7 @@ def _draw_foot(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """What stays at the foot of the run's drawers: the objectives, under every one (D-065)."""
     if scene.layout.goal_area is not None:
         x, y, w, _ = scene.layout.goal_area
-        pygame.draw.line(screen, RULE, (x + MARGIN, y), (x + w - MARGIN, y))
+        pygame.draw.line(screen, DIVIDER, (x + MARGIN, y), (x + w - MARGIN, y))
         _draw_goals(screen, scene, fonts)
 
 

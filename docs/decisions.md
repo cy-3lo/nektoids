@@ -2607,3 +2607,76 @@ deterministic (invariant 1): a flash that goes dark, lights that switch on in tu
 the eyes read now is not enough. Valves, out = max(0, a − b), need ports first and stay in the
 ideas, as do the threshold node and colours. The todo's §16 lists the work; each item is planned,
 and its decisions taken, when it starts.
+
+**D-418 — 2026-10-08 — A field of text repeats a key held and selects: Shift with the arrows, Home and End, Ctrl or Cmd+A, a drag in the open field; what is typed or pasted replaces the selection, Backspace and Delete take it out, Ctrl or Cmd+C and X copy and cut it. Amends D-206, D-305.**
+The physicist's, before v1.1: deleting a word took a key press a letter, and nothing could be
+selected. Natively a key held repeats after 0.4 s, every 35 ms, while a field is open and only
+then, so the game's own keys still act once a press. A field holds an anchor beside its caret;
+the selection between them is drawn behind the text in the accent's dark. A click in the open
+field puts the caret on the place nearest it, found as the field draws its text: IBM Plex Mono's
+characters are all one width, measured once at startup. On the web the page's field already
+repeats and selects with the keys; the game now reads the selection's other end from it too, and
+a click or drag in the game's field selects in the page's. Every field takes it: the Editor's
+title, spec, author and typed values, Paste a level and Paste a board.
+
+**D-419 — 2026-10-08 — Build your level is captioned by its level's title alone, or YOUR LEVEL while it has none, in the Run, the Board and the Editor; a blank level starts with no title, its field showing "Title", dimmed. Amends D-310, D-341.**
+The physicist's, before v1.1: "YOUR LEVEL. New level" said the same thing twice. A level made
+in the Editor may have no title; the chapters' levels keep "LEVEL 1.2. Fear" (D-034). A level
+shared with no title is read back with none (D-413), and so captioned YOUR LEVEL where it is
+pasted.
+
+**D-420 — 2026-10-08 — Every heading within a drawer is drawn alike: in capitals, 20 px, larger than the 18 px they had, smaller than the drawer's own title, now 24 px in a font of its own, in a grey between that title and the rows; a chapter's reads "1. BRAITENBERG". Amends D-069, D-326.**
+The physicist's, of four drawn for the chapters, then toned down and extended to every heading:
+"CHAPTER 1: BRAITENBERG" was in the small capitals of a section title, dimmed, as small as Parts'
+group titles; in the rows' white it stood out too much, and no heading may be larger than its
+drawer's title. Section titles ("SAVE/LOAD", "OBJECTIVES", "ACTIVE BOARD"), titles that fold
+(Parts' groups, the chapters) and the Text drawer's fields' titles are drawn by one function,
+`draw_heading`, lit in the accent as before while a tutorial step explains them. The chapter's
+number before a dot sits over its levels' "1.1", "1.2"; "Ch." added nothing under a drawer
+titled Chapters.
+
+**D-421 — 2026-10-08 — A row's info disc sits 50 px from the row's right end, just before its count, lock, infinity sign or tick, in one column in every drawer; a switch reads "on" in white and "off" in grey, with no tick. Amends D-051, D-054.**
+The physicist's: the disc stood 156 px from the row's left, far from the lock or the infinity
+sign at the right end, a gap of some 26 px. Measured from the right it sits close to them, and
+long names get more room. "Key hints ✓ on" was the widest status and ran into the disc; the
+switches, Key hints in Settings and the shadow in Hints, now say "on" or "off" alone, the word's
+colour telling which, as Fast forward says "4x". A click on the disc falls where it is drawn.
+
+**D-422 — 2026-10-08 — The bar between a drawer's parts is drawn two shades lighter, in the secondary text's grey, and the Board's Diagnostic has one between its active board and its level. Amends D-065, D-407.**
+The physicist's: the bar over the run's objectives, and the one in the Editor's Files between
+Save/Load and the levels to start from, were in the rules' grey, barely seen on the panel. Rules
+that outline a box or a column keep their grey; a bar that divides a drawer is `DIVIDER`. Under
+the Editor's Files' bar, 12 px before the levels to start from, not 6.
+
+**D-423 — 2026-10-08 — No semicolon in what the game shows: a period or a colon in its place, in info boxes, status lines, notes, refusals and tutorial cards.**
+The physicist's. Fourteen went: "…but the level's own. Undo brings them back.", "Click or drag
+to pick cells or parts. Shift adds.", "this level hands out one eye. The board has two", the
+cards of 0.1 Wiring and 0.6 Diagnostic, and the rest of their kind. Comments and the docs keep
+theirs.
+
+**D-424 — 2026-10-08 — Lights are solid, discs of 1 u that a swimmer slides round as it does an obstacle; each obstacle is a sphere in the same fluid as the swimmers, held at its rest by a spring, and gives a little when pushed: SPRING_GIVE, 0.30 u, under a head-on push of two thrusters at full rate. Amends D-019, D-022; the stage's scope takes them in.**
+The physicist's, from the ideas logged with D-406. Lights stay fixed: a light that moved would
+change what the eyes read. An obstacle and a swimmer touching share an overlap as their Stokes
+drags say, ζ = 6πμR each, neither having inertia; the spring pulls the obstacle back,
+ζ du/dt = -k u, k = 2 THRUST / SPRING_GIVE, by an Euler step as the swimmers move, so that under
+a steady push it settles exactly at k u = F, whatever its size, a larger sphere only slower, and
+let go it comes back without ringing. Its displacement is the run's state, shared by every
+swimmer as one world: the plane it is in (`Arena.moved`) is what `world.step` takes and gives,
+what the run records and puts back, what the eyes' shadows and the goals' "reach an obstacle"
+read, and what is drawn. A light counts as reached at 1.05 times the touching distance (D-043),
+so a swimmer that runs into one has reached it, and "Don't touch the light" is lost as before.
+Every shipped level's proof still wins; the tests' model boards win too, Greed's 0.7 s sooner,
+round a light it went through, Patience's 0.1 and 0.3 s sooner, Shadows' 7 ticks sooner. No
+level is changed until the physicist has seen it on screen. First 0.15 u, doubled after a look.
+
+**D-425 — 2026-10-08 — A run puts the swimmer at its start nudged by (1e-3, -1e-3) u, so that no push is exactly on an obstacle's centre: a head-on collision slides off in the end, as a real one does. The level's start stays on whole units.**
+The physicist's. On whole units, a swimmer driven straight at an obstacle on its line pushed on it
+for ever, a balance only an exact symmetry holds. Nudged, the balance is unstable and the swimmer
+goes round: driven at 3 u/s into an obstacle 8 u ahead, it presses it 0.15 u back from 2 s, its
+side drift growing by e every 0.8 s or so, slides off at about 8 s and is past it by 10 s, the
+obstacle back at its rest. A tenfold nudge saves only some 2 s, the drift being exponential:
+1e-4 u held it some 8 s, 1e-2 u some 4 s; 1e-3 u is the physicist's compromise, invisible on
+screen. The nudge is the same in every run, so runs stay deterministic (invariant 1): the Run, the
+proof's replay, Diagnostic's probe and the check of goals decided at the start all use
+`Level.start_at`; the Editor shows and moves the whole start. Every shipped proof still wins;
+Aggression's model board wins one tick later, Patience's two ticks sooner.

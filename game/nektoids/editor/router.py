@@ -23,7 +23,7 @@ from nektoids.levels.arenas import CHAPTERS, EVERY_LEVEL, locate
 from nektoids.levels.level import Level
 from nektoids.levels.score import Score, front
 
-SANDBOX_LABEL = "YOUR LEVEL"  # the sandbox's, before its title in the caption (D-341)
+SANDBOX_LABEL = "YOUR LEVEL"  # the sandbox's caption while its level has no title (D-341, D-419)
 EDITOR_ROW = (  # the sandbox's row in Chapters, under Build your level: its name and info (D-341)
     "Open Editor",
     "Build your own level in the Editor: its objects, its goals, its parts. Try it, then share it.",
@@ -35,6 +35,14 @@ def level_number(index: int) -> str:
     (D-325)."""
     chapter, k = locate(index)
     return f"{chapter.number}.{k + 1}"
+
+
+def captioned(label: str, title: str) -> str:
+    """The caption's first part: a level's number and title, "LEVEL 1.2. Fear" (D-034); the
+    sandbox's title alone, or YOUR LEVEL while it has none (D-419)."""
+    if label == SANDBOX_LABEL:
+        return title or SANDBOX_LABEL
+    return f"{label}. {title}"
 
 
 def level_label(index: int) -> str:

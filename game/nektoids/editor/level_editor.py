@@ -41,7 +41,7 @@ from enum import Enum
 import numpy as np
 import pygame
 
-from nektoids.editor import clipboard
+from nektoids.editor import clipboard, fieldinput
 from nektoids.editor.arena_view import (
     MAX_SCALE,
     OPENING_SCALE,
@@ -118,6 +118,7 @@ from nektoids.editor.plane_pick import (
     clicked,
     items,
 )
+from nektoids.editor.router import captioned
 from nektoids.editor.scene import (
     ARROW_SCANCODES,
     ARROWS,
@@ -240,6 +241,7 @@ class EditorScene(Frame):
         self.wheel_folded = False  # the Wheel left the Editor (D-410)
         self.writing: Brief | Knob | Paste | None = None  # a field typed in: Brief's, a box...
         self.field: TextField | None = None  # ... what it holds (D-305)
+        self.selecting = False  # a drag in the open field selects its text (D-418)
         self.field_pressed: Brief | Knob | Paste | None = None  # opens once the click is over
         self.sliding: Knob | None = None  # a slider of Goals held: its value follows the mouse
         self.folded: set[str] = set()  # Parts' groups shown closed, as the Board's (D-315),
@@ -250,8 +252,9 @@ class EditorScene(Frame):
 
     @property
     def caption(self) -> tuple[str, str]:
-        """The level's place and title, and what it asks: under the tabs (D-056)."""
-        return f"{self.label}. {self.level.title}", self.level.spec
+        """The level's title, or YOUR LEVEL while it has none, and what it asks: under the tabs
+        (D-056, D-419)."""
+        return captioned(self.label, self.level.title), self.level.spec
 
     @property
     def arena_area(self) -> Rect:
@@ -297,8 +300,8 @@ class EditorScene(Frame):
         """Once a frame: on the web, what the page's field holds (D-206); the tooltip's rest;
         the view kept inside the overview (D-066)."""
         if self.field is not None and clipboard.WEB:  # the page's field took the keys
-            text, caret, ended = clipboard.field()
-            self.field.take(text, caret)
+            text, caret, anchor, ended = clipboard.field()
+            self.field.take(text, caret, anchor)
             if ended is not None:
                 self._field_done(ended)
         self._check_proof()
@@ -336,11 +339,11 @@ class EditorScene(Frame):
         if self.layout.drawer is Drawer.GOALS:
             return "Click a word to change a goal.  Drag a slider to set it.  Space: run."
         if self.confirming:
-            return "Erase every object?  Erase all erases them; Cancel, Enter or Esc keeps them."
+            return "Erase every object?  Erase all erases them. Cancel, Enter or Esc keeps them."
         if self.held is Piece.START:
             return "Click the plane: the swimmer starts there."
         if isinstance(self.held, Piece):
-            return f"Click the plane: {ONE[self.held]} at each click; drag, a row.  S: Select."
+            return f"Click the plane: {ONE[self.held]} at each click. Drag: a row.  S: Select."
         if self.start_off:
             return "The swimmer is off the plane: 0, or its key, then a click places it."
         if self.held is Key.HAND:
@@ -643,8 +646,12 @@ class EditorScene(Frame):
         field = self._field_at(pos)
         if self.field is not None and field != self.writing:
             self._field_done("enter")  # a click elsewhere keeps what was typed
+        if field is not None and field == self.writing:  # in the open field: the caret there
+            self.field.place(self._index(field, pos))
+            self.selecting = True
+            return
         if field is not None:
-            self.field_pressed = None if field == self.writing else field
+            self.field_pressed = field
             return
         if self.frame_press(pos):
             return
@@ -717,6 +724,9 @@ class EditorScene(Frame):
         an object's key dragged off it; the pick swept, or moved, on the lattice."""
         self.pointer = pos
         self.frame_track(pos)
+        if self.selecting:
+            self.field.place(self._index(self.writing, pos), extend=True)
+            return
         if self.key_down is not None and key_at(self.arena_area, pos) != self.key_down:
             if piece_row_at(self.layout, pos) != self.key_down:  # off its key, or its row
                 self.carrying, self.key_down = self.key_down, None
@@ -787,6 +797,9 @@ class EditorScene(Frame):
         if self.field_pressed is not None:
             self._open_field(self.field_pressed)
             self.field_pressed = None
+        if self.selecting:  # the page's field takes the selection, and the keys (web)
+            self.selecting = False
+            fieldinput.select(self.field)
         if self.key_down is not None:  # let go on its key, or its row: a click
             self._press_key(self.key_down)
         elif self.carrying is not None and contains(self.arena_area, pos):
@@ -897,23 +910,34 @@ class EditorScene(Frame):
             text, longest, taken = self.level.spec, SPEC_LONGEST, None
         self.writing, self.field = which, TextField(text, taken, longest)
         clipboard.open_field(text, longest)
+        fieldinput.opened()
 
     def _field_key(self, event: pygame.event.Event) -> None:
-        """A key while a field is open, natively: Ctrl/Cmd+V pastes, Enter keeps it, Esc gives
-        it up; the rest types or moves the caret."""
-        if event.key == pygame.K_v and event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
-            self.field.paste(clipboard.paste())
-            return
-        ended = self.field.type(pygame.key.name(event.key), event.unicode)
+        """A key while a field is open, natively: Enter keeps it, Esc gives it up; the rest
+        types, moves the caret, selects, copies, cuts or pastes (`fieldinput.key`)."""
+        ended = fieldinput.key(self.field, event)
         if ended is not None:
             self._field_done(ended)
+
+    def _index(self, which: Brief | Knob | Paste, pos: tuple[int, int]) -> int:
+        """The place in the open field nearest `pos`, as it is drawn (D-418)."""
+        if which is Brief.SPEC:
+            return fieldinput.index_in_box(self.field, dict(self.layout.brief_fields)[which], pos)
+        if isinstance(which, Brief):
+            rect, icon = dict(self.layout.brief_fields)[which], False
+        elif isinstance(which, Knob):
+            rect, icon = slider_parts(dict(self.layout.knobs)[which])[2], False
+        else:
+            rect, icon = self.layout.level_field, True
+        return fieldinput.index_in_line(self.field, rect, pos[0], icon)
 
     def _field_done(self, ended: str) -> None:
         """Enter, or a click elsewhere: the level says what was typed, a step for undo, unless
         there is nothing in it, or no number in a slider's box; Esc: as it was."""
         which, text = self.writing, self.field.text
-        self.writing = self.field = None
+        self.writing, self.field, self.selecting = None, None, False
         clipboard.close_field()
+        fieldinput.closed()
         if ended != "enter":
             return
         if which is Paste.LEVEL:
@@ -964,7 +988,7 @@ class EditorScene(Frame):
             return
         if not self._made_anew(lambda level: replace(taken(level, other), author=other.author)):
             return
-        self.said = f"Pasted: {self.level.title}."
+        self.said = f"Pasted: {self.level.title or 'a level with no title'}."
         if other.proof is not None:
             proof, board = Proof.from_dict(other.proof), self.level.new_board()
             fits, why = load(board, proof.board)

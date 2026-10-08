@@ -64,26 +64,26 @@ class Replay:
     def __init__(self, level: Level, board: Board, dt: float) -> None:
         self.level, self.dt = level, dt
         self.net = Network.from_board(board)
-        x, y, heading = level.start
-        self.pos = np.array([[x, y]])  # (1, 2) [u]
+        _, _, heading = level.start
+        self.pos = np.array([level.start_at])  # (1, 2) [u], nudged as the run's (D-425)
         self.heading = np.array([math.radians(heading)])  # (1,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (1,) [u]
         self.state = initial_state(self.net, 1)
         self.kept = begin(level, self.pos, self.radius)
         self.tick = 0
+        self.arena = level.arena  # its obstacles at rest, then where their springs have them
         self.outcome: Outcome | None = None
         self.last = round(level.time_limit / dt)  # the tick its time is up at
 
     def advance(self, ticks: int) -> Outcome | None:
         """At most `ticks` more ticks, fewer if the run is over; how it ended, once it has."""
-        arena = self.level.arena
         for _ in range(ticks):
             if self.outcome is not None:
                 break
-            self.pos, self.heading, self.state = world.step(
-                arena, self.net, self.pos, self.heading, self.radius, self.state, self.dt
+            self.pos, self.heading, self.state, self.arena = world.step(
+                self.arena, self.net, self.pos, self.heading, self.radius, self.state, self.dt
             )
-            self.kept = follow(self.level, self.kept, self.pos, self.radius, self.dt)
+            self.kept = follow(self.level, self.kept, self.pos, self.radius, self.dt, self.arena)
             self.tick += 1
             self.outcome = outcome(self.level, self.kept, self.tick, self.dt)
         return self.outcome

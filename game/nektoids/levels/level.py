@@ -31,6 +31,7 @@ from nektoids.levels.objectives import Goal, objective_from_dict, objective_to_d
 from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
+START_NUDGE = (1e-3, -1e-3)  # [u] a run's swimmer starts so far off its whole start (D-425)
 FORMAT = 5  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
 # 4 a zone written as its size (D-313), 5 an author (D-331)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
@@ -103,6 +104,12 @@ class Level:
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
     proof: Mapping | None = field(default=None, repr=False)  # a level shared: its win (D-320)
     author: str | None = None  # who made it, as they sign: "@Cy-3LO" (D-331)
+
+    @property
+    def start_at(self) -> tuple[float, float]:
+        """Where a run puts the swimmer [u]: its start, nudged by START_NUDGE, so that no push is
+        ever exactly on an obstacle's centre, which a real one never is (D-425)."""
+        return self.start[0] + START_NUDGE[0], self.start[1] + START_NUDGE[1]
 
     @cached_property
     def marks(self) -> tuple[Item, ...]:

@@ -45,7 +45,7 @@ from dataclasses import replace
 
 import pygame
 
-from nektoids.editor import clipboard
+from nektoids.editor import clipboard, fieldinput
 from nektoids.editor.boardfield import board_field, load
 from nektoids.editor.buttons import (
     COUNT_FRAMES,
@@ -223,6 +223,7 @@ class BoardScene(Frame):
         self._kept = board.snapshot()  # the board as of the last step undo can go back to
         self.loading: TextField | None = None  # Load's field, open: a board's text (D-206)
         self.field_pressed = False  # a press on it: it opens when the click is over
+        self.selecting = False  # a drag in it, open, selects its text (D-418)
         self.ghosts: tuple = ()  # the tutorial's parts to build, drawn faintly (D-039); main.py's
         self.ghost_wires: tuple = ()  # ... and its wires, cell to cell (D-074); main.py's too
 
@@ -264,8 +265,8 @@ class BoardScene(Frame):
     def update(self) -> None:
         """Once per frame."""
         if self.loading is not None and clipboard.WEB:  # the page's field took the keys
-            text, caret, ended = clipboard.field()
-            self.loading.take(text, caret)
+            text, caret, anchor, ended = clipboard.field()
+            self.loading.take(text, caret, anchor)
             if ended is not None:
                 self._field_done(ended)
         if self.flash_frames > 0:
@@ -489,6 +490,9 @@ class BoardScene(Frame):
     def _track(self, pos: tuple[int, int]) -> None:
         self.mouse = pos
         self.frame_track(pos)
+        if self.selecting:
+            self.loading.place(self._field_index(pos), extend=True)
+            return
         if self.probing and self.probe is not None:
             self._probe_to(pos)
         pointed = cell_at(self.layout, self.view, pos)
@@ -539,6 +543,10 @@ class BoardScene(Frame):
         if self.loading is not None and not board_field_at(self.layout, pos):
             self._close_field()  # a click elsewhere gives it up, as the passkey's (D-075)
         if self.frame_press(pos):
+            return
+        if board_field_at(self.layout, pos) and self.loading is not None:  # the caret there
+            self.loading.place(self._field_index(pos))
+            self.selecting = True
             return
         if board_field_at(self.layout, pos):
             self.field_pressed = True  # it opens when the click is over: Safari wants it so
@@ -607,6 +615,9 @@ class BoardScene(Frame):
         return turns and self._on_map(self.mouse)
 
     def _release(self, pos: tuple[int, int]) -> None:
+        if self.selecting:  # the page's field takes the selection, and the keys (web)
+            self.selecting = False
+            fieldinput.select(self.loading)
         if self.field_pressed:
             self.field_pressed = False
             if board_field_at(self.layout, pos):
@@ -729,18 +740,21 @@ class BoardScene(Frame):
             self._cancel()
             self.loading = board_field()
             clipboard.open_field("", self.loading.longest)
+            fieldinput.opened()
 
     def _close_field(self) -> None:
-        self.loading = None
+        self.loading, self.selecting = None, False
         clipboard.close_field()
+        fieldinput.closed()
+
+    def _field_index(self, pos: tuple[int, int]) -> int:
+        """The place in Load's field nearest `pos`, as it is drawn (D-418)."""
+        return fieldinput.index_in_line(self.loading, self.layout.board_field, pos[0], icon=True)
 
     def _field_key(self, event: pygame.event.Event) -> None:
-        """A key while Load's field is open, natively: Ctrl/Cmd+V pastes, Enter loads, Esc
-        gives up; the rest types."""
-        if event.key == pygame.K_v and event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
-            self.loading.paste(clipboard.paste())
-            return
-        ended = self.loading.type(pygame.key.name(event.key), event.unicode)
+        """A key while Load's field is open, natively: Enter loads, Esc gives up; the rest types,
+        selects, copies, cuts or pastes (`fieldinput.key`)."""
+        ended = fieldinput.key(self.loading, event)
         if ended is not None:
             self._field_done(ended)
 
@@ -1407,15 +1421,15 @@ class BoardScene(Frame):
         """What the status line says the player can do now."""
         held, picked = self.held, parts(self.pick, self.board)
         if self._on_map(self.mouse):  # Diagnostic's map (D-407)
-            return "Drag the swimmer anywhere; the wheel, or L and R, turn it."
+            return "Drag the swimmer anywhere. The wheel, or L and R, turn it."
         if self._dropping():
-            return "Let go and what you drag goes, with its wires; back on the body, it stays."
+            return "Let go and what you drag goes, with its wires. Back on the body, it stays."
         if self.right is not None:
-            return "Right-click the next part to wire it, one before to undo; a cell stops."
+            return "Right-click the next part to wire it, one before to undo. A cell stops."
         if held is Button.WIRE:
             if self.source is None:
                 return "Click the part a wire starts from. S: back to Select."
-            return "Click the next part to wire it, one before to undo; a cell stops."
+            return "Click the next part to wire it, one before to undo. A cell stops."
         if held is Button.DELETE:
             return "Click a part or a wire to delete it. S: back to Select."
         if held is Button.LOCK:
@@ -1428,7 +1442,7 @@ class BoardScene(Frame):
             return "A part's button, or its number, puts one in each, in the order picked."
         if picked:
             return "The lit buttons act on what is picked. Right-click a cell: none."
-        return "Click or drag to pick cells or parts; Shift adds. Or press a button."
+        return "Click or drag to pick cells or parts. Shift adds. Or press a button."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason

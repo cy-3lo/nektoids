@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 import pygame
 
-from nektoids.editor import streams
+from nektoids.editor import fieldfont, streams
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.buttons import (
     BUTTON_INSET,
@@ -73,6 +73,7 @@ from nektoids.editor.layout import (
     CAPTION_HEIGHT,
     DIAGNOSTIC_BODY,
     DIAGNOSTIC_MAP,
+    DIAGNOSTIC_RULE,
     DRAWER_KEYS,
     HINT_LINE,
     INFO_AT,
@@ -118,6 +119,7 @@ from nektoids.editor.palette import (
     COMPONENT,
     DARK,
     DIM_TEXT,
+    DIVIDER,
     DOOMED,
     EYE_FACE,
     FLAME,
@@ -130,6 +132,7 @@ from nektoids.editor.palette import (
     GREYED,
     GREYED_FACE,
     GRID_LINE,
+    HEADING,
     HOVER,
     INTAKE,
     INTAKE_FAINT,
@@ -149,6 +152,7 @@ from nektoids.editor.palette import (
     REFUSED,
     RULE,
     SCROLL_THUMB,
+    SELECTED,
     SHADOW,
     TAB_STRIP,
     TEXT,
@@ -166,11 +170,14 @@ from nektoids.editor.probe import level_view
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
 from nektoids.editor.streams import DIAGNOSTIC_REACH
+from nektoids.editor.textfield import shown_from
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+
+TITLE_SIZE = 24  # [px] a drawer's title: its headings are 20 (D-420)
 
 TIP = {
     Tool.ADD: "Add a part",
@@ -189,7 +196,7 @@ TIP = {
     ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    FileButton.ERASE: "Takes every wire and every part off the board, but the level's own; Undo"
+    FileButton.ERASE: "Takes every wire and every part off the board, but the level's own. Undo"
     " brings them back.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
     " into Paste a board, under this row, to bring it back, on this level or another.",
@@ -197,8 +204,8 @@ TIP = {
     " and the level as one word: to keep, or to paste into Paste a level, under this row, to"
     " make it again.",
     FileButton.SHARE: "Copies the level as text with its proof, the board that won it, to paste"
-    " into a comment or an email. Offered once the level, as it stands, has been won in the Run;"
-    " pasted, the proof is run again, and the level is cleared if it wins, its score the one to"
+    " into a comment or an email. Offered once the level, as it stands, has been won in the Run."
+    " Pasted, the proof is run again, and the level is cleared if it wins, its score the one to"
     " beat.",
     LevelButton.RUN: "Run",
     LevelButton.BOARD: "Back to the board",
@@ -298,17 +305,25 @@ class Fonts:
     label: pygame.font.Font  # the same, smaller: section labels, tabs, keys, the box's buttons
     big: pygame.font.Font  # the cards' titles, the end's thanks
     icons: Icons
+    heading: pygame.font.Font  # a drawer's headings: sections, groups, chapters (D-420)
+    title: pygame.font.Font  # a drawer's own title, over its headings (D-420)
 
     @classmethod
     def load(cls) -> Fonts:
-        """Call once at startup, after pygame.init() (web.md: every asset at startup)."""
+        """Call once at startup, after pygame.init() (web.md: every asset at startup); it records
+        how wide a character of the fields' fonts is (`fieldfont.py`, D-418)."""
+        text = pygame.font.Font(TEXT_FONT_FILE, 17)
+        small = pygame.font.Font(TEXT_FONT_FILE, 15)
+        fieldfont.ADVANCE.update(text=text.size("M")[0], small=small.size("M")[0])
         return cls(
-            text=pygame.font.Font(TEXT_FONT_FILE, 17),
-            small=pygame.font.Font(TEXT_FONT_FILE, 15),
+            text=text,
+            small=small,
             name=pygame.font.Font(None, 22),
             label=pygame.font.Font(None, 18),
             big=pygame.font.Font(None, 64),
             icons=Icons(),
+            heading=pygame.font.Font(None, 20),  # a drawer's headings, under its title (D-420)
+            title=pygame.font.Font(None, TITLE_SIZE),
         )
 
 
@@ -722,20 +737,26 @@ def _draw_sections(screen: pygame.Surface, scene: Frame, fonts: Fonts, ink, at_f
     for title, rect in scene.layout.section_titles:
         if ((title, rect) in foot) is not at_foot:
             continue
-        x, y, _, h = rect
         lit = title.lower() in scene.lit
-        shown = fonts.label.render(title.upper(), True, scene.lit_ink if lit else ink)
-        screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
+        draw_heading(screen, fonts, title, rect, scene.lit_ink if lit else ink)
+
+
+def draw_heading(screen, fonts: Fonts, title: str, rect, ink=DIM_TEXT, indent: int = 0) -> None:
+    """A heading within a drawer, every one alike: in capitals, 20 px, under the drawer's own
+    title, 22 px, in a grey between it and the rows; in `ink` while a tutorial step lights it
+    (D-050, D-420). `indent` leaves room for a fold's caret."""
+    x, y, _, h = rect
+    shown = fonts.heading.render(title.upper(), True, HEADING if ink == DIM_TEXT else ink)
+    screen.blit(shown, (x + indent, y + (h - shown.get_height()) // 2))
 
 
 def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -> None:
-    """A title that folds what is under it, as Parts' groups and The Wheel (D-069): a caret, right
-    while folded, down while open, then the title in upper case."""
+    """A heading that folds what is under it, as Parts' groups and the chapters (D-069): a caret,
+    right while folded, down while open, then the heading (`draw_heading`)."""
     x, y, _, h = rect
     caret = "caret-right" if folded else "caret-down"
-    fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
-    shown = fonts.label.render(title.upper(), True, ink)
-    screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
+    fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, HEADING if ink == DIM_TEXT else ink)
+    draw_heading(screen, fonts, title, rect, ink, indent=16)
 
 
 def _draw_files(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
@@ -839,6 +860,8 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
         draw_working(screen, circuit, probe.y, probe.ticks // TICKS_PER_FRAME, fonts)
         screen.set_clip(None)
+    left, width = DIAGNOSTIC_MAP[0], DIAGNOSTIC_MAP[2]  # the active board's, then the level's
+    pygame.draw.line(screen, DIVIDER, (left, DIAGNOSTIC_RULE), (left + width, DIAGNOSTIC_RULE))
     area = pygame.Rect(DIAGNOSTIC_MAP)
     if level is not None and probe is not None:
         view = level_view(level, tuple(area))
@@ -852,7 +875,7 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
-    note = "You can drag the swimmer anywhere; the wheel, or L and R, turn it."
+    note = "You can drag the swimmer anywhere. The wheel, or L and R, turn it."
     draw_note(screen, fonts, note, (area.left, area.bottom + 8), area.width)
 
 
@@ -891,10 +914,9 @@ def _draw_board_text(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
     layout = scene.layout
     _, top, _, room = layout.list_area
     for title, rect in layout.section_titles:
-        x, y, _, h = rect
+        _, y, _, h = rect
         if y + h <= top or y >= top + room:  # outside the wins' list, which is clipped
-            shown = fonts.label.render(title.upper(), True, DIM_TEXT)
-            screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
+            draw_heading(screen, fonts, title, rect)
     empty = not any(not n.locked for n in scene.board.nodes.values()) and not scene.board.wires
     for button, rect in layout.file_buttons:  # Erase all greyed with nothing to erase (D-321)
         erase = button is FileButton.ERASE
@@ -903,7 +925,10 @@ def _draw_board_text(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         draw_row(screen, scene, fonts, rect, button, name, none, False, greyed, icon=icon)
     loading = scene.loading
     text, caret = (loading.text, loading.caret) if loading is not None else ("", None)
-    draw_field(screen, fonts, layout.board_field, text, caret, "paste", "Paste a board")
+    anchor = loading.anchor if loading is not None else None
+    draw_field(
+        screen, fonts, layout.board_field, text, caret, "paste", "Paste a board", anchor=anchor
+    )
 
 
 def _draw_rows(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
@@ -944,7 +969,7 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     for row, rect in layout.hint_rows:
         k = row.index
         if k == SHADOW_HINT and k < taken:
-            status = ("tick", "on") if hints.shadow else ("count", "off")
+            status = ("count", "on") if hints.shadow else ("off", "off")  # D-421
         elif k < taken:
             status = ("tick", "")
         else:
@@ -1010,7 +1035,7 @@ def _draw_settings(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     settings = scene.settings
     shown = {
         Setting.FAST: ("count", f"{settings.fast}x"),
-        Setting.HINTS: ("tick", "on") if settings.key_hints else ("count", "off"),
+        Setting.HINTS: ("count", "on") if settings.key_hints else ("off", "off"),  # D-421
     } | ({Setting.TUTORIAL: ("none", "")} if scene.tutored else {})  # D-334
     for setting, rect in scene.layout.setting_rows:
         name, icon, _ = SETTING[setting]
@@ -1067,11 +1092,13 @@ def draw_field(
     icon: str | None = None,
     hint: str = "",
     row: bool = False,
+    anchor: int | None = None,
 ) -> None:
     """A field of text (D-075, D-206, D-305): a box, outlined in the accent while typed in, its
     icon if it has one; the text, slid left as far as the caret needs to show, the caret a bar
-    where it is while typed in; with no text and not typed in, `hint`, dimmed, or drawn as a
-    row's name if the field is a `row` among buttons (D-413)."""
+    where it is while typed in, the selection from `anchor` lit behind it (D-418); with no text
+    and not typed in, `hint`, dimmed, or drawn as a row's name if the field is a `row` among
+    buttons (D-413)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, BUTTON, box, border_radius=6)
     if caret is not None:
@@ -1086,12 +1113,14 @@ def draw_field(
         shown = named.render(_fitted(named, hint, room), True, ink)
         screen.blit(shown, (left, box.centery - shown.get_height() // 2))
         return
-    start = 0
-    while caret is not None and start < caret and font.size(text[start:caret])[0] > room:
-        start += 1  # the caret always shows: the text slides left
+    start = shown_from(text, caret, lambda part: font.size(part)[0] <= room)  # the caret shows
     end = len(text)
     while end > start and font.size(text[start:end])[0] > room:
         end -= 1
+    if caret is not None and anchor is not None and anchor != caret:
+        lo, hi = (min(max(i, start), end) for i in sorted((anchor, caret)))
+        x0, x1 = (left + font.size(text[start:i])[0] for i in (lo, hi))
+        pygame.draw.rect(screen, SELECTED, (x0, box.centery - 10, x1 - x0, 20))
     shown = font.render(text[start:end], True, ink)
     screen.blit(shown, (left, box.centery - shown.get_height() // 2))
     if caret is not None:
@@ -1116,10 +1145,11 @@ def draw_row(
     lit=None,
 ) -> None:
     """A drawer's row, as every drawer draws them (D-051): an icon (or the part itself, or a
-    level's number), the name, an info disc, then a count, the infinity sign, a key, a tick or a
-    lock, right-aligned; nothing for "none". Keys show while the key hints are on (D-054).
-    `alarm`: the name and the count in the refusals' colour, for an objective that lost; `lit`:
-    the name in that colour, a tutorial's target (D-338)."""
+    level's number), the name, an info disc just before the end, then a count, the infinity
+    sign, a key, a tick, a lock or a switch's "off", right-aligned; nothing for "none"
+    (D-421). Keys show while the key hints are on (D-054). `alarm`: the name and the count
+    in the refusals' colour, for an objective that lost; `lit`: the name in that colour, a
+    tutorial's target (D-338)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, box, border_radius=6)
     ink = GREYED if greyed else TEXT
@@ -1136,7 +1166,7 @@ def draw_row(
     shown = fonts.name.render(name, True, named)
     screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
     disc = TEXT if what == scene.info else DIM_TEXT
-    fonts.icons.draw(screen, "circle-info", (box.left + INFO_AT, box.centery), INFO_ICON, disc)
+    fonts.icons.draw(screen, "circle-info", (box.right - INFO_AT, box.centery), INFO_ICON, disc)
     kind, text = status
     right = box.right - 10
     if kind == "infinity":
@@ -1150,6 +1180,9 @@ def draw_row(
         fonts.icons.draw(screen, "check", (x, box.centery), 12, LIT)
     elif kind == "none":
         pass
+    elif kind == "off":  # a switch that is off: its word in grey, "on" in white (D-421)
+        shown = fonts.small.render(text, True, DIM_TEXT)
+        screen.blit(shown, shown.get_rect(midright=(right, box.centery)))
     elif kind == "key":
         if not scene.settings.key_hints:
             return
@@ -1207,7 +1240,7 @@ def draw_title(
 ) -> None:
     """A section's title, as every view writes them: upper case, dimmed, centred in `height`;
     in the accent, `ink`, while a tutorial step explains its panel (D-050, D-337)."""
-    text = fonts.name.render(title.upper(), True, ink)
+    text = fonts.title.render(title.upper(), True, ink)
     screen.blit(text, (topleft[0], topleft[1] + (height - text.get_height()) // 2))
 
 

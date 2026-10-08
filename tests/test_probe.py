@@ -35,7 +35,7 @@ def seeing(level):
 
 
 def test_the_eyes_read_the_light_where_the_probe_stands_and_the_circuit_follows():
-    assert Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], AREA).pose[:2] == LEVELS["Fear"].start[:2]
+    assert Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], AREA).pose[:2] == LEVELS["Fear"].start_at
     probe = seeing(LEVELS["Fear"])
     (sent,) = probe.eyes()
     assert 0.0 < sent <= RATE_MAX

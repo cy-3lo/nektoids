@@ -57,7 +57,22 @@ window.nkField = (function () {
     },
     close: function () { if (field) { field.blur(); } },
     text: function () { return field ? field.value : ''; },
-    caret: function () { return field ? field.selectionStart : 0; },
+    caret: function () {  // the end the selection grows from, as the keys move it (D-418)
+      if (!field) { return 0; }
+      return field.selectionDirection === 'backward' ? field.selectionStart : field.selectionEnd;
+    },
+    anchor: function () {
+      if (!field) { return 0; }
+      return field.selectionDirection === 'backward' ? field.selectionEnd : field.selectionStart;
+    },
+    select: function (caret, anchor) {  // a click in the game's field: the page's follows
+      setTimeout(function () {
+        if (!field) { return; }
+        field.focus();
+        field.setSelectionRange(Math.min(caret, anchor), Math.max(caret, anchor),
+          caret < anchor ? 'backward' : 'forward');
+      }, 60);
+    },
     ended: function () { var was = ended; ended = ''; return was; }
   };
 })();
@@ -113,10 +128,17 @@ def close_field() -> None:
         _page("nkField.close()")
 
 
-def field() -> tuple[str, int, str | None]:
-    """On the web: what the page's field holds, where its caret is, and "enter" or "escape" if
-    it was ended since the last call, else None."""
+def field() -> tuple[str, int, int, str | None]:
+    """On the web: what the page's field holds, where its caret is and the selection's other end
+    (D-418), and "enter" or "escape" if it was ended since the last call, else None."""
     if not WEB:
-        return "", 0, None
+        return "", 0, 0, None
     ended = str(_page("nkField.ended()"))
-    return str(_page("nkField.text()")), int(_page("nkField.caret()")), ended or None
+    caret, anchor = int(_page("nkField.caret()")), int(_page("nkField.anchor()"))
+    return str(_page("nkField.text()")), caret, anchor, ended or None
+
+
+def select_field(caret: int, anchor: int) -> None:
+    """On the web, the page's field selects from `anchor` to `caret`, and takes the keys."""
+    if WEB:
+        _page(f"nkField.select({int(caret)}, {int(anchor)})")

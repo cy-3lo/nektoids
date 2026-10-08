@@ -39,7 +39,7 @@ from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, contains, make
 from nektoids.editor.level_editor import EditorScene
 from nektoids.editor.level_editor_draw import draw_level_editor
 from nektoids.editor.palette import pulse, pulse_fill
-from nektoids.editor.router import Router, Screen, level_label, level_number
+from nektoids.editor.router import Router, Screen, captioned, level_label, level_number
 from nektoids.editor.scene import BoardScene
 from nektoids.editor.schematic import SchematicScene
 from nektoids.editor.schematic_draw import draw_schematic
@@ -193,7 +193,7 @@ def board_scene() -> BoardScene:
     """The open level's Board, made the first time the level opens."""
     if router.index not in board_scenes:
         level = router.level
-        caption = (f"{router.label}. {level.title}", level.spec)
+        caption = (captioned(router.label, level.title), level.spec)
         board = router.board
         handed_out = frozenset(kind for kind in Kind if board.total(kind) != 0)
         sandbox = router.in_sandbox  # its tabs end with the Editor's (D-301)

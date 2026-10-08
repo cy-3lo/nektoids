@@ -139,11 +139,9 @@ def turned(level: Level, steps: int) -> Level:
 
 
 def titled(level: Level, title: str) -> Level:
-    """The level called `title`, its spaces squeezed to one between words."""
-    title = " ".join(title.split())
-    if not title:
-        raise Unmade("a level needs a title")
-    return replace(level, title=title[:TITLE_LONGEST])
+    """The level called `title`, its spaces squeezed to one between words; with none, it is
+    YOUR LEVEL in the caption (D-419)."""
+    return replace(level, title=" ".join(title.split())[:TITLE_LONGEST])
 
 
 def specified(level: Level, spec: str) -> Level:
@@ -252,7 +250,7 @@ def read_level(text: str) -> Level:
 def blank(level: Level) -> Level:
     """A blank plane: no item, the swimmer at the origin heading along x, no goal, BLANK_TIME,
     BLANK_STOCK of each part on `level`'s zone, a title and a spec to write (D-310, D-315)."""
-    words = replace(level, title="New level", spec="Say what the level asks.")
+    words = replace(level, title="", spec="Say what the level asks.")  # no title yet (D-419)
     plane = replace(words, start=(0.0, 0.0, 0.0), items=(), objectives=())
     stock = {kind.value: BLANK_STOCK for kind in Kind}
     board = {**level.board, "stock": stock, "parts": [], "wires": []}  # placing none (D-319)

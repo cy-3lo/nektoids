@@ -24,11 +24,11 @@ def test_arena_titles_tell_them_apart():
 
 def test_the_route_runs_through_the_chapters_in_order_each_level_in_one():
     assert [chapter.heading for chapter in CHAPTERS] == [
-        "Chapter 0: Tutorials",
-        "Chapter 1: Braitenberg",
-        "Chapter 2: Obstacles",
-        "Chapter 3: Many lights",
-        "Chapter 4: Made by users",
+        "0. Tutorials",
+        "1. Braitenberg",
+        "2. Obstacles",
+        "3. Many lights",
+        "4. Made by users",
     ]  # D-325
     assert [len(chapter.names) for chapter in CHAPTERS] == [6, 4, 1, 3, 2]  # D-335, D-348
     places = [(locate(k)[0].number, locate(k)[1]) for k in (0, 5, 6, 9, 10, 11, 13, 14, 15)]

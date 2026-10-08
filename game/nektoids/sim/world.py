@@ -1,12 +1,14 @@
 """One tick of the swimmers: move, touch, see, think (D-022).
 
 The state of N swimmers is four arrays that the caller keeps (the arena view, a test): pos (N, 2)
-[u], heading (N,) [rad], radius (N,) [u], and y (N, n), the rates of their nodes (D-017). A tick
-of dt [s]:
+[u], heading (N,) [rad], radius (N,) [u], and y (N, n), the rates of their nodes (D-017); and
+the plane they swim in, each obstacle where its spring has it (`Arena.moved`, D-424). A tick of
+dt [s]:
 
 1. move: with what the actuators do now, the thrusters' push, against the Stokes drag of a
    sphere (`push`, `motion`);
-2. touch: back outside the obstacles (`contact`); the plane is open (D-028);
+2. touch: back outside the lights and obstacles, an obstacle giving a little (`contact`); the
+   plane is open (D-028);
 3. sense: each sensor reads where the bodies now are, the eyes the light (`readings`, `optics`);
 4. think: the nodes follow, one step of their laws (`graph.dynamics`).
 
@@ -26,7 +28,7 @@ from nektoids.graph import dynamics
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.network import Network
 from nektoids.sim.arena import Arena
-from nektoids.sim.contact import confine
+from nektoids.sim.contact import collide
 from nektoids.sim.motion import advance, stokes, thrust
 from nektoids.sim.optics import eye_rates
 
@@ -93,24 +95,35 @@ def step(
     radius: np.ndarray,
     y: np.ndarray,
     dt: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """(pos, heading, y) one tick later, as new arrays; the arguments are not changed.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, Arena]:
+    """(pos, heading, y, arena) one tick later, as new arrays and a new plane, its obstacles
+    where their springs have them; the arguments are not changed.
 
     pos (N, 2) [u], heading (N,) [rad], radius (N,) [u], y (N, n) the nodes' rates; dt [s], with
     0 < dt <= the laws' limit (`graph.dynamics.step_given` raises ValueError otherwise).
     """
     vel, spin = stokes(*push(net, y, radius), radius)
     pos, heading = advance(pos, heading, vel, spin, dt)
-    pos = confine(arena, pos, radius)
-    return pos, heading, dynamics.step_given(net, y, readings(arena, net, pos, heading, radius), dt)
+    rest = arena.offsets if arena.offsets is not None else arena.at_rest
+    pos, offsets = collide(arena, rest, pos, radius, dt)
+    arena = arena.moved(offsets)
+    seen = readings(arena, net, pos, heading, radius)
+    return pos, heading, dynamics.step_given(net, y, seen, dt), arena
 
 
 def state_hash(
-    pos: np.ndarray, heading: np.ndarray, radius: np.ndarray, y: np.ndarray, tick: int
+    pos: np.ndarray,
+    heading: np.ndarray,
+    radius: np.ndarray,
+    y: np.ndarray,
+    tick: int,
+    offsets: np.ndarray | None = None,
 ) -> str:
-    """Fingerprint of the whole state of a run, for determinism tests."""
+    """Fingerprint of the whole state of a run, for determinism tests: the obstacles' places
+    too, when they have moved (D-424)."""
     digest = hashlib.sha256()
-    for array in (pos, heading, radius, y):
+    moved = () if offsets is None else (offsets,)
+    for array in (pos, heading, radius, y, *moved):
         digest.update(np.ascontiguousarray(array, dtype=np.float64).tobytes())
     digest.update(tick.to_bytes(8, "little"))
     return digest.hexdigest()

@@ -76,7 +76,8 @@ ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
 SECTION_GAP = 6  # before a section title or a group [px]
-INFO_AT = 156  # a row's info disc: its centre, this far from the row's left [px]
+UNDER_RULE = 12  # under the Editor's Files' bar, before the levels to start from (D-422) [px]
+INFO_AT = 50  # a row's info disc: its centre, so far from the row's right (D-421) [px]
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
 HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
 TABS_HEIGHT = 32  # the strip of tabs over the board [px]
@@ -216,6 +217,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, at Diagnostic's foot, its note und
     DRAWER_WIDTH - 2 * MARGIN,
     DRAWER_WIDTH - 2 * MARGIN,
 )
+DIAGNOSTIC_RULE = DIAGNOSTIC_MAP[1] - TITLE_HEIGHT - 4  # the bar over "The level" (D-422) [px]
 DIAGNOSTIC_BODY: Rect = (  # the active board in Diagnostic, under its title, as Run's (D-089)
     BAR_WIDTH,
     DRAWER_TOP + TITLE_HEIGHT,
@@ -712,7 +714,7 @@ class _Rows:
         self.share_note = (BAR_WIDTH + ROW_INSET, top, width, HINT_LINE)
         self.y = top + HINT_LINE + ROW_PITCH - ROW_HEIGHT
         self.files_rule = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, 2)
-        self.y += SECTION_GAP
+        self.y += UNDER_RULE
         groups = [("", [Start(None)])]
         groups += [(title, [Start(k) for k in levels]) for title, levels in _spans(chapters)]
         self._folding(groups, folded, height - FOOT_MARGIN, scroll)
@@ -911,10 +913,10 @@ def _moved(rect: Rect | None, dy: int) -> Rect | None:
 
 
 def _info_disc(what: object, row: Rect) -> Rect:
-    """Where a row's info disc catches a click: INFO_AT into the row, on its middle; an
+    """Where a row's info disc catches a click: INFO_AT from the row's right, on its middle; an
     objective's, whose count and bar run along its second line, at its first line's end."""
     x, y, w, h = row
-    cx, cy = (x + w - 16, y + 14) if isinstance(what, Goal) else (x + INFO_AT, y + h // 2)
+    cx, cy = (x + w - 16, y + 14) if isinstance(what, Goal) else (x + w - INFO_AT, y + h // 2)
     return (cx - INFO_HIT // 2, cy - INFO_HIT // 2, INFO_HIT, INFO_HIT)
 
 
