@@ -58,6 +58,9 @@ taken, when it starts.
   (D-324).
 - [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
   their JSON (D-310), shared with their proof (D-320).
+- [ ] **A level's text as one cryptic word** (the physicist, 2026-10-08): Copy level and Paste a
+  level in Files (D-310) write and read a level as JSON today, easy to edit by hand; written as
+  one word, as a board's text is (D-205), it could not be.
 - [ ] **A long press on + or − in the Maker's Parts** (the physicist, 2026-10-07): after 1 s
   the number keeps changing, 3 steps a second; both numbers to be tuned by trying. A
   `feat/…` branch into `stage/1-level-maker`.
@@ -92,8 +95,6 @@ The physicist's: players build their control boards with less back and forth of 
 keyboard, from buttons round a board of one size. Its look and places are D-401 and D-406, decided
 from ten rounds of mockups; its gestures are D-402 to D-405, revised by D-406 after his first
 review. Done since: Diagnostic in the drawer, the board kept editable (D-407); chapter 0's
-cards read again, kept clear of the buttons (D-408).
+cards read again, kept clear of the buttons (D-408); the Editor's keys in place of its Wheel
+(D-410).
 
-- [ ] **The Editor's buttons** (the physicist, 2026-10-07): the Maker's tab given the Board's
-  buttons and gestures in place of its Wheel (D-314): a click picks, a drag picks, moves or acts
-  along a path it can go back on, the tools round its plane. Planned, and decided, when it starts.
