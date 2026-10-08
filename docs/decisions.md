@@ -2531,3 +2531,10 @@ where it was is a click, which inspects, as before; the developer's drag still m
 A right drag moves the view whatever the press would do. The wheel over the arena zooms about the
 mouse, a trackpad's small scrolls adding up to a notch (D-405); in the developer view it still
 turns the swimmer. The Hand and Navigator's zoom stay.
+
+**D-412 — 2026-10-08 — In the Editor's Parts, a − or + held keeps stepping: after 1 s, three steps a second, the whole ladder, ∞ included; the hold is one step for undo. Amends D-315.**
+The physicist's, from the todo's §11. A press steps once, as before; held 60 frames over the same
+button, it steps again every 20 frames until it is let go, the mouse leaves the button, the end of
+its row is reached or a step is refused, the status line saying why (D-315). Both numbers are
+constants in `editor/hold.py`, to be tuned by trying. Undo takes the whole hold back, as a run of
+the wheel's notches (D-405).

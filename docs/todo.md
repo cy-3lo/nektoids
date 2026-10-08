@@ -61,9 +61,6 @@ taken, when it starts.
 - [ ] **A level's text as one cryptic word** (the physicist, 2026-10-08): Copy level and Paste a
   level in Files (D-310) write and read a level as JSON today, easy to edit by hand; written as
   one word, as a board's text is (D-205), it could not be.
-- [ ] **A long press on + or − in the Maker's Parts** (the physicist, 2026-10-07): after 1 s
-  the number keeps changing, 3 steps a second; both numbers to be tuned by trying. A
-  `feat/…` branch into `stage/1-level-maker`.
 
 ## 12. Checks and fixes on `main` (done, D-345)
 
