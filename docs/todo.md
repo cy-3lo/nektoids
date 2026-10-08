@@ -3,7 +3,7 @@
 The jam build shipped as v1.0 (D-106), and stage 0, Foundations, is built (D-200 to D-206). What
 is left goes here, in the order it unblocks the rest; the PR that does an item removes it, and
 what was done is in git and in [`decisions.md`](decisions.md). Sections keep their numbers,
-which the decision log cites. Ideas for later go in [`ideas.md`](ideas.md). §11 is stage 1, a
+which the decision log cites. Ideas for later are kept apart, off the repository (D-414). §11 is stage 1, a
 level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300); §13, the
 chapters, levels and tutorials made with it, done (D-325 to D-341); §14, the repository's face;
 §15 is stage 2, the Board, built beside stage 1 on `stage/2-board` (D-400).

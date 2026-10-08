@@ -2560,3 +2560,11 @@ level keeps its author, as D-331 said and the Editor did not. To ship a level (D
 saved to a file goes through `PYTHONPATH=game python -m nektoids.levels.levelword TEXT FILE`,
 which runs its proof again and writes the level's file as the game writes it; passkey and
 tutorial are still written there by hand.
+
+**D-414 — 2026-10-08 — The README is written for visitors: the game, how to play it and how to build it, the `docs/` folder, credits. `docs/ideas.md` is no longer committed: it stays on the developers' disks, ignored by git. Amends D-028.**
+The physicist's, the todo's §14. The README says what the game is, plays it in a browser on
+itch.io or natively from `requirements.txt` (the game is not an installable package), builds it,
+and lists `docs/`; it names no contributor but Cy-3LO, and says nothing of how the work is shared.
+`ideas.md` held thoughts for later, not for strangers: it is taken out of the repository, its
+history left as it is, and CLAUDE.md no longer counts it among the files strangers read. The
+banner, the todo's other item, comes later.
