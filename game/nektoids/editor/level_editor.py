@@ -224,6 +224,7 @@ class EditorScene(Frame):
         self.moving: tuple[Object, ...] = ()  # the objects a drag moves together
         self.before: Level | None = None  # the level as a drag began: one step for undo
         self.key_down: Key | Piece | None = None  # an object's key pressed: a click, or a drag
+        self.right_at: tuple[int, int] | None = None  # a right press: a click, or a drag?
         self.carrying: Piece | None = None  # an object dragged from its key or its row
         self.confirming = False  # Erase all asked: Confirm or Cancel, Cancel the default
         self.counted: Object | None = None  # an object whose value shows a moment (D-410)
@@ -612,9 +613,11 @@ class EditorScene(Frame):
             self._release(event.pos)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             if contains(self.arena_area, event.pos):  # a right drag moves the view (D-410)
-                self.panning = event.pos
+                self.panning = self.right_at = event.pos
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
-            self.panning = None
+            if self.right_at is not None and math.dist(event.pos, self.right_at) < CLICK:
+                self.held, self.pick = Key.SELECT, NOTHING  # a right click: put it all down
+            self.panning = self.right_at = None
         elif event.type == pygame.MOUSEWHEEL:
             if not self.frame_wheel(self.pointer, event.y):  # else the drawer's rows (D-096)
                 self._wheel_on(event)
@@ -784,7 +787,7 @@ class EditorScene(Frame):
         if moved and self.before is not None and self.level != self.before:
             self.history.record((self.before, self.start_off))
         clicked_ = self.press_at is not None and math.dist(pos, self.press_at) < CLICK
-        if laying and not clicked_:  # a drag laid them: Select in hand again (D-410)
+        if laying and len(self.laid) > 1:  # a drag laid a row: Select in hand again (D-410)
             self.held = Key.SELECT
         elif clicked_ and not laying:
             self.pick = clicked(self.pick, self.press_on, self.adding)
