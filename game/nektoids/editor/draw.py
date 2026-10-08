@@ -965,7 +965,7 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     for row, rect in layout.hint_rows:
         k = row.index
         if k == SHADOW_HINT and k < taken:
-            status = ("tick", "on") if hints.shadow else ("count", "off")
+            status = ("count", "on") if hints.shadow else ("off", "off")  # D-421
         elif k < taken:
             status = ("tick", "")
         else:
@@ -1031,7 +1031,7 @@ def _draw_settings(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
     settings = scene.settings
     shown = {
         Setting.FAST: ("count", f"{settings.fast}x"),
-        Setting.HINTS: ("tick", "on") if settings.key_hints else ("count", "off"),
+        Setting.HINTS: ("count", "on") if settings.key_hints else ("off", "off"),  # D-421
     } | ({Setting.TUTORIAL: ("none", "")} if scene.tutored else {})  # D-334
     for setting, rect in scene.layout.setting_rows:
         name, icon, _ = SETTING[setting]
@@ -1141,10 +1141,11 @@ def draw_row(
     lit=None,
 ) -> None:
     """A drawer's row, as every drawer draws them (D-051): an icon (or the part itself, or a
-    level's number), the name, an info disc, then a count, the infinity sign, a key, a tick or a
-    lock, right-aligned; nothing for "none". Keys show while the key hints are on (D-054).
-    `alarm`: the name and the count in the refusals' colour, for an objective that lost; `lit`:
-    the name in that colour, a tutorial's target (D-338)."""
+    level's number), the name, an info disc just before the end, then a count, the infinity
+    sign, a key, a tick, a lock or a switch's "off", right-aligned; nothing for "none"
+    (D-421). Keys show while the key hints are on (D-054). `alarm`: the name and the count
+    in the refusals' colour, for an objective that lost; `lit`: the name in that colour, a
+    tutorial's target (D-338)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, ACTIVE if active else BUTTON, box, border_radius=6)
     ink = GREYED if greyed else TEXT
@@ -1161,7 +1162,7 @@ def draw_row(
     shown = fonts.name.render(name, True, named)
     screen.blit(shown, (box.left + 42, box.centery - shown.get_height() // 2))
     disc = TEXT if what == scene.info else DIM_TEXT
-    fonts.icons.draw(screen, "circle-info", (box.left + INFO_AT, box.centery), INFO_ICON, disc)
+    fonts.icons.draw(screen, "circle-info", (box.right - INFO_AT, box.centery), INFO_ICON, disc)
     kind, text = status
     right = box.right - 10
     if kind == "infinity":
@@ -1175,6 +1176,9 @@ def draw_row(
         fonts.icons.draw(screen, "check", (x, box.centery), 12, LIT)
     elif kind == "none":
         pass
+    elif kind == "off":  # a switch that is off: its word in grey, "on" in white (D-421)
+        shown = fonts.small.render(text, True, DIM_TEXT)
+        screen.blit(shown, shown.get_rect(midright=(right, box.centery)))
     elif kind == "key":
         if not scene.settings.key_hints:
             return

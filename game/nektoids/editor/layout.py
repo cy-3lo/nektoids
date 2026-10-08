@@ -76,7 +76,7 @@ ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
 SECTION_GAP = 6  # before a section title or a group [px]
-INFO_AT = 156  # a row's info disc: its centre, this far from the row's left [px]
+INFO_AT = 50  # a row's info disc: its centre, so far from the row's right (D-421) [px]
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
 HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
 TABS_HEIGHT = 32  # the strip of tabs over the board [px]
@@ -911,10 +911,10 @@ def _moved(rect: Rect | None, dy: int) -> Rect | None:
 
 
 def _info_disc(what: object, row: Rect) -> Rect:
-    """Where a row's info disc catches a click: INFO_AT into the row, on its middle; an
+    """Where a row's info disc catches a click: INFO_AT from the row's right, on its middle; an
     objective's, whose count and bar run along its second line, at its first line's end."""
     x, y, w, h = row
-    cx, cy = (x + w - 16, y + 14) if isinstance(what, Goal) else (x + INFO_AT, y + h // 2)
+    cx, cy = (x + w - 16, y + 14) if isinstance(what, Goal) else (x + w - INFO_AT, y + h // 2)
     return (cx - INFO_HIT // 2, cy - INFO_HIT // 2, INFO_HIT, INFO_HIT)
 
 

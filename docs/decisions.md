@@ -2634,3 +2634,10 @@ drawer's title. Section titles ("SAVE/LOAD", "OBJECTIVES", "ACTIVE BOARD"), titl
 `draw_heading`, lit in the accent as before while a tutorial step explains them. The chapter's
 number before a dot sits over its levels' "1.1", "1.2"; "Ch." added nothing under a drawer
 titled Chapters.
+
+**D-421 — 2026-10-08 — A row's info disc sits 50 px from the row's right end, just before its count, lock, infinity sign or tick, in one column in every drawer; a switch reads "on" in white and "off" in grey, with no tick. Amends D-051, D-054.**
+The physicist's: the disc stood 156 px from the row's left, far from the lock or the infinity
+sign at the right end, a gap of some 26 px. Measured from the right it sits close to them, and
+long names get more room. "Key hints ✓ on" was the widest status and ran into the disc; the
+switches, Key hints in Settings and the shadow in Hints, now say "on" or "off" alone, the word's
+colour telling which, as Fast forward says "4x". A click on the disc falls where it is drawn.
