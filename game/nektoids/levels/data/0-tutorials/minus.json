@@ -7,7 +7,7 @@
   "items": [{"kind": "light", "at": [16, 0], "power": 4}, {"kind": "mark", "at": [16, 0], "radius": 8}],
   "board": {
     "zone": 7,
-    "stock": {"eye": 1, "source": 1, "difference": 1, "thruster": 1},
+    "stock": {"eye": 1, "source": 1, "sum": 1, "difference": 1, "thruster": 1},
     "parts": [],
     "wires": []
   },

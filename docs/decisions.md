@@ -2482,4 +2482,5 @@ and the swimmer, over the arena between the swimmer and the timeline. Eyes, Half
 the part's button round the board and its row in Parts; Eyes says how: the buttons dragged onto
 their ghosts, then W and the two parts. The tutorials' shadows, parts and wires, are the line's
 grey, a shade darker, not to be taken for a wire. Settings' Tutorial row is named Redo
-tutorial, which is what it does (D-334): from the first step, on the board as it stands.
+tutorial, which is what it does (D-334): from the first step, on the board as it stands. Minus
+hands out a Sum too, the physicist's, so that Sum and Difference sit side by side, to choose.
