@@ -189,11 +189,13 @@ TIP = {
     " brings them back.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
     " into Paste a board, under this row, to bring it back, on this level or another.",
-    FileButton.LEVEL: "Copies the level as text, its JSON, as the game's own level files hold it:"
-    " to keep, or to paste into Paste a level, under this row, to make it again.",
-    FileButton.SHARE: "Copies the level as text with its proof, the board that won it and its"
-    " score, the one to beat. Offered once the level, as it stands, has been won in the Run;"
-    " pasted, the proof is run again, and the level is cleared if it wins.",
+    FileButton.LEVEL: "Copies the level as a few lines of text, its title, author and description"
+    " and the level as one word: to keep, or to paste into Paste a level, under this row, to"
+    " make it again.",
+    FileButton.SHARE: "Copies the level as text with its proof, the board that won it, to paste"
+    " into a comment or an email. Offered once the level, as it stands, has been won in the Run;"
+    " pasted, the proof is run again, and the level is cleared if it wins, its score the one to"
+    " beat.",
     LevelButton.RUN: "Run",
     LevelButton.BOARD: "Back to the board",
     Drawer.PARTS: "Parts",

@@ -2538,3 +2538,25 @@ button, it steps again every 20 frames until it is let go, the mouse leaves the 
 its row is reached or a step is refused, the status line saying why (D-315). Both numbers are
 constants in `editor/hold.py`, to be tuned by trying. Undo takes the whole hold back, as a run of
 the wheel's notches (D-405).
+
+**D-413 — 2026-10-08 — A level is shared as a few lines of text: its title, author and description, then the level as one word, then, once won, the winning board's text. Copy level and Share level write them, Paste a level reads them; JSON leaves the Editor, and shipped files stay JSON. Amends D-310, D-320, D-328, D-331.**
+The physicist's, from the todo's §11: a short text to paste into a comment or an email,
+`Title:`, `Author:`, `Description:`, `Level:` and `Board:`, each on its line. The level's word
+holds only the level as played: the start, the items, the zone, what the board hands out, the
+parts it places, locked, the time and the goals; no title, spec or author, which are the lines
+above it, and no board but its locked parts. It is built as a board's text (D-205): each
+decision a digit whose base is the number of choices, a position one digit within 32 u of the
+origin and more beyond, a heading a whole degree, the locked parts the board's own digits; the
+integer is written in base 59 with the board's checks, moved to `graph/spelling.py`, under a
+hidden version symbol of its own, 31, so a board's text pasted as a level is refused, "that is a
+board's text: paste it on the Board", and a level's word on the Board likewise. Every shipped
+level's word is 18 to 35 characters; Dragster's whole text, 115, against 374 of compact JSON.
+Paste a level finds the lines by their labels, in any order, what comes before the first or
+after a word left out, as an email's greeting and signature; a line break pasted into any field
+is now a space, so the lines run together in a field of one line and are still read. A word
+alone is a level untitled. The proof's tick and parts are not written: a pasted proof is run
+again and counted (D-320). Copy level writes no `Board:` line; Share level does. A pasted
+level keeps its author, as D-331 said and the Editor did not. To ship a level (D-328), its text
+saved to a file goes through `PYTHONPATH=game python -m nektoids.levels.levelword TEXT FILE`,
+which runs its proof again and writes the level's file as the game writes it; passkey and
+tutorial are still written there by hand.

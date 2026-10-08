@@ -130,7 +130,8 @@ from nektoids.editor.textfield import TextField
 from nektoids.graph import boardtext
 from nektoids.graph.board import Board, complexity
 from nektoids.levels.lattice import POSITION, Range
-from nektoids.levels.level import Item, Level, to_json
+from nektoids.levels.level import Item, Level
+from nektoids.levels.levelword import to_shared, to_word
 from nektoids.levels.making import (
     AUTHOR_LONGEST,
     GOALS_MOST,
@@ -947,11 +948,10 @@ class EditorScene(Frame):
     # Files (D-310)
 
     def _copy_level(self) -> None:
-        """Copy level: its JSON, as the shipped levels' files hold it, on the clipboard;
-        too long for the status line, which says how long it is."""
-        text = to_json(self.level)
-        clipboard.copy(text)
-        self.said = f"Copied: the level's text, {len(text.splitlines())} lines of JSON."
+        """Copy level: its title, author and description, and its word, on the clipboard, as
+        lines to paste into a comment or an email (D-413)."""
+        clipboard.copy(to_shared(self.level))
+        self.said = f"Copied: the level's text, its word {len(to_word(self.level))} characters."
 
     def _paste_level(self, text: str) -> None:
         """The level `text` holds, taken onto this one but its board's free parts, one step for
@@ -962,7 +962,7 @@ class EditorScene(Frame):
         except Unmade as why:
             self._refuse(str(why))
             return
-        if not self._made_anew(lambda level: taken(level, other)):
+        if not self._made_anew(lambda level: replace(taken(level, other), author=other.author)):
             return
         self.said = f"Pasted: {self.level.title}."
         if other.proof is not None:
@@ -1003,7 +1003,7 @@ class EditorScene(Frame):
         if not self.shareable:
             self._refuse("win it in Run first, as it stands, to share it")  # D-321
             return
-        clipboard.copy(to_json(replace(self.level, proof=self.proof.to_dict())))
+        clipboard.copy(to_shared(self.level, self.proof.board))
         seconds = self.proof.ticks * DT
         self.said = f"Copied, with its proof: won in {seconds:.2f} s, {self.proof.parts} parts."
         self.info, self.shared = FileButton.SHARE, True

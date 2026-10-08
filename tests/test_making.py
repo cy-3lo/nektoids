@@ -1,13 +1,16 @@
 """A level made by hand (D-301). making.py imports no pygame."""
 
 import json
+import re
 from dataclasses import replace
 
 import pytest
 
+from nektoids.graph import boardtext
 from nektoids.graph.board import Kind
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level, to_json
+from nektoids.levels.levelword import to_shared, to_word
 from nektoids.levels.making import (
     AUTHOR_LONGEST,
     BLANK_STOCK,
@@ -210,15 +213,15 @@ def test_a_level_copied_as_text_is_pasted_back_as_it_was():
         goal_worded(placed(goal_added(LEVEL), ItemKind.MARK, (3.0, 3.0)), 0, Verb.STAY), 0, 8
     )
     made = titled(timed(turned(made, 2), 45.0), "Made")
-    assert pasted(LEVEL, to_json(made)) == made  # D-310
-    assert pasted(made, to_json(LEVEL)) == LEVEL  # and back: one step for undo each way
+    assert pasted(LEVEL, to_shared(made)) == made  # D-310
+    assert pasted(made, to_shared(LEVEL)) == LEVEL  # and back: one step for undo each way
 
 
 def test_a_shipped_level_pasted_brings_its_plane_goals_time_handout_and_locked_parts():
     fear = next(
         level for level in arenas() if level.title == "Fear"
     )  # its passkey, a board of its own, two thrusters locked on it (D-354)
-    made = pasted(LEVEL, to_json(fear))
+    made = pasted(LEVEL, to_shared(fear))
     assert (made.title, made.spec, made.start) == (fear.title, fear.spec, fear.start)
     assert (made.items, made.objectives, made.time_limit) == (
         fear.items,
@@ -231,7 +234,7 @@ def test_a_shipped_level_pasted_brings_its_plane_goals_time_handout_and_locked_p
     assert made.tutorial is None and made.passkey is None
     assert fear.passkey is not None
     wiring = next(level for level in arenas() if level.title == "Wiring")  # D-335: a tutorial
-    assert wiring.tutorial is not None and pasted(LEVEL, to_json(wiring)).tutorial is None
+    assert wiring.tutorial is not None and pasted(LEVEL, to_shared(wiring)).tutorial is None
 
 
 def test_a_level_is_signed_in_text_a_pasted_one_keeps_its_author_one_started_from_none():
@@ -240,25 +243,26 @@ def test_a_level_is_signed_in_text_a_pasted_one_keeps_its_author_one_started_fro
     assert authored(made, "@").author is None and authored(made, " ").author is None
     assert len(authored(made, "@" + "x" * 99).author) == AUTHOR_LONGEST
     fear = next(level for level in arenas() if level.title == "Fear")
-    assert pasted(made, to_json(fear)).author == "@Cy-3LO"  # someone's level stays theirs
+    assert pasted(made, to_shared(fear)).author == "@Cy-3LO"  # someone's level stays theirs
     assert taken(made, fear).author is None  # Start from: a new level, its maker's to sign
     assert blank(made).author is None
 
 
 def test_a_text_no_level_could_hold_is_refused_with_its_reason():
-    text = json.loads(to_json(LEVEL))
+    word = to_word(LEVEL)
+    typos = "".join("2" if k in (3, 9) and c != "2" else c for k, c in enumerate(word))
+    inside = replace(LEVEL, start=(21.0, 21.0, 0.0))  # on the obstacle at (21, 21)
     for given, why in (
         ("  ", "paste a level's text into the field first"),
-        ("{", "not JSON"),
-        ("[1, 2]", "without its version"),
-        ("12", "not a level's text"),
-        (json.dumps({**text, "version": 9}), "version 9"),
-        (json.dumps({**text, "colour": "red"}), "takes no 'colour'"),
-        (json.dumps({k: v for k, v in text.items() if k != "title"}), "no 'title'"),
-        (json.dumps({**text, "title": "   "}), "needs a title"),
-        (json.dumps({**text, "start": {"at": [21.0, 21.0], "heading": 0}}), "inside an obstacle"),
+        (to_json(LEVEL), "a level's file: paste the lines Copy level writes"),
+        ("Title: Fear", 'no line "Level:"'),
+        ("Level: 12", "too short to hold a level"),
+        (f"Level: {typos}", "holds no level"),
+        (f"Level: {word}!", "no level has the character '!'"),
+        (boardtext.to_text(LEVEL.new_board()), "a board's text: paste it on the Board"),
+        (f"Level: {to_word(inside)}", "inside an obstacle"),
     ):
-        with pytest.raises(Unmade, match=why):
+        with pytest.raises(Unmade, match=re.escape(why)):
             pasted(LEVEL, given)
 
 
@@ -267,7 +271,7 @@ def test_a_blank_plane_has_no_item_no_goal_the_swimmer_at_the_origin_two_of_each
     assert (made.items, made.objectives, made.start) == ((), (), (0.0, 0.0, 0.0))
     assert made.time_limit == BLANK_TIME and made.title == "New level" and made.spec
     assert made.board["stock"] == {kind.value: BLANK_STOCK for kind in Kind}
-    assert made.board["zone"] == LEVEL.board["zone"] and pasted(LEVEL, to_json(made)) == made
+    assert made.board["zone"] == LEVEL.board["zone"] and pasted(LEVEL, to_shared(made)) == made
 
 
 def test_every_shipped_level_may_be_started_from_its_plane_goals_time_and_handout():
@@ -310,7 +314,7 @@ def test_locked_parts_on_the_board_are_the_levels_and_travel_with_its_text():
     assert [(p["kind"], p["cell"], p["locked"]) for p in made.board["parts"]] == [
         ("eye", [0, 0], True)
     ]
-    assert made.board["wires"] == [] and pasted(LEVEL, to_json(made)) == made
+    assert made.board["wires"] == [] and pasted(LEVEL, to_shared(made)) == made
     assert taken(LEVEL, made).board["parts"] == made.board["parts"]  # Start from, Paste
     assert blank(made).board["parts"] == []  # a blank plane places none
     diagnostic = next(level for level in arenas() if level.title == "Diagnostic")  # its parts

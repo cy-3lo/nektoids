@@ -23,12 +23,12 @@ def test_a_field_types_at_its_caret_which_the_arrows_home_and_end_move():
 
 
 def test_a_field_takes_what_it_says_as_far_as_it_may_grow_pasted_at_the_caret():
-    free = TextField(longest=10)
-    free.paste("Two\nlights")  # a pasted line break is no printable character
-    assert (free.text, free.caret) == ("Twolights", 9)
+    free = TextField(longest=11)
+    free.paste("Two\nlight")  # a pasted line break, which it does not take, a space (D-413)
+    assert (free.text, free.caret) == ("Two light", 9)
     free.type("tab", "\t")
-    free.paste("xyz")
-    assert free.text == "Twolightsx" and free.caret == 10
+    free.paste("sxyz")
+    assert free.text == "Two lightsx" and free.caret == 11
     board = TextField(taken=frozenset("abc"), longest=5)
     board.paste("a#b c")
     assert board.text == "abc"
