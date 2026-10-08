@@ -119,7 +119,7 @@ from nektoids.levels.objectives import (
 )
 from nektoids.levels.score import Score
 from nektoids.sim import world
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Arena
 from nektoids.sim.contact import confine
 from nektoids.sim.optics import (
     angular_irradiance,
@@ -141,13 +141,15 @@ SEEK_TICKS = 40  # a frame's worth of ticks while the run races ahead to a time 
 @dataclass(frozen=True)
 class Snapshot:
     """The run at one tick, as the timeline puts it back: the swimmers, their controllers,
-    what their objectives keep (D-038, D-040), the beads."""
+    what their objectives keep (D-038, D-040), the beads, the plane, its obstacles where their
+    springs had them (D-424)."""
 
     pos: np.ndarray
     heading: np.ndarray
     state: np.ndarray
     kept: Kept
     phase: tuple[float, ...]
+    arena: Arena
 
 
 CLICK = 4  # a press on the arena that moves less than this is a click: it inspects [px]
@@ -273,6 +275,7 @@ class ArenaScene(Frame):
 
     def _restart(self) -> None:
         x, y, heading = self.level.start
+        self.arena = self.level.arena  # its obstacles at rest (D-424)
         self.pos = np.array([[x, y]])  # (N, 2) [u]
         self.heading = np.array([math.radians(heading)])  # (N,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (N,) [u], every body alike (D-045)
@@ -388,6 +391,7 @@ class ArenaScene(Frame):
         self.pos, self.heading = then.pos.copy(), then.heading.copy()
         self.state, self.kept = then.state.copy(), tuple(k.copy() for k in then.kept)
         self.circuit.beads.phase = list(then.phase)
+        self.arena = then.arena
         self.eyes = self.state[:, self.net.eyes]
         self.circuit.show(self.y)
 
@@ -398,14 +402,15 @@ class ArenaScene(Frame):
             self.state.copy(),
             tuple(k.copy() for k in self.kept),
             tuple(self.circuit.beads.phase),
+            self.arena,
         )
 
     def _tick(self) -> None:
-        self.pos, self.heading, self.state = world.step(
+        self.pos, self.heading, self.state, self.arena = world.step(
             self.arena, self.net, self.pos, self.heading, self.radius, self.state, DT
         )
         self.eyes = self.state[:, self.net.eyes]  # what they read where the swimmers now are
-        self.kept = follow(self.level, self.kept, self.pos, self.radius, DT)
+        self.kept = follow(self.level, self.kept, self.pos, self.radius, DT, self.arena)
         self.circuit.advance(self.y, DT)
 
     @property

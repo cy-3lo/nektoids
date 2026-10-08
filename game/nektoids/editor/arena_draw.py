@@ -213,10 +213,10 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
 
 
 def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Arena) -> None:
-    """The plane's items: the obstacles, grey discs; the lights, white discs with a bulb."""
-    for disc in arena.obstacles:
-        centre = view.to_screen(disc.x, disc.y)
-        pygame.draw.circle(screen, OBSTACLE, centre, disc.radius * view.scale)
+    """The plane's items: the obstacles, grey discs, where their springs have them (D-424); the
+    lights, white discs with a bulb."""
+    for (x, y), radius in zip(arena.disc_xy, arena.disc_radius, strict=True):
+        pygame.draw.circle(screen, OBSTACLE, view.to_screen(x, y), radius * view.scale)
     for light in arena.lights:
         draw_light(screen, fonts, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale)
 

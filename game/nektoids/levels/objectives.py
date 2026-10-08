@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from nektoids.levels.lattice import Range
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Arena
 
 REACH = 1.05  # a light counts as reached this many times its touching distance away (D-043)
 EPS = 1e-9  # a timer this close to its seconds has reached them
@@ -213,10 +213,13 @@ class Goal:
 
     # How it counts
 
-    def marks(self, level: Level, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
+    def marks(
+        self, level: Level, pos: np.ndarray, radius: np.ndarray, arena: Arena | None = None
+    ) -> np.ndarray:
         """What counts now, for swimmers at pos (N, 2) [u] of radius (N,) [u]: (N, K) for each
-        target, or (N, 1) for the targets together."""
-        centres, size = targets(level, self.target)
+        target, or (N, 1) for the targets together; the obstacles where `arena` has them, if
+        given, as their springs move them (D-424)."""
+        centres, size = targets(level, self.target, arena)
         dx = centres[None, :, 0] - pos[:, None, 0]
         dy = centres[None, :, 1] - pos[:, None, 1]
         if self.verb is Verb.REACH:
@@ -278,9 +281,12 @@ def _touch(size: np.ndarray, radius: np.ndarray) -> np.ndarray:
     return REACH * (size[None, :] + np.asarray(radius, dtype=np.float64)[:, None])
 
 
-def targets(level: Level, target: Target) -> tuple[np.ndarray, np.ndarray]:
-    """The level's targets of a kind: their centres (K, 2) [u] and their radii (K,) [u]."""
-    arena = level.arena
+def targets(
+    level: Level, target: Target, arena: Arena | None = None
+) -> tuple[np.ndarray, np.ndarray]:
+    """The level's targets of a kind: their centres (K, 2) [u] and their radii (K,) [u]; the
+    obstacles where `arena` has them, if given, else at rest."""
+    arena = arena if arena is not None else level.arena
     if target is Target.LIGHT:
         return arena.light_xy, np.full(len(arena.light_xy), LIGHT_RADIUS)
     if target is Target.OBSTACLE:
@@ -299,10 +305,18 @@ def begin(level: Level, pos: np.ndarray, radius: np.ndarray) -> Kept:
     return tuple(o.start(o.marks(level, pos, radius)) for o in level.objectives)
 
 
-def follow(level: Level, kept: Kept, pos: np.ndarray, radius: np.ndarray, dt: float) -> Kept:
-    """What the run keeps after a tick of `dt` [s], the swimmers now at `pos`."""
+def follow(
+    level: Level,
+    kept: Kept,
+    pos: np.ndarray,
+    radius: np.ndarray,
+    dt: float,
+    arena: Arena | None = None,
+) -> Kept:
+    """What the run keeps after a tick of `dt` [s], the swimmers now at `pos`, the obstacles
+    where `arena` has them (D-424)."""
     pairs = zip(level.objectives, kept, strict=True)
-    return tuple(o.keep(k, o.marks(level, pos, radius), dt) for o, k in pairs)
+    return tuple(o.keep(k, o.marks(level, pos, radius, arena), dt) for o, k in pairs)
 
 
 def lit_marks(level: Level, kept: Kept) -> tuple[bool, ...]:

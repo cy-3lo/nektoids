@@ -54,7 +54,7 @@ def run(net, title, seconds, start=None):
     pos, heading, radius = start[:, :2], start[:, 2], np.ones(len(start))
     y = initial_state(net, len(start))
     for _ in range(round(seconds / DT)):
-        pos, heading, y = step(arena, net, pos, heading, radius, y, DT)
+        pos, heading, y, arena = step(arena, net, pos, heading, radius, y, DT)  # D-424
         yield pos, heading, y
 
 
@@ -153,7 +153,7 @@ def test_shadows_a_drive_gets_it_out_and_it_wins_with_time_and_room_to_spare():
     assert play(DRIVEN, title)[1] == ticks  # the same tick, every run
     light = LEVELS[title].arena.light_xy[0]
     nearest = min(np.hypot(*(pos[0] - light)) for pos, _, _ in run(DRIVEN, title, ticks * DT + 2.0))
-    assert nearest < 0.5 * (LIGHT_RADIUS + 1.0)  # deep in, not grazing it (D-004)
+    assert nearest < 1.001 * (LIGHT_RADIUS + 1.0)  # against it, a light being solid (D-424)
 
 
 def fear(upper, lower, crossed=False):
@@ -416,7 +416,7 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
-    ("Shadows", "DRIVEN"): (Outcome.WON, 446, ((1, 1, 1.0),)),  # D-317
+    ("Shadows", "DRIVEN"): (Outcome.WON, 442, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
     ("Fear", "fear(NW, SW)"): (Outcome.WON, 382, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
@@ -427,11 +427,11 @@ BEFORE_SENTENCES = {
     ("Orbit", "ORBITER"): (Outcome.WON, 1132, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312, D-357
     ("Orbit", "HALVED"): (Outcome.WON, 2263, ((4, 4, 1.0), (1, 1, 1.0))),  # D-357
     ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
-    ("Greed", "greedy()"): (Outcome.WON, 1202, ((2, 2, 1.0),)),  # D-313
+    ("Greed", "greedy()"): (Outcome.WON, 1118, ((2, 2, 1.0),)),  # D-313; round a light, D-424
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1213, ((3, 3, 1.0),)),  # D-317
-    ("Patience", "patient(True)"): (Outcome.WON, 1188, ((3, 3, 1.0),)),
+    ("Patience", "patient()"): (Outcome.WON, 1200, ((3, 3, 1.0),)),  # D-317, D-424
+    ("Patience", "patient(True)"): (Outcome.WON, 1155, ((3, 3, 1.0),)),  # D-424
 }
 
 

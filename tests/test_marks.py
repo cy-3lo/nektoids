@@ -60,7 +60,7 @@ def test_the_motion_drawn_is_what_the_next_tick_does():
     pos, heading, radius = np.array([[3.0, 2.0]]), np.array([0.4]), np.ones(1)
     y = np.array([[0.6, 0.2, 0.3, 0.9]])
     vel, spin = motion(net, y[0], 1.0)
-    after, turned, _ = step(arena, net, pos, heading, radius, y, DT)
+    after, turned, _, _ = step(arena, net, pos, heading, radius, y, DT)
     c, s = math.cos(0.4), math.sin(0.4)
     drawn = [c * vel[0] - s * vel[1], s * vel[0] + c * vel[1]]
     assert np.allclose(drawn, (after[0] - pos[0]) / DT)
