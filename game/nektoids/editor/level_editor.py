@@ -217,6 +217,8 @@ class EditorScene(Frame):
         self.box_to: tuple[int, int] | None = None  # ... its other corner, under the mouse
         self.start_off = False  # the swimmer cut off the plane, to be placed again (D-410)
         self.laid: list[int] = []  # the items a drag with an object's key held has placed
+        self.clicking = False  # ... the key used by clicks: a drag now is Select's (D-410)
+        self.waiting = False  # ... a press whose release places one, unless it drags
         self.adding = False  # the add key down at the press
         self.press_at: tuple[int, int] | None = None  # a press on the plane: click, or drag?
         self.press_on: Object | None = None  # ... on an object
@@ -433,6 +435,7 @@ class EditorScene(Frame):
             self._refuse("the swimmer is on the plane: drag it, or cut it first")
         elif isinstance(key, Piece):  # held for the clicks on the plane; pressed again, put down
             self.held = Key.SELECT if self.held is key else key
+            self.clicking = False  # its first gesture says: a drag lays a row, a click clicks
         elif key is Key.ZOOM_IN:
             self._view(ViewButton.ZOOM_IN)
         elif key is Key.ZOOM_OUT:
@@ -687,6 +690,10 @@ class EditorScene(Frame):
         drop the pick or sweep a pick along a drag (D-410)."""
         at = self.view.to_world(*pos)
         self.adding = bool(pygame.key.get_mods() & ADD_KEYS)
+        if isinstance(self.held, Piece) and self.clicking:  # a click places; a drag selects
+            self.press_at, self.before, self.waiting = pos, self.level, True
+            self.press_on, self.grab_from = self._object_at(pos), at
+            return
         if isinstance(self.held, Piece):  # one here; a drag lays more along its way
             self.press_at, self.before, self.laid = pos, self.level, []
             if self._place(self.held, at) and self.held is not Key.SELECT:
@@ -723,6 +730,8 @@ class EditorScene(Frame):
     def _drag(self, pos: tuple[int, int]) -> None:
         """A drag on the plane with Select: from an object, it moves, with the pick if it is
         picked; from the open plane, the objects it crosses are picked."""
+        if self.waiting:  # clicks placed some: a drag puts the key down, Select's (D-410)
+            self.held, self.waiting = Key.SELECT, False
         if isinstance(self.held, Piece):
             self._lay(pos)
             return
@@ -782,6 +791,10 @@ class EditorScene(Frame):
                 self._place(self.carrying, at)
         if self.box_from is not None:  # the rectangle's pick, once let go
             self.pick = boxed(self.pick, self.centres(), self.box_from, pos, self.adding)
+        if self.waiting:  # a click with the key used by clicks: one placed where it was pressed
+            self.waiting = False
+            self._place(self.held, self.view.to_world(*self.press_at))
+            self.press_at = None
         laying = isinstance(self.held, Piece) and self.press_at is not None
         moved = self.moving or self.sliding is not None or laying
         if moved and self.before is not None and self.level != self.before:
@@ -789,6 +802,8 @@ class EditorScene(Frame):
         clicked_ = self.press_at is not None and math.dist(pos, self.press_at) < CLICK
         if laying and len(self.laid) > 1:  # a drag laid a row: Select in hand again (D-410)
             self.held = Key.SELECT
+        elif laying:  # a click: the key used by clicks from now on
+            self.clicking = True
         elif clicked_ and not laying:
             self.pick = clicked(self.pick, self.press_on, self.adding)
         self.overviewing = self.zooming = False
