@@ -34,8 +34,8 @@ class Chapter:
 
     @property
     def heading(self) -> str:
-        """Its title in Chapters and in the Editor's Files: "Chapter 1: Braitenberg"."""
-        return f"Chapter {self.number}: {self.title}"
+        """Its title in Chapters and in the Editor's Files: "1. Braitenberg" (D-420)."""
+        return f"{self.number}. {self.title}"
 
 
 CHAPTERS = (

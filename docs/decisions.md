@@ -2624,3 +2624,9 @@ The physicist's, before v1.1: "YOUR LEVEL. New level" said the same thing twice.
 in the Editor may have no title; the chapters' levels keep "LEVEL 1.2. Fear" (D-034). A level
 shared with no title is read back with none (D-413), and so captioned YOUR LEVEL where it is
 pasted.
+
+**D-420 — 2026-10-08 — A chapter's title reads "1. Braitenberg", as it is written, in a larger font than the drawers' section titles and in the text's colour, in Chapters and in the Editor's Start from. Amends D-326.**
+The physicist's, of four drawn: "CHAPTER 1: BRAITENBERG" was in the small capitals of a section
+title, dimmed, and read as small as Parts' group titles. The number before a dot sits over its
+levels' "1.1", "1.2"; "Ch." added nothing under a drawer titled Chapters. Parts' group titles
+keep their small capitals.

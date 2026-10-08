@@ -172,7 +172,10 @@ from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
+from nektoids.levels.arenas import CHAPTERS
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+
+CHAPTER_HEADINGS = frozenset(chapter.heading for chapter in CHAPTERS)  # drawn larger (D-420)
 
 TIP = {
     Tool.ADD: "Add a part",
@@ -300,6 +303,7 @@ class Fonts:
     label: pygame.font.Font  # the same, smaller: section labels, tabs, keys, the box's buttons
     big: pygame.font.Font  # the cards' titles, the end's thanks
     icons: Icons
+    heading: pygame.font.Font  # a chapter's title in Chapters and Start from (D-420)
 
     @classmethod
     def load(cls) -> Fonts:
@@ -315,6 +319,7 @@ class Fonts:
             label=pygame.font.Font(None, 18),
             big=pygame.font.Font(None, 64),
             icons=Icons(),
+            heading=pygame.font.Font(None, 24),
         )
 
 
@@ -736,11 +741,15 @@ def _draw_sections(screen: pygame.Surface, scene: Frame, fonts: Fonts, ink, at_f
 
 def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -> None:
     """A title that folds what is under it, as Parts' groups and The Wheel (D-069): a caret, right
-    while folded, down while open, then the title in upper case."""
+    while folded, down while open, then the title in upper case; a chapter's as it is written,
+    larger and brighter, "1. Braitenberg" (D-420)."""
     x, y, _, h = rect
     caret = "caret-right" if folded else "caret-down"
     fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
-    shown = fonts.label.render(title.upper(), True, ink)
+    if title in CHAPTER_HEADINGS:
+        shown = fonts.heading.render(title, True, TEXT if ink == DIM_TEXT else ink)
+    else:
+        shown = fonts.label.render(title.upper(), True, ink)
     screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
 
 

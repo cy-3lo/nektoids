@@ -168,8 +168,8 @@ def test_each_chapters_first_level_is_open_and_a_chapters_last_gives_no_word():
 
 def test_chapters_shows_the_chapter_being_played_and_folds_the_others_until_asked():
     router = a_router()  # D-326
-    zero, one = "Chapter 0: Tutorials", "Chapter 1: Braitenberg"
-    two, three = "Chapter 2: Obstacles", "Chapter 3: Many lights"
+    zero, one = "0. Tutorials", "1. Braitenberg"
+    two, three = "2. Obstacles", "3. Many lights"
     assert zero not in router.folded and {one, two, three} <= router.folded
     router.fold(three)  # the player shows chapter 3 too
     router.next()  # 0.2: the same chapter, the folds kept
@@ -186,9 +186,9 @@ def test_chapters_shows_the_chapter_being_played_and_folds_the_others_until_aske
 
 def test_a_passkey_shows_the_chapter_of_the_level_it_opens():
     router = a_router()  # D-326
-    assert "Chapter 3: Many lights" in router.folded
+    assert "3. Many lights" in router.folded
     assert router.unlock("gold") == AT["Patience"]  # Greed's word opens Patience, 3.2
-    assert "Chapter 3: Many lights" not in router.folded
+    assert "3. Many lights" not in router.folded
 
 
 def test_chapters_rows_show_each_place_its_state_and_its_fastest_win():
