@@ -66,6 +66,7 @@ from nektoids.editor.devdrive import DT
 from nektoids.editor.editor_keys import Key, confirm_box, key_at, states
 from nektoids.editor.frame import Frame
 from nektoids.editor.history import History
+from nektoids.editor.hold import Hold
 from nektoids.editor.layout import (
     KEY_ALIASES,
     TOOL_KEYS,
@@ -233,6 +234,7 @@ class EditorScene(Frame):
         self.count_frames = 0
         self.notches = Notches()  # the mouse wheel's scrolls, made steps (D-405)
         self.run_frames = 0  # ... frames left before a run of them is one step for undo
+        self.hold = Hold()  # a − or + of Parts held, which steps again and again (D-412)
         self.history: History[tuple[Level, bool]] = History()  # the level, the swimmer off
         self.wheel_folded = False  # the Wheel left the Editor (D-410)
         self.writing: Brief | Knob | Paste | None = None  # a field typed in: Brief's, a box...
@@ -304,6 +306,8 @@ class EditorScene(Frame):
         self.notches.tick()
         if self.run_frames > 0:
             self.run_frames -= 1
+        if self.hold.tick():
+            self._step_again()
         self.shared = self.shared and self.info is FileButton.SHARE  # while its box is open
         self.view = kept_in(self.view, self.arena_area, self.extent())
 
@@ -668,7 +672,8 @@ class EditorScene(Frame):
         elif (start := start_row_at(self.layout, pos)) is not None:
             self._start_from(start)
         elif (step := stepper_at(self.layout, pos)) is not None:  # Parts (D-315)
-            self._step(*step)
+            if self._step(*step):
+                self.hold.press(step)  # held, it steps again, the hold one step for undo
         elif (group := group_at(self.layout, pos)) is not None:  # ... its groups fold (D-069)
             self.folded ^= {group}
             self.layout = self._relayout(self.layout.drawer)
@@ -806,6 +811,7 @@ class EditorScene(Frame):
             self.clicking = True
         elif clicked_ and not laying:
             self.pick = clicked(self.pick, self.press_on, self.adding)
+        self.hold.release()
         self.overviewing = self.zooming = False
         self.key_down = self.carrying = self.box_from = self.box_to = None
         self.laid = []
@@ -921,13 +927,22 @@ class EditorScene(Frame):
 
     # Parts (D-315)
 
-    def _step(self, what: Stepper, steps: int) -> None:
+    def _step(self, what: Stepper, steps: int, record: bool = True) -> bool:
         """A − or a + of Parts: the board a ring smaller or bigger, or a part handed out one
-        fewer or more, the Board with it."""
+        fewer or more, the Board with it; whether the level changed."""
+        before = self.level
         if what.kind is None:
-            self._make(lambda level: zoned(level, steps))
+            self._make(lambda level: zoned(level, steps), record)
         else:
-            self._make(lambda level: stocked(level, what.kind, steps))
+            self._make(lambda level: stocked(level, what.kind, steps), record)
+        return self.level != before
+
+    def _step_again(self) -> None:
+        """A − or a + held (D-412): one step more, its undo the press's; let go of at the end
+        of its row, at a refusal, or once the mouse leaves it."""
+        held = self.hold.target
+        if stepper_at(self.layout, self.pointer) != held or not self._step(*held, record=False):
+            self.hold.release()
 
     # Files (D-310)
 
