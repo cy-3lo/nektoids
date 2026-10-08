@@ -8,7 +8,8 @@ and watch a deterministic 2D simulation play out.
 
 - Design brief: `docs/brief.md` — read sections 1 and 3 before proposing any feature.
 - Decision log: `docs/decisions.md` — append-only; check it before re-opening a question.
-- What is left to do: `docs/todo.md`; ideas for later: `docs/ideas.md` (D-028).
+- What is left to do: `docs/todo.md`; ideas for later: `docs/ideas.md` (D-028), local, not
+  committed (D-414).
 
 ## Who works here
 
@@ -76,7 +77,7 @@ docs/                    brief, decisions, todo, ideas, walkthrough
 
 Path-specific rules live in `.claude/rules/` and load when the matching files are touched.
 
-`README.md`, `docs/brief.md` and `docs/ideas.md` are read by strangers (the repository is public):
+`README.md` and `docs/brief.md` are read by strangers (the repository is public):
 keep them in step with the decisions, write them for a visitor, and put nothing private in them.
 
 ## Commands
