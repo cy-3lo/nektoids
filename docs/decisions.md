@@ -2645,4 +2645,5 @@ colour telling which, as Fast forward says "4x". A click on the disc falls where
 **D-422 — 2026-10-08 — The bar between a drawer's parts is drawn two shades lighter, in the secondary text's grey, and the Board's Diagnostic has one between its active board and its level. Amends D-065, D-407.**
 The physicist's: the bar over the run's objectives, and the one in the Editor's Files between
 Save/Load and the levels to start from, were in the rules' grey, barely seen on the panel. Rules
-that outline a box or a column keep their grey; a bar that divides a drawer is `DIVIDER`.
+that outline a box or a column keep their grey; a bar that divides a drawer is `DIVIDER`. Under
+the Editor's Files' bar, 12 px before the levels to start from, not 6.

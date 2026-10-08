@@ -76,6 +76,7 @@ ROW_PITCH = 46  # from one row to the next [px]
 ROW_INSET = 12  # a row's sides from the drawer's [px]
 TITLE_HEIGHT = 24  # a group's or a section's title in a drawer [px]
 SECTION_GAP = 6  # before a section title or a group [px]
+UNDER_RULE = 12  # under the Editor's Files' bar, before the levels to start from (D-422) [px]
 INFO_AT = 50  # a row's info disc: its centre, so far from the row's right (D-421) [px]
 INFO_HIT = 20  # ... and the square a click on it falls in [px]
 HANDLE = (14, 44)  # the arrow on the drawer's edge that folds it [px]
@@ -713,7 +714,7 @@ class _Rows:
         self.share_note = (BAR_WIDTH + ROW_INSET, top, width, HINT_LINE)
         self.y = top + HINT_LINE + ROW_PITCH - ROW_HEIGHT
         self.files_rule = (BAR_WIDTH + MARGIN, self.y, DRAWER_WIDTH - 2 * MARGIN, 2)
-        self.y += SECTION_GAP
+        self.y += UNDER_RULE
         groups = [("", [Start(None)])]
         groups += [(title, [Start(k) for k in levels]) for title, levels in _spans(chapters)]
         self._folding(groups, folded, height - FOOT_MARGIN, scroll)
