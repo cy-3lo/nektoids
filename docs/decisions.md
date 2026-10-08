@@ -2625,7 +2625,7 @@ in the Editor may have no title; the chapters' levels keep "LEVEL 1.2. Fear" (D-
 shared with no title is read back with none (D-413), and so captioned YOUR LEVEL where it is
 pasted.
 
-**D-420 — 2026-10-08 — A chapter's title reads "1. BRAITENBERG": its number and a dot, in capitals, in a larger font than the drawers' section titles, in a grey between a drawer's title and its rows, in Chapters and in the Editor's Start from. Amends D-326.**
+**D-420 — 2026-10-08 — A chapter's title reads "1. BRAITENBERG": its number and a dot, in capitals, at 20 px, larger than the drawers' section titles, 18, smaller than their title, 22, in a grey between a drawer's title and its rows, in Chapters and in the Editor's Start from. Amends D-326.**
 The physicist's, of four drawn, then toned down: "CHAPTER 1: BRAITENBERG" was in the small
 capitals of a section title, dimmed, and read as small as Parts' group titles; in the rows'
 white it stood out too much. The number before a dot sits over its levels' "1.1", "1.2"; "Ch."

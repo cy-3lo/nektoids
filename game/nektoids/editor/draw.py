@@ -320,7 +320,7 @@ class Fonts:
             label=pygame.font.Font(None, 18),
             big=pygame.font.Font(None, 64),
             icons=Icons(),
-            heading=pygame.font.Font(None, 24),
+            heading=pygame.font.Font(None, 20),  # under the drawer's title, 22 (D-420)
         )
 
 
