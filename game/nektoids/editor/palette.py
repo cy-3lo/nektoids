@@ -214,6 +214,8 @@ MARK = mix(P.muted, P.dim, 0.5)  # a mark, an empty circle and its centre, in ev
 # 0.56), dimmer than the swimmer
 FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks drifting out
 INTAKE = mix(P.muted, P.dim, 0.6)  # the light an eye draws in, specks drifting to its face
+FLAME_FAINT = mix(FLAME, PANEL, 0.3)  # ... on Diagnostic's circuit, behind it (D-415)
+INTAKE_FAINT = mix(INTAKE, PANEL, 0.3)
 PART_OUTLINE = P.dim  # a part's outline on the swimmer; its face keeps EYE_FACE, THRUSTER_BACK
 MOTION = P.accent1.bright  # its velocity and its spin, in the swimmer's own colour
 
