@@ -172,8 +172,8 @@ class LevelButton(Enum):  # the accented switch at the bar's foot, to the other 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
     SAVE = "save"  # Copy a board: its text; the field to paste one is under it
     ERASE = "erase all"  # under the field: every wire and part but the level's off (D-321, D-401)
-    LEVEL = "level"  # the Editor's Files: Copy level, its JSON; a field under it (D-310)
-    SHARE = "share"  # ... Share level: its JSON and its proof, once it is won (D-320)
+    LEVEL = "level"  # the Editor's Files: Copy level, its text; a field under it (D-310, D-413)
+    SHARE = "share"  # ... Share level: its text and its proof, once it is won (D-320)
 
 
 class ViewButton(Enum):

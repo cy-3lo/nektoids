@@ -13,7 +13,6 @@ sentence asked twice, a third goal, a text no level could hold. Pure Python, no 
 
 from __future__ import annotations
 
-import json
 import math
 from collections.abc import Sequence
 from dataclasses import replace
@@ -22,6 +21,7 @@ from itertools import product
 from nektoids.graph.board import Board, Kind
 from nektoids.levels.lattice import HEADING, Range, snap, snapped
 from nektoids.levels.level import Item, ItemKind, Level
+from nektoids.levels.levelword import read_shared
 from nektoids.levels.objectives import (
     THING,
     Count,
@@ -228,7 +228,7 @@ def goal_set(level: Level, index: int, value: float) -> Level:
 
 
 def pasted(level: Level, text: str) -> Level:
-    """The level that `text` holds, its JSON as `to_json` writes it, taken onto `level`
+    """The level that `text` holds, its lines as Copy level writes them, taken onto `level`
     (`taken`), signed as it is: someone's level keeps its author (D-331); Unmade, saying why,
     for a text no level could hold (D-201, D-310)."""
     other = read_level(text)
@@ -236,21 +236,17 @@ def pasted(level: Level, text: str) -> Level:
 
 
 def read_level(text: str) -> Level:
-    """The level that `text` holds, its proof with it if it has one (D-320); Unmade, saying
-    why, for a text no level could hold (D-201, D-310)."""
+    """The level that `text` holds, the lines Copy level writes (`levelword.to_shared`), its
+    proof with it if it has one (D-320, D-413); Unmade, saying why, for a text no level could
+    hold."""
     if not text.strip():
         raise Unmade("paste a level's text into the field first")
+    if text.lstrip().startswith("{"):
+        raise Unmade("that is a level's file: paste the lines Copy level writes")
     try:
-        other = Level.from_dict(json.loads(text))
-    except json.JSONDecodeError:
-        raise Unmade("that is not a level's text: it is not JSON") from None
-    except KeyError as missing:
-        raise Unmade(f"that is not a level's text: it has no {missing.args[0]!r}") from None
-    except (TypeError, AttributeError):
-        raise Unmade("that is not a level's text") from None
-    except ValueError as refused:  # a newer version, a key it does not know, items that overlap
+        return read_shared(text)
+    except ValueError as refused:  # mistyped, a board's text, items that overlap
         raise Unmade(str(refused)) from None
-    return other
 
 
 def blank(level: Level) -> Level:

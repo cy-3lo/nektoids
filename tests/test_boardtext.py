@@ -4,10 +4,11 @@ import random
 
 import pytest
 
-from nektoids.graph import boardtext
+from nektoids.graph import boardtext, spelling
 from nektoids.graph.board import Board, Kind, Refused
-from nektoids.graph.boardtext import ALPHABET, from_text, to_text
+from nektoids.graph.boardtext import from_text, to_text
 from nektoids.graph.hexgrid import NW, SW, E, hex_disc, offset_rect
+from nektoids.graph.spelling import ALPHABET
 from nektoids.levels.arenas import arenas
 
 LEVELS = {level.title: level for level in arenas()}
@@ -86,9 +87,9 @@ def test_a_board_too_long_for_a_block_takes_several():
             kind, cell, facing=rng.randrange(6) if kind.default_facing is not None else None
         )
     text = to_text(board)
-    assert len(text) > boardtext.BLOCK + boardtext.CHECKS
+    assert len(text) > spelling.BLOCK + spelling.CHECKS
     assert parts_and_wires(from_text(text)) == parts_and_wires(board)
-    second = boardtext.BLOCK + boardtext.CHECKS + 3  # a typo in the second block
+    second = spelling.BLOCK + spelling.CHECKS + 3  # a typo in the second block
     typo = text[:second] + ("Z" if text[second] != "Z" else "Y") + text[second + 1 :]
     assert parts_and_wires(from_text(typo)) == parts_and_wires(board)
 
@@ -130,8 +131,8 @@ def test_a_person_may_space_it_dash_it_and_mistake_I_l_O_for_1_and_0():
     text = to_text(fear())
     spaced = "-".join(text[i : i + 4] for i in range(0, len(text), 4))
     assert parts_and_wires(from_text(f"  {spaced} ")) == parts_and_wires(fear())
-    assert boardtext.READ["I"] == boardtext.READ["l"] == boardtext.READ["1"]
-    assert boardtext.READ["O"] == boardtext.READ["0"]
+    assert spelling.READ["I"] == spelling.READ["l"] == spelling.READ["1"]
+    assert spelling.READ["O"] == spelling.READ["0"]
     with pytest.raises(ValueError, match="character '#'"):
         from_text(text + "#")
 
@@ -144,7 +145,7 @@ def test_a_body_that_is_not_a_disc_and_a_part_not_yet_made_have_no_text():
         return options[2] if tag == "zone" else (1 if tag == "parts" else options[-1])
 
     with pytest.raises(ValueError, match="does not have"):
-        boardtext._replay(picks)  # the last kind code, kept for a part to come
+        boardtext.replay(picks)  # the last kind code, kept for a part to come
 
 
 def test_kinds_keep_their_codes_as_new_ones_come_after_them():

@@ -57,10 +57,7 @@ taken, when it starts.
   chapter's last level, 1.8: 27 of 1,728 one-eyed circlers win it, the fastest in 24.6 s
   (D-324).
 - [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
-  their JSON (D-310), shared with their proof (D-320).
-- [ ] **A level's text as one cryptic word** (the physicist, 2026-10-08): Copy level and Paste a
-  level in Files (D-310) write and read a level as JSON today, easy to edit by hand; written as
-  one word, as a board's text is (D-205), it could not be.
+  a few lines, the level one word (D-310, D-413), shared with their proof (D-320).
 
 ## 12. Checks and fixes on `main` (done, D-345)
 

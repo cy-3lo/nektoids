@@ -559,7 +559,7 @@ def _draw_save_load(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) ->
     screen.blit(note, (x + 4, y + (h - note.get_height()) // 2))
     pasting = scene.writing is Paste.LEVEL
     text, caret = (scene.field.text, scene.field.caret) if pasting else ("", None)
-    draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level")
+    draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level", row=True)
     x, y, w, _ = layout.files_rule
     pygame.draw.line(screen, RULE, (x, y), (x + w, y), 2)  # the bar that divides, as the Wheel's
 

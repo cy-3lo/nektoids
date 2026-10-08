@@ -12,10 +12,10 @@ from __future__ import annotations
 from dataclasses import replace
 
 from nektoids.editor.textfield import TextField
-from nektoids.graph import boardtext
+from nektoids.graph import boardtext, spelling
 from nektoids.graph.board import Board
 
-TAKEN = frozenset(boardtext.READ) | frozenset(boardtext.IGNORED)  # what the field accepts
+TAKEN = frozenset(spelling.READ) | frozenset(spelling.IGNORED)  # what the field accepts
 LONGEST = 400  # characters, far more than any board's text
 
 
