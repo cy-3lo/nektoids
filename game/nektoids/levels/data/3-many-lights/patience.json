@@ -28,5 +28,5 @@
   "time_limit": 20,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "SNAIL",
-  "proof": {"board": "ZWyWkpi61C4KdQ5CZBRk", "ticks": 1213, "parts": 6}
+  "proof": {"board": "ZWyWkpi61C4KdQ5CZBRk", "ticks": 1196, "parts": 6}
 }
