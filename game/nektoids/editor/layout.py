@@ -201,20 +201,23 @@ class Drawer(Enum):  # D-051
     GOALS = "goals"  # the Editor's: the time allowed and the goals, as sentences (D-308)
 
 
-class MainView(Enum):  # what the Board's main screen shows, by the drawer open (D-058, D-069)
-    DIAGRAM = "diagram"  # the board on its hex grid, to edit
-    PREVIEW = "preview"  # the Run preview: the board as it runs, where the probe stands
-
-
 class Env(Enum):  # the environments, each a tab over the main screen (D-051)
     BOARD = "board"
     RUN = "run"
     EDITOR = "editor"  # the sandbox's own: its level, made (D-301)
 
 
-DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a square [px]
+NOTE_AT = (BAR_WIDTH + MARGIN, DRAWER_TOP + TITLE_HEIGHT + 4)  # a drawer's note, under its title
+NOTE_WIDTH = DRAWER_WIDTH - 2 * MARGIN  # [px]
+DIAGNOSTIC_BODY: Rect = (  # the board at work in Diagnostic, under its title, as Run's (D-089)
+    BAR_WIDTH,
+    DRAWER_TOP + TITLE_HEIGHT,
+    DRAWER_WIDTH,
+    300,
+)
+DIAGNOSTIC_MAP: Rect = (  # the level, small, at Diagnostic's foot, under its label: a square [px]
     BAR_WIDTH + MARGIN,
-    DRAWER_TOP + TITLE_HEIGHT + 4,
+    SCREEN[1] - MARGIN - (DRAWER_WIDTH - 2 * MARGIN),
     DRAWER_WIDTH - 2 * MARGIN,
     DRAWER_WIDTH - 2 * MARGIN,
 )
@@ -486,7 +489,9 @@ def make_layout(
     elif drawer is Drawer.GOALS:
         rows.made_goals(made, addable)
         rows.scrolled(floor, scroll)  # D-096
-    elif drawer is Drawer.DIAGNOSTIC:
+    elif drawer is Drawer.DIAGNOSTIC:  # the board at work, then the map at the foot (D-407)
+        rows.label("The board at work")
+        rows.y = DIAGNOSTIC_MAP[1] - TITLE_HEIGHT
         rows.label("The level")
     elif drawer is Drawer.FILES and env is Env.EDITOR:
         rows.editor_files(starts, chapters, folded, height, scroll)
@@ -959,12 +964,6 @@ def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelB
 def drawer_key(env: Env, typed: str) -> Drawer | None:
     """The drawer of `env`, in its bar or at its foot, whose key is `typed`, upper case (D-069)."""
     return next((d for d in (*DRAWERS[env], *FOOT) if DRAWER_KEYS[d] == typed), None)
-
-
-def main_view_for(drawer: Drawer | None) -> MainView:
-    """What the Board's main screen shows with `drawer` open (D-069): the Run preview in
-    Diagnostic, else the board."""
-    return MainView.PREVIEW if drawer is Drawer.DIAGNOSTIC else MainView.DIAGRAM
 
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:

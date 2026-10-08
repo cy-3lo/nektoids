@@ -183,7 +183,7 @@ WIRING = P.bright  # the wire being drawn, where it would run: white, apart from
 WIRING_OK = P.accent1.bright  # ... and it may connect there (D-087)
 GHOST_OK = P.bright  # a tutorial's part outlined where it should face
 FOCUS_TINT = 0.5  # a cell a tutorial's step acts on: so much of its pulse over the zone (D-337)
-GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part or wire: a paler grey, no outline
+GHOST_FILL = P.line  # a tutorial's ghost part or wire, a shadow: darker than a wire, no outline
 DOOMED = P.muted  # what a Delete click would remove
 ICON_EDGE = mix(P.muted, P.dim, 0.5)  # the edge of an icon of the Wheel, and of a pile's (D-068)
 

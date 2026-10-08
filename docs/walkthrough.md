@@ -750,22 +750,21 @@ The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc
 Questions: what does `_slid` do on the Board, and in the run? Why is the controls strip not an
 "area" for the tutorial's box (`tutorial.is_area`)?
 
-The Run preview and Diagnostic, called Sense until D-069 (D-058). Open Diagnostic: the main
-screen runs your board where the probe stands; drag the probe on the map, then drag an eye's
-knob.
+Diagnostic on the Board, called Sense until D-069 (D-058, D-407). Open Diagnostic: the main
+screen stays the board, to edit; the drawer runs it at its top where the probe stands, and shows
+the level at its foot; drag the probe on the map, turn it with the wheel, or L and R over the map.
 
 - [`editor/probe.py`](../game/nektoids/editor/probe.py), pure: `Probe`, the board as it would
-  run at a pose, its eyes reading the light once (nothing moves), `hold` for an eye's knob;
-  `level_view`, the level seen whole in Diagnostic's map. Tested in
-  [`test_probe.py`](../tests/test_probe.py).
-- [`editor/scene.py`](../game/nektoids/editor/scene.py): `main` (a `MainView`, which
-  `layout.main_view_for` reads off the drawer, D-069), `open_drawer` (Diagnostic shows the
-  preview), `_editing`, `_probe_now`, `_hold`.
-- [`editor/preview_draw.py`](../game/nektoids/editor/preview_draw.py): the preview and its
-  knobs; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_diagnostic`.
+  run at a pose, its eyes reading the light once (nothing moves), its circuit fitted to the
+  drawer's top as Run's Diagnostic fits its own (D-089); `level_view`, the level seen whole in
+  Diagnostic's map. Tested in [`test_probe.py`](../tests/test_probe.py).
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `_probe_now`, the probe made again
+  when the board changes; `_on_map`, `_probe_to`, `_turns_probe`.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `DIAGNOSTIC_BODY`,
+  `DIAGNOSTIC_MAP`; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_diagnostic`.
 
-Questions: why does the probe read the light once, and not every tick? What would a held eye
-do to a run, and why can it not?
+Questions: why does the probe read the light once, and not every tick? Why is the probe made
+again whenever the board changes, and what of it is kept?
 
 Files (D-059): win a level twice with two boards, then open Files and click the other win.
 
@@ -784,8 +783,7 @@ The run opens paused, and Fear's tutorial opens in it (D-060).
   waits for through, and "play" while it waits for a win.
 - [`main.py`](../game/main.py): `begun`, a card gone this frame, which opens Fear's run.
 - [`editor/layout.py`](../game/nektoids/editor/layout.py): `overview_view`, `shown_frame`,
-  `centred_on`, Navigator's overview; [`probe.py`](../game/nektoids/editor/probe.py): `see`,
-  the preview through the Board's view.
+  `centred_on`, Navigator's overview, since gone from the Board (D-401).
 
 Question: why must the run's controls ask the tutorial's gate, now that Fear starts in the run?
 

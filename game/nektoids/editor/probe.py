@@ -1,4 +1,5 @@
-"""The Run preview's engine (D-051, D-058): the board as it would run where a probe stands.
+"""Diagnostic's engine on the Board (D-051, D-058, D-407): the board as it would run where a probe
+stands, drawn at work in the drawer over the map.
 
 The probe is the swimmer put anywhere on the level and turned any way; nothing moves and
 nothing is scored. Its eyes read the light there, as they would in a run, and the circuit
@@ -16,7 +17,7 @@ import numpy as np
 from nektoids.editor.arena_view import ArenaView, frame, rims
 from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT
-from nektoids.editor.layout import Rect, View
+from nektoids.editor.layout import Rect
 from nektoids.graph.board import Board
 from nektoids.graph.dynamics import initial_state, step
 from nektoids.graph.network import Network
@@ -26,7 +27,7 @@ from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
 from nektoids.sim.contact import confine
 from nektoids.sim.optics import eye_rates
 
-NO_AREA: Rect = (0, 0, 0, 0)  # the circuit is drawn through a given view: nothing to fit
+CIRCUIT_MARGIN = 1.0  # room round the body's circle in Diagnostic, as in Run's [hex sizes]
 MAP_MARGIN = 2.0  # room round what Diagnostic's map shows of the level [u]
 
 
@@ -45,11 +46,11 @@ class Track(NamedTuple):
 
 
 class Probe:
-    def __init__(self, board: Board, level: Level, view: View, pose: Pose | None = None):
-        """view: how the circuit is drawn, the Board's own, so that the board keeps its scale
-        and its place (D-060); pose: where the probe stands, else the level's start."""
+    def __init__(self, board: Board, level: Level, area: Rect, pose: Pose | None = None):
+        """area: where the board at work is drawn, fitted with its body, as Run's Diagnostic
+        draws it (D-089, D-407); pose: where the probe stands, else the level's start."""
         self.board, self.level = board, level
-        self.circuit = Circuit(board, NO_AREA, 0.0, view=view)
+        self.circuit = Circuit(board, area, CIRCUIT_MARGIN, body=True)
         x, y, heading = level.start
         start = pose or Pose(x, y, math.radians(heading))
         self.pos = np.array([[start.x, start.y]], dtype=np.float64)  # (1, 2) [u]
@@ -99,10 +100,6 @@ class Probe:
         """Turn the probe by `angle` [rad], counter-clockwise."""
         self.heading = self.heading + angle
         self._look()
-
-    def see(self, view: View) -> None:
-        """Draw the circuit through another view, zoomed or panned; nothing else changes."""
-        self.circuit.view = view
 
 
 def level_view(level: Level, area: Rect) -> ArenaView:
