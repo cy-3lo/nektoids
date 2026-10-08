@@ -23,7 +23,7 @@ is (q, r) on the board: (0, 0) its centre, (1, 0) ahead, (-1, 0) behind.
 | 2 | Run, Diagnostic | **Objectives** are what the level asks. Here, get into the ring before the 10 s are out. | Run: Objectives | Next, or any key or click |
 | 3 | Run, Diagnostic | The window has two tabs: Run plays the level, and on the **Board** you build its control board.<br>Click the **Board** tab or button, or press Tab. | Board tab; Board button | the Board opens |
 | 4 | Board, Parts | The nav bar opens the drawers: **Tools**, **Parts**, **Files**, **Diagnostic**, **Navigator**. At its foot: **Hints**, **Settings**, **Chapters**, and **Run**. | the nav bar | Next, or any key or click |
-| 5 | Board, Parts | A **Source** sends beads all the time; a thruster pushes as hard as beads come in.<br>Click the **Source**, then the **Thruster** to wire them. | the Source, cell (0, 0); the Thruster, cell (-1, 0) | a wire from the Source, cell (0, 0) to the Thruster, cell (-1, 0) |
+| 5 | Board, Parts | A **Source** sends beads all the time. A thruster pushes as hard as beads come in.<br>Click the **Source**, then the **Thruster** to wire them. | the Source, cell (0, 0); the Thruster, cell (-1, 0) | a wire from the Source, cell (0, 0) to the Thruster, cell (-1, 0) |
 | 6 | Board, Parts | Click the **Run** tab or button, or press **Tab**. | Run tab; Run button | the Run opens |
 | 7 | Run, Diagnostic | Press **Play**, or Space to play the simulation. | Run: Play | the run is won |
 | 8 | Run, Diagnostic | You won! You reached the objectives.<br>If you are stuck, try clicking **Hints**. | Hints icon | any key or click closes it |

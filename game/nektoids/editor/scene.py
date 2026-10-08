@@ -1421,15 +1421,15 @@ class BoardScene(Frame):
         """What the status line says the player can do now."""
         held, picked = self.held, parts(self.pick, self.board)
         if self._on_map(self.mouse):  # Diagnostic's map (D-407)
-            return "Drag the swimmer anywhere; the wheel, or L and R, turn it."
+            return "Drag the swimmer anywhere. The wheel, or L and R, turn it."
         if self._dropping():
-            return "Let go and what you drag goes, with its wires; back on the body, it stays."
+            return "Let go and what you drag goes, with its wires. Back on the body, it stays."
         if self.right is not None:
-            return "Right-click the next part to wire it, one before to undo; a cell stops."
+            return "Right-click the next part to wire it, one before to undo. A cell stops."
         if held is Button.WIRE:
             if self.source is None:
                 return "Click the part a wire starts from. S: back to Select."
-            return "Click the next part to wire it, one before to undo; a cell stops."
+            return "Click the next part to wire it, one before to undo. A cell stops."
         if held is Button.DELETE:
             return "Click a part or a wire to delete it. S: back to Select."
         if held is Button.LOCK:
@@ -1442,7 +1442,7 @@ class BoardScene(Frame):
             return "A part's button, or its number, puts one in each, in the order picked."
         if picked:
             return "The lit buttons act on what is picked. Right-click a cell: none."
-        return "Click or drag to pick cells or parts; Shift adds. Or press a button."
+        return "Click or drag to pick cells or parts. Shift adds. Or press a button."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
         self.message = reason

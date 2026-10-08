@@ -196,7 +196,7 @@ TIP = {
     ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
-    FileButton.ERASE: "Takes every wire and every part off the board, but the level's own; Undo"
+    FileButton.ERASE: "Takes every wire and every part off the board, but the level's own. Undo"
     " brings them back.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
     " into Paste a board, under this row, to bring it back, on this level or another.",
@@ -204,8 +204,8 @@ TIP = {
     " and the level as one word: to keep, or to paste into Paste a level, under this row, to"
     " make it again.",
     FileButton.SHARE: "Copies the level as text with its proof, the board that won it, to paste"
-    " into a comment or an email. Offered once the level, as it stands, has been won in the Run;"
-    " pasted, the proof is run again, and the level is cleared if it wins, its score the one to"
+    " into a comment or an email. Offered once the level, as it stands, has been won in the Run."
+    " Pasted, the proof is run again, and the level is cleared if it wins, its score the one to"
     " beat.",
     LevelButton.RUN: "Run",
     LevelButton.BOARD: "Back to the board",
@@ -875,7 +875,7 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
-    note = "You can drag the swimmer anywhere; the wheel, or L and R, turn it."
+    note = "You can drag the swimmer anywhere. The wheel, or L and R, turn it."
     draw_note(screen, fonts, note, (area.left, area.bottom + 8), area.width)
 
 

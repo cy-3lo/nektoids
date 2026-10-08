@@ -2647,3 +2647,9 @@ The physicist's: the bar over the run's objectives, and the one in the Editor's 
 Save/Load and the levels to start from, were in the rules' grey, barely seen on the panel. Rules
 that outline a box or a column keep their grey; a bar that divides a drawer is `DIVIDER`. Under
 the Editor's Files' bar, 12 px before the levels to start from, not 6.
+
+**D-423 — 2026-10-08 — No semicolon in what the game shows: a period or a colon in its place, in info boxes, status lines, notes, refusals and tutorial cards.**
+The physicist's. Fourteen went: "…but the level's own. Undo brings them back.", "Click or drag
+to pick cells or parts. Shift adds.", "this level hands out one eye. The board has two", the
+cards of 0.1 Wiring and 0.6 Diagnostic, and the rest of their kind. Comments and the docs keep
+theirs.

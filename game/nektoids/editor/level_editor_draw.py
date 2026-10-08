@@ -146,7 +146,7 @@ WORD_NAME = {  # Goals' buttons (D-308), the targets as Objects names them
     Target.MARK: "Marks",
 }
 
-KEPT = "Its plane, goals and time replace the level's; the board stays as it is."  # D-310
+KEPT = "Its plane, goals and time replace the level's. The board stays as it is."  # D-310
 UNJUDGED = {  # the status line, while the level is decided where its swimmer starts (D-349)
     Outcome.WON: "Won where the swimmer starts: move the start or change a goal.",
     Outcome.LOST: "Lost where the swimmer starts: move the start or change a goal.",

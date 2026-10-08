@@ -339,11 +339,11 @@ class EditorScene(Frame):
         if self.layout.drawer is Drawer.GOALS:
             return "Click a word to change a goal.  Drag a slider to set it.  Space: run."
         if self.confirming:
-            return "Erase every object?  Erase all erases them; Cancel, Enter or Esc keeps them."
+            return "Erase every object?  Erase all erases them. Cancel, Enter or Esc keeps them."
         if self.held is Piece.START:
             return "Click the plane: the swimmer starts there."
         if isinstance(self.held, Piece):
-            return f"Click the plane: {ONE[self.held]} at each click; drag, a row.  S: Select."
+            return f"Click the plane: {ONE[self.held]} at each click. Drag: a row.  S: Select."
         if self.start_off:
             return "The swimmer is off the plane: 0, or its key, then a click places it."
         if self.held is Key.HAND:

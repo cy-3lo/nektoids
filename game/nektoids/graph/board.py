@@ -662,8 +662,8 @@ def _misfit(state: BoardState, zone: set[Cell], total) -> Refused | None:
         if handed is not None and used > handed:
             plural = "" if handed == 1 else "s"
             return Refused(
-                f"this level hands out {_count(handed)} {kind.value}{plural};"
-                f" the board has {_count(used)}"
+                f"this level hands out {_count(handed)} {kind.value}{plural}."
+                f" The board has {_count(used)}"
             )
     return None
 
