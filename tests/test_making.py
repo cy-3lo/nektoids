@@ -24,6 +24,7 @@ from nektoids.levels.making import (
     authored,
     blank,
     boarded,
+    erased,
     goal_added,
     goal_removed,
     goal_set,
@@ -341,3 +342,10 @@ def test_a_paste_adds_copies_moved_onto_the_lattice_last_in_order():
         (ItemKind.OBSTACLE, (21.0, 23.0), 1.0),
         (ItemKind.OBSTACLE, (24.0, 17.0), 1.0),
     ]
+
+
+def test_erase_all_takes_every_item_and_every_goal_the_swimmer_and_the_time_stay():
+    level = next(lv for lv in arenas() if lv.objectives and lv.items)  # D-410
+    gone = erased(level)
+    assert gone.items == () and gone.objectives == ()
+    assert gone.start == level.start and gone.time_limit == level.time_limit

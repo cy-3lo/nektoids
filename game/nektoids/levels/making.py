@@ -113,6 +113,12 @@ def group_removed(level: Level, indices: Sequence[int]) -> Level:
     )
 
 
+def erased(level: Level) -> Level:
+    """Erase all: every item gone, and every goal with them, which would aim at nothing; the
+    swimmer's start and the time allowed stay (D-410)."""
+    return _checked(replace(level, items=(), objectives=()))
+
+
 def added(level: Level, items: Sequence[Item], offset: tuple[float, float]) -> Level:
     """Copies of `items` moved by `offset` [u], onto the lattice, last in order: a paste (D-410)."""
     dx, dy = offset

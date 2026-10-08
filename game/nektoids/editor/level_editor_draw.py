@@ -168,10 +168,13 @@ def draw_level_editor(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) 
         draw_rays(screen, view, area, scene.arena, scene.rays, 0.0, scene.pos, scene.radius)
     draw_marks(screen, scene.view, scene.level.marks)
     draw_items(screen, fonts, scene.view, scene.arena)
-    centre, radius = scene.view.to_screen(*scene.pos[0]), float(scene.radius[0]) * scene.view.scale
-    draw_symbol(screen, DARK, centre, radius + 1, scene.heading, SYMBOL_WIDTH + 2)
-    draw_symbol(screen, BODY, centre, radius, scene.heading, SYMBOL_WIDTH)
+    if not scene.start_off:  # cut off the plane, until its key places it again (D-410)
+        centre = scene.view.to_screen(*scene.pos[0])
+        radius = float(scene.radius[0]) * scene.view.scale
+        draw_symbol(screen, DARK, centre, radius + 1, scene.heading, SYMBOL_WIDTH + 2)
+        draw_symbol(screen, BODY, centre, radius, scene.heading, SYMBOL_WIDTH)
     _draw_pick(screen, scene)
+    _draw_box(screen, scene)
     _draw_in_hand(screen, scene, fonts)
     _draw_count(screen, scene, fonts)
     screen.set_clip(None)
@@ -201,6 +204,8 @@ KEY_ICON = {  # the Editor's keys (D-410); an object's is its own (PIECE_ICON)
     Key.ERASE: "eraser",
 }
 KEY_ICON_SIZE = 0.6  # an icon on its key, over the key's side
+SWIMMER_LINE = 0.2  # the swimmer icon's lines, over its radius
+BOX_CROSS = 7  # the half-length of a rectangle's + at its corners [px]
 COUNT_BELOW = 14  # a value's tag under its object's rim [px]
 
 
@@ -221,8 +226,11 @@ def _draw_keys(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         square_bevel(screen, rect, light, dark)
         x, y, w, h = rect
         at = (x + w // 2 + (look is State.CHOSEN), y + h // 2 + (look is State.CHOSEN))
-        icon = PIECE_ICON[key] if isinstance(key, Piece) else KEY_ICON[key]
         ink = GREYED if look is State.GREYED else TEXT
+        if key is Piece.START:  # the swimmer's own shape (D-410)
+            draw_swimmer_icon(screen, at, KEY_ICON_SIZE * w / 2, ink)
+            continue
+        icon = PIECE_ICON[key] if isinstance(key, Piece) else KEY_ICON[key]
         fonts.icons.draw(screen, icon, at, round(KEY_ICON_SIZE * w), ink)
 
 
@@ -238,6 +246,24 @@ def _draw_key_tip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
         draw_tip(screen, fonts, text, midright=(x - 14, y + h // 2))
     else:
         draw_tip(screen, fonts, text, midleft=(x + w + 14, y + h // 2))
+
+
+def draw_swimmer_icon(screen: pygame.Surface, centre, radius: float, colour) -> None:
+    """The swimmer's symbol as an icon, pointing right: a circle round a wedge (D-410)."""
+    draw_symbol(screen, colour, centre, radius, 0.0, max(1, round(SWIMMER_LINE * radius)))
+
+
+def _draw_box(screen: pygame.Surface, scene: EditorScene) -> None:
+    """A rectangle dragged from the open plane: its outline, a + at the corner it started from
+    and at the mouse (D-410)."""
+    if scene.box_from is None or scene.box_to is None:
+        return
+    (x0, y0), (x1, y1) = scene.box_from, scene.box_to
+    box = pygame.Rect(min(x0, x1), min(y0, y1), abs(x1 - x0), abs(y1 - y0))
+    pygame.draw.rect(screen, LIT, box, 1)
+    for cx, cy in (scene.box_from, scene.box_to):
+        pygame.draw.line(screen, LIT, (cx - BOX_CROSS, cy), (cx + BOX_CROSS, cy), 2)
+        pygame.draw.line(screen, LIT, (cx, cy - BOX_CROSS), (cx, cy + BOX_CROSS), 2)
 
 
 def _draw_pick(screen: pygame.Surface, scene: EditorScene) -> None:
@@ -361,8 +387,14 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     for piece, rect in layout.piece_rows:
         count = ("count", str(1 if piece is Piece.START else counts[PLACED[piece]]))
         active = piece is scene.held or (piece is Piece.START and Piece.START in scene.pick)
-        icon = PIECE_ICON[piece]
-        draw_row(screen, scene, fonts, rect, piece, NAMES[piece], count, active, icon=icon)
+        if piece is Piece.START:  # the swimmer's own shape, as on its key (D-410)
+            count = ("count", "0" if scene.start_off else "1")
+            draw_row(screen, scene, fonts, rect, piece, NAMES[piece], count, active)
+            x, y, _, h = rect
+            draw_swimmer_icon(screen, (x + 20, y + h // 2), 8, TEXT)
+        else:
+            icon = PIECE_ICON[piece]
+            draw_row(screen, scene, fonts, rect, piece, NAMES[piece], count, active, icon=icon)
     for field, rect in layout.brief_fields:
         writing = scene.writing is field
         author = (level.author or "").removeprefix("@")  # its "@" outside the field (D-341)

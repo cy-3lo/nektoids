@@ -4,9 +4,8 @@ from nektoids.editor.layout import Piece
 from nektoids.editor.plane_pick import (
     NOTHING,
     after_removal,
-    begun,
+    boxed,
     clicked,
-    crossed,
     items,
 )
 
@@ -21,14 +20,12 @@ def test_a_click_picks_one_object_the_add_key_adds_or_drops_one():
     assert items(both) == [2, 4]
 
 
-def test_a_drag_picks_what_it_crosses_and_going_back_cuts_its_path_back():
-    sweep = begun(NOTHING)
-    for target in (None, 0, None, 1, 2, 3):
-        sweep = crossed(sweep, target)
-    assert sweep.pick == (0, 1, 2, 3)
-    assert crossed(sweep, 1).pick == (0, 1)  # two back at once
-    kept = begun((5,), add=True)
-    assert crossed(crossed(kept, 0), 5).pick == (5, 0)  # picked before: kept, not doubled
+def test_a_rectangle_picks_the_objects_whose_centres_lie_inside_it():
+    centres = {0: (10.0, 10.0), 1: (50.0, 60.0), 2: (90.0, 20.0), Piece.START: (40.0, 30.0)}
+    assert boxed(NOTHING, centres, (0, 0), (60, 61)) == (0, 1, Piece.START)
+    assert boxed(NOTHING, centres, (60, 61), (0, 0)) == (0, 1, Piece.START)  # either way
+    assert boxed((2,), centres, (45, 55), (55, 65)) == (1,)  # a new pick
+    assert boxed((2,), centres, (45, 55), (55, 65), add=True) == (2, 1)  # Shift: added
 
 
 def test_the_pick_follows_the_items_when_some_go():

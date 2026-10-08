@@ -5,7 +5,8 @@ Paste, Cut and Erase all; at the right, the objects: Light, Obstacle, Mark and t
 
 Each key looks as the Board's buttons do (D-401): chosen, the one in hand; lit, it acts on what
 is picked at once; greyed, it cannot act now: Bigger, Smaller, Cut and Copy with no item picked,
-Paste with nothing copied, Undo or Redo with nothing to go back to, Erase all on an empty plane.
+Paste with nothing copied, Undo or Redo with nothing to go back to, Erase all on an empty plane,
+the Swimmer while it is on the plane: a level has one.
 Pure numbers, no pygame.
 """
 
@@ -42,11 +43,11 @@ LEFT = (
     (Key.COPY, Key.PASTE),
     (Key.CUT, Key.ERASE),
 )
-RIGHT = (Piece.LIGHT, Piece.OBSTACLE, Piece.MARK, Piece.START)
-SIZE = 46  # a key's side [px]
-GAP = 5  # between two keys of a pair [px]
-ROW_GAP = 10  # between two rows [px]
-EDGE = 8  # from the plane's edge [px]
+RIGHT = (Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK)  # the swimmer first, key 0
+SIZE = 36  # a key's side: its icon as big as the bar's, 22 px [px]
+GAP = 4  # between two keys of a pair [px]
+ROW_GAP = 8  # between two rows [px]
+EDGE = 20  # from the plane's edge, clear of the drawer's handle [px]
 
 KEYS = {  # what the tooltips name; an object's is its number
     Key.SELECT: "S",
@@ -60,7 +61,7 @@ KEYS = {  # what the tooltips name; an object's is its number
     Key.COPY: "Ctrl+C",
     Key.PASTE: "Ctrl+V",
     Key.CUT: "Del",
-    **{p: str(k + 1) for k, p in enumerate(RIGHT)},
+    **{p: str(k) for k, p in enumerate(RIGHT)},  # 0 the swimmer, 1 to 3 the items
 }
 NAMES = {
     **{k: k.value.capitalize() for k in Key},
@@ -106,6 +107,7 @@ def states(
     can_undo: bool,
     can_redo: bool,
     copied: bool,
+    start_off: bool = False,
 ) -> dict[Key | Piece, State]:
     """How each key looks, as the module's docstring says."""
     picked = bool(items(pick))
@@ -113,6 +115,9 @@ def states(
     for key in (*[k for pair in LEFT for k in pair], *RIGHT):
         if key == held:
             looks[key] = State.CHOSEN
+        elif key is Key.CUT:  # the items, and the swimmer, picked (D-410)
+            swimmer = Piece.START in pick and not start_off
+            looks[key] = State.LIT if picked or swimmer else State.GREYED
         elif key in ACTS_ON_ITEMS:
             looks[key] = State.LIT if picked else State.GREYED
         elif key is Key.PASTE:
@@ -122,7 +127,9 @@ def states(
         elif key is Key.REDO:
             looks[key] = State.PLAIN if can_redo else State.GREYED
         elif key is Key.ERASE:
-            looks[key] = State.PLAIN if level.items else State.GREYED
+            looks[key] = State.PLAIN if level.items or level.objectives else State.GREYED
+        elif key is Piece.START:  # one swimmer: its key, once it is off the plane (D-410)
+            looks[key] = State.PLAIN if start_off else State.GREYED
         else:
             looks[key] = State.PLAIN
     return looks

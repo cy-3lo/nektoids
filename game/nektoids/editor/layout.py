@@ -774,7 +774,7 @@ class _Rows:
         """The Editor's objects under their title, scrolled down to `floor`, the drawer's foot:
         the Wheel and the undo rows left it for the keys round the plane (D-410)."""
         self._title("Plane", self.sections)
-        for piece in Piece:
+        for piece in (Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK):  # as the keys (D-410)
             self._row(piece)
         self.y -= ROW_PITCH - ROW_HEIGHT  # what lies under the last row
         self.scrolled(floor, scroll)

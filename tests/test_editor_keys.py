@@ -45,10 +45,14 @@ def test_a_key_lights_on_what_it_acts_on_and_greys_when_it_cannot():
     assert picked[Piece.MARK] is State.CHOSEN and picked[Key.PASTE] is State.PLAIN
     start = states(level, Key.SELECT, (Piece.START,), False, False, False)
     assert start[Key.BIGGER] is State.GREYED  # the start has no size
+    assert start[Key.CUT] is State.LIT and start[Piece.START] is State.GREYED  # one swimmer
+    off = states(level, Key.SELECT, (), False, False, False, start_off=True)
+    assert off[Piece.START] is State.PLAIN  # cut: its key places it again (D-410)
     empty = states(replace(level, items=()), Key.SELECT, (), False, False, False)
     assert empty[Key.ERASE] is State.GREYED
 
 
 def test_a_tooltip_names_the_key_and_says_its_key():
     assert tip(Key.ERASE) == "Erase all" and tip(Key.CUT) == "Cut (Del)"
-    assert tip(Piece.START) == "Swimmer (4)" and tip(Key.HAND, key_hints=False) == "Hand"
+    assert tip(Piece.START) == "Swimmer (0)" and tip(Piece.LIGHT) == "Light (1)"
+    assert tip(Key.HAND, key_hints=False) == "Hand"
