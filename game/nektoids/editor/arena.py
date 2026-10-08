@@ -276,7 +276,7 @@ class ArenaScene(Frame):
     def _restart(self) -> None:
         x, y, heading = self.level.start
         self.arena = self.level.arena  # its obstacles at rest (D-424)
-        self.pos = np.array([[x, y]])  # (N, 2) [u]
+        self.pos = np.array([self.level.start_at])  # (N, 2) [u], nudged (D-425)
         self.heading = np.array([math.radians(heading)])  # (N,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (N,) [u], every body alike (D-045)
         self.state = initial_state(self.net, len(self.pos))  # (N, n), from rest

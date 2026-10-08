@@ -51,7 +51,7 @@ class Probe:
         draws it (D-089, D-407); pose: where the probe stands, else the level's start."""
         self.board, self.level = board, level
         self.circuit = Circuit(board, area, CIRCUIT_MARGIN, body=True)
-        x, y, heading = level.start
+        (x, y), heading = level.start_at, level.start[2]  # nudged as the run's (D-425)
         start = pose or Pose(x, y, math.radians(heading))
         self.pos = np.array([[start.x, start.y]], dtype=np.float64)  # (1, 2) [u]
         self.heading = np.array([start.heading])  # (1,) [rad]

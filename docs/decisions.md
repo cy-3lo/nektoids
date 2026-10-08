@@ -2668,3 +2668,13 @@ so a swimmer that runs into one has reached it, and "Don't touch the light" is l
 Every shipped level's proof still wins; the tests' model boards win too, Greed's 0.7 s sooner,
 round a light it went through, Patience's 0.1 and 0.3 s sooner, Shadows' 7 ticks sooner. No
 level is changed until the physicist has seen it on screen. First 0.15 u, doubled after a look.
+
+**D-425 — 2026-10-08 — A run puts the swimmer at its start nudged by (1e-4, -1e-4) u, so that no push is exactly on an obstacle's centre: a head-on collision slides off in the end, as a real one does. The level's start stays on whole units.**
+The physicist's. On whole units, a swimmer driven straight at an obstacle on its line pushed on it
+for ever, a balance only an exact symmetry holds. Nudged, the balance is unstable and the swimmer
+goes round: driven at 3 u/s into an obstacle 8 u ahead, it presses it 0.15 u back from 3 s, its
+side drift growing from 1e-4 u to 0.6 u by 10 s, and is past it by 15 s, the obstacle back at its
+rest. The nudge is the same in every run, so runs stay deterministic (invariant 1): the Run, the
+proof's replay, Diagnostic's probe and the check of goals decided at the start all use
+`Level.start_at`; the Editor shows and moves the whole start. Every shipped proof still wins;
+Aggression's model board wins one tick later.

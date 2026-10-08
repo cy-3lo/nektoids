@@ -64,8 +64,8 @@ class Replay:
     def __init__(self, level: Level, board: Board, dt: float) -> None:
         self.level, self.dt = level, dt
         self.net = Network.from_board(board)
-        x, y, heading = level.start
-        self.pos = np.array([[x, y]])  # (1, 2) [u]
+        _, _, heading = level.start
+        self.pos = np.array([level.start_at])  # (1, 2) [u], nudged as the run's (D-425)
         self.heading = np.array([math.radians(heading)])  # (1,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (1,) [u]
         self.state = initial_state(self.net, 1)
