@@ -2654,7 +2654,7 @@ to pick cells or parts. Shift adds.", "this level hands out one eye. The board h
 cards of 0.1 Wiring and 0.6 Diagnostic, and the rest of their kind. Comments and the docs keep
 theirs.
 
-**D-424 — 2026-10-08 — Lights are solid, discs of 1 u that a swimmer slides round as it does an obstacle; each obstacle is a sphere in the same fluid as the swimmers, held at its rest by a spring, and gives a little when pushed: SPRING_GIVE, 0.15 u, under a head-on push of two thrusters at full rate. Amends D-019, D-022; the stage's scope takes them in.**
+**D-424 — 2026-10-08 — Lights are solid, discs of 1 u that a swimmer slides round as it does an obstacle; each obstacle is a sphere in the same fluid as the swimmers, held at its rest by a spring, and gives a little when pushed: SPRING_GIVE, 0.30 u, under a head-on push of two thrusters at full rate. Amends D-019, D-022; the stage's scope takes them in.**
 The physicist's, from the ideas logged with D-406. Lights stay fixed: a light that moved would
 change what the eyes read. An obstacle and a swimmer touching share an overlap as their Stokes
 drags say, ζ = 6πμR each, neither having inertia; the spring pulls the obstacle back,
@@ -2666,5 +2666,5 @@ what the run records and puts back, what the eyes' shadows and the goals' "reach
 read, and what is drawn. A light counts as reached at 1.05 times the touching distance (D-043),
 so a swimmer that runs into one has reached it, and "Don't touch the light" is lost as before.
 Every shipped level's proof still wins; the tests' model boards win too, Greed's 0.7 s sooner,
-round a light it went through, Patience's 0.1 and 0.3 s sooner, Shadows' 4 ticks sooner. No
-level is changed until the physicist has seen it on screen.
+round a light it went through, Patience's 0.1 and 0.3 s sooner, Shadows' 7 ticks sooner. No
+level is changed until the physicist has seen it on screen. First 0.15 u, doubled after a look.

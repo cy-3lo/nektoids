@@ -416,7 +416,7 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
-    ("Shadows", "DRIVEN"): (Outcome.WON, 442, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
+    ("Shadows", "DRIVEN"): (Outcome.WON, 439, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
     ("Fear", "fear(NW, SW)"): (Outcome.WON, 382, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
@@ -430,8 +430,8 @@ BEFORE_SENTENCES = {
     ("Greed", "greedy()"): (Outcome.WON, 1118, ((2, 2, 1.0),)),  # D-313; round a light, D-424
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1200, ((3, 3, 1.0),)),  # D-317, D-424
-    ("Patience", "patient(True)"): (Outcome.WON, 1155, ((3, 3, 1.0),)),  # D-424
+    ("Patience", "patient()"): (Outcome.WON, 1197, ((3, 3, 1.0),)),  # D-317, D-424
+    ("Patience", "patient(True)"): (Outcome.WON, 1152, ((3, 3, 1.0),)),  # D-424
 }
 
 

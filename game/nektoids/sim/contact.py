@@ -27,7 +27,7 @@ from nektoids.sim.motion import THRUST, VISCOSITY
 from nektoids.sim.optics import TINY
 
 CONTACT_PASSES = 3  # every light and obstacle in turn, this many times a step
-SPRING_GIVE = 0.15  # [u] how far a head-on push of two thrusters at full rate moves an obstacle
+SPRING_GIVE = 0.30  # [u] how far a head-on push of two thrusters at full rate moves an obstacle
 SPRING = 2.0 * THRUST / SPRING_GIVE  # [f/u] k, each obstacle's spring, from SPRING_GIVE
 
 
