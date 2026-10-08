@@ -73,6 +73,7 @@ from nektoids.editor.layout import (
     CAPTION_HEIGHT,
     DIAGNOSTIC_BODY,
     DIAGNOSTIC_MAP,
+    DIAGNOSTIC_RULE,
     DRAWER_KEYS,
     HINT_LINE,
     INFO_AT,
@@ -118,6 +119,7 @@ from nektoids.editor.palette import (
     COMPONENT,
     DARK,
     DIM_TEXT,
+    DIVIDER,
     DOOMED,
     EYE_FACE,
     FLAME,
@@ -858,6 +860,8 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
         draw_working(screen, circuit, probe.y, probe.ticks // TICKS_PER_FRAME, fonts)
         screen.set_clip(None)
+    left, width = DIAGNOSTIC_MAP[0], DIAGNOSTIC_MAP[2]  # the active board's, then the level's
+    pygame.draw.line(screen, DIVIDER, (left, DIAGNOSTIC_RULE), (left + width, DIAGNOSTIC_RULE))
     area = pygame.Rect(DIAGNOSTIC_MAP)
     if level is not None and probe is not None:
         view = level_view(level, tuple(area))

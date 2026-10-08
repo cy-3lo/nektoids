@@ -216,6 +216,7 @@ DIAGNOSTIC_MAP: Rect = (  # the level, small, at Diagnostic's foot, its note und
     DRAWER_WIDTH - 2 * MARGIN,
     DRAWER_WIDTH - 2 * MARGIN,
 )
+DIAGNOSTIC_RULE = DIAGNOSTIC_MAP[1] - TITLE_HEIGHT - 4  # the bar over "The level" (D-422) [px]
 DIAGNOSTIC_BODY: Rect = (  # the active board in Diagnostic, under its title, as Run's (D-089)
     BAR_WIDTH,
     DRAWER_TOP + TITLE_HEIGHT,

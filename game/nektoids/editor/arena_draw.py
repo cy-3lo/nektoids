@@ -98,6 +98,7 @@ from nektoids.editor.palette import (
     BUTTON,
     DARK,
     DIM_TEXT,
+    DIVIDER,
     EYE_SHADES,
     FULL,
     LIGHT,
@@ -413,7 +414,7 @@ def _draw_foot(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     """What stays at the foot of the run's drawers: the objectives, under every one (D-065)."""
     if scene.layout.goal_area is not None:
         x, y, w, _ = scene.layout.goal_area
-        pygame.draw.line(screen, RULE, (x + MARGIN, y), (x + w - MARGIN, y))
+        pygame.draw.line(screen, DIVIDER, (x + MARGIN, y), (x + w - MARGIN, y))
         _draw_goals(screen, scene, fonts)
 
 

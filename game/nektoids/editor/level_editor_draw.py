@@ -93,6 +93,7 @@ from nektoids.editor.palette import (
     BUTTON,
     DARK,
     DIM_TEXT,
+    DIVIDER,
     GREYED,
     ICON_EDGE,
     KEY_DARK,
@@ -578,7 +579,7 @@ def _draw_save_load(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) ->
         screen, fonts, layout.level_field, text, caret, "paste", hint, row=True, anchor=anchor
     )
     x, y, w, _ = layout.files_rule
-    pygame.draw.line(screen, RULE, (x, y), (x + w, y), 2)  # the bar that divides, as the Wheel's
+    pygame.draw.line(screen, DIVIDER, (x, y), (x + w, y), 2)  # the bar that divides (D-422)
 
 
 def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:

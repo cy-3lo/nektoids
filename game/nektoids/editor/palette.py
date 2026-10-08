@@ -148,6 +148,7 @@ KEY_GREYED = mix(P.deep, P.dim, 0.4)  # a greyed button's light sides: the bevel
 KEY_SHADOW = (0, 0, 0, 150)  # under a button, 2 px right and 3 px down
 GREYED_FACE = P.accent1.dark  # an eye's face, a thruster's back, on a greyed button
 RULE = P.line  # separators between columns and between sets of buttons
+DIVIDER = P.dim  # the bar between a drawer's parts, two shades over a rule (D-422)
 SCROLL_THUMB = P.dim  # a scroll bar's thumb, over its track in RULE (D-069)
 SWATCH_OFF = P.raised  # colour picker, not active yet
 TEXT = P.text
