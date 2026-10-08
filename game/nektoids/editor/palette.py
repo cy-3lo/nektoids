@@ -152,9 +152,7 @@ SCROLL_THUMB = P.dim  # a scroll bar's thumb, over its track in RULE (D-069)
 SWATCH_OFF = P.raised  # colour picker, not active yet
 TEXT = P.text
 DIM_TEXT = P.dim
-CHAPTER = mix(
-    P.dim, P.text, 0.5
-)  # a chapter's title: between a drawer's title and its rows (D-420)
+HEADING = mix(P.dim, P.text, 0.5)  # a drawer's headings, between its title and rows (D-420)
 GREYED = P.muted
 TO_BEAT = P.muted  # the score of a level's proof, a cross in Score (D-330)
 PLOT_FRAME = mix(P.line, P.dim, 0.75)  # Score's box and ticks, a shade over a rule (D-340)

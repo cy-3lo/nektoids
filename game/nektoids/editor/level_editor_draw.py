@@ -47,6 +47,7 @@ from nektoids.editor.draw import (
     draw_bar,
     draw_drawer,
     draw_field,
+    draw_heading,
     draw_info,
     draw_part,
     draw_row,
@@ -558,10 +559,9 @@ def _draw_save_load(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) ->
     Share level, greyed until it is won, and the line under it; the rule over the levels to
     start from, which scroll under it (D-322)."""
     layout = scene.layout
-    for title, (x, y, _, h) in layout.section_titles:
+    for title, rect in layout.section_titles:
         if title == "Save/Load":
-            shown = cached_text(fonts.label, title.upper(), DIM_TEXT)
-            screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
+            draw_heading(screen, fonts, title, rect)
     for button, rect in layout.file_buttons:
         share = button is FileButton.SHARE  # greyed until the level is won (D-320)
         icon, shut = ("share", not scene.shareable) if share else ("copy", False)

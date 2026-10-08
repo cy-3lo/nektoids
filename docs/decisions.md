@@ -2625,8 +2625,12 @@ in the Editor may have no title; the chapters' levels keep "LEVEL 1.2. Fear" (D-
 shared with no title is read back with none (D-413), and so captioned YOUR LEVEL where it is
 pasted.
 
-**D-420 — 2026-10-08 — A chapter's title reads "1. BRAITENBERG": its number and a dot, in capitals, at 20 px, larger than the drawers' section titles, 18, smaller than their title, 22, in a grey between a drawer's title and its rows, in Chapters and in the Editor's Start from. Amends D-326.**
-The physicist's, of four drawn, then toned down: "CHAPTER 1: BRAITENBERG" was in the small
-capitals of a section title, dimmed, and read as small as Parts' group titles; in the rows'
-white it stood out too much. The number before a dot sits over its levels' "1.1", "1.2"; "Ch."
-added nothing under a drawer titled Chapters. Parts' group titles keep their small capitals.
+**D-420 — 2026-10-08 — Every heading within a drawer is drawn alike: in capitals, 20 px, larger than the 18 px they had, smaller than the drawer's own title, 22 px, in a grey between that title and the rows; a chapter's reads "1. BRAITENBERG". Amends D-069, D-326.**
+The physicist's, of four drawn for the chapters, then toned down and extended to every heading:
+"CHAPTER 1: BRAITENBERG" was in the small capitals of a section title, dimmed, as small as Parts'
+group titles; in the rows' white it stood out too much, and no heading may be larger than its
+drawer's title. Section titles ("SAVE/LOAD", "OBJECTIVES", "ACTIVE BOARD"), titles that fold
+(Parts' groups, the chapters) and the Text drawer's fields' titles are drawn by one function,
+`draw_heading`, lit in the accent as before while a tutorial step explains them. The chapter's
+number before a dot sits over its levels' "1.1", "1.2"; "Ch." added nothing under a drawer
+titled Chapters.

@@ -114,7 +114,6 @@ from nektoids.editor.palette import (
     BODY,
     BODY_OUTLINE,
     BUTTON,
-    CHAPTER,
     CLEAR,
     COMPONENT,
     DARK,
@@ -131,6 +130,7 @@ from nektoids.editor.palette import (
     GREYED,
     GREYED_FACE,
     GRID_LINE,
+    HEADING,
     HOVER,
     INTAKE,
     INTAKE_FAINT,
@@ -173,10 +173,7 @@ from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
-from nektoids.levels.arenas import CHAPTERS
 from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
-
-CHAPTER_HEADINGS = frozenset(chapter.heading for chapter in CHAPTERS)  # drawn larger (D-420)
 
 TIP = {
     Tool.ADD: "Add a part",
@@ -304,7 +301,7 @@ class Fonts:
     label: pygame.font.Font  # the same, smaller: section labels, tabs, keys, the box's buttons
     big: pygame.font.Font  # the cards' titles, the end's thanks
     icons: Icons
-    heading: pygame.font.Font  # a chapter's title in Chapters and Start from (D-420)
+    heading: pygame.font.Font  # a drawer's headings: sections, groups, chapters (D-420)
 
     @classmethod
     def load(cls) -> Fonts:
@@ -320,7 +317,7 @@ class Fonts:
             label=pygame.font.Font(None, 18),
             big=pygame.font.Font(None, 64),
             icons=Icons(),
-            heading=pygame.font.Font(None, 20),  # under the drawer's title, 22 (D-420)
+            heading=pygame.font.Font(None, 20),  # a drawer's headings, under its title (D-420)
         )
 
 
@@ -734,24 +731,26 @@ def _draw_sections(screen: pygame.Surface, scene: Frame, fonts: Fonts, ink, at_f
     for title, rect in scene.layout.section_titles:
         if ((title, rect) in foot) is not at_foot:
             continue
-        x, y, _, h = rect
         lit = title.lower() in scene.lit
-        shown = fonts.label.render(title.upper(), True, scene.lit_ink if lit else ink)
-        screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
+        draw_heading(screen, fonts, title, rect, scene.lit_ink if lit else ink)
+
+
+def draw_heading(screen, fonts: Fonts, title: str, rect, ink=DIM_TEXT, indent: int = 0) -> None:
+    """A heading within a drawer, every one alike: in capitals, 20 px, under the drawer's own
+    title, 22 px, in a grey between it and the rows; in `ink` while a tutorial step lights it
+    (D-050, D-420). `indent` leaves room for a fold's caret."""
+    x, y, _, h = rect
+    shown = fonts.heading.render(title.upper(), True, HEADING if ink == DIM_TEXT else ink)
+    screen.blit(shown, (x + indent, y + (h - shown.get_height()) // 2))
 
 
 def draw_fold_title(screen, fonts: Fonts, title: str, rect, folded: bool, ink) -> None:
-    """A title that folds what is under it, as Parts' groups and The Wheel (D-069): a caret, right
-    while folded, down while open, then the title in upper case; a chapter's larger and lighter,
-    "1. BRAITENBERG" (D-420)."""
+    """A heading that folds what is under it, as Parts' groups and the chapters (D-069): a caret,
+    right while folded, down while open, then the heading (`draw_heading`)."""
     x, y, _, h = rect
     caret = "caret-right" if folded else "caret-down"
-    fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, ink)
-    if title in CHAPTER_HEADINGS:
-        shown = fonts.heading.render(title.upper(), True, CHAPTER if ink == DIM_TEXT else ink)
-    else:
-        shown = fonts.label.render(title.upper(), True, ink)
-    screen.blit(shown, (x + 16, y + (h - shown.get_height()) // 2))
+    fonts.icons.draw(screen, caret, (x + 5, y + h // 2), 14, HEADING if ink == DIM_TEXT else ink)
+    draw_heading(screen, fonts, title, rect, ink, indent=16)
 
 
 def _draw_files(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
@@ -907,10 +906,9 @@ def _draw_board_text(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
     layout = scene.layout
     _, top, _, room = layout.list_area
     for title, rect in layout.section_titles:
-        x, y, _, h = rect
+        _, y, _, h = rect
         if y + h <= top or y >= top + room:  # outside the wins' list, which is clipped
-            shown = fonts.label.render(title.upper(), True, DIM_TEXT)
-            screen.blit(shown, (x, y + (h - shown.get_height()) // 2))
+            draw_heading(screen, fonts, title, rect)
     empty = not any(not n.locked for n in scene.board.nodes.values()) and not scene.board.wires
     for button, rect in layout.file_buttons:  # Erase all greyed with nothing to erase (D-321)
         erase = button is FileButton.ERASE
