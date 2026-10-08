@@ -21,6 +21,7 @@ from nektoids.editor.layout import (
     FOOT_MARGIN,
     HINT_LINE,
     LEVEL_KEYS,
+    MAP_NOTE,
     MAX_HEX,
     MENU_GROUPS,
     MIN_HEX,
@@ -522,11 +523,12 @@ def test_diagnostic_on_the_board_runs_it_at_its_top_and_shows_the_level_at_its_f
     # D-407: the main screen stays the board; the drawer holds the board at work, then the map
     diagnostic = make_layout(Drawer.DIAGNOSTIC)
     (top, top_rect), (foot, foot_rect) = diagnostic.section_titles
-    assert (top, foot) == ("The board at work", "The level")
+    assert (top, foot) == ("Active board", "The level")
     bx, by, bw, bh = DIAGNOSTIC_BODY
     mx, my, mw, mh = DIAGNOSTIC_MAP
     assert top_rect[1] + top_rect[3] == by and by + bh < foot_rect[1]
-    assert foot_rect[1] + foot_rect[3] == my and my + mh <= SCREEN[1] - 8 and mw == mh
+    assert foot_rect[1] + foot_rect[3] == my and mw == mh
+    assert my + mh + 8 + MAP_NOTE <= SCREEN[1] - 8  # room for its note under it
     assert bw == DRAWER_WIDTH and diagnostic.board_area == make_layout(Drawer.PARTS).board_area
     x, y, w, _ = LAYOUT.board_area  # nothing in the main screen's corner names a view any more
     assert palette_target_at(LAYOUT, (x + w - 30, y + 26)) is None
