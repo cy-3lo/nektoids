@@ -36,6 +36,8 @@ from nektoids.editor.arena_draw import (
     draw_rays,
 )
 from nektoids.editor.arena_view import LINE_STEP, dot_step, lattice, shown
+from nektoids.editor.buttons import State
+from nektoids.editor.buttons_draw import square_bevel, square_shadows, tag
 from nektoids.editor.devdrive import DT
 from nektoids.editor.draw import (
     MENU_ANGLE,
@@ -44,7 +46,6 @@ from nektoids.editor.draw import (
     Fonts,
     cached_text,
     draw_bar,
-    draw_disc,
     draw_drawer,
     draw_field,
     draw_info,
@@ -57,23 +58,20 @@ from nektoids.editor.draw import (
     draw_tooltip,
     draw_track,
 )
+from nektoids.editor.editor_keys import Key, confirm_box, key_at, places, tip
 from nektoids.editor.icons import EDIT_ICON, PIECE_ICON, VIEW_ICON
 from nektoids.editor.layout import (
-    ACTION_WIDTH,
-    BAR_WIDTH,
-    EDIT_KEYS,
     FIELD_PAD,
     HINT_LINE,
     SPEC_LINES,
     VIEW_KEYS,
-    WHEEL_TITLE,
     Brief,
     EditButton,
     FileButton,
     Knob,
     Piece,
     Start,
-    Tool,
+    ViewButton,
     bin_rect,
     contains,
     slider_parts,
@@ -81,15 +79,9 @@ from nektoids.editor.layout import (
 )
 from nektoids.editor.level_editor import EditorScene, Paste
 from nektoids.editor.objects import (
-    KEYS,
     NAMES,
     PLACED,
-    Point,
-    name,
-    offer,
-    piece_of,
     reach,
-    says,
     where,
 )
 from nektoids.editor.palette import (
@@ -101,10 +93,13 @@ from nektoids.editor.palette import (
     DARK,
     DIM_TEXT,
     GREYED,
-    HOVER,
     ICON_EDGE,
+    KEY_DARK,
+    KEY_GREYED,
+    KEY_LIGHT,
     LIT,
     OBSTACLE,
+    OUTSIDE,
     PANEL,
     PLANE_DOT,
     PLANE_LINE,
@@ -112,10 +107,10 @@ from nektoids.editor.palette import (
     RULE,
     SHADOW,
     TEXT,
+    TOOLTIP_BG,
 )
 from nektoids.editor.parts import NAME as PART_NAME
 from nektoids.editor.textfield import caret_at, wrapped
-from nektoids.editor.wheel import ICON, LINE_BELOW, WHEEL_HEX, centre_in
 from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
 from nektoids.levels.making import BLANK_TIME, NEW, ZONES, lacks
@@ -176,86 +171,136 @@ def draw_level_editor(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) 
     centre, radius = scene.view.to_screen(*scene.pos[0]), float(scene.radius[0]) * scene.view.scale
     draw_symbol(screen, DARK, centre, radius + 1, scene.heading, SYMBOL_WIDTH + 2)
     draw_symbol(screen, BODY, centre, radius, scene.heading, SYMBOL_WIDTH)
-    _draw_focus(screen, scene)
+    _draw_pick(screen, scene)
     _draw_in_hand(screen, scene, fonts)
+    _draw_count(screen, scene, fonts)
     screen.set_clip(None)
-    _draw_action(screen, scene, fonts)
+    _draw_keys(screen, scene, fonts)
     draw_tabs(screen, scene, fonts)
     _draw_status(screen, scene, fonts)
     draw_bar(screen, scene, fonts)
     draw_drawer(screen, scene, fonts, _draw_rows, _draw_foot)
     draw_tooltip(screen, scene, fonts)
-    _draw_wheel_tip(screen, scene, fonts)
+    _draw_key_tip(screen, scene, fonts)
     draw_info(screen, scene, fonts, _about)
+    _draw_confirm(screen, scene, fonts)
 
 
-def _draw_action(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """Atop the plane, as atop the Board (D-068, D-314): what the next click or Enter
-    does, a lit disc, its name and key beside it, a line under it saying what it does; with no
-    action, the object focused, plain; nothing with nothing focused."""
-    if scene.layout.action_at is None:
+KEY_ICON = {  # the Editor's keys (D-410); an object's is its own (PIECE_ICON)
+    Key.SELECT: "arrow-pointer",
+    Key.HAND: "hand",
+    Key.BIGGER: "caret-up",
+    Key.SMALLER: "caret-down",
+    Key.ZOOM_IN: VIEW_ICON[ViewButton.ZOOM_IN],
+    Key.ZOOM_OUT: VIEW_ICON[ViewButton.ZOOM_OUT],
+    Key.UNDO: EDIT_ICON[EditButton.UNDO],
+    Key.REDO: EDIT_ICON[EditButton.REDO],
+    Key.COPY: "copy",
+    Key.PASTE: "paste",
+    Key.CUT: "scissors",
+    Key.ERASE: "eraser",
+}
+KEY_ICON_SIZE = 0.6  # an icon on its key, over the key's side
+COUNT_BELOW = 14  # a value's tag under its object's rim [px]
+
+
+def _draw_keys(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """The keys round the plane, floating over it (D-410), as the Board's buttons look (D-401):
+    chosen, pressed in; lit, a teal bevel; greyed, dimmed."""
+    looks, found = scene.key_states(), places(scene.arena_area)
+    square_shadows(screen, [r for k, r in found.items() if looks[k] is not State.CHOSEN])
+    for key, rect in found.items():
+        look = looks[key]
+        pygame.draw.rect(screen, ACTIVE if look is State.CHOSEN else OUTSIDE, rect)
+        light, dark = {
+            State.PLAIN: (KEY_LIGHT, KEY_DARK),
+            State.LIT: (LIT, ACTIVE),
+            State.CHOSEN: (KEY_DARK, LIT),  # pressed in: the light falls on the far sides
+            State.GREYED: (KEY_GREYED, KEY_DARK),
+        }[look]
+        square_bevel(screen, rect, light, dark)
+        x, y, w, h = rect
+        at = (x + w // 2 + (look is State.CHOSEN), y + h // 2 + (look is State.CHOSEN))
+        icon = PIECE_ICON[key] if isinstance(key, Piece) else KEY_ICON[key]
+        ink = GREYED if look is State.GREYED else TEXT
+        fonts.icons.draw(screen, icon, at, round(KEY_ICON_SIZE * w), ink)
+
+
+def _draw_key_tip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """A key's tooltip beside it, once the mouse has rested there: its name and key (D-410)."""
+    target = scene.tooltip
+    found = places(scene.arena_area)
+    if target not in found:
         return
-    action = scene.action()
-    what = action if action is not None else piece_of(scene.level, scene.focus)
-    if what is None:
+    x, y, w, h = found[target]
+    text = tip(target, scene.settings.key_hints)
+    if isinstance(target, Piece):  # the objects at the right: the tip to their left
+        draw_tip(screen, fonts, text, midright=(x - 14, y + h // 2))
+    else:
+        draw_tip(screen, fonts, text, midleft=(x + w + 14, y + h // 2))
+
+
+def _draw_pick(screen: pygame.Surface, scene: EditorScene) -> None:
+    """A ring round each object picked (D-410)."""
+    for obj in scene.pick:
+        cx, cy = scene.view.to_screen(*where(scene.level, obj))
+        ring = reach(scene.level, obj) * scene.view.scale + FOCUS_GAP
+        pygame.draw.circle(screen, LIT, (cx, cy), ring, 2)
+
+
+def _draw_count(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """An object's value a moment under it, once placed or set, as the Board's count of parts
+    left (D-401, D-410): a light's power, an obstacle's or a mark's radius, the swimmer's
+    heading."""
+    obj = scene.counted
+    if scene.count_frames <= 0 or obj is None:
         return
-    box = pygame.Rect(scene.layout.action_at)
-    fill, edge = (ACTIVE, LIT) if action is not None else (BUTTON, ICON_EDGE)
-    draw_disc(screen, fonts, box.center, what, fill, edge, ACTION_WIDTH / 2)  # as the Wheel's
-    key = KEYS.get(action) if scene.settings.key_hints else None  # an action's, not an object's
-    named = name(scene.level, scene.focus, what) + (f" ({key})" if key else "")
-    shown = fonts.text.render(named, True, LIT if action is not None else TEXT)
-    at = shown.get_rect(midleft=(box.right + 10, box.centery))
-    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)  # legible over the grid
-    screen.blit(shown, at)
-    line = _action_says(scene, action) if action is not None else says(scene.level, scene.focus)
-    under = fonts.small.render(line, True, TEXT)
-    at = under.get_rect(midtop=(box.centerx, box.bottom + 8))
-    pygame.draw.rect(screen, BAR, at.inflate(14, 6), border_radius=5)
-    screen.blit(under, at)
-
-
-def _action_says(scene: EditorScene, action) -> str:
-    """What the action atop the plane does, in a short line (D-314, D-318)."""
-    if isinstance(action, Piece) and scene.picked is action:
-        return "Click the plane: place it"
-    if isinstance(action, Piece):
-        return "Enter: place it here"
-    if action is Tool.MOVE:
-        return "Click or arrows: move. Enter: done"
-    if action is Tool.DELETE:
-        return "Enter: remove it"
-    if action in (Tool.TURN_LEFT, Tool.TURN_RIGHT):
-        return f"Enter: turn 15° {'left' if action is Tool.TURN_LEFT else 'right'}"
-    return f"Enter: {name(scene.level, scene.focus, action).lower()}"
-
-
-def _draw_focus(screen: pygame.Surface, scene: EditorScene) -> None:
-    """The focus lit on the plane: a ring round its object, or a cross on its point."""
-    focus = scene.focus
-    if focus is None:
+    if isinstance(obj, int) and obj >= len(scene.level.items):
         return
-    cx, cy = scene.view.to_screen(*where(scene.level, focus))
-    if isinstance(focus, Point):
-        pygame.draw.circle(screen, LIT, (cx, cy), FOCUS_DOT, 2)
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            near, far = FOCUS_DOT + 2, FOCUS_DOT + 8
-            start, end = (cx + dx * near, cy + dy * near), (cx + dx * far, cy + dy * far)
-            pygame.draw.line(screen, LIT, start, end, 2)
+    cx, cy = scene.view.to_screen(*where(scene.level, obj))
+    below = cy + reach(scene.level, obj) * scene.view.scale + COUNT_BELOW
+    if obj is Piece.START:
+        value = f"{scene.level.start[2]:g}°"
+    else:
+        value = f"{scene.level.items[obj].value:g}"
+    tag(screen, (cx, below), fonts.small.render(value, True, TEXT), BAR, DIM_TEXT)
+
+
+def _draw_confirm(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
+    """Erase all's box over the plane: the question, then Cancel, the default, lit, and Erase
+    all, which alone erases (D-410)."""
+    if not scene.confirming:
         return
-    ring = reach(scene.level, focus) * scene.view.scale + FOCUS_GAP
-    pygame.draw.circle(screen, LIT, (cx, cy), ring, 2)
+    box, cancel, erase = (pygame.Rect(r) for r in confirm_box(scene.arena_area))
+    pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=8)
+    pygame.draw.rect(screen, RULE, box, 1, border_radius=8)
+    for k, line in enumerate(("Are you sure you want to erase", "all the objects?")):
+        shown = fonts.text.render(line, True, TEXT)
+        screen.blit(shown, shown.get_rect(midtop=(box.centerx, box.top + 16 + 24 * k)))
+    for rect, label, default in ((cancel, "Cancel", True), (erase, "Erase all", False)):
+        pygame.draw.rect(screen, ACTIVE if default else BUTTON, rect, border_radius=6)
+        pygame.draw.rect(screen, LIT if default else ICON_EDGE, rect, 2, border_radius=6)
+        shown = fonts.text.render(label, True, TEXT if default else REFUSED)
+        screen.blit(shown, shown.get_rect(center=rect.center))
 
 
 def _draw_in_hand(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """A row of Objects picked: its object where a click would put it, under the mouse."""
-    if scene.picked is None or not contains(scene.arena_area, scene.pointer):
+    """An object's key held, or carried: the object where a click would put it, under the
+    mouse (D-410)."""
+    piece = scene.carrying or scene.held
+    if not isinstance(piece, Piece) or piece is Piece.START:
         return
-    kind = PLACED[scene.picked]
+    if not contains(scene.arena_area, scene.pointer) or places_hit(scene, scene.pointer):
+        return
+    kind = PLACED[piece]
     centre = scene.view.to_screen(*snapped(scene.view.to_world(*scene.pointer)))
     radius = (LIGHT_RADIUS if kind is ItemKind.LIGHT else NEW[kind]) * scene.view.scale
     _draw_object(screen, fonts, kind, centre, radius)
     pygame.draw.circle(screen, LIT, centre, radius + FOCUS_GAP, 2)
+
+
+def places_hit(scene: EditorScene, point) -> bool:
+    return key_at(scene.arena_area, point) is not None
 
 
 def _draw_object(screen: pygame.Surface, fonts: Fonts, kind: ItemKind, centre, radius) -> None:
@@ -309,31 +354,15 @@ def _dotted(scene: EditorScene, area: pygame.Rect, step: float) -> pygame.Surfac
 
 def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
     """The Editor's own drawers: Objects' rows, each object and how many are on the plane, lit if
-    in hand or focused, then undo and redo; Goals'; Brief's fields; Files'; Navigator's rays,
-    overview and zoom."""
+    in hand or picked (D-410); Goals'; Brief's fields; Files'; Navigator's rays, overview and
+    zoom."""
     layout, level = scene.layout, scene.level
     counts = Counter(item.kind for item in level.items)
     for piece, rect in layout.piece_rows:
         count = ("count", str(1 if piece is Piece.START else counts[PLACED[piece]]))
-        active = piece is scene.picked or (piece is Piece.START and scene.focus is Piece.START)
+        active = piece is scene.held or (piece is Piece.START and Piece.START in scene.pick)
         icon = PIECE_ICON[piece]
         draw_row(screen, scene, fonts, rect, piece, NAMES[piece], count, active, icon=icon)
-    can = {EditButton.UNDO: scene.history.can_undo, EditButton.REDO: scene.history.can_redo}
-    for button, rect in layout.edit_buttons:
-        key = ("key", EDIT_KEYS[button].replace("+", " "))
-        name_ = ROW_NAME[button]
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            name_,
-            key,
-            False,
-            not can[button],
-            EDIT_ICON[button],
-        )
     for field, rect in layout.brief_fields:
         writing = scene.writing is field
         author = (level.author or "").removeprefix("@")  # its "@" outside the field (D-341)
@@ -474,10 +503,7 @@ def _draw_spec(screen: pygame.Surface, fonts: Fonts, rect, text: str, caret: int
 
 
 def _draw_foot(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """What the drawer's scrolled rows do not clip: at the foot of Objects, the Wheel; atop
-    Files, Save/Load, over its rule."""
-    if scene.layout.wheel_fold is not None:
-        _draw_wheel(screen, scene, fonts)
+    """What the drawer's scrolled rows do not clip: atop Files, Save/Load, over its rule."""
     if scene.layout.files_rule is not None:
         _draw_save_load(screen, scene, fonts)
 
@@ -504,68 +530,6 @@ def _draw_save_load(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) ->
     draw_field(screen, fonts, layout.level_field, text, caret, "paste", "Paste a level")
     x, y, w, _ = layout.files_rule
     pygame.draw.line(screen, RULE, (x, y), (x + w, y), 2)  # the bar that divides, as the Wheel's
-
-
-def _draw_wheel(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """As Tools and Parts draw it (D-068, D-069): a rule, The Wheel's title, which folds; unless
-    folded, the focus large at its hub, the Wheel's icons round it, the one Enter uses lit, a
-    line under it saying what is focused and its setting, the action being named atop the plane
-    (D-314, D-317). The Editor's Wheel never folds: its title has no arrow."""
-    layout = scene.layout
-    fx, fy, fw, _ = layout.wheel_fold
-    pygame.draw.line(screen, RULE, (fx, fy - 3), (fx + fw, fy - 3), 2)  # the bar that divides
-    x, y, _, h = layout.wheel_fold
-    title = cached_text(fonts.label, WHEEL_TITLE.upper(), DIM_TEXT)
-    screen.blit(title, (x, y + (h - title.get_height()) // 2))
-    if layout.wheel_view is None:
-        return
-    centre = centre_in(layout.wheel_view)
-    if scene.focus is None:
-        pygame.draw.circle(screen, RULE, centre, WHEEL_HEX, 1)
-    else:
-        pygame.draw.circle(screen, ACTIVE, centre, WHEEL_HEX)
-        pygame.draw.circle(screen, LIT, centre, WHEEL_HEX, 2)
-        _draw_hub(screen, scene, fonts, centre)
-    wheel, radius = scene.wheel(), ICON * WHEEL_HEX
-    action = scene.action() if scene.action() in offer(scene.focus) else None
-    for slot in wheel:
-        lit = slot.what is action
-        fill = ACTIVE if lit else HOVER if slot == scene.wheel_hover else BUTTON
-        draw_disc(screen, fonts, slot.at, slot.what, fill, LIT if lit else ICON_EDGE, radius)
-    lowest = max([centre[1] + WHEEL_HEX] + [slot.at[1] + radius for slot in wheel])
-    line = fonts.small.render(says(scene.level, scene.focus), True, DIM_TEXT)  # its setting
-    screen.blit(line, line.get_rect(midtop=(round(centre[0]), round(lowest) + LINE_BELOW)))
-
-
-def _draw_hub(screen: pygame.Surface, scene: EditorScene, fonts: Fonts, centre) -> None:
-    """The focus drawn large at the Wheel's hub: a point's cross, the swimmer, a light, an
-    obstacle as big as its radius says, within the hub."""
-    focus = scene.focus
-    if isinstance(focus, Point):
-        fonts.icons.draw(screen, "location-crosshairs", centre, 28, TEXT)
-    elif focus is Piece.START:
-        draw_symbol(screen, BODY, centre, 0.6 * WHEEL_HEX, scene.heading, 3)
-    else:
-        item = scene.level.items[focus]
-        size = {
-            ItemKind.LIGHT: 0.45,
-            ItemKind.OBSTACLE: 0.25 + 0.13 * item.value,  # 1 to 5 u
-            ItemKind.MARK: 0.3 + 0.02 * item.value,  # 1 to 30 u
-        }[item.kind]
-        _draw_object(screen, fonts, item.kind, centre, size * WHEEL_HEX)
-
-
-def _draw_wheel_tip(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None:
-    """The Wheel's icon under the mouse, named in a tooltip as the bar's are (D-069): the less
-    and the more as the focused item's kind says them, the key while key hints are on."""
-    slot = scene.tooltip
-    if slot not in scene.wheel():
-        return
-    text = name(scene.level, scene.focus, slot.what)
-    text += f" ({slot.key})" if scene.settings.key_hints else ""
-    half = fonts.text.size(text)[0] // 2 + 8  # the box's half width
-    x = max(round(slot.at[0]), BAR_WIDTH + 4 + half)
-    draw_tip(screen, fonts, text, midbottom=(x, round(slot.at[1] - ICON * WHEEL_HEX - 10)))
 
 
 def _about(scene: EditorScene, what: object) -> tuple[str, tuple[str, ...]]:
