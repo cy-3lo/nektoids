@@ -1,8 +1,6 @@
 # Nektoids
 
-*A game by Cy-3LO.*
-
-You don't control the swimmer. You wire its control board, press run, and watch.
+![Nektoids, a game by Cy-3LO. You don't control the swimmer. You wire its control board, press run, and watch.](docs/banner/github.png)
 
 A small Zachtronics-style puzzle game about sensorimotor control. A swimmer sits in a plane of
 lights and obstacles. On its control board you place eyes, which read the light, and thrusters,
@@ -56,6 +54,8 @@ the board never import pygame, and the tests never do.
 - [`todo.md`](docs/todo.md): what is left to build.
 - [`tutorials.md`](docs/tutorials.md): the tutorials' cards, in one place for editing.
 - [`walkthrough.md`](docs/walkthrough.md): a guided tour of the code, in the order it runs.
+- [`banner/`](docs/banner): the banners for GitHub and itch.io, drawn by the game's own code;
+  `PYTHONPATH=game python docs/banner/make_banners.py` draws them again.
 
 ## Credits
 

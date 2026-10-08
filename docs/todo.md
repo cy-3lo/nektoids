@@ -75,13 +75,8 @@ chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users
 
 ## 14. The repository's face
 
-- [ ] **A new banner for GitHub**, the physicist's: a new catch phrase and an image, at the top of
-  the README and as the repository's social preview (1280 × 640 px). The image could be the game
-  itself, a swimmer and its streams round a light, rendered by the game's own drawing (no new
-  art: the stage's scope leaves art out). The phrase to find: the README's line today, "You
-  don't steer the agents. You wire their sensors to their thrusters, press run, and watch.",
-  and its "collective behaviour", come from the jam's brief, when the game was to have many
-  swimmers; it has one.
+- [ ] **Put the banners up** (D-417): `docs/banner/github.png` as the repository's social
+  preview (Settings, General); `itch-cover.png` and `itch-banner.png` on the itch.io page.
 
 ## 15. The Board, built with fewer moves (stage 2, D-400, on `main` since D-406)
 

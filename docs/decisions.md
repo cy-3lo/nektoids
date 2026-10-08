@@ -2584,3 +2584,14 @@ a board, one or two cells, a low rate often showed one bead or none. The speed s
 sizes a second, so the beads move as before, closer together; the rate still reads as their
 spacing. Every circuit takes it: Diagnostic, the Board's and Run's, the parts' entries, where ×2
 and ÷2 still send their beads in time with those coming in, and the developer view.
+
+**D-417 — 2026-10-08 — The banners: the title, the studio and the README's phrase, the swimmer at the run's scale, its velocity and spin shown, and its board at work at the same moment, drawn by the game's own code; one atop the README and as GitHub's social preview, two for itch.io. Closes the todo's §14.**
+The physicist's, from mockups rendered by the game. One board, two eyes ahead and two thrusters
+at the tail, wired without crossing, a Double on the left, a Source less the right eye on the
+right, runs 1 s towards a light that is never seen: its rays fade out before it. The swimmer is
+drawn as the run draws it at its opening scale, 16 px a unit; beside it, its board on its body,
+its beads (D-416) and its streams in the run's colours, neither brighter nor dimmed as
+Diagnostic's (D-415), three frames of specks so that they read on a still. GitHub's is 1280 by
+640, nothing within 40 px of its edges, as GitHub's template asks; itch.io's cover 630 by 500
+and its page banner 960 by 300. `docs/banner/make_banners.py` draws all three again when the
+game's look changes; the README shows GitHub's under its title, the phrase in its alt text.
