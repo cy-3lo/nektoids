@@ -2,6 +2,7 @@
 
 import pytest
 
+from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.devdrive import TICKS_PER_FRAME
 from nektoids.editor.entry import (
     DEMOS,
@@ -70,7 +71,7 @@ def test_double_gives_two_beads_for_one_and_halve_one_for_two_in_time(kind):
     beads, ratio = entry.circuit.beads, KEEP_TIME[kind]
     flux = entry.circuit.flux
     assert flux[1] == pytest.approx(ratio * flux[0])
-    arrives = beads.lengths[0] * 4.0 * float(flux[0]) / beads.speed  # BEAD_RATE_AT_FULL
+    arrives = beads.lengths[0] * BEAD_RATE_AT_FULL * float(flux[0]) / beads.speed
     every = min(1.0, ratio)  # ÷2: a bead leaves with every other arrival, either of the two
     for _ in range(3 * FPS):  # a bead leaves as one arrives, frame after frame
         entry.tick()

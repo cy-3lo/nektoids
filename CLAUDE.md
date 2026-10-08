@@ -8,7 +8,8 @@ and watch a deterministic 2D simulation play out.
 
 - Design brief: `docs/brief.md` — read sections 1 and 3 before proposing any feature.
 - Decision log: `docs/decisions.md` — append-only; check it before re-opening a question.
-- What is left to do: `docs/todo.md`; ideas for later: `docs/ideas.md` (D-028).
+- What is left to do: `docs/todo.md`; ideas for later: `docs/ideas.md` (D-028), local, not
+  committed (D-414).
 
 ## Who works here
 
@@ -28,7 +29,7 @@ Claude writes the code, whole features included, in any package.
 - The humans may write in French: answer in the language of the prompt.
   Code, comments, commit messages and docs stay in English.
 
-## Scope: stage 1, a level maker (D-300), and stage 2, the Board (D-400)
+## Scope: stage 1, a level maker (D-300), stage 2, the Board (D-400), and stage 3, memory (D-500)
 
 After the jam come six stages (D-105, D-400). Each opens with a decision that sets its scope here, as
 the scope lock did for the jam. Changing this list requires an entry in `docs/decisions.md`.
@@ -52,8 +53,12 @@ and solutions shared as text, no server; and §13, the chapters, levels and tuto
 And stage 2, built beside stage 1 on `stage/2-board` and on `main` since D-406, the todo's §15: a Board built with fewer
 moves, hex buttons round a board of one fixed size, no Navigator, its gestures, and chapter 0's
 cards rewritten for them (D-400).
+And stage 3, decided by D-500, built on `stage/3-memory` from `main` once #125 is there, the
+todo's §16: tanks, a part whose level lags what comes in, T dh/dt = in − h, its level drawn;
+loops on the board; lights whose power follows a fixed schedule in time; and their levels.
 
-Out: no new part or sense, and no new item but marks (D-306). The later stages, memory, flows, actions other than moving, and
+Out: no new part but the tank, no new sense, and no new item but marks (D-306): a schedule is a
+light's setting. Valves, and the later stages, flows, actions other than moving, and
 all after them (`docs/ideas.md`): flocking and multiple agents, flow sensing, chemical fields,
 optical flow, parts that move on the body during a run, threshold nodes, the generalisation
 pillar (multi-seed validation), sound, art.
@@ -76,7 +81,7 @@ docs/                    brief, decisions, todo, ideas, walkthrough
 
 Path-specific rules live in `.claude/rules/` and load when the matching files are touched.
 
-`README.md`, `docs/brief.md` and `docs/ideas.md` are read by strangers (the repository is public):
+`README.md` and `docs/brief.md` are read by strangers (the repository is public):
 keep them in step with the decisions, write them for a visitor, and put nothing private in them.
 
 ## Commands

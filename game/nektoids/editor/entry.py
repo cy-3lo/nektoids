@@ -22,22 +22,12 @@ from functools import cache
 
 import numpy as np
 
+from nektoids.editor import streams
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
-from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
 from nektoids.editor.layout import Rect, View, fitted_view
-from nektoids.editor.marks import (
-    FADE,
-    FLAME_LIFE,
-    FLAME_SPECKS,
-    FLAME_SPREAD,
-    INTAKE_LIFE,
-    INTAKE_SPECKS,
-    INTAKE_SPREAD,
-    SPECKS,
-    face,
-)
+from nektoids.editor.streams import EYE_FACE, THRUSTER_BACK
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.dynamics import RATE_MAX, initial_state, step
 from nektoids.graph.hexgrid import Cell, W, to_pixel
@@ -55,9 +45,6 @@ ZONE = [(q, r) for q in range(-6, 6) for r in range(-2, 3)]  # room for every ro
 # Where the parts sit: one input, two inputs one over the other, the part, its thruster.
 IN, UPPER, LOWER, PART, OUT = (-3, 0), (-2, -1), (-3, 1), (0, 0), (3, 0)
 SENSOR, ITS_THRUSTER = (-2, 0), (1, 0)  # a sensor's own entry: it, then a thruster
-# Each face's middle along the part's axis, and half its width [hex sizes]: the eye's in front,
-# the thruster's back behind (`marks.face`).
-EYE_FACE, THRUSTER_BACK = face(np.array(EYE_DISC)), face(np.array(SQUARE_POINT))
 AHEAD = (math.cos(FACING_STEP * OUTWARDS), -math.sin(FACING_STEP * OUTWARDS))  # on screen
 
 Point = tuple[float, float]
@@ -136,44 +123,13 @@ class Entry:
 
     def light(self) -> list[Point]:
         """The specks of light drawn into each eye's face, from REACH ahead of it, as many as it
-        reads (`marks.intake`, D-076) [px, in ENTRY_AREA]."""
-        (middle, _), half = EYE_FACE
-        found = []
-        for k, i in enumerate(self.circuit.net.eyes):
-            share = float(self.y[i]) / RATE_MAX
-            _, left, across = SPECKS.stream(
-                INTAKE_SPECKS * share, self.frame, INTAKE_LIFE, STREAMS + k, FADE
-            )
-            found += self._off_face(int(i), middle, half, left, across, INTAKE_SPREAD, 1.0)
-        return found
+        reads (`streams.light`, D-076) [px, in ENTRY_AREA]."""
+        return streams.light(self.circuit, self.y, self.frame, REACH, STREAMS)
 
     def flames(self) -> list[Point]:
         """The specks of each thruster's flame, out of its back, REACH long, as many as its rate
-        (`marks.flames`, D-076) [px, in ENTRY_AREA]."""
-        (middle, _), half = THRUSTER_BACK
-        found = []
-        for k, i in enumerate(self.circuit.net.thrusters):
-            rate = float(self.y[i]) / RATE_MAX
-            stream = STREAMS + 8 + k
-            gone, _, across = SPECKS.stream(
-                FLAME_SPECKS * rate, self.frame, FLAME_LIFE, stream, FADE
-            )
-            found += self._off_face(int(i), middle, half, gone, across, FLAME_SPREAD, -1.0)
-        return found
-
-    def _off_face(self, i, middle, half, along, across, spread, way) -> list[Point]:
-        """Specks off node i's face, `middle` hex sizes along its axis and `half` wide: `along`
-        out of it in units of the stream's length, REACH / (1 + FADE), so that the farthest
-        speck is REACH out; ahead of the part if `way` is +1, behind it if -1; `across` in
-        [-1, 1], widening by `spread` [rad] either side."""
-        size = self.circuit.view.size
-        cx, cy = self.circuit.centre(i)
-        ax, ay = AHEAD
-        out = along * REACH / (1.0 + FADE) * size
-        wide = across * (half * size + out * math.tan(spread))
-        x = cx + ax * middle * size + way * ax * out - ay * wide
-        y = cy + ay * middle * size + way * ay * out + ax * wide
-        return list(zip(x.tolist(), y.tolist(), strict=True))
+        (`streams.flames`, D-076) [px, in ENTRY_AREA]."""
+        return streams.flames(self.circuit, self.y, self.frame, REACH, STREAMS)
 
     def _keep_time(self, ratio: float) -> None:
         """The beads out of the part leave as one comes in, and `ratio` times as often: wire 0

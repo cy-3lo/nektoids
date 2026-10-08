@@ -11,6 +11,7 @@ from nektoids.graph import boardtext
 from nektoids.graph.board import complexity
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Level, to_json
+from nektoids.levels.levelword import to_shared
 from nektoids.levels.making import read_level
 from nektoids.levels.objectives import Outcome
 from nektoids.levels.proof import Proof, Replay, to_beat
@@ -44,8 +45,9 @@ def test_a_winning_board_run_again_wins_at_the_tick_it_won_at_a_few_ticks_a_fram
 def test_a_level_shared_carries_its_proof_through_its_text():
     proof = Proof(boardtext.to_text(ORBITER), 1132, 4)
     shared = replace(ORBIT, proof=proof.to_dict())
-    again = read_level(to_json(shared))
-    assert again == shared and Proof.from_dict(again.proof) == proof
+    again = read_level(to_shared(shared, proof.board))  # D-413: its score counted again
+    assert again.proof == {"board": proof.board, "ticks": 0, "parts": 0}
+    assert read_level(to_shared(shared)).proof is None  # Copy level: a draft
     assert "proof" not in json.loads(to_json(replace(ORBIT, proof=None)))  # none, none written
     with pytest.raises(ValueError, match="a proof takes no 'seed'"):
         Level.from_dict({**json.loads(to_json(shared)), "proof": {**proof.to_dict(), "seed": 1}})

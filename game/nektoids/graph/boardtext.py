@@ -12,12 +12,9 @@ wire's path costs one binary digit when it is the router's, drawn after the wire
 and a step at a time otherwise. A kind is one of CAPACITY codes, `Kind`'s order, so the kinds to
 come fit the same text; a zone is one of RADII codes, the discs and room for other shapes.
 
-The integer is written in base 59, the alphanumerics without I, l and O, in blocks of at most
-BLOCK characters, each followed by CHECKS check characters of a Reed-Solomon code over the
-integers mod 59, a field since 59 is prime. The version of the format is a hidden first symbol:
-never written, it enters every check, so a text of another version fails them. Distance
-CHECKS + 1 = 5: in each block one wrong character is put right, and two are refused, never read as
-another board. Pure Python, no pygame.
+The integer is written in base 59, with check characters, by `spelling.py`; the version of the
+format is its hidden first symbol, so a text of another version, or a level's word, fails the
+checks. Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -26,21 +23,12 @@ from collections.abc import Callable, Sequence
 
 from nektoids.graph.board import Board, Kind, Wire
 from nektoids.graph.hexgrid import Cell, hex_disc
+from nektoids.graph.spelling import spell, unspell
 
-VERSION = 1  # of the format; raised when the rules of a part or the router change
+VERSION = 1  # of the format, its hidden symbol; raised when a part's rules or the router change
 RADII = 16  # zone codes: a hex disc of radius 0 to 7, then room for other shapes
 DISCS = 8
 CAPACITY = 32  # kind codes, the kinds to come included
-
-ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"  # no I, l, O
-P = len(ALPHABET)  # 59, a prime: the check characters are reckoned mod 59
-READ = {c: i for i, c in enumerate(ALPHABET)} | {"I": 1, "l": 1, "O": 0}
-IGNORED = " -\t\n"  # spaces and dashes a person may put in
-CHECKS = 4
-BLOCK = P - 2 - CHECKS  # data characters a block holds: P - 1 symbols, the version one of them
-ROOT = 2  # a primitive root mod 59: its powers are every non-zero symbol
-POWER = [pow(ROOT, i, P) for i in range(P - 1)]
-LOG = {value: i for i, value in enumerate(POWER)}
 
 Choose = Callable[[str, Sequence], object]
 
@@ -48,11 +36,11 @@ Choose = Callable[[str, Sequence], object]
 def to_text(board: Board) -> str:
     """The board as text. ValueError if its zone is not a disc."""
     digits: list[tuple[int, int]] = []
-    _replay(_Encoder(board, digits))
+    replay(Encoder(board, digits))
     number = 0
     for choice, base in reversed(digits):
         number = number * base + choice
-    return _spell(number)
+    return spell(number, VERSION)
 
 
 def from_text(text: str) -> Board:
@@ -63,14 +51,14 @@ def from_text(text: str) -> Board:
 
 def read(text: str) -> tuple[Board, bool]:
     """`from_text`'s board, and whether a wrong character was put right on the way."""
-    number, corrected = _read(text)
+    number, corrected = unspell(text, VERSION, "board")
 
     def choose(tag: str, options: Sequence) -> object:
         nonlocal number
         number, choice = divmod(number, len(options))
         return options[choice]
 
-    board = _replay(choose)
+    board = replay(choose)
     if number:
         raise ValueError("this text holds more than a board")
     return board, corrected
@@ -79,7 +67,7 @@ def read(text: str) -> tuple[Board, bool]:
 # The replay, the same for both ways
 
 
-def _replay(choose: Choose) -> Board:
+def replay(choose: Choose) -> Board:
     """Build a board decision by decision; `choose(tag, options)` picks one of `options`."""
     radius = choose("zone", [*range(DISCS), *[None] * (RADII - DISCS)])
     if radius is None:
@@ -119,7 +107,7 @@ def _free(board: Board) -> list[Cell]:
     return [cell for cell in board.cells if board.node_at(cell) is None]
 
 
-class _Encoder:
+class Encoder:
     """Answers the replay's questions with `board`'s own choices, keeping each as a digit."""
 
     def __init__(self, board: Board, digits: list[tuple[int, int]]) -> None:
@@ -157,88 +145,3 @@ class _Encoder:
         choice = list(options).index(want)
         self.digits.append((choice, len(options)))
         return options[choice]
-
-
-# Base 59 and the check characters
-
-
-def _spell(number: int) -> str:
-    data = []
-    while number:
-        number, digit = divmod(number, P)
-        data.append(digit)
-    data = data[::-1] or [0]
-    blocks = [data[i : i + BLOCK] for i in range(0, len(data), BLOCK)]
-    return "".join(ALPHABET[s] for block in blocks for s in (*block, *_checks(block)))
-
-
-def _read(text: str) -> tuple[int, bool]:
-    symbols = []
-    for char in text:
-        if char in IGNORED:
-            continue
-        if char not in READ:
-            raise ValueError(f"no board has the character {char!r}")
-        symbols.append(READ[char])
-    size = BLOCK + CHECKS
-    blocks = [symbols[i : i + size] for i in range(0, len(symbols), size)]
-    if not blocks or len(blocks[-1]) <= CHECKS:
-        raise ValueError("this text is too short to hold a board")
-    number, corrected = 0, False
-    for block in blocks:
-        fixed = _corrected([VERSION, *block])
-        if fixed is None:
-            raise ValueError("this text holds no board: mistyped, or of another version")
-        corrected |= fixed[1:] != block
-        for digit in fixed[1:-CHECKS]:
-            number = number * P + digit
-    return number, corrected
-
-
-def _generator() -> list[int]:
-    """The product of (x - ROOT^j) for j = 1..CHECKS, lowest degree first."""
-    g = [1]
-    for j in range(1, CHECKS + 1):
-        g = [(lower - POWER[j] * same) % P for same, lower in zip([*g, 0], [0, *g], strict=True)]
-    return g
-
-
-GENERATOR = _generator()[::-1]  # highest degree first
-
-
-def _checks(block: Sequence[int]) -> list[int]:
-    """The check symbols of the version and `block`: minus the remainder of their polynomial,
-    times x^CHECKS, divided by the generator, so the whole word divides by it."""
-    rest = [VERSION, *block, *[0] * CHECKS]
-    for i in range(len(rest) - CHECKS):
-        if rest[i]:
-            factor = rest[i]
-            for j in range(1, len(GENERATOR)):
-                rest[i + j] = (rest[i + j] - GENERATOR[j] * factor) % P
-    return [(-r) % P for r in rest[-CHECKS:]]
-
-
-def _corrected(word: list[int]) -> list[int] | None:
-    """The word with one wrong symbol put right, the hidden first one excepted; None if it has
-    two or more. Its syndromes are the word's values at ROOT^j: all 0 for a word of the code,
-    e X^j for one error of e at the place whose locator is X."""
-    syndromes = []
-    for j in range(1, CHECKS + 1):
-        value = 0
-        for symbol in word:
-            value = (value * POWER[j] + symbol) % P
-        syndromes.append(value)
-    if not any(syndromes):
-        return word
-    if not all(syndromes) or any(
-        (syndromes[j + 1] * syndromes[j + 1] - syndromes[j] * syndromes[j + 2]) % P
-        for j in range(CHECKS - 2)
-    ):
-        return None
-    locator = syndromes[1] * pow(syndromes[0], P - 2, P) % P  # ROOT^p, p from the last symbol
-    where = len(word) - 1 - LOG[locator]
-    if where < 1:  # the version, or before the word: not one error
-        return None
-    fixed = list(word)
-    fixed[where] = (fixed[where] - syndromes[0] * pow(locator, P - 2, P)) % P
-    return fixed

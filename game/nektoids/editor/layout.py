@@ -172,8 +172,8 @@ class LevelButton(Enum):  # the accented switch at the bar's foot, to the other 
 class FileButton(Enum):  # at Files' foot, under the wins (D-206)
     SAVE = "save"  # Copy a board: its text; the field to paste one is under it
     ERASE = "erase all"  # under the field: every wire and part but the level's off (D-321, D-401)
-    LEVEL = "level"  # the Editor's Files: Copy level, its JSON; a field under it (D-310)
-    SHARE = "share"  # ... Share level: its JSON and its proof, once it is won (D-320)
+    LEVEL = "level"  # the Editor's Files: Copy level, its text; a field under it (D-310, D-413)
+    SHARE = "share"  # ... Share level: its text and its proof, once it is won (D-320)
 
 
 class ViewButton(Enum):
@@ -201,22 +201,26 @@ class Drawer(Enum):  # D-051
     GOALS = "goals"  # the Editor's: the time allowed and the goals, as sentences (D-308)
 
 
-class MainView(Enum):  # what the Board's main screen shows, by the drawer open (D-058, D-069)
-    DIAGRAM = "diagram"  # the board on its hex grid, to edit
-    PREVIEW = "preview"  # the Run preview: the board as it runs, where the probe stands
-
-
 class Env(Enum):  # the environments, each a tab over the main screen (D-051)
     BOARD = "board"
     RUN = "run"
     EDITOR = "editor"  # the sandbox's own: its level, made (D-301)
 
 
-DIAGNOSTIC_MAP: Rect = (  # the level, small, in Diagnostic, under its label: a square [px]
+NOTE_AT = (BAR_WIDTH + MARGIN, DRAWER_TOP + TITLE_HEIGHT + 4)  # a drawer's note, under its title
+NOTE_WIDTH = DRAWER_WIDTH - 2 * MARGIN  # [px]
+MAP_NOTE = 60  # the note under Diagnostic's map: three lines [px]
+DIAGNOSTIC_MAP: Rect = (  # the level, small, at Diagnostic's foot, its note under it: a square
     BAR_WIDTH + MARGIN,
-    DRAWER_TOP + TITLE_HEIGHT + 4,
+    SCREEN[1] - 12 - MAP_NOTE - 8 - (DRAWER_WIDTH - 2 * MARGIN),
     DRAWER_WIDTH - 2 * MARGIN,
     DRAWER_WIDTH - 2 * MARGIN,
+)
+DIAGNOSTIC_BODY: Rect = (  # the active board in Diagnostic, under its title, as Run's (D-089)
+    BAR_WIDTH,
+    DRAWER_TOP + TITLE_HEIGHT,
+    DRAWER_WIDTH,
+    DIAGNOSTIC_MAP[1] - TITLE_HEIGHT - 8 - (DRAWER_TOP + TITLE_HEIGHT),
 )
 DRAWERS = {  # each environment's drawers, in the bar's order from the top
     Env.BOARD: (Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC),  # the rest are buttons (D-401)
@@ -480,20 +484,22 @@ def make_layout(
     elif drawer is Drawer.PARTS:
         rows.parts(folded, kinds, floor, scroll)
     elif drawer is Drawer.OBJECTS:
-        rows.objects(height, wheel_folded, scroll)
+        rows.objects(floor, scroll)
     elif drawer is Drawer.TEXT:
         rows.brief()
     elif drawer is Drawer.GOALS:
         rows.made_goals(made, addable)
         rows.scrolled(floor, scroll)  # D-096
-    elif drawer is Drawer.DIAGNOSTIC:
+    elif drawer is Drawer.DIAGNOSTIC:  # the active board, then the map at the foot (D-407)
+        rows.label("Active board")
+        rows.y = DIAGNOSTIC_MAP[1] - TITLE_HEIGHT
         rows.label("The level")
     elif drawer is Drawer.FILES and env is Env.EDITOR:
         rows.editor_files(starts, chapters, folded, height, scroll)
     elif drawer is Drawer.FILES:
         rows.files(files, folded, height, scroll)
     elif drawer is Drawer.INSIDE:  # a drawing under its title, not rows
-        rows.label("The swimmer's wiring")
+        rows.label("Active board")  # as the Board's Diagnostic names it (D-407)
     elif drawer is Drawer.SCORE:
         rows.label("Your wins")
     elif drawer in (Drawer.NAVIGATOR, Drawer.SETTINGS, Drawer.CHAPTERS) or (
@@ -523,7 +529,6 @@ def make_layout(
         tabs.append((name, (x, 0, TAB_WIDTHS[name], TABS_HEIGHT)))
         x += TAB_WIDTHS[name]
     open_ = drawer is not None
-    centre = left + (width - left) // 2  # the main screen's
     main = height - STATUS_HEIGHT - (CONTROLS_HEIGHT if env is Env.RUN else 0)  # its foot
     return Layout(
         env=env,
@@ -555,9 +560,7 @@ def make_layout(
         scroll_max=rows.scroll_max,
         scroll_bar=rows.scroll_bar,
         edit_buttons=tuple(rows.of(EditButton)),
-        action_at=(centre - ACTION_WIDTH // 2, TOP + 8, ACTION_WIDTH, ACTION_WIDTH)
-        if env is Env.EDITOR  # the Editor's (D-314); the Board has its buttons (D-401)
-        else None,
+        action_at=None,  # the Board and the Editor have their buttons (D-401, D-410)
         view_buttons=tuple(rows.of(ViewButton)),
         goal_rows=tuple(rows.of(Goal)),
         goal_area=goal_area,
@@ -767,11 +770,14 @@ class _Rows:
         self.zoom_bar, self.level_field = _moved(self.zoom_bar, up), _moved(self.level_field, up)
         self.share_note = _moved(self.share_note, up)
 
-    def objects(self, height: int, wheel_folded: bool, scroll: int) -> None:
-        """The Editor's objects under their title, then undo and redo, which need none, as rows,
-        scrolled above the Wheel if they do not fit; at the drawer's foot, the Wheel round what
-        is focused on the plane (D-301, D-306)."""
-        self._over_wheel((("Plane", Piece), ("", EditButton)), height, wheel_folded, scroll)
+    def objects(self, floor: int, scroll: int) -> None:
+        """The Editor's objects under their title, scrolled down to `floor`, the drawer's foot:
+        the Wheel and the undo rows left it for the keys round the plane (D-410)."""
+        self._title("Plane", self.sections)
+        for piece in (Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK):  # as the keys (D-410)
+            self._row(piece)
+        self.y -= ROW_PITCH - ROW_HEIGHT  # what lies under the last row
+        self.scrolled(floor, scroll)
 
     def brief(self) -> None:
         """The level's title, a field a row high, its spec, a field SPEC_LINES high, then its
@@ -817,28 +823,6 @@ class _Rows:
         width = DRAWER_WIDTH - 2 * ROW_INSET
         self.knobs.append((knob, (BAR_WIDTH + ROW_INSET, self.y, width, SLIDER_HEIGHT)))
         self.y += SLIDER_HEIGHT + WORD_GAP
-
-    def _over_wheel(self, sections: tuple, height: int, wheel_folded: bool, scroll: int) -> None:
-        """Each section's title and rows, scrolled above the Wheel if they do not fit, the gaps
-        after the last row not counted: blank, they never make it scroll (D-323)."""
-        for title, rows in sections:
-            if title:
-                self._title(title, self.sections)
-            for what in rows:
-                self._row(what)
-            self.y += SECTION_GAP
-        self.y -= SECTION_GAP + ROW_PITCH - ROW_HEIGHT  # what lies under the last row
-        self.scrolled(self._wheel(height, wheel_folded) - SECTION_GAP, scroll)
-
-    def _wheel(self, height: int, folded: bool) -> int:
-        """At the drawer's foot, The Wheel's title, which folds, then, unless folded, the Wheel:
-        the focused cell drawn large, its icons round it (D-069); the title's top [px]."""
-        width = DRAWER_WIDTH - 2 * MARGIN
-        top = height - FOOT_MARGIN - TITLE_HEIGHT - (0 if folded else WHEEL_HEIGHT)
-        self.wheel_fold = (BAR_WIDTH + MARGIN, top, width, TITLE_HEIGHT)
-        if not folded:
-            self.wheel_view = (BAR_WIDTH + MARGIN, top + TITLE_HEIGHT, width, WHEEL_HEIGHT)
-        return top
 
     def view(self, env: Env) -> None:
         """The view's options as rows, in the run the rays, the swimmer's motion and its streams
@@ -959,12 +943,6 @@ def palette_target_at(layout: Layout, point: tuple[int, int]) -> Drawer | LevelB
 def drawer_key(env: Env, typed: str) -> Drawer | None:
     """The drawer of `env`, in its bar or at its foot, whose key is `typed`, upper case (D-069)."""
     return next((d for d in (*DRAWERS[env], *FOOT) if DRAWER_KEYS[d] == typed), None)
-
-
-def main_view_for(drawer: Drawer | None) -> MainView:
-    """What the Board's main screen shows with `drawer` open (D-069): the Run preview in
-    Diagnostic, else the board."""
-    return MainView.PREVIEW if drawer is Drawer.DIAGNOSTIC else MainView.DIAGRAM
 
 
 def drawer_button_at(layout: Layout, point: tuple[int, int]) -> Drawer | None:

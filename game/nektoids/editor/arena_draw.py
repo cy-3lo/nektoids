@@ -19,11 +19,12 @@ tooltip naming it and its key; the timeline, the part of the time allowed alread
 lighter grey, the part played brighter, and a red mark where the run ended (D-033); the time.
 The drawers: Objectives, each objective counted (so many of so many) with a bar, red if it lost
 the run, and the time left, its bar running down to zero, red if it runs out; Inside, the
-selected swimmer's wiring on its body, plain: the beads on the wires and a level meter by each
-eye and thruster, no numbers; Score, the level's wins; Navigator, the view's buttons. The
-status line under it all recalls the keys. With P, an inset over the arena shows the light at
-its eyes as a polar plot in the arena's frame: E(phi) for each eye, a circle for the scale, and
-a tick along each eye's look as long as what it reads. The plot is exact; the map is smoothed.
+selected swimmer's wiring on its body, plain: the beads on the wires and, faint behind each eye
+and thruster, the light it draws in and its flame (D-415), no numbers; Score, the level's wins;
+Navigator, the view's buttons. The status line under it all recalls the keys. With P, an inset
+over the arena shows the light at its eyes as a polar plot in the arena's frame: E(phi) for each
+eye, a circle for the scale, and a tick along each eye's look as long as what it reads. The plot
+is exact; the map is smoothed.
 """
 
 from __future__ import annotations
@@ -71,7 +72,6 @@ from nektoids.editor.draw import (
     draw_bar,
     draw_body,
     draw_button,
-    draw_circuit,
     draw_drawer,
     draw_info,
     draw_level_map,
@@ -82,7 +82,9 @@ from nektoids.editor.draw import (
     draw_tabs,
     draw_tip,
     draw_tooltip,
+    draw_working,
     draw_zoom,
+    swimmer_width,
 )
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, Rect, ViewButton, level_of
@@ -127,7 +129,6 @@ if TYPE_CHECKING:
 
 RAY_WIDTH = 2  # [px]
 BULB = 1.6  # the bulb's height on a light, in light radii (D-076)
-SYMBOL_WIDTH = 2  # [px]
 MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
 PLAYHEAD = 6  # [px]
 END_MARK = 3  # the red mark across the timeline where the run ended [px]
@@ -296,8 +297,9 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
         )
         if scene.settings.streams:
             draw_under(screen, view, body)
-        draw_symbol(screen, DARK, centre, radius + 1, heading, SYMBOL_WIDTH + 2)  # on a light map
-        draw_symbol(screen, colour, centre, radius, heading, SYMBOL_WIDTH)
+        width = swimmer_width(radius)  # in proportion (D-410)
+        draw_symbol(screen, DARK, centre, radius + 1, heading, width + 2)  # on a light map
+        draw_symbol(screen, colour, centre, radius, heading, width)
         draw_parts(screen, view, body)
         if scene.settings.motion:
             draw_motion(screen, view, body.velocity, body.spin)
@@ -535,7 +537,8 @@ def _draw_goal(
 
 
 def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
-    """The selected swimmer's wiring on its body: beads, a meter by each eye and thruster."""
+    """The selected swimmer's wiring on its body: beads, faint streams behind each eye and
+    thruster (D-415)."""
     x, y, w, h = DRAWER_BODY
     if scene.selected is None:
         note = "Click the swimmer to see its wiring"
@@ -546,7 +549,7 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         circuit = scene.circuit
         screen.set_clip(DRAWER_BODY)
         draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
-        draw_circuit(screen, circuit, scene.y, fonts, plain=True)
+        draw_working(screen, circuit, scene.y, scene.clock.tick // TICKS_PER_FRAME, fonts)
         screen.set_clip(None)
         return
     draw_note(screen, fonts, note, (x + MARGIN, y + 8), DRAWER_BODY[2] - 2 * MARGIN)

@@ -1,20 +1,18 @@
-"""The Run preview's engine (D-058). probe.py imports no pygame."""
+"""Diagnostic's engine on the Board (D-058, D-407). probe.py imports no pygame."""
 
 import math
 
-import numpy as np
 import pytest
 
-from nektoids.editor.layout import View
+from nektoids.editor.layout import DIAGNOSTIC_BODY, contains
 from nektoids.editor.probe import Probe
 from nektoids.graph.board import Kind
 from nektoids.graph.dynamics import RATE_MAX
-from nektoids.graph.hexgrid import to_pixel
 from nektoids.levels.arenas import arenas
 from nektoids.sim.arena import BASE_RADIUS
 
 LEVELS = {level.title: level for level in arenas()}
-VIEW = View(34.0, (628.0, 335.0))  # as the Board shows the board
+AREA = DIAGNOSTIC_BODY  # the board at work, at Diagnostic's top
 
 
 def wired(level):
@@ -28,7 +26,7 @@ def wired(level):
 
 def seeing(level):
     """A probe on the level, turned until its eye sees the light."""
-    probe = Probe(wired(level), level, VIEW)
+    probe = Probe(wired(level), level, AREA)
     for _ in range(12):
         if probe.eyes()[0] > 0.0:
             return probe
@@ -37,7 +35,7 @@ def seeing(level):
 
 
 def test_the_eyes_read_the_light_where_the_probe_stands_and_the_circuit_follows():
-    assert Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], VIEW).pose[:2] == LEVELS["Fear"].start[:2]
+    assert Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], AREA).pose[:2] == LEVELS["Fear"].start[:2]
     probe = seeing(LEVELS["Fear"])
     (sent,) = probe.eyes()
     assert 0.0 < sent <= RATE_MAX
@@ -49,26 +47,20 @@ def test_the_eyes_read_the_light_where_the_probe_stands_and_the_circuit_follows(
 
 def test_the_probe_stays_out_of_the_obstacles():
     level = LEVELS["Shadows"]
-    probe = Probe(level.new_board(), level, VIEW)
+    probe = Probe(level.new_board(), level, AREA)
     disc = level.arena.obstacles[0]
     probe.place(disc.x, disc.y)
     gap = math.hypot(probe.pose.x - disc.x, probe.pose.y - disc.y)
     assert gap >= disc.radius + BASE_RADIUS - 1e-9
 
 
-def test_the_preview_draws_the_board_where_the_board_does_and_follows_its_view():
-    board = wired(LEVELS["Fear"])
-    probe = Probe(board, LEVELS["Fear"], VIEW)
-    (eye,) = probe.net.eyes
-    cell = board.nodes[probe.net.ids[int(eye)]].cell
-    assert probe.circuit.centre(int(eye)) == to_pixel(cell, VIEW.size, VIEW.origin)  # D-060
+def test_the_board_at_work_is_drawn_whole_in_diagnostics_top_its_beads_running():
+    probe = seeing(LEVELS["Fear"])  # D-407: fitted with its body, as Run's Diagnostic (D-089)
+    for i in range(len(probe.net.ids)):
+        assert contains(AREA, tuple(round(v) for v in probe.circuit.centre(i)))
     for _ in range(50):
         probe.tick()
-    before = probe.y.copy()
-    zoomed = View(51.0, (400.0, 300.0))
-    probe.see(zoomed)
-    assert probe.circuit.centre(int(eye)) == to_pixel(cell, zoomed.size, zoomed.origin)
-    assert np.array_equal(probe.y, before)
+    assert probe.y.any()  # the circuit runs where the probe stands
     rings = [[m.value for m in LEVELS[t].marks] for t in ("Fear", "Love")]  # marks (D-307)
     assert rings == [[8.0], [7.0]]  # Fear's ring, Love's (D-317, D-318)
 

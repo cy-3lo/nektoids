@@ -28,6 +28,7 @@ from pathlib import Path
 import numpy as np
 import pygame
 
+from nektoids.editor import streams
 from nektoids.editor.beads import BEAD_RATE_AT_FULL
 from nektoids.editor.buttons import (
     BUTTON_INSET,
@@ -70,12 +71,15 @@ from nektoids.editor.icons import (
 from nektoids.editor.layout import (
     BAR_WIDTH,
     CAPTION_HEIGHT,
+    DIAGNOSTIC_BODY,
     DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     HINT_LINE,
     INFO_AT,
     LEVEL_KEYS,
     MARGIN,
+    NOTE_AT,
+    NOTE_WIDTH,
     PALETTE_TITLE,
     PASSKEY_KEY,
     SCREEN,
@@ -88,7 +92,6 @@ from nektoids.editor.layout import (
     HintRow,
     Layout,
     LevelButton,
-    MainView,
     Mode,
     Piece,
     Setting,
@@ -118,6 +121,7 @@ from nektoids.editor.palette import (
     DOOMED,
     EYE_FACE,
     FLAME,
+    FLAME_FAINT,
     FLASH,
     FOCUS_TINT,
     FULL,
@@ -128,6 +132,7 @@ from nektoids.editor.palette import (
     GRID_LINE,
     HOVER,
     INTAKE,
+    INTAKE_FAINT,
     KEY_DARK,
     KEY_GREYED,
     KEY_LIGHT,
@@ -160,6 +165,7 @@ from nektoids.editor.picking import Picked
 from nektoids.editor.probe import level_view
 from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
+from nektoids.editor.streams import DIAGNOSTIC_REACH
 from nektoids.graph.board import Board, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
@@ -187,11 +193,13 @@ TIP = {
     " brings them back.",
     FileButton.SAVE: "Copies the board as a line of text, to paste anywhere and keep. Paste it"
     " into Paste a board, under this row, to bring it back, on this level or another.",
-    FileButton.LEVEL: "Copies the level as text, its JSON, as the game's own level files hold it:"
-    " to keep, or to paste into Paste a level, under this row, to make it again.",
-    FileButton.SHARE: "Copies the level as text with its proof, the board that won it and its"
-    " score, the one to beat. Offered once the level, as it stands, has been won in the Run;"
-    " pasted, the proof is run again, and the level is cleared if it wins.",
+    FileButton.LEVEL: "Copies the level as a few lines of text, its title, author and description"
+    " and the level as one word: to keep, or to paste into Paste a level, under this row, to"
+    " make it again.",
+    FileButton.SHARE: "Copies the level as text with its proof, the board that won it, to paste"
+    " into a comment or an email. Offered once the level, as it stands, has been won in the Run;"
+    " pasted, the proof is run again, and the level is cleared if it wins, its score the one to"
+    " beat.",
     LevelButton.RUN: "Run",
     LevelButton.BOARD: "Back to the board",
     Drawer.PARTS: "Parts",
@@ -213,9 +221,9 @@ SETTING = {  # Settings' rows: their name, icon and what their info box says (D-
     Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
     Setting.HINTS: ("Key hints", "keyboard", "Keys on each row and in the bar's tooltips."),
     Setting.TUTORIAL: (
-        "Tutorial",
+        "Redo tutorial",
         "graduation-cap",
-        "This level's tutorial again, from its first step.",
+        "This level's tutorial again, from its first step, on the board as you left it.",
     ),
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),
@@ -347,14 +355,11 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
     if board.cells:
         draw_body(screen, board.cells, view.size, view.origin, BODY_WIDTH)
     screen.set_clip(None)
-    shown = scene.main is MainView.DIAGRAM  # the Run preview hides the buttons: no editing there
-    if shown:
-        _draw_button_shadows(screen, scene)
+    _draw_button_shadows(screen, scene)
     screen.set_clip(scene.layout.board_area)  # the grid over the shadows, under the rest
     screen.blit(_grid(scene.layout, view, board.cells, screen.get_size()), (0, 0))
     screen.set_clip(None)
-    if shown:
-        _draw_buttons(screen, scene, fonts)
+    _draw_buttons(screen, scene, fonts)
     screen.set_clip(scene.layout.board_area)
 
     wired = {(board.nodes[w.source].cell, board.nodes[w.target].cell) for w in board.wires}
@@ -541,6 +546,16 @@ def draw_body(screen, zone: list[Cell], size: float, origin, width: int = 3) -> 
     """The swimmer's symbol behind a board, a corner forward (E): the body is the board (D-018)."""
     centre, radius = body_circle(zone, size, origin)
     draw_symbol(screen, BODY_OUTLINE, centre, radius, 0.0, width)
+
+
+SWIMMER_LINE = 0.15  # the swimmer's lines, over its radius on screen (D-410)
+SWIMMER_LEAST = 2  # ... never thinner than this [px]
+
+
+def swimmer_width(radius: float) -> int:
+    """How thick the swimmer's symbol is drawn at `radius` [px], in the run, the Editor and their
+    maps: in proportion, never under SWIMMER_LEAST (D-410)."""
+    return max(SWIMMER_LEAST, round(SWIMMER_LINE * radius))
 
 
 def draw_symbol(screen, colour, centre, radius: float, heading: float, width: int) -> None:
@@ -735,7 +750,7 @@ def _draw_files(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
         draw_row(screen, scene, fonts, rect, row, _win_name(won), status, active, icon="trophy")
     if not scene.wins:
         note = "No win yet. Each win of each level will be kept here for the session."
-        draw_note(screen, fonts, note, DIAGNOSTIC_MAP[:2], DIAGNOSTIC_MAP[2])
+        draw_note(screen, fonts, note, NOTE_AT, NOTE_WIDTH)
 
 
 def _win_name(won) -> str:
@@ -772,7 +787,8 @@ def draw_level_map(
         x, y, heading = pose
         if body is not None:
             draw_under(screen, view, body)
-        draw_symbol(screen, BODY, view.to_screen(x, y), BASE_RADIUS * view.scale, heading, 2)
+        radius = BASE_RADIUS * view.scale
+        draw_symbol(screen, BODY, view.to_screen(x, y), radius, heading, swimmer_width(radius))
         if body is not None:
             draw_over(screen, view, body)
         if frame is not None:
@@ -808,11 +824,22 @@ def draw_track(screen: pygame.Surface, rect, level: float, held: bool = False) -
 
 
 def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """Diagnostic (D-058, D-069): the level small, its obstacles, its marks, its lights,
-    and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076), its
-    streams no shorter on screen than LEAST_STREAM (D-345)."""
-    area = pygame.Rect(DIAGNOSTIC_MAP)
+    """Diagnostic (D-058, D-407): at its top the board at work where the probe stands, on its
+    body, plain, as Run's Diagnostic draws it (D-089): beads on the wires, faint streams behind
+    each eye and thruster (D-415), no numbers (D-052); at its foot the level small, its
+    obstacles, its marks, its lights, and the probe, the swimmer to drag and turn, at work
+    (D-076), its streams no shorter on screen than LEAST_STREAM (D-345)."""
     probe, level = scene.probe, scene.level
+    if probe is None or not probe.circuit.cells:
+        note = "Your board is empty: place a part to see it run."
+        draw_note(screen, fonts, note, NOTE_AT, NOTE_WIDTH)
+    else:
+        circuit = probe.circuit
+        screen.set_clip(DIAGNOSTIC_BODY)
+        draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
+        draw_working(screen, circuit, probe.y, probe.ticks // TICKS_PER_FRAME, fonts)
+        screen.set_clip(None)
+    area = pygame.Rect(DIAGNOSTIC_MAP)
     if level is not None and probe is not None:
         view = level_view(level, tuple(area))
         frame = probe.ticks // TICKS_PER_FRAME
@@ -825,11 +852,8 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
-    note = (
-        "Drag the swimmer anywhere; the mouse wheel, or L and R, turn it. The main screen runs your"
-        " board there."
-    )
-    draw_note(screen, fonts, note, (area.left, area.bottom + 10), area.width)
+    note = "You can drag the swimmer anywhere; the wheel, or L and R, turn it."
+    draw_note(screen, fonts, note, (area.left, area.bottom + 8), area.width)
 
 
 def draw_note(
@@ -940,8 +964,8 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         note = "Skip or finish the tutorial for hints."
     if note is not None:
         rows = layout.hint_rows
-        top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else DIAGNOSTIC_MAP[1]
-        draw_note(screen, fonts, note, (DIAGNOSTIC_MAP[0], top), DIAGNOSTIC_MAP[2])
+        top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else NOTE_AT[1]
+        draw_note(screen, fonts, note, (NOTE_AT[0], top), NOTE_WIDTH)
 
 
 def _draw_with_icons(
@@ -1042,21 +1066,24 @@ def draw_field(
     caret: int | None,
     icon: str | None = None,
     hint: str = "",
+    row: bool = False,
 ) -> None:
     """A field of text (D-075, D-206, D-305): a box, outlined in the accent while typed in, its
     icon if it has one; the text, slid left as far as the caret needs to show, the caret a bar
-    where it is while typed in; with no text and not typed in, `hint`, dimmed."""
+    where it is while typed in; with no text and not typed in, `hint`, dimmed, or drawn as a
+    row's name if the field is a `row` among buttons (D-413)."""
     box = pygame.Rect(rect)
     pygame.draw.rect(screen, BUTTON, box, border_radius=6)
     if caret is not None:
         pygame.draw.rect(screen, LIT, box, 2, border_radius=6)
-    ink = TEXT if caret is not None or text else DIM_TEXT
+    ink = TEXT if caret is not None or text or row else DIM_TEXT
     left = box.left + (42 if icon else 12)
     if icon:
         fonts.icons.draw(screen, icon, (box.left + 20, box.centery), 16, ink)
     font, room = fonts.text, box.right - 10 - left
     if not text and caret is None:
-        shown = font.render(_fitted(font, hint, room), True, DIM_TEXT)
+        named = fonts.name if row else font
+        shown = named.render(_fitted(named, hint, room), True, ink)
         screen.blit(shown, (left, box.centery - shown.get_height() // 2))
         return
     start = 0
@@ -1284,9 +1311,7 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
         place = pygame.Rect(box.centerx - circuit_w // 2, y + INFO_PAD - 4, circuit_w, circuit_h)
         pygame.draw.rect(screen, PANEL, place, border_radius=6)
         inside = screen.subsurface(place)
-        for specks, colour in ((entry.light(), INTAKE), (entry.flames(), FLAME)):
-            for sx, sy in specks:  # on the grid of the run's specks (D-076)
-                inside.fill(colour, (sx // SPECK * SPECK, sy // SPECK * SPECK, SPECK, SPECK))
+        draw_streams(inside, ((entry.light(), INTAKE), (entry.flames(), FLAME)))
         draw_circuit(inside, entry.circuit, entry.y, fonts, plain=True, meters=False)
 
 
@@ -1345,6 +1370,25 @@ def cached_text(font: pygame.font.Font, text: str, colour: tuple[int, int, int])
             _TEXT_CACHE.clear()
         _TEXT_CACHE[key] = font.render(text, True, colour)
     return _TEXT_CACHE[key]
+
+
+def draw_working(
+    screen: pygame.Surface, circuit: Circuit, y: np.ndarray, frame: int, fonts: Fonts
+) -> None:
+    """Diagnostic's circuit, the Board's and Run's (D-089, D-407): behind it, faint and short,
+    the light each eye draws in and each thruster's flame, as many as the rates; then the
+    wires, the beads and the parts, plain (D-415)."""
+    light = streams.light(circuit, y, frame, DIAGNOSTIC_REACH, 0)
+    flames = streams.flames(circuit, y, frame, DIAGNOSTIC_REACH, 0)
+    draw_streams(screen, ((light, INTAKE_FAINT), (flames, FLAME_FAINT)))
+    draw_circuit(screen, circuit, y, fonts, plain=True, meters=False)
+
+
+def draw_streams(screen: pygame.Surface, specks) -> None:
+    """Each list of specks [px] in its colour, on the grid of the run's specks (D-076)."""
+    for points, colour in specks:
+        for sx, sy in points:
+            screen.fill(colour, (sx // SPECK * SPECK, sy // SPECK * SPECK, SPECK, SPECK))
 
 
 def draw_circuit(

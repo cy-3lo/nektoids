@@ -5,10 +5,11 @@ import pytest
 from nektoids.editor.arena_layout import BUTTON_KEYS
 from nektoids.editor.buttons import FRAME, KEYS, board_view
 from nektoids.editor.layout import (
-    ACTION_WIDTH,
     BAR_WIDTH,
     BOARD_HEX,
     CAPTION_HEIGHT,
+    DIAGNOSTIC_BODY,
+    DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     DRAWER_WIDTH,
     DRAWERS,
@@ -19,6 +20,7 @@ from nektoids.editor.layout import (
     FOOT_MARGIN,
     HINT_LINE,
     LEVEL_KEYS,
+    MAP_NOTE,
     MAX_HEX,
     MENU_GROUPS,
     MIN_HEX,
@@ -42,10 +44,8 @@ from nektoids.editor.layout import (
     Knob,
     LevelButton,
     MadeGoal,
-    MainView,
     Piece,
     Setting,
-    Shown,
     Start,
     Stepper,
     Tool,
@@ -72,7 +72,6 @@ from nektoids.editor.layout import (
     level_button_at,
     level_field_at,
     level_of,
-    main_view_for,
     make_layout,
     menu_item_at,
     moved_view,
@@ -298,18 +297,14 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
         assert group_at(folded, centre(rect)) == title
 
 
-def test_the_boards_drawers_are_parts_files_and_diagnostic_and_the_editor_has_its_action():
+def test_the_boards_drawers_are_parts_files_and_diagnostic_and_no_action_atop_a_screen():
     # D-401: Tools, Navigator and the Wheel left the Board for the buttons round it
     assert DRAWERS[Env.BOARD] == (Drawer.PARTS, Drawer.FILES, Drawer.DIAGNOSTIC)
     for layout in (LAYOUT, FILES, make_layout(None)):
         assert layout.action_at is None and action_at(layout, centre(layout.board_area)) is None
         assert layout.edit_buttons == ()
-    editor = make_layout(Drawer.OBJECTS, env=Env.EDITOR, editor=True)
-    x, y, w, h = editor.action_at  # the Editor's, centred atop its main screen (D-314)
-    bx, by, bw, _ = editor.board_area
-    assert abs(x + w / 2 - (bx + bw / 2)) <= 1 and y > by and w == h == ACTION_WIDTH
-    assert action_at(editor, (x + 5, y + 5)) is Shown.ACTION
-    assert make_layout(env=Env.RUN).action_at is None
+    editor = make_layout(Drawer.OBJECTS, env=Env.EDITOR, editor=True)  # its keys instead (D-410)
+    assert editor.action_at is None and make_layout(env=Env.RUN).action_at is None
     assert [title for title, _ in FILES.section_titles] == ["Wins this session", "Save/Load"]
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
     assert [title for title, _ in run.section_titles] == ["View", "Overview", "Objectives"]
@@ -518,11 +513,17 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]
 
 
-def test_the_main_screen_shows_the_run_preview_only_in_diagnostic():
-    # D-069: no switch; the drawer says what the Board's main screen shows
-    assert main_view_for(Drawer.DIAGNOSTIC) is MainView.PREVIEW
-    for drawer in (Drawer.PARTS, Drawer.FILES, *FOOT, None):
-        assert main_view_for(drawer) is MainView.DIAGRAM
+def test_diagnostic_on_the_board_runs_it_at_its_top_and_shows_the_level_at_its_foot():
+    # D-407: the main screen stays the board; the drawer holds the board at work, then the map
+    diagnostic = make_layout(Drawer.DIAGNOSTIC)
+    (top, top_rect), (foot, foot_rect) = diagnostic.section_titles
+    assert (top, foot) == ("Active board", "The level")
+    bx, by, bw, bh = DIAGNOSTIC_BODY
+    mx, my, mw, mh = DIAGNOSTIC_MAP
+    assert top_rect[1] + top_rect[3] == by and by + bh < foot_rect[1]
+    assert foot_rect[1] + foot_rect[3] == my and mw == mh
+    assert my + mh + 8 + MAP_NOTE <= SCREEN[1] - 8  # room for its note under it
+    assert bw == DRAWER_WIDTH and diagnostic.board_area == make_layout(Drawer.PARTS).board_area
     x, y, w, _ = LAYOUT.board_area  # nothing in the main screen's corner names a view any more
     assert palette_target_at(LAYOUT, (x + w - 30, y + 26)) is None
 
@@ -613,7 +614,7 @@ def test_the_sandbox_has_a_third_tab_the_editor_with_its_own_drawers_and_switch_
     assert [b for b, _ in editor.level_buttons] == [LevelButton.RUN]  # Space runs it
     assert [b for b, _ in editor.view_buttons] == [ViewButton.RAYS]
     assert editor.overview is not None and editor.zoom_bar is not None
-    assert editor.controls_area is None and editor.action_at is not None  # the plane, D-314
+    assert editor.controls_area is None and editor.action_at is None  # its keys, D-410
     assert editor.board_area[1] + editor.board_area[3] == editor.status_at[1] - 6
     tabs = dict(editor.tabs)
     assert palette_target_at(editor, centre(tabs["run"])) == "run"
@@ -622,22 +623,17 @@ def test_the_sandbox_has_a_third_tab_the_editor_with_its_own_drawers_and_switch_
     assert drawer_key(Env.EDITOR, "O") is Drawer.OBJECTS and drawer_key(Env.BOARD, "O") is None
 
 
-def test_objects_lists_the_planes_objects_then_undo_and_redo_over_the_wheel_as_tools_does():
-    layout = make_layout(Drawer.OBJECTS, env=Env.EDITOR, editor=True)  # D-301
-    pieces = [Piece.LIGHT, Piece.OBSTACLE, Piece.MARK, Piece.START]  # D-306
+def test_objects_lists_the_planes_objects_alone_the_wheel_and_undo_gone_to_the_keys():
+    layout = make_layout(Drawer.OBJECTS, env=Env.EDITOR, editor=True)  # D-301, D-410
+    pieces = [Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK]  # D-306, the keys' order
     assert [p for p, _ in layout.piece_rows] == pieces
-    assert [b for b, _ in layout.edit_buttons] == [EditButton.UNDO, EditButton.REDO]
-    assert [t for t, _ in layout.section_titles] == ["Plane"]  # Undo and Redo need none
-    assert layout.scroll_max == 0  # all of them over the Wheel, no scroll bar
-    lowest = max(r[1] + r[3] for _, r in (*layout.piece_rows, *layout.edit_buttons))
-    assert layout.wheel_view is not None and lowest < layout.wheel_fold[1]  # all over the Wheel
+    assert layout.edit_buttons == () and layout.wheel_view is None
+    assert [t for t, _ in layout.section_titles] == ["Plane"] and layout.scroll_max == 0
     for piece, rect in layout.piece_rows:
         assert piece_row_at(layout, centre(rect)) is piece and contains(
             layout.drawer_area, rect[:2]
         )
     assert piece_row_at(layout, centre(layout.board_area)) is None
-    folded = make_layout(Drawer.OBJECTS, env=Env.EDITOR, editor=True, wheel_folded=True)
-    assert folded.wheel_view is None and folded.wheel_fold[1] > layout.wheel_fold[1]
     assert LAYOUT.piece_rows == ()
 
 

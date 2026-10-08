@@ -1,66 +1,20 @@
 # To do
 
-The jam build shipped as v1.0 (D-106), and stage 0, Foundations, is built (D-200 to D-206). What
-is left goes here, in the order it unblocks the rest; the PR that does an item removes it, and
-what was done is in git and in [`decisions.md`](decisions.md). Sections keep their numbers,
-which the decision log cites. Ideas for later go in [`ideas.md`](ideas.md). §11 is stage 1, a
-level maker, built on `stage/1-level-maker` and merged into `main` in one PR (D-300); §13, the
-chapters, levels and tutorials made with it, done (D-325 to D-341); §14, the repository's face;
-§15 is stage 2, the Board, built beside stage 1 on `stage/2-board` (D-400).
+The jam build shipped as v1.0 (D-106). Stage 0, Foundations (D-200 to D-206), stage 1, a level
+maker (D-300 on), and stage 2, the Board (D-400 on), are built; stage 3, memory, is decided
+(D-500). What is left goes here, in the
+order it unblocks the rest; the PR that does an item removes it, and what was done is in git and
+in [`decisions.md`](decisions.md). Sections keep their numbers, which the decision log cites.
+Ideas for later are kept apart, off the repository (D-414).
 
-## 11. A level maker (stage 1, D-300)
+## 11. A level maker (stage 1, done, D-300 to D-357, D-412, D-413)
 
-For us and Camille first, then for players (D-105). Each item is planned, and its decisions
-taken, when it starts.
-
-- [x] **A level editor**, Super Mario Maker-like: levels are data already (D-028). It comes
-  first after the foundations (D-105): Camille can make levels without programming (D-041), and
-  every later stage needs levels. It is the Maker, a third tab on the sandbox (D-301).
-  Done, on `stage/1-level-maker`:
-  - [x] The Maker's tab: the plane at large over its grid, a dot every 1 u and a line every
-    5 u, no rulers; Navigator (D-301, D-311, #50).
-  - [x] Objects, as Parts with its Wheel: lights, obstacles, marks and the swimmer's start,
-    placed, dragged, sized, turned, deleted; undo and redo (D-302, D-306, #51, #55). The Wheel
-    works as the Editor's: the action atop the plane, Move on an object clicked, More on one
-    placed, the arrows and Enter, its icons side by side; a click on the plane opens it
-    (D-314, D-316, D-317).
-  - [x] The tabs: F1 to F3, Tab and Shift+Tab; Esc backs out, then opens Chapters (D-303,
-    D-304, #52, #53).
-  - [x] Text, once Brief: the level's title and spec, in fields with a caret (D-305, D-318,
-    #54).
-  - [x] Marks, zones only the objectives read (D-306, #55); objectives as sentences: reach,
-    leave or stay all, one or none of the lights, obstacles or marks (D-307, #56, #57); circle
-    gone, Orbit asking to enter four rings round its light (D-312); the rings lit one by one
-    as they are entered (D-318).
-  - [x] Goals: the time allowed, and at most two goals, each a sentence chosen in three rows of
-    buttons, the words that would aim at nothing dimmed; sliders for the time and a stay's
-    seconds, their values typed too (D-308, #59, #60, #61).
-  - [x] Save, in the Maker's Files: Copy level, its JSON; Paste a level; Start from a blank
-    level or a shipped level, a list of its own under a rule, its chapter folding (D-310, D-322,
-    #64, #65).
-  - [x] Erase all, in the Editor's Tools; Parts the Editor's first drawer, the run opening on
-    Diagnostic (D-321).
-  - [x] Whole numbers: positions on whole units, settings from 1 to 8, the shipped levels too;
-    level files version 4, the zone written as its size (D-311, D-313, D-317, D-318).
-  - [x] Parts, in the Maker: the board's size, 7, 19 or 37 cells, and each part handed out,
-    none to 9 or unlimited, grouped and folding as the Editor's; the Editor's board takes it
-    at once or the change is refused; Paste and Start from bring it (D-315).
-  - [x] The Maker opens on a blank plane, two of each part (D-317).
-  - [x] The board's locked parts: Lock, a mode of the sandbox's Tools (K), makes a part the
-    level's, fixed and using no stock, or frees it; the level places what is locked, Copy level
-    writes it, Paste and Start from bring it (D-319).
-  - [x] Share level: once won as it stands, the level copied with its proof, the winning board's
-    text and its score; pasted, the proof run again, the level cleared if it wins, its score the
-    one to beat, else a draft (D-320).
-
-- [x] **"Two lights, four obstacles"**, set aside as too hard for level 2 (D-032), back as the
-  chapter's last level, 1.8: 27 of 1,728 one-eyed circlers win it, the fastest in 24.6 s
-  (D-324).
-- [x] **Sharing levels and solutions.** Solutions as a board's text (D-205, D-206); levels as
-  their JSON (D-310), shared with their proof (D-320).
-- [ ] **A long press on + or − in the Maker's Parts** (the physicist, 2026-10-07): after 1 s
-  the number keeps changing, 3 steps a second; both numbers to be tuned by trying. A
-  `feat/…` branch into `stage/1-level-maker`.
+Done: the Editor, a tab of Build your level (D-301, D-356), where a level is made: its lights,
+obstacles and marks, the swimmer's start, its goals and time, its text, the parts its board
+hands out and those it places, locked (D-302 to D-322); whole numbers everywhere (D-311,
+D-313); − and + that keep stepping when held (D-412); Share level, the level won with its proof
+(D-320), written as a few lines, the level one word, the board that won it another (D-413);
+"Two lights" back as 1.8 (D-324).
 
 ## 12. Checks and fixes on `main` (done, D-345)
 
@@ -73,28 +27,35 @@ radii and are never shorter than 32 px on screen (D-345).
 Done: five chapters, 0 Tutorials to 4 Made by users (D-325, D-326); a Maker level shipped with
 its proof, its hints from it (D-328, D-329); chapter 0's six tutorials, reviewed in
 [`tutorials.md`](tutorials.md) (D-334 to D-339); Dragster (D-332); Build your level, Open Maker,
-in Chapters (D-341). What is left is made with the Maker as it comes, under Build your level:
+in Chapters (D-341). What is left is made with the Editor as it comes, under Build your level:
 chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users.
 
 ## 14. The repository's face
 
-- [ ] **A new banner for GitHub**, the physicist's: a new catch phrase and an image, at the top of
-  the README and as the repository's social preview (1280 × 640 px). The image could be the game
-  itself, a swimmer and its streams round a light, rendered by the game's own drawing (no new
-  art: the stage's scope leaves art out). The phrase to find: the README's line today, "You
-  don't steer the agents. You wire their sensors to their thrusters, press run, and watch.",
-  and its "collective behaviour", come from the jam's brief, when the game was to have many
-  swimmers; it has one.
+- [ ] **Put the banners up** (D-417): `docs/banner/github.png` as the repository's social
+  preview (Settings, General); `itch-cover.png` and `itch-banner.png` on the itch.io page.
 
-## 15. The Board, built with fewer moves (stage 2, D-400, on `main` since D-406)
+## 15. The Board, built with fewer moves (stage 2, done, D-400 to D-417)
 
-The physicist's: players build their control boards with less back and forth of the mouse and the
-keyboard, from buttons round a board of one size. Its look and places are D-401 and D-406, decided
-from ten rounds of mockups; its gestures are D-402 to D-405, revised by D-406 after his first
-review.
+Done: buttons round a board of one size, its look and gestures decided from ten rounds of
+mockups (D-401 to D-406); Diagnostic in the drawer, the board kept editable, its streams in
+place of meters, its beads denser (D-407, D-409, D-415, D-416); chapter 0's cards read again
+(D-408); the Editor's keys in place of its Wheel (D-410); the run's drag and wheel (D-411).
 
-- [ ] **Chapter 0's cards**, read again against the buttons: Wiring's and Turning's say how now
-  (D-406); the others, and Camille's reading of them, to come.
-- [ ] **The Editor's buttons** (the physicist, 2026-10-07): the Maker's tab given the Board's
-  buttons and gestures in place of its Wheel (D-314): a click picks, a drag picks, moves or acts
-  along a path it can go back on, the tools round its plane. Planned, and decided, when it starts.
+## 16. Memory (stage 3, D-500)
+
+Built on `stage/3-memory`, branched from `main` once #125 is merged. Each item is planned, and
+its decisions taken, when it starts.
+
+- [ ] **Tanks.** A part whose level h lags what comes in, T dh/dt = in − h, T about 4 s, and
+  sends out h: `Relax(Scaled(1.0), tau=4.0)` in `graph/laws.py`, already checked by
+  `test_laws.py`; a row in the table of kinds, its icon, its level drawn as a fill; its entry
+  in the info box; how it counts in the score (D-045).
+- [ ] **Loops on the board.** A wire may come back round to a part before it: the Board
+  refuses it today, the dynamics take it (D-017). What the beads show on a loop; a tank on a
+  loop that holds its level, Doubles making up for the fork.
+- [ ] **Lights that change in time.** A light's power as a schedule, deterministic: a flash that
+  goes dark, lights that switch on in turn. Set in the Editor, written in the level's file and
+  its word (D-413), drawn so that the player sees it change (invariant 6).
+- [ ] **Levels for memory.** A chapter whose levels need what the eyes no longer read: go where
+  the light flashed; visit the lights in the order they lit.

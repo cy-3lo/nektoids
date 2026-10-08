@@ -67,7 +67,10 @@ class TextField:
         self.caret = min(self.caret, len(self.text))
 
     def _kept(self, text: str) -> str:
-        return "".join(c for c in text if self.takes(c))[: self.longest]
+        """What the field takes of `text`, a line break a space if it takes no line break, so
+        lines pasted run on as words do (D-413)."""
+        spaced = (" " if c in "\r\n" and not self.takes(c) else c for c in text)
+        return "".join(c for c in spaced if self.takes(c))[: self.longest]
 
 
 def wrapped(text: str, fits: Callable[[str], bool]) -> list[tuple[int, str]]:

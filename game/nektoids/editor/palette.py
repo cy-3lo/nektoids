@@ -183,7 +183,7 @@ WIRING = P.bright  # the wire being drawn, where it would run: white, apart from
 WIRING_OK = P.accent1.bright  # ... and it may connect there (D-087)
 GHOST_OK = P.bright  # a tutorial's part outlined where it should face
 FOCUS_TINT = 0.5  # a cell a tutorial's step acts on: so much of its pulse over the zone (D-337)
-GHOST_FILL = mix(P.line, P.dim, 0.4)  # a tutorial's ghost part or wire: a paler grey, no outline
+GHOST_FILL = P.line  # a tutorial's ghost part or wire, a shadow: darker than a wire, no outline
 DOOMED = P.muted  # what a Delete click would remove
 ICON_EDGE = mix(P.muted, P.dim, 0.5)  # the edge of an icon of the Wheel, and of a pile's (D-068)
 
@@ -214,6 +214,8 @@ MARK = mix(P.muted, P.dim, 0.5)  # a mark, an empty circle and its centre, in ev
 # 0.56), dimmer than the swimmer
 FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks drifting out
 INTAKE = mix(P.muted, P.dim, 0.6)  # the light an eye draws in, specks drifting to its face
+FLAME_FAINT = mix(FLAME, PANEL, 0.3)  # ... on Diagnostic's circuit, behind it (D-415)
+INTAKE_FAINT = mix(INTAKE, PANEL, 0.3)
 PART_OUTLINE = P.dim  # a part's outline on the swimmer; its face keeps EYE_FACE, THRUSTER_BACK
 MOTION = P.accent1.bright  # its velocity and its spin, in the swimmer's own colour
 

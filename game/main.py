@@ -31,14 +31,14 @@ import pygame
 from nektoids.editor import clipboard
 from nektoids.editor.arena import ArenaScene
 from nektoids.editor.arena_draw import draw_arena
+from nektoids.editor.buttons import Button
 from nektoids.editor.devdrive import DT, SIM_HZ, TICKS_PER_FRAME
 from nektoids.editor.draw import Fonts, draw
 from nektoids.editor.hints import Hints, Taken, hint_view
-from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, MainView, contains, make_layout
+from nektoids.editor.layout import DRAWERS, FOOT, SCREEN, Drawer, contains, make_layout
 from nektoids.editor.level_editor import EditorScene
 from nektoids.editor.level_editor_draw import draw_level_editor
 from nektoids.editor.palette import pulse, pulse_fill
-from nektoids.editor.preview_draw import draw_preview
 from nektoids.editor.router import Router, Screen, level_label, level_number
 from nektoids.editor.scene import BoardScene
 from nektoids.editor.schematic import SchematicScene
@@ -129,11 +129,21 @@ def tutorial_box(guide: Tutorial, scene: BoardScene | ArenaScene) -> tuple:
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = [] if done is None else target_rects(worked_on(done.show), *where)
     beside = scene.layout.board_area  # the board, or the arena
-    parts = []  # what the box must not hide: the parts on the Board (D-103)
+    parts = []  # what the box must not hide: the parts on the Board (D-103), its buttons (D-408)
     if isinstance(scene, BoardScene):
         parts = target_rects([{"cell": list(n.cell)} for n in scene.board.nodes.values()], *where)
+    if isinstance(scene, ArenaScene):  # the run: its controls, its drawer, the swimmer (D-408)
+        parts = [scene.layout.controls_area, scene.swimmer_box()]
+        if scene.layout.drawer_area is not None:
+            parts.append(scene.layout.drawer_area)
+    spare = []  # what it hides last: Undo and Redo, which a step needs least (D-408)
+    if isinstance(scene, BoardScene):
+        buttons = scene.shown_buttons()
+        last = (Button.UNDO, Button.REDO)
+        parts += target_rects([{"button": b.value} for b in buttons if b not in last], *where)
+        spare = target_rects([{"button": b.value} for b in buttons if b in last], *where)
     lines = len(guide.step.lines)
-    return spots, box_rect([rect for rect, _ in spots], lines, beside, before, parts)
+    return spots, box_rect([rect for rect, _ in spots], lines, beside, before, parts, spare)
 
 
 def choose_place(index: int) -> None:
@@ -470,8 +480,7 @@ async def main() -> None:
             draw_level_editor(screen, editor(), fonts)
         else:
             board_scene().update()
-            preview = board_scene().main is MainView.PREVIEW  # the Run preview (D-058)
-            draw(screen, board_scene(), fonts, draw_preview if preview else None)
+            draw(screen, board_scene(), fonts)
         if developer is None and router.screen is Screen.TITLE:  # over the run (D-069)
             draw_title_card(screen, fonts)
         elif developer is None and router.screen is Screen.SPEC:

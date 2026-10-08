@@ -2458,3 +2458,152 @@ turned, swapped or deleted, its wires free to come and go; ringed in the accent,
 ring is light; Erase all spares it; saved boards keep it, the board's text does not, as it keeps
 no lock. On the sandbox, Shift+Lock makes a part the level's, as Lock did (D-319). Stage 2 goes
 to `main` now, the physicist's, before Camille's review of v1.1 (D-400 left it open).
+
+**D-407 — 2026-10-08 — Diagnostic on the Board keeps the board editable: the main screen stays the board with its buttons; the drawer runs it at its top, as Run's Diagnostic does, and shows the level's map at its foot. The Run preview goes. Amends D-058, D-060, D-069, D-339.**
+The physicist's: with the board always on the main screen, a change shows at once in the drawer,
+and nothing is refused for being in a preview. The drawer's top, "The board at work", draws the
+board fitted with its body, plain, beads on the wires and a meter by each eye and thruster, as
+Run's Diagnostic draws it (D-089); its foot, "The level", is the map as before, 216 px square,
+the probe dragged on it. Over the map, L, R and the mouse wheel turn the probe; anywhere else
+they turn the parts, the physicist's. The probe is made again whenever the board changes, where
+it stood. A part clicked on the preview to edit it (D-339) goes with the preview. The status line
+says how to use the map while the mouse is on it. Diagnostic's last card in chapter 0 says what
+the drawer shows.
+
+**D-408 — 2026-10-08 — Tutorial cards keep clear of what the player needs: on the Board, of the buttons round the board, Undo and Redo given up last; in the run, of the controls, the drawer and the swimmer. Chapter 0 lights a part's button with its row, and its shadows are darker. Amends D-048, D-103, D-337.**
+From the physicist's review of chapter 0 against the new Board (D-406). A card's place keeps
+clear of its targets, the hand's way between them, the work just done and the parts (D-048,
+D-103), and now of the buttons; where no place is clear, it gives up the ways, then Undo and
+Redo, which a step needs least, then the buttons, then the work just done, never its targets.
+With the Parts drawer open, a card of 464 px finds no room clear of every button in a board area
+of 664 px: three of chapter 0's cards lie over Undo and Redo. A card with no target looks for a
+clear place from the board's foot up. In the run, a card keeps off the controls, the drawer
+and the swimmer, over the arena between the swimmer and the timeline. Eyes, Half and Minus light
+the part's button round the board and its row in Parts; Eyes says how: the buttons dragged onto
+their ghosts, then W and the two parts. The tutorials' shadows, parts and wires, are the line's
+grey, a shade darker, not to be taken for a wire. Settings' Tutorial row is named Redo
+tutorial, which is what it does (D-334): from the first step, on the board as it stands. Minus
+hands out a Sum too, the physicist's, so that Sum and Difference sit side by side, to choose.
+
+**D-409 — 2026-10-08 — Diagnostic's board is titled "Active board", in the run and on the Board; on the Board, a note under the map says it can be dragged. Amends D-089, D-407.**
+The physicist's. The run's Diagnostic called its board "The swimmer's wiring", the Board's "The
+board at work": both are now "Active board". Under the Board's map, a note: "You can drag the
+swimmer anywhere; the wheel, or L and R, turn it." Its room is taken from the active board, now
+248 px high, the map moved up over the note.
+
+**D-410 — 2026-10-08 — The Editor's keys: square keys fixed on the screen, floating over the plane at its edges, tools at its left, objects at its right, in place of the Wheel and the action atop the plane; a click picks, Shift adds, a drag draws a rectangle that picks or moves the pick, a held object is laid along a drag, the Hand pans, the wheel sizes or zooms; the swimmer can be cut and placed again; Erase all takes the goals too. Amends D-301, D-302, D-307, D-314, D-316, D-317.**
+The physicist's, from four rounds of mockups and a review: the Board's buttons sit round a fixed
+board, the Editor's plane pans and zooms, so its keys are squares fixed on the screen, 36 px so
+that their icons are the bar's size, 20 px inside the plane's edges, clear of the drawer's
+handle, with nothing under them but the plane. At the left, two columns: Select and Hand; Bigger
+and Smaller, carets up and down; Zoom in and out; Undo and Redo; Copy and Paste; Cut, which takes
+the place of Delete, and Erase all. At the right: the Swimmer, drawn as its symbol, key 0, then
+Light, Obstacle and Mark, 1 to 3; Objects' rows in that order. Each looks as the Board's buttons
+do (D-401): chosen, lit, greyed; each has its tooltip, its name and key. The Wheel, the action
+atop the plane and the undo rows of Objects go.
+With Select, a click picks the object clicked, Shift or Cmd adds one, the open plane drops the
+pick; a drag from the open plane draws a rectangle, a + at its first corner and at the mouse,
+which picks the objects whose centres lie inside it; a drag from an object moves it, or the pick
+it is in, on the lattice, one step for undo. The Hand pans; a right drag pans whatever is held.
+An object's key held, each click on the plane places one; a drag lays them along its way, each
+touching the last, going back taking them away, as the Board's parts (D-404), and lets go with
+Select in hand; dragged onto the plane from its key or its row, one lands there. A level has one
+swimmer: its key is greyed while it is on the plane; Cut takes it off, the run refused until its
+key, or 0, places it again; Undo puts it back. Bigger, Smaller, Cut and Copy act on the items
+picked; Paste puts copies where the mouse is, else 2 u beside, and picks them; what is copied
+lasts the session, for any level. Erase all asks "Are you sure you want to erase all the
+objects?", Cancel the default, Enter, Esc or a click elsewhere cancelling; it takes every item
+and every goal, which would aim at nothing, the swimmer and the time allowed staying. A value
+shows a moment under an object placed or set, as the Board's count (D-401). The mouse wheel over
+an item sizes it, the pick if it is picked, over the swimmer turns it, over the open plane zooms
+there; notches as the Board's (D-405). Keys: S, H, 0 to 3, < and >, + and -, Del cuts, Ctrl+C,
+Ctrl+V, Ctrl+X; the arrows move the pick 1 u, else the view; Esc opens Chapters (D-406). The swimmer is
+drawn with lines 0.15 of its radius on screen, 2 px at least, in the run, the Editor, their maps
+and on its key, the physicist's. A click with an object's key held stays a click though the
+mouse moves a little: only a drag that lays a second object lets the key go. A right click, not
+a drag, puts the key down and drops the pick, Select in hand. An object's key, its first gesture
+says how it is used: a drag lays a row; a click places one, and then each click places one, a
+drag putting the key down to move the object under it, or pick with a rectangle, as Select.
+
+**D-411 — 2026-10-08 — In the run, a drag moves the view, left or right, and the mouse wheel zooms about the mouse, as in the Editor (D-410). Amends D-065, D-066.**
+The physicist's. A left press on the arena that moves 4 px or more moves the view; one let go
+where it was is a click, which inspects, as before; the developer's drag still moves the swimmer.
+A right drag moves the view whatever the press would do. The wheel over the arena zooms about the
+mouse, a trackpad's small scrolls adding up to a notch (D-405); in the developer view it still
+turns the swimmer. The Hand and Navigator's zoom stay.
+
+**D-412 — 2026-10-08 — In the Editor's Parts, a − or + held keeps stepping: after 1 s, three steps a second, the whole ladder, ∞ included; the hold is one step for undo. Amends D-315.**
+The physicist's, from the todo's §11. A press steps once, as before; held 60 frames over the same
+button, it steps again every 20 frames until it is let go, the mouse leaves the button, the end of
+its row is reached or a step is refused, the status line saying why (D-315). Both numbers are
+constants in `editor/hold.py`, to be tuned by trying. Undo takes the whole hold back, as a run of
+the wheel's notches (D-405).
+
+**D-413 — 2026-10-08 — A level is shared as a few lines of text: its title, author and description, then the level as one word, then, once won, the winning board's text. Copy level and Share level write them, Paste a level reads them; JSON leaves the Editor, and shipped files stay JSON. Amends D-310, D-320, D-328, D-331.**
+The physicist's, from the todo's §11: a short text to paste into a comment or an email,
+`Title:`, `Author:`, `Description:`, `Level:` and `Board:`, each on its line. The level's word
+holds only the level as played: the start, the items, the zone, what the board hands out, the
+parts it places, locked, the time and the goals; no title, spec or author, which are the lines
+above it, and no board but its locked parts. It is built as a board's text (D-205): each
+decision a digit whose base is the number of choices, a position one digit within 32 u of the
+origin and more beyond, a heading a whole degree, the locked parts the board's own digits; the
+integer is written in base 59 with the board's checks, moved to `graph/spelling.py`, under a
+hidden version symbol of its own, 31, so a board's text pasted as a level is refused, "that is a
+board's text: paste it on the Board", and a level's word on the Board likewise. Every shipped
+level's word is 18 to 35 characters; Dragster's whole text, 115, against 374 of compact JSON.
+Paste a level finds the lines by their labels, in any order, what comes before the first or
+after a word left out, as an email's greeting and signature; a line break pasted into any field
+is now a space, so the lines run together in a field of one line and are still read. A word
+alone is a level untitled. The proof's tick and parts are not written: a pasted proof is run
+again and counted (D-320). Copy level writes no `Board:` line; Share level does. A pasted
+level keeps its author, as D-331 said and the Editor did not. To ship a level (D-328), its text
+saved to a file goes through `PYTHONPATH=game python -m nektoids.levels.levelword TEXT FILE`,
+which runs its proof again and writes the level's file as the game writes it; passkey and
+tutorial are still written there by hand.
+
+**D-414 — 2026-10-08 — The README is written for visitors: the game, how to play it and how to build it, the `docs/` folder, credits. `docs/ideas.md` is no longer committed: it stays on the developers' disks, ignored by git. Amends D-028.**
+The physicist's, the todo's §14. The README says what the game is, plays it in a browser on
+itch.io or natively from `requirements.txt` (the game is not an installable package), builds it,
+and lists `docs/`; it names no contributor but Cy-3LO, and says nothing of how the work is shared.
+`ideas.md` held thoughts for later, not for strangers: it is taken out of the repository, its
+history left as it is, and CLAUDE.md no longer counts it among the files strangers read. The
+banner, the todo's other item, comes later.
+
+**D-415 — 2026-10-08 — Diagnostic's circuit, the Board's and Run's, shows each eye's light and each thruster's flame behind it, faint and short, in place of the level meters. Amends D-052, D-089.**
+The physicist's: a meter, a bar of the faces' accent beside a part, was hard to read and taken
+for the part's accented face. Behind the wires and the parts, the specks the run draws (D-076)
+now come into each eye's face and out of each thruster's back, as many as the rates, the way the
+part faces: at most 1.4 hex sizes from the face, against 1.8 in a part's entry (D-082), in the
+run's colours taken 30% towards the panel's, the variant he chose of three. The entry's specks
+and Diagnostic's are drawn by one module, `editor/streams.py`, any facing; the entry's are the
+same as before, speck for speck. The developer view keeps its meters beside its numbers.
+
+**D-416 — 2026-10-08 — A wire carrying RATE_MAX shows 10 beads a second, not 4, at the same speed: beads 0.35 hex sizes apart at full rate, not 0.875.**
+The physicist's, comparing 4, 6, 8 and 12 a second on the banner's board: on the short wires of
+a board, one or two cells, a low rate often showed one bead or none. The speed stays 3.5 hex
+sizes a second, so the beads move as before, closer together; the rate still reads as their
+spacing. Every circuit takes it: Diagnostic, the Board's and Run's, the parts' entries, where ×2
+and ÷2 still send their beads in time with those coming in, and the developer view.
+
+**D-417 — 2026-10-08 — The banners: the title, the studio and the README's phrase, the swimmer at the run's scale, its velocity and spin shown, and its board at work at the same moment, drawn by the game's own code; one atop the README and as GitHub's social preview, two for itch.io. Closes the todo's §14.**
+The physicist's, from mockups rendered by the game. One board, two eyes ahead and two thrusters
+at the tail, wired without crossing, a Double on the left, a Source less the right eye on the
+right, runs 1 s towards a light that is never seen: its rays fade out before it. The swimmer is
+drawn as the run draws it at its opening scale, 16 px a unit; beside it, its board on its body,
+its beads (D-416) and its streams in the run's colours, neither brighter nor dimmed as
+Diagnostic's (D-415), three frames of specks so that they read on a still. GitHub's is 1280 by
+640, nothing within 40 px of its edges, as GitHub's template asks; itch.io's cover 630 by 500
+and its page banner 960 by 300. `docs/banner/make_banners.py` draws all three again when the
+game's look changes; the README shows GitHub's under its title, the phrase in its alt text.
+
+**D-500 — 2026-10-08 — Stage 3, memory, is decided: tanks, loops on the board, and lights that change in time, with their levels; valves stay in the ideas. Built on `stage/3-memory`, branched from `main` once stages 1 and 2 are there (#125); its decisions take the five hundreds. Applies D-105, D-400.**
+The physicist's, from the ideas' §3, the stage D-400 put next. A tank is a part whose level h
+lags what comes in, T dh/dt = in − h, T about 4 s, and which sends out its level: the lag every
+node has (D-017), slower, one entry in the table of kinds and its law in `graph/laws.py`
+(D-202), its level drawn as a fill. Loops: a wire may come back round to a part before it; the
+dynamics take loops already (D-017), the Board refuses them, and with a tank a loop holds a
+level. A light may follow a schedule, its power a function of time, set in the Editor and
+deterministic (invariant 1): a flash that goes dark, lights that switch on in turn, so that what
+the eyes read now is not enough. Valves, out = max(0, a − b), need ports first and stay in the
+ideas, as do the threshold node and colours. The todo's §16 lists the work; each item is planned,
+and its decisions taken, when it starts.

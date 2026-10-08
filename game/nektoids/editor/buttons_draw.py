@@ -1,6 +1,7 @@
 """The Board's buttons as keys (D-401): a hex the size of a cell, a bevel 3 px wide lit from the
 top left, a shadow 2 px right and 3 px down; pressed in, the light falls on the far sides and
-the shadow goes. `draw.py` puts the icon or the part on it, and the tags."""
+the shadow goes. `draw.py` puts the icon or the part on it, and the tags. The Editor's keys are
+squares, lit and shadowed alike (D-410)."""
 
 from __future__ import annotations
 
@@ -58,3 +59,28 @@ def tag(screen: pygame.Surface, centre, text: pygame.Surface, fill, edge=None) -
     if edge is not None:
         pygame.draw.rect(screen, edge, rect, 1, border_radius=5)
     screen.blit(text, text.get_rect(center=rect.center))
+
+
+def square_shadows(screen: pygame.Surface, rects: list) -> None:
+    """The square keys' shadows, under them all, as the hexes' (D-410)."""
+    layer = _layers.get(screen.get_size())
+    if layer is None:
+        layer = _layers[screen.get_size()] = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    layer.fill(CLEAR)
+    for x, y, w, h in rects:
+        pygame.draw.rect(layer, KEY_SHADOW, (x + SHADOW_AT[0], y + SHADOW_AT[1], w, h))
+    screen.blit(layer, (0, 0))
+
+
+def square_bevel(screen: pygame.Surface, rect, light, dark) -> None:
+    """A square key's rim, BEVEL px wide: the top lit, the bottom dark, the sides between."""
+    r, b = pygame.Rect(rect), BEVEL
+    inner = r.inflate(-2 * b, -2 * b)
+    sides = (
+        ([r.topleft, r.topright, inner.topright, inner.topleft], light),
+        ([r.topleft, inner.topleft, inner.bottomleft, r.bottomleft], mix(light, dark, 0.35)),
+        ([r.topright, r.bottomright, inner.bottomright, inner.topright], mix(light, dark, 0.65)),
+        ([r.bottomleft, inner.bottomleft, inner.bottomright, r.bottomright], dark),
+    )
+    for quad, colour in sides:
+        pygame.draw.polygon(screen, colour, quad)

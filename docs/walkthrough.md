@@ -707,16 +707,19 @@ Parts open; click Tools, then its icon again, or the arrow on the drawer's edge.
   its own small circuit (`DEMOS`), its light and flames (`light`, `flames`), run by
   `Frame.frame_update` while its box is open and drawn by `draw_info` with `draw_circuit`, as
   Inside draws a board; its beads are `beads.Travelling`. Open a part's (i) in Parts.
-- [`editor/wheel.py`](../game/nektoids/editor/wheel.py), pure: the Wheel at the foot of Tools
-  and Parts (D-068, D-069). `offer` is what a cell offers; `slots` places the icons at a turn,
-  a fraction while the Wheel slides from one turn to the next, eased by `slid` (D-083). The
-  scene keeps the turn an integer and starts each slide in `_turn_wheel`. Open the sandbox,
-  click an empty cell, and turn its seven parts with the mouse wheel.
+- [`editor/buttons.py`](../game/nektoids/editor/buttons.py) and
+  [`editor/editor_keys.py`](../game/nektoids/editor/editor_keys.py), pure: the keys that took
+  the Wheel's place (D-401, D-410), round the Board's board and at the Editor's plane's edges;
+  each one's place, key, tooltip, and how it looks given what is picked (`states`).
+  [`editor/picking.py`](../game/nektoids/editor/picking.py) and
+  [`editor/plane_pick.py`](../game/nektoids/editor/plane_pick.py), pure: what a click or a drag
+  picks, on the Board's cells and on the Editor's plane. Open the sandbox, pick two parts with
+  Shift, and press Turn right.
 
 Questions: why is an info disc asked before its row, in `_press`? What would the player see if
 `open_drawer` did not slide the view? Why do ×2's beads leave in step with those coming in
-(`Entry._keep_time`), when no other wire's beads keep time with another's? Why does
-`_turn_wheel` start a slide from the turn shown, not from the turn before?
+(`Entry._keep_time`), when no other wire's beads keep time with another's? Why does a drag that
+goes back over its path cut the pick back, not add to it (`plane_pick.crossed`)?
 
 Settings and Chapters (D-054) sit at the bar's foot. Open Settings and click Fast forward, then
 Chapters (Tab) and a locked level.
@@ -750,22 +753,21 @@ The run has the same frame (D-057). Run a level, open Inside, then Tab, then Esc
 Questions: what does `_slid` do on the Board, and in the run? Why is the controls strip not an
 "area" for the tutorial's box (`tutorial.is_area`)?
 
-The Run preview and Diagnostic, called Sense until D-069 (D-058). Open Diagnostic: the main
-screen runs your board where the probe stands; drag the probe on the map, then drag an eye's
-knob.
+Diagnostic on the Board, called Sense until D-069 (D-058, D-407). Open Diagnostic: the main
+screen stays the board, to edit; the drawer runs it at its top where the probe stands, and shows
+the level at its foot; drag the probe on the map, turn it with the wheel, or L and R over the map.
 
 - [`editor/probe.py`](../game/nektoids/editor/probe.py), pure: `Probe`, the board as it would
-  run at a pose, its eyes reading the light once (nothing moves), `hold` for an eye's knob;
-  `level_view`, the level seen whole in Diagnostic's map. Tested in
-  [`test_probe.py`](../tests/test_probe.py).
-- [`editor/scene.py`](../game/nektoids/editor/scene.py): `main` (a `MainView`, which
-  `layout.main_view_for` reads off the drawer, D-069), `open_drawer` (Diagnostic shows the
-  preview), `_editing`, `_probe_now`, `_hold`.
-- [`editor/preview_draw.py`](../game/nektoids/editor/preview_draw.py): the preview and its
-  knobs; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_diagnostic`.
+  run at a pose, its eyes reading the light once (nothing moves), its circuit fitted to the
+  drawer's top as Run's Diagnostic fits its own (D-089); `level_view`, the level seen whole in
+  Diagnostic's map. Tested in [`test_probe.py`](../tests/test_probe.py).
+- [`editor/scene.py`](../game/nektoids/editor/scene.py): `_probe_now`, the probe made again
+  when the board changes; `_on_map`, `_probe_to`, `_turns_probe`.
+- [`editor/layout.py`](../game/nektoids/editor/layout.py): `DIAGNOSTIC_BODY`,
+  `DIAGNOSTIC_MAP`; [`draw.py`](../game/nektoids/editor/draw.py): `_draw_diagnostic`.
 
-Questions: why does the probe read the light once, and not every tick? What would a held eye
-do to a run, and why can it not?
+Questions: why does the probe read the light once, and not every tick? Why is the probe made
+again whenever the board changes, and what of it is kept?
 
 Files (D-059): win a level twice with two boards, then open Files and click the other win.
 
@@ -784,8 +786,7 @@ The run opens paused, and Fear's tutorial opens in it (D-060).
   waits for through, and "play" while it waits for a win.
 - [`main.py`](../game/main.py): `begun`, a card gone this frame, which opens Fear's run.
 - [`editor/layout.py`](../game/nektoids/editor/layout.py): `overview_view`, `shown_frame`,
-  `centred_on`, Navigator's overview; [`probe.py`](../game/nektoids/editor/probe.py): `see`,
-  the preview through the Board's view.
+  `centred_on`, Navigator's overview, since gone from the Board (D-401).
 
 Question: why must the run's controls ask the tutorial's gate, now that Fear starts in the run?
 

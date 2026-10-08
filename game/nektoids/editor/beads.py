@@ -18,7 +18,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 BEAD_SPEED = 3.5  # hex sizes per second at most (a wire at RATE_MAX): about 2 cells a second
-BEAD_RATE_AT_FULL = 4.0  # beads a second on a wire that carries RATE_MAX: the view's scale
+BEAD_RATE_AT_FULL = 10.0  # beads a second on a wire that carries RATE_MAX: the view's scale (D-416)
 
 
 class Beads:
