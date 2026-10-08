@@ -2577,3 +2577,10 @@ part faces: at most 1.4 hex sizes from the face, against 1.8 in a part's entry (
 run's colours taken 30% towards the panel's, the variant he chose of three. The entry's specks
 and Diagnostic's are drawn by one module, `editor/streams.py`, any facing; the entry's are the
 same as before, speck for speck. The developer view keeps its meters beside its numbers.
+
+**D-416 — 2026-10-08 — A wire carrying RATE_MAX shows 10 beads a second, not 4, at the same speed: beads 0.35 hex sizes apart at full rate, not 0.875.**
+The physicist's, comparing 4, 6, 8 and 12 a second on the banner's board: on the short wires of
+a board, one or two cells, a low rate often showed one bead or none. The speed stays 3.5 hex
+sizes a second, so the beads move as before, closer together; the rate still reads as their
+spacing. Every circuit takes it: Diagnostic, the Board's and Run's, the parts' entries, where ×2
+and ÷2 still send their beads in time with those coming in, and the developer view.
