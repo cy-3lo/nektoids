@@ -2595,3 +2595,15 @@ Diagnostic's (D-415), three frames of specks so that they read on a still. GitHu
 640, nothing within 40 px of its edges, as GitHub's template asks; itch.io's cover 630 by 500
 and its page banner 960 by 300. `docs/banner/make_banners.py` draws all three again when the
 game's look changes; the README shows GitHub's under its title, the phrase in its alt text.
+
+**D-500 — 2026-10-08 — Stage 3, memory, is decided: tanks, loops on the board, and lights that change in time, with their levels; valves stay in the ideas. Built on `stage/3-memory`, branched from `main` once stages 1 and 2 are there (#125); its decisions take the five hundreds. Applies D-105, D-400.**
+The physicist's, from the ideas' §3, the stage D-400 put next. A tank is a part whose level h
+lags what comes in, T dh/dt = in − h, T about 4 s, and which sends out its level: the lag every
+node has (D-017), slower, one entry in the table of kinds and its law in `graph/laws.py`
+(D-202), its level drawn as a fill. Loops: a wire may come back round to a part before it; the
+dynamics take loops already (D-017), the Board refuses them, and with a tank a loop holds a
+level. A light may follow a schedule, its power a function of time, set in the Editor and
+deterministic (invariant 1): a flash that goes dark, lights that switch on in turn, so that what
+the eyes read now is not enough. Valves, out = max(0, a − b), need ports first and stay in the
+ideas, as do the threshold node and colours. The todo's §16 lists the work; each item is planned,
+and its decisions taken, when it starts.
