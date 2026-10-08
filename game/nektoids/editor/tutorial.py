@@ -517,7 +517,7 @@ def box_rect(
 ) -> Rect:
     """The step's box. A leading step's keeps clear of its targets, of the hand's way from each
     to the next, of the same for the step `before`, the work just done (D-048), of `clear_of`,
-    what it must not hide, the parts on the board (D-103) and the Board's buttons (D-406), and of
+    what it must not hide, the parts on the board (D-103) and the Board's buttons (D-408), and of
     `spare`, what it hides last, Undo and Redo: beside a target, the last first, trying its
     right, its left, under it, over it; else the clear spot of a grid over the screen nearest the
     last target. Where none is clear, it gives up the ways first, then `spare`, then `clear_of`,
@@ -566,7 +566,7 @@ def _placed(
         for x in range(8, SCREEN[0] - 8 - BOX_WIDTH + 1, GRID)
     ]
     everything = (*kept, *kept_before, *clear_of, *spare)
-    tests = (  # what it keeps clear of, giving up the least first: the targets, never (D-406)
+    tests = (  # what it keeps clear of, giving up the least first: the targets, never (D-408)
         lambda spot: (
             clear_of_rects(spot, everything) and not any(_crosses(spot, *p) for p in paths)
         ),

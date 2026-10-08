@@ -2458,3 +2458,27 @@ turned, swapped or deleted, its wires free to come and go; ringed in the accent,
 ring is light; Erase all spares it; saved boards keep it, the board's text does not, as it keeps
 no lock. On the sandbox, Shift+Lock makes a part the level's, as Lock did (D-319). Stage 2 goes
 to `main` now, the physicist's, before Camille's review of v1.1 (D-400 left it open).
+
+**D-407 — 2026-10-08 — Diagnostic on the Board keeps the board editable: the main screen stays the board with its buttons; the drawer runs it at its top, as Run's Diagnostic does, and shows the level's map at its foot. The Run preview goes. Amends D-058, D-060, D-069, D-339.**
+The physicist's: with the board always on the main screen, a change shows at once in the drawer,
+and nothing is refused for being in a preview. The drawer's top, "The board at work", draws the
+board fitted with its body, plain, beads on the wires and a meter by each eye and thruster, as
+Run's Diagnostic draws it (D-089); its foot, "The level", is the map as before, 216 px square,
+the probe dragged on it. Over the map, L, R and the mouse wheel turn the probe; anywhere else
+they turn the parts, the physicist's. The probe is made again whenever the board changes, where
+it stood. A part clicked on the preview to edit it (D-339) goes with the preview. The status line
+says how to use the map while the mouse is on it. Diagnostic's last card in chapter 0 says what
+the drawer shows.
+
+**D-408 — 2026-10-08 — Tutorial cards keep clear of what the player needs: on the Board, of the buttons round the board, Undo and Redo given up last; in the run, of the controls, the drawer and the swimmer. Chapter 0 lights a part's button with its row, and its shadows are darker. Amends D-048, D-103, D-337.**
+From the physicist's review of chapter 0 against the new Board (D-406). A card's place keeps
+clear of its targets, the hand's way between them, the work just done and the parts (D-048,
+D-103), and now of the buttons; where no place is clear, it gives up the ways, then Undo and
+Redo, which a step needs least, then the buttons, then the work just done, never its targets.
+With the Parts drawer open, a card of 464 px finds no room clear of every button in a board area
+of 664 px: three of chapter 0's cards lie over Undo and Redo. A card with no target looks for a
+clear place from the board's foot up. In the run, a card keeps off the controls, the drawer
+and the swimmer, over the arena between the swimmer and the timeline. Eyes, Half and Minus light
+the part's button round the board and its row in Parts; Eyes says how: the buttons dragged onto
+their ghosts, then W and the two parts. The tutorials' shadows, parts and wires, are the line's
+grey, a shade darker, not to be taken for a wire.

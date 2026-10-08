@@ -129,14 +129,14 @@ def tutorial_box(guide: Tutorial, scene: BoardScene | ArenaScene) -> tuple:
     done = guide.before  # the work just done, which the box keeps clear of too (D-048)
     before = [] if done is None else target_rects(worked_on(done.show), *where)
     beside = scene.layout.board_area  # the board, or the arena
-    parts = []  # what the box must not hide: the parts on the Board (D-103), its buttons (D-406)
+    parts = []  # what the box must not hide: the parts on the Board (D-103), its buttons (D-408)
     if isinstance(scene, BoardScene):
         parts = target_rects([{"cell": list(n.cell)} for n in scene.board.nodes.values()], *where)
-    if isinstance(scene, ArenaScene):  # the run: its controls, its drawer, the swimmer (D-407)
+    if isinstance(scene, ArenaScene):  # the run: its controls, its drawer, the swimmer (D-408)
         parts = [scene.layout.controls_area, scene.swimmer_box()]
         if scene.layout.drawer_area is not None:
             parts.append(scene.layout.drawer_area)
-    spare = []  # what it hides last: Undo and Redo, which a step needs least (D-406)
+    spare = []  # what it hides last: Undo and Redo, which a step needs least (D-408)
     if isinstance(scene, BoardScene):
         buttons = scene.shown_buttons()
         last = (Button.UNDO, Button.REDO)

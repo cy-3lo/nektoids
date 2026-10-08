@@ -91,14 +91,9 @@ chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users
 The physicist's: players build their control boards with less back and forth of the mouse and the
 keyboard, from buttons round a board of one size. Its look and places are D-401 and D-406, decided
 from ten rounds of mockups; its gestures are D-402 to D-405, revised by D-406 after his first
-review.
+review. Done since: Diagnostic in the drawer, the board kept editable (D-407); chapter 0's
+cards read again, kept clear of the buttons (D-408).
 
-- [ ] **Chapter 0's cards**, read again against the buttons: Wiring's and Turning's say how now
-  (D-406); the others, and Camille's reading of them, to come.
 - [ ] **The Editor's buttons** (the physicist, 2026-10-07): the Maker's tab given the Board's
   buttons and gestures in place of its Wheel (D-314): a click picks, a drag picks, moves or acts
   along a path it can go back on, the tools round its plane. Planned, and decided, when it starts.
-- [ ] **Diagnostic on the Board, the board kept editable** (the physicist, 2026-10-08): the main
-  screen stays the board with its buttons, never the Run preview (D-058, D-069). Diagnostic's
-  drawer shows at its top the board at work, as Run's Diagnostic drawer does (D-089), and at its
-  foot the map, clickable as today: the swimmer dragged and turned, the board's beads following.

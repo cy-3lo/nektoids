@@ -518,7 +518,7 @@ def test_every_box_keeps_clear_of_its_targets_the_way_between_them_and_the_work_
 
 @pytest.mark.parametrize("title", [t for t, level in LEVELS.items() if level.tutorial])
 def test_a_box_on_the_board_hides_none_of_its_targets_nor_a_button_but_undo_and_redo(title):
-    # D-406: the buttons are kept clear of as the parts are (D-103); where a card fits nowhere
+    # D-408: the buttons are kept clear of as the parts are (D-103); where a card fits nowhere
     # else by a drawer, over Undo and Redo, which a tutorial's step needs least
     level = LEVELS[title]
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
@@ -558,7 +558,7 @@ def test_a_box_on_the_board_hides_none_of_its_targets_nor_a_button_but_undo_and_
 
 @pytest.mark.parametrize("title", [t for t, level in LEVELS.items() if level.tutorial])
 def test_a_box_in_the_run_keeps_off_its_controls_and_its_drawer(title):
-    # D-407: a card in the run lies over the arena, between the swimmer and the timeline
+    # D-408: a card in the run lies over the arena, between the swimmer and the timeline
     tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
     for index, step in enumerate(tutorial.steps):
         tutorial.index = index
