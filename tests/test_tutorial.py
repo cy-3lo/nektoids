@@ -556,6 +556,19 @@ def test_a_box_on_the_board_hides_none_of_its_targets_nor_a_button_but_undo_and_
         assert set(hidden) <= spare, (title, index, hidden)
 
 
+@pytest.mark.parametrize("title", [t for t, level in LEVELS.items() if level.tutorial])
+def test_a_box_in_the_run_keeps_off_its_controls_and_its_drawer(title):
+    # D-407: a card in the run lies over the arena, between the swimmer and the timeline
+    tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
+    for index, step in enumerate(tutorial.steps):
+        tutorial.index = index
+        layout = layout_on(Screen.RUN, step)
+        targets = [t for t in target_rects(step.show, Screen.RUN, layout, VIEW) if not is_area(t)]
+        clear_of = [layout.controls_area, *([layout.drawer_area] if layout.drawer_area else [])]
+        box = box_rect(targets, len(step.lines), layout.board_area, [], clear_of)
+        assert not any(overlap(box, c) for c in clear_of), (title, index, box)
+
+
 def grown(rect, by):
     x, y, w, h = rect
     return (x - by, y - by, w + 2 * by, h + 2 * by)
