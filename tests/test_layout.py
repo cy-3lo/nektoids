@@ -9,6 +9,8 @@ from nektoids.editor.layout import (
     BAR_WIDTH,
     BOARD_HEX,
     CAPTION_HEIGHT,
+    DIAGNOSTIC_BODY,
+    DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     DRAWER_WIDTH,
     DRAWERS,
@@ -42,7 +44,6 @@ from nektoids.editor.layout import (
     Knob,
     LevelButton,
     MadeGoal,
-    MainView,
     Piece,
     Setting,
     Shown,
@@ -72,7 +73,6 @@ from nektoids.editor.layout import (
     level_button_at,
     level_field_at,
     level_of,
-    main_view_for,
     make_layout,
     menu_item_at,
     moved_view,
@@ -518,11 +518,16 @@ def test_the_run_has_its_own_drawers_its_switch_back_and_its_controls_under_the_
     assert folded.board_area[2] - run.board_area[2] == run.drawer_area[2]
 
 
-def test_the_main_screen_shows_the_run_preview_only_in_diagnostic():
-    # D-069: no switch; the drawer says what the Board's main screen shows
-    assert main_view_for(Drawer.DIAGNOSTIC) is MainView.PREVIEW
-    for drawer in (Drawer.PARTS, Drawer.FILES, *FOOT, None):
-        assert main_view_for(drawer) is MainView.DIAGRAM
+def test_diagnostic_on_the_board_runs_it_at_its_top_and_shows_the_level_at_its_foot():
+    # D-407: the main screen stays the board; the drawer holds the board at work, then the map
+    diagnostic = make_layout(Drawer.DIAGNOSTIC)
+    (top, top_rect), (foot, foot_rect) = diagnostic.section_titles
+    assert (top, foot) == ("The board at work", "The level")
+    bx, by, bw, bh = DIAGNOSTIC_BODY
+    mx, my, mw, mh = DIAGNOSTIC_MAP
+    assert top_rect[1] + top_rect[3] == by and by + bh < foot_rect[1]
+    assert foot_rect[1] + foot_rect[3] == my and my + mh <= SCREEN[1] - 8 and mw == mh
+    assert bw == DRAWER_WIDTH and diagnostic.board_area == make_layout(Drawer.PARTS).board_area
     x, y, w, _ = LAYOUT.board_area  # nothing in the main screen's corner names a view any more
     assert palette_target_at(LAYOUT, (x + w - 30, y + 26)) is None
 

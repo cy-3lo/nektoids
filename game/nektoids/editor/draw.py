@@ -70,12 +70,15 @@ from nektoids.editor.icons import (
 from nektoids.editor.layout import (
     BAR_WIDTH,
     CAPTION_HEIGHT,
+    DIAGNOSTIC_BODY,
     DIAGNOSTIC_MAP,
     DRAWER_KEYS,
     HINT_LINE,
     INFO_AT,
     LEVEL_KEYS,
     MARGIN,
+    NOTE_AT,
+    NOTE_WIDTH,
     PALETTE_TITLE,
     PASSKEY_KEY,
     SCREEN,
@@ -88,7 +91,6 @@ from nektoids.editor.layout import (
     HintRow,
     Layout,
     LevelButton,
-    MainView,
     Mode,
     Piece,
     Setting,
@@ -347,14 +349,11 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
     if board.cells:
         draw_body(screen, board.cells, view.size, view.origin, BODY_WIDTH)
     screen.set_clip(None)
-    shown = scene.main is MainView.DIAGRAM  # the Run preview hides the buttons: no editing there
-    if shown:
-        _draw_button_shadows(screen, scene)
+    _draw_button_shadows(screen, scene)
     screen.set_clip(scene.layout.board_area)  # the grid over the shadows, under the rest
     screen.blit(_grid(scene.layout, view, board.cells, screen.get_size()), (0, 0))
     screen.set_clip(None)
-    if shown:
-        _draw_buttons(screen, scene, fonts)
+    _draw_buttons(screen, scene, fonts)
     screen.set_clip(scene.layout.board_area)
 
     wired = {(board.nodes[w.source].cell, board.nodes[w.target].cell) for w in board.wires}
@@ -735,7 +734,7 @@ def _draw_files(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
         draw_row(screen, scene, fonts, rect, row, _win_name(won), status, active, icon="trophy")
     if not scene.wins:
         note = "No win yet. Each win of each level will be kept here for the session."
-        draw_note(screen, fonts, note, DIAGNOSTIC_MAP[:2], DIAGNOSTIC_MAP[2])
+        draw_note(screen, fonts, note, NOTE_AT, NOTE_WIDTH)
 
 
 def _win_name(won) -> str:
@@ -808,11 +807,22 @@ def draw_track(screen: pygame.Surface, rect, level: float, held: bool = False) -
 
 
 def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None:
-    """Diagnostic (D-058, D-069): the level small, its obstacles, its marks, its lights,
-    and the probe, the swimmer the Run preview runs at, to drag and turn, at work (D-076), its
-    streams no shorter on screen than LEAST_STREAM (D-345)."""
-    area = pygame.Rect(DIAGNOSTIC_MAP)
+    """Diagnostic (D-058, D-407): at its top the board at work where the probe stands, on its
+    body, plain, as Run's Diagnostic draws it (D-089): beads on the wires, a meter by each eye
+    and thruster, no numbers (D-052); at its foot the level small, its obstacles, its marks, its
+    lights, and the probe, the swimmer to drag and turn, at work (D-076), its streams no shorter
+    on screen than LEAST_STREAM (D-345)."""
     probe, level = scene.probe, scene.level
+    if probe is None or not probe.circuit.cells:
+        note = "Your board is empty: place a part to see it run."
+        draw_note(screen, fonts, note, NOTE_AT, NOTE_WIDTH)
+    else:
+        circuit = probe.circuit
+        screen.set_clip(DIAGNOSTIC_BODY)
+        draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
+        draw_circuit(screen, circuit, probe.y, fonts, plain=True)
+        screen.set_clip(None)
+    area = pygame.Rect(DIAGNOSTIC_MAP)
     if level is not None and probe is not None:
         view = level_view(level, tuple(area))
         frame = probe.ticks // TICKS_PER_FRAME
@@ -825,11 +835,6 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)
-    note = (
-        "Drag the swimmer anywhere; the mouse wheel, or L and R, turn it. The main screen runs your"
-        " board there."
-    )
-    draw_note(screen, fonts, note, (area.left, area.bottom + 10), area.width)
 
 
 def draw_note(
@@ -940,8 +945,8 @@ def _draw_hints(screen: pygame.Surface, scene: Frame, fonts: Fonts) -> None:
         note = "Skip or finish the tutorial for hints."
     if note is not None:
         rows = layout.hint_rows
-        top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else DIAGNOSTIC_MAP[1]
-        draw_note(screen, fonts, note, (DIAGNOSTIC_MAP[0], top), DIAGNOSTIC_MAP[2])
+        top = rows[-1][1][1] + rows[-1][1][3] + 12 if rows else NOTE_AT[1]
+        draw_note(screen, fonts, note, (NOTE_AT[0], top), NOTE_WIDTH)
 
 
 def _draw_with_icons(

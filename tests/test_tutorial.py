@@ -531,8 +531,6 @@ def test_a_box_on_the_board_hides_none_of_its_targets_nor_a_button_but_undo_and_
             continue
         if waits.get("screen") == "run":
             on_board = False
-        if any(tutorial.steps[k].until == {"drawer": "diagnostic"} for k in range(index)):
-            continue  # the Run preview: no buttons (D-058)
         tutorial.index = index
         layout = make_layout(drawer_for(step) or Drawer.PARTS, kinds=kinds)
         view, where = board_view(layout), (Screen.BOARD, layout)
@@ -637,7 +635,7 @@ def test_a_step_opens_the_drawer_its_targets_are_in():
 def test_a_leading_step_keeps_the_board_on_screen():
     tutorial = Tutorial.from_dict(BUILT["fear"])
     tutorial.index = EYE  # an Eye to place on its cell
-    assert not allows(tutorial.step, Action("view"))  # no Run preview while it leads (D-058)
+    assert not allows(tutorial.step, Action("view"))  # Diagnostic stays shut while it leads (D-058)
     assert allows(None, Action("view"))
 
 

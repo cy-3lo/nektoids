@@ -63,6 +63,7 @@ from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.history import History
 from nektoids.editor.layout import (
+    DIAGNOSTIC_BODY,
     DIAGNOSTIC_MAP,
     KEY_ALIASES,
     MENU_GROUPS,
@@ -71,7 +72,6 @@ from nektoids.editor.layout import (
     EditButton,
     FileButton,
     Layout,
-    MainView,
     Tool,
     WinRow,
     board_field_at,
@@ -80,7 +80,6 @@ from nektoids.editor.layout import (
     drawer_key,
     file_button_at,
     group_at,
-    main_view_for,
     make_layout,
     menu_item_at,
     win_row_at,
@@ -171,7 +170,6 @@ class BoardScene(Frame):
         self._start_frame(layout, settings)
         self.board = board
         self.level = level  # where the Run preview's probe stands; None: no preview
-        self.main = MainView.DIAGRAM  # what the main screen shows, by the drawer (D-069)
         self.probe: Probe | None = None  # the Run preview's engine, made when it first shows
         self._probed = None  # the board as the probe was made for it
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
@@ -280,17 +278,15 @@ class BoardScene(Frame):
             if self.run_frames == 0:  # the wheel's run of turns ends: one step for undo
                 self._keep()
         self.frame_update()
-        if self.main is MainView.PREVIEW or self.layout.drawer is Drawer.DIAGNOSTIC:
+        if self.layout.drawer is Drawer.DIAGNOSTIC:  # the board at work, in the drawer (D-407)
             self._probe_now()
-        if self.probe is not None:
-            self.probe.see(self.view)  # the board's own scale and place
-        if self.main is MainView.PREVIEW:
-            for _ in range(TICKS_PER_FRAME):
-                self.probe.tick()
+            if self.probe is not None:
+                for _ in range(TICKS_PER_FRAME):
+                    self.probe.tick()
 
     def _tip_target(self, pos: tuple[int, int]) -> object | None:
         """The bar's icons, and the buttons round the board (D-401)."""
-        if self.main is MainView.DIAGRAM and contains(self.layout.board_area, pos):
+        if contains(self.layout.board_area, pos):
             button = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
             if button is not None:
                 return button
@@ -303,13 +299,13 @@ class BoardScene(Frame):
         now = self.board.snapshot()
         if self.probe is None or now != self._probed:
             pose = self.probe.pose if self.probe is not None else None
-            self.probe = Probe(self.board, self.level, self.view, pose)
+            self.probe = Probe(self.board, self.level, DIAGNOSTIC_BODY, pose)
             self._probed = now
 
     def open_drawer(self, drawer: Drawer | None) -> None:
-        """As the frame opens it; the main screen follows (D-069): the Run preview in Diagnostic,
-        the board otherwise. Diagnostic stays shut while a tutorial step leads, and with no level
-        to run the board in."""
+        """As the frame opens it. The main screen stays the board, Diagnostic running it in its
+        drawer (D-407). Diagnostic stays shut while a tutorial step leads, and with no level to
+        run the board in."""
         if drawer is Drawer.DIAGNOSTIC:
             if self.level is None:
                 self._refuse("there is no level to run the board in")
@@ -317,23 +313,11 @@ class BoardScene(Frame):
             if not self._allowed(Action("view")):
                 return
         super().open_drawer(drawer)
-        view = main_view_for(drawer)
-        if view is not self.main:
-            self._cancel()
-            self.main = view
-            self.held = Button.SELECT
 
     def arrive(self) -> None:
         """The Board's tab opened again: Select is in hand, whatever was before."""
         self._cancel()
         self.held = Button.SELECT
-
-    def _editing(self) -> bool:
-        """Whether the board is on screen to edit; if the Run preview shows, say so (D-069)."""
-        if self.main is MainView.PREVIEW:
-            self._refuse("the Run preview shows: shut Diagnostic to edit")
-            return False
-        return True
 
     def _on_map(self, pos: tuple[int, int]) -> bool:
         """Whether `pos` is on Diagnostic's map of the level, with a probe to move."""
@@ -410,14 +394,11 @@ class BoardScene(Frame):
         self.keyboard = True
         arrow = ARROW_SCANCODES.get(event.scancode) or (event.key if event.key in ARROWS else None)
         if arrow is not None and event.mod & pygame.KMOD_SHIFT and parts(self.pick, self.board):
-            if self._editing():
-                self._nudge(arrow)  # the picked parts, a cell that way
+            self._nudge(arrow)  # the picked parts, a cell that way
         elif arrow is not None:
-            if self._editing():
-                self._arrow(arrow)
+            self._arrow(arrow)
         elif event.scancode in ENTER_SCANCODES or event.key in ENTER:
-            if self._editing():
-                self._enter()
+            self._enter()
         elif event.scancode == pygame.KSCAN_SPACE:  # LEVEL_KEYS[RUN], on the physical key
             self._ask("run")
         elif event.scancode == pygame.KSCAN_TAB:  # the next tab, or the one before (D-304)
@@ -522,7 +503,7 @@ class BoardScene(Frame):
             over = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
             if over != self.button_down:
                 kind, self.button_down = self.button_down, None
-                if self._editing() and self._hold(kind):
+                if self._hold(kind):
                     self.dragging = True
         if self.press_cell is not None and pointed != self.press_cell and not self._dragged():
             start = self.press_cell
@@ -587,19 +568,12 @@ class BoardScene(Frame):
             if self._hold(kind):
                 self.dragging = True
             return
-        if self.main is MainView.DIAGRAM:  # the buttons round the board (D-401)
-            button = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
-            if button is not None and contains(self.layout.board_area, pos):
-                if isinstance(button, Kind):
-                    self.button_down = button  # a click, or a drag to the board: the release tells
-                else:
-                    self._press_button(button)
-                return
-        if self.main is MainView.PREVIEW:  # the board runs here: a part clicked, to edit it
-            cell = cell_at(self.layout, self.view, pos)
-            if cell is not None and self.board.node_at(cell) is not None:  # D-339
-                self.open_drawer(Drawer.PARTS)  # the board back, its buttons round it
-                self.pick = clicked(NOTHING, self.board, cell)
+        button = button_at(self.shown_buttons(), self.view.size, self.view.origin, pos)
+        if button is not None and contains(self.layout.board_area, pos):  # round the board
+            if isinstance(button, Kind):
+                self.button_down = button  # a click, or a drag to the board: the release tells
+            else:
+                self._press_button(button)
             return
         if not contains(self.layout.board_area, pos):
             return
@@ -628,10 +602,9 @@ class BoardScene(Frame):
         return wire
 
     def _turns_probe(self, typed: str) -> bool:
-        """L and R turn the probe while Diagnostic shows it with the Run preview; else the parts."""
+        """L and R turn the probe while the mouse is on Diagnostic's map; else the parts (D-407)."""
         turns = typed.upper() in (KEYS[Button.TURN_LEFT], KEYS[Button.TURN_RIGHT])
-        shown = self.main is MainView.PREVIEW and self.layout.drawer is Drawer.DIAGNOSTIC
-        return turns and shown and self.probe is not None
+        return turns and self._on_map(self.mouse)
 
     def _release(self, pos: tuple[int, int]) -> None:
         if self.field_pressed:
@@ -685,11 +658,8 @@ class BoardScene(Frame):
             self._place_held(self.pointed)
 
     def _slid(self, before: Layout, after: Layout) -> None:
-        """The board area changed: the board stays centred in it, and the Run preview fits its new
-        room."""
+        """The board area changed: the board stays centred in it."""
         self.view = board_view(after)
-        if self.probe is not None:
-            self.probe.see(self.view)
 
     def _relayout(self, drawer: Drawer | None) -> Layout:
         """The layout with `drawer` open, the same parts handed out, chapters, wins, hints and
@@ -829,8 +799,6 @@ class BoardScene(Frame):
         else it is held, for the clicks on the board, the pick dropped."""
         if button in (Button.UNDO, Button.REDO):
             self._edit(EditButton.UNDO if button is Button.UNDO else EditButton.REDO)
-            return
-        if not self._editing():
             return
         look = self.button_states().get(button)
         if button is Button.SELECT or look is State.CHOSEN:
@@ -1208,7 +1176,7 @@ class BoardScene(Frame):
         each picked part that turns (D-402, D-405). A run of turns on the same parts is one step
         for undo, kept once the wheel has rested RUN frames."""
         node = self.board.node_at(self.hover) if self.hover is not None else None
-        if node is None or self.main is not MainView.DIAGRAM:
+        if node is None:
             return
         up = getattr(event, "precise_y", event.y)  # a trackpad's scrolls are small
         if getattr(event, "flipped", False):  # natural scrolling: the wheel's own way back
@@ -1239,7 +1207,7 @@ class BoardScene(Frame):
         """A right click wires (D-402, D-404): on a part, the chain's first, or the next, wired
         to the one before. Off a part it ends the chains and, with Select or Move held, drops
         the pick and puts back the part carried; the held button stays as it is."""
-        if self.main is not MainView.DIAGRAM or not contains(self.layout.board_area, pos):
+        if not contains(self.layout.board_area, pos):
             return
         node = self.board.node_at(self.hover) if self.hover is not None else None
         self.right_down, self.right_dragged = node is not None, False
@@ -1438,8 +1406,8 @@ class BoardScene(Frame):
     def hint(self) -> str:
         """What the status line says the player can do now."""
         held, picked = self.held, parts(self.pick, self.board)
-        if self.main is MainView.PREVIEW:  # nothing to edit here (D-069)
-            return "Drag an eye's knob to set what it reads. Shut Diagnostic to edit."
+        if self._on_map(self.mouse):  # Diagnostic's map (D-407)
+            return "Drag the swimmer anywhere; the wheel, or L and R, turn it."
         if self._dropping():
             return "Let go and what you drag goes, with its wires; back on the body, it stays."
         if self.right is not None:
