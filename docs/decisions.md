@@ -2481,4 +2481,5 @@ clear place from the board's foot up. In the run, a card keeps off the controls,
 and the swimmer, over the arena between the swimmer and the timeline. Eyes, Half and Minus light
 the part's button round the board and its row in Parts; Eyes says how: the buttons dragged onto
 their ghosts, then W and the two parts. The tutorials' shadows, parts and wires, are the line's
-grey, a shade darker, not to be taken for a wire.
+grey, a shade darker, not to be taken for a wire. Settings' Tutorial row is named Redo
+tutorial, which is what it does (D-334): from the first step, on the board as it stands.

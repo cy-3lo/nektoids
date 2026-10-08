@@ -215,9 +215,9 @@ SETTING = {  # Settings' rows: their name, icon and what their info box says (D-
     Setting.FAST: ("Fast forward", "forward", "How fast the run goes when fast forward is on."),
     Setting.HINTS: ("Key hints", "keyboard", "Keys on each row and in the bar's tooltips."),
     Setting.TUTORIAL: (
-        "Tutorial",
+        "Redo tutorial",
         "graduation-cap",
-        "This level's tutorial again, from its first step.",
+        "This level's tutorial again, from its first step, on the board as you left it.",
     ),
     Setting.SOUND: ("Sound", "volume-high", "There is no sound yet."),
     Setting.MUSIC: ("Music", "music", "There is no music yet."),
