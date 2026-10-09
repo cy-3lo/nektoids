@@ -858,8 +858,6 @@ class BoardScene(Frame):
             if self.board.remaining(button) == 0:
                 return "none left"
             return "it may become only a part of its group, still left"
-        if self.pick.what is Picked.CELLS and button is Button.DELETE:
-            return "no wire crosses the cells picked"
         if self.pick.what is Picked.CELLS:
             return "empty cells picked: a part's button fills them"
         if button in TURNING:

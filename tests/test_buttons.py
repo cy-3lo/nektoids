@@ -146,9 +146,10 @@ def test_empty_cells_picked_light_delete_when_a_wire_crosses_them_and_it_takes_t
     pick = clicked(clicked(NOTHING, board, through), board, wire.path[2])  # two of its cells
     looks = states(board, buttons, Button.SELECT, pick, False, False, kinds)
     assert looks[Button.DELETE] is State.LIT and looks[Button.LOCK] is State.GREYED  # D-431
+    assert looks[Button.WIRE] is State.PLAIN  # held, the pick dropped
     assert crossing(pick, board) == [wire]  # once, though it crosses both
     off = next(c for c in board.cells if c not in wire.path)
     lone = clicked(NOTHING, board, off)
-    assert states(board, buttons, Button.SELECT, lone, False, False, kinds)[Button.DELETE] is (
-        State.GREYED
-    )
+    alone = states(board, buttons, Button.SELECT, lone, False, False, kinds)
+    assert alone[Button.DELETE] is alone[Button.WIRE] is State.PLAIN  # held, the pick dropped
+    assert alone[Button.TURN_LEFT] is State.GREYED

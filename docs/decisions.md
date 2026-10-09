@@ -2716,11 +2716,13 @@ them: the router goes round, `exits` (a board as text, D-205) agrees, and a path
 edge is refused. Between neighbours a straight drag across therefore follows the one straight
 wire; D-429's last sentence, two wires sharing an edge, no longer happens.
 
-**D-431 — 2026-10-09 — Empty cells picked, Delete is lit when a wire crosses one of them, and deletes every wire that crosses them; Select stays chosen, the cells picked. Amends D-402.**
+**D-431 — 2026-10-09 — Empty cells picked, Delete is lit when a wire crosses one of them, and deletes every wire that crosses them; Select stays chosen, the cells picked. Otherwise Wire and Delete, pressed, drop the pick and are held. Amends D-402.**
 The physicist's. A wire could be deleted only by a click on it, Delete held; empty cells picked
 greyed every button but a part's. Now Delete takes each wire through the cells picked once, one
 step for undo, darkened first while the mouse is on its button, as parts picked are (D-401). A
-click on the board with Delete held still takes the one wire under the pointer.
+click on the board with Delete held still takes the one wire under the pointer. With no wire
+through them, Delete, and Wire always, are plain: pressed, the pick is dropped and the button
+held for the clicks, as with nothing picked.
 
 **D-432 — 2026-10-09 — Beads move 40% slower, 2.1 hex sizes a second, not 3.5, and a wire at RATE_MAX shows 6 beads a second, not 10: the same spacing, 0.35 hex sizes at full rate. Amends D-416.**
 The physicist's, in Diagnostic: the beads ran too fast to follow. Slowing them alone would have
