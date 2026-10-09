@@ -2680,3 +2680,6 @@ screen. The nudge is the same in every run, so runs stay deterministic (invarian
 proof's replay, Diagnostic's probe and the check of goals decided at the start all use
 `Level.start_at`; the Editor shows and moves the whole start. Every shipped proof still wins;
 Aggression's model board wins one tick later, Patience's two ticks sooner.
+
+**D-427 — 2026-10-09 — `CLAUDE.md` is no longer committed: it stays on the developers' disks, ignored by git, as `docs/ideas.md` is (D-414). `.claude/`, its rules and skills, stays in the repository.**
+The physicist's. The history keeps the versions already committed; nothing is rewritten.
