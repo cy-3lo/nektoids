@@ -22,5 +22,5 @@
   "time_limit": 20,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "GOLD",
-  "proof": {"board": "4pifG7G7tDDQKNGcN4Zs", "ticks": 1202, "parts": 6}
+  "proof": {"board": "4pifG7G7tDDQKNGcN4Zs", "ticks": 1118, "parts": 6}
 }

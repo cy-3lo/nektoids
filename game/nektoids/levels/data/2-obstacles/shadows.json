@@ -26,5 +26,5 @@
   },
   "time_limit": 15,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
-  "proof": {"board": "h9AbgaRDZ0Pzfw6Ln", "ticks": 446, "parts": 5}
+  "proof": {"board": "h9AbgaRDZ0Pzfw6Ln", "ticks": 439, "parts": 5}
 }
