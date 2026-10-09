@@ -12,7 +12,7 @@ game/build/
 CLAUDE.local.md
 .claude/settings.local.json
 
-# Claude Code's project instructions, kept by the developers (D-427)
+# Claude Code's project instructions: in CLAUDE.local.md, above, since D-427
 CLAUDE.md
 
 # Ideas for later, kept by the developers (D-414)

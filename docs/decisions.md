@@ -2681,5 +2681,8 @@ proof's replay, Diagnostic's probe and the check of goals decided at the start a
 `Level.start_at`; the Editor shows and moves the whole start. Every shipped proof still wins;
 Aggression's model board wins one tick later, Patience's two ticks sooner.
 
-**D-427 — 2026-10-09 — `CLAUDE.md` is no longer committed: it stays on the developers' disks, ignored by git, as `docs/ideas.md` is (D-414). `.claude/`, its rules and skills, stays in the repository.**
-The physicist's. The history keeps the versions already committed; nothing is rewritten.
+**D-427 — 2026-10-09 — `CLAUDE.md` is no longer committed: Claude Code's project instructions live in `CLAUDE.local.md`, on the developers' disks, ignored by git, as `docs/ideas.md` is (D-414). `.claude/`, its rules and skills, stays in the repository.**
+The physicist's. `CLAUDE.local.md` was never tracked, so no switch between branches or merge can
+delete it, as one deleted `docs/ideas.md` twice; an ignored `CLAUDE.md` would be deleted by every
+merge of this change. Claude Code reads both alike. The skills that read `CLAUDE.md` read
+`CLAUDE.local.md`. The history keeps the versions already committed; nothing is rewritten.
