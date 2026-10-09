@@ -65,7 +65,7 @@ def random_board(rng, radius):
 def test_fears_board_is_a_short_line_and_comes_back_the_same():
     board = fear()
     text = to_text(board)
-    assert text == "3MowKThhXG3AdEL7"  # a change here is a new format: raise VERSION (D-205)
+    assert text == "fGTmeKajrLhFyZe"  # a change here is a new format: raise VERSION (D-205)
     assert set(text) <= set(ALPHABET) and to_text(board) == text
     assert parts_and_wires(from_text(text)) == parts_and_wires(board)
 
@@ -163,7 +163,7 @@ def test_a_painted_board_comes_back_painted():
     eye = next(n for n in board.nodes.values() if n.kind is Kind.EYE)
     thruster = next(n for n in board.nodes.values() if n.kind is Kind.THRUSTER)
     board.paint(eye.id, Hue.RED)
-    board.paint(thruster.id, Hue.BLUE)
+    board.paint(thruster.id, Hue.RED)
     again = from_text(to_text(board))
     assert {n.cell: n.hue for n in again.nodes.values()} == {
         n.cell: n.hue for n in board.nodes.values()

@@ -2748,3 +2748,18 @@ reading it yet (D-018); no Sink, a part with no wire out being one; the valve st
 Colours do not make a valve, being linear channel by channel, but today's parts do:
 max(0, a − b) = |max(a, b) − b|, with max(a, b) = (a + b + |a − b|)/2, a level's puzzle. Lights
 that change in time leave the stage, so its memory levels hide the light with shadows (D-019).
+
+**D-502 — 2026-10-09 — A signal's two channels are white and red, not red and blue with white both: a part is painted white or red, and reads or sends its own channel only. A wire shows each channel as its own stream of beads, red half a spacing behind white, and a stream at full rate holds 30% fewer beads than D-432's. Three colour operators: Paint, Filter and Swap. Amends D-501, D-432.**
+The physicist's, before the beads: with white both channels, a wire at (0.8, 0.5) has no colour
+anyone can read. A rate is (w, r), each in [0, RATE_MAX]. Everything the game held so far is
+white, (x, 0): the red channel stays at zero, and every level and proof runs bit-identical. An eye
+or a Source sends in the channel of its paint; a thruster pushes with that channel alone, so a red
+signal into a white thruster does nothing: the mean of D-501 goes. The Paint button turns a part
+white or red in turn. Red is accent2's hue, darker, L 0.62, C 0.13: apart from white in grey and
+for colour-blind eyes, the mockups compared against violet. A wire carries two streams, never a
+blend (invariant 6), red half a spacing behind, so that equal rates alternate; at full rate a
+stream's beads are 0.5 hex sizes apart, not 0.35, so that two full streams stay readable. The
+operators: Paint, painted, turns what comes in to its colour, (w, r) to (min(R, w + r), 0) or
+(0, min(R, w + r)), the one law that adds the channels together; Filter, painted, passes its
+colour alone, (w, 0) or (0, r); Swap exchanges them, (r, w). Their names on the board are settled
+when they are built: an operator called Paint beside the Paint button would read as one thing.

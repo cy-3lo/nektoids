@@ -3,10 +3,10 @@ places on every level, so that the hand learns them.
 
 The board's centre is cell (0, 0), r down. At N, Select, Move and Lock, Lock on the board reached
 from the Editor only (D-319); at S, Undo, Redo and Delete; at W, Turn left and Turn right side by
-side, Wire under them; at E, the parts: Eye, Source and Thruster, then the Tank over Double and
-Halve side by side, over Sum and Difference (D-501). A kind the level does not hand out leaves its
-place empty. The board shows at one size, centred, so that the largest zone and every button fit
-beside a drawer.
+side, Wire under them and Paint under Wire; at E, the parts: Eye, Source and Thruster, then the
+Tank over Double and Halve side by side, over Sum and Difference (D-501). A kind the level does
+not hand out leaves its place empty. The board shows at one size, centred, so that the largest
+zone and every button fit beside a drawer.
 
 Each button looks chosen, lit, greyed or plain. Chosen is the one in hand. Lit and greyed say
 what a press would do to what is picked (D-402): lit, it acts on it at once; greyed, it cannot.
@@ -45,6 +45,7 @@ class Button(Enum):
     TURN_LEFT = "turn left"
     TURN_RIGHT = "turn right"
     WIRE = "wire"
+    PAINT = "paint"  # an eye, a Source or a thruster: white or red in turn (D-502)
 
 
 PLACES: dict[Button | Kind, Cell] = {
@@ -56,6 +57,7 @@ PLACES: dict[Button | Kind, Cell] = {
     Button.TURN_LEFT: (-3, -2),
     Button.TURN_RIGHT: (-2, -2),
     Button.WIRE: (-3, -1),
+    Button.PAINT: (-4, 0),  # under Wire, inside the frame: no other button moves (D-501)
     Kind.EYE: (4, -3),
     Kind.SOURCE: (4, -2),
     Kind.THRUSTER: (4, -1),
@@ -90,6 +92,7 @@ KEYS = {  # each button's key; a part's is its number among those handed out (`k
     Button.TURN_LEFT: TOOL_KEYS[Tool.TURN_LEFT],
     Button.TURN_RIGHT: TOOL_KEYS[Tool.TURN_RIGHT],
     Button.WIRE: TOOL_KEYS[Tool.WIRE],
+    Button.PAINT: "C",  # as in colour; the run's Centre, which never shows with the Board
 }
 
 
@@ -193,6 +196,7 @@ def states(
         if picked:
             loose = [n for n in picked if not n.fixed]
             return {
+                Button.PAINT: any(n.kind.paintable for n in loose),
                 Button.DELETE: bool(loose),
                 Button.LOCK: editor or any(not n.locked for n in picked),
                 Button.TURN_LEFT: any(n.facing is not None for n in loose),
@@ -200,6 +204,7 @@ def states(
                 Button.WIRE: len(nodes) > 1,
             }[b]
         able = {
+            Button.PAINT: any(n.kind.paintable for n in free),
             Button.DELETE: bool(free),
             Button.LOCK: bool(nodes) if editor else bool(mine),
             Button.TURN_LEFT: any(n.facing is not None for n in free),

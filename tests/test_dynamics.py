@@ -5,9 +5,9 @@ import pytest
 
 from nektoids.graph import dynamics
 from nektoids.graph.board import Board, Kind
-from nektoids.graph.dynamics import CHANNELS, RATE_MAX, SOURCE_RATE, TAU, max_dt, wire_flux
+from nektoids.graph.dynamics import RATE_MAX, SOURCE_RATE, TAU, max_dt, wire_flux
 from nektoids.graph.hexgrid import offset_rect
-from nektoids.graph.laws import BLUE, RED
+from nektoids.graph.kinds import Hue
 from nektoids.graph.network import Network, abs_coupling, contraction_factor
 
 EYE, SRC, DBL, HLV, SUM, DIF, THR = (
@@ -25,19 +25,23 @@ DT = 1 / 120  # the tick of the simulation [s]
 H = DT / TAU  # 1/2: the step of the lag
 
 
+W, R = Hue.WHITE.channel, Hue.RED.channel
+
+
 def both(y):
-    """White rates (N, n) as the state holds them, (N, n, C): the same in every channel."""
-    return np.repeat(np.asarray(y, dtype=float)[..., None], CHANNELS, axis=-1)
+    """White rates (N, n) as the state holds them, (N, n, C): in the white channel, red at 0."""
+    y = np.asarray(y, dtype=float)
+    return np.stack([y, np.zeros_like(y)], axis=-1)
 
 
 def one(y):
-    """The white rates (N, n) of a state (N, n, C) of white light, checked white bit for bit."""
-    assert np.array_equal(y[..., RED], y[..., BLUE])  # D-501: white stays white
-    return y[..., RED]
+    """The white rates (N, n) of a state (N, n, C), its red checked at 0 (D-502)."""
+    assert not y[..., R].any()
+    return y[..., W]
 
 
-# The tests below run the dynamics in white, as every level is today (D-501): on rates (N, n),
-# through the state's channels, every step checked white bit for bit.
+# The tests below run the dynamics in white, as every level is today (D-502): on rates (N, n),
+# through the state's white channel, every step checked to leave red at 0.
 
 
 def initial_state(net, agents=1):
@@ -295,33 +299,34 @@ def test_random_dags_relax_to_what_an_independent_evaluator_gives():
         np.testing.assert_allclose(y[0], expected, rtol=1e-9, atol=1e-12)
 
 
-def test_each_channel_runs_as_a_white_run_of_its_own_light_bit_for_bit():
-    rng = np.random.default_rng(11)  # D-501: no law mixes red and blue
+def test_each_channel_runs_as_a_white_run_of_its_own_sensors_bit_for_bit():
+    rng = np.random.default_rng(11)  # D-502: no law of these mixes white and red
     for _ in range(60):
         kinds, edges = random_graph(rng, int(rng.integers(1, 14)), loops=True)
         kinds = [Kind.TANK if k is DBL and rng.random() < 0.3 else k for k in kinds]
         net = Network.from_edges(kinds, edges)
-        red, sources = random_inputs(rng, kinds)
-        blue, _ = random_inputs(rng, kinds)
+        white, red = (rng.uniform(0.0, RATE_MAX, size=(1, net.n)) for _ in range(2))
+        given = np.stack([white, red], axis=-1)  # each sensor's rate in each channel
         y = dynamics.initial_state(net)
-        white_red, white_blue = initial_state(net), initial_state(net)
+        alone = {W: initial_state(net), R: initial_state(net)}
         for _ in range(200):
-            y = dynamics.step(net, y, np.stack([red, blue], axis=-1), DT, sources)
-            white_red = step(net, white_red, red, DT, sources)
-            white_blue = step(net, white_blue, blue, DT, sources)
-        assert np.array_equal(y[..., RED], white_red)
-        assert np.array_equal(y[..., BLUE], white_blue)
+            y = dynamics.step_given(net, y, given, DT)
+            for c, rates in ((W, white), (R, red)):
+                alone[c] = one(dynamics.step_given(net, both(alone[c]), both(rates), DT))
+        assert np.array_equal(y[..., W], alone[W]) and np.array_equal(y[..., R], alone[R])
 
 
-def test_red_light_alone_leaves_blue_dark_but_for_the_sources():
-    net = Network.from_edges(
-        [EYE, SUM, Kind.TANK, DIF, DBL, THR], [(0, 1), (1, 2), (2, 3), (3, 4), (4, 1), (4, 5)]
-    )
-    eyes = np.array([[[0.6, 0.0]]])  # red only
+def test_a_red_source_leaves_white_dark_and_a_red_eye_sees_no_white_light():
+    kinds = [SRC, SUM, Kind.TANK, DIF, DBL, THR, EYE]
+    edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 1), (4, 5)]
+    hues = [Hue.RED, *[Hue.WHITE] * 4, Hue.RED, Hue.RED]
+    net = Network.from_edges(kinds, edges, hues=hues)
     y = dynamics.initial_state(net)
     for _ in range(600):
-        y = dynamics.step(net, y, eyes, DT)
-    assert y[0, :, RED].max() > 0.1 and not y[0, :, BLUE].any()
+        y = dynamics.step(net, y, eyes_row(0.9), DT)  # white light on the red eye
+    assert y[0, :, R].max() > 0.1 and not y[0, :, W].any()
+    assert y[0, 6].tolist() == [0.0, 0.0]  # the red eye reads nothing
+    assert dynamics.painted(net, y, net.thrusters)[0, 0] == y[0, 5, R]  # it pushes with red
 
 
 # Braitenberg

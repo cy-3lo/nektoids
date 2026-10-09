@@ -126,10 +126,14 @@ def _encode(v: float) -> float:
 
 
 # The game's palette: Slate and evergreen, with a red. This line alone changes every colour.
+ACCENT2_HUE = 25.0
 PALETTE = make_palette(
-    tint_hue=273.0, tint_chroma=0.022, accent1_hue=187.0, accent2_hue=25.0, light_hue=85.0
+    tint_hue=273.0, tint_chroma=0.022, accent1_hue=187.0, accent2_hue=ACCENT2_HUE, light_hue=85.0
 )
 P = PALETTE
+# The signal's red (D-502), on a red part's body: accent2's hue, darker, so that it stands apart
+# from a white part even in grey and for colour-blind eyes.
+PAINT_RED = oklch(0.62, 0.13, ACCENT2_HUE)
 
 # Every view
 BACKGROUND = P.base
@@ -175,7 +179,7 @@ GRID_LINE = mix(
     P.line, P.dim, 0.5
 )  # the zone's cells: lighter than the buttons' ground, not to mix with them
 BODY_OUTLINE = P.raised  # the swimmer's symbol behind the board, a shade under the grid
-COMPONENT = P.parts
+COMPONENT = P.parts  # every part's body, white or unpainted
 LOCK_RING = mix(P.parts, P.bright, 0.4)
 PIN_RING = P.accent1.mid  # a part the player locked: theirs, in the accent (D-406)
 EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)

@@ -148,6 +148,7 @@ from nektoids.editor.palette import (
     OBSTACLE,
     OUTSIDE,
     OUTSIDE_LINE,
+    PAINT_RED,
     PANEL,
     PIN_RING,
     REFUSED,
@@ -172,7 +173,7 @@ from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
 from nektoids.editor.streams import DIAGNOSTIC_REACH
 from nektoids.editor.textfield import shown_from
-from nektoids.graph.board import Board, Kind, Refused
+from nektoids.graph.board import Board, Hue, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
@@ -275,6 +276,7 @@ MENU_ANGLE = {kind: 90.0 for kind in Kind if kind.default_facing is not None}
 WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever the zoom [px]
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
+BODY_OF = {Hue.WHITE: COMPONENT, Hue.RED: PAINT_RED}  # a part's body by its paint (D-502)
 FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 16  # a menu row's info disc [px]
 INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit under it (D-094)
@@ -413,6 +415,7 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             node.locked,
             fill,
             pinned=node.pinned,
+            hue=node.hue,
         )
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
@@ -597,9 +600,11 @@ def draw_part(
     face=None,
     pinned: bool = False,
     level: float | None = None,
+    hue: Hue = Hue.WHITE,
 ):
-    """A part, and over its fill, if `level` is given, how full it is: a tank's (D-501)."""
-    fill = fill or COMPONENT
+    """A part, its body in its paint, `hue` (D-501), and over its fill, if `level` is given, how
+    full it is: a tank's."""
+    fill = fill or BODY_OF[hue]
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if level is not None and (filled := filled_to(outline, level / RATE_MAX)):
@@ -1480,7 +1485,8 @@ def _draw_parts(
         facing = circuit.board.nodes[node_id].facing
         level = rate if kind is Kind.TANK else None  # its level, drawn as a fill (D-501)
         angle = placed_angle(kind, facing)
-        draw_part(screen, fonts, kind, angle, (cx, cy), size, False, level=level)
+        hue = circuit.board.nodes[node_id].hue
+        draw_part(screen, fonts, kind, angle, (cx, cy), size, False, level=level, hue=hue)
         if meters and kind in (Kind.EYE, Kind.THRUSTER):
             _draw_meter(screen, (cx + METER_AT * size, cy), size, rate)
         if plain:

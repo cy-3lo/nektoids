@@ -108,10 +108,12 @@ def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_pick()
     assert on_sum[Button.DELETE] is on_sum[Button.WIRE] is on_sum[Kind.DOUBLE] is State.LIT
     assert on_sum[Button.TURN_LEFT] is State.GREYED
     assert on_sum[Kind.EYE] is on_sum[Kind.SUM] is State.PLAIN  # held, for the clicks
-    both = look((0, 0), (1, 0))  # the eye with it: Turn acts on the eye
-    assert both[Button.TURN_RIGHT] is both[Button.DELETE] is State.LIT
+    assert on_sum[Button.PAINT] is State.GREYED  # an operator takes no paint (D-502)
+    both = look((0, 0), (1, 0))  # the eye with it: Turn and Paint act on the eye
+    assert both[Button.TURN_RIGHT] is both[Button.DELETE] is both[Button.PAINT] is State.LIT
     board.lock(board.node_at((1, 0)).id)
     assert look()[Button.TURN_LEFT] is State.GREYED  # the only eye is the level's now
+    assert look()[Button.PAINT] is State.GREYED
     assert look(held=Kind.EYE)[Kind.EYE] is State.CHOSEN
 
 

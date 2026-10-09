@@ -54,17 +54,18 @@ its decisions taken, when it starts.
 - [x] **Loops on the board** (D-428, brought onto `main` before v1.1). A wire may come back
   round to a part before it, as the dynamics always allowed (D-017). A tank on a loop that
   holds its level, Doubles making up for the fork, comes with the tanks.
-- [ ] **Colours** (D-501). A signal in two channels, (r, b); white is both. Each a PR into the
-  stage, each playable:
+- [ ] **Colours** (D-501, D-502). A signal in two channels, (w, r): white and red, each its own.
+  Each a PR into the stage, each playable:
   - [ ] Channels inside, nothing seen: the state (N, n, 2), the laws on the last axis, every part
     white; every shipped level's proof plays the same, positions equal tick by tick.
-  - [ ] Parts painted r, b or w with a Paint button on the Board: eyes, Sources, thrusters
-    (white pushes with the mean); a board's text a version up, reading the old as all white;
+  - [ ] Parts painted white or red with a Paint button on the Board: eyes, Sources, thrusters,
+    each its own channel; a board's text and a level's word a version up, the old still read;
     undo and redo.
-  - [ ] Lights coloured, r, b or w, in the level's format and the Editor.
-  - [ ] Beads in two hues, a stream a channel, never blended; the hues in the palette.
-  - [ ] Filter and Paint, two operators, painted with the same button; white's laws decided then.
+  - [ ] Lights coloured, white or red, in the level's format and the Editor.
+  - [ ] Beads in two streams, red half a spacing behind, never blended; a stream's beads 0.5 hex
+    sizes apart at full rate.
+  - [ ] Paint, Filter and Swap, three operators; Paint and Filter painted with the same button.
 - [ ] **Levels for memory and colour.** Memory with no schedule, the light hidden by shadows
-  (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to red and
-  flee blue; two lights a colour-blind circuit cannot tell apart; a valve built from parts
+  (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to the red light
+  and flee the white one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
   (D-501).

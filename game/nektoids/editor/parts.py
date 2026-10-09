@@ -1,5 +1,6 @@
 """The parts as the player reads them: each kind's name in the menu, and what its info box says
-(D-036): what it does, then what may come in and go out, from the board's own rules (D-014,
+(D-036): what it does, what its paint does if it may be painted (D-502), then what may come in
+and go out, from the board's own rules (D-014,
 D-016), the names and paragraphs from the table of kinds (`graph/kinds.py`, D-202). Rates run
 from 0 to 1, what one wire carries. Pure Python, no pygame.
 """
@@ -11,6 +12,11 @@ from nektoids.graph.kinds import Category
 
 NAME = {kind: kind.spec.name for kind in Kind}  # from the table of kinds (D-202)
 WHAT = {kind: kind.spec.what for kind in Kind}  # a paragraph the box wraps (D-094)
+PAINTED = {  # what Paint does to it (D-502)
+    Kind.EYE: "White, it senses white light; painted red, red light only.",
+    Kind.SOURCE: "White, it sends a white signal; painted red, a red one.",
+    Kind.THRUSTER: "White, it pushes with the white signal; painted red, with the red only.",
+}
 
 
 def ports(kind: Kind) -> tuple[str, str]:
@@ -31,8 +37,10 @@ def ports(kind: Kind) -> tuple[str, str]:
 
 
 def info(kind: Kind) -> tuple[str, ...]:
-    """The paragraphs of the part's info box, after its name: what it does, In, Out."""
-    return (WHAT[kind], *ports(kind))
+    """The paragraphs of the part's info box, after its name: what it does, its paint if it may
+    be painted, In, Out."""
+    painted = (PAINTED[kind],) if kind.paintable else ()
+    return (WHAT[kind], *painted, *ports(kind))
 
 
 def _count(n: int) -> str:

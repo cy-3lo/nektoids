@@ -3,8 +3,9 @@
 Every node of the graph has a state y and a law. The law is the state's equation,
 dy/dt = f(x, y), with x the rates on the node's wires in, slot by slot in the order of
 `Network.slots`, and what the node sends out, o = g(y), shared among its wires out. A rate has
-two channels, red and blue, white being both (D-501): each is the last axis of every array here,
-and every law acts on them channel by channel, elementwise, the same arithmetic in each. The output
+two channels, white and red, in `Hue`'s order (D-501, D-502): they are the last axis of every
+array here, and every law acts on them channel by channel, elementwise, the same arithmetic in
+each. The output
 depends on the state alone, so a tick reads every output, then steps every state, and never
 solves for one: a loop needs no special case (D-017). Each law owns its explicit step, so that
 its arithmetic is fixed (invariant 1), and says the longest tick that step is stable for.
@@ -23,8 +24,7 @@ from typing import Protocol
 import numpy as np
 
 RATE_MAX = 1.0  # what one wire can carry: the unit of every rate
-CHANNELS = 2  # the colours a rate carries (D-501): red and blue, white being both
-RED, BLUE = 0, 1  # their places on the last axis
+CHANNELS = 2  # the colours a rate carries (D-502): white and red, in `kinds.Hue`'s order
 TAU = 1.0 / 60.0  # the lag of every part of the jam [s]
 
 

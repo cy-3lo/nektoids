@@ -12,7 +12,7 @@ from nektoids.graph.board import (
     complexity,
 )
 from nektoids.graph.hexgrid import NE, NW, SE, SW, E, W, direction_to, hex_disc, offset_rect
-from nektoids.graph.kinds import Category
+from nektoids.graph.kinds import Category, Hue
 
 RECT = offset_rect(9, 7)  # a 9 x 7 zone for most tests
 
@@ -723,3 +723,20 @@ def test_a_part_the_player_locks_stays_put_its_wires_free_and_survives_erase_all
     assert board.pin(eye.id, False) is None and board.remove_node(eye.id) is None
     level = board.place(Kind.EYE, (0, 1), locked=True)
     assert board.pin(level.id).reason == "placed by the level"
+
+
+def test_an_eye_a_source_or_a_thruster_takes_paint_and_keeps_it_through_a_swap_and_a_save():
+    board = Board(hex_disc(2))  # D-502
+    eye, total = board.place(Kind.EYE, (0, 0)), board.place(Kind.SUM, (1, 0))
+    assert board.paint(eye.id, Hue.RED).hue is Hue.RED and Hue.RED.next is Hue.WHITE
+    assert isinstance(board.paint(total.id, Hue.RED), Refused)  # an operator: white
+    source, _ = board.replace(eye.id, Kind.SOURCE)
+    assert source.hue is Hue.RED  # a part that may be painted keeps its paint
+    double, _ = board.replace(source.id, Kind.DOUBLE)
+    assert double.hue is Hue.WHITE
+    thruster = board.place(Kind.THRUSTER, (-1, 0), hue=Hue.RED)
+    data = board.to_dict()
+    assert [part.get("hue") for part in data["parts"]] == [None, None, "red"]
+    assert Board.from_dict(json.loads(json.dumps(data))).node_at((-1, 0)).hue is Hue.RED
+    board.lock(thruster.id)
+    assert isinstance(board.paint(thruster.id, Hue.WHITE), Refused)  # the level's

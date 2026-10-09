@@ -4,7 +4,7 @@ by its kind's action. world.py imports no pygame."""
 import numpy as np
 
 from nektoids.graph.board import Kind
-from nektoids.graph.dynamics import CHANNELS, SOURCE_RATE, given_rates, outputs, white
+from nektoids.graph.dynamics import CHANNELS, SOURCE_RATE, given_rates, outputs
 from nektoids.graph.hexgrid import NE, SW, E, hex_disc
 from nektoids.graph.network import Network, body_mounts
 from nektoids.sim.arena import Arena, Light
@@ -35,14 +35,14 @@ def test_the_eyes_read_the_light_and_a_source_its_steady_rate():
     eyes = eye_rates(arena, pos, heading, radius, *parts(net, net.eyes))
     found = readings(arena, net, pos, heading, radius)
     assert np.array_equal(found, given_rates(net, eyes))  # bit for bit: what the run did
-    assert found[:, net.sources].tolist() == [[[SOURCE_RATE] * CHANNELS]] * 2  # white (D-501)
+    assert found[:, net.sources].tolist() == [[[SOURCE_RATE, 0.0]]] * 2  # white (D-502)
     assert not found[:, [3, 4, 5]].any()  # operators and actuators read nothing
 
 
 def test_the_thrusters_push_by_their_outputs_and_alone_are_not_added_to_a_zero():
     arena, net, pos, heading, radius = swimmers()
-    y = np.random.default_rng(0).uniform(0.0, 1.0, (2, net.n, CHANNELS))  # red and blue apart
-    rates = white(outputs(net, y))[:, net.thrusters]  # a white thruster: their mean (D-501)
+    y = np.random.default_rng(0).uniform(0.0, 1.0, (2, net.n, CHANNELS))  # white and red apart
+    rates = outputs(net, y)[:, net.thrusters, 0]  # a white thruster: the white alone (D-502)
     force, torque = push(net, y, radius)
     expected = thrust(rates, radius, *parts(net, net.thrusters))
     assert np.array_equal(force, expected[0]) and np.array_equal(torque, expected[1])

@@ -29,17 +29,22 @@ class Category(Enum):
 
 
 class Hue(Enum):
-    """What a part is painted (D-501): which channel an eye or a Source sends, a thruster pushes
-    with. White, both, as every part was before; red; blue. Its place here is its code in a
-    board's text and the order the Paint button goes round in."""
+    """What a part is painted (D-501, D-502): the channel an eye reads, a Source sends, a
+    thruster pushes with. White, as every part was before, or red. Its place here is its
+    channel, the last axis of every rate, its code in a board's text, and the order the Paint
+    button goes round in."""
 
     WHITE = "white"
     RED = "red"
-    BLUE = "blue"
+
+    @property
+    def channel(self) -> int:
+        """Its place on the last axis of the rates."""
+        return list(Hue).index(self)
 
     @property
     def next(self) -> Hue:
-        """The hue the Paint button turns it to: white, red, blue, white again."""
+        """The hue the Paint button turns it to: white to red, red to white."""
         hues = list(Hue)
         return hues[(hues.index(self) + 1) % len(hues)]
 
@@ -82,7 +87,7 @@ class Kind(Enum):
 
     @property
     def paintable(self) -> bool:
-        """Whether it may be painted red or blue, not only white (D-501)."""
+        """Whether it may be painted red, not only white (D-501)."""
         return SPEC[self].paintable
 
     @property
@@ -110,7 +115,7 @@ class KindSpec:
     shape: str = "diamond"  # its outline, by its name in `editor/geometry.py`'s SHAPES
     sense: str | None = None  # a sensor's: what gives its rate, by name (`sim/world.py`, SENSES)
     action: str | None = None  # an actuator's: what it does, by name (`sim/world.py`, ACTIONS)
-    paintable: bool = False  # it may be painted red or blue (D-501); the rest are white
+    paintable: bool = False  # it may be painted red (D-501); the rest are white
 
 
 SPEC: dict[Kind, KindSpec] = {

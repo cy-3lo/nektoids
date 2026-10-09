@@ -63,6 +63,7 @@ BUTTON_ICON = {  # the Board's buttons (D-401); a part's shows the part itself
     Button.TURN_LEFT: TOOL_ICON[Tool.TURN_LEFT],
     Button.TURN_RIGHT: TOOL_ICON[Tool.TURN_RIGHT],
     Button.WIRE: TOOL_ICON[Tool.WIRE],
+    Button.PAINT: "paintbrush",  # D-501
 }
 LEVEL_ICON = {LevelButton.RUN: "play", LevelButton.BOARD: "diagram-project"}
 DRAWER_ICON = {  # the activity bar's (D-051)

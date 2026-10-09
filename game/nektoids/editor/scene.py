@@ -106,7 +106,7 @@ from nektoids.editor.textfield import TextField
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.editor.wiring import Chain, chain_to
 from nektoids.graph import boardtext
-from nektoids.graph.board import Board, BoardState, Kind, Node, Refused, Wire
+from nektoids.graph.board import Board, BoardState, Hue, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
     Cell,
     E,
@@ -862,6 +862,8 @@ class BoardScene(Frame):
             return "empty cells picked: a part's button fills them"
         if button in TURNING:
             return "nothing here turns: only an eye or a thruster, not the level's"
+        if button is Button.PAINT:
+            return "nothing here takes paint: only an eye, a Source or a thruster, not the level's"
         if button is Button.WIRE:
             return "a wire runs from a part to another"
         if button is Button.LOCK:
@@ -884,6 +886,10 @@ class BoardScene(Frame):
             for node in loose:
                 if node.facing is not None:
                     self._turn(node.cell, -TURNING[button] if back else TURNING[button])
+        elif button is Button.PAINT:  # all to the hue after the first's, alike (D-502)
+            paintable = [n for n in loose if n.kind.paintable]
+            for node in paintable:
+                self._paint(node.cell, paintable[0].hue.next)
         elif button is Button.DELETE and self.pick.what is Picked.CELLS:
             for wire in crossing(self.pick, self.board):  # the wires through them (D-431)
                 self._delete_wire(wire)
@@ -949,6 +955,12 @@ class BoardScene(Frame):
                 self._turn(cell, -TURNING[held] if back else TURNING[held])
         elif held is Button.WIRE:
             self._wire_click(cell)
+        elif held is Button.PAINT:
+            node = self.board.node_at(cell) if cell is not None else None
+            if node is None:
+                self._refuse("click an eye, a Source or a thruster", cell)
+            else:
+                self._paint(cell, node.hue.next)
 
     def _place_held(self, cell: Cell | None) -> None:
         """The part held placed on `cell`; it stays held while one of its kind is left, then
@@ -1059,6 +1071,17 @@ class BoardScene(Frame):
         if not self._allowed(Action("turn", cell=cell), cell):
             return
         result = self.board.rotate(node.id, steps)
+        if isinstance(result, Refused):
+            self._refuse(result.reason, cell)
+        else:
+            self.message = ""
+
+    def _paint(self, cell: Cell, hue: Hue) -> None:
+        """Paint the part on `cell` `hue` (D-501)."""
+        node = self.board.node_at(cell)
+        if node is None or not self._allowed(Action("paint", cell=cell), cell):
+            return
+        result = self.board.paint(node.id, hue)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
         else:

@@ -94,7 +94,8 @@ class Step:
 @dataclass(frozen=True)
 class Action:
     """What the player asks for that would change the board, the tool in hand or the screen.
-    `verb`: pick, place, tool, turn, wire, move, delete, undo, redo, run, map, edit, next."""
+    `verb`: pick, place, tool, turn, paint, wire, move, delete, undo, redo, run, map, edit,
+    next."""
 
     verb: str
     kind: Kind | None = None  # pick, place

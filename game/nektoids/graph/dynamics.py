@@ -10,10 +10,10 @@ or |x_1 - x_2| for a Difference. Eyes and sources are given, not computed. The s
 of equations, so a loop is no special case: it is just a feedback that the state remembers, and
 it can settle, hold a value, latch or oscillate.
 
-The state is `y` of shape (N, n, C) for N agents, C = CHANNELS: each node's rate in red and in
-blue, white being both (D-501), each channel following the same equations on its own. The caller
-keeps it from tick to tick, and it belongs in the hash of the run. A white part reads `white(y)`,
-the mean of the channels. A tick reads every output, then steps every state by its law,
+The state is `y` of shape (N, n, C) for N agents, C = CHANNELS: each node's rate in white and in
+red (D-501, D-502), each channel following the same equations on its own. The caller keeps it
+from tick to tick, and it belongs in the hash of the run. A painted part reads or sends its own
+channel alone, `painted`. A tick reads every output, then steps every state by its law,
 each from the same y, so the order in which kinds are stepped cannot change a result. The tick
 is at most the shortest `max_dt` of the network's laws: TAU for the jam's parts, whose step is
 then y <- F(y); keep it well under (dt <= TAU / 2, see `laws.Relax`).
@@ -29,43 +29,33 @@ import math
 import numpy as np
 
 from nektoids.graph.kinds import Hue
-from nektoids.graph.laws import BLUE, CHANNELS, RATE_MAX, RED
+from nektoids.graph.laws import CHANNELS, RATE_MAX
 from nektoids.graph.laws import TAU as TAU  # re-exported: the lag of every part of the jam
 from nektoids.graph.network import Network
 
 SOURCE_RATE = 1.0  # what a Source emits
 
 
-def white(y: np.ndarray) -> np.ndarray:
-    """What a white part reads of rates y (..., C): the mean of red and blue (D-501). White
-    light gives both channels the same rate x, and (x + x) / 2 is x exactly."""
-    return 0.5 * (y[..., RED] + y[..., BLUE])
-
-
-# The channels a part of each hue sends or reads (D-501): a mask over the last axis.
-CHANNELS_OF = {Hue.WHITE: (1.0, 1.0), Hue.RED: (1.0, 0.0), Hue.BLUE: (0.0, 1.0)}
-
-
 def masks(hues) -> np.ndarray:
-    """(k, C): the channels each of `hues` sends, 1 or 0."""
-    return np.array([CHANNELS_OF[hue] for hue in hues], dtype=np.float64).reshape(-1, CHANNELS)
+    """(k, C): each of `hues` as a mask over the channels, 1 on its own, 0 on the other."""
+    return np.array([np.eye(CHANNELS)[hue.channel] for hue in hues]).reshape(-1, CHANNELS)
+
+
+WHITE_LIGHT = masks([Hue.WHITE])[0]  # every light so far (D-502): a red eye sees none of it
 
 
 def painted(net: Network, y: np.ndarray, nodes: np.ndarray) -> np.ndarray:
-    """(N, k): the rates y (N, n, C) of `nodes` as their paint reads them (D-501): a red part
-    its red, a blue part its blue, a white one the mean, `white`. What a thruster pushes with."""
-    hues = [net.hues[i] for i in nodes]
-    red = np.array([hue is Hue.RED for hue in hues], dtype=bool)
-    blue = np.array([hue is Hue.BLUE for hue in hues], dtype=bool)
-    rows = y[:, nodes]
-    return np.where(red, rows[..., RED], np.where(blue, rows[..., BLUE], white(rows)))
+    """(N, k): the rates y (N, n, C) of `nodes`, each in its own channel, by its paint (D-502):
+    what a thruster pushes with."""
+    channels = np.array([net.hues[i].channel for i in nodes], dtype=np.int64)
+    return y[:, np.asarray(nodes, dtype=np.int64), channels]
 
 
 def shown(net: Network, y: np.ndarray) -> np.ndarray:
     """(N, n): one rate a node, as the Board shows it until a wire's beads show each channel:
-    a painted part's as its paint reads it, `painted`; any other node's larger channel, so
-    that a red signal alone is seen whole through the operators."""
-    rates = np.maximum(y[..., RED], y[..., BLUE])
+    a painted part's in its own channel, `painted`; any other node's larger channel, so that a
+    red signal alone is seen whole through the operators."""
+    rates = y.max(axis=-1)
     paintable = np.array([kind.paintable for kind in net.kinds], dtype=bool)
     nodes = np.flatnonzero(paintable)
     rates[:, nodes] = painted(net, y, nodes)
@@ -100,25 +90,26 @@ def max_dt(net: Network) -> float:
 def given_rates(net: Network, eyes: np.ndarray, sources: np.ndarray | None = None) -> np.ndarray:
     """(N, n, C): the rates of the sensors, zero elsewhere.
 
-    eyes: (N, n_eyes, C), or (N, n_eyes) for white light, the same rate in every channel; clipped
-    to [0, RATE_MAX]. sources: override of SOURCE_RATE, (n_sources,) or (N, n_sources); only the
-    developer view passes it. Each sensor sends only its own channels, by its paint (D-501).
+    eyes: the light at each eye, (N, n_eyes, C), or (N, n_eyes) for white light; clipped to
+    [0, RATE_MAX]. sources: override of SOURCE_RATE, (n_sources,) or (N, n_sources); only the
+    developer view passes it. An eye sends the light of its own channel, a Source its rate in
+    its own channel, by their paint (D-502).
     """
     eyes = np.asarray(eyes, dtype=np.float64)
     if eyes.ndim == 2:
-        eyes = np.repeat(eyes[:, :, None], CHANNELS, axis=2)
+        eyes = eyes[:, :, None] * WHITE_LIGHT
     if eyes.ndim != 3 or eyes.shape[1:] != (len(net.eyes), CHANNELS):
         raise ValueError(
             f"eyes must have shape (N, {len(net.eyes)}[, {CHANNELS}]), got {eyes.shape}"
         )
     agents = eyes.shape[0]
     given = np.zeros((agents, net.n, CHANNELS))
-    given[:, net.eyes] = np.clip(eyes, 0.0, RATE_MAX)
+    given[:, net.eyes] = np.clip(eyes, 0.0, RATE_MAX) * masks(net.hues[i] for i in net.eyes)
     if sources is None:
         sources = np.full(len(net.sources), SOURCE_RATE)
     sources = np.broadcast_to(np.asarray(sources, dtype=np.float64), (agents, len(net.sources)))
-    given[:, net.sources] = np.clip(sources, 0.0, RATE_MAX)[:, :, None]
-    given[:, net.sensors] *= masks([net.hues[i] for i in net.sensors])  # their own channels
+    hues = masks(net.hues[i] for i in net.sources)
+    given[:, net.sources] = np.clip(sources, 0.0, RATE_MAX)[:, :, None] * hues
     return given
 
 
@@ -163,7 +154,7 @@ def step_given(net: Network, y: np.ndarray, given: np.ndarray, dt: float) -> np.
 
 def wire_flux(net: Network, y: np.ndarray) -> np.ndarray:
     """(N, E[, C]): rate on each wire, in `net.edges` order, from rates y (N, n[, C]): in each
-    channel, or white."""
+    channel, or one rate a node."""
     sources = net.edges[:, 0]
     out, outdeg = outputs(net, y), net.outdeg[sources]
     return out[:, sources] / outdeg.reshape(outdeg.shape + (1,) * (out.ndim - 2))

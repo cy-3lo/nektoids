@@ -29,6 +29,7 @@ import numpy as np
 from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
 from nektoids.graph.dynamics import RATE_MAX, painted
 from nektoids.graph.hexgrid import Cell
+from nektoids.graph.kinds import Hue
 from nektoids.graph.network import Network, body_disc
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
 from nektoids.sim.motion import stokes
@@ -103,6 +104,8 @@ class AtWork:
     flames: np.ndarray  # (Q, 2) the specks of its thrusters' flames
     eyes: np.ndarray  # (k, m, 2) each eye's outline; its face, the edge from last point to first
     thrusters: np.ndarray  # (j, m, 2) each thruster's, its face its back
+    eye_hues: tuple[Hue, ...]  # what each eye is painted (D-502)
+    thruster_hues: tuple[Hue, ...]  # ... each thruster
     velocity: np.ndarray | None  # (2, 2) from the rim along the velocity; None while still
     spin: np.ndarray | None  # (m, 2) the arc from the heading; None while it does not turn
 
@@ -141,6 +144,8 @@ def at_work(
         ),
         eyes=to_plane(eyes, pose, radius),
         thrusters=to_plane(thrusters, pose, radius),
+        eye_hues=tuple(net.hues[i] for i in net.eyes),
+        thruster_hues=tuple(net.hues[i] for i in net.thrusters),
         velocity=velocity_segment(centre, heading, radius, vel),
         spin=spin_arc(centre, heading, radius, spin),
     )
