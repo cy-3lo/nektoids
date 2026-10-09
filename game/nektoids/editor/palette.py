@@ -207,7 +207,11 @@ WARN = P.accent2.mid  # the developer view's warnings
 # The arena
 SHADOW = P.deep  # the open plane, and a reading of 0 on the light map
 LIGHT = P.bright  # a light, and a reading of RATE_MAX
-RAY = mix(P.deep, P.line, 0.75)  # every ray, whatever its light, a shade lighter (D-342)
+RAY = mix(P.deep, P.line, 0.75)  # a white light's rays, a shade lighter than the plane (D-342)
+LIGHT_AMBER = BEAD_AMBER  # an amber light's disc (D-506); its rays, the same, darker
+LIGHT_VIOLET = BEAD_VIOLET
+RAY_AMBER = oklch(0.40, 0.07, 75.0)
+RAY_VIOLET = oklch(0.38, 0.08, 300.0)
 OBSTACLE = mix(P.line, P.muted, 0.5)
 BODY = P.accent1.bright  # the selected swimmer
 BODY_UNSELECTED = P.dim

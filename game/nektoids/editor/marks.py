@@ -131,7 +131,18 @@ def at_work(
     vel, spin = motion(net, y, radius)
     centre, heading = pose[:2], pose[2]
     return AtWork(
-        intake=intake(arena, eye_mount, eye_facing, eyes, pose, radius, frame, specks, stretch),
+        intake=intake(
+            arena,
+            eye_mount,
+            eye_facing,
+            eyes,
+            pose,
+            radius,
+            frame,
+            specks,
+            stretch,
+            hues=[net.hues[i] for i in net.eyes],
+        ),
         flames=flames(
             painted(net, y[None], net.thrusters)[0],
             thr_facing,
@@ -219,11 +230,17 @@ def flames(
 
 
 def light_shares(
-    arena: Arena, mount: np.ndarray, facing: np.ndarray, pose: Pose, radius: float
+    arena: Arena,
+    mount: np.ndarray,
+    facing: np.ndarray,
+    pose: Pose,
+    radius: float,
+    hues: Sequence[Hue] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """What each light gives each eye's reading, (k, L) in [0, RATE_MAX], summing to what the
-    eye reads (`optics.eye_rates`), and each eye's look (k, 2): the light it reads, shared out
-    between the lights in proportion to what each gives it unshadowed."""
+    eye reads in its own channel (`optics.eye_rates`), and each eye's look (k, 2): the light it
+    reads, shared out between the lights in proportion to what each gives it unshadowed. An eye
+    of `hues` sees only the lights that shine in its colour (D-506); all amber if None."""
     x, y, heading = pose
     pos, turn, size = np.array([[x, y]]), np.array([heading]), np.array([radius])
     points, looks = eye_poses(pos, turn, size, mount, facing)
@@ -232,6 +249,8 @@ def light_shares(
     centres, radii = discs(arena, pos, size)
     own = np.full(len(points), len(arena.obstacles))  # the body is transparent to its own parts
     seen = visible(points, arena.light_xy, centres, radii, skip=own)
+    channels = [hue.channel for hue in hues] if hues is not None else [0] * len(points)
+    seen &= arena.light_channels[:, channels].T  # (k, L): the lights of its colour
     part = np.where(seen, given, 0.0)
     total = part.sum(axis=1, keepdims=True)
     return part * np.minimum(RATE_MAX, total) / np.maximum(total, TINY), looks
@@ -247,14 +266,16 @@ def intake(
     frame: int,
     specks: Specks = SPECKS,
     stretch: float = 1.0,
+    hues: Sequence[Hue] | None = None,
 ) -> np.ndarray:
     """(P, 2) [u]: the specks of light drawn into eyes at `mount` (k, 2) [body radii], facing
     `facing` (k,), with outlines (k, m, 2): into each face from each light it sees, along the
     light's direction, from INTAKE_LENGTH out `stretch` times over, thinning out there, or from
-    the light if it is nearer; as many as that light gives the reading."""
+    the light if it is nearer; as many as that light gives the reading. An eye of `hues` sees the
+    lights that shine in its colour (D-506)."""
     if len(mount) == 0 or len(arena.lights) == 0:
         return NOWHERE
-    shares, looks = light_shares(arena, mount, facing, pose, radius)
+    shares, looks = light_shares(arena, mount, facing, pose, radius, hues)
     found = [NOWHERE]
     for k in range(len(mount)):
         middle, half = face(outline[k])

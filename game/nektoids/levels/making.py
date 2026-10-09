@@ -33,7 +33,7 @@ from nektoids.levels.objectives import (
     settings,
     targets,
 )
-from nektoids.sim.arena import BASE_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, Colour
 
 SETTING = {  # what each item's setting may be: a whole number, 1 to 8 (D-301, D-311, D-318)
     ItemKind.LIGHT: Range(1.0, 8.0, 1.0),  # its power
@@ -57,9 +57,13 @@ class Unmade(ValueError):
     """A change the level could not hold; its message says why, as the status line says it."""
 
 
-def placed(level: Level, kind: ItemKind, at: tuple[float, float]) -> Level:
-    """A new item of `kind` at the lattice point nearest `at`, set as NEW says, last in order."""
-    return _checked(replace(level, items=(*level.items, Item(kind, snapped(at), NEW[kind]))))
+def placed(
+    level: Level, kind: ItemKind, at: tuple[float, float], colour: Colour = Colour.WHITE
+) -> Level:
+    """A new item of `kind` at the lattice point nearest `at`, set as NEW says, last in order; a
+    light of `colour` (D-506)."""
+    item = Item(kind, snapped(at), NEW[kind], colour)
+    return _checked(replace(level, items=(*level.items, item)))
 
 
 def moved(level: Level, index: int, at: tuple[float, float]) -> Level:

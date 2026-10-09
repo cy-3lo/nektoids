@@ -150,7 +150,7 @@ def test_the_light_is_drawn_in_from_the_light_in_its_share_of_the_reading():
     outline = outlines(mount, facing, EYE_DISC, part_scale(board.cells))
     arena = Arena(lights=(Light(2.0, 6.0, 8.0),))  # ahead and to the left: the upper eye sees it
     shares, _ = light_shares(arena, mount, facing, STILL, 1.0)
-    read = eye_rates(arena, np.zeros((1, 2)), np.zeros(1), np.ones(1), mount, facing)[0]
+    read = eye_rates(arena, np.zeros((1, 2)), np.zeros(1), np.ones(1), mount, facing)[0, :, 0]
     assert shares[:, 0] == pytest.approx(read)
     assert shares[0, 0] > 0.0 and shares[1, 0] == 0.0  # the lower eye looks away
     end, _ = face(outline[0])

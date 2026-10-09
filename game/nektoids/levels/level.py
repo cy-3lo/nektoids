@@ -28,12 +28,12 @@ from nektoids.graph.board import Board
 from nektoids.graph.hexgrid import disc_radius, hex_disc
 from nektoids.levels import objectives as goals
 from nektoids.levels.objectives import Goal, objective_from_dict, objective_to_dict
-from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Disc, Light
+from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Colour, Disc, Light
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
 START_NUDGE = (1e-3, -1e-3)  # [u] a run's swimmer starts so far off its whole start (D-425)
-FORMAT = 5  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
-# 4 a zone written as its size (D-313), 5 an author (D-331)
+FORMAT = 6  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
+# 4 a zone written as its size (D-313), 5 an author (D-331), 6 a light's colour (D-506)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "version",
     "title",
@@ -75,20 +75,28 @@ class Item:
     kind: ItemKind
     at: tuple[float, float]  # where its centre sits [u]
     value: float  # its kind's setting: a light's power, an obstacle's radius [u]
+    colour: Colour = Colour.WHITE  # a light's (D-506); white, unread, for the rest
 
     def to_dict(self) -> dict:
         at = [whole(v) for v in self.at]
-        return {"kind": self.kind.value, "at": at, self.kind.setting: whole(self.value)}
+        data = {"kind": self.kind.value, "at": at, self.kind.setting: whole(self.value)}
+        return {**data, "colour": self.colour.value} if self.colour is not Colour.WHITE else data
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Item:
         kind = ItemKind(data["kind"])
-        known(data, ("kind", "at", kind.setting), f"a {kind.value}")
+        coloured = ("colour",) if kind is ItemKind.LIGHT else ()  # a light's alone (D-506)
+        known(data, ("kind", "at", kind.setting, *coloured), f"a {kind.value}")
         value = data.get(kind.setting, kind.default)
         if value is None:
             raise ValueError(f"a {kind.value} needs its {kind.setting}")
         x, y = data["at"]
-        return cls(kind, (float(x), float(y)), float(value))
+        try:
+            colour = Colour(data.get("colour", Colour.WHITE.value))
+        except ValueError:
+            name = data["colour"]
+            raise ValueError(f"a light's colour is white, amber or violet, not {name!r}") from None
+        return cls(kind, (float(x), float(y)), float(value), colour)
 
 
 @dataclass(frozen=True)
@@ -120,7 +128,9 @@ class Level:
     def arena(self) -> Arena:
         """What the simulation reads: the lights and the obstacles, each in item order."""
         lights = tuple(
-            Light(*item.at, item.value) for item in self.items if item.kind is ItemKind.LIGHT
+            Light(*item.at, item.value, item.colour)
+            for item in self.items
+            if item.kind is ItemKind.LIGHT
         )
         obstacles = tuple(
             Disc(*item.at, item.value) for item in self.items if item.kind is ItemKind.OBSTACLE
@@ -195,8 +205,9 @@ def upgraded(data: Mapping) -> Mapping:
     """`data` in FORMAT, from the version it says (D-201): version 1 had no marks, and is
     version 2 as it is (D-306); version 2's objectives become sentences, its rings marks on its
     lights (D-307, `objectives.upgraded`); version 3's zone, a hexagon's cells, becomes its size
-    (D-313); version 4 has no author, and is version 5 as it is (D-331). ValueError for no
-    version, one this game does not know, or rings that would mix with the marks a level has."""
+    (D-313); version 4 has no author, and is version 5 as it is (D-331); version 5's lights are
+    white, and it is version 6 as it is (D-506). ValueError for no version, one this game does
+    not know, or rings that would mix with the marks a level has."""
     if "version" not in data:
         raise ValueError(f"a level without its version: this game reads version {FORMAT}")
     version = data["version"]

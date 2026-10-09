@@ -112,11 +112,11 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
 def test_a_level_without_its_version_or_of_another_is_refused():
     data = a_level()
     del data["version"]
-    with pytest.raises(ValueError, match="without its version: this game reads version 5"):
+    with pytest.raises(ValueError, match="without its version: this game reads version 6"):
         Level.from_dict(data)
-    with pytest.raises(ValueError, match="of version 6: this game reads version 5 and those"):
-        Level.from_dict(a_level(version=6))  # D-201
-    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 5  # 1 upgraded (D-331)
+    with pytest.raises(ValueError, match="of version 7: this game reads version 6 and those"):
+        Level.from_dict(a_level(version=7))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 6  # 1 upgraded (D-506)
 
 
 def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():

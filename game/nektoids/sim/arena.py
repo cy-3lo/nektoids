@@ -10,13 +10,30 @@ pygame.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from functools import cached_property
 
 import numpy as np
 
+from nektoids.graph.kinds import Hue
+
 BASE_RADIUS = 1.0  # [u] every body's radius, whatever its board (D-045): the unit of length
 LIGHT_RADIUS = BASE_RADIUS  # [u] a light is a disc as big as a swimmer; it shadows nothing
 OBSTACLE_RADIUS = 1.0  # [u]
+
+
+class Colour(Enum):
+    """A light's colour (D-506): amber or violet, one channel, or white, both; an eye sees the
+    lights that shine in its own colour. Its place here is its code in a level's word."""
+
+    WHITE = "white"
+    AMBER = "amber"
+    VIOLET = "violet"
+
+    @property
+    def channels(self) -> tuple[bool, ...]:
+        """Whether it shines in each channel, in `Hue`'s order."""
+        return tuple(self is Colour.WHITE or self.value == hue.value for hue in Hue)
 
 
 @dataclass(frozen=True)
@@ -24,6 +41,7 @@ class Light:
     x: float  # [u]
     y: float  # [u]
     power: float  # [u]: an eye looking straight at the light reads RATE_MAX this close to it
+    colour: Colour = Colour.WHITE  # the eyes it is seen by: of its colour, or all (D-506)
 
 
 @dataclass(frozen=True)
@@ -72,6 +90,12 @@ class Arena:
     def light_power(self) -> np.ndarray:
         """(L,) [u]."""
         return _frozen(np.array([s.power for s in self.lights], dtype=np.float64))
+
+    @cached_property
+    def light_channels(self) -> np.ndarray:
+        """(L, C) bool: whether each light shines in each channel, by its colour (D-506)."""
+        rows = [s.colour.channels for s in self.lights]
+        return _frozen(np.array(rows, dtype=bool).reshape(len(self.lights), len(Hue)))
 
     @cached_property
     def rest_xy(self) -> np.ndarray:

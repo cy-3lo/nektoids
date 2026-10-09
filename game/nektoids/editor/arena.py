@@ -300,9 +300,9 @@ class ArenaScene(Frame):
 
     def _moved(self) -> None:
         """A swimmer moved or turned: what the eyes read now, even paused; the map if shown."""
-        self.eyes = self._read_eyes()
         hues = [self.net.hues[i] for i in self.net.eyes]
-        self.state[:, self.net.eyes] = self.eyes[:, :, None] * masks(hues)  # by their paint
+        self.state[:, self.net.eyes] = self._read_eyes() * masks(hues)  # their own channels
+        self.eyes = painted(self.net, self.state, self.net.eyes)
         self.circuit.show(self.channels)
         if self.show_map:
             self._map()
@@ -328,7 +328,7 @@ class ArenaScene(Frame):
         self.map_version += 1
 
     def _read_eyes(self) -> np.ndarray:
-        """(N, n_eyes): what each swimmer's eyes read where it is."""
+        """(N, n_eyes, C): what each swimmer's eyes read where it is, in each channel."""
         return eye_rates(
             self.arena, self.pos, self.heading, self.radius, self.eye_mount, self.eye_facing
         )

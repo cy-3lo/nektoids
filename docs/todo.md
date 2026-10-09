@@ -62,7 +62,8 @@ its decisions taken, when it starts.
   - [ ] Parts painted amber or violet with a Paint button on the Board, its brush's colour
     switched with nothing picked: eyes, Sources, thrusters, each its own channel; a board's text and a level's word a version up, the old still read;
     undo and redo.
-  - [ ] Lights coloured, amber or violet, in the level's format and the Editor.
+  - [ ] Lights white, amber or violet (D-506): white shines in both channels; in the level's
+    format and word, three keys in the Editor, the rays tinted.
   - [ ] Beads in two streams, violet half a spacing behind, never blended; a stream's beads 0.5 hex
     sizes apart at full rate.
   - [ ] Paint, Filter and Swap, three operators; Paint and Filter painted with the same button.

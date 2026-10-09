@@ -133,11 +133,13 @@ PALETTE_TOOLS = (
 TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-clockwise
 
 
-class Piece(Enum):  # Objects' rows: what the Editor puts on the plane (D-301)
-    LIGHT = "light"
+class Piece(Enum):  # Objects' rows: what the Editor puts on the plane (D-301), in the keys' order
+    START = "start"  # the swimmer's start: always one, moved and turned, never placed
+    LIGHT = "light"  # white, seen by every eye (D-506)
+    AMBER_LIGHT = "amber light"  # seen by amber eyes alone
+    VIOLET_LIGHT = "violet light"  # by violet eyes alone
     OBSTACLE = "obstacle"
     MARK = "mark"  # a zone, which only the objectives read (D-306)
-    START = "start"  # the swimmer's start: always one, moved and turned, never placed
 
 
 class Brief(Enum):  # Text's fields, in the Editor: the level's name, what it asks, its maker
@@ -776,7 +778,7 @@ class _Rows:
         """The Editor's objects under their title, scrolled down to `floor`, the drawer's foot:
         the Wheel and the undo rows left it for the keys round the plane (D-410)."""
         self._title("Plane", self.sections)
-        for piece in (Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK):  # as the keys (D-410)
+        for piece in Piece:  # as the keys (D-410)
             self._row(piece)
         self.y -= ROW_PITCH - ROW_HEIGHT  # what lies under the last row
         self.scrolled(floor, scroll)

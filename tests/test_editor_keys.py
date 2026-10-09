@@ -54,5 +54,5 @@ def test_a_key_lights_on_what_it_acts_on_and_greys_when_it_cannot():
 
 def test_a_tooltip_names_the_key_and_says_its_key():
     assert tip(Key.ERASE) == "Erase all" and tip(Key.CUT) == "Cut (Del)"
-    assert tip(Piece.START) == "Swimmer (0)" and tip(Piece.LIGHT) == "Light (1)"
+    assert tip(Piece.START) == "Swimmer (0)" and tip(Piece.LIGHT) == "White light (1)"
     assert tip(Key.HAND, key_hints=False) == "Hand"

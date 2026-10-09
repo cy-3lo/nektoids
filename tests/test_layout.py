@@ -625,7 +625,8 @@ def test_the_sandbox_has_a_third_tab_the_editor_with_its_own_drawers_and_switch_
 
 def test_objects_lists_the_planes_objects_alone_the_wheel_and_undo_gone_to_the_keys():
     layout = make_layout(Drawer.OBJECTS, env=Env.EDITOR, editor=True)  # D-301, D-410
-    pieces = [Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK]  # D-306, the keys' order
+    pieces = list(Piece)  # the keys' order: the swimmer, three lights (D-506), the rest
+    assert pieces[:2] == [Piece.START, Piece.LIGHT] and pieces[-1] is Piece.MARK  # D-306
     assert [p for p, _ in layout.piece_rows] == pieces
     assert layout.edit_buttons == () and layout.wheel_view is None
     assert [t for t, _ in layout.section_titles] == ["Plane"] and layout.scroll_max == 0

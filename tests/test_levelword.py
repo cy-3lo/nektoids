@@ -13,6 +13,7 @@ from nektoids.levels import levelword, making, objectives
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.levelword import from_word, read_shared, to_shared, to_word
+from nektoids.sim.arena import Colour
 
 LEVELS = {level.title: level for level in (*arenas(), sandbox())}
 DRAGSTER = LEVELS["Dragster"]
@@ -137,3 +138,14 @@ def test_the_words_ranges_are_the_editors():
         assert (levelword.SETTINGS[0], levelword.SETTINGS[-1]) == (scale.lo, scale.hi)
     seconds = objectives.SECONDS
     assert (levelword.STAYS[0], levelword.STAYS[-1]) == (seconds.lo, seconds.hi)
+
+
+def test_a_coloured_light_reads_back_coloured():
+    level = LEVELS["Fear"]  # D-506
+    lit = [
+        replace(item, colour=Colour.VIOLET) if item.kind is ItemKind.LIGHT else item
+        for item in level.items
+    ]
+    coloured = replace(level, items=tuple(lit))
+    items = from_word(to_word(coloured))[0].items
+    assert [item.colour for item in items if item.kind is ItemKind.LIGHT] == [Colour.VIOLET]

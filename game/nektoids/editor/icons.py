@@ -47,6 +47,8 @@ TOOL_ICON = {
 }
 PIECE_ICON = {
     Piece.LIGHT: "lightbulb",
+    Piece.AMBER_LIGHT: "lightbulb",  # in its colour (D-506)
+    Piece.VIOLET_LIGHT: "lightbulb",
     Piece.OBSTACLE: "circle",
     Piece.MARK: "circle-plus",  # a + in a circle, as the plane draws a mark (D-306, D-314)
     Piece.START: "location-arrow",

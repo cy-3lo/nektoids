@@ -15,8 +15,8 @@ symbol, so that a board's text is never read as a level, nor a level's word as a
 parts a level places are the board's own digits (`boardtext.replay`), on a board of its zone. A
 position costs one digit within NEAR of the origin, more beyond; a heading is a whole degree.
 The kinds of part are `Kind`'s, in order: a new kind raises VERSION. A word of an older version
-is read as that version wrote it: 31 had the seven kinds before the Tank and boards with no hues
-(D-501). Pure Python, no pygame.
+is read as that version wrote it: 31 had the seven kinds before the Tank, boards with no hues
+and white lights (D-501, D-506). Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ from nektoids.graph.board import Kind
 from nektoids.graph.spelling import spell, unspell
 from nektoids.levels.level import FORMAT, Item, ItemKind, Level
 from nektoids.levels.objectives import Count, Goal, Target, Verb, objective_to_dict
+from nektoids.sim.arena import Colour
 
 VERSION = 32  # of the word, its hidden symbol: boards' count from 1 (D-205), levels' from 31
 # The versions still read, newest first: each, the kinds whose stock it holds, and the version of
@@ -169,7 +170,10 @@ def _replay(choose: Choose, version: int = VERSION) -> Play:
     for _ in range(choose("items", ITEMS)):
         kind = choose("item", list(ItemKind))
         at = (float(_integer(choose)), float(_integer(choose)))
-        items.append(Item(kind, at, float(choose("setting", SETTINGS))))
+        setting = float(choose("setting", SETTINGS))
+        coloured = kind is ItemKind.LIGHT and version >= 32  # D-506
+        colour = choose("colour", list(Colour)) if coloured else Colour.WHITE
+        items.append(Item(kind, at, setting, colour))
     stock = {kind.value: choose("stock", STOCK) for kind in kinds}
     placed = boardtext.replay(choose, board_version)
     parts = [{**part, "locked": True} for part in placed.to_dict()["parts"]]
@@ -219,6 +223,7 @@ class _Encoder:
         wants.append(len(level.items))
         for item in level.items:
             wants += [item.kind, *_far(item.at[0]), *_far(item.at[1]), _whole(item.value)]
+            wants += [item.colour] if item.kind is ItemKind.LIGHT else []
         wants += [stock.get(kind.value, 0) for kind in Kind]
         self.before = wants  # the level's choices before the board's
         self.after: list[object] = [_whole(level.time_limit), len(level.objectives)]

@@ -9,6 +9,9 @@ segment from x to the light meets no disc, 0 otherwise. The 2 pi of 2D spreading
 P, so P is the distance at which an eye looking straight at the light reads RATE_MAX. The rate
 of an eye is min(RATE_MAX, E), the cap every node has (D-016).
 
+A light shines in amber, in violet, or in both, white (D-506): an eye's reading has a channel
+each, the sum over the lights that shine in it, so that an eye painted one colour reads its own.
+
 The discs are the obstacles and the swimmers' bodies. A body shadows every eye but its own: the
 body is transparent to its own parts (D-018). The light map a player sees is what an eye looking
 straight at each light would read there, so what is drawn is what is sensed.
@@ -23,6 +26,7 @@ from __future__ import annotations
 import numpy as np
 
 from nektoids.graph.dynamics import RATE_MAX
+from nektoids.graph.laws import CHANNELS
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
 
 R_MIN = LIGHT_RADIUS  # [u] a light closer than this counts as this far: its own size, no 1/0
@@ -119,7 +123,8 @@ def eye_rates(
     mount: np.ndarray,
     facing: np.ndarray,
 ) -> np.ndarray:
-    """(N, k): what the k eyes of each of N bodies send, in [0, RATE_MAX].
+    """(N, k, C): what the k eyes of each of N bodies read in each channel, in [0, RATE_MAX]:
+    the lights that shine in each added in their order, the others adding nothing.
 
     Arguments as for `eye_poses`. Every body shadows the others' eyes, never its own.
     """
@@ -130,7 +135,9 @@ def eye_rates(
     own = len(arena.obstacles) + np.repeat(np.arange(n), k)
     given = exposure(points, looks, arena.light_xy, arena.light_power)
     seen = visible(points, arena.light_xy, centres, radii, skip=own)
-    return np.minimum(RATE_MAX, add_lights(given, seen)).reshape(n, k)
+    channels = [seen & arena.light_channels[None, :, c] for c in range(CHANNELS)]
+    rates = np.stack([add_lights(given, lit) for lit in channels], axis=-1)
+    return np.minimum(RATE_MAX, rates).reshape(n, k, CHANNELS)
 
 
 def angular_irradiance(

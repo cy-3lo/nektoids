@@ -82,7 +82,7 @@ class Probe:
         ]
 
     def eyes(self) -> np.ndarray:
-        """What each eye sends now, (n_eyes,): the light it reads."""
+        """What each eye reads now, (n_eyes, C): the light in each channel; it sends its own."""
         return self.light.copy()
 
     def tick(self, dt: float = DT) -> None:

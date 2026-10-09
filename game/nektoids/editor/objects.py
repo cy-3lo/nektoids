@@ -13,13 +13,32 @@ import numpy as np
 from nektoids.editor.arena_view import ArenaView, body_at
 from nektoids.editor.layout import Piece
 from nektoids.levels.level import ItemKind, Level
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Colour
 
-PLACED = {Piece.LIGHT: ItemKind.LIGHT, Piece.OBSTACLE: ItemKind.OBSTACLE, Piece.MARK: ItemKind.MARK}
-ONE = {Piece.LIGHT: "a light", Piece.OBSTACLE: "an obstacle", Piece.MARK: "a mark"}
+PLACED = {
+    Piece.LIGHT: ItemKind.LIGHT,
+    Piece.AMBER_LIGHT: ItemKind.LIGHT,
+    Piece.VIOLET_LIGHT: ItemKind.LIGHT,
+    Piece.OBSTACLE: ItemKind.OBSTACLE,
+    Piece.MARK: ItemKind.MARK,
+}
+COLOUR = {  # a light's, by its key (D-506)
+    Piece.LIGHT: Colour.WHITE,
+    Piece.AMBER_LIGHT: Colour.AMBER,
+    Piece.VIOLET_LIGHT: Colour.VIOLET,
+}
+ONE = {
+    Piece.LIGHT: "a white light",
+    Piece.AMBER_LIGHT: "an amber light",
+    Piece.VIOLET_LIGHT: "a violet light",
+    Piece.OBSTACLE: "an obstacle",
+    Piece.MARK: "a mark",
+}
 MARK_GRAB = 6.0  # a mark is grabbed this near its rim, or its centre [px]
 NAMES = {
-    Piece.LIGHT: "Light",
+    Piece.LIGHT: "White light",
+    Piece.AMBER_LIGHT: "Amber light",
+    Piece.VIOLET_LIGHT: "Violet light",
     Piece.OBSTACLE: "Obstacle",
     Piece.MARK: "Mark",
     Piece.START: "Swimmer",  # its start; "Swimmer's start" runs into the row's info disc

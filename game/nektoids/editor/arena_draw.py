@@ -102,6 +102,8 @@ from nektoids.editor.palette import (
     EYE_SHADES,
     FULL,
     LIGHT,
+    LIGHT_AMBER,
+    LIGHT_VIOLET,
     LIT,
     MARK,
     OBSTACLE,
@@ -109,6 +111,8 @@ from nektoids.editor.palette import (
     PLOT_FRAME,
     PLOT_TEXT,
     RAY,
+    RAY_AMBER,
+    RAY_VIOLET,
     REFUSED,
     RULE,
     RUN_SO_FAR,
@@ -122,13 +126,15 @@ from nektoids.graph.network import label
 from nektoids.levels.objectives import Outcome, at_start
 from nektoids.levels.proof import to_beat
 from nektoids.levels.score import Score, front
-from nektoids.sim.arena import LIGHT_RADIUS, Arena
+from nektoids.sim.arena import LIGHT_RADIUS, Arena, Colour
 from nektoids.sim.optics import discs
 
 if TYPE_CHECKING:
     from nektoids.editor.level_editor import EditorScene
 
 RAY_WIDTH = 2  # [px]
+LIGHT_OF = {Colour.WHITE: LIGHT, Colour.AMBER: LIGHT_AMBER, Colour.VIOLET: LIGHT_VIOLET}
+RAY_OF = {Colour.WHITE: RAY, Colour.AMBER: RAY_AMBER, Colour.VIOLET: RAY_VIOLET}
 BULB = 1.6  # the bulb's height on a light, in light radii (D-076)
 MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
 PLAYHEAD = 6  # [px]
@@ -214,11 +220,12 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
 
 def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Arena) -> None:
     """The plane's items: the obstacles, grey discs, where their springs have them (D-424); the
-    lights, white discs with a bulb."""
+    lights, discs with a bulb, in their colours (D-506)."""
     for (x, y), radius in zip(arena.disc_xy, arena.disc_radius, strict=True):
         pygame.draw.circle(screen, OBSTACLE, view.to_screen(x, y), radius * view.scale)
     for light in arena.lights:
-        draw_light(screen, fonts, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale)
+        centre = view.to_screen(light.x, light.y)
+        draw_light(screen, fonts, centre, LIGHT_RADIUS * view.scale, LIGHT_OF[light.colour])
 
 
 def draw_marks(
@@ -240,9 +247,9 @@ def draw_mark(screen: pygame.Surface, centre, radius: float, width: int = 2, col
     pygame.draw.line(screen, colour, (cx, cy - arm), (cx, cy + arm), width)
 
 
-def draw_light(screen: pygame.Surface, fonts: Fonts, centre, radius: float) -> None:
-    """A light: a white disc of `radius` [px], outlined, a bulb on it (D-076)."""
-    pygame.draw.circle(screen, LIGHT, centre, radius)
+def draw_light(screen: pygame.Surface, fonts: Fonts, centre, radius: float, ink=LIGHT) -> None:
+    """A light: a disc of `radius` [px] in its colour, `ink`, outlined, a bulb on it (D-076)."""
+    pygame.draw.circle(screen, ink, centre, radius)
     pygame.draw.aacircle(screen, DARK, centre, radius + 1, 1)
     fonts.icons.draw(screen, "lightbulb", centre, round(BULB * radius), DARK)
 
@@ -262,6 +269,7 @@ def draw_rays(
     centres, radii = discs(arena, pos, radius)
     left, bottom, right, top = shown(view, area)
     for light, (x, y) in enumerate(arena.light_xy):
+        ink = RAY_OF[arena.lights[light].colour]  # tinted as its light, darker (D-506)
         angles = rays.angles(light, t)
         length = max(math.hypot(cx - x, cy - y) for cx in (left, right) for cy in (bottom, top))
         ends = ray_ends((x, y), angles, centres, radii, length)  # out of view, or a disc
@@ -269,7 +277,7 @@ def draw_rays(
             if math.hypot(ex - x, ey - y) > LIGHT_RADIUS:  # from the light's rim outwards
                 rim = (x + LIGHT_RADIUS * math.cos(a), y + LIGHT_RADIUS * math.sin(a))
                 start, end = view.to_screen(*rim), view.to_screen(ex, ey)
-                pygame.draw.aaline(screen, RAY, start, end, RAY_WIDTH)
+                pygame.draw.aaline(screen, ink, start, end, RAY_WIDTH)
 
 
 def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:

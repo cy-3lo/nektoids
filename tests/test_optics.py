@@ -5,18 +5,27 @@ import pytest
 
 from nektoids.graph.network import Network
 from nektoids.levels.sandbox import tutorial_board
-from nektoids.sim.arena import Arena, Disc, Light
+from nektoids.sim import optics
+from nektoids.sim.arena import Arena, Colour, Disc, Light
 from nektoids.sim.optics import (
     R_MIN,
     add_lights,
     angular_irradiance,
     exposure,
     eye_poses,
-    eye_rates,
     light_map,
     still_light,
     visible,
 )
+
+
+def eye_rates(*args):
+    """`optics.eye_rates` under white lights, as every test here has: the same in both channels
+    (D-506), the amber one returned."""
+    rates = optics.eye_rates(*args)
+    assert np.array_equal(rates[..., 0], rates[..., 1])
+    return rates[..., 0]
+
 
 LIGHT = Light(50.0, 30.0, power=10.0)
 CENTRE = np.zeros((1, 2))  # one eye at the centre of its body
@@ -225,3 +234,23 @@ def test_the_light_map_from_what_never_moves_is_the_same_bit_for_bit():
     assert np.array_equal(
         light_map(arena, points, pos, radius, kept), light_map(arena, points, pos, radius)
     )
+
+
+def test_an_eye_reads_in_each_channel_the_lights_that_shine_in_it():
+    lights = (  # D-506: white shines in both, amber and violet in one each
+        Light(10.0, 0.0, 4.0, Colour.AMBER),
+        Light(10.0, 2.0, 4.0, Colour.VIOLET),
+        Light(10.0, -2.0, 4.0, Colour.WHITE),
+    )
+    rates = optics.eye_rates(
+        Arena(lights), np.zeros((1, 2)), np.zeros(1), np.ones(1), CENTRE, AHEAD
+    )
+    alone = [
+        optics.eye_rates(Arena((light,)), np.zeros((1, 2)), np.zeros(1), np.ones(1), CENTRE, AHEAD)
+        for light in lights
+    ]
+    amber, violet, white = (float(r[0, 0, c]) for r, c in zip(alone, (0, 1, 0), strict=True))
+    assert rates[0, 0, 0] == pytest.approx(amber + white)
+    assert rates[0, 0, 1] == pytest.approx(violet + white)
+    assert alone[0][0, 0, 1] == 0.0 and alone[1][0, 0, 0] == 0.0  # each in its own channel
+    assert Colour.WHITE.channels == (True, True) and Colour.VIOLET.channels == (False, True)

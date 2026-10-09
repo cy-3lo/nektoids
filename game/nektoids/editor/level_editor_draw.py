@@ -27,6 +27,7 @@ import numpy as np
 import pygame
 
 from nektoids.editor.arena_draw import (
+    LIGHT_OF,
     draw_items,
     draw_light,
     draw_mark,
@@ -80,6 +81,7 @@ from nektoids.editor.layout import (
 )
 from nektoids.editor.level_editor import EditorScene, Paste
 from nektoids.editor.objects import (
+    COLOUR,
     NAMES,
     PLACED,
     reach,
@@ -99,6 +101,8 @@ from nektoids.editor.palette import (
     KEY_DARK,
     KEY_GREYED,
     KEY_LIGHT,
+    LIGHT_AMBER,
+    LIGHT_VIOLET,
     LIT,
     OBSTACLE,
     OUTSIDE,
@@ -118,14 +122,18 @@ from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
 from nektoids.levels.making import BLANK_TIME, NEW, ZONES, lacks
 from nektoids.levels.objectives import Count, Outcome, Target, Verb, at_start, settings
-from nektoids.sim.arena import LIGHT_RADIUS
+from nektoids.sim.arena import LIGHT_RADIUS, Colour
+
+LIGHT_INK = {Piece.AMBER_LIGHT: LIGHT_AMBER, Piece.VIOLET_LIGHT: LIGHT_VIOLET}  # their keys' bulbs
 
 FOCUS_GAP = 4  # from an object's rim to the ring round it when focused [px]
 FOCUS_DOT = 5  # a focused point's circle; its cross's arms reach 6 px past it [px]
 DOT_SIZE = 2  # a dot of the grid, square [px] (D-311)
 PIECE_ABOUT = {  # what Objects' rows' info boxes say
     Piece.LIGHT: "Click it, then the plane, or drag it there. Its power, 1 to 8, is how much"
-    " light it gives: what an eye reads of it falls as 1/r.",
+    " light it gives: what an eye reads of it falls as 1/r. White, every eye sees it.",
+    Piece.AMBER_LIGHT: "A light that amber eyes see, and violet eyes do not. Its power, 1 to 8.",
+    Piece.VIOLET_LIGHT: "A light that violet eyes see, and amber eyes do not. Its power, 1 to 8.",
     Piece.OBSTACLE: "Click it, then the plane, or drag it there. A disc the swimmer slides round"
     " and the light does not cross: it casts a shadow. Its radius, 1 to 8.",
     Piece.MARK: "Click it, then the plane, or drag it there. A ring only the goals read: the"
@@ -229,7 +237,7 @@ def _draw_keys(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         square_bevel(screen, rect, light, dark)
         x, y, w, h = rect
         at = (x + w // 2 + (look is State.CHOSEN), y + h // 2 + (look is State.CHOSEN))
-        ink = GREYED if look is State.GREYED else TEXT
+        ink = GREYED if look is State.GREYED else LIGHT_INK.get(key, TEXT)  # a light's colour
         if key is Piece.START:  # the swimmer's own shape (D-410)
             draw_swimmer_icon(screen, at, KEY_ICON_SIZE * w / 2, ink)
             continue
@@ -324,7 +332,7 @@ def _draw_in_hand(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     kind = PLACED[piece]
     centre = scene.view.to_screen(*snapped(scene.view.to_world(*scene.pointer)))
     radius = (LIGHT_RADIUS if kind is ItemKind.LIGHT else NEW[kind]) * scene.view.scale
-    _draw_object(screen, fonts, kind, centre, radius)
+    _draw_object(screen, fonts, kind, centre, radius, COLOUR.get(piece, Colour.WHITE))
     pygame.draw.circle(screen, LIT, centre, radius + FOCUS_GAP, 2)
 
 
@@ -332,10 +340,13 @@ def places_hit(scene: EditorScene, point) -> bool:
     return key_at(scene.arena_area, point) is not None
 
 
-def _draw_object(screen: pygame.Surface, fonts: Fonts, kind: ItemKind, centre, radius) -> None:
-    """A light, an obstacle or a mark of `radius` [px], as the plane draws them."""
+def _draw_object(
+    screen: pygame.Surface, fonts: Fonts, kind: ItemKind, centre, radius, colour=Colour.WHITE
+) -> None:
+    """A light, an obstacle or a mark of `radius` [px], as the plane draws them; a light in its
+    `colour` (D-506)."""
     if kind is ItemKind.LIGHT:
-        draw_light(screen, fonts, centre, radius)
+        draw_light(screen, fonts, centre, radius, LIGHT_OF[colour])
     elif kind is ItemKind.MARK:
         draw_mark(screen, centre, radius)
     else:
@@ -386,9 +397,10 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
     in hand or picked (D-410); Goals'; Brief's fields; Files'; Navigator's rays, overview and
     zoom."""
     layout, level = scene.layout, scene.level
-    counts = Counter(item.kind for item in level.items)
+    counts = Counter((item.kind, item.colour) for item in level.items)
     for piece, rect in layout.piece_rows:
-        count = ("count", str(1 if piece is Piece.START else counts[PLACED[piece]]))
+        each = (PLACED.get(piece), COLOUR.get(piece, Colour.WHITE))  # a light, of its colour
+        count = ("count", str(1 if piece is Piece.START else counts[each]))
         active = piece is scene.held or (piece is Piece.START and Piece.START in scene.pick)
         if piece is Piece.START:  # the swimmer's own shape, as on its key (D-410)
             count = ("count", "0" if scene.start_off else "1")

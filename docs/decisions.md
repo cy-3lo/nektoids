@@ -2786,3 +2786,14 @@ placed in, so that switching the brush switches what the hand lays down. Picked 
 colours take the brush's; if they are all of it already, the press means the other colour, for
 them and the brush. With nothing picked, Paint always switches its colour, so it is never
 greyed, and its icon is always in its colour.
+
+**D-506 — 2026-10-09 — A light is white, amber or violet: white shines in both channels, so every eye sees it; amber or violet only in its own. Lights are white unless made otherwise, as they always were. The Editor has a key for each: white, amber and violet light, 1 to 3, the obstacle 4 and the mark 5. A light and its rays are drawn in its colour, the rays darker. Amends D-503, D-410.**
+The physicist's: in light, unlike on the board, white has a meaning, (1, 1). D-503 had every
+light amber; white keeps every level as it looked and as it played, an amber eye reading of a
+white light just what it read of every light, bit for bit, and lets a violet eye see the levels'
+lights too. An eye reads in each channel the sum over the lights that shine in it, each with its
+1/r, its cosine and its shadows. A level's file writes `"colour"` for an amber or violet light
+alone, as version 6 of the format; one of version 5 is read as it is, its lights white. A level's
+word holds a light's colour (version 32, not yet shipped); one of version 31 reads its lights
+white. Three keys rather than a paint tool in the Editor, for now: a light is placed in its
+colour, and stays it.
