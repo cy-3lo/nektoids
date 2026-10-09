@@ -12,6 +12,7 @@ from nektoids.editor.geometry import (
     filled_to,
     nearest_wire,
     point_at,
+    polygon_area,
     symbol_corners,
     turn_centre,
     wire_arrows,
@@ -176,16 +177,15 @@ def test_the_symbol_is_an_equilateral_triangle_on_its_circle_with_a_corner_where
         )
 
 
-def _area(polygon):
-    closed = zip(polygon, polygon[1:] + polygon[:1], strict=True)
-    return 0.5 * abs(sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in closed))
-
-
-def test_a_tank_fills_its_outline_from_the_bottom_by_height():
+@pytest.mark.parametrize("level", [0.05, 0.25, 0.5, 0.75, 0.95])
+def test_a_tank_fills_its_outline_from_the_bottom_by_area(level):
     diamond = [(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)]  # on screen, y down
+    filled = filled_to(diamond, level)
+    assert polygon_area(filled) == pytest.approx(level * polygon_area(diamond), abs=1e-6)
+    assert max(y for _, y in filled) == pytest.approx(1.0)  # from the bottom up
+
+
+def test_an_empty_tank_shows_no_fill_and_a_full_one_its_whole_outline():
+    diamond = [(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)]
     assert filled_to(diamond, 0.0) == []
-    assert _area(filled_to(diamond, 1.0)) == pytest.approx(_area(diamond))
-    half = filled_to(diamond, 0.5)
-    assert _area(half) == pytest.approx(_area(diamond) / 2)
-    assert min(y for _, y in half) == pytest.approx(0.0)  # up to the middle, no higher
-    assert filled_to(diamond, 2.0) == filled_to(diamond, 1.0)  # a level above full is full
+    assert filled_to(diamond, 1.0) == filled_to(diamond, 2.0) == diamond
