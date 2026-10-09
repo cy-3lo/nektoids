@@ -430,6 +430,22 @@ def test_a_loop_of_gain_one_holds_what_an_eye_pulse_left_in_it():
     assert y[0, 1] == pytest.approx(held, abs=1e-9)  # nothing drives it, nothing drains it
 
 
+def test_a_tank_lags_by_four_seconds_and_on_a_loop_holds_its_level():
+    tank = Network.from_edges([EYE, Kind.TANK], [(0, 1)])  # D-500, D-501
+    y = relax(tank, eyes_row(0.8), ticks=round(4.0 / DT))
+    assert y[0, 1] == pytest.approx(0.8 * (1 - np.exp(-1)), rel=2e-3)  # one lag: 63%
+    # eye -> sum -> tank -> double -> (sum, thruster): the Double makes up for the fork
+    net = Network.from_edges(
+        [EYE, SUM, Kind.TANK, DBL, THR], [(0, 1), (1, 2), (2, 3), (3, 1), (3, 4)]
+    )
+    y = relax(net, eyes_row(0.5), ticks=round(2.0 / DT))
+    y = relax(net, eyes_row(0.0), ticks=round(1.0 / DT), start=y)
+    held = y[0, 2]
+    assert held > 0.1
+    y = relax(net, eyes_row(0.0), ticks=round(20.0 / DT), start=y)
+    assert y[0, 2] == pytest.approx(held, rel=1e-6)  # the eye gone dark, the level stays
+
+
 def ring(stages, doublers):
     """Stages of y = gain * |1 - previous|, closed on themselves; sources emit 1."""
     kinds, edges = [], []

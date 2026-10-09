@@ -3,9 +3,10 @@ places on every level, so that the hand learns them.
 
 The board's centre is cell (0, 0), r down. At N, Select, Move and Lock, Lock on the board reached
 from the Editor only (D-319); at S, Undo, Redo and Delete; at W, Turn left and Turn right side by
-side, Wire under them; at E, the parts: Eye, Source and Thruster, then Double and Halve side by
-side over Sum and Difference. A kind the level does not hand out leaves its place empty. The
-board shows at one size, centred, so that the largest zone and every button fit beside a drawer.
+side, Wire under them; at E, the parts: Eye, Source and Thruster, then the Tank over Double and
+Halve side by side, over Sum and Difference (D-501). A kind the level does not hand out leaves its
+place empty. The board shows at one size, centred, so that the largest zone and every button fit
+beside a drawer.
 
 Each button looks chosen, lit, greyed or plain. Chosen is the one in hand. Lit and greyed say
 what a press would do to what is picked (D-402): lit, it acts on it at once; greyed, it cannot.
@@ -62,6 +63,7 @@ PLACES: dict[Button | Kind, Cell] = {
     Kind.HALVE: (3, 2),
     Kind.SUM: (1, 3),
     Kind.DIFFERENCE: (2, 3),
+    Kind.TANK: (3, 1),  # over Double and Halve: under Sum, it would move every button (D-501)
 }
 LARGEST_ZONE = 3  # the sandbox's, 37 cells (D-102, D-313)
 FRAME: tuple[Cell, ...] = (*hex_disc(LARGEST_ZONE), *PLACES.values())  # what the view shows whole

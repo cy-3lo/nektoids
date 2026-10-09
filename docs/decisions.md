@@ -2742,7 +2742,8 @@ channel, never one blended hue (invariant 6). Filter r passes red and stops blue
 (r, 0); Paint r turns all to red, (r, b) → (min(R, r + b), 0); white's laws are decided when
 they are built. The signal hues are two of their own in the palette, apart for colour-blind eyes:
 `accent2` keeps its job, what goes wrong (D-047). A tank is an OPERATOR, swapped with the
-operators, its button at E under Sum and Difference. Out: the lamp stays in stage 5, nothing
+operators, its button at E over Double and Halve: under Sum and Difference it would have widened
+the Board's frame and moved every button (D-401). Out: the lamp stays in stage 5, nothing
 reading it yet (D-018); no Sink, a part with no wire out being one; the valve stays in the ideas.
 Colours do not make a valve, being linear channel by channel, but today's parts do:
 max(0, a − b) = |max(a, b) − b|, with max(a, b) = (a + b + |a − b|)/2, a level's puzzle. Lights

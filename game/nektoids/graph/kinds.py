@@ -18,6 +18,8 @@ from enum import Enum
 from nektoids.graph.hexgrid import E
 from nektoids.graph.laws import Difference, Law, Relax, Scaled
 
+TANK_TAU = 4.0  # a tank's lag [s] (D-500)
+
 
 class Category(Enum):
     SENSOR = "sensor"
@@ -35,6 +37,7 @@ class Kind(Enum):
     SUM = "sum"
     DIFFERENCE = "difference"
     THRUSTER = "thruster"
+    TANK = "tank"  # a slow part: it holds a level (D-500, D-501)
 
     @property
     def spec(self) -> KindSpec:
@@ -153,5 +156,13 @@ SPEC: dict[Kind, KindSpec] = {
         icon="rocket",
         shape="square point",
         action="push",
+    ),
+    Kind.TANK: KindSpec(
+        Category.OPERATOR,
+        "K",
+        "Tank",
+        "Fills slowly with what comes in, and sends its level.",
+        Relax(Scaled(1.0), tau=TANK_TAU),
+        icon="flask",
     ),
 }

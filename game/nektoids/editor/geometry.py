@@ -77,6 +77,23 @@ SHAPES = {  # a part's outline by the name the table of kinds gives it (D-202)
 }
 
 
+def filled_to(outline: list[Point], level: float) -> list[Point]:
+    """The part of a convex `outline` on screen (y down) under its `level`, 0 empty to 1 full,
+    by height: a tank's fill (D-501). One edge of Sutherland and Hodgman's clip; [] when empty."""
+    if level <= 0.0:
+        return []
+    top, bottom = min(y for _, y in outline), max(y for _, y in outline)
+    cut = bottom - min(1.0, level) * (bottom - top)
+    kept: list[Point] = []
+    for (x0, y0), (x1, y1) in zip(outline, outline[1:] + outline[:1], strict=True):
+        if y0 >= cut:
+            kept.append((x0, y0))
+        if (y0 >= cut) != (y1 >= cut):
+            t = (cut - y0) / (y1 - y0)
+            kept.append((x0 + t * (x1 - x0), cut))
+    return kept if len(kept) >= 3 else []
+
+
 def body_circle(zone: list[Cell], size: float, origin: Point) -> tuple[Point, float]:
     """The swimmer's body on the board (D-018): its centre and radius [px]."""
     (cx, cy), reach = body_disc(zone)
