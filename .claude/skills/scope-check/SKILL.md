@@ -7,7 +7,7 @@ description: Check a proposed feature or change against the Nektoids scope (the 
 Do not start implementing. Answer in at most ten lines.
 
 1. Restate the proposed change in one sentence.
-2. Read the "Scope" section of `CLAUDE.md` (the current stage's, D-105), sections 1 and 3 of
+2. Read the "Scope" section of the project instructions, `CLAUDE.local.md` (the current stage's, D-105), sections 1 and 3 of
    `docs/brief.md`, and `docs/decisions.md` (a later decision overrides the brief).
 3. Classify it: IN (explicitly in scope), OUT (explicitly excluded), or GREY (not mentioned).
 4. Check it against the non-negotiables: no sliders; no threshold node in early levels;

@@ -11,7 +11,7 @@ disable-model-invocation: true
 2. `ruff format .` then `ruff check .`. Fix trivial findings; list anything that needs a human.
 3. `python -m pytest -q`. If `test_determinism.py` fails, stop and explain what changed and why
    the run is no longer reproducible.
-4. Read the diff against the invariants in `CLAUDE.md` and the rules in `.claude/rules/`.
+4. Read the diff against the invariants in the project instructions, `CLAUDE.local.md`, and the rules in `.claude/rules/`.
    Flag every violation explicitly, even small ones.
 5. If the change touches scope, check `docs/decisions.md` has an entry; if not, draft one.
 6. Draft the PR description from `.github/pull_request_template.md`, its base named above it.
