@@ -2707,3 +2707,11 @@ follows a wire when it enters every cell between the wire's ends and none that d
 them, so a corner clipped still counts. Between neighbours a wire has no cell between: a drag
 straight across follows it, one that goes round draws the loop, routed by the Board as any
 wire. Two neighbours wired both ways share an edge; a drag across takes away the one it runs.
+
+**D-430 — 2026-10-09 — No two wires take the edge between two neighbouring parts, whichever way they run: the wire back of a loop between neighbours goes round through a free cell. Amends D-010, D-429.**
+The physicist's, trying loops (D-428). D-010 keeps an edge to one wire, but it counted only the
+edges of free cells: a wire straight from a part to its neighbour crosses none, so the wire back
+lay on top of it, the loop unseen (invariant 6). A wire of two cells now takes the edge between
+them: the router goes round, `exits` (a board as text, D-205) agrees, and a path laid on that
+edge is refused. Between neighbours a straight drag across therefore follows the one straight
+wire; D-429's last sentence, two wires sharing an edge, no longer happens.

@@ -502,6 +502,7 @@ class Board:
         result never depends on set or dict order.
         """
         edges_used = self._edges_used()
+        direct = self._direct_used()
         blocked = {node.cell for node in self.nodes.values()}
         counter = itertools.count()
         # (steps, bends, tie-break, cell, heading into cell, path so far); heading -1 at the start
@@ -518,6 +519,8 @@ class Board:
                 nxt = neighbour(cell, out)
                 if nxt not in self._on_board or (nxt in blocked and nxt != goal):
                     continue
+                if heading < 0 and nxt == goal and frozenset((cell, nxt)) in direct:
+                    continue  # the edge between two neighbours, another wire's (D-430)
                 if heading >= 0 and not can_pass(edges_used.get(cell, set()), heading, out):
                     continue
                 bend = int(heading >= 0 and out != heading)
@@ -533,11 +536,14 @@ class Board:
         `goal`: each cell of the zone it may enter, free or the goal, with the heading to it, in
         direction order. A board as text writes a path the router would not take so (D-205)."""
         used = self._edges_used().get(cell, set())
+        direct = self._direct_used()
         found = []
         for out in range(6):
             nxt = neighbour(cell, out)
             if nxt not in self._on_board or (self.node_at(nxt) is not None and nxt != goal):
                 continue
+            if heading < 0 and nxt == goal and frozenset((cell, nxt)) in direct:
+                continue  # the edge between two neighbours, another wire's (D-430)
             if heading < 0 or can_pass(used, heading, out):
                 found.append((nxt, out))
         return found
@@ -558,6 +564,8 @@ class Board:
                 return Refused("its path leaves the zone")
             if self.node_at(cell) is not None:
                 return Refused("its path crosses a part")
+        if len(path) == 2 and frozenset(path) in self._direct_used():
+            return Refused("its path takes an edge another wire has")  # D-430
         used = self._edges_used()
         for before, cell, after in zip(path, path[1:], path[2:], strict=False):
             if not can_pass(
@@ -585,6 +593,11 @@ class Board:
             self.wires.append(rerouted[i])  # so the next ones route round it
         self.wires = [rerouted.get(i, wire) for i, wire in enumerate(saved)]
         return None
+
+    def _direct_used(self) -> set[frozenset[Cell]]:
+        """The edges between two neighbouring parts a wire already takes, straight from one to
+        the other: no other wire may take it, whichever way it runs (D-430)."""
+        return {frozenset(wire.path) for wire in self.wires if len(wire.path) == 2}
 
     def _edges_used(self) -> dict[Cell, set[int]]:
         """Edges of each free cell already taken by a wire."""
