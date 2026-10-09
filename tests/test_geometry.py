@@ -9,8 +9,10 @@ from nektoids.editor.geometry import (
     cumulative_lengths,
     distance_to_polyline,
     edge_midpoint,
+    filled_to,
     nearest_wire,
     point_at,
+    polygon_area,
     symbol_corners,
     turn_centre,
     wire_arrows,
@@ -173,3 +175,17 @@ def test_the_symbol_is_an_equilateral_triangle_on_its_circle_with_a_corner_where
         assert forward == pytest.approx(
             (100.0 + 20.0 * math.cos(heading), 50.0 - 20.0 * math.sin(heading))
         )
+
+
+@pytest.mark.parametrize("level", [0.05, 0.25, 0.5, 0.75, 0.95])
+def test_a_tank_fills_its_outline_from_the_bottom_by_area(level):
+    diamond = [(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)]  # on screen, y down
+    filled = filled_to(diamond, level)
+    assert polygon_area(filled) == pytest.approx(level * polygon_area(diamond), abs=1e-6)
+    assert max(y for _, y in filled) == pytest.approx(1.0)  # from the bottom up
+
+
+def test_an_empty_tank_shows_no_fill_and_a_full_one_its_whole_outline():
+    diamond = [(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)]
+    assert filled_to(diamond, 0.0) == []
+    assert filled_to(diamond, 1.0) == filled_to(diamond, 2.0) == diamond

@@ -43,11 +43,15 @@ BODY_CORNERS = (0.0, 2.0 * math.pi / 3.0, -2.0 * math.pi / 3.0)
 SHAPE_AREA = 0.8
 
 
+def polygon_area(polygon: list[Point]) -> float:
+    """The area a polygon encloses (shoelace formula); 0 for fewer than three points."""
+    closed = zip(polygon, polygon[1:] + polygon[:1], strict=True)
+    return 0.5 * abs(sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in closed))
+
+
 def _to_area(outline: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    """The outline scaled about the cell centre until it encloses SHAPE_AREA (shoelace formula)."""
-    closed = zip(outline, outline[1:] + outline[:1], strict=True)
-    area = 0.5 * abs(sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in closed))
-    k = math.sqrt(SHAPE_AREA / area)
+    """The outline scaled about the cell centre until it encloses SHAPE_AREA."""
+    k = math.sqrt(SHAPE_AREA / polygon_area(outline))
     return [(k * x, k * y) for x, y in outline]
 
 
@@ -75,6 +79,39 @@ SHAPES = {  # a part's outline by the name the table of kinds gives it (D-202)
     "diamond": DIAMOND,
     "square point": SQUARE_POINT,
 }
+
+
+FILL_STEPS = 30  # halvings of the cut's search: its error, 2^-30 of the outline's height
+
+
+def filled_to(outline: list[Point], level: float) -> list[Point]:
+    """The part of a convex `outline` on screen (y down) under a cut that leaves `level` of its
+    area below, 0 empty to 1 full: a tank's fill (D-501), so that nearly empty and nearly full
+    read as such. The cut found by halving; [] when empty."""
+    if level <= 0.0:
+        return []
+    if level >= 1.0:
+        return list(outline)
+    top, bottom = min(y for _, y in outline), max(y for _, y in outline)
+    whole, high, low = polygon_area(outline), top, bottom
+    for _ in range(FILL_STEPS):
+        cut = 0.5 * (high + low)
+        short = polygon_area(_below(outline, cut)) < level * whole  # the cut is too low
+        high, low = (high, cut) if short else (cut, low)
+    return _below(outline, 0.5 * (high + low))
+
+
+def _below(outline: list[Point], cut: float) -> list[Point]:
+    """The part of a convex `outline` below `cut` on screen (y >= cut): one edge of Sutherland
+    and Hodgman's clip; [] when nothing is left."""
+    kept: list[Point] = []
+    for (x0, y0), (x1, y1) in zip(outline, outline[1:] + outline[:1], strict=True):
+        if y0 >= cut:
+            kept.append((x0, y0))
+        if (y0 >= cut) != (y1 >= cut):
+            t = (cut - y0) / (y1 - y0)
+            kept.append((x0 + t * (x1 - x0), cut))
+    return kept if len(kept) >= 3 else []
 
 
 def body_circle(zone: list[Cell], size: float, origin: Point) -> tuple[Point, float]:

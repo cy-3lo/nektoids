@@ -21,7 +21,8 @@
       "halve": null,
       "sum": null,
       "difference": null,
-      "thruster": null
+      "thruster": null,
+      "tank": null
     },
     "parts": [],
     "wires": []

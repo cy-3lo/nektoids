@@ -121,7 +121,8 @@ def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
         board.place(k, c)
         for k, c in ((Kind.SUM, (0, 0)), (Kind.EYE, (1, 0)), (Kind.THRUSTER, (2, 0)))
     )
-    assert swaps(board, total.cell, frozenset(Kind)) == (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE)
+    operators = (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE, Kind.TANK)  # the Tank too (D-501)
+    assert swaps(board, total.cell, frozenset(Kind)) == operators
     assert swaps(board, eye.cell, frozenset({Kind.EYE, Kind.THRUSTER})) == ()  # no source here
     assert swaps(board, thruster.cell, frozenset(Kind)) == ()  # alone in its group
 

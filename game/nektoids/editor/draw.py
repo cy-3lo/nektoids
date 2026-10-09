@@ -51,6 +51,7 @@ from nektoids.editor.geometry import (
     SHAPES,
     body_circle,
     cumulative_lengths,
+    filled_to,
     point_at,
     symbol_corners,
     wire_arrows,
@@ -595,10 +596,14 @@ def draw_part(
     fill=None,
     face=None,
     pinned: bool = False,
+    level: float | None = None,
 ):
+    """A part, and over its fill, if `level` is given, how full it is: a tank's (D-501)."""
     fill = fill or COMPONENT
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
+    if level is not None and (filled := filled_to(outline, level / RATE_MAX)):
+        pygame.draw.polygon(screen, METER, filled)
     if kind in FACE:  # the closing edge, astride the outline
         width = max(2, round(FACE_WIDTH * size))
         pygame.draw.line(screen, face or FACE[kind], outline[-1], outline[0], width)
@@ -1466,7 +1471,9 @@ def _draw_parts(
         kind, rate = net.kinds[i], float(y[i])
         cx, cy = circuit.centre(i)
         facing = circuit.board.nodes[node_id].facing
-        draw_part(screen, fonts, kind, placed_angle(kind, facing), (cx, cy), size, False)
+        level = rate if kind is Kind.TANK else None  # its level, drawn as a fill (D-501)
+        angle = placed_angle(kind, facing)
+        draw_part(screen, fonts, kind, angle, (cx, cy), size, False, level=level)
         if meters and kind in (Kind.EYE, Kind.THRUSTER):
             _draw_meter(screen, (cx + METER_AT * size, cy), size, rate)
         if plain:

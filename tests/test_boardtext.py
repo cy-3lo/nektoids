@@ -87,6 +87,17 @@ def test_a_board_with_a_loop_comes_back_the_same():
     assert parts_and_wires(from_text(to_text(board))) == parts_and_wires(board)  # D-428
 
 
+def test_a_board_with_a_tank_comes_back_the_same():
+    board = Board(hex_disc(2))  # the Tank takes a spare code: older texts read as they did
+    eye, tank, thruster = (
+        board.place(kind, cell)
+        for kind, cell in ((Kind.EYE, (-2, 0)), (Kind.TANK, (0, 0)), (Kind.THRUSTER, (2, 0)))
+    )
+    for source, target in ((eye, tank), (tank, thruster)):
+        assert not isinstance(board.connect(source.id, target.id), Refused)
+    assert parts_and_wires(from_text(to_text(board))) == parts_and_wires(board)  # D-501
+
+
 @pytest.mark.parametrize("seed", range(40))
 def test_every_board_comes_back_the_same_routes_and_all(seed):
     rng = random.Random(seed)

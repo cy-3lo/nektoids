@@ -7,7 +7,8 @@ lit by a light, so that less than 1 can go in: a Source sends 1, and ×2 of 1 is
 and thrusters turn their faces outwards: the light comes into each eye's face from the left, and
 the thrust streams out of each thruster's back to the right, drawn as the run draws them, specks
 of light drawn in and flames (D-076), as many as the rate. Only the Eye's own reading moves, to
-show more light giving more beads; the rest are steady, so that the beads can be counted. Beads
+show more light giving more beads, and the Tank's input, on and off, to show it filling and
+emptying slowly; the rest are steady, so that the beads can be counted. Beads
 keep their speed once out (`beads.Travelling`), so none goes backwards as the reading changes.
 The circuit opens at its steady rates, and for ×2 and ÷2 the beads going out keep time with
 those coming in: one in, two out; two in, one out. Never read by the model. Pure Python, no
@@ -31,12 +32,15 @@ from nektoids.editor.streams import EYE_FACE, THRUSTER_BACK
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.dynamics import RATE_MAX, initial_state, step
 from nektoids.graph.hexgrid import Cell, W, to_pixel
+from nektoids.graph.kinds import TANK_TAU
 from nektoids.sim.optics import FACING_STEP
 
 ENTRY_AREA: Rect = (0, 0, 420, 140)  # the circuit, in the box's own frame [px]
 MARGIN = 0.6  # round the circuit and its specks, in its area [hex sizes]
 SETTLE = 0.25  # [s] run before it shows, so that it opens at its steady rates
+SETTLE_TANK = TANK_TAU  # [s] the Tank's, its input on: it opens two thirds full, filling
 EYE_LOW, EYE_HIGH, EYE_PERIOD = 0.2, 0.9, 10.0  # the Eye's own reading, rising and falling [s]
+TANK_ON, TANK_PERIOD = 0.8, 16.0  # the Tank's input, on for half the period, off for half [s]
 REACH = 1.8  # [hex sizes] how far out the light comes from, and the flames go, at most
 STREAMS = 400  # the entry's streams in the specks' table, after the swimmer's
 OUTWARDS = W  # every eye and thruster faces left: the eye's face, the thruster's back, outwards
@@ -76,6 +80,7 @@ DEMOS: dict[Kind, Demo] = {
     Kind.HALVE: _through(Kind.HALVE, (0.8,)),
     Kind.SUM: _through(Kind.SUM, (0.3, 0.4)),
     Kind.DIFFERENCE: _through(Kind.DIFFERENCE, (0.7, 0.3)),
+    Kind.TANK: _through(Kind.TANK, (TANK_ON,)),
     Kind.THRUSTER: Demo(  # two eyes into it: what comes in is added
         ((Kind.EYE, UPPER), (Kind.EYE, LOWER), (Kind.THRUSTER, PART)),
         ((UPPER, PART), (LOWER, PART)),
@@ -94,7 +99,7 @@ class Entry:
         self.circuit = Circuit(board, ENTRY_AREA, MARGIN, view=_seen(board), travelling=True)
         self.readings = np.array(demo.readings)
         self.state = initial_state(self.circuit.net)
-        for _ in range(round(SETTLE / DT)):
+        for _ in range(round((SETTLE_TANK if kind is Kind.TANK else SETTLE) / DT)):
             self.state = step(self.circuit.net, self.state, self.eyes()[None, :], DT)
         self.circuit.show(self.y)
         if kind in KEEP_TIME:
@@ -107,7 +112,11 @@ class Entry:
         return self.state[0]
 
     def eyes(self) -> np.ndarray:
-        """What each eye reads now: its reading; the Eye's own rises and falls."""
+        """What each eye reads now: its reading; the Eye's own rises and falls, the Tank's input
+        is on, then off."""
+        if self.kind is Kind.TANK:
+            on = self.time % TANK_PERIOD < TANK_PERIOD / 2
+            return self.readings if on else np.zeros_like(self.readings)
         if self.kind is not Kind.EYE:
             return self.readings
         swing = 0.5 - 0.5 * math.cos(2.0 * math.pi * self.time / EYE_PERIOD)
