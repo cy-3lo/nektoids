@@ -176,7 +176,7 @@ class BoardScene(Frame):
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.held: Button | Kind = Button.SELECT  # the button in hand (D-401, D-402)
-        self.brush: Hue = Hue.AMBER  # the colour Paint paints, on its brush (D-503)
+        self.brush: Hue = Hue.AMBER  # Paint's colour, on its brush, and new parts' (D-503)
         self.pick: Pick = NOTHING  # what Select has picked, in the order clicked (D-402)
         self.cursor: Cell | None = None  # the keyboard's cell: the arrows move it, Enter clicks
         self.wire_chain: Chain | None = None  # Wire held: the parts clicked, wired one to the next
@@ -1056,7 +1056,7 @@ class BoardScene(Frame):
             return False
         if not self._allowed(Action("place", kind=kind, cell=cell), cell):
             return False
-        result = self.board.place(kind, cell)
+        result = self.board.place(kind, cell, hue=self.brush)  # in Paint's colour (D-503)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
             return False

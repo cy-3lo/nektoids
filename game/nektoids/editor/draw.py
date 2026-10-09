@@ -347,7 +347,7 @@ def draw(
     if scene.dragging and scene.in_hand is not None:  # a part's row dragged from Parts
         size, kind = scene.view.size, scene.in_hand
         angle = placed_angle(kind, kind.default_facing)  # as it will land
-        draw_part(screen, fonts, kind, angle, scene.mouse, size, locked=False)
+        draw_part(screen, fonts, kind, angle, scene.mouse, size, locked=False, hue=scene.brush)
 
 
 # Board
@@ -495,7 +495,9 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
         if isinstance(b, Kind):
             fill, face = (GREYED, GREYED_FACE) if greyed else (None, None)
             angle = placed_angle(b, b.default_facing)
-            draw_part(screen, fonts, b, angle, at, size - PART_SMALLER, False, fill, face)
+            draw_part(  # in Paint's colour, as it will be placed (D-503)
+                screen, fonts, b, angle, at, size - PART_SMALLER, False, fill, face, hue=scene.brush
+            )
         else:
             ink = GREYED if greyed else BODY_OF[scene.brush] if b is Button.PAINT else TEXT
             fonts.icons.draw(screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), ink)
@@ -1173,7 +1175,8 @@ def draw_row(
     slot = (box.left + 20, box.centery)
     if part is not None:
         fill = GREYED if greyed else None
-        draw_part(screen, fonts, part, MENU_ANGLE.get(part), slot, 24, False, fill)
+        hue = getattr(scene, "brush", Hue.AMBER)  # the Board's Paint colour (D-503)
+        draw_part(screen, fonts, part, MENU_ANGLE.get(part), slot, 24, False, fill, hue=hue)
     elif badge is not None:  # in the name's font, so the two sit on one line (D-339)
         label = fonts.name.render(badge, True, DIM_TEXT if greyed else TEXT)
         screen.blit(label, label.get_rect(center=(slot[0], box.centery)))
