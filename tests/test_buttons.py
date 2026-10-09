@@ -48,7 +48,9 @@ def test_the_tools_sit_at_n_in_a_row_undo_across_from_sum_and_the_pairs_side_by_
     for left, right in pairs:  # side by side in a row, the first on the left
         (q0, r0), (q1, r1) = PLACES[left], PLACES[right]
         assert r0 == r1 and q1 == q0 + 1
-    assert all(PLACES[k][0] > 0 for k in Kind)  # the parts at E
+    colour = (Kind.TINT, Kind.FILTER, Kind.SWAP)  # under Paint, at W (D-507)
+    assert all(PLACES[k][0] > 0 for k in Kind if k not in colour)  # the other parts at E
+    assert all(PLACES[k][0] < 0 for k in colour)
     assert all(PLACES[b][0] < 0 for b in (Button.TURN_LEFT, Button.TURN_RIGHT, Button.WIRE))
 
 
@@ -123,7 +125,8 @@ def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
         board.place(k, c)
         for k, c in ((Kind.SUM, (0, 0)), (Kind.EYE, (1, 0)), (Kind.THRUSTER, (2, 0)))
     )
-    operators = (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE, Kind.TANK)  # the Tank too (D-501)
+    operators = (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE, Kind.TANK)  # the Tank too (D-501),
+    operators += (Kind.TINT, Kind.FILTER, Kind.SWAP)  # and the colour operators (D-507)
     assert swaps(board, total.cell, frozenset(Kind)) == operators
     assert swaps(board, eye.cell, frozenset({Kind.EYE, Kind.THRUSTER})) == ()  # no source here
     assert swaps(board, thruster.cell, frozenset(Kind)) == ()  # alone in its group

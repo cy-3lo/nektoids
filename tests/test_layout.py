@@ -179,7 +179,10 @@ def test_parts_lists_down_to_the_drawers_foot_with_no_wheel_under_it():
 
 
 def test_parts_lists_every_part_unscrolled_and_a_long_list_scrolls_by_its_bar():
-    assert LAYOUT.scroll_max == 0 and LAYOUT.scroll_bar is None and scroll_thumb(LAYOUT) is None
+    assert LAYOUT.scroll_max > 0  # every part of all, the sandbox's, scrolls a little (D-507)
+    levels = frozenset(Kind) - {Kind.TINT, Kind.FILTER, Kind.SWAP}  # a level's: it fits
+    fits = make_layout(kinds=levels)
+    assert fits.scroll_max == 0 and fits.scroll_bar is None and scroll_thumb(fits) is None
     wins = (("1.1 Fear", 10), ("1.2 Aggression", 10))
     many = make_layout(Drawer.FILES, files=wins)
     assert many.scroll_max > 0 and many.scroll_bar is not None
@@ -188,7 +191,8 @@ def test_parts_lists_every_part_unscrolled_and_a_long_list_scrolls_by_its_bar():
     assert make_layout(Drawer.FILES, files=wins, scroll=-5).scroll == 0
     x, y, w, h = many.scroll_bar  # beside the rows, inside the drawer's edge
     assert x + w < BAR_WIDTH + DRAWER_WIDTH
-    assert scroll_bar_at(many, (x + w // 2, y + h // 2)) and not scroll_bar_at(LAYOUT, (x, y))
+    short = make_layout(kinds=frozenset({Kind.EYE, Kind.THRUSTER}))  # nothing to scroll
+    assert scroll_bar_at(many, (x + w // 2, y + h // 2)) and not scroll_bar_at(short, (x, y))
     assert scroll_for(many, y) == 0 and scroll_for(many, y + h) == many.scroll_max
     _, top, _, length = scroll_thumb(many)
     assert top == y and scroll_thumb(bottom)[1] + length == y + h
@@ -747,10 +751,12 @@ def test_the_editors_parts_gives_the_board_size_then_each_part_a_row_with_minus_
     assert [t for t, _ in layout.group_titles] == ["Sensors", "Actuators", "Operators"]
     order = [k for _, kinds in MENU_GROUPS for k in kinds]  # as the Board's Parts groups them
     assert [s for s, _ in layout.steppers] == [Stepper(None), *(Stepper(k) for k in order)]
-    assert not layout.menu_items and layout.scroll_max == 0  # not the Board's, and it fits
+    assert not layout.menu_items and layout.scroll_max > 0  # not the Board's; it scrolls (D-507)
     for what, row in layout.steppers:
         minus, plus = step_buttons(row)
         assert row[0] < minus[0] < plus[0] and plus[0] + plus[2] < row[0] + row[2]
+        if not contains(layout.list_area, centre(row)):
+            continue  # scrolled out of sight: no click reaches it
         assert stepper_at(layout, centre(minus)) == (what, -1)
         assert stepper_at(layout, centre(plus)) == (what, 1)
         assert stepper_at(layout, (row[0] + 30, row[1] + 20)) is None  # its name: nothing

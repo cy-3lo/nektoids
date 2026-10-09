@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.hexgrid import E
-from nektoids.graph.laws import Difference, Law, Relax, Scaled
+from nektoids.graph.laws import Difference, Filtered, Law, Relax, Scaled, Swapped, Tinted
 
 TANK_TAU = 4.0  # a tank's lag [s] (D-500)
 
@@ -61,6 +61,9 @@ class Kind(Enum):
     DIFFERENCE = "difference"
     THRUSTER = "thruster"
     TANK = "tank"  # a slow part: it holds a level (D-500, D-501)
+    TINT = "tint"  # the colour operators (D-507): all in, out in its colour
+    FILTER = "filter"  # its colour alone through
+    SWAP = "swap"  # amber and violet exchanged
 
     @property
     def spec(self) -> KindSpec:
@@ -196,5 +199,34 @@ SPEC: dict[Kind, KindSpec] = {
         "Fills slowly with what comes in, and sends its level.",
         Relax(Scaled(1.0), tau=TANK_TAU),
         icon="flask",
+    ),
+    Kind.TINT: KindSpec(
+        Category.OPERATOR,
+        "N",
+        "Tint",
+        "Turns what comes in, amber and violet, all into its own colour.",
+        Relax(Tinted()),
+        icon="droplet",
+        shape="rounded square",
+        paintable=True,
+    ),
+    Kind.FILTER: KindSpec(
+        Category.OPERATOR,
+        "F",
+        "Filter",
+        "Lets its own colour through, and stops the other.",
+        Relax(Filtered()),
+        icon="filter",
+        shape="rounded square",
+        paintable=True,
+    ),
+    Kind.SWAP: KindSpec(
+        Category.OPERATOR,
+        "W",
+        "Swap",
+        "Sends amber as violet, and violet as amber.",
+        Relax(Swapped()),
+        icon="shuffle",
+        shape="rounded square",
     ),
 }

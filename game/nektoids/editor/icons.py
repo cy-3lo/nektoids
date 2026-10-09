@@ -41,7 +41,6 @@ TOOL_ICON = {
     Tool.TURN_RIGHT: "rotate-right",
     Tool.MOVE: "up-down-left-right",
     Tool.DELETE: "trash-can",
-    Tool.SWAP: "arrow-right-arrow-left",
     Tool.LESS: "minus",  # the Editor's (D-301)
     Tool.MORE: "plus",
 }

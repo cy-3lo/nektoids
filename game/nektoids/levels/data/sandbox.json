@@ -22,7 +22,10 @@
       "sum": null,
       "difference": null,
       "thruster": null,
-      "tank": null
+      "tank": null,
+      "tint": null,
+      "filter": null,
+      "swap": null
     },
     "parts": [],
     "wires": []

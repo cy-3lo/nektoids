@@ -66,7 +66,8 @@ its decisions taken, when it starts.
     format and word, three keys in the Editor, the rays tinted.
   - [ ] Beads in two streams, violet half a spacing behind, never blended; a stream's beads 0.5 hex
     sizes apart at full rate.
-  - [ ] Paint, Filter and Swap, three operators; Paint and Filter painted with the same button.
+  - [ ] Tint, Filter and Swap (D-507), three operators in rounded squares under Paint; Tint and
+    Filter painted with the same button.
 - [ ] **Levels for memory and colour.** Memory with no schedule, the light hidden by shadows
   (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to the violet light
   and flee the amber one; two lights a colour-blind circuit cannot tell apart; a valve built from parts

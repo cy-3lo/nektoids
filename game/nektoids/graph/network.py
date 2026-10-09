@@ -137,7 +137,7 @@ class Network:
             slots=_frozen(slots),
             gain=_frozen(np.array([k.spec.law.slope if k.spec.law else 0.0 for k in kinds])),
             given=_frozen(np.array([kind.spec.law is None for kind in kinds], dtype=bool)),
-            laws=_by_law(kinds, slots),
+            laws=_by_law(kinds, slots, hues),
             senses=tuple((k, indices(k)) for k in Kind if k.category is SENSOR and k in kinds),
             actions=tuple((k, indices(k)) for k in Kind if k.category is ACTUATOR and k in kinds),
             outdeg=_frozen(outdeg),
@@ -149,22 +149,27 @@ class Network:
 
 
 def _by_law(
-    kinds: Sequence[Kind], slots: np.ndarray
+    kinds: Sequence[Kind], slots: np.ndarray, hues: Sequence[Hue]
 ) -> tuple[tuple[Law, np.ndarray, np.ndarray], ...]:
-    """Each law of the nodes, with the nodes that follow it, ascending, and their rows of
-    `slots`; laws in the order of the table of kinds, kinds with equal laws together (a Sum and
-    a Thruster). Nodes step independently, each from the same state, so this order cannot change
-    a result; it is fixed all the same (invariant 1)."""
+    """Each law of the nodes, painted as each node is (a Tint's, a Filter's colour, D-507), with
+    the nodes that follow it, ascending, and their rows of `slots`; laws in the order of the table
+    of kinds, then of `Hue`, kinds with equal laws together (a Sum and a Thruster). Nodes step
+    independently, each from the same state, so this order cannot change a result; it is fixed
+    all the same (invariant 1)."""
     laws: list[Law] = []
     members: list[list[int]] = []
     for kind in Kind:
-        nodes = [i for i, k in enumerate(kinds) if k is kind]
-        if kind.spec.law is None or not nodes:
+        if kind.spec.law is None:
             continue
-        if kind.spec.law not in laws:
-            laws.append(kind.spec.law)
-            members.append([])
-        members[laws.index(kind.spec.law)].extend(nodes)
+        for hue in Hue:
+            nodes = [i for i, k in enumerate(kinds) if k is kind and hues[i] is hue]
+            if not nodes:
+                continue
+            law = kind.spec.law.painted(hue) if kind.paintable else kind.spec.law
+            if law not in laws:
+                laws.append(law)
+                members.append([])
+            members[laws.index(law)].extend(nodes)
     found = []
     for law, nodes in zip(laws, members, strict=True):
         index = np.array(sorted(nodes), dtype=np.int64)

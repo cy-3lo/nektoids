@@ -25,6 +25,9 @@ GLYPH = {
     "minus": 0xF068,
     "flask": 0xF0C3,  # a tank (D-501)
     "paintbrush": 0xF1FC,  # the Board's Paint (D-501)
+    "droplet": 0xF043,  # Tint (D-507)
+    "filter": 0xF0B0,  # Filter
+    "shuffle": 0xF074,  # Swap
     "shapes": 0xF61F,  # the Editor's Objects (D-301)
     "circle": 0xF111,  # an obstacle
     "location-arrow": 0xF124,  # the swimmer's start

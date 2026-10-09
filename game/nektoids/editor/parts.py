@@ -16,6 +16,8 @@ PAINTED = {  # what Paint does to it (D-502)
     Kind.EYE: "Amber, it senses amber light only; painted violet, violet light only.",
     Kind.SOURCE: "Amber, it sends an amber signal; painted violet, a violet one.",
     Kind.THRUSTER: "Amber, it pushes with the amber signal only; painted violet, the violet.",
+    Kind.TINT: "Its colour is the one it sends: amber, or violet once painted.",
+    Kind.FILTER: "Its colour is the one it lets through: amber, or violet once painted.",
 }
 
 

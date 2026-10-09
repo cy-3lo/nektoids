@@ -18,7 +18,7 @@ pygame.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 
 import numpy as np
@@ -29,7 +29,7 @@ from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.layout import Rect, View, fitted_view
 from nektoids.editor.streams import EYE_FACE, THRUSTER_BACK
-from nektoids.graph.board import Board, Kind
+from nektoids.graph.board import Board, Hue, Kind
 from nektoids.graph.dynamics import RATE_MAX, initial_state, shown, step
 from nektoids.graph.hexgrid import Cell, W, to_pixel
 from nektoids.graph.kinds import TANK_TAU
@@ -59,6 +59,7 @@ class Demo:
     parts: tuple[tuple[Kind, Cell], ...]  # in the order they are placed
     wires: tuple[tuple[Cell, Cell], ...]  # in the order they are made
     readings: tuple[float, ...]  # each eye's, in the parts' order; the Eye's own moves
+    violet: tuple[Cell, ...] = ()  # the parts painted violet; the rest amber (D-503, D-507)
 
 
 def _through(kind: Kind, readings: tuple[float, ...]) -> Demo:
@@ -81,6 +82,15 @@ DEMOS: dict[Kind, Demo] = {
     Kind.SUM: _through(Kind.SUM, (0.3, 0.4)),
     Kind.DIFFERENCE: _through(Kind.DIFFERENCE, (0.7, 0.3)),
     Kind.TANK: _through(Kind.TANK, (TANK_ON,)),
+    # The colour operators (D-507): amber in, violet out; a violet Source's stopped; exchanged.
+    Kind.TINT: replace(_through(Kind.TINT, (0.5,)), violet=(PART, OUT)),
+    Kind.FILTER: Demo(
+        ((Kind.EYE, UPPER), (Kind.SOURCE, LOWER), (Kind.FILTER, PART), (Kind.THRUSTER, OUT)),
+        ((UPPER, PART), (LOWER, PART), (PART, OUT)),
+        (0.4,),
+        violet=(LOWER,),
+    ),
+    Kind.SWAP: replace(_through(Kind.SWAP, (0.5,)), violet=(OUT,)),
     Kind.THRUSTER: Demo(  # two eyes into it: what comes in is added
         ((Kind.EYE, UPPER), (Kind.EYE, LOWER), (Kind.THRUSTER, PART)),
         ((UPPER, PART), (LOWER, PART)),
@@ -171,7 +181,8 @@ def _built(demo: Demo) -> Board:
     """The demo's board: its parts placed, facing outwards, then its wires made, in order."""
     board = Board(ZONE)
     for part, cell in demo.parts:
-        board.place(part, cell, facing=OUTWARDS)
+        hue = Hue.VIOLET if cell in demo.violet else Hue.AMBER
+        board.place(part, cell, facing=OUTWARDS, hue=hue)
     for start, end in demo.wires:
         board.connect(board.node_at(start).id, board.node_at(end).id)
     return board

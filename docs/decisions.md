@@ -2797,3 +2797,17 @@ alone, as version 6 of the format; one of version 5 is read as it is, its lights
 word holds a light's colour (version 32, not yet shipped); one of version 31 reads its lights
 white. Three keys rather than a paint tool in the Editor, for now: a light is placed in its
 colour, and stays it.
+
+**D-507 — 2026-10-09 — Three colour operators, Tint, Filter and Swap, drawn as rounded squares, their buttons in a corner under Paint: Tint over Filter and Swap. Tint and Filter are painted, Swap is neutral. Amends D-401, D-502.**
+The physicist's, from the mockups. Tint sends everything that comes in in its own colour, both
+channels added, (a, v) → (min(R, a + v), 0) amber: the one part that adds the channels together.
+Filter lets its colour alone through, (a, 0); Swap exchanges them, (v, a). Each follows what it
+aims at with the lag every part has (D-017). Tint and Filter are painted with the Paint button and
+placed in its colour, as eyes are; Swap carries both alike, grey. A rounded square, apart from
+the diamond, the thruster's point and the discs. Their buttons sit at W under Paint, the brush
+beside what it colours, so that no other button moves; the parts are no longer all at E. Swap
+takes the name of the Board's old Swap tool, which left with the Wheel (D-401): the tool's
+leftovers go. Their letters on the panels are N, F and W, T and S being the Thruster's and the
+Source's. Every part handed out, as on the sandbox, the Parts drawer scrolls a little; a level's
+fits. For the loop's bound (D-428), a Tint counts twice, both channels into one. The player reads
+no equation: the info box says what each does in words.

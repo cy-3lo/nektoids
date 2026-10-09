@@ -116,19 +116,17 @@ class Tool(Enum):
     DELETE = "delete"
     TURN_LEFT = "turn left"  # counter-clockwise, 60° a click
     TURN_RIGHT = "turn right"  # clockwise
-    SWAP = "swap"  # the focused part for another of its group in Parts (D-068)
     LESS = "less"  # the Editor's: the focused light dimmer, the obstacle smaller (D-301)
     MORE = "more"  # ... brighter, bigger
 
 
-PALETTE_TOOLS = (
+PALETTE_TOOLS = (  # the tools with a key of their own; Swap's went with the Wheel (D-401, D-507)
     Tool.ADD,
     Tool.WIRE,
     Tool.MOVE,
     Tool.DELETE,
     Tool.TURN_LEFT,
     Tool.TURN_RIGHT,
-    Tool.SWAP,
 )
 TURNS = {Tool.TURN_LEFT: 1, Tool.TURN_RIGHT: -1}  # hex directions run counter-clockwise
 
@@ -321,7 +319,6 @@ TOOL_KEYS = {
     Tool.DELETE: "Del",
     Tool.TURN_LEFT: "L",
     Tool.TURN_RIGHT: "R",
-    Tool.SWAP: "S",
     Tool.LESS: "<",  # the Editor's (D-301); + and - zoom
     Tool.MORE: ">",
 }

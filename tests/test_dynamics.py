@@ -5,7 +5,7 @@ import pytest
 
 from nektoids.graph import dynamics
 from nektoids.graph.board import Board, Kind
-from nektoids.graph.dynamics import RATE_MAX, SOURCE_RATE, TAU, max_dt, wire_flux
+from nektoids.graph.dynamics import CHANNELS, RATE_MAX, SOURCE_RATE, TAU, max_dt, wire_flux
 from nektoids.graph.hexgrid import offset_rect
 from nektoids.graph.kinds import Hue
 from nektoids.graph.network import Network, abs_coupling, contraction_factor
@@ -327,6 +327,41 @@ def test_a_violet_source_leaves_amber_dark_and_a_violet_eye_sees_no_amber_light(
     assert y[0, :, V].max() > 0.1 and not y[0, :, A].any()
     assert y[0, 6].tolist() == [0.0, 0.0]  # the violet eye reads nothing
     assert dynamics.painted(net, y, net.thrusters)[0, 0] == y[0, 5, V]  # it pushes with violet
+
+
+@pytest.mark.parametrize(
+    "kind, hue, settles",  # (amber, violet) in, (amber, violet) out (D-507)
+    [
+        (Kind.TINT, Hue.VIOLET, [0.0, 0.7]),  # all of it into its colour
+        (Kind.TINT, Hue.AMBER, [0.7, 0.0]),
+        (Kind.FILTER, Hue.AMBER, [0.3, 0.0]),  # its colour alone through
+        (Kind.FILTER, Hue.VIOLET, [0.0, 0.4]),
+        (Kind.SWAP, Hue.AMBER, [0.4, 0.3]),  # exchanged, whatever its paint
+    ],
+)
+def test_the_colour_operators_act_across_the_channels(kind, hue, settles):
+    net = Network.from_edges([SRC, kind], [(0, 1)], hues=[Hue.AMBER, hue])
+    given = np.zeros((1, 2, CHANNELS))
+    given[0, 0] = [0.3, 0.4]  # a source sending both, as a Sum of two colours would
+    y = dynamics.initial_state(net)
+    for _ in range(200):
+        y = dynamics.step_given(net, y, given, DT)
+    assert y[0, 1].tolist() == pytest.approx(settles, abs=1e-12)
+
+
+def test_a_tint_caps_its_colour_and_two_tints_of_two_colours_step_apart():
+    net = Network.from_edges(
+        [SRC, Kind.TINT, Kind.TINT], [(0, 1), (0, 2)], hues=[Hue.AMBER, Hue.AMBER, Hue.VIOLET]
+    )
+    assert len(net.laws) == 2  # one law a colour (D-507)
+    given = np.zeros((1, 3, CHANNELS))
+    given[0, 0] = [1.0, 1.0]  # shared between two wires: 0.5 each way, in each channel
+    y = dynamics.initial_state(net)
+    for _ in range(200):
+        y = dynamics.step_given(net, y, given, DT)
+    assert y[0, 1].tolist() == pytest.approx([1.0, 0.0]) and y[0, 2].tolist() == pytest.approx(
+        [0.0, 1.0]
+    )
 
 
 # Braitenberg
