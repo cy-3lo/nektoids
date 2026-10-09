@@ -56,6 +56,13 @@ WARM_FRAMES = 18  # after a tooltip, the next one shows at once for this long: 0
 class Frame:
     layout: Layout
 
+    @property
+    def colours(self) -> bool:
+        """Whether its level shows colour: the Brush, amber and violet parts and beads (D-509);
+        the Editor's always does."""
+        level = getattr(self, "level", None)
+        return True if level is None else level.colours
+
     def _start_frame(self, layout: Layout, settings: Settings | None) -> None:
         self.layout = layout
         self.settings = settings if settings is not None else Settings()  # the session's

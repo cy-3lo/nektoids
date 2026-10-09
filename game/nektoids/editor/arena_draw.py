@@ -301,6 +301,7 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
             float(scene.radius[k]),
             frame,
             stretch=stretch_at(view.scale, float(scene.radius[k])),
+            colours=scene.colours,
         )
         if scene.settings.streams:
             draw_under(screen, view, body)
@@ -556,7 +557,8 @@ def _draw_wiring(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
         circuit = scene.circuit
         screen.set_clip(DRAWER_BODY)
         draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
-        draw_working(screen, circuit, scene.y, scene.clock.tick // TICKS_PER_FRAME, fonts)
+        frame = scene.clock.tick // TICKS_PER_FRAME
+        draw_working(screen, circuit, scene.y, frame, fonts, scene.colours)
         screen.set_clip(None)
         return
     draw_note(screen, fonts, note, (x + MARGIN, y + 8), DRAWER_BODY[2] - 2 * MARGIN)

@@ -145,6 +145,7 @@ def read_shared(text: str) -> Level:
         "title": title,
         "spec": spec,
         **({"author": said["Author"]} if said.get("Author") else {}),
+        "colours": True,  # made in the Editor, which shows colour (D-509)
         "start": {"at": list(play.start[:2]), "heading": play.start[2]},
         "items": [item.to_dict() for item in play.items],
         "board": play.board,

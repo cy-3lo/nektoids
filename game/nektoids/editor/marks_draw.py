@@ -18,6 +18,7 @@ from nektoids.editor.palette import (
     MOTION,
     PAINT_AMBER,
     PAINT_VIOLET,
+    PART_OUTLINE,
     THRUSTER_BACK,
 )
 from nektoids.graph.kinds import Hue
@@ -48,9 +49,10 @@ def draw_parts(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
         (body.eyes, body.eye_hues, EYE_FACE),
         (body.thrusters, body.thruster_hues, THRUSTER_BACK),
     ):
-        for outline, hue in zip(outlines, hues, strict=True):
+        for k, outline in enumerate(outlines):
             points = _on_screen(view, outline)
-            pygame.draw.aalines(screen, OUTLINE_OF[hue], False, points)
+            ink = PART_OUTLINE if hues is None else OUTLINE_OF[hues[k]]  # no colour shown (D-509)
+            pygame.draw.aalines(screen, ink, False, points)
             pygame.draw.aaline(screen, colour, points[-1], points[0], FACE_WIDTH)
 
 

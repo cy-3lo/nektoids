@@ -227,3 +227,10 @@ def test_every_shipped_levels_positions_are_whole_units_and_its_zone_a_size():
         points = [data["start"]["at"], *(item["at"] for item in data["items"])]
         assert all(isinstance(v, int) for point in points for v in point), path.stem
         assert data["version"] == FORMAT and data["board"]["zone"] in (7, 19, 37), path.stem
+
+
+def test_only_the_levels_that_show_colour_say_so():
+    levels = {level.title: level for level in arenas()}  # D-509
+    assert not levels["Aggression"].colours and "colours" not in levels["Aggression"].to_dict()
+    assert levels["Dragster"].colours and levels["Dragster"].to_dict()["colours"] is True
+    assert sandbox().colours

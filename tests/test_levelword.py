@@ -21,11 +21,12 @@ DRAGSTER = LEVELS["Dragster"]
 
 def _played(level: Level) -> Level:
     """What the word and the lines hold of a level: neither its board's free parts and wires,
-    nor a part it hands out none of, nor its tutorial, passkey or proof."""
+    nor a part it hands out none of, nor its tutorial, passkey or proof; read back, it shows
+    colour, as every level made in the Editor does (D-509)."""
     board = dict(level.board)
     board["stock"] = {kind: n for kind, n in board["stock"].items() if n != 0}
     board["parts"], board["wires"] = [p for p in board["parts"] if p["locked"]], []
-    return replace(level, board=board, tutorial=None, passkey=None, proof=None)
+    return replace(level, board=board, tutorial=None, passkey=None, proof=None, colours=True)
 
 
 @pytest.mark.parametrize("level", LEVELS.values(), ids=lambda level: level.title)

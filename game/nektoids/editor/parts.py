@@ -38,10 +38,10 @@ def ports(kind: Kind) -> tuple[str, str]:
     return f"In: {inward}.", f"Out: {outward}."
 
 
-def info(kind: Kind) -> tuple[str, ...]:
+def info(kind: Kind, colours: bool = True) -> tuple[str, ...]:
     """The paragraphs of the part's info box, after its name: what it does, its paint if it may
-    be painted, In, Out."""
-    painted = (PAINTED[kind],) if kind.paintable else ()
+    be painted on a level that shows colour (D-509), In, Out."""
+    painted = (PAINTED[kind],) if kind.paintable and colours else ()
     return (WHAT[kind], *painted, *ports(kind))
 
 

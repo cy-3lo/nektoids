@@ -104,8 +104,8 @@ class AtWork:
     flames: np.ndarray  # (Q, 2) the specks of its thrusters' flames
     eyes: np.ndarray  # (k, m, 2) each eye's outline; its face, the edge from last point to first
     thrusters: np.ndarray  # (j, m, 2) each thruster's, its face its back
-    eye_hues: tuple[Hue, ...]  # what each eye is painted (D-502)
-    thruster_hues: tuple[Hue, ...]  # ... each thruster
+    eye_hues: tuple[Hue, ...] | None  # what each eye is painted (D-502); None: no colour shown
+    thruster_hues: tuple[Hue, ...] | None  # ... each thruster (D-509)
     velocity: np.ndarray | None  # (2, 2) from the rim along the velocity; None while still
     spin: np.ndarray | None  # (m, 2) the arc from the heading; None while it does not turn
 
@@ -120,6 +120,7 @@ def at_work(
     frame: int,
     specks: Specks = SPECKS,
     stretch: float = 1.0,
+    colours: bool = True,
 ) -> AtWork:
     """What a swimmer running `net` on a board of `cells`, its nodes at rates `y` (n, C), shows
     at `pose` in `arena`, at `frame` of the run, its streams `stretch` times their length."""
@@ -155,8 +156,8 @@ def at_work(
         ),
         eyes=to_plane(eyes, pose, radius),
         thrusters=to_plane(thrusters, pose, radius),
-        eye_hues=tuple(net.hues[i] for i in net.eyes),
-        thruster_hues=tuple(net.hues[i] for i in net.thrusters),
+        eye_hues=tuple(net.hues[i] for i in net.eyes) if colours else None,
+        thruster_hues=tuple(net.hues[i] for i in net.thrusters) if colours else None,
         velocity=velocity_segment(centre, heading, radius, vel),
         spin=spin_arc(centre, heading, radius, spin),
     )

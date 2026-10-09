@@ -3,6 +3,7 @@
   "title": "Dragster",
   "spec": "Go as fast as possible.",
   "author": "@Cy-3LO",
+  "colours": true,
   "start": {"at": [-15, 0], "heading": 0},
   "items": [{"kind": "mark", "at": [8, 0], "radius": 8}],
   "board": {"zone": 7, "stock": {"source": 3, "thruster": 3}, "parts": [], "wires": []},

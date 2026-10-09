@@ -23,3 +23,7 @@ def test_the_info_box_holds_paragraphs_what_it_does_its_paint_then_in_and_out():
         assert info(kind) == (WHAT[kind], *painted, *ports(kind)), kind
         assert isinstance(WHAT[kind], str), kind
     assert set(PAINTED) == {kind for kind in Kind if kind.paintable}
+
+
+def test_a_level_without_colour_says_nothing_of_paint():
+    assert info(Kind.EYE, colours=False) == (WHAT[Kind.EYE], *ports(Kind.EYE))  # D-509

@@ -827,7 +827,7 @@ class BoardScene(Frame):
     # The buttons (D-401, D-402)
 
     def shown_buttons(self) -> tuple[Button | Kind, ...]:
-        return shown(self.layout.kinds, self.layout.editor)
+        return shown(self.layout.kinds, self.layout.editor, self.colours)
 
     def button_states(self) -> dict[Button | Kind, State]:
         history = self.history

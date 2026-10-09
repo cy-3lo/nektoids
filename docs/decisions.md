@@ -2822,3 +2822,11 @@ shows the same groups; every part handed out, as on the sandbox, it scrolls. On 
 and Source side by side, the Thruster under them, the Tank under it; the math stays a block,
 Double and Halve over Sum and Diff, and the colour operators stay under the Brush. A tool's key is
 its first letter: Paint becomes the Brush, B, so that C does not read as the colour group's.
+
+**D-509 — 2026-10-09 — A level shows colour only if its file says so, `"colours": true`: the sandbox, the levels made by players and the chapters of colour and memory. Elsewhere there is no Brush, and parts, beads and meters look as they did before colour. Amends D-503, D-508.**
+The physicist's: the chapters made before colour teach what they always taught, and amber parts
+in them would raise a question they never answer. Their parts are amber all the same, and play as
+they did, bit for bit; they are only drawn white. Explicit rather than guessed from the level's
+items: the levels made by players have no colour in them yet, and show it, for their makers to
+use. A level read from a shared text shows colour, being made in the Editor, as does every level
+the Editor makes, from the sandbox's. Part of format 6, not yet shipped.

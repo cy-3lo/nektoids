@@ -163,3 +163,13 @@ def test_empty_cells_picked_light_delete_when_a_wire_crosses_them_and_it_takes_t
     alone = states(board, buttons, Button.SELECT, lone, False, False, kinds)
     assert alone[Button.DELETE] is alone[Button.WIRE] is State.PLAIN  # held, the pick dropped
     assert alone[Button.TURN_LEFT] is State.GREYED
+
+
+def test_the_brush_shows_only_on_a_level_that_shows_colour():
+    kinds = frozenset({Kind.EYE, Kind.THRUSTER})  # D-509
+    assert Button.BRUSH in shown(kinds, editor=False)
+    assert Button.BRUSH not in shown(kinds, editor=False, colours=False)
+    assert [b for b in shown(kinds, False, False) if isinstance(b, Kind)] == [
+        Kind.EYE,
+        Kind.THRUSTER,
+    ]

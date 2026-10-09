@@ -33,12 +33,14 @@ from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Colour, Disc, Light
 LINE = 96  # a level file's lines stay this short where they can [characters]
 START_NUDGE = (1e-3, -1e-3)  # [u] a run's swimmer starts so far off its whole start (D-425)
 FORMAT = 6  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
-# 4 a zone written as its size (D-313), 5 an author (D-331), 6 a light's colour (D-506)
+# 4 a zone written as its size (D-313), 5 an author (D-331), 6 a light's colour (D-506) and
+# whether the level shows colour (D-509)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "version",
     "title",
     "spec",
     "author",
+    "colours",
     "start",
     "items",
     "board",
@@ -112,6 +114,7 @@ class Level:
     passkey: str | None = None  # the word its win gives: it opens the next level (D-075)
     proof: Mapping | None = field(default=None, repr=False)  # a level shared: its win (D-320)
     author: str | None = None  # who made it, as they sign: "@Cy-3LO" (D-331)
+    colours: bool = False  # it shows colour: the Brush, amber and violet parts and beads (D-509)
 
     @property
     def start_at(self) -> tuple[float, float]:
@@ -152,6 +155,7 @@ class Level:
         return (
             {"version": FORMAT, "title": self.title, "spec": self.spec}
             | ({"author": self.author} if self.author else {})
+            | ({"colours": True} if self.colours else {})
             | {
                 "start": {"at": [whole(x), whole(y)], "heading": whole(heading)},
                 "items": [item.to_dict() for item in self.items],
@@ -186,6 +190,7 @@ class Level:
             passkey=data.get("passkey"),
             proof=data.get("proof"),
             author=data.get("author"),
+            colours=bool(data.get("colours", False)),
         )
         if level.proof is not None:  # its board's text, its score (`proof.Proof`, D-320)
             known(level.proof, ("board", "ticks", "parts"), "a proof")

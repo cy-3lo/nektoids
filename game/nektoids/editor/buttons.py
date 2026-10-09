@@ -130,10 +130,15 @@ def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
     )
 
 
-def shown(kinds: frozenset[Kind], editor: bool) -> tuple[Button | Kind, ...]:
+def shown(kinds: frozenset[Kind], editor: bool, colours: bool = True) -> tuple[Button | Kind, ...]:
     """The buttons a level shows, in PLACES' order: every tool, Lock the player's on every board
-    (D-406); the parts the level hands out. `editor`, the sandbox's, changes no button."""
-    return tuple(b for b in PLACES if not isinstance(b, Kind) or b in kinds)
+    (D-406), the Brush on a level that shows colour (D-509); the parts the level hands out.
+    `editor`, the sandbox's, changes no button."""
+    return tuple(
+        b
+        for b in PLACES
+        if (b in kinds if isinstance(b, Kind) else colours or b is not Button.BRUSH)
+    )
 
 
 def button_at(
