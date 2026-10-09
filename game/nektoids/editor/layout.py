@@ -34,7 +34,6 @@ from enum import Enum
 
 from nektoids.graph.board import Kind
 from nektoids.graph.hexgrid import SQRT3, Cell, from_pixel
-from nektoids.graph.kinds import Category
 from nektoids.levels.objectives import Count, Target, Verb
 
 Rect = tuple[int, int, int, int]  # x, y, width, height [px]
@@ -97,16 +96,17 @@ BOARD_HEX = 40.0  # the Board's one size: the largest zone and its buttons fit b
 MIN_HEX, MAX_HEX = 20.0, 80.0  # zoom limits [px]
 ZOOM_STEP = 1.25  # hex size factor per click
 
-# Parts' groups, actuators before operators (D-069): the number keys follow this order; within a
-# group, the parts in the table's order (D-202).
-MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = tuple(
-    (title, tuple(kind for kind in Kind if kind.category is category))
-    for title, category in (
-        ("Sensors", Category.SENSOR),
-        ("Actuators", Category.ACTUATOR),
-        ("Operators", Category.OPERATOR),
-    )
+# Parts' groups (D-508), each a row of buttons on the Board and a number key, 1 to 5 in this
+# order: a press takes a part of the group, the next press the next one. Within a group, the
+# order the presses go round in.
+MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
+    ("Sensors", (Kind.EYE, Kind.SOURCE)),
+    ("Actuators", (Kind.THRUSTER,)),
+    ("Math", (Kind.SUM, Kind.DIFFERENCE, Kind.DOUBLE, Kind.HALVE)),
+    ("Colour", (Kind.TINT, Kind.FILTER, Kind.SWAP)),
+    ("Memory", (Kind.TANK,)),
 )
+GROUP_OF = {kind: g for g, (_, kinds) in enumerate(MENU_GROUPS) for kind in kinds}
 
 
 class Tool(Enum):

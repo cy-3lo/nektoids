@@ -107,6 +107,8 @@ from nektoids.levels.objectives import Count, Target, Verb
 from nektoids.levels.sandbox import free_board, tutorial_board
 
 LAYOUT = make_layout()  # Parts open, every part handed out, no Wheel under it (D-401)
+# A level's parts, which fit unscrolled; every part, the sandbox's, scrolls a little (D-508)
+FITS = make_layout(kinds=frozenset(Kind) - {Kind.TINT, Kind.FILTER, Kind.SWAP, Kind.TANK})
 VIEW = centred_view(LAYOUT)
 FILES = make_layout(Drawer.FILES, files=(("1.2 Aggression", 2), ("1.1 Fear", 1)))
 FOLDED = make_layout(None)
@@ -150,7 +152,7 @@ def test_the_bar_the_drawer_and_the_board_side_by_side_the_tabs_over_the_board()
 
 def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
     for layout, rows in (
-        (LAYOUT, LAYOUT.menu_items),
+        (FITS, FITS.menu_items),
         (FILES, (*FILES.win_rows, *FILES.file_buttons)),
         (RUN_NAVIGATOR, (*RUN_NAVIGATOR.view_buttons, *RUN_NAVIGATOR.goal_rows)),
     ):
@@ -168,7 +170,9 @@ def test_parts_has_every_kind_once_and_a_click_on_a_row_picks_it():
     kinds = [kind for kind, _ in LAYOUT.menu_items]
     assert sorted(kinds, key=lambda k: k.value) == sorted(Kind, key=lambda k: k.value)
     for kind, rect in LAYOUT.menu_items:
-        assert menu_item_at(LAYOUT, (rect[0] + 20, rect[1] + rect[3] // 2)) == kind
+        point = (rect[0] + 20, rect[1] + rect[3] // 2)
+        if contains(LAYOUT.list_area, point):  # one scrolled out of sight takes no click
+            assert menu_item_at(LAYOUT, point) == kind
 
 
 def test_parts_lists_down_to_the_drawers_foot_with_no_wheel_under_it():
@@ -284,9 +288,10 @@ def test_a_tutored_levels_parts_fit_unscrolled_so_a_steps_rows_would_show():
 
 
 def test_parts_lists_sensors_then_actuators_then_operators_and_the_numbers_follow():
-    assert [title for title, _ in LAYOUT.group_titles] == ["Sensors", "Actuators", "Operators"]
-    kinds = [kind for kind, _ in LAYOUT.menu_items]  # D-069: the thruster third, its key 3
-    assert kinds[:3] == [Kind.EYE, Kind.SOURCE, Kind.THRUSTER]
+    titles = ["Sensors", "Actuators", "Math", "Colour", "Memory"]  # D-508: keys 1 to 5
+    assert [title for title, _ in LAYOUT.group_titles] == titles
+    kinds = [kind for kind, _ in LAYOUT.menu_items]
+    assert kinds[:4] == [Kind.EYE, Kind.SOURCE, Kind.THRUSTER, Kind.SUM]
 
 
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
@@ -295,7 +300,7 @@ def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():
     assert Kind.THRUSTER not in kinds and Kind.EYE in kinds and Kind.DOUBLE in kinds
     titles_open, titles_folded = dict(LAYOUT.group_titles), dict(folded.group_titles)
     assert titles_folded["Sensors"] == titles_open["Sensors"]
-    assert titles_folded["Operators"][1] < titles_open["Operators"][1]
+    assert titles_folded["Math"][1] < titles_open["Math"][1]
     assert folded.board_area == LAYOUT.board_area
     for title, rect in folded.group_titles:
         assert group_at(folded, centre(rect)) == title
@@ -426,12 +431,12 @@ def test_the_fold_handle_sits_on_the_drawers_edge_and_the_view_keeps_its_centre(
 
 
 def test_each_menu_row_has_its_info_disc_inside_it_and_unfolding_moves_it_along():
-    rows = dict(LAYOUT.menu_items)
-    for kind, rect in LAYOUT.info_buttons:
+    rows = dict(FITS.menu_items)
+    for kind, rect in FITS.info_buttons:
         assert contains(rows[kind], rect[:2])
         assert contains(rows[kind], (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
-        assert info_at(LAYOUT, centre(rect)) is kind and menu_item_at(LAYOUT, centre(rect)) is kind
-    assert info_at(LAYOUT, centre(rows[Kind.EYE])[:1] + (0,)) is None
+        assert info_at(FITS, centre(rect)) is kind and menu_item_at(FITS, centre(rect)) is kind
+    assert info_at(FITS, centre(rows[Kind.EYE])[:1] + (0,)) is None
     folded = make_layout(folded=frozenset({"Sensors"}))
     assert Kind.EYE not in dict(folded.info_buttons)
 
@@ -748,7 +753,13 @@ def test_start_from_lists_a_blank_plane_then_every_shipped_level_under_the_paste
 def test_the_editors_parts_gives_the_board_size_then_each_part_a_row_with_minus_and_plus():
     layout = make_layout(Drawer.PARTS, env=Env.EDITOR, editor=True)  # D-315
     assert [t for t, _ in layout.section_titles] == ["Board"]
-    assert [t for t, _ in layout.group_titles] == ["Sensors", "Actuators", "Operators"]
+    assert [t for t, _ in layout.group_titles] == [
+        "Sensors",
+        "Actuators",
+        "Math",
+        "Colour",
+        "Memory",
+    ]
     order = [k for _, kinds in MENU_GROUPS for k in kinds]  # as the Board's Parts groups them
     assert [s for s, _ in layout.steppers] == [Stepper(None), *(Stepper(k) for k in order)]
     assert not layout.menu_items and layout.scroll_max > 0  # not the Board's; it scrolls (D-507)
@@ -761,10 +772,10 @@ def test_the_editors_parts_gives_the_board_size_then_each_part_a_row_with_minus_
         assert stepper_at(layout, centre(plus)) == (what, 1)
         assert stepper_at(layout, (row[0] + 30, row[1] + 20)) is None  # its name: nothing
     assert drawer_key(Env.EDITOR, "P") is Drawer.PARTS
-    shut = make_layout(Drawer.PARTS, frozenset({"Operators"}), env=Env.EDITOR, editor=True)
-    unfolded = [k for title, kinds in MENU_GROUPS if title != "Operators" for k in kinds]
-    assert [s.kind for s, _ in shut.steppers] == [None, *unfolded]  # the operators folded
-    assert group_at(shut, centre(shut.group_titles[2][1])) == "Operators"
+    shut = make_layout(Drawer.PARTS, frozenset({"Math"}), env=Env.EDITOR, editor=True)
+    unfolded = [k for title, kinds in MENU_GROUPS if title != "Math" for k in kinds]
+    assert [s.kind for s, _ in shut.steppers] == [None, *unfolded]  # the math folded
+    assert group_at(shut, centre(shut.group_titles[2][1])) == "Math"
 
 
 def test_files_ends_with_erase_all_under_the_field_to_paste_a_board():

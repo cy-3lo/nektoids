@@ -3,7 +3,7 @@ places on every level, so that the hand learns them.
 
 The board's centre is cell (0, 0), r down. At N, Select, Move and Lock, Lock on the board reached
 from the Editor only (D-319); at S, Undo, Redo and Delete; at W, Turn left and Turn right side by
-side, Wire under them and Paint under Wire, and under Paint the colour operators, Tint over
+side, Wire under them and the Brush under Wire, and under the Brush the colour operators, Tint over
 Filter and Swap (D-507); at E, the parts: Eye, Source and Thruster, then the
 Tank over Double and Halve side by side, over Sum and Difference (D-501). A kind the level does
 not hand out leaves its place empty. The board shows at one size, centred, so that the largest
@@ -24,6 +24,7 @@ from enum import Enum
 from nektoids.editor.layout import (
     BOARD_HEX,
     EDIT_KEYS,
+    GROUP_OF,
     LOCK_KEY,
     MENU_GROUPS,
     TOOL_KEYS,
@@ -46,7 +47,7 @@ class Button(Enum):
     TURN_LEFT = "turn left"
     TURN_RIGHT = "turn right"
     WIRE = "wire"
-    PAINT = "paint"  # eyes, Sources, thrusters: its brush's colour, amber or violet (D-503)
+    BRUSH = "brush"  # paints eyes, Sources, thrusters, Tints, Filters (D-503, D-508)
 
 
 PLACES: dict[Button | Kind, Cell] = {
@@ -58,15 +59,15 @@ PLACES: dict[Button | Kind, Cell] = {
     Button.TURN_LEFT: (-3, -2),
     Button.TURN_RIGHT: (-2, -2),
     Button.WIRE: (-3, -1),
-    Button.PAINT: (-4, 0),  # under Wire, inside the frame: no other button moves (D-501)
-    Kind.EYE: (4, -3),
-    Kind.SOURCE: (4, -2),
-    Kind.THRUSTER: (4, -1),
+    Button.BRUSH: (-4, 0),  # under Wire, inside the frame: no other button moves (D-501)
+    Kind.EYE: (4, -3),  # the groups a row each (D-508): Eye and Source,
+    Kind.SOURCE: (5, -3),
+    Kind.THRUSTER: (4, -2),  # the Thruster, the Tank,
     Kind.DOUBLE: (2, 2),
     Kind.HALVE: (3, 2),
     Kind.SUM: (1, 3),
     Kind.DIFFERENCE: (2, 3),
-    Kind.TANK: (3, 1),  # over Double and Halve: under Sum, it would move every button (D-501)
+    Kind.TANK: (4, -1),  # then the math, Double and Halve over Sum and Difference
     Kind.TINT: (-4, 1),  # the colour corner, under Paint: Tint, then Filter and Swap (D-507)
     Kind.FILTER: (-5, 2),
     Kind.SWAP: (-4, 2),
@@ -96,7 +97,7 @@ KEYS = {  # each button's key; a part's is its number among those handed out (`k
     Button.TURN_LEFT: TOOL_KEYS[Tool.TURN_LEFT],
     Button.TURN_RIGHT: TOOL_KEYS[Tool.TURN_RIGHT],
     Button.WIRE: TOOL_KEYS[Tool.WIRE],
-    Button.PAINT: "C",  # as in colour; the run's Centre, which never shows with the Board
+    Button.BRUSH: "B",  # its first letter, as every tool's (D-508)
 }
 
 
@@ -111,14 +112,13 @@ def board_view(layout: Layout) -> View:
 
 
 def part_key(kind: Kind, kinds: frozenset[Kind]) -> str:
-    """A part's number key: its place among the parts the level hands out, as in Parts."""
-    ordered = [k for _, group in MENU_GROUPS for k in group if k in kinds]
-    return str(ordered.index(kind) + 1)
+    """A part's number key: its group's, the same on every level (D-508)."""
+    return str(GROUP_OF[kind] + 1)
 
 
 def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
     """What the part on `cell` may be swapped for (D-068): the other parts of its group in Parts
-    that the level still hands out, in Parts' order."""
+    (D-508) that the level still hands out, in Parts' order."""
     node = board.node_at(cell)
     if node is None or node.fixed:
         return ()
@@ -126,7 +126,7 @@ def swaps(board: Board, cell, kinds: frozenset[Kind]) -> tuple[Kind, ...]:
     return tuple(
         k
         for k in ordered
-        if k.category is node.kind.category and k is not node.kind and board.remaining(k) != 0
+        if GROUP_OF[k] == GROUP_OF[node.kind] and k is not node.kind and board.remaining(k) != 0
     )
 
 
@@ -200,7 +200,7 @@ def states(
         if picked:
             loose = [n for n in picked if not n.fixed]
             return {
-                Button.PAINT: any(n.kind.paintable for n in loose),
+                Button.BRUSH: any(n.kind.paintable for n in loose),
                 Button.DELETE: bool(loose),
                 Button.LOCK: editor or any(not n.locked for n in picked),
                 Button.TURN_LEFT: any(n.facing is not None for n in loose),
@@ -208,7 +208,7 @@ def states(
                 Button.WIRE: len(nodes) > 1,
             }[b]
         able = {
-            Button.PAINT: True,  # with nothing picked, it switches its colour (D-503)
+            Button.BRUSH: True,  # with nothing picked, it switches its colour (D-503)
             Button.DELETE: bool(free),
             Button.LOCK: bool(nodes) if editor else bool(mine),
             Button.TURN_LEFT: any(n.facing is not None for n in free),

@@ -503,7 +503,7 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
                 screen, fonts, b, angle, at, size - PART_SMALLER, False, fill, face, hue=scene.brush
             )
         else:
-            ink = BODY_OF[scene.brush] if b is Button.PAINT else GREYED if greyed else TEXT
+            ink = BODY_OF[scene.brush] if b is Button.BRUSH else GREYED if greyed else TEXT
             fonts.icons.draw(screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), ink)
     for b, centre in places.items():  # a tutorial's target, pulsing (D-337)
         if f"button:{b.value}" in scene.lit:

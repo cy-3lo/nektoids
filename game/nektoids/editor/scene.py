@@ -65,6 +65,7 @@ from nektoids.editor.history import History
 from nektoids.editor.layout import (
     DIAGNOSTIC_BODY,
     DIAGNOSTIC_MAP,
+    GROUP_OF,
     KEY_ALIASES,
     MENU_GROUPS,
     TURNS,
@@ -177,6 +178,7 @@ class BoardScene(Frame):
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.held: Button | Kind = Button.SELECT  # the button in hand (D-401, D-402)
         self.brush: Hue = Hue.AMBER  # Paint's colour, on its brush, and new parts' (D-503)
+        self.last_taken: dict[int, Kind] = {}  # each group's part last taken by its key (D-508)
         self.pick: Pick = NOTHING  # what Select has picked, in the order clicked (D-402)
         self.cursor: Cell | None = None  # the keyboard's cell: the arrows move it, Enter clicks
         self.wire_chain: Chain | None = None  # Wire held: the parts clicked, wired one to the next
@@ -473,10 +475,32 @@ class BoardScene(Frame):
         return (round(x), round(y))
 
     def _digit(self, k: int) -> None:
-        """A number: that part's button, among the parts the level hands out (D-402)."""
-        kinds = [kind for _, group in MENU_GROUPS for kind in group if kind in self.layout.kinds]
-        if k < len(kinds):
-            self._press_button(kinds[k])
+        """A number: group k's (D-508). Parts of it picked, they become the group's next part;
+        else its part in hand goes on to the next, or the one last taken from it comes back to
+        hand. Parts the level hands out none of, or none left of, are passed over."""
+        if k >= len(MENU_GROUPS):
+            return
+        kinds = [kind for kind in MENU_GROUPS[k][1] if kind in self.layout.kinds]
+        picked = parts(self.pick, self.board)
+        if picked and all(GROUP_OF[n.kind] == k for n in picked):
+            after = picked[0].kind
+        elif isinstance(self.held, Kind) and GROUP_OF[self.held] == k:
+            after = self.held
+        else:
+            after = None
+        if after is None:
+            target = self.last_taken.get(k, kinds[0] if kinds else None)
+            ready = [target] if target in kinds and self.board.remaining(target) != 0 else []
+        else:
+            start = kinds.index(after) + 1 if after in kinds else 0
+            turn = kinds[start:] + kinds[:start]
+            ready = [kind for kind in turn if kind is not after and self.board.remaining(kind) != 0]
+        if not ready:
+            return
+        self.last_taken[k] = ready[0]
+        if after is not None and not picked:
+            self.held = Button.SELECT  # so that the press takes the next, and does not put it down
+        self._press_button(ready[0])
 
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
@@ -826,7 +850,7 @@ class BoardScene(Frame):
             self._edit(EditButton.UNDO if button is Button.UNDO else EditButton.REDO)
             return
         look = self.button_states().get(button)
-        if button is Button.PAINT and not (look is State.LIT and self.pick):
+        if button is Button.BRUSH and not (look is State.LIT and self.pick):
             self._switch_brush()  # nothing picked: the other colour, held (D-503)
         elif button is Button.SELECT or look is State.CHOSEN:
             self._hold(Button.SELECT)
@@ -865,7 +889,7 @@ class BoardScene(Frame):
             return "empty cells picked: a part's button fills them"
         if button in TURNING:
             return "nothing here turns: only an eye or a thruster, not the level's"
-        if button is Button.PAINT:
+        if button is Button.BRUSH:
             return "nothing here takes paint: only an eye, a Source or a thruster, not the level's"
         if button is Button.WIRE:
             return "a wire runs from a part to another"
@@ -889,7 +913,7 @@ class BoardScene(Frame):
             for node in loose:
                 if node.facing is not None:
                     self._turn(node.cell, -TURNING[button] if back else TURNING[button])
-        elif button is Button.PAINT:  # all the brush's colour; all of it already: the other
+        elif button is Button.BRUSH:  # all the brush's colour; all of it already: the other
             paintable = [n for n in loose if n.kind.paintable]  # colour, the brush too (D-503)
             if all(n.hue is self.brush for n in paintable):
                 self.brush = self.brush.next
@@ -960,7 +984,7 @@ class BoardScene(Frame):
                 self._turn(cell, -TURNING[held] if back else TURNING[held])
         elif held is Button.WIRE:
             self._wire_click(cell)
-        elif held is Button.PAINT:
+        elif held is Button.BRUSH:
             if cell is None or self.board.node_at(cell) is None:
                 self._refuse("click an eye, a Source or a thruster", cell)
             else:
@@ -1083,7 +1107,7 @@ class BoardScene(Frame):
     def _switch_brush(self) -> None:
         """Paint pressed with nothing picked: its brush the other colour, and Paint held for the
         clicks (D-503)."""
-        if self.held is Button.PAINT or self._hold(Button.PAINT):
+        if self.held is Button.BRUSH or self._hold(Button.BRUSH):
             self.brush = self.brush.next
 
     def _paint(self, cell: Cell, hue: Hue) -> None:

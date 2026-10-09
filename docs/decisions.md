@@ -2811,3 +2811,14 @@ leftovers go. Their letters on the panels are N, F and W, T and S being the Thru
 Source's. Every part handed out, as on the sandbox, the Parts drawer scrolls a little; a level's
 fits. For the loop's bound (D-428), a Tint counts twice, both channels into one. The player reads
 no equation: the info box says what each does in words.
+
+**D-508 — 2026-10-09 — The parts come in five groups, a row of buttons each and a number key each, the same on every level: 1 sensors (Eye, Source), 2 actuators (Thruster), 3 math (Sum, Diff, Double, Halve), 4 colour (Tint, Filter, Swap), 5 memory (Tank). A press takes a part of the group in hand, the next the next part. Paint is the Brush, key B. Amends D-068, D-401, D-402, D-505.**
+The physicist's: with fourteen parts, a number a part ran past 9, and the keys changed from level
+to level. Now a key is a group's: pressed, it takes the part last taken from that group, the first
+at the start; pressed again, the next, round the group, past the parts the level hands out none
+of or none left of. Parts of the group picked, it turns them into the group's next part, the swap
+of D-068, which keeps to a group now: a Sum swaps for a Diff, not for a Tank. The Parts drawer
+shows the same groups; every part handed out, as on the sandbox, it scrolls. On the Board, Eye
+and Source side by side, the Thruster under them, the Tank under it; the math stays a block,
+Double and Halve over Sum and Diff, and the colour operators stay under the Brush. A tool's key is
+its first letter: Paint becomes the Brush, B, so that C does not read as the colour group's.
