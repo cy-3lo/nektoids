@@ -68,7 +68,7 @@ its decisions taken, when it starts.
     sizes apart at full rate.
   - [ ] Tint, Filter and Swap (D-507), three operators in rounded squares under Paint; Tint and
     Filter painted with the same button.
-- [ ] **Levels for memory and colour.** Memory with no schedule, the light hidden by shadows
+- [ ] **Levels for memory and colour** (first ones: D-510, chapters 4 Colour and 5 Memory). Memory with no schedule, the light hidden by shadows
   (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to the violet light
   and flee the amber one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
   (D-501).

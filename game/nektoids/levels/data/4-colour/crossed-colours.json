@@ -1,0 +1,23 @@
+{
+  "version": 6,
+  "title": "Crossed colours",
+  "spec": "Amber eyes, violet thrusters: make them speak to each other, and touch the light.",
+  "author": "@Cy-3LO",
+  "colours": true,
+  "start": {"at": [9, 15], "heading": 0},
+  "items": [{"kind": "light", "at": [27, 21], "power": 8}],
+  "board": {
+    "zone": 19,
+    "stock": {"swap": 2, "tint": 2},
+    "parts": [
+      {"kind": "eye", "cell": [2, -2], "facing": "E", "locked": true},
+      {"kind": "eye", "cell": [0, 2], "facing": "E", "locked": true},
+      {"kind": "thruster", "cell": [1, -2], "facing": "E", "locked": true, "hue": "violet"},
+      {"kind": "thruster", "cell": [-1, 2], "facing": "E", "locked": true, "hue": "violet"}
+    ],
+    "wires": []
+  },
+  "time_limit": 20,
+  "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
+  "proof": {"board": "11H7FTb3AFUMGdYuUeuN1", "ticks": 552, "parts": 6}
+}

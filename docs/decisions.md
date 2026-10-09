@@ -2830,3 +2830,14 @@ they did, bit for bit; they are only drawn white. Explicit rather than guessed f
 items: the levels made by players have no colour in them yet, and show it, for their makers to
 use. A level read from a shared text shows colour, being made in the Editor, as does every level
 the Editor makes, from the sandbox's. Part of format 6, not yet shipped.
+
+**D-510 — 2026-10-09 — Two chapters before the levels made by users: 4 Colour (Violet, Two colours, Crossed colours) and 5 Memory (Latch). Made by users is no real chapter and has no number: its levels are captioned by their titles alone. Amends D-325, D-348.**
+The physicist's. Violet teaches the Brush, eyes and thrusters both to paint; Two colours that an
+eye sees its colour alone, an amber light in the way of a violet one; Crossed colours a Swap or a
+Tint of the right colour, the level's eyes amber and its thrusters violet, both locked. Latch
+asks for memory: a weak light behind, a ring far ahead, and no Sum handed out, so that the one
+loop that holds its level runs through the Tank, a Double sharing its output between the Tank
+and the thruster; fleeing, or a Tank or a Double alone, runs out of time. Each was checked by
+simulation, its intended board winning and the obvious wrong ones not, and ships with that proof.
+Both chapters show colour (D-509). Violet gives PRISM, Two colours INDIGO; a chapter's last gives
+none (D-325). The folder of the levels made by users loses its number.

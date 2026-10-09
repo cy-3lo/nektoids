@@ -30,8 +30,8 @@ HINTED = [title for k, title in enumerate(LEVELS) if locate(k)[0].hints]
 
 
 def test_the_levels_of_chapters_0_to_3_have_hints_and_those_made_by_users_none():
-    chapters = [locate(k)[0].number for k in range(len(LEVELS))]  # D-353
-    assert HINTED == [title for title, n in zip(LEVELS, chapters, strict=True) if n <= 3]
+    chapters = [locate(k)[0].number for k in range(len(LEVELS))]  # D-353, D-510
+    assert HINTED == [title for title, n in zip(LEVELS, chapters, strict=True) if n is not None]
     assert "Shadows" in HINTED and "Two lights" in HINTED
     assert "Dragster" not in HINTED and "Dragster II" not in HINTED  # D-348
 

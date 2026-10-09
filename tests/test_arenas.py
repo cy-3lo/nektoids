@@ -28,11 +28,27 @@ def test_the_route_runs_through_the_chapters_in_order_each_level_in_one():
         "1. Braitenberg",
         "2. Obstacles",
         "3. Many lights",
-        "4. Made by users",
+        "4. Colour",
+        "5. Memory",
+        "Made by users",  # no real chapter: unnumbered (D-510)
     ]  # D-325
-    assert [len(chapter.names) for chapter in CHAPTERS] == [6, 4, 1, 3, 2]  # D-335, D-348
-    places = [(locate(k)[0].number, locate(k)[1]) for k in (0, 5, 6, 9, 10, 11, 13, 14, 15)]
-    assert places == [(0, 0), (0, 5), (1, 0), (1, 3), (2, 0), (3, 0), (3, 2), (4, 0), (4, 1)]
+    assert [len(chapter.names) for chapter in CHAPTERS] == [6, 4, 1, 3, 3, 1, 2]  # D-335, D-348
+    ks = (0, 5, 6, 9, 10, 11, 13, 14, 16, 17, 18, 19)
+    places = [(locate(k)[0].number, locate(k)[1]) for k in ks]
+    assert places == [
+        (0, 0),
+        (0, 5),
+        (1, 0),
+        (1, 3),
+        (2, 0),
+        (3, 0),
+        (3, 2),
+        (4, 0),
+        (4, 2),
+        (5, 0),
+        (None, 0),
+        (None, 1),
+    ]
     assert locate(10)[0].names[0] == "shadows"
     with pytest.raises(IndexError):
         locate(len(arenas()))

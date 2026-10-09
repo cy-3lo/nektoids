@@ -10,8 +10,8 @@ there is no slider to tune. Press run: the simulation is deterministic, so the s
 swims the same way. A level is won by meeting its goals in time. Its score counts the parts used
 and the time taken.
 
-The levels come in five chapters: tutorials, Braitenberg's vehicles (fear, aggression, love),
-obstacles and shadows, many lights, and levels made by players. A level editor builds new
+The levels come in six chapters: tutorials, Braitenberg's vehicles (fear, aggression, love),
+obstacles and shadows, many lights, colour, and memory; then levels made by players. A level editor builds new
 levels, and a level is shared as a few lines of text, with the board that wins it.
 
 ## Play
