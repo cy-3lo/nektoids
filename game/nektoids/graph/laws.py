@@ -2,7 +2,10 @@
 
 Every node of the graph has a state y and a law. The law is the state's equation,
 dy/dt = f(x, y), with x the rates on the node's wires in, slot by slot in the order of
-`Network.slots`, and what the node sends out, o = g(y), shared among its wires out. The output
+`Network.slots`, and what the node sends out, o = g(y), shared among its wires out. A rate has
+two channels, amber and violet, in `Hue`'s order (D-501 to D-503): they are the last axis of every
+array here, and every law acts on them channel by channel, elementwise, the same arithmetic in
+each. The output
 depends on the state alone, so a tick reads every output, then steps every state, and never
 solves for one: a loop needs no special case (D-017). Each law owns its explicit step, so that
 its arithmetic is fixed (invariant 1), and says the longest tick that step is stable for.
@@ -15,12 +18,13 @@ its own. Pure numpy, no pygame.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 
 import numpy as np
 
 RATE_MAX = 1.0  # what one wire can carry: the unit of every rate
+CHANNELS = 2  # the colours a rate carries (D-503): amber and violet, in `kinds.Hue`'s order
 TAU = 1.0 / 60.0  # the lag of every part of the jam [s]
 
 
@@ -30,11 +34,16 @@ class Target(Protocol):
     slope: float  # the most F moves per unit of one input: |dF/dx_k| <= slope
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        """F (N, m) from the rates in, x (N, m, K); unused slots carry 0."""
+        """F (N, m, C) from the rates in, x (N, m, K, C); unused slots carry 0."""
         ...
 
     def text(self, terms: list[str]) -> str:
         """F in ASCII, its inputs named by `terms`, at least one."""
+        ...
+
+    def painted(self, hue) -> Target:
+        """The target of a part painted `hue` (a `kinds.Hue`): itself, but for the colour
+        operators (D-507)."""
         ...
 
 
@@ -44,21 +53,25 @@ class Law(Protocol):
     slope: float  # how far its state follows one input, per unit: the weight of the loop bound
 
     def step(self, x: np.ndarray, y: np.ndarray, dt: float) -> np.ndarray:
-        """The state (N, m) a tick of `dt` [s] later, from the rates in x (N, m, K) and the
-        state now y (N, m); neither is changed. The caller keeps it in [0, RATE_MAX]."""
+        """The state (N, m, C) a tick of `dt` [s] later, from the rates in x (N, m, K, C) and
+        the state now y (N, m, C); neither is changed. The caller keeps it in [0, RATE_MAX]."""
         ...
 
     def output(self, y: np.ndarray) -> np.ndarray:
-        """What the node sends out (N, m) from its state."""
+        """What the node sends out (N, m, C) from its state."""
         ...
 
     def equation(self, name: str, terms: list[str]) -> str:
         """The node's equation in ASCII, its state named `name`, its inputs `terms`."""
         ...
 
+    def painted(self, hue) -> Law:
+        """The law of a part painted `hue`: itself, but for the colour operators (D-507)."""
+        ...
+
 
 def inflow(x: np.ndarray) -> np.ndarray:
-    """(N, m): the sum of the rates in, slot by slot in order, never by a reduction whose order
+    """(N, m, C): the sum of the rates in, slot by slot in order, never by a reduction whose order
     numpy picks, so a node's sum does not depend on the batch it is in (invariant 1). A node
     has one slot at least (`Network.slots`)."""
     total = 0.0
@@ -80,6 +93,9 @@ class Scaled:
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return self.gain * np.abs(inflow(x))  # abs only clears the sign of a zero
 
+    def painted(self, hue) -> Scaled:
+        return self
+
     def text(self, terms: list[str]) -> str:
         inner = " + ".join(terms)
         if self.gain == 1.0:
@@ -100,8 +116,75 @@ class Difference:
             return np.abs(x[:, :, 0])
         return np.abs(x[:, :, 0] - x[:, :, 1])
 
+    def painted(self, hue) -> Difference:
+        return self
+
     def text(self, terms: list[str]) -> str:
         return f"|{terms[0]} - {terms[1]}|" if len(terms) == 2 else " + ".join(terms)
+
+
+# The colour operators (D-507): each acts across the channels, the last axis. Tint and Filter
+# are painted, and act by their colour, `channel`; Swap is neutral.
+
+
+@dataclass(frozen=True)
+class Tinted:
+    """F = everything that comes in, in one colour: in `channel`, the channels' sum, added in
+    order; 0 in the others. The one target that adds the channels together."""
+
+    channel: int = 0
+    slope: float = float(CHANNELS)  # every channel into one: the largest is at most C times over
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        total = inflow(x)
+        both = total[..., 0]
+        for c in range(1, total.shape[-1]):
+            both = both + total[..., c]
+        out = np.zeros_like(total)
+        out[..., self.channel] = both
+        return out
+
+    def painted(self, hue) -> Tinted:
+        return replace(self, channel=hue.channel)
+
+    def text(self, terms: list[str]) -> str:
+        return f"tint{self.channel}({' + '.join(terms)})"
+
+
+@dataclass(frozen=True)
+class Filtered:
+    """F = what comes in in one colour, `channel`, alone; 0 in the others."""
+
+    channel: int = 0
+    slope: float = 1.0
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        total = inflow(x)
+        out = np.zeros_like(total)
+        out[..., self.channel] = total[..., self.channel]
+        return out
+
+    def painted(self, hue) -> Filtered:
+        return replace(self, channel=hue.channel)
+
+    def text(self, terms: list[str]) -> str:
+        return f"filter{self.channel}({' + '.join(terms)})"
+
+
+@dataclass(frozen=True)
+class Swapped:
+    """F = what comes in, the channels exchanged: amber to violet, violet to amber."""
+
+    slope: float = 1.0
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return inflow(x)[..., ::-1].copy()
+
+    def painted(self, hue) -> Swapped:
+        return self
+
+    def text(self, terms: list[str]) -> str:
+        return f"swap({' + '.join(terms)})"
 
 
 @dataclass(frozen=True)
@@ -127,6 +210,11 @@ class Relax:
 
     def output(self, y: np.ndarray) -> np.ndarray:
         return y
+
+    def painted(self, hue) -> Relax:
+        """Its target painted `hue`: a Tint's or a Filter's colour (D-507)."""
+        target = self.target.painted(hue)
+        return self if target is self.target else replace(self, target=target)
 
     def equation(self, name: str, terms: list[str]) -> str:
         lag = "tau" if self.tau == TAU else f"{self.tau:g} s *"

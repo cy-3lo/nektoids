@@ -108,7 +108,7 @@ from nektoids.editor.layout import (
     zoom_button_at,
 )
 from nektoids.editor.notches import RUN, Notches
-from nektoids.editor.objects import ONE, PLACED, object_at, reach
+from nektoids.editor.objects import COLOUR, ONE, PLACED, object_at, reach
 from nektoids.editor.plane_pick import (
     NOTHING,
     Object,
@@ -167,7 +167,7 @@ from nektoids.levels.making import (
 from nektoids.levels.objectives import Outcome, at_start, settings
 from nektoids.levels.proof import Proof, Replay
 from nektoids.levels.score import Score
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Colour
 
 ARROW_PAN = 2.0  # an arrow drags the view this far [u]
 CLICK = 4  # a press that moves less than this is a click, not a drag [px]
@@ -175,7 +175,7 @@ EDITOR_VIEW = (ViewButton.ZOOM_IN, ViewButton.ZOOM_OUT, ViewButton.CENTRE, ViewB
 VIEWS = {VIEW_KEYS[b]: b for b in EDITOR_VIEW}  # the keys the Editor's view answers: + - C X
 KEYS_TYPED = {"S": Key.SELECT, "H": Key.HAND, "<": Key.SMALLER, ">": Key.BIGGER}  # D-410
 TURN_KEYS = {TOOL_KEYS[Tool.TURN_LEFT]: 1, TOOL_KEYS[Tool.TURN_RIGHT]: -1}  # the start, picked
-DIGITS = (Piece.LIGHT, Piece.OBSTACLE, Piece.MARK)  # 1 to 3, on their physical keys; 0 swims
+DIGITS = tuple(Piece)[1:]  # 1 to 5, on their physical keys; 0 swims (D-506)
 PASTE_BESIDE = (2.0, 0.0)  # a paste with the mouse off the plane: beside what was copied [u]
 ADD_KEYS = pygame.KMOD_SHIFT | pygame.KMOD_META  # held, a click or a drag adds to the pick
 _copied: tuple[Item, ...] = ()  # what Copy and Cut keep, for every level of the session (D-410)
@@ -401,7 +401,8 @@ class EditorScene(Frame):
                 self.start_off, self.held, self.pick = False, Key.SELECT, (Piece.START,)
                 return True
             return False
-        if self._make(lambda level: placed(level, PLACED[piece], at), record):
+        colour = COLOUR.get(piece, Colour.WHITE)  # a light's (D-506)
+        if self._make(lambda level: placed(level, PLACED[piece], at, colour), record):
             self.pick = (len(self.level.items) - 1,)
             self._count(self.pick[0])
             return True

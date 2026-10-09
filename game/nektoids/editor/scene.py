@@ -65,6 +65,7 @@ from nektoids.editor.history import History
 from nektoids.editor.layout import (
     DIAGNOSTIC_BODY,
     DIAGNOSTIC_MAP,
+    GROUP_OF,
     KEY_ALIASES,
     MENU_GROUPS,
     TURNS,
@@ -106,7 +107,7 @@ from nektoids.editor.textfield import TextField
 from nektoids.editor.tutorial import REFUSAL, Action
 from nektoids.editor.wiring import Chain, chain_to
 from nektoids.graph import boardtext
-from nektoids.graph.board import Board, BoardState, Kind, Node, Refused, Wire
+from nektoids.graph.board import Board, BoardState, Hue, Kind, Node, Refused, Wire
 from nektoids.graph.hexgrid import (
     Cell,
     E,
@@ -176,6 +177,8 @@ class BoardScene(Frame):
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.held: Button | Kind = Button.SELECT  # the button in hand (D-401, D-402)
+        self.brush: Hue = Hue.AMBER  # Paint's colour, on its brush, and new parts' (D-503)
+        self.last_taken: dict[int, Kind] = {}  # each group's part last taken by its key (D-508)
         self.pick: Pick = NOTHING  # what Select has picked, in the order clicked (D-402)
         self.cursor: Cell | None = None  # the keyboard's cell: the arrows move it, Enter clicks
         self.wire_chain: Chain | None = None  # Wire held: the parts clicked, wired one to the next
@@ -472,10 +475,32 @@ class BoardScene(Frame):
         return (round(x), round(y))
 
     def _digit(self, k: int) -> None:
-        """A number: that part's button, among the parts the level hands out (D-402)."""
-        kinds = [kind for _, group in MENU_GROUPS for kind in group if kind in self.layout.kinds]
-        if k < len(kinds):
-            self._press_button(kinds[k])
+        """A number: group k's (D-508). Parts of it picked, they become the group's next part;
+        else its part in hand goes on to the next, or the one last taken from it comes back to
+        hand. Parts the level hands out none of, or none left of, are passed over."""
+        if k >= len(MENU_GROUPS):
+            return
+        kinds = [kind for kind in MENU_GROUPS[k][1] if kind in self.layout.kinds]
+        picked = parts(self.pick, self.board)
+        if picked and all(GROUP_OF[n.kind] == k for n in picked):
+            after = picked[0].kind
+        elif isinstance(self.held, Kind) and GROUP_OF[self.held] == k:
+            after = self.held
+        else:
+            after = None
+        if after is None:
+            target = self.last_taken.get(k, kinds[0] if kinds else None)
+            ready = [target] if target in kinds and self.board.remaining(target) != 0 else []
+        else:
+            start = kinds.index(after) + 1 if after in kinds else 0
+            turn = kinds[start:] + kinds[:start]
+            ready = [kind for kind in turn if kind is not after and self.board.remaining(kind) != 0]
+        if not ready:
+            return
+        self.last_taken[k] = ready[0]
+        if after is not None and not picked:
+            self.held = Button.SELECT  # so that the press takes the next, and does not put it down
+        self._press_button(ready[0])
 
     def _shortcut(self, typed: str) -> None:
         key = KEY_ALIASES.get(typed, typed.upper())
@@ -802,7 +827,7 @@ class BoardScene(Frame):
     # The buttons (D-401, D-402)
 
     def shown_buttons(self) -> tuple[Button | Kind, ...]:
-        return shown(self.layout.kinds, self.layout.editor)
+        return shown(self.layout.kinds, self.layout.editor, self.colours)
 
     def button_states(self) -> dict[Button | Kind, State]:
         history = self.history
@@ -825,7 +850,9 @@ class BoardScene(Frame):
             self._edit(EditButton.UNDO if button is Button.UNDO else EditButton.REDO)
             return
         look = self.button_states().get(button)
-        if button is Button.SELECT or look is State.CHOSEN:
+        if button is Button.BRUSH and not (look is State.LIT and self.pick):
+            self._switch_brush()  # nothing picked: the other colour, held (D-503)
+        elif button is Button.SELECT or look is State.CHOSEN:
             self._hold(Button.SELECT)
         elif look is State.GREYED:
             self._refuse(self._why_not(button), None)
@@ -862,6 +889,8 @@ class BoardScene(Frame):
             return "empty cells picked: a part's button fills them"
         if button in TURNING:
             return "nothing here turns: only an eye or a thruster, not the level's"
+        if button is Button.BRUSH:
+            return "nothing here takes paint: only an eye, a Source or a thruster, not the level's"
         if button is Button.WIRE:
             return "a wire runs from a part to another"
         if button is Button.LOCK:
@@ -884,6 +913,12 @@ class BoardScene(Frame):
             for node in loose:
                 if node.facing is not None:
                     self._turn(node.cell, -TURNING[button] if back else TURNING[button])
+        elif button is Button.BRUSH:  # all the brush's colour; all of it already: the other
+            paintable = [n for n in loose if n.kind.paintable]  # colour, the brush too (D-503)
+            if all(n.hue is self.brush for n in paintable):
+                self.brush = self.brush.next
+            for node in paintable:
+                self._paint(node.cell, self.brush)
         elif button is Button.DELETE and self.pick.what is Picked.CELLS:
             for wire in crossing(self.pick, self.board):  # the wires through them (D-431)
                 self._delete_wire(wire)
@@ -949,6 +984,11 @@ class BoardScene(Frame):
                 self._turn(cell, -TURNING[held] if back else TURNING[held])
         elif held is Button.WIRE:
             self._wire_click(cell)
+        elif held is Button.BRUSH:
+            if cell is None or self.board.node_at(cell) is None:
+                self._refuse("click an eye, a Source or a thruster", cell)
+            else:
+                self._paint(cell, self.brush)
 
     def _place_held(self, cell: Cell | None) -> None:
         """The part held placed on `cell`; it stays held while one of its kind is left, then
@@ -1042,7 +1082,7 @@ class BoardScene(Frame):
             return False
         if not self._allowed(Action("place", kind=kind, cell=cell), cell):
             return False
-        result = self.board.place(kind, cell)
+        result = self.board.place(kind, cell, hue=self.brush)  # in Paint's colour (D-503)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
             return False
@@ -1059,6 +1099,23 @@ class BoardScene(Frame):
         if not self._allowed(Action("turn", cell=cell), cell):
             return
         result = self.board.rotate(node.id, steps)
+        if isinstance(result, Refused):
+            self._refuse(result.reason, cell)
+        else:
+            self.message = ""
+
+    def _switch_brush(self) -> None:
+        """Paint pressed with nothing picked: its brush the other colour, and Paint held for the
+        clicks (D-503)."""
+        if self.held is Button.BRUSH or self._hold(Button.BRUSH):
+            self.brush = self.brush.next
+
+    def _paint(self, cell: Cell, hue: Hue) -> None:
+        """Paint the part on `cell` `hue` (D-501)."""
+        node = self.board.node_at(cell)
+        if node is None or not self._allowed(Action("paint", cell=cell), cell):
+            return
+        result = self.board.paint(node.id, hue)
         if isinstance(result, Refused):
             self._refuse(result.reason, cell)
         else:
@@ -1471,5 +1528,11 @@ class BoardScene(Frame):
         return "Click or drag to pick cells or parts. Shift adds. Or press a button."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
+        """Say why not; on a cell of the board, flash it, and put the tool down, Select held, no
+        part left in hand (D-504)."""
+        if cell is not None and self.held is not Button.SELECT:
+            self._drop_gesture()
+            self.held, self.wire_chain = Button.SELECT, None
+            self._update_ghost()
         self.message = reason
         self.flash_cell, self.flash_frames = cell, FLASH_FRAMES

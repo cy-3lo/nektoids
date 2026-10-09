@@ -48,7 +48,9 @@ def test_the_tools_sit_at_n_in_a_row_undo_across_from_sum_and_the_pairs_side_by_
     for left, right in pairs:  # side by side in a row, the first on the left
         (q0, r0), (q1, r1) = PLACES[left], PLACES[right]
         assert r0 == r1 and q1 == q0 + 1
-    assert all(PLACES[k][0] > 0 for k in Kind)  # the parts at E
+    colour = (Kind.TINT, Kind.FILTER, Kind.SWAP)  # under Paint, at W (D-507)
+    assert all(PLACES[k][0] > 0 for k in Kind if k not in colour)  # the other parts at E
+    assert all(PLACES[k][0] < 0 for k in colour)
     assert all(PLACES[b][0] < 0 for b in (Button.TURN_LEFT, Button.TURN_RIGHT, Button.WIRE))
 
 
@@ -76,11 +78,16 @@ def test_a_click_finds_the_button_under_it_and_nothing_between_or_off_them():
     assert button_at(level, view.size, view.origin, (x, y)) is None  # not shown: an empty place
 
 
-def test_each_button_has_its_own_key():
+def test_each_tool_has_its_own_key_and_each_group_of_parts_a_number():
     kinds = frozenset(Kind)
-    keys = [key_of(b, kinds) for b in shown(kinds, editor=True)]
-    assert len(set(keys)) == len(keys)
-    assert key_of(Button.SELECT, kinds) == "S" and key_of(Kind.EYE, kinds) == "1"
+    tools = [key_of(b, kinds) for b in shown(kinds, editor=True) if isinstance(b, Button)]
+    numbers = {key_of(k, kinds) for k in kinds}
+    assert len(set(tools)) == len(tools) and not numbers & set(tools)
+    assert key_of(Button.SELECT, kinds) == "S" and key_of(Button.BRUSH, kinds) == "B"  # D-508
+    assert key_of(Kind.EYE, kinds) == key_of(Kind.SOURCE, kinds) == "1"
+    assert [key_of(k, kinds) for k in (Kind.THRUSTER, Kind.SUM, Kind.TINT, Kind.TANK)] == list(
+        "2345"
+    )
 
 
 def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_pick():
@@ -108,10 +115,12 @@ def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_pick()
     assert on_sum[Button.DELETE] is on_sum[Button.WIRE] is on_sum[Kind.DOUBLE] is State.LIT
     assert on_sum[Button.TURN_LEFT] is State.GREYED
     assert on_sum[Kind.EYE] is on_sum[Kind.SUM] is State.PLAIN  # held, for the clicks
-    both = look((0, 0), (1, 0))  # the eye with it: Turn acts on the eye
-    assert both[Button.TURN_RIGHT] is both[Button.DELETE] is State.LIT
+    assert on_sum[Button.BRUSH] is State.GREYED  # an operator takes no paint (D-502)
+    both = look((0, 0), (1, 0))  # the eye with it: Turn and Paint act on the eye
+    assert both[Button.TURN_RIGHT] is both[Button.DELETE] is both[Button.BRUSH] is State.LIT
     board.lock(board.node_at((1, 0)).id)
     assert look()[Button.TURN_LEFT] is State.GREYED  # the only eye is the level's now
+    assert look()[Button.BRUSH] is State.PLAIN  # nothing picked: it switches its colour (D-503)
     assert look(held=Kind.EYE)[Kind.EYE] is State.CHOSEN
 
 
@@ -121,8 +130,8 @@ def test_a_part_may_be_swapped_for_another_of_its_group_left_in_parts_order():
         board.place(k, c)
         for k, c in ((Kind.SUM, (0, 0)), (Kind.EYE, (1, 0)), (Kind.THRUSTER, (2, 0)))
     )
-    operators = (Kind.DOUBLE, Kind.HALVE, Kind.DIFFERENCE, Kind.TANK)  # the Tank too (D-501)
-    assert swaps(board, total.cell, frozenset(Kind)) == operators
+    math = (Kind.DIFFERENCE, Kind.DOUBLE, Kind.HALVE)  # its group's, in Parts' order (D-508)
+    assert swaps(board, total.cell, frozenset(Kind)) == math
     assert swaps(board, eye.cell, frozenset({Kind.EYE, Kind.THRUSTER})) == ()  # no source here
     assert swaps(board, thruster.cell, frozenset(Kind)) == ()  # alone in its group
 
@@ -154,3 +163,13 @@ def test_empty_cells_picked_light_delete_when_a_wire_crosses_them_and_it_takes_t
     alone = states(board, buttons, Button.SELECT, lone, False, False, kinds)
     assert alone[Button.DELETE] is alone[Button.WIRE] is State.PLAIN  # held, the pick dropped
     assert alone[Button.TURN_LEFT] is State.GREYED
+
+
+def test_the_brush_shows_only_on_a_level_that_shows_colour():
+    kinds = frozenset({Kind.EYE, Kind.THRUSTER})  # D-509
+    assert Button.BRUSH in shown(kinds, editor=False)
+    assert Button.BRUSH not in shown(kinds, editor=False, colours=False)
+    assert [b for b in shown(kinds, False, False) if isinstance(b, Kind)] == [
+        Kind.EYE,
+        Kind.THRUSTER,
+    ]

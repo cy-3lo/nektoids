@@ -54,17 +54,21 @@ its decisions taken, when it starts.
 - [x] **Loops on the board** (D-428, brought onto `main` before v1.1). A wire may come back
   round to a part before it, as the dynamics always allowed (D-017). A tank on a loop that
   holds its level, Doubles making up for the fork, comes with the tanks.
-- [ ] **Colours** (D-501). A signal in two channels, (r, b); white is both. Each a PR into the
-  stage, each playable:
+- [ ] **Colours** (D-501 to D-503). A signal in two channels, (a, v): amber and violet; wires
+  and operators neutral, white.
+  Each a PR into the stage, each playable:
   - [ ] Channels inside, nothing seen: the state (N, n, 2), the laws on the last axis, every part
-    white; every shipped level's proof plays the same, positions equal tick by tick.
-  - [ ] Parts painted r, b or w with a Paint button on the Board: eyes, Sources, thrusters
-    (white pushes with the mean); a board's text a version up, reading the old as all white;
+    amber; every shipped level's proof plays the same, positions equal tick by tick.
+  - [ ] Parts painted amber or violet with a Paint button on the Board, its brush's colour
+    switched with nothing picked: eyes, Sources, thrusters, each its own channel; a board's text and a level's word a version up, the old still read;
     undo and redo.
-  - [ ] Lights coloured, r, b or w, in the level's format and the Editor.
-  - [ ] Beads in two hues, a stream a channel, never blended; the hues in the palette.
-  - [ ] Filter and Paint, two operators, painted with the same button; white's laws decided then.
-- [ ] **Levels for memory and colour.** Memory with no schedule, the light hidden by shadows
-  (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to red and
-  flee blue; two lights a colour-blind circuit cannot tell apart; a valve built from parts
+  - [ ] Lights white, amber or violet (D-506): white shines in both channels; in the level's
+    format and word, three keys in the Editor, the rays tinted.
+  - [ ] Beads in two streams, violet half a spacing behind, never blended; a stream's beads 0.5 hex
+    sizes apart at full rate.
+  - [ ] Tint, Filter and Swap (D-507), three operators in rounded squares under Paint; Tint and
+    Filter painted with the same button.
+- [ ] **Levels for memory and colour** (first ones: D-510, chapters 4 Colour and 5 Memory). Memory with no schedule, the light hidden by shadows
+  (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to the violet light
+  and flee the amber one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
   (D-501).

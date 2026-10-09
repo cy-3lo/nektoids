@@ -1,8 +1,9 @@
 {
-  "version": 5,
+  "version": 6,
   "title": "Two lights, four obstacles",
   "spec": "No goal: try any wiring.",
   "author": "@Cy-3LO",
+  "colours": true,
   "start": {"at": [15, 19], "heading": 20},
   "items": [
     {"kind": "light", "at": [28, 24], "power": 8},
@@ -22,7 +23,10 @@
       "sum": null,
       "difference": null,
       "thruster": null,
-      "tank": null
+      "tank": null,
+      "tint": null,
+      "filter": null,
+      "swap": null
     },
     "parts": [],
     "wires": []

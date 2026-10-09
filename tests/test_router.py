@@ -22,7 +22,9 @@ def a_router():
 
 
 AT = {level.title: k for k, level in enumerate(arenas())}  # each level's place on the route
-FIRSTS = {AT[title] for title in ("Wiring", "Fear", "Shadows", "Greed", "Dragster")}  # D-325
+FIRSTS = {
+    AT[t] for t in ("Wiring", "Fear", "Shadows", "Greed", "Violet", "Latch", "Dragster")
+}  # D-325
 
 
 def test_the_game_opens_on_the_first_level_under_its_title_card():
@@ -148,7 +150,11 @@ def test_levels_are_named_by_chapter_and_place():
         "3.3",
         "4.1",
         "4.2",
+        "4.3",
+        "5.1",
+        "",  # made by users: unnumbered (D-510)
         "",
+        "",  # the sandbox
     ]
 
 

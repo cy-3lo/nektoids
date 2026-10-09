@@ -15,16 +15,18 @@ SETTLE = 1500  # ticks: 12 s, long after every lag here has settled
 
 
 def run(title, eyes, ticks=SETTLE, sources=None, start=None):
-    """The state of the board `title` after `ticks` ticks of constant sensors (one agent)."""
+    """The rates (1, n) of the board `title` after `ticks` ticks of constant sensors (one agent),
+    amber: the state's amber channel, its violet checked at 0 (D-503); `start` amber too."""
     scenario = BY_TITLE[title]
     net = Network.from_board(scenario.board)
     if sources is None:
         sources = np.full(len(net.sources), scenario.source_level)
     eyes = np.array([eyes], dtype=float).reshape(1, -1)
-    y = initial_state(net) if start is None else start
+    y = initial_state(net) if start is None else np.stack([start, np.zeros_like(start)], axis=-1)
     for _ in range(ticks):
         y = step(net, y, eyes, DT, sources)
-    return y
+    assert not y[..., 1].any()
+    return y[..., 0]
 
 
 def rates(title, *eyes, sources=None):

@@ -16,9 +16,10 @@ paths:
 - Dynamics (D-017, D-202): every node follows its kind's law (`laws.py`), a state equation
   dy/dt = f(x, y) and an output o = g(y); every jam part relaxes, tau dy/dt = F(x) - y, o = y,
   tau = TAU. One explicit step per fixed sim tick, no longer than any law's `max_dt`; each law
-  owns its step. The state `y` (N, n) belongs to the agent and goes into the hash. Inputs are
-  gathered in a fixed order, never with `@`. The Board rejects cycles for now; the dynamics
-  accept them (a loop is feedback that the state remembers).
+  owns its step. The state `y` (N, n, C) belongs to the agent and goes into the hash: C = 2
+  channels, red and blue, white being both, each following the same laws on its own; a white
+  part reads their mean, `dynamics.white` (D-501). Inputs are gathered in a fixed order, never
+  with `@`. Loops are allowed on the Board (D-428): a loop is feedback that the state remembers.
 - Complexity is one function, `complexity(board) -> int`: the number of parts, locked ones
   included, wires free. The score reads it (D-028); it never changes the body, which stays a
   sphere of radius 1 u (D-045). Do not add a second count.

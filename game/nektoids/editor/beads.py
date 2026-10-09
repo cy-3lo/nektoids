@@ -6,7 +6,9 @@ phase per wire, the fraction of a bead released since the last whole one: phase 
 Bead k sits at (phase + k) * speed / f from the source. A bead leaves the source when the phase
 wraps, and while f is steady the beads move at `speed`; when f changes the spacing follows it at
 once and the phase keeps the pattern continuous, so nothing jumps. Positions are arc lengths in
-hex sizes, so they do not depend on zoom. No randomness. Pure numbers, no pygame.
+hex sizes, so they do not depend on zoom. No randomness. Each phase is a stream of beads: a
+wire carries one a channel (D-502), each starting at its own phase, `starts`. Pure numbers, no
+pygame.
 
 When the flux changes fast the lattice stretches about the source, and beads far from it move
 many times `speed` (and backwards when the flux rises): the pattern is continuous, but it
@@ -18,19 +20,26 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 BEAD_SPEED = 2.1  # hex sizes per second (D-432): about 1.2 cells a second
-BEAD_RATE_AT_FULL = 6.0  # beads a second on a wire at RATE_MAX: 0.35 hex sizes apart (D-416, D-432)
+BEAD_RATE_AT_FULL = 4.2  # beads a second in a stream at RATE_MAX: 0.5 hex sizes apart (D-502)
 
 
 class Beads:
-    def __init__(self, lengths: Sequence[float], speed: float = BEAD_SPEED):
-        """lengths: length of each wire [hex sizes]."""
+    def __init__(
+        self,
+        lengths: Sequence[float],
+        speed: float = BEAD_SPEED,
+        starts: Sequence[float] | None = None,
+    ):
+        """lengths: length of each stream's wire [hex sizes]; starts: each stream's phase at the
+        start, in [0, 1), all 0 if None."""
         self.lengths = list(lengths)
         self.speed = speed
+        self.starts = [0.0] * len(self.lengths) if starts is None else list(starts)
         self.phase: list[float] = []  # fraction of a bead released on each wire, in [0, 1)
         self.reset()
 
     def reset(self) -> None:
-        self.phase = [0.0] * len(self.lengths)
+        self.phase = list(self.starts)
 
     def step(self, fluxes: Sequence[float], dt: float) -> None:
         """Advance every phase by `dt` seconds of the fluxes [beads/s]."""
@@ -59,8 +68,13 @@ class Travelling(Beads):
     as a front, and no bead ever goes backwards. A part's entry runs them; on a steady wire they
     sit where `Beads` would put them."""
 
-    def __init__(self, lengths: Sequence[float], speed: float = BEAD_SPEED):
-        super().__init__(lengths, speed)
+    def __init__(
+        self,
+        lengths: Sequence[float],
+        speed: float = BEAD_SPEED,
+        starts: Sequence[float] | None = None,
+    ):
+        super().__init__(lengths, speed, starts)
         self.out: list[list[float]] = [[] for _ in self.lengths]  # each wire's beads, in order
 
     def fill(self, fluxes: Sequence[float]) -> None:

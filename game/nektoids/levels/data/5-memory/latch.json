@@ -1,0 +1,18 @@
+{
+  "version": 6,
+  "title": "Latch",
+  "spec": "The light fades behind you. Keep going all the way to the ring.",
+  "author": "@Cy-3LO",
+  "colours": true,
+  "start": {"at": [12, 15], "heading": 0},
+  "items": [{"kind": "light", "at": [8, 15], "power": 3}, {"kind": "mark", "at": [44, 15], "radius": 3}],
+  "board": {
+    "zone": 19,
+    "stock": {"eye": 1, "thruster": 1, "double": 1, "tank": 1},
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 30,
+  "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
+  "proof": {"board": "1jrxjveRNAzry70C", "ticks": 2522, "parts": 4}
+}

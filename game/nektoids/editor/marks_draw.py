@@ -11,7 +11,19 @@ import pygame
 
 from nektoids.editor.arena_view import ArenaView
 from nektoids.editor.marks import AtWork
-from nektoids.editor.palette import EYE_FACE, FLAME, INTAKE, MOTION, PART_OUTLINE, THRUSTER_BACK
+from nektoids.editor.palette import (
+    EYE_FACE,
+    FLAME,
+    INTAKE,
+    MOTION,
+    PAINT_AMBER,
+    PAINT_VIOLET,
+    PART_OUTLINE,
+    THRUSTER_BACK,
+)
+from nektoids.graph.kinds import Hue
+
+OUTLINE_OF = {Hue.AMBER: PAINT_AMBER, Hue.VIOLET: PAINT_VIOLET}  # an outline by its paint
 
 SPECK = 3  # a speck's side, and the pitch of the grid the specks sit on [px]
 FACE_WIDTH = 2  # an eye's face, a thruster's back [px]
@@ -32,11 +44,15 @@ def draw_over(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
 
 
 def draw_parts(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
-    """Each part's outline, and its face in its accent."""
-    for outlines, colour in ((body.eyes, EYE_FACE), (body.thrusters, THRUSTER_BACK)):
-        for outline in outlines:
+    """Each part's outline in its paint (D-503), and its face in its accent."""
+    for outlines, hues, colour in (
+        (body.eyes, body.eye_hues, EYE_FACE),
+        (body.thrusters, body.thruster_hues, THRUSTER_BACK),
+    ):
+        for k, outline in enumerate(outlines):
             points = _on_screen(view, outline)
-            pygame.draw.aalines(screen, PART_OUTLINE, False, points)
+            ink = PART_OUTLINE if hues is None else OUTLINE_OF[hues[k]]  # no colour shown (D-509)
+            pygame.draw.aalines(screen, ink, False, points)
             pygame.draw.aaline(screen, colour, points[-1], points[0], FACE_WIDTH)
 
 

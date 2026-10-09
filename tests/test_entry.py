@@ -69,7 +69,7 @@ def test_only_the_eyes_own_reading_rises_and_falls():
 def test_double_gives_two_beads_for_one_and_halve_one_for_two_in_time(kind):
     entry = Entry(kind)
     beads, ratio = entry.circuit.beads, KEEP_TIME[kind]
-    flux = entry.circuit.flux
+    flux = entry.circuit.flux[:, 0]  # amber: the entries' parts are (D-503)
     assert flux[1] == pytest.approx(ratio * flux[0])
     arrives = beads.lengths[0] * BEAD_RATE_AT_FULL * float(flux[0]) / beads.speed
     every = min(1.0, ratio)  # ÷2: a bead leaves with every other arrival, either of the two

@@ -32,9 +32,9 @@ EDITOR_ROW = (  # the sandbox's row in Chapters, under Build your level: its nam
 
 def level_number(index: int) -> str:
     """The number of the route's level at `index`: its chapter's, then its place there, "2.1"
-    (D-325)."""
+    (D-325); none for a level made by users, in no real chapter (D-510)."""
     chapter, k = locate(index)
-    return f"{chapter.number}.{k + 1}"
+    return "" if chapter.number is None else f"{chapter.number}.{k + 1}"
 
 
 def captioned(label: str, title: str) -> str:
@@ -42,12 +42,14 @@ def captioned(label: str, title: str) -> str:
     sandbox's title alone, or YOUR LEVEL while it has none (D-419)."""
     if label == SANDBOX_LABEL:
         return title or SANDBOX_LABEL
-    return f"{label}. {title}"
+    return f"{label}. {title}" if label else title  # unnumbered, by users: its title (D-510)
 
 
 def level_label(index: int) -> str:
-    """How the route's level at `index` is named on screen, before its title (D-034)."""
-    return f"LEVEL {level_number(index)}"
+    """How the route's level at `index` is named on screen, before its title (D-034); nothing
+    for one made by users (D-510)."""
+    number = level_number(index)
+    return f"LEVEL {number}" if number else ""
 
 
 @dataclass(frozen=True)
@@ -314,7 +316,8 @@ class Router:
         route's order; a level with none has no group, nor has the sandbox."""
         order = sorted(range(len(self.levels)), key=lambda k: k != self.index)
         groups = (
-            WinGroup(k, f"{level_number(k)} {self.levels[k].title}", self.wins(k)) for k in order
+            WinGroup(k, f"{level_number(k)} {self.levels[k].title}".strip(), self.wins(k))
+            for k in order
         )
         return tuple(group for group in groups if group.wins)
 

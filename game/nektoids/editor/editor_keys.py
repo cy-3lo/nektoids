@@ -1,7 +1,8 @@
 """The Editor's buttons (D-410): square keys fixed on the screen, floating over the plane at its
 edges, whatever the drawer and however the plane is panned or zoomed. At the left, two columns
 of tools in pairs: Select and Hand, Bigger and Smaller, Zoom in and out, Undo and Redo, Copy and
-Paste, Cut and Erase all; at the right, the objects: Light, Obstacle, Mark and the Swimmer.
+Paste, Cut and Erase all; at the right, the objects: the Swimmer, a white, an amber and a violet
+light (D-506), Obstacle and Mark.
 
 Each key looks as the Board's buttons do (D-401): chosen, the one in hand; lit, it acts on what
 is picked at once; greyed, it cannot act now: Bigger, Smaller, Cut and Copy with no item picked,
@@ -43,7 +44,7 @@ LEFT = (
     (Key.COPY, Key.PASTE),
     (Key.CUT, Key.ERASE),
 )
-RIGHT = (Piece.START, Piece.LIGHT, Piece.OBSTACLE, Piece.MARK)  # the swimmer first, key 0
+RIGHT = tuple(Piece)  # the swimmer first, key 0; the lights, white, amber, violet (D-506)
 SIZE = 36  # a key's side: its icon as big as the bar's, 22 px [px]
 GAP = 4  # between two keys of a pair [px]
 ROW_GAP = 8  # between two rows [px]
@@ -61,11 +62,13 @@ KEYS = {  # what the tooltips name; an object's is its number
     Key.COPY: "Ctrl+C",
     Key.PASTE: "Ctrl+V",
     Key.CUT: "Del",
-    **{p: str(k) for k, p in enumerate(RIGHT)},  # 0 the swimmer, 1 to 3 the items
+    **{p: str(k) for k, p in enumerate(RIGHT)},  # 0 the swimmer, 1 to 5 the items
 }
 NAMES = {
     **{k: k.value.capitalize() for k in Key},
-    Piece.LIGHT: "Light",
+    Piece.LIGHT: "White light",
+    Piece.AMBER_LIGHT: "Amber light",
+    Piece.VIOLET_LIGHT: "Violet light",
     Piece.OBSTACLE: "Obstacle",
     Piece.MARK: "Mark",
     Piece.START: "Swimmer",

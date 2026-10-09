@@ -19,7 +19,7 @@ from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT
 from nektoids.editor.layout import Rect
 from nektoids.graph.board import Board
-from nektoids.graph.dynamics import initial_state, step
+from nektoids.graph.dynamics import initial_state, shown, step
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
 from nektoids.sim import world
@@ -56,7 +56,7 @@ class Probe:
         self.pos = np.array([[start.x, start.y]], dtype=np.float64)  # (1, 2) [u]
         self.heading = np.array([start.heading])  # (1,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # every body alike (D-045)
-        self.state = initial_state(self.net)  # (1, n), from rest
+        self.state = initial_state(self.net)  # (1, n, C), from rest
         self.ticks = 0  # ticks run: the clock of the specks on Diagnostic's map (D-076)
         self.mount, self.facing = world.parts(self.net, self.net.eyes)
         self._look()
@@ -67,8 +67,8 @@ class Probe:
 
     @property
     def y(self) -> np.ndarray:
-        """Every node's rate now, (n,)."""
-        return self.state[0]
+        """Every node's rate now, (n,), as the Board shows it (`dynamics.shown`, D-501)."""
+        return shown(self.net, self.state)[0]
 
     @property
     def pose(self) -> Pose:
@@ -82,12 +82,12 @@ class Probe:
         ]
 
     def eyes(self) -> np.ndarray:
-        """What each eye sends now, (n_eyes,): the light it reads."""
+        """What each eye reads now, (n_eyes, C): the light in each channel; it sends its own."""
         return self.light.copy()
 
     def tick(self, dt: float = DT) -> None:
         self.state = step(self.net, self.state, self.eyes()[None, :], dt)
-        self.circuit.advance(self.y, dt)
+        self.circuit.advance(self.state[0], dt)
         self.ticks += 1
 
     def place(self, x: float, y: float) -> None:

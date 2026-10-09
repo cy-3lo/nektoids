@@ -2748,3 +2748,96 @@ reading it yet (D-018); no Sink, a part with no wire out being one; the valve st
 Colours do not make a valve, being linear channel by channel, but today's parts do:
 max(0, a − b) = |max(a, b) − b|, with max(a, b) = (a + b + |a − b|)/2, a level's puzzle. Lights
 that change in time leave the stage, so its memory levels hide the light with shadows (D-019).
+
+**D-502 — 2026-10-09 — A signal's two channels are white and red, not red and blue with white both: a part is painted white or red, and reads or sends its own channel only. A wire shows each channel as its own stream of beads, red half a spacing behind white, and a stream at full rate holds 30% fewer beads than D-432's. Three colour operators: Paint, Filter and Swap. Amends D-501, D-432.**
+The physicist's, before the beads: with white both channels, a wire at (0.8, 0.5) has no colour
+anyone can read. A rate is (w, r), each in [0, RATE_MAX]. Everything the game held so far is
+white, (x, 0): the red channel stays at zero, and every level and proof runs bit-identical. An eye
+or a Source sends in the channel of its paint; a thruster pushes with that channel alone, so a red
+signal into a white thruster does nothing: the mean of D-501 goes. The Paint button turns a part
+white or red in turn. Red is accent2's hue, darker, L 0.62, C 0.13: apart from white in grey and
+for colour-blind eyes, the mockups compared against violet. A wire carries two streams, never a
+blend (invariant 6), red half a spacing behind, so that equal rates alternate; at full rate a
+stream's beads are 0.5 hex sizes apart, not 0.35, so that two full streams stay readable. The
+operators: Paint, painted, turns what comes in to its colour, (w, r) to (min(R, w + r), 0) or
+(0, min(R, w + r)), the one law that adds the channels together; Filter, painted, passes its
+colour alone, (w, 0) or (0, r); Swap exchanges them, (r, w). Their names on the board are settled
+when they are built: an operator called Paint beside the Paint button would read as one thing.
+
+**D-503 — 2026-10-09 — The two colours are amber and violet; white is no colour but the neutral: wires and operators. Every eye, Source and thruster is amber or violet, amber unless painted, and every light so far is amber. The Paint button holds a colour, shown on its brush: pressed with parts picked, it paints them that colour; with none, it switches the colour, and is held for the clicks. Amends D-502.**
+The physicist's, from the mockups: with white both a colour and the neutral, a white Sum could not
+be told from a part of the white channel. Now colour marks only what reads or acts in a channel,
+and the parts that carry whatever comes in are grey, as the wires are: the board says by itself
+which parts belong to a channel. A rate is (a, v), amber channel 0 and violet 1, so every level and
+proof runs bit-identical, violet at zero. Amber is drawn lighter than accent2, L 0.80 at hue 75°,
+so that colour-blind eyes tell it from the warning red; violet is L 0.66 at 300°. A part saved
+without a hue is amber. With a brush that holds its colour, a pick of mixed colours comes out of
+one press in one colour, and nothing is left to guess about which.
+
+**D-504 — 2026-10-09 — A refusal on the board puts the tool down: the cell flashes, and Select is held again, no part left in hand. Amends D-402.**
+The physicist's, trying the Board: after a part's button clicked on a cell taken, the part stayed
+in hand, and the next click tried again where the player no longer meant to. A refusal that
+flashes a cell ends the gesture under way and holds Select; one with no cell, a greyed button
+pressed, changes nothing held.
+
+**D-505 — 2026-10-09 — Paint's colour is also the colour new eyes, Sources and thrusters are placed in, and the part buttons show it; a press on parts already all of that colour turns them, and the brush, to the other; with nothing picked Paint is never greyed. Amends D-503.**
+The physicist's, trying Paint: the brush and the part buttons are one colour, the one a part is
+placed in, so that switching the brush switches what the hand lays down. Picked parts of mixed
+colours take the brush's; if they are all of it already, the press means the other colour, for
+them and the brush. With nothing picked, Paint always switches its colour, so it is never
+greyed, and its icon is always in its colour.
+
+**D-506 — 2026-10-09 — A light is white, amber or violet: white shines in both channels, so every eye sees it; amber or violet only in its own. Lights are white unless made otherwise, as they always were. The Editor has a key for each: white, amber and violet light, 1 to 3, the obstacle 4 and the mark 5. A light and its rays are drawn in its colour, the rays darker. Amends D-503, D-410.**
+The physicist's: in light, unlike on the board, white has a meaning, (1, 1). D-503 had every
+light amber; white keeps every level as it looked and as it played, an amber eye reading of a
+white light just what it read of every light, bit for bit, and lets a violet eye see the levels'
+lights too. An eye reads in each channel the sum over the lights that shine in it, each with its
+1/r, its cosine and its shadows. A level's file writes `"colour"` for an amber or violet light
+alone, as version 6 of the format; one of version 5 is read as it is, its lights white. A level's
+word holds a light's colour (version 32, not yet shipped); one of version 31 reads its lights
+white. Three keys rather than a paint tool in the Editor, for now: a light is placed in its
+colour, and stays it.
+
+**D-507 — 2026-10-09 — Three colour operators, Tint, Filter and Swap, drawn as rounded squares, their buttons in a corner under Paint: Tint over Filter and Swap. Tint and Filter are painted, Swap is neutral. Amends D-401, D-502.**
+The physicist's, from the mockups. Tint sends everything that comes in in its own colour, both
+channels added, (a, v) → (min(R, a + v), 0) amber: the one part that adds the channels together.
+Filter lets its colour alone through, (a, 0); Swap exchanges them, (v, a). Each follows what it
+aims at with the lag every part has (D-017). Tint and Filter are painted with the Paint button and
+placed in its colour, as eyes are; Swap carries both alike, grey. A rounded square, apart from
+the diamond, the thruster's point and the discs. Their buttons sit at W under Paint, the brush
+beside what it colours, so that no other button moves; the parts are no longer all at E. Swap
+takes the name of the Board's old Swap tool, which left with the Wheel (D-401): the tool's
+leftovers go. Their letters on the panels are N, F and W, T and S being the Thruster's and the
+Source's. Every part handed out, as on the sandbox, the Parts drawer scrolls a little; a level's
+fits. For the loop's bound (D-428), a Tint counts twice, both channels into one. The player reads
+no equation: the info box says what each does in words.
+
+**D-508 — 2026-10-09 — The parts come in five groups, a row of buttons each and a number key each, the same on every level: 1 sensors (Eye, Source), 2 actuators (Thruster), 3 math (Sum, Diff, Double, Halve), 4 colour (Tint, Filter, Swap), 5 memory (Tank). A press takes a part of the group in hand, the next the next part. Paint is the Brush, key B. Amends D-068, D-401, D-402, D-505.**
+The physicist's: with fourteen parts, a number a part ran past 9, and the keys changed from level
+to level. Now a key is a group's: pressed, it takes the part last taken from that group, the first
+at the start; pressed again, the next, round the group, past the parts the level hands out none
+of or none left of. Parts of the group picked, it turns them into the group's next part, the swap
+of D-068, which keeps to a group now: a Sum swaps for a Diff, not for a Tank. The Parts drawer
+shows the same groups; every part handed out, as on the sandbox, it scrolls. On the Board, Eye
+and Source side by side, the Thruster under them, the Tank under it; the math stays a block,
+Double and Halve over Sum and Diff, and the colour operators stay under the Brush. A tool's key is
+its first letter: Paint becomes the Brush, B, so that C does not read as the colour group's.
+
+**D-509 — 2026-10-09 — A level shows colour only if its file says so, `"colours": true`: the sandbox, the levels made by players and the chapters of colour and memory. Elsewhere there is no Brush, and parts, beads and meters look as they did before colour. Amends D-503, D-508.**
+The physicist's: the chapters made before colour teach what they always taught, and amber parts
+in them would raise a question they never answer. Their parts are amber all the same, and play as
+they did, bit for bit; they are only drawn white. Explicit rather than guessed from the level's
+items: the levels made by players have no colour in them yet, and show it, for their makers to
+use. A level read from a shared text shows colour, being made in the Editor, as does every level
+the Editor makes, from the sandbox's. Part of format 6, not yet shipped.
+
+**D-510 — 2026-10-09 — Two chapters before the levels made by users: 4 Colour (Violet, Two colours, Crossed colours) and 5 Memory (Latch). Made by users is no real chapter and has no number: its levels are captioned by their titles alone. Amends D-325, D-348.**
+The physicist's. Violet teaches the Brush, eyes and thrusters both to paint; Two colours that an
+eye sees its colour alone, an amber light in the way of a violet one; Crossed colours a Swap or a
+Tint of the right colour, the level's eyes amber and its thrusters violet, both locked. Latch
+asks for memory: a weak light behind, a ring far ahead, and no Sum handed out, so that the one
+loop that holds its level runs through the Tank, a Double sharing its output between the Tank
+and the thruster; fleeing, or a Tank or a Double alone, runs out of time. Each was checked by
+simulation, its intended board winning and the obvious wrong ones not, and ships with that proof.
+Both chapters show colour (D-509). Violet gives PRISM, Two colours INDIGO; a chapter's last gives
+none (D-325). The folder of the levels made by users loses its number.

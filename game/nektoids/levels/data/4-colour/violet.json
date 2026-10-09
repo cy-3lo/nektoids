@@ -1,0 +1,14 @@
+{
+  "version": 6,
+  "title": "Violet",
+  "spec": "Touch the violet light. Your eyes see amber: paint them with the Brush.",
+  "author": "@Cy-3LO",
+  "colours": true,
+  "start": {"at": [9, 15], "heading": 0},
+  "items": [{"kind": "light", "at": [27, 21], "power": 8, "colour": "violet"}],
+  "board": {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []},
+  "time_limit": 20,
+  "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
+  "passkey": "PRISM",
+  "proof": {"board": "UVEuc1nySSiNLgP", "ticks": 549, "parts": 4}
+}

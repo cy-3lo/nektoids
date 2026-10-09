@@ -126,10 +126,18 @@ def _encode(v: float) -> float:
 
 
 # The game's palette: Slate and evergreen, with a red. This line alone changes every colour.
+ACCENT2_HUE = 25.0
 PALETTE = make_palette(
-    tint_hue=273.0, tint_chroma=0.022, accent1_hue=187.0, accent2_hue=25.0, light_hue=85.0
+    tint_hue=273.0, tint_chroma=0.022, accent1_hue=187.0, accent2_hue=ACCENT2_HUE, light_hue=85.0
 )
 P = PALETTE
+# The signal's two colours (D-503), on the body of a part that reads or acts in a channel: amber,
+# lighter than accent2 so that colour-blind eyes tell it from the warning red; violet, darker,
+# apart from amber and from the neutral parts even in grey. Their beads, a little brighter.
+PAINT_AMBER = oklch(0.80, 0.13, 75.0)
+PAINT_VIOLET = oklch(0.66, 0.14, 300.0)
+BEAD_AMBER = oklch(0.84, 0.14, 75.0)
+BEAD_VIOLET = oklch(0.72, 0.15, 300.0)
 
 # Every view
 BACKGROUND = P.base
@@ -175,7 +183,7 @@ GRID_LINE = mix(
     P.line, P.dim, 0.5
 )  # the zone's cells: lighter than the buttons' ground, not to mix with them
 BODY_OUTLINE = P.raised  # the swimmer's symbol behind the board, a shade under the grid
-COMPONENT = P.parts
+COMPONENT = P.parts  # a neutral part's body: an operator's (D-503)
 LOCK_RING = mix(P.parts, P.bright, 0.4)
 PIN_RING = P.accent1.mid  # a part the player locked: theirs, in the accent (D-406)
 EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)
@@ -199,7 +207,11 @@ WARN = P.accent2.mid  # the developer view's warnings
 # The arena
 SHADOW = P.deep  # the open plane, and a reading of 0 on the light map
 LIGHT = P.bright  # a light, and a reading of RATE_MAX
-RAY = mix(P.deep, P.line, 0.75)  # every ray, whatever its light, a shade lighter (D-342)
+RAY = mix(P.deep, P.line, 0.75)  # a white light's rays, a shade lighter than the plane (D-342)
+LIGHT_AMBER = BEAD_AMBER  # an amber light's disc (D-506); its rays, the same, darker
+LIGHT_VIOLET = BEAD_VIOLET
+RAY_AMBER = oklch(0.40, 0.07, 75.0)
+RAY_VIOLET = oklch(0.38, 0.08, 300.0)
 OBSTACLE = mix(P.line, P.muted, 0.5)
 BODY = P.accent1.bright  # the selected swimmer
 BODY_UNSELECTED = P.dim

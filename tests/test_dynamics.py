@@ -3,19 +3,11 @@ import hashlib
 import numpy as np
 import pytest
 
+from nektoids.graph import dynamics
 from nektoids.graph.board import Board, Kind
-from nektoids.graph.dynamics import (
-    RATE_MAX,
-    SOURCE_RATE,
-    TAU,
-    given_rates,
-    initial_state,
-    max_dt,
-    step,
-    thrust_rates,
-    wire_flux,
-)
+from nektoids.graph.dynamics import CHANNELS, RATE_MAX, SOURCE_RATE, TAU, max_dt, wire_flux
 from nektoids.graph.hexgrid import offset_rect
+from nektoids.graph.kinds import Hue
 from nektoids.graph.network import Network, abs_coupling, contraction_factor
 
 EYE, SRC, DBL, HLV, SUM, DIF, THR = (
@@ -31,6 +23,41 @@ KINDS = [EYE, SRC, DBL, HLV, SUM, DIF, THR]
 GAINS = {DBL: 2.0, HLV: 0.5, SUM: 1.0, DIF: 1.0, THR: 1.0}
 DT = 1 / 120  # the tick of the simulation [s]
 H = DT / TAU  # 1/2: the step of the lag
+
+
+A, V = Hue.AMBER.channel, Hue.VIOLET.channel
+
+
+def both(y):
+    """Amber rates (N, n) as the state holds them, (N, n, C): violet at 0."""
+    y = np.asarray(y, dtype=float)
+    return np.stack([y, np.zeros_like(y)], axis=-1)
+
+
+def one(y):
+    """The amber rates (N, n) of a state (N, n, C), its violet checked at 0 (D-503)."""
+    assert not y[..., V].any()
+    return y[..., A]
+
+
+# The tests below run the dynamics in amber, as every level is today (D-503): on rates (N, n),
+# through the state's amber channel, every step checked to leave violet at 0.
+
+
+def initial_state(net, agents=1):
+    return one(dynamics.initial_state(net, agents))
+
+
+def step(net, y, eyes, dt, sources=None):
+    return one(dynamics.step(net, both(y), eyes, dt, sources))
+
+
+def given_rates(net, eyes, sources=None):
+    return one(dynamics.given_rates(net, eyes, sources))
+
+
+def thrust_rates(net, y):
+    return one(dynamics.thrust_rates(net, both(y)))
 
 
 def eyes_row(*values):
@@ -270,6 +297,71 @@ def test_random_dags_relax_to_what_an_independent_evaluator_gives():
         y = relax(net, eyes, sources, ticks=300)  # 13 levels at h = 1/2 are settled long before
         expected = reference(kinds, edges, eyes[0], sources)
         np.testing.assert_allclose(y[0], expected, rtol=1e-9, atol=1e-12)
+
+
+def test_each_channel_runs_as_an_amber_run_of_its_own_sensors_bit_for_bit():
+    rng = np.random.default_rng(11)  # D-503: no law of these mixes amber and violet
+    for _ in range(60):
+        kinds, edges = random_graph(rng, int(rng.integers(1, 14)), loops=True)
+        kinds = [Kind.TANK if k is DBL and rng.random() < 0.3 else k for k in kinds]
+        net = Network.from_edges(kinds, edges)
+        amber, violet = (rng.uniform(0.0, RATE_MAX, size=(1, net.n)) for _ in range(2))
+        given = np.stack([amber, violet], axis=-1)  # each sensor's rate in each channel
+        y = dynamics.initial_state(net)
+        alone = {A: initial_state(net), V: initial_state(net)}
+        for _ in range(200):
+            y = dynamics.step_given(net, y, given, DT)
+            for c, rates in ((A, amber), (V, violet)):
+                alone[c] = one(dynamics.step_given(net, both(alone[c]), both(rates), DT))
+        assert np.array_equal(y[..., A], alone[A]) and np.array_equal(y[..., V], alone[V])
+
+
+def test_a_violet_source_leaves_amber_dark_and_a_violet_eye_sees_no_amber_light():
+    kinds = [SRC, SUM, Kind.TANK, DIF, DBL, THR, EYE]
+    edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 1), (4, 5)]
+    hues = [Hue.VIOLET, *[Hue.AMBER] * 4, Hue.VIOLET, Hue.VIOLET]
+    net = Network.from_edges(kinds, edges, hues=hues)
+    y = dynamics.initial_state(net)
+    for _ in range(600):
+        y = dynamics.step(net, y, eyes_row(0.9), DT)  # amber light on the violet eye
+    assert y[0, :, V].max() > 0.1 and not y[0, :, A].any()
+    assert y[0, 6].tolist() == [0.0, 0.0]  # the violet eye reads nothing
+    assert dynamics.painted(net, y, net.thrusters)[0, 0] == y[0, 5, V]  # it pushes with violet
+
+
+@pytest.mark.parametrize(
+    "kind, hue, settles",  # (amber, violet) in, (amber, violet) out (D-507)
+    [
+        (Kind.TINT, Hue.VIOLET, [0.0, 0.7]),  # all of it into its colour
+        (Kind.TINT, Hue.AMBER, [0.7, 0.0]),
+        (Kind.FILTER, Hue.AMBER, [0.3, 0.0]),  # its colour alone through
+        (Kind.FILTER, Hue.VIOLET, [0.0, 0.4]),
+        (Kind.SWAP, Hue.AMBER, [0.4, 0.3]),  # exchanged, whatever its paint
+    ],
+)
+def test_the_colour_operators_act_across_the_channels(kind, hue, settles):
+    net = Network.from_edges([SRC, kind], [(0, 1)], hues=[Hue.AMBER, hue])
+    given = np.zeros((1, 2, CHANNELS))
+    given[0, 0] = [0.3, 0.4]  # a source sending both, as a Sum of two colours would
+    y = dynamics.initial_state(net)
+    for _ in range(200):
+        y = dynamics.step_given(net, y, given, DT)
+    assert y[0, 1].tolist() == pytest.approx(settles, abs=1e-12)
+
+
+def test_a_tint_caps_its_colour_and_two_tints_of_two_colours_step_apart():
+    net = Network.from_edges(
+        [SRC, Kind.TINT, Kind.TINT], [(0, 1), (0, 2)], hues=[Hue.AMBER, Hue.AMBER, Hue.VIOLET]
+    )
+    assert len(net.laws) == 2  # one law a colour (D-507)
+    given = np.zeros((1, 3, CHANNELS))
+    given[0, 0] = [1.0, 1.0]  # shared between two wires: 0.5 each way, in each channel
+    y = dynamics.initial_state(net)
+    for _ in range(200):
+        y = dynamics.step_given(net, y, given, DT)
+    assert y[0, 1].tolist() == pytest.approx([1.0, 0.0]) and y[0, 2].tolist() == pytest.approx(
+        [0.0, 1.0]
+    )
 
 
 # Braitenberg

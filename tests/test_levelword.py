@@ -13,6 +13,7 @@ from nektoids.levels import levelword, making, objectives
 from nektoids.levels.arenas import arenas, sandbox
 from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.levelword import from_word, read_shared, to_shared, to_word
+from nektoids.sim.arena import Colour
 
 LEVELS = {level.title: level for level in (*arenas(), sandbox())}
 DRAGSTER = LEVELS["Dragster"]
@@ -20,11 +21,12 @@ DRAGSTER = LEVELS["Dragster"]
 
 def _played(level: Level) -> Level:
     """What the word and the lines hold of a level: neither its board's free parts and wires,
-    nor a part it hands out none of, nor its tutorial, passkey or proof."""
+    nor a part it hands out none of, nor its tutorial, passkey or proof; read back, it shows
+    colour, as every level made in the Editor does (D-509)."""
     board = dict(level.board)
     board["stock"] = {kind: n for kind, n in board["stock"].items() if n != 0}
     board["parts"], board["wires"] = [p for p in board["parts"] if p["locked"]], []
-    return replace(level, board=board, tutorial=None, passkey=None, proof=None)
+    return replace(level, board=board, tutorial=None, passkey=None, proof=None, colours=True)
 
 
 @pytest.mark.parametrize("level", LEVELS.values(), ids=lambda level: level.title)
@@ -32,6 +34,25 @@ def test_every_shipped_level_is_shared_and_read_back_as_it_is_played(level):
     text = to_shared(level)
     assert _played(read_shared(text)) == _played(level)
     assert len(to_word(level)) <= 40  # Orbit's, 35, the longest
+
+
+@pytest.mark.parametrize(
+    "title, word",  # as v1.1 wrote them, before the Tank and the hues (D-501)
+    [("Fear", "ba9FDD6LtkJyk40FsuZaZ9m8Fx"), ("Aggression", "1RpbHBm8yv94r6vrUP3CkBu")],
+)
+def test_a_word_of_version_31_still_reads_as_it_was_written(title, word):
+    assert from_word(word)[0] == from_word(to_word(LEVELS[title]))[0]
+
+
+def test_a_level_placing_painted_parts_reads_back_painted():
+    level = LEVELS["Fear"]
+    board = dict(level.board)
+    board["parts"] = [
+        {**part, "hue": "violet"} if part["locked"] else part for part in level.board["parts"]
+    ]
+    painted = replace(level, board=board)
+    parts = from_word(to_word(painted))[0].board["parts"]
+    assert parts and all(part["hue"] == "violet" for part in parts)
 
 
 def test_a_made_level_far_from_the_origin_with_every_kind_of_item_and_goal_reads_back():
@@ -118,3 +139,14 @@ def test_the_words_ranges_are_the_editors():
         assert (levelword.SETTINGS[0], levelword.SETTINGS[-1]) == (scale.lo, scale.hi)
     seconds = objectives.SECONDS
     assert (levelword.STAYS[0], levelword.STAYS[-1]) == (seconds.lo, seconds.hi)
+
+
+def test_a_coloured_light_reads_back_coloured():
+    level = LEVELS["Fear"]  # D-506
+    lit = [
+        replace(item, colour=Colour.VIOLET) if item.kind is ItemKind.LIGHT else item
+        for item in level.items
+    ]
+    coloured = replace(level, items=tuple(lit))
+    items = from_word(to_word(coloured))[0].items
+    assert [item.colour for item in items if item.kind is ItemKind.LIGHT] == [Colour.VIOLET]

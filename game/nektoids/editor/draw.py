@@ -113,6 +113,8 @@ from nektoids.editor.palette import (
     BACKGROUND,
     BAR,
     BEAD,
+    BEAD_AMBER,
+    BEAD_VIOLET,
     BODY,
     BODY_OUTLINE,
     BUTTON,
@@ -141,6 +143,8 @@ from nektoids.editor.palette import (
     KEY_GREYED,
     KEY_LIGHT,
     LIGHT,
+    LIGHT_AMBER,
+    LIGHT_VIOLET,
     LIT,
     LOCK_RING,
     MARK,
@@ -148,6 +152,8 @@ from nektoids.editor.palette import (
     OBSTACLE,
     OUTSIDE,
     OUTSIDE_LINE,
+    PAINT_AMBER,
+    PAINT_VIOLET,
     PANEL,
     PIN_RING,
     REFUSED,
@@ -172,11 +178,11 @@ from nektoids.editor.router import level_label
 from nektoids.editor.scene import BoardScene
 from nektoids.editor.streams import DIAGNOSTIC_REACH
 from nektoids.editor.textfield import shown_from
-from nektoids.graph.board import Board, Kind, Refused
+from nektoids.graph.board import Board, Hue, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Colour
 
 TITLE_SIZE = 24  # [px] a drawer's title: its headings are 20 (D-420)
 
@@ -187,7 +193,6 @@ TIP = {
     Tool.TURN_RIGHT: "Turn right",
     Tool.MOVE: "Move a part",
     Tool.DELETE: "Delete",
-    Tool.SWAP: "Swap for another part",
     ViewButton.ZOOM_IN: "Zoom in",
     ViewButton.ZOOM_OUT: "Zoom out",
     ViewButton.PAN: "Move the view",
@@ -248,7 +253,6 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     Tool.DELETE: "Delete",
     Tool.TURN_LEFT: "Turn left",
     Tool.TURN_RIGHT: "Turn right",
-    Tool.SWAP: "Swap",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
     FileButton.SAVE: "Copy a board",
@@ -275,6 +279,10 @@ MENU_ANGLE = {kind: 90.0 for kind in Kind if kind.default_facing is not None}
 WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever the zoom [px]
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
+BODY_OF = {Hue.AMBER: PAINT_AMBER, Hue.VIOLET: PAINT_VIOLET}  # a painted part's body (D-503)
+BEAD_OF = {Hue.AMBER: BEAD_AMBER, Hue.VIOLET: BEAD_VIOLET}  # a bead of each channel
+LIGHT_OF = {Colour.WHITE: LIGHT, Colour.AMBER: LIGHT_AMBER, Colour.VIOLET: LIGHT_VIOLET}  # D-506
+BEAD_LEAST = 3  # a bead's radius, however small the circuit is drawn [px]
 FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 16  # a menu row's info disc [px]
 INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit under it (D-094)
@@ -344,7 +352,8 @@ def draw(
     if scene.dragging and scene.in_hand is not None:  # a part's row dragged from Parts
         size, kind = scene.view.size, scene.in_hand
         angle = placed_angle(kind, kind.default_facing)  # as it will land
-        draw_part(screen, fonts, kind, angle, scene.mouse, size, locked=False)
+        hue, colours = scene.brush, scene.colours
+        draw_part(screen, fonts, kind, angle, scene.mouse, size, False, hue=hue, colours=colours)
 
 
 # Board
@@ -413,6 +422,8 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             node.locked,
             fill,
             pinned=node.pinned,
+            hue=node.hue,
+            colours=scene.colours,
         )
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
@@ -491,11 +502,22 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
         if isinstance(b, Kind):
             fill, face = (GREYED, GREYED_FACE) if greyed else (None, None)
             angle = placed_angle(b, b.default_facing)
-            draw_part(screen, fonts, b, angle, at, size - PART_SMALLER, False, fill, face)
-        else:
-            fonts.icons.draw(
-                screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), GREYED if greyed else TEXT
+            draw_part(  # in the Brush's colour, as it will be placed (D-503, D-509)
+                screen,
+                fonts,
+                b,
+                angle,
+                at,
+                size - PART_SMALLER,
+                False,
+                fill,
+                face,
+                hue=scene.brush,
+                colours=scene.colours,
             )
+        else:
+            ink = BODY_OF[scene.brush] if b is Button.BRUSH else GREYED if greyed else TEXT
+            fonts.icons.draw(screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), ink)
     for b, centre in places.items():  # a tutorial's target, pulsing (D-337)
         if f"button:{b.value}" in scene.lit:
             pygame.draw.polygon(screen, scene.lit_ink, hexagon(centre, key_size), 3)
@@ -597,9 +619,13 @@ def draw_part(
     face=None,
     pinned: bool = False,
     level: float | None = None,
+    hue: Hue = Hue.AMBER,
+    colours: bool = True,
 ):
-    """A part, and over its fill, if `level` is given, how full it is: a tank's (D-501)."""
-    fill = fill or COMPONENT
+    """A part, its body in its paint, `hue`, if it is painted, else neutral (D-503); on a level
+    that shows no colour, as every part was before (D-509). Over its fill, if `level` is given,
+    how full it is: a tank's."""
+    fill = fill or (BODY_OF[hue] if kind.paintable and colours else COMPONENT)
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if level is not None and (filled := filled_to(outline, level / RATE_MAX)):
@@ -806,10 +832,9 @@ def draw_level_map(
         for mark in level.marks:  # D-306
             centre = view.to_screen(*mark.at)
             pygame.draw.circle(screen, MARK, centre, max(2.0, mark.value * view.scale), 1)
-        for light in arena.lights:
-            pygame.draw.circle(
-                screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
-            )
+        for light in arena.lights:  # in its colour (D-506)
+            centre, radius = view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
+            pygame.draw.circle(screen, LIGHT_OF[light.colour], centre, radius)
         x, y, heading = pose
         if body is not None:
             draw_under(screen, view, body)
@@ -863,7 +888,8 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         circuit = probe.circuit
         screen.set_clip(DIAGNOSTIC_BODY)
         draw_body(screen, circuit.board.cells, circuit.view.size, circuit.view.origin)
-        draw_working(screen, circuit, probe.y, probe.ticks // TICKS_PER_FRAME, fonts)
+        frame = probe.ticks // TICKS_PER_FRAME
+        draw_working(screen, circuit, probe.y, frame, fonts, scene.colours)
         screen.set_clip(None)
     left, width = DIAGNOSTIC_MAP[0], DIAGNOSTIC_MAP[2]  # the active board's, then the level's
     pygame.draw.line(screen, DIVIDER, (left, DIAGNOSTIC_RULE), (left + width, DIAGNOSTIC_RULE))
@@ -874,7 +900,15 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         cells = probe.circuit.board.cells
         stretch = stretch_at(view.scale, BASE_RADIUS)
         body = at_work(
-            level.arena, probe.net, cells, probe.y, probe.pose, BASE_RADIUS, frame, stretch=stretch
+            level.arena,
+            probe.net,
+            cells,
+            probe.state[0],
+            probe.pose,
+            BASE_RADIUS,
+            frame,
+            stretch=stretch,
+            colours=level.colours,
         )
         draw_level_map(screen, level, area, probe.pose, view=view, body=body)
     else:
@@ -1161,7 +1195,19 @@ def draw_row(
     slot = (box.left + 20, box.centery)
     if part is not None:
         fill = GREYED if greyed else None
-        draw_part(screen, fonts, part, MENU_ANGLE.get(part), slot, 24, False, fill)
+        hue = getattr(scene, "brush", Hue.AMBER)  # the Board's Brush colour (D-503, D-509)
+        draw_part(
+            screen,
+            fonts,
+            part,
+            MENU_ANGLE.get(part),
+            slot,
+            24,
+            False,
+            fill,
+            hue=hue,
+            colours=scene.colours,
+        )
     elif badge is not None:  # in the name's font, so the two sit on one line (D-339)
         label = fonts.name.render(badge, True, DIM_TEXT if greyed else TEXT)
         screen.blit(label, label.get_rect(center=(slot[0], box.centery)))
@@ -1350,13 +1396,16 @@ def draw_info(screen: pygame.Surface, scene: Frame, fonts: Fonts, about: Callabl
         pygame.draw.rect(screen, PANEL, place, border_radius=6)
         inside = screen.subsurface(place)
         draw_streams(inside, ((entry.light(), INTAKE), (entry.flames(), FLAME)))
-        draw_circuit(inside, entry.circuit, entry.y, fonts, plain=True, meters=False)
+        colours = scene.colours
+        draw_circuit(
+            inside, entry.circuit, entry.y, fonts, plain=True, meters=False, colours=colours
+        )
 
 
 def _about(scene: BoardScene, what: object) -> tuple[str, tuple[str, ...]]:
     """What the Board's info boxes say: a part's entry, a win, or what a row does."""
     if isinstance(what, Kind):
-        return NAME[what], tuple(info(what))
+        return NAME[what], tuple(info(what, scene.colours))
     if isinstance(what, WinRow):
         group = scene.wins[what.group]
         won = group.wins[what.index]
@@ -1411,7 +1460,12 @@ def cached_text(font: pygame.font.Font, text: str, colour: tuple[int, int, int])
 
 
 def draw_working(
-    screen: pygame.Surface, circuit: Circuit, y: np.ndarray, frame: int, fonts: Fonts
+    screen: pygame.Surface,
+    circuit: Circuit,
+    y: np.ndarray,
+    frame: int,
+    fonts: Fonts,
+    colours: bool = True,
 ) -> None:
     """Diagnostic's circuit, the Board's and Run's (D-089, D-407): behind it, faint and short,
     the light each eye draws in and each thruster's flame, as many as the rates; then the
@@ -1419,7 +1473,7 @@ def draw_working(
     light = streams.light(circuit, y, frame, DIAGNOSTIC_REACH, 0)
     flames = streams.flames(circuit, y, frame, DIAGNOSTIC_REACH, 0)
     draw_streams(screen, ((light, INTAKE_FAINT), (flames, FLAME_FAINT)))
-    draw_circuit(screen, circuit, y, fonts, plain=True, meters=False)
+    draw_circuit(screen, circuit, y, fonts, plain=True, meters=False, colours=colours)
 
 
 def draw_streams(screen: pygame.Surface, specks) -> None:
@@ -1437,25 +1491,31 @@ def draw_circuit(
     belt: bool = False,
     plain: bool = False,
     meters: bool = True,
+    colours: bool = True,
 ) -> None:
     """Wires, beads and parts at the rates y (n,): the beads, and a level meter by each eye and
     thruster unless not `meters`, show the rates; the parts keep their colour (D-052). Unless
-    `plain`, every part has its name and its rate as a number, and every thruster a bar."""
-    _draw_wires(screen, circuit, belt)
-    _draw_parts(screen, circuit, y, fonts, plain, meters)
+    `plain`, every part has its name and its rate as a number, and every thruster a bar. Without
+    `colours`, every bead and part as before colour (D-509)."""
+    _draw_wires(screen, circuit, belt, colours)
+    _draw_parts(screen, circuit, y, fonts, plain, meters, colours)
 
 
-def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
+def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool, colours: bool) -> None:
     view = circuit.view
-    radius = max(2, round(BEAD_RADIUS * view.size))
+    radius = max(BEAD_LEAST, round(BEAD_RADIUS * view.size))
     for k, path in enumerate(circuit.paths):
-        points = wire_points(path, view.size, view.origin)
-        flux = float(circuit.flux[k])
-        pygame.draw.lines(screen, WIRE, False, points, 2)  # one colour: the beads show the rate
+        # on whole pixels, the line and its beads alike: a bead never off its wire by a pixel
+        points = [(round(x), round(y)) for x, y in wire_points(path, view.size, view.origin)]
+        pygame.draw.lines(screen, WIRE, False, points, 2)  # neutral: the beads show the rates
         along = cumulative_lengths(points)
-        for s in circuit.beads.positions(k, BEAD_RATE_AT_FULL / RATE_MAX * flux, belt=belt):
-            x, y = point_at(points, along, s * view.size)
-            pygame.draw.circle(screen, BEAD, (round(x), round(y)), radius)
+        for hue in Hue:  # a stream a channel, in its colour (D-502, D-503)
+            flux = BEAD_RATE_AT_FULL / RATE_MAX * float(circuit.flux[k, hue.channel])
+            for s in circuit.beads.positions(circuit.stream(k, hue.channel), flux, belt=belt):
+                x, y = point_at(points, along, s * view.size)
+                at = (round(x) + 1, round(y) + 1)  # a 2 px line at y covers y and y + 1, a
+                ink = BEAD_OF[hue] if colours else BEAD  # white, on a level without colour
+                pygame.draw.circle(screen, ink, at, radius)  # circle y - r to y + r - 1
 
 
 def _draw_parts(
@@ -1465,6 +1525,7 @@ def _draw_parts(
     fonts: Fonts,
     plain: bool,
     meters: bool = True,
+    colours: bool = True,
 ) -> None:
     net, size = circuit.net, circuit.view.size
     for i, node_id in enumerate(net.ids):
@@ -1473,9 +1534,22 @@ def _draw_parts(
         facing = circuit.board.nodes[node_id].facing
         level = rate if kind is Kind.TANK else None  # its level, drawn as a fill (D-501)
         angle = placed_angle(kind, facing)
-        draw_part(screen, fonts, kind, angle, (cx, cy), size, False, level=level)
-        if meters and kind in (Kind.EYE, Kind.THRUSTER):
-            _draw_meter(screen, (cx + METER_AT * size, cy), size, rate)
+        hue = circuit.board.nodes[node_id].hue
+        draw_part(
+            screen,
+            fonts,
+            kind,
+            angle,
+            (cx, cy),
+            size,
+            False,
+            level=level,
+            hue=hue,
+            colours=colours,
+        )
+        if meters and kind in (Kind.EYE, Kind.THRUSTER):  # its own channel, in its colour
+            ink = BODY_OF[hue] if colours else METER
+            _draw_meter(screen, (cx + METER_AT * size, cy), size, rate, ink)
         if plain:
             continue
         name = cached_text(fonts.small, label(net, i), DIM_TEXT)
@@ -1485,9 +1559,9 @@ def _draw_parts(
 
 
 def _draw_meter(
-    screen: pygame.Surface, centre: tuple[float, float], size: float, rate: float
+    screen: pygame.Surface, centre: tuple[float, float], size: float, rate: float, ink=METER
 ) -> None:
-    """A part's level meter: filled from the foot up to its rate, in the colour of its face."""
+    """A part's level meter: filled from the foot up to its rate, in `ink`: its colour."""
     outline = pygame.Rect(0, 0, METER_WIDTH, round(METER_HEIGHT * size))
     outline.center = (round(centre[0]), round(centre[1]))
     filled = outline.inflate(-4, -4)
@@ -1495,4 +1569,4 @@ def _draw_meter(
     filled.height = round(filled.height * min(1.0, rate / RATE_MAX))
     filled.bottom = foot
     pygame.draw.rect(screen, RULE, outline, 1)
-    pygame.draw.rect(screen, METER, filled)
+    pygame.draw.rect(screen, ink, filled)

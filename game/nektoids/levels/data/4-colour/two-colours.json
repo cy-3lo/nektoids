@@ -1,0 +1,18 @@
+{
+  "version": 6,
+  "title": "Two colours",
+  "spec": "Reach the ring round the violet light; the amber one is in the way.",
+  "author": "@Cy-3LO",
+  "colours": true,
+  "start": {"at": [9, 15], "heading": 0},
+  "items": [
+    {"kind": "light", "at": [19, 18], "power": 8, "colour": "amber"},
+    {"kind": "light", "at": [31, 24], "power": 6, "colour": "violet"},
+    {"kind": "mark", "at": [31, 24], "radius": 4}
+  ],
+  "board": {"zone": 19, "stock": {"eye": 2, "thruster": 2}, "parts": [], "wires": []},
+  "time_limit": 25,
+  "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
+  "passkey": "INDIGO",
+  "proof": {"board": "UVEuc1nySSiNLgP", "ticks": 1036, "parts": 4}
+}

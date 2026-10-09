@@ -28,7 +28,7 @@ def seeing(level):
     """A probe on the level, turned until its eye sees the light."""
     probe = Probe(wired(level), level, AREA)
     for _ in range(12):
-        if probe.eyes()[0] > 0.0:
+        if probe.eyes()[0, 0] > 0.0:  # amber, of the level's white light (D-506)
             return probe
         probe.turn(math.pi / 6)
     raise AssertionError("the eye never sees the light")
@@ -37,7 +37,7 @@ def seeing(level):
 def test_the_eyes_read_the_light_where_the_probe_stands_and_the_circuit_follows():
     assert Probe(wired(LEVELS["Fear"]), LEVELS["Fear"], AREA).pose[:2] == LEVELS["Fear"].start_at
     probe = seeing(LEVELS["Fear"])
-    (sent,) = probe.eyes()
+    (sent,) = probe.eyes()[:, 0]  # its eye amber: it sends the amber channel
     assert 0.0 < sent <= RATE_MAX
     for _ in range(400):
         probe.tick()

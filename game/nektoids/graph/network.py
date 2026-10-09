@@ -18,7 +18,7 @@ import numpy as np
 
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import Cell, to_pixel
-from nektoids.graph.kinds import Category
+from nektoids.graph.kinds import Category, Hue
 from nektoids.graph.laws import Law
 
 SENSOR, ACTUATOR = Category.SENSOR, Category.ACTUATOR
@@ -48,6 +48,7 @@ class Network:
     eyes: np.ndarray  # indices of the eyes, ascending
     sources: np.ndarray  # indices of the sources, ascending
     thrusters: np.ndarray  # indices of the thrusters, ascending
+    hues: tuple[Hue, ...]  # what each node is painted (D-503); amber, unread, if neutral
 
     @property
     def n(self) -> int:
@@ -68,6 +69,7 @@ class Network:
             [board.nodes[i].facing for i in ids],
             ids=ids,
             mount=body_mounts(board.cells, [board.nodes[i].cell for i in ids]),
+            hues=[board.nodes[i].hue for i in ids],
         )
 
     @classmethod
@@ -78,10 +80,12 @@ class Network:
         facing: Sequence[int | None] | None = None,
         ids: Sequence[int] | None = None,
         mount: np.ndarray | None = None,
+        hues: Sequence[Hue] | None = None,
     ) -> Network:
         """Network of nodes 0..n-1 of the given kinds and directed wires (source, target).
 
-        mount: (n, 2) positions on the body in body radii; all at the centre if None.
+        mount: (n, 2) positions on the body in body radii; all at the centre if None. hues: what
+        each node is painted (D-503); all amber if None.
 
         Raises ValueError for what no board could hold: a wire out of range, out of a thruster or
         into a sensor, a duplicate wire, or more inputs than the kind takes. Loops and a wire from
@@ -117,8 +121,9 @@ class Network:
             facing = [kind.default_facing for kind in kinds]
         ids = tuple(range(n)) if ids is None else tuple(ids)
         mount = np.zeros((n, 2)) if mount is None else np.array(mount, dtype=np.float64)
-        if len(ids) != n or len(facing) != n or mount.shape != (n, 2):
-            raise ValueError("ids, facing and mount need one entry per node")
+        hues = (Hue.AMBER,) * n if hues is None else tuple(hues)
+        if len(ids) != n or len(facing) != n or mount.shape != (n, 2) or len(hues) != n:
+            raise ValueError("ids, facing, mount and hues need one entry per node")
 
         def indices(kind: Kind) -> np.ndarray:
             return _frozen(np.array([i for i, k in enumerate(kinds) if k is kind], dtype=np.int64))
@@ -132,33 +137,39 @@ class Network:
             slots=_frozen(slots),
             gain=_frozen(np.array([k.spec.law.slope if k.spec.law else 0.0 for k in kinds])),
             given=_frozen(np.array([kind.spec.law is None for kind in kinds], dtype=bool)),
-            laws=_by_law(kinds, slots),
+            laws=_by_law(kinds, slots, hues),
             senses=tuple((k, indices(k)) for k in Kind if k.category is SENSOR and k in kinds),
             actions=tuple((k, indices(k)) for k in Kind if k.category is ACTUATOR and k in kinds),
             outdeg=_frozen(outdeg),
             eyes=indices(Kind.EYE),
             sources=indices(Kind.SOURCE),
             thrusters=indices(Kind.THRUSTER),
+            hues=hues,
         )
 
 
 def _by_law(
-    kinds: Sequence[Kind], slots: np.ndarray
+    kinds: Sequence[Kind], slots: np.ndarray, hues: Sequence[Hue]
 ) -> tuple[tuple[Law, np.ndarray, np.ndarray], ...]:
-    """Each law of the nodes, with the nodes that follow it, ascending, and their rows of
-    `slots`; laws in the order of the table of kinds, kinds with equal laws together (a Sum and
-    a Thruster). Nodes step independently, each from the same state, so this order cannot change
-    a result; it is fixed all the same (invariant 1)."""
+    """Each law of the nodes, painted as each node is (a Tint's, a Filter's colour, D-507), with
+    the nodes that follow it, ascending, and their rows of `slots`; laws in the order of the table
+    of kinds, then of `Hue`, kinds with equal laws together (a Sum and a Thruster). Nodes step
+    independently, each from the same state, so this order cannot change a result; it is fixed
+    all the same (invariant 1)."""
     laws: list[Law] = []
     members: list[list[int]] = []
     for kind in Kind:
-        nodes = [i for i, k in enumerate(kinds) if k is kind]
-        if kind.spec.law is None or not nodes:
+        if kind.spec.law is None:
             continue
-        if kind.spec.law not in laws:
-            laws.append(kind.spec.law)
-            members.append([])
-        members[laws.index(kind.spec.law)].extend(nodes)
+        for hue in Hue:
+            nodes = [i for i, k in enumerate(kinds) if k is kind and hues[i] is hue]
+            if not nodes:
+                continue
+            law = kind.spec.law.painted(hue) if kind.paintable else kind.spec.law
+            if law not in laws:
+                laws.append(law)
+                members.append([])
+            members[laws.index(law)].extend(nodes)
     found = []
     for law, nodes in zip(laws, members, strict=True):
         index = np.array(sorted(nodes), dtype=np.int64)

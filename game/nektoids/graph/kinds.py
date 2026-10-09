@@ -4,7 +4,8 @@ know of a part, in one table, `SPEC`, which a test checks whole.
 An entry says where the part stands (sensor, operator, actuator), how it is wired (inputs and
 outputs at most), where it points until turned (D-009), its law, what it does to the rates
 through it (`laws.py`; a sensor has none), a sensor's sense, which gives its rate, and an
-actuator's action, what it does to the body (`sim/world.py`, D-203), and how the player reads
+actuator's action, what it does to the body (`sim/world.py`, D-203), whether it may be painted
+(D-501), and how the player reads
 it: a letter for the panels, a name and a paragraph for its info box (D-036, D-094), the icon
 on it and its outline, each by name, for the interface to draw. The table's order is the order of
 the parts within each group of the menu (D-069). Pure Python, no pygame.
@@ -16,7 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.hexgrid import E
-from nektoids.graph.laws import Difference, Law, Relax, Scaled
+from nektoids.graph.laws import Difference, Filtered, Law, Relax, Scaled, Swapped, Tinted
 
 TANK_TAU = 4.0  # a tank's lag [s] (D-500)
 
@@ -25,6 +26,28 @@ class Category(Enum):
     SENSOR = "sensor"
     OPERATOR = "operator"
     ACTUATOR = "actuator"
+
+
+class Hue(Enum):
+    """What a part is painted (D-501 to D-503): the channel an eye reads, a Source sends, a
+    thruster pushes with. Amber, as every part was before, or violet; the parts that cannot be
+    painted are neutral, and their hue is never read. Its place here is its channel, the last
+    axis of every rate, its code in a board's text, and the order the Paint button goes round
+    in."""
+
+    AMBER = "amber"
+    VIOLET = "violet"
+
+    @property
+    def channel(self) -> int:
+        """Its place on the last axis of the rates."""
+        return list(Hue).index(self)
+
+    @property
+    def next(self) -> Hue:
+        """The other colour, the Paint button's brush switched: amber to violet, and back."""
+        hues = list(Hue)
+        return hues[(hues.index(self) + 1) % len(hues)]
 
 
 class Kind(Enum):
@@ -38,6 +61,9 @@ class Kind(Enum):
     DIFFERENCE = "difference"
     THRUSTER = "thruster"
     TANK = "tank"  # a slow part: it holds a level (D-500, D-501)
+    TINT = "tint"  # the colour operators (D-507): all in, out in its colour
+    FILTER = "filter"  # its colour alone through
+    SWAP = "swap"  # amber and violet exchanged
 
     @property
     def spec(self) -> KindSpec:
@@ -64,6 +90,11 @@ class Kind(Enum):
         return SPEC[self].facing
 
     @property
+    def paintable(self) -> bool:
+        """Whether it is painted, amber or violet (D-503); the rest are neutral."""
+        return SPEC[self].paintable
+
+    @property
     def max_inputs(self) -> int | None:
         """How many wires may come in; None means no limit (D-014)."""
         return SPEC[self].max_inputs
@@ -88,6 +119,7 @@ class KindSpec:
     shape: str = "diamond"  # its outline, by its name in `editor/geometry.py`'s SHAPES
     sense: str | None = None  # a sensor's: what gives its rate, by name (`sim/world.py`, SENSES)
     action: str | None = None  # an actuator's: what it does, by name (`sim/world.py`, ACTIONS)
+    paintable: bool = False  # it is amber or violet (D-503); the rest are neutral
 
 
 SPEC: dict[Kind, KindSpec] = {
@@ -101,6 +133,7 @@ SPEC: dict[Kind, KindSpec] = {
         icon="eye",
         shape="eye disc",
         sense="light",
+        paintable=True,
     ),
     Kind.SOURCE: KindSpec(
         Category.SENSOR,
@@ -109,6 +142,7 @@ SPEC: dict[Kind, KindSpec] = {
         "Senses nothing: it sends a steady signal.",
         shape="disc",  # a blank sensor: it senses nothing
         sense="steady",
+        paintable=True,
     ),
     Kind.DOUBLE: KindSpec(
         Category.OPERATOR,
@@ -156,6 +190,7 @@ SPEC: dict[Kind, KindSpec] = {
         icon="rocket",
         shape="square point",
         action="push",
+        paintable=True,
     ),
     Kind.TANK: KindSpec(
         Category.OPERATOR,
@@ -164,5 +199,34 @@ SPEC: dict[Kind, KindSpec] = {
         "Fills slowly with what comes in, and sends its level.",
         Relax(Scaled(1.0), tau=TANK_TAU),
         icon="flask",
+    ),
+    Kind.TINT: KindSpec(
+        Category.OPERATOR,
+        "N",
+        "Tint",
+        "Turns what comes in, amber and violet, all into its own colour.",
+        Relax(Tinted()),
+        icon="droplet",
+        shape="rounded square",
+        paintable=True,
+    ),
+    Kind.FILTER: KindSpec(
+        Category.OPERATOR,
+        "F",
+        "Filter",
+        "Lets its own colour through, and stops the other.",
+        Relax(Filtered()),
+        icon="filter",
+        shape="rounded square",
+        paintable=True,
+    ),
+    Kind.SWAP: KindSpec(
+        Category.OPERATOR,
+        "W",
+        "Swap",
+        "Sends amber as violet, and violet as amber.",
+        Relax(Swapped()),
+        icon="shuffle",
+        shape="rounded square",
     ),
 }

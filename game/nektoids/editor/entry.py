@@ -18,7 +18,7 @@ pygame.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 
 import numpy as np
@@ -29,8 +29,8 @@ from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.layout import Rect, View, fitted_view
 from nektoids.editor.streams import EYE_FACE, THRUSTER_BACK
-from nektoids.graph.board import Board, Kind
-from nektoids.graph.dynamics import RATE_MAX, initial_state, step
+from nektoids.graph.board import Board, Hue, Kind
+from nektoids.graph.dynamics import RATE_MAX, initial_state, shown, step
 from nektoids.graph.hexgrid import Cell, W, to_pixel
 from nektoids.graph.kinds import TANK_TAU
 from nektoids.sim.optics import FACING_STEP
@@ -59,6 +59,7 @@ class Demo:
     parts: tuple[tuple[Kind, Cell], ...]  # in the order they are placed
     wires: tuple[tuple[Cell, Cell], ...]  # in the order they are made
     readings: tuple[float, ...]  # each eye's, in the parts' order; the Eye's own moves
+    violet: tuple[Cell, ...] = ()  # the parts painted violet; the rest amber (D-503, D-507)
 
 
 def _through(kind: Kind, readings: tuple[float, ...]) -> Demo:
@@ -81,6 +82,15 @@ DEMOS: dict[Kind, Demo] = {
     Kind.SUM: _through(Kind.SUM, (0.3, 0.4)),
     Kind.DIFFERENCE: _through(Kind.DIFFERENCE, (0.7, 0.3)),
     Kind.TANK: _through(Kind.TANK, (TANK_ON,)),
+    # The colour operators (D-507): amber in, violet out; a violet Source's stopped; exchanged.
+    Kind.TINT: replace(_through(Kind.TINT, (0.5,)), violet=(PART, OUT)),
+    Kind.FILTER: Demo(
+        ((Kind.EYE, UPPER), (Kind.SOURCE, LOWER), (Kind.FILTER, PART), (Kind.THRUSTER, OUT)),
+        ((UPPER, PART), (LOWER, PART), (PART, OUT)),
+        (0.4,),
+        violet=(LOWER,),
+    ),
+    Kind.SWAP: replace(_through(Kind.SWAP, (0.5,)), violet=(OUT,)),
     Kind.THRUSTER: Demo(  # two eyes into it: what comes in is added
         ((Kind.EYE, UPPER), (Kind.EYE, LOWER), (Kind.THRUSTER, PART)),
         ((UPPER, PART), (LOWER, PART)),
@@ -101,15 +111,15 @@ class Entry:
         self.state = initial_state(self.circuit.net)
         for _ in range(round((SETTLE_TANK if kind is Kind.TANK else SETTLE) / DT)):
             self.state = step(self.circuit.net, self.state, self.eyes()[None, :], DT)
-        self.circuit.show(self.y)
+        self.circuit.show(self.state[0])
         if kind in KEEP_TIME:
             self._keep_time(KEEP_TIME[kind])
-        self.circuit.beads.fill((BEAD_RATE_AT_FULL / RATE_MAX * self.circuit.flux).tolist())
+        self.circuit.beads.fill(self.circuit.rates())
 
     @property
     def y(self) -> np.ndarray:
-        """Every node's rate now, (n,)."""
-        return self.state[0]
+        """Every node's rate now, (n,), as the Board shows it (`dynamics.shown`, D-501)."""
+        return shown(self.circuit.net, self.state)[0]
 
     def eyes(self) -> np.ndarray:
         """What each eye reads now: its reading; the Eye's own rises and falls, the Tank's input
@@ -126,7 +136,7 @@ class Entry:
         """A frame: its ticks run, the beads move."""
         for _ in range(TICKS_PER_FRAME):
             self.state = step(self.circuit.net, self.state, self.eyes()[None, :], DT)
-            self.circuit.advance(self.y, DT)
+            self.circuit.advance(self.state[0], DT)
             self.time += DT
         self.frame += 1
 
@@ -142,10 +152,10 @@ class Entry:
 
     def _keep_time(self, ratio: float) -> None:
         """The beads out of the part leave as one comes in, and `ratio` times as often: wire 0
-        comes in, wire 1 goes out. A bead reaches the end of wire 0 when its phase is
+        comes in, wire 1 goes out, both amber. A bead reaches the end of wire 0 when its phase is
         `length × flux / speed`, modulo 1; wire 1's phase is set to wrap then."""
         beads = self.circuit.beads
-        flux = BEAD_RATE_AT_FULL / RATE_MAX * float(self.circuit.flux[0])
+        flux = BEAD_RATE_AT_FULL / RATE_MAX * float(self.circuit.flux[0, 0])
         arrives = beads.lengths[0] * flux / beads.speed
         beads.phase[1] = (ratio * (beads.phase[0] - arrives)) % 1.0
 
@@ -171,7 +181,8 @@ def _built(demo: Demo) -> Board:
     """The demo's board: its parts placed, facing outwards, then its wires made, in order."""
     board = Board(ZONE)
     for part, cell in demo.parts:
-        board.place(part, cell, facing=OUTWARDS)
+        hue = Hue.VIOLET if cell in demo.violet else Hue.AMBER
+        board.place(part, cell, facing=OUTWARDS, hue=hue)
     for start, end in demo.wires:
         board.connect(board.node_at(start).id, board.node_at(end).id)
     return board

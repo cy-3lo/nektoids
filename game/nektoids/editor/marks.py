@@ -27,8 +27,9 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
-from nektoids.graph.dynamics import RATE_MAX
+from nektoids.graph.dynamics import RATE_MAX, painted
 from nektoids.graph.hexgrid import Cell
+from nektoids.graph.kinds import Hue
 from nektoids.graph.network import Network, body_disc
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
 from nektoids.sim.motion import stokes
@@ -103,6 +104,8 @@ class AtWork:
     flames: np.ndarray  # (Q, 2) the specks of its thrusters' flames
     eyes: np.ndarray  # (k, m, 2) each eye's outline; its face, the edge from last point to first
     thrusters: np.ndarray  # (j, m, 2) each thruster's, its face its back
+    eye_hues: tuple[Hue, ...] | None  # what each eye is painted (D-502); None: no colour shown
+    thruster_hues: tuple[Hue, ...] | None  # ... each thruster (D-509)
     velocity: np.ndarray | None  # (2, 2) from the rim along the velocity; None while still
     spin: np.ndarray | None  # (m, 2) the arc from the heading; None while it does not turn
 
@@ -117,8 +120,9 @@ def at_work(
     frame: int,
     specks: Specks = SPECKS,
     stretch: float = 1.0,
+    colours: bool = True,
 ) -> AtWork:
-    """What a swimmer running `net` on a board of `cells`, its nodes at rates `y` (n,), shows
+    """What a swimmer running `net` on a board of `cells`, its nodes at rates `y` (n, C), shows
     at `pose` in `arena`, at `frame` of the run, its streams `stretch` times their length."""
     scale = part_scale(cells)
     eye_mount, eye_facing = parts(net, net.eyes)
@@ -128,12 +132,32 @@ def at_work(
     vel, spin = motion(net, y, radius)
     centre, heading = pose[:2], pose[2]
     return AtWork(
-        intake=intake(arena, eye_mount, eye_facing, eyes, pose, radius, frame, specks, stretch),
+        intake=intake(
+            arena,
+            eye_mount,
+            eye_facing,
+            eyes,
+            pose,
+            radius,
+            frame,
+            specks,
+            stretch,
+            hues=[net.hues[i] for i in net.eyes],
+        ),
         flames=flames(
-            y[net.thrusters], thr_facing, thrusters, pose, radius, frame, specks, stretch
+            painted(net, y[None], net.thrusters)[0],
+            thr_facing,
+            thrusters,
+            pose,
+            radius,
+            frame,
+            specks,
+            stretch,
         ),
         eyes=to_plane(eyes, pose, radius),
         thrusters=to_plane(thrusters, pose, radius),
+        eye_hues=tuple(net.hues[i] for i in net.eyes) if colours else None,
+        thruster_hues=tuple(net.hues[i] for i in net.thrusters) if colours else None,
         velocity=velocity_segment(centre, heading, radius, vel),
         spin=spin_arc(centre, heading, radius, spin),
     )
@@ -207,11 +231,17 @@ def flames(
 
 
 def light_shares(
-    arena: Arena, mount: np.ndarray, facing: np.ndarray, pose: Pose, radius: float
+    arena: Arena,
+    mount: np.ndarray,
+    facing: np.ndarray,
+    pose: Pose,
+    radius: float,
+    hues: Sequence[Hue] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """What each light gives each eye's reading, (k, L) in [0, RATE_MAX], summing to what the
-    eye reads (`optics.eye_rates`), and each eye's look (k, 2): the light it reads, shared out
-    between the lights in proportion to what each gives it unshadowed."""
+    eye reads in its own channel (`optics.eye_rates`), and each eye's look (k, 2): the light it
+    reads, shared out between the lights in proportion to what each gives it unshadowed. An eye
+    of `hues` sees only the lights that shine in its colour (D-506); all amber if None."""
     x, y, heading = pose
     pos, turn, size = np.array([[x, y]]), np.array([heading]), np.array([radius])
     points, looks = eye_poses(pos, turn, size, mount, facing)
@@ -220,6 +250,8 @@ def light_shares(
     centres, radii = discs(arena, pos, size)
     own = np.full(len(points), len(arena.obstacles))  # the body is transparent to its own parts
     seen = visible(points, arena.light_xy, centres, radii, skip=own)
+    channels = [hue.channel for hue in hues] if hues is not None else [0] * len(points)
+    seen &= arena.light_channels[:, channels].T  # (k, L): the lights of its colour
     part = np.where(seen, given, 0.0)
     total = part.sum(axis=1, keepdims=True)
     return part * np.minimum(RATE_MAX, total) / np.maximum(total, TINY), looks
@@ -235,14 +267,16 @@ def intake(
     frame: int,
     specks: Specks = SPECKS,
     stretch: float = 1.0,
+    hues: Sequence[Hue] | None = None,
 ) -> np.ndarray:
     """(P, 2) [u]: the specks of light drawn into eyes at `mount` (k, 2) [body radii], facing
     `facing` (k,), with outlines (k, m, 2): into each face from each light it sees, along the
     light's direction, from INTAKE_LENGTH out `stretch` times over, thinning out there, or from
-    the light if it is nearer; as many as that light gives the reading."""
+    the light if it is nearer; as many as that light gives the reading. An eye of `hues` sees the
+    lights that shine in its colour (D-506)."""
     if len(mount) == 0 or len(arena.lights) == 0:
         return NOWHERE
-    shares, looks = light_shares(arena, mount, facing, pose, radius)
+    shares, looks = light_shares(arena, mount, facing, pose, radius, hues)
     found = [NOWHERE]
     for k in range(len(mount)):
         middle, half = face(outline[k])
@@ -267,7 +301,7 @@ def intake(
 
 def motion(net: Network, y: np.ndarray, radius: float) -> tuple[np.ndarray, float]:
     """The velocity (2,) in the body's frame [u/s] and the spin [rad/s] that the thrust of
-    rates `y` (n,) gives a body of `radius` [u] (D-022): what the next tick does."""
+    rates `y` (n, C) gives a body of `radius` [u] (D-022): what the next tick does."""
     size = np.array([radius])
     vel, spin = stokes(*push(net, y[None, :], size), size)  # as the run sums it (D-203)
     return vel[0], float(spin[0])
