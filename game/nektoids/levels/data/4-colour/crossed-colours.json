@@ -19,5 +19,6 @@
   },
   "time_limit": 20,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
+  "passkey": "LENS",
   "proof": {"board": "11H7FTb3AFUMGdYuUeuN1", "ticks": 552, "parts": 6}
 }

@@ -40,7 +40,8 @@ def test_every_shipped_level_is_in_the_order_and_its_file_is_what_the_code_write
         assert to_json(load(path)) == path.read_text(encoding="utf-8")
     titles = ["Wiring", "Turning", "Eyes", "Half", "Minus", "Diagnostic"]  # D-335
     titles += ["Fear", "Aggression", "Love", "Orbit", "Shadows", "Greed", "Patience"]  # D-097
-    titles += ["Two lights", "Violet", "Two colours", "Crossed colours", "Latch"]  # D-324, D-510
+    titles += ["Two lights", "Violet", "Two colours", "Crossed colours"]  # D-324, D-510
+    titles += ["Spot the violet", "Latch"]  # D-511
     titles += ["Dragster", "Dragster II"]  # D-332, D-348
     assert [level.title for level in arenas()] == titles
 
@@ -144,7 +145,7 @@ def test_every_level_gives_a_passkey_but_the_tutorials_a_chapters_last_and_the_u
     tutorials = [None] * 6  # every one open: no word to give (D-335)
     braitenberg = ["LOVE", "SWORD", "HEART", None]  # its last opens nothing (D-325, D-355)
     obstacles, many_lights = [None], ["GOLD", "SNAIL", None]
-    colour, memory = ["PRISM", "INDIGO", None], [None]  # D-510
+    colour, memory = ["PRISM", "INDIGO", "LENS", None], [None]  # D-510, D-511
     made = [None, None]  # by users, every one open (D-348)
     chapters = [*tutorials, *braitenberg, *obstacles, *many_lights, *colour, *memory, *made]
     assert list(words.values()) == chapters

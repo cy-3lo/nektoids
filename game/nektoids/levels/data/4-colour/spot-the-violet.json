@@ -1,0 +1,26 @@
+{
+  "version": 6,
+  "title": "Spot the violet",
+  "spec": "White light shines in both colours. Reach the violet light's ring, and touch no light.",
+  "author": "@Cy-3LO",
+  "colours": true,
+  "start": {"at": [8, 18], "heading": 0},
+  "items": [
+    {"kind": "light", "at": [24, 18], "power": 7},
+    {"kind": "light", "at": [30, 12], "power": 5},
+    {"kind": "light", "at": [22, 30], "power": 4, "colour": "violet"},
+    {"kind": "mark", "at": [22, 30], "radius": 4}
+  ],
+  "board": {
+    "zone": 37,
+    "stock": {"eye": 4, "thruster": 2, "swap": 2, "tint": 2, "difference": 2, "sum": 2},
+    "parts": [],
+    "wires": []
+  },
+  "time_limit": 30,
+  "objectives": [
+    {"verb": "reach", "count": "all", "target": "mark"},
+    {"verb": "reach", "count": "none", "target": "light"}
+  ],
+  "proof": {"board": "4xp9FgAwbQPkFaKcmAbp4zn8w27RMmbuEsE", "ticks": 1585, "parts": 10}
+}

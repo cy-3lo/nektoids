@@ -2841,3 +2841,12 @@ and the thruster; fleeing, or a Tank or a Double alone, runs out of time. Each w
 simulation, its intended board winning and the obvious wrong ones not, and ships with that proof.
 Both chapters show colour (D-509). Violet gives PRISM, Two colours INDIGO; a chapter's last gives
 none (D-325). The folder of the levels made by users loses its number.
+
+**D-511 — 2026-10-09 — Spot the violet, 4.4: white lights ahead, a dim violet light aside, a ring round it to reach and no light to touch. It asks for a subtraction of colours. Crossed colours gives LENS. Amends D-510.**
+The physicist's, from the ideas. White light shines in both channels: an amber eye reads the white
+lights, W, and a violet eye beside it W + V. A Swap, or a violet Tint, puts the amber eye's reading
+in violet, and a Diff leaves |W + V − W| = V, the violet light alone; a pair of eyes so on each
+side, crossed to violet thrusters, steers to it. A violet Aggression runs into the white light
+ahead, an amber one too. Two of three layouts were refused by simulation: two whites on either
+side let a plain violet Aggression slip between them; a white too near the start drowns V in the
+pairs' own difference. Ten parts on the largest zone; two Sums handed out besides.
