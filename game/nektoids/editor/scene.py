@@ -194,6 +194,7 @@ class BoardScene(Frame):
         self.group_offset: Cell = (0, 0)  # how far it has moved them
         self.right_chain: Chain | None = None  # the right clicks' chain, alike
         self.right_down = False  # the right button down: a drag chains the parts crossed
+        self.trail: list[Cell] = []  # a wiring drag: the cells entered since the last part (D-429)
         self.right_dragged = False  # ... and has chained one: the chain ends when it is let go
         self.ctrl_down = False  # a left press with Ctrl held, a right click's stand-in
         self.notches = Notches()  # the mouse wheel's scrolls, made turns (D-405)
@@ -530,11 +531,18 @@ class BoardScene(Frame):
         if on_board and self.sweeping and (along or pointed not in self.swept):
             self.swept.add(pointed)
             self._sweep(pointed)
+        wiring = self.right_down or (self.sweeping and self.held is Button.WIRE)
+        if on_board and wiring:
+            over = self.board.node_at(pointed)
+            if over is None:
+                self.trail.append(pointed)
+            elif over.id in (self.right, self.source):
+                self.trail = []  # back on the chain's last part: the trail starts again
         if on_board and self.right_down:
             node = self.board.node_at(pointed)
             if node is not None and node.id != self.right:
                 self.right_dragged = True
-                self._right_to(node)  # a right drag chains the parts it crosses
+                self._right_to(node, self._trail())  # a right drag chains the parts it crosses
 
     def _press(self, pos: tuple[int, int]) -> None:
         if self.right is not None:  # a left click ends the right clicks' chain, and acts (D-404)
@@ -593,6 +601,7 @@ class BoardScene(Frame):
         elif cell is not None and held is Button.SELECT:
             self.pick_from, self.picked_along, self.drag = cell, False, None  # click or drag
         else:
+            self.trail = []
             self._click(self.pointed, pos)  # the others act as the button goes down
             if cell is not None and held is not Button.SELECT:
                 self.sweeping, self.swept = True, {cell}  # ... and along a drag (D-404)
@@ -949,20 +958,27 @@ class BoardScene(Frame):
         if self.board.remaining(kind) == 0:
             self.held = Button.SELECT
 
-    def _wire_click(self, cell: Cell | None) -> None:
+    def _wire_click(self, cell: Cell | None, trail: tuple[Cell, ...] | None = None) -> None:
         """Wire held: a part clicked starts the chain, the next is wired to it, or unwired, and
         the chain goes on from there; a part of the chain clicked again takes it back there
-        (D-402, `wiring`); an empty cell ends it."""
+        (D-402, `wiring`); an empty cell ends it. `trail`: a drag's, None for a click (D-429)."""
         node = self.board.node_at(cell) if cell is not None else None
         if node is None:
             self.wire_chain = None
         elif self.wire_chain is None:
             self.source = node.id
         else:
-            self.wire_chain = self._chain_to(self.wire_chain, node)
+            self.wire_chain = self._chain_to(self.wire_chain, node, trail)
         self._update_ghost()
 
-    def _chain_to(self, chain: Chain, node: Node) -> Chain | None:
+    def _trail(self) -> tuple[Cell, ...]:
+        """A wiring drag's trail since the last part, taken: the next starts empty (D-429)."""
+        trail, self.trail = tuple(self.trail), []
+        return trail
+
+    def _chain_to(
+        self, chain: Chain, node: Node, trail: tuple[Cell, ...] | None = None
+    ) -> Chain | None:
         """A chain on to `node` (`wiring.chain_to`), the scene saying why if it is refused."""
 
         def make(a: int, b: int) -> Wire | None:
@@ -975,7 +991,7 @@ class BoardScene(Frame):
             self.message = ""
             return True
 
-        return chain_to(chain, self.board, node.id, make, cut)
+        return chain_to(chain, self.board, node.id, make, cut, trail)
 
     def _in_the_way(self, picked: list[Node], offset: Cell) -> Cell | None:
         """The first cell a group moved by `offset` would land on that it may not: off the zone,
@@ -1169,7 +1185,7 @@ class BoardScene(Frame):
         elif node is not None and (held in TURNING or held in (Button.DELETE, Button.LOCK)):
             self._click(cell, (round(x), round(y)))
         elif node is not None and held is Button.WIRE:
-            self._wire_click(cell)
+            self._wire_click(cell, self._trail())
 
     def _place_along(self, cell: Cell) -> None:
         """A part's button held, a drag on: one placed in each empty cell it enters, while one is
@@ -1225,6 +1241,7 @@ class BoardScene(Frame):
             return
         node = self.board.node_at(self.hover) if self.hover is not None else None
         self.right_down, self.right_dragged = node is not None, False
+        self.trail = []
         if node is None:
             self.right = None
             if self.held is Button.SELECT:
@@ -1240,14 +1257,14 @@ class BoardScene(Frame):
             self._update_ghost()
         self.right_down = self.right_dragged = False
 
-    def _right_to(self, node: Node) -> None:
+    def _right_to(self, node: Node, trail: tuple[Cell, ...] | None = None) -> None:
         """The right clicks' chain on to `node`: wired from the part before, if there is one; a
-        wire refused ends it, the reason said."""
+        wire refused ends it, the reason said. `trail`: a drag's, None for a click (D-429)."""
         if self.right_chain is None:
             self.right = node.id
         else:
             wires = list(self.board.wires)
-            self.right_chain = self._chain_to(self.right_chain, node)
+            self.right_chain = self._chain_to(self.right_chain, node, trail)
             if isinstance(self.held, Kind) and self.board.wires != wires:
                 self.held = Button.SELECT  # wiring made: placing is over
         self._update_ghost()
