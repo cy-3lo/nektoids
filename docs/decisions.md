@@ -2681,6 +2681,11 @@ proof's replay, Diagnostic's probe and the check of goals decided at the start a
 `Level.start_at`; the Editor shows and moves the whole start. Every shipped proof still wins;
 Aggression's model board wins one tick later, Patience's two ticks sooner.
 
+**D-426 — 2026-10-09 — A − or + held in Parts steps again after 0.4 s, then ten steps a second. Amends D-412.**
+The physicist's, trying it: after 1 s and at three steps a second, a long press felt slow. Held
+24 frames, a button steps again every 6, near a key held in a field (0.4 s, then every 35 ms,
+D-418); the whole ladder to ∞ takes about a second. The constants stay in `editor/hold.py`.
+
 **D-427 — 2026-10-09 — `CLAUDE.md` is no longer committed: Claude Code's project instructions live in `CLAUDE.local.md`, on the developers' disks, ignored by git, as `docs/ideas.md` is (D-414). `.claude/`, its rules and skills, stays in the repository.**
 The physicist's. `CLAUDE.local.md` was never tracked, so no switch between branches or merge can
 delete it, as one deleted `docs/ideas.md` twice; an ignored `CLAUDE.md` would be deleted by every
