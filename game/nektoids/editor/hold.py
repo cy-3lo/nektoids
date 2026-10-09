@@ -1,4 +1,4 @@
-"""A button held down (D-412): after a moment it acts again, and again, at a steady pace, until
+"""A button held down (D-412, D-426): after a moment it acts again, and again, at a steady pace, until
 it is let go; the Editor's − and + in Parts. Pure Python, no pygame.
 """
 
@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-HOLD = 60  # held this long, a button acts again: 1 s [frames]
-EVERY = 20  # then once every so often: 3 a second [frames]
+HOLD = 24  # held this long, a button acts again: 0.4 s [frames]
+EVERY = 6  # then once every so often: 10 a second [frames]
 
 
 @dataclass
