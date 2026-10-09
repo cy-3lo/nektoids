@@ -2721,3 +2721,9 @@ The physicist's. A wire could be deleted only by a click on it, Delete held; emp
 greyed every button but a part's. Now Delete takes each wire through the cells picked once, one
 step for undo, darkened first while the mouse is on its button, as parts picked are (D-401). A
 click on the board with Delete held still takes the one wire under the pointer.
+
+**D-432 — 2026-10-09 — Beads move 40% slower, 2.1 hex sizes a second, not 3.5, and a wire at RATE_MAX shows 6 beads a second, not 10: the same spacing, 0.35 hex sizes at full rate. Amends D-416.**
+The physicist's, in Diagnostic: the beads ran too fast to follow. Slowing them alone would have
+packed them closer than a bead is wide at full rate, so the rate at full scale falls with the
+speed and a wire shows as many beads as before, D-416's point. Every circuit takes it, as
+D-416's did.
