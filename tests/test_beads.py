@@ -117,10 +117,10 @@ def test_no_flux_shows_no_beads_and_keeps_the_phase():
 
 
 def test_a_bead_leaves_the_wire_at_its_end():
-    beads = Beads([4.0])
+    beads = Beads([3.0])
     beads.phase[0] = 0.9
-    assert all(x < 4.0 for x in beads.positions(0, 1.0))
-    assert beads.positions(0, 1.0) == [pytest.approx(0.9 * BEAD_SPEED)]  # the next one is at 6.65
+    assert all(x < 3.0 for x in beads.positions(0, 1.0))
+    assert beads.positions(0, 1.0) == [pytest.approx(0.9 * BEAD_SPEED)]  # the next one is at 3.99
 
 
 def test_the_same_fluxes_give_the_same_beads():

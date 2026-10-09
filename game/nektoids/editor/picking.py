@@ -13,7 +13,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
 
-from nektoids.graph.board import Board, Node
+from nektoids.graph.board import Board, Node, Wire
 from nektoids.graph.hexgrid import Cell
 
 
@@ -107,6 +107,15 @@ def parts(pick: Pick, board: Board) -> list[Node]:
     if pick.what is not Picked.PARTS:
         return []
     return [node for node in (board.node_at(c) for c in pick.cells) if node is not None]
+
+
+def crossing(pick: Pick, board: Board) -> list[Wire]:
+    """The wires that cross the empty cells picked, each once, in the order drawn (D-431); none
+    for a pick of parts."""
+    if pick.what is not Picked.CELLS:
+        return []
+    cells = set(pick.cells)
+    return [wire for wire in board.wires if cells.intersection(wire.path[1:-1])]
 
 
 def moved(pick: Pick, offset: Cell) -> Pick:

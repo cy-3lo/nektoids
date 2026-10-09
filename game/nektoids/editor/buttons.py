@@ -30,7 +30,7 @@ from nektoids.editor.layout import (
     Tool,
     View,
 )
-from nektoids.editor.picking import Pick, Picked, parts
+from nektoids.editor.picking import Pick, Picked, crossing, parts
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import Cell, from_pixel, hex_disc, to_pixel
 
@@ -184,8 +184,10 @@ def states(
             if board.remaining(b) == 0:
                 return False
             return True if cells else None  # into the cells picked; else picked for the clicks
-        if cells:
-            return False  # empty cells: nothing to move, turn, wire, delete or lock
+        if cells and b is Button.DELETE and crossing(pick, board):
+            return True  # empty cells: Delete takes the wires through them (D-431)
+        if cells and b not in (Button.WIRE, Button.DELETE):
+            return False  # nothing to turn or lock; Wire and Delete are held, the pick dropped
         if picked:
             loose = [n for n in picked if not n.fixed]
             return {
