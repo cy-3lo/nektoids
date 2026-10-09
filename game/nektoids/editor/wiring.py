@@ -1,5 +1,7 @@
 """A wiring chain on the Board (D-402): the parts clicked or dragged over one after another, each
-wired to the one before. Wiring over a wire already there takes it away instead. Going back to a
+wired to the one before. Wiring over a wire already there takes it away instead: a drag that
+follows its path, or a click the way it runs; a drag another way, or a click the other way,
+draws a wire back, a loop (D-429). Going back to a
 part of the chain, a click or a drag on it, undoes what the chain did after it, however far back:
 the wires it made go, those it took away come back. A wire refused ends the chain. Pure Python,
 no pygame.
@@ -12,6 +14,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from nektoids.graph.board import Board, Wire
+from nektoids.graph.hexgrid import Cell, neighbour
 
 
 class Did(Enum):
@@ -29,9 +32,18 @@ class Chain:
         return self.path[-1]
 
 
-def between(board: Board, a: int, b: int) -> Wire | None:
-    """The wire between two parts, either way round, if there is one."""
-    return next((w for w in board.wires if {w.source, w.target} == {a, b}), None)
+def wired(board: Board, source: int, target: int) -> Wire | None:
+    """The wire from `source` to `target`, if there is one."""
+    return next((w for w in board.wires if (w.source, w.target) == (source, target)), None)
+
+
+def retraces(wire: Wire, trail: tuple[Cell, ...]) -> bool:
+    """Whether a drag's trail, the cells it entered between the wire's two parts, follows the
+    wire (D-429): every cell between its ends entered, and none that does not border them, so a
+    corner clipped still counts. Between neighbours, no cell: only a drag straight across."""
+    inner = set(wire.path[1:-1])
+    near = inner | {neighbour(cell, d) for cell in inner for d in range(6)}
+    return inner <= set(trail) and set(trail) <= near
 
 
 def chain_to(
@@ -40,23 +52,36 @@ def chain_to(
     node_id: int,
     make: Callable[[int, int], Wire | None],
     cut: Callable[[Wire], bool],
+    trail: tuple[Cell, ...] | None = None,
 ) -> Chain | None:
     """The chain after it reaches `node_id`: back to it if it is on the chain, its steps after it
-    undone; else the wire to it from the last part taken away if there is one, or made (`make`,
-    `cut`: the scene's, which may refuse and say why). None: refused, the chain ends."""
+    undone; else the wire between the last part and it taken away if the gesture retraces it, or
+    one made (`make`, `cut`: the scene's, which may refuse and say why). `trail`: the cells a drag
+    entered since the last part; None for a click, which takes away the wire the way it runs
+    (D-429). None: refused, the chain ends."""
     if node_id == chain.last:
         return chain
     if node_id in chain.path:
         i = chain.path.index(node_id)
         for did, wire in reversed(chain.steps[i:]):
             if did is Did.MADE:
-                made = between(board, wire.source, wire.target)
+                made = wired(board, wire.source, wire.target)
                 if made is not None:
                     board.remove_wire(made)
             else:
                 board.connect(wire.source, wire.target, wire.path)
         return Chain(chain.path[: i + 1], chain.steps[:i])
-    there = between(board, chain.last, node_id)
+    way = board.orient(chain.last, node_id)
+    if trail is None:
+        there = wired(board, *way)
+    else:  # both ways along one edge, between neighbours: the one the drag runs goes
+        followed = [
+            w
+            for w in board.wires
+            if {w.source, w.target} == {chain.last, node_id} and retraces(w, trail)
+        ]
+        followed.sort(key=lambda w: (w.source, w.target) != way)
+        there = followed[0] if followed else None
     if there is not None:
         if not cut(there):
             return None

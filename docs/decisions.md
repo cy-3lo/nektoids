@@ -2691,3 +2691,19 @@ The physicist's. `CLAUDE.local.md` was never tracked, so no switch between branc
 delete it, as one deleted `docs/ideas.md` twice; an ignored `CLAUDE.md` would be deleted by every
 merge of this change. Claude Code reads both alike. The skills that read `CLAUDE.md` read
 `CLAUDE.local.md`. The history keeps the versions already committed; nothing is rewritten.
+
+**D-428 — 2026-10-09 — Loops on the Board come forward from stage 3 to `main`, before v1.1: a wire may come back round to a part before it. A wire from a part to itself is still refused. Tanks and lights that change in time stay in stage 3. Amends D-500.**
+The physicist's, trying the Board: he expected loops, which D-500 had decided. The dynamics took
+them already (D-017): every node lags, so a loop is a feedback the state remembers and needs no
+solve; only `Board.refusal` stood in the way, "would close a loop", and it goes. A loop of gain
+below 1 settles; of gain 1 or more it climbs to the bead rate's cap and holds there, which the
+beads show at full rate (invariant 6). The developer scenarios' loops are now drawn by the Board
+as any wire. No shipped level needs a loop, and every proof still wins.
+
+**D-429 — 2026-10-09 — Wiring over a wire takes it away only when the gesture follows it: a drag along its path, or a click the way it runs. A drag another way, or a click the other way, draws a wire back, a loop. Amends D-402.**
+The physicist's, trying loops (D-428): any gesture between two parts wired took their wire away,
+so the wire back could not be drawn. A drag keeps the cells it enters between two parts; it
+follows a wire when it enters every cell between the wire's ends and none that does not border
+them, so a corner clipped still counts. Between neighbours a wire has no cell between: a drag
+straight across follows it, one that goes round draws the loop, routed by the Board as any
+wire. Two neighbours wired both ways share an edge; a drag across takes away the one it runs.

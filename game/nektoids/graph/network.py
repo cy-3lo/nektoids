@@ -5,8 +5,7 @@ need, including where each node sits on the body: the board is the body (D-018).
 network is the `i`-th node by id. Inputs are gathered slot by slot, sorted by source index, so the
 order in which wires were drawn can never change a result (invariant 1).
 
-`from_edges` accepts loops, which `Board` refuses, so that tests and developer scenarios can build
-them. Pure numpy, no pygame.
+`from_edges` accepts loops, as `Board` does (D-428). Pure numpy, no pygame.
 """
 
 from __future__ import annotations

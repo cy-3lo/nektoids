@@ -1,16 +1,15 @@
 """Boards for the developer view: one idea each, built by hand (D-017).
 
 Not levels. They show what the dynamics do: Braitenberg wiring, a fork, saturation, a
-threshold-like |x - c|, and loops that settle, hold a value or latch. `Board.connect` refuses
-loops, so the loops are drawn with public calls only: `route` finds the path and the wire is
-appended by hand, which is how a test hand-draws one too. The Board never does this.
+threshold-like |x - c|, and loops that settle, hold a value or latch. A loop's closing wire is
+drawn last, as the Board draws any wire (D-428).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from nektoids.graph.board import Board, Kind, Node, Refused, Wire
+from nektoids.graph.board import Board, Kind, Node, Refused
 from nektoids.graph.dynamics import SOURCE_RATE
 from nektoids.graph.hexgrid import offset_rect
 
@@ -42,15 +41,10 @@ def _build(parts, wires, loops=(), title="", source_level=SOURCE_RATE) -> Scenar
         if isinstance(placed, Refused):
             raise ValueError(f"{title}: {name} at {cell}: {placed.reason}")
         nodes[name] = placed
-    for a, b in wires:
+    for a, b in (*wires, *loops):
         result = board.connect(nodes[a].id, nodes[b].id)
         if isinstance(result, Refused):
             raise ValueError(f"{title}: {a} -> {b}: {result.reason}")
-    for a, b in loops:
-        path = board.route(nodes[a].cell, nodes[b].cell)
-        if path is None:
-            raise ValueError(f"{title}: no path {a} -> {b}")
-        board.wires.append(Wire(nodes[a].id, nodes[b].id, path))
     return Scenario(title, board, source_level)
 
 

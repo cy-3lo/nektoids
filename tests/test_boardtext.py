@@ -71,6 +71,22 @@ def test_fears_board_is_a_short_line_and_comes_back_the_same():
     assert parts_and_wires(from_text(text)) == parts_and_wires(board)
 
 
+def test_a_board_with_a_loop_comes_back_the_same():
+    board = Board(hex_disc(2))
+    eye, double, half, thruster = (
+        board.place(kind, cell)
+        for kind, cell in (
+            (Kind.EYE, (-2, 0)),
+            (Kind.DOUBLE, (0, 0)),
+            (Kind.HALVE, (1, -1)),
+            (Kind.THRUSTER, (2, 0)),
+        )
+    )
+    for source, target in ((eye, double), (double, half), (half, double), (half, thruster)):
+        assert not isinstance(board.connect(source.id, target.id), Refused)
+    assert parts_and_wires(from_text(to_text(board))) == parts_and_wires(board)  # D-428
+
+
 @pytest.mark.parametrize("seed", range(40))
 def test_every_board_comes_back_the_same_routes_and_all(seed):
     rng = random.Random(seed)
