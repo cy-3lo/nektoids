@@ -387,7 +387,7 @@ def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
     arena = LEVELS["Aggression"].arena
     for pos, heading, y in run(CROSSED, "Aggression", 2.0):
         seen = eye_rates(arena, pos, heading, np.ones(1), *parts(CROSSED, CROSSED.eyes))
-        assert np.array_equal(y[:, CROSSED.eyes], seen)
+        assert np.array_equal(y[:, CROSSED.eyes], np.stack([seen, seen], axis=-1))  # white
 
 
 def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no_walls():

@@ -1,7 +1,8 @@
 """One tick of the swimmers: move, touch, see, think (D-022).
 
 The state of N swimmers is four arrays that the caller keeps (the arena view, a test): pos (N, 2)
-[u], heading (N,) [rad], radius (N,) [u], and y (N, n), the rates of their nodes (D-017); and
+[u], heading (N,) [rad], radius (N,) [u], and y (N, n, C), the rates of their nodes in each
+channel, red and blue (D-017, D-501); and
 the plane they swim in, each obstacle where its spring has it (`Arena.moved`, D-424). A tick of
 dt [s]:
 
@@ -14,8 +15,10 @@ dt [s]:
 
 A sensor's rate comes from its kind's sense, an actuator's effect from its kind's action, each
 named in the table of kinds and mapped here to its function, `SENSES` and `ACTIONS` (D-203). So
-after a tick, as after a restart or a drag, y's sensor columns are what the sensors read where
-the bodies are. Nothing is changed in place. Pure numpy, no pygame.
+after a tick, as after a restart or a drag, y's sensor rows are what the sensors read where
+the bodies are. Every light, sensor and actuator is white so far (D-501): a sensor's reading goes
+into both channels, and an actuator acts on their mean, `dynamics.white`. Nothing is changed in
+place. Pure numpy, no pygame.
 """
 
 from __future__ import annotations
@@ -25,7 +28,7 @@ import hashlib
 import numpy as np
 
 from nektoids.graph import dynamics
-from nektoids.graph.dynamics import RATE_MAX
+from nektoids.graph.dynamics import CHANNELS, RATE_MAX
 from nektoids.graph.network import Network
 from nektoids.sim.arena import Arena
 from nektoids.sim.contact import collide
@@ -62,19 +65,20 @@ ACTIONS = {"push": thrust}
 def readings(
     arena: Arena, net: Network, pos: np.ndarray, heading: np.ndarray, radius: np.ndarray
 ) -> np.ndarray:
-    """(N, n): each sensor's rate where the bodies are, by its kind's sense, in [0, RATE_MAX];
-    0 in the other columns."""
-    given = np.zeros((pos.shape[0], net.n))
+    """(N, n, C): each sensor's rate where the bodies are, by its kind's sense, in
+    [0, RATE_MAX], white: the same in every channel; 0 in the other rows."""
+    given = np.zeros((pos.shape[0], net.n, CHANNELS))
     for kind, nodes in net.senses:
         rates = SENSES[kind.spec.sense](arena, pos, heading, radius, *parts(net, nodes))
-        given[:, nodes] = np.clip(rates, 0.0, RATE_MAX)
+        given[:, nodes] = np.clip(rates, 0.0, RATE_MAX)[:, :, None]
     return given
 
 
 def push(net: Network, y: np.ndarray, radius: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """The force (N, 2) in the body's frame [f] and the torque (N,) [f u] that the actuators of
-    rates y (N, n) exert, each kind's by its action, from its nodes' outputs."""
-    out = dynamics.outputs(net, y)
+    rates y (N, n, C) exert, each kind's by its action, from its nodes' outputs: white, the mean
+    of the channels (D-501)."""
+    out = dynamics.white(dynamics.outputs(net, y))
     pushes = [
         ACTIONS[kind.spec.action](out[:, nodes], radius, *parts(net, nodes))
         for kind, nodes in net.actions
@@ -99,7 +103,7 @@ def step(
     """(pos, heading, y, arena) one tick later, as new arrays and a new plane, its obstacles
     where their springs have them; the arguments are not changed.
 
-    pos (N, 2) [u], heading (N,) [rad], radius (N,) [u], y (N, n) the nodes' rates; dt [s], with
+    pos (N, 2) [u], heading (N,) [rad], radius (N,) [u], y (N, n, C) the nodes' rates; dt [s], with
     0 < dt <= the laws' limit (`graph.dynamics.step_given` raises ValueError otherwise).
     """
     vel, spin = stokes(*push(net, y, radius), radius)

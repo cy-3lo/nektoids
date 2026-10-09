@@ -874,7 +874,14 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
         cells = probe.circuit.board.cells
         stretch = stretch_at(view.scale, BASE_RADIUS)
         body = at_work(
-            level.arena, probe.net, cells, probe.y, probe.pose, BASE_RADIUS, frame, stretch=stretch
+            level.arena,
+            probe.net,
+            cells,
+            probe.state[0],
+            probe.pose,
+            BASE_RADIUS,
+            frame,
+            stretch=stretch,
         )
         draw_level_map(screen, level, area, probe.pose, view=view, body=body)
     else:

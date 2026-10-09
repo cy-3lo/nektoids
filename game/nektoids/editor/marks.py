@@ -27,7 +27,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
-from nektoids.graph.dynamics import RATE_MAX
+from nektoids.graph.dynamics import RATE_MAX, white
 from nektoids.graph.hexgrid import Cell
 from nektoids.graph.network import Network, body_disc
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
@@ -118,7 +118,7 @@ def at_work(
     specks: Specks = SPECKS,
     stretch: float = 1.0,
 ) -> AtWork:
-    """What a swimmer running `net` on a board of `cells`, its nodes at rates `y` (n,), shows
+    """What a swimmer running `net` on a board of `cells`, its nodes at rates `y` (n, C), shows
     at `pose` in `arena`, at `frame` of the run, its streams `stretch` times their length."""
     scale = part_scale(cells)
     eye_mount, eye_facing = parts(net, net.eyes)
@@ -130,7 +130,7 @@ def at_work(
     return AtWork(
         intake=intake(arena, eye_mount, eye_facing, eyes, pose, radius, frame, specks, stretch),
         flames=flames(
-            y[net.thrusters], thr_facing, thrusters, pose, radius, frame, specks, stretch
+            white(y[net.thrusters]), thr_facing, thrusters, pose, radius, frame, specks, stretch
         ),
         eyes=to_plane(eyes, pose, radius),
         thrusters=to_plane(thrusters, pose, radius),
@@ -267,7 +267,7 @@ def intake(
 
 def motion(net: Network, y: np.ndarray, radius: float) -> tuple[np.ndarray, float]:
     """The velocity (2,) in the body's frame [u/s] and the spin [rad/s] that the thrust of
-    rates `y` (n,) gives a body of `radius` [u] (D-022): what the next tick does."""
+    rates `y` (n, C) gives a body of `radius` [u] (D-022): what the next tick does."""
     size = np.array([radius])
     vel, spin = stokes(*push(net, y[None, :], size), size)  # as the run sums it (D-203)
     return vel[0], float(spin[0])

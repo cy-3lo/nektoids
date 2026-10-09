@@ -5,7 +5,8 @@ paths:
 ---
 # Simulation rules
 
-- State is numpy: `(N, 2)` float64 for position, `(N,)` for heading and radius. Velocity is not
+- State is numpy: `(N, 2)` float64 for position, `(N,)` for heading and radius, `(N, n, C)` for
+  the nodes' rates in each channel (D-501). Velocity is not
   state: bodies are overdamped (D-022). The jam has one agent, but write for N so flocking later
   is an addition, not a rewrite.
 - Pairwise interactions use full `(N, N)` matrices built by broadcasting. N ≈ 100 makes O(N²)

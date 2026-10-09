@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 from nektoids.graph.analysis import Status, loop_report
-from nektoids.graph.dynamics import RATE_MAX, initial_state, step
+from nektoids.graph.dynamics import CHANNELS, RATE_MAX, initial_state, step
+from nektoids.graph.laws import BLUE, RED
 from nektoids.graph.network import Network, topological_order
 from nektoids.levels.scenarios import scenarios
 
@@ -15,16 +16,18 @@ SETTLE = 1500  # ticks: 12 s, long after every lag here has settled
 
 
 def run(title, eyes, ticks=SETTLE, sources=None, start=None):
-    """The state of the board `title` after `ticks` ticks of constant sensors (one agent)."""
+    """The rates (1, n) of the board `title` after `ticks` ticks of constant sensors (one agent),
+    white: the state's channels checked equal bit for bit (D-501); `start` white too."""
     scenario = BY_TITLE[title]
     net = Network.from_board(scenario.board)
     if sources is None:
         sources = np.full(len(net.sources), scenario.source_level)
     eyes = np.array([eyes], dtype=float).reshape(1, -1)
-    y = initial_state(net) if start is None else start
+    y = initial_state(net) if start is None else np.repeat(start[..., None], CHANNELS, axis=-1)
     for _ in range(ticks):
         y = step(net, y, eyes, DT, sources)
-    return y
+    assert np.array_equal(y[..., RED], y[..., BLUE])
+    return y[..., RED]
 
 
 def rates(title, *eyes, sources=None):

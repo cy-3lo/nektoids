@@ -3,7 +3,7 @@ import pytest
 
 from nektoids.graph.analysis import Status, loop_report, problems
 from nektoids.graph.board import Kind
-from nektoids.graph.dynamics import RATE_MAX, TAU, initial_state, step
+from nektoids.graph.dynamics import CHANNELS, RATE_MAX, TAU, initial_state, step
 from nektoids.graph.network import Network
 
 EYE, SRC, DBL, HLV, SUM, DIF, THR = (
@@ -24,7 +24,8 @@ def halve_ring():
 
 
 def relax(net, start, eyes, ticks=1500):
-    y = start
+    """From white rates `start` (1, n), the state (1, n, C) after `ticks` ticks."""
+    y = np.repeat(start[..., None], CHANNELS, axis=-1)
     for _ in range(ticks):
         y = step(net, y, eyes, DT)
     return y
@@ -81,12 +82,12 @@ def test_a_contractive_loop_forgets_its_start_and_a_noncontractive_one_may_not()
     assert np.allclose(ends[0], ends[1]) and np.allclose(ends[1], ends[2])
     hold = Network.from_edges([EYE, SUM, DBL, DBL, HLV], [(0, 1), (1, 2), (2, 3), (3, 4), (4, 1)])
     low, high = (relax(hold, np.full((1, hold.n), v), np.zeros((1, 1))) for v in (0.0, 0.3))
-    assert abs(low[0, 1] - high[0, 1]) > 0.05  # the start is remembered
+    assert (abs(low[0, 1] - high[0, 1]) > 0.05).all()  # the start is remembered
 
 
 def test_the_time_constant_is_a_sixtieth_of_a_second():
     assert TAU == pytest.approx(1 / 60)
-    assert initial_state(halve_ring()).shape == (1, 3)
+    assert initial_state(halve_ring()).shape == (1, 3, CHANNELS)
 
 
 # Problems

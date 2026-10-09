@@ -29,7 +29,7 @@ from nektoids.editor.devdrive import (
 )
 from nektoids.editor.layout import SCREEN, Rect
 from nektoids.graph.analysis import LoopReport, loop_report, problems
-from nektoids.graph.dynamics import RATE_MAX, given_rates, initial_state, step
+from nektoids.graph.dynamics import RATE_MAX, given_rates, initial_state, step, white
 from nektoids.graph.equations import node_equations, report_lines
 from nektoids.graph.network import Network
 from nektoids.levels.scenarios import Scenario
@@ -60,7 +60,7 @@ class SchematicScene:
         net = self.net
         self.levels = {int(i): EYE_LEVEL for i in net.eyes}
         self.levels |= {int(i): current.source_level for i in net.sources}
-        self.state = initial_state(net)  # (1, n): every rate, from rest
+        self.state = initial_state(net)  # (1, n, C): every rate, from rest
         self.report: LoopReport = loop_report(net)
         self.lines = _panel_lines(self)
         self.clock.reset()
@@ -72,8 +72,8 @@ class SchematicScene:
 
     @property
     def y(self) -> np.ndarray:
-        """The rate of every node now, shape (n,)."""
-        return self.state[0]
+        """The rate of every node now, white, shape (n,): the mean of its channels (D-501)."""
+        return white(self.state[0])
 
     # Per frame
 

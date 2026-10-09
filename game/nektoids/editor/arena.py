@@ -102,7 +102,7 @@ from nektoids.editor.scene import ARROW_SCANCODES, ARROWS
 from nektoids.editor.settings import Settings
 from nektoids.editor.tutorial import Action
 from nektoids.graph.board import Board, complexity
-from nektoids.graph.dynamics import initial_state
+from nektoids.graph.dynamics import initial_state, white
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
 from nektoids.levels.objectives import Count as Many
@@ -220,8 +220,8 @@ class ArenaScene(Frame):
 
     @property
     def y(self) -> np.ndarray:
-        """The selected swimmer's rates now, shape (n,)."""
-        return self.state[0 if self.selected is None else self.selected]
+        """The selected swimmer's rates now, white, shape (n,): the mean of the channels."""
+        return white(self.state[0 if self.selected is None else self.selected])
 
     @property
     def level(self) -> Level:
@@ -279,7 +279,7 @@ class ArenaScene(Frame):
         self.pos = np.array([self.level.start_at])  # (N, 2) [u], nudged (D-425)
         self.heading = np.array([math.radians(heading)])  # (N,) [rad]
         self.radius = np.full(1, BASE_RADIUS)  # (N,) [u], every body alike (D-045)
-        self.state = initial_state(self.net, len(self.pos))  # (N, n), from rest
+        self.state = initial_state(self.net, len(self.pos))  # (N, n, C), from rest
         self.kept = begin(self.level, self.pos, self.radius)  # each objective's
         self.clock.reset()
         self.circuit.beads.reset()
@@ -294,7 +294,7 @@ class ArenaScene(Frame):
     def _moved(self) -> None:
         """A swimmer moved or turned: what the eyes read now, even paused; the map if shown."""
         self.eyes = self._read_eyes()
-        self.state[:, self.net.eyes] = self.eyes
+        self.state[:, self.net.eyes] = self.eyes[:, :, None]  # white: in every channel
         self.circuit.show(self.y)
         if self.show_map:
             self._map()
@@ -392,7 +392,7 @@ class ArenaScene(Frame):
         self.state, self.kept = then.state.copy(), tuple(k.copy() for k in then.kept)
         self.circuit.beads.phase = list(then.phase)
         self.arena = then.arena
-        self.eyes = self.state[:, self.net.eyes]
+        self.eyes = white(self.state[:, self.net.eyes])
         self.circuit.show(self.y)
 
     def _snapshot(self) -> Snapshot:
@@ -409,7 +409,7 @@ class ArenaScene(Frame):
         self.pos, self.heading, self.state, self.arena = world.step(
             self.arena, self.net, self.pos, self.heading, self.radius, self.state, DT
         )
-        self.eyes = self.state[:, self.net.eyes]  # what they read where the swimmers now are
+        self.eyes = white(self.state[:, self.net.eyes])  # what they read where they now are
         self.kept = follow(self.level, self.kept, self.pos, self.radius, DT, self.arena)
         self.circuit.advance(self.y, DT)
 
