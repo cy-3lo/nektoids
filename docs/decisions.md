@@ -2680,3 +2680,8 @@ screen. The nudge is the same in every run, so runs stay deterministic (invarian
 proof's replay, Diagnostic's probe and the check of goals decided at the start all use
 `Level.start_at`; the Editor shows and moves the whole start. Every shipped proof still wins;
 Aggression's model board wins one tick later, Patience's two ticks sooner.
+
+**D-426 — 2026-10-09 — A − or + held in Parts steps again after 0.4 s, then ten steps a second. Amends D-412.**
+The physicist's, trying it: after 1 s and at three steps a second, a long press felt slow. Held
+24 frames, a button steps again every 6, near a key held in a field (0.4 s, then every 35 ms,
+D-418); the whole ladder to ∞ takes about a second. The constants stay in `editor/hold.py`.
