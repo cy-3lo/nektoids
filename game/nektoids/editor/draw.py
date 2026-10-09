@@ -142,6 +142,8 @@ from nektoids.editor.palette import (
     KEY_GREYED,
     KEY_LIGHT,
     LIGHT,
+    LIGHT_AMBER,
+    LIGHT_VIOLET,
     LIT,
     LOCK_RING,
     MARK,
@@ -179,7 +181,7 @@ from nektoids.graph.board import Board, Hue, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Colour
 
 TITLE_SIZE = 24  # [px] a drawer's title: its headings are 20 (D-420)
 
@@ -280,6 +282,8 @@ ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
 BODY_OF = {Hue.AMBER: PAINT_AMBER, Hue.VIOLET: PAINT_VIOLET}  # a painted part's body (D-503)
 BEAD_OF = {Hue.AMBER: BEAD_AMBER, Hue.VIOLET: BEAD_VIOLET}  # a bead of each channel
+LIGHT_OF = {Colour.WHITE: LIGHT, Colour.AMBER: LIGHT_AMBER, Colour.VIOLET: LIGHT_VIOLET}  # D-506
+BEAD_LEAST = 3  # a bead's radius, however small the circuit is drawn [px]
 FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 16  # a menu row's info disc [px]
 INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit under it (D-094)
@@ -815,10 +819,9 @@ def draw_level_map(
         for mark in level.marks:  # D-306
             centre = view.to_screen(*mark.at)
             pygame.draw.circle(screen, MARK, centre, max(2.0, mark.value * view.scale), 1)
-        for light in arena.lights:
-            pygame.draw.circle(
-                screen, LIGHT, view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
-            )
+        for light in arena.lights:  # in its colour (D-506)
+            centre, radius = view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
+            pygame.draw.circle(screen, LIGHT_OF[light.colour], centre, radius)
         x, y, heading = pose
         if body is not None:
             draw_under(screen, view, body)
@@ -1464,9 +1467,10 @@ def draw_circuit(
 
 def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
     view = circuit.view
-    radius = max(2, round(BEAD_RADIUS * view.size))
+    radius = max(BEAD_LEAST, round(BEAD_RADIUS * view.size))
     for k, path in enumerate(circuit.paths):
-        points = wire_points(path, view.size, view.origin)
+        # on whole pixels, the line and its beads alike: a bead never off its wire by a pixel
+        points = [(round(x), round(y)) for x, y in wire_points(path, view.size, view.origin)]
         pygame.draw.lines(screen, WIRE, False, points, 2)  # neutral: the beads show the rates
         along = cumulative_lengths(points)
         for hue in Hue:  # a stream a channel, in its colour (D-502, D-503)

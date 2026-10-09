@@ -66,6 +66,7 @@ from nektoids.editor.arena_view import (
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.draw import (
     INFO_ICON,
+    LIGHT_OF,
     ROW_NAME,
     TIP,
     Fonts,
@@ -102,8 +103,6 @@ from nektoids.editor.palette import (
     EYE_SHADES,
     FULL,
     LIGHT,
-    LIGHT_AMBER,
-    LIGHT_VIOLET,
     LIT,
     MARK,
     OBSTACLE,
@@ -133,7 +132,6 @@ if TYPE_CHECKING:
     from nektoids.editor.level_editor import EditorScene
 
 RAY_WIDTH = 2  # [px]
-LIGHT_OF = {Colour.WHITE: LIGHT, Colour.AMBER: LIGHT_AMBER, Colour.VIOLET: LIGHT_VIOLET}
 RAY_OF = {Colour.WHITE: RAY, Colour.AMBER: RAY_AMBER, Colour.VIOLET: RAY_VIOLET}
 BULB = 1.6  # the bulb's height on a light, in light radii (D-076)
 MARKER = 9  # half the length of the arrow that points at a swimmer out of view [px]
