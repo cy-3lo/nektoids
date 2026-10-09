@@ -151,6 +151,7 @@ def test_levels_are_named_by_chapter_and_place():
         "4.1",
         "4.2",
         "4.3",
+        "4.4",
         "5.1",
         "",  # made by users: unnumbered (D-510)
         "",

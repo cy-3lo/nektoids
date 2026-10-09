@@ -50,7 +50,9 @@ CHAPTERS = (
     Chapter(1, "Braitenberg", "1-braitenberg", ("fear", "aggression", "love", "orbit")),
     Chapter(2, "Obstacles", "2-obstacles", ("shadows",)),
     Chapter(3, "Many lights", "3-many-lights", ("greed", "patience", "two-lights")),
-    Chapter(4, "Colour", "4-colour", ("violet", "two-colours", "crossed-colours")),
+    Chapter(
+        4, "Colour", "4-colour", ("violet", "two-colours", "crossed-colours", "spot-the-violet")
+    ),
     Chapter(5, "Memory", "5-memory", ("latch",)),
     Chapter(
         None,
