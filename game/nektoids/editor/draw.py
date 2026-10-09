@@ -1477,7 +1477,8 @@ def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
             flux = BEAD_RATE_AT_FULL / RATE_MAX * float(circuit.flux[k, hue.channel])
             for s in circuit.beads.positions(circuit.stream(k, hue.channel), flux, belt=belt):
                 x, y = point_at(points, along, s * view.size)
-                pygame.draw.circle(screen, BEAD_OF[hue], (round(x), round(y)), radius)
+                at = (round(x) + 1, round(y) + 1)  # a 2 px line at y covers y and y + 1, a
+                pygame.draw.circle(screen, BEAD_OF[hue], at, radius)  # circle y - r to y + r - 1
 
 
 def _draw_parts(
