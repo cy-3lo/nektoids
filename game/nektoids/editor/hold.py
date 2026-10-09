@@ -1,5 +1,5 @@
-"""A button held down (D-412, D-426): after a moment it acts again, and again, at a steady pace, until
-it is let go; the Editor's − and + in Parts. Pure Python, no pygame.
+"""A button held down (D-412, D-426): after a moment it acts again, and again, at a steady pace,
+until it is let go; the Editor's − and + in Parts. Pure Python, no pygame.
 """
 
 from __future__ import annotations
