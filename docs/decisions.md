@@ -2773,3 +2773,16 @@ proof runs bit-identical, violet at zero. Amber is drawn lighter than accent2, L
 so that colour-blind eyes tell it from the warning red; violet is L 0.66 at 300°. A part saved
 without a hue is amber. With a brush that holds its colour, a pick of mixed colours comes out of
 one press in one colour, and nothing is left to guess about which.
+
+**D-504 — 2026-10-09 — A refusal on the board puts the tool down: the cell flashes, and Select is held again, no part left in hand. Amends D-402.**
+The physicist's, trying the Board: after a part's button clicked on a cell taken, the part stayed
+in hand, and the next click tried again where the player no longer meant to. A refusal that
+flashes a cell ends the gesture under way and holds Select; one with no cell, a greyed button
+pressed, changes nothing held.
+
+**D-505 — 2026-10-09 — Paint's colour is also the colour new eyes, Sources and thrusters are placed in, and the part buttons show it; a press on parts already all of that colour turns them, and the brush, to the other; with nothing picked Paint is never greyed. Amends D-503.**
+The physicist's, trying Paint: the brush and the part buttons are one colour, the one a part is
+placed in, so that switching the brush switches what the hand lays down. Picked parts of mixed
+colours take the brush's; if they are all of it already, the press means the other colour, for
+them and the brush. With nothing picked, Paint always switches its colour, so it is never
+greyed, and its icon is always in its colour.

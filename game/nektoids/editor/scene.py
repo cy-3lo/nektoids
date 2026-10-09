@@ -1504,5 +1504,11 @@ class BoardScene(Frame):
         return "Click or drag to pick cells or parts. Shift adds. Or press a button."
 
     def _refuse(self, reason: str, cell: Cell | None = None) -> None:
+        """Say why not; on a cell of the board, flash it, and put the tool down, Select held, no
+        part left in hand (D-504)."""
+        if cell is not None and self.held is not Button.SELECT:
+            self._drop_gesture()
+            self.held, self.wire_chain = Button.SELECT, None
+            self._update_ghost()
         self.message = reason
         self.flash_cell, self.flash_frames = cell, FLASH_FRAMES
