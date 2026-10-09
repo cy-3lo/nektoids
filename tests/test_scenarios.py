@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from nektoids.graph.analysis import Status, loop_report
-from nektoids.graph.board import Refused
 from nektoids.graph.dynamics import RATE_MAX, initial_state, step
 from nektoids.graph.network import Network, topological_order
 from nektoids.levels.scenarios import scenarios
@@ -56,20 +55,20 @@ def test_every_board_runs_and_stays_inside_the_cap(scenario):
         assert 0.0 <= y.min() and y.max() <= RATE_MAX
 
 
-def test_only_the_loop_boards_have_loops_and_the_board_would_have_refused_them():
+def test_only_the_loop_boards_have_loops():
     for scenario in ALL:
         net = Network.from_board(scenario.board)
         assert (topological_order(net) is None) == scenario.title.startswith(("Loop", "Toggle"))
 
 
-def test_the_board_would_not_have_drawn_the_closing_wire():
+def test_the_board_draws_the_closing_wire_again_the_same_way():
     for scenario in scenarios():  # fresh boards: this test takes a wire off
         if not scenario.title.startswith(("Loop", "Toggle")):
             continue
         board = scenario.board
         closing = board.wires[-1]
         board.remove_wire(closing)
-        assert board.connect(closing.source, closing.target) == Refused("would close a loop")
+        assert board.connect(closing.source, closing.target) == closing  # D-428
 
 
 # Without loops
@@ -152,3 +151,9 @@ def test_the_toggle_keeps_its_winner_and_a_stronger_source_flips_it():
     y = run(title, [], ticks=300, sources=[0.5, 1.0], start=y)  # the loser's source up ...
     y = run(title, [], ticks=600, start=y)
     assert y[0, thrusters[1]] > 10 * y[0, thrusters[0]]  # ... flips it
+
+
+def test_a_loop_runs_bit_identical_twice():  # invariant 1
+    title = "Toggle: two stages inhibiting each other"
+    sources = [0.5, 0.45]
+    assert np.array_equal(run(title, [], sources=sources), run(title, [], sources=sources))

@@ -298,8 +298,6 @@ class Board:
             return Refused("sensors have no input")
         if any(wire.source == source_id and wire.target == target_id for wire in self.wires):
             return Refused("already wired")
-        if self._reaches(target_id, source_id):
-            return Refused("would close a loop")
         outputs = sum(wire.source == source_id for wire in self.wires)
         if source.kind.max_outputs is not None and outputs >= source.kind.max_outputs:
             return Refused(f"a {source.kind.value} has {_count(source.kind.max_outputs)} output")
@@ -595,19 +593,6 @@ class Board:
             for cell, entry, exit_ in crossings(wire.path):
                 used.setdefault(cell, set()).update((entry, exit_))
         return used
-
-    def _reaches(self, start: int, goal: int) -> bool:
-        """Whether signal from node `start` already flows to node `goal` along existing wires."""
-        frontier, seen = [start], {start}
-        while frontier:
-            node_id = frontier.pop()
-            if node_id == goal:
-                return True
-            for wire in self.wires:
-                if wire.source == node_id and wire.target not in seen:
-                    seen.add(wire.target)
-                    frontier.append(wire.target)
-        return False
 
 
 def complexity(board: Board) -> int:

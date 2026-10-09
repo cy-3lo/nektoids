@@ -216,7 +216,7 @@ def test_removing_a_node_removes_its_wires_and_frees_their_cells():
 # Wire validity
 
 
-def test_wires_run_from_outputs_to_inputs_without_loops():
+def test_wires_run_from_outputs_to_inputs_and_may_close_a_loop():
     board, (eye, gain, half, thrust) = build(
         [
             ((0, 1), Kind.EYE),
@@ -230,8 +230,8 @@ def test_wires_run_from_outputs_to_inputs_without_loops():
     assert board.connect(gain.id, gain.id) == Refused("same component")
     assert not isinstance(board.connect(gain.id, half.id), Refused)
     assert board.connect(gain.id, half.id) == Refused("already wired")
-    assert board.connect(half.id, gain.id) == Refused("would close a loop")
-    assert len(board.wires) == 1
+    assert not isinstance(board.connect(half.id, gain.id), Refused)  # a loop (D-428)
+    assert len(board.wires) == 2
 
 
 def test_sum_and_difference_take_two_inputs_and_give_one_output():

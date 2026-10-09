@@ -2680,3 +2680,11 @@ screen. The nudge is the same in every run, so runs stay deterministic (invarian
 proof's replay, Diagnostic's probe and the check of goals decided at the start all use
 `Level.start_at`; the Editor shows and moves the whole start. Every shipped proof still wins;
 Aggression's model board wins one tick later, Patience's two ticks sooner.
+
+**D-428 — 2026-10-09 — Loops on the Board come forward from stage 3 to `main`, before v1.1: a wire may come back round to a part before it. A wire from a part to itself is still refused. Tanks and lights that change in time stay in stage 3. Amends D-500.**
+The physicist's, trying the Board: he expected loops, which D-500 had decided. The dynamics took
+them already (D-017): every node lags, so a loop is a feedback the state remembers and needs no
+solve; only `Board.refusal` stood in the way, "would close a loop", and it goes. A loop of gain
+below 1 settles; of gain 1 or more it climbs to the bead rate's cap and holds there, which the
+beads show at full rate (invariant 6). The developer scenarios' loops are now drawn by the Board
+as any wire. No shipped level needs a loop, and every proof still wins.

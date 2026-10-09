@@ -51,9 +51,9 @@ its decisions taken, when it starts.
   sends out h: `Relax(Scaled(1.0), tau=4.0)` in `graph/laws.py`, already checked by
   `test_laws.py`; a row in the table of kinds, its icon, its level drawn as a fill; its entry
   in the info box; how it counts in the score (D-045).
-- [ ] **Loops on the board.** A wire may come back round to a part before it: the Board
-  refuses it today, the dynamics take it (D-017). What the beads show on a loop; a tank on a
-  loop that holds its level, Doubles making up for the fork.
+- [x] **Loops on the board** (D-428, brought onto `main` before v1.1). A wire may come back
+  round to a part before it, as the dynamics always allowed (D-017). A tank on a loop that
+  holds its level, Doubles making up for the fork, comes with the tanks.
 - [ ] **Lights that change in time.** A light's power as a schedule, deterministic: a flash that
   goes dark, lights that switch on in turn. Set in the Editor, written in the level's file and
   its word (D-413), drawn so that the player sees it change (invariant 6).
