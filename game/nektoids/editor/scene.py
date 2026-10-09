@@ -889,10 +889,12 @@ class BoardScene(Frame):
             for node in loose:
                 if node.facing is not None:
                     self._turn(node.cell, -TURNING[button] if back else TURNING[button])
-        elif button is Button.PAINT:  # all the brush's colour (D-503)
-            for node in loose:
-                if node.kind.paintable:
-                    self._paint(node.cell, self.brush)
+        elif button is Button.PAINT:  # all the brush's colour; all of it already: the other
+            paintable = [n for n in loose if n.kind.paintable]  # colour, the brush too (D-503)
+            if all(n.hue is self.brush for n in paintable):
+                self.brush = self.brush.next
+            for node in paintable:
+                self._paint(node.cell, self.brush)
         elif button is Button.DELETE and self.pick.what is Picked.CELLS:
             for wire in crossing(self.pick, self.board):  # the wires through them (D-431)
                 self._delete_wire(wire)

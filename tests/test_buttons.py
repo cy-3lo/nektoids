@@ -113,7 +113,7 @@ def test_a_button_greys_when_it_cannot_act_and_lights_when_it_acts_on_the_pick()
     assert both[Button.TURN_RIGHT] is both[Button.DELETE] is both[Button.PAINT] is State.LIT
     board.lock(board.node_at((1, 0)).id)
     assert look()[Button.TURN_LEFT] is State.GREYED  # the only eye is the level's now
-    assert look()[Button.PAINT] is State.GREYED
+    assert look()[Button.PAINT] is State.PLAIN  # nothing picked: it switches its colour (D-503)
     assert look(held=Kind.EYE)[Kind.EYE] is State.CHOSEN
 
 

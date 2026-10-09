@@ -204,7 +204,7 @@ def states(
                 Button.WIRE: len(nodes) > 1,
             }[b]
         able = {
-            Button.PAINT: any(n.kind.paintable for n in free),
+            Button.PAINT: True,  # with nothing picked, it switches its colour (D-503)
             Button.DELETE: bool(free),
             Button.LOCK: bool(nodes) if editor else bool(mine),
             Button.TURN_LEFT: any(n.facing is not None for n in free),
