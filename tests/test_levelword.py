@@ -34,6 +34,25 @@ def test_every_shipped_level_is_shared_and_read_back_as_it_is_played(level):
     assert len(to_word(level)) <= 40  # Orbit's, 35, the longest
 
 
+@pytest.mark.parametrize(
+    "title, word",  # as v1.1 wrote them, before the Tank and the hues (D-501)
+    [("Fear", "ba9FDD6LtkJyk40FsuZaZ9m8Fx"), ("Aggression", "1RpbHBm8yv94r6vrUP3CkBu")],
+)
+def test_a_word_of_version_31_still_reads_as_it_was_written(title, word):
+    assert from_word(word)[0] == from_word(to_word(LEVELS[title]))[0]
+
+
+def test_a_level_placing_painted_parts_reads_back_painted():
+    level = LEVELS["Fear"]
+    board = dict(level.board)
+    board["parts"] = [
+        {**part, "hue": "red"} if part["locked"] else part for part in level.board["parts"]
+    ]
+    painted = replace(level, board=board)
+    parts = from_word(to_word(painted))[0].board["parts"]
+    assert parts and all(part["hue"] == "red" for part in parts)
+
+
 def test_a_made_level_far_from_the_origin_with_every_kind_of_item_and_goal_reads_back():
     rng = random.Random(4)
     for _ in range(20):

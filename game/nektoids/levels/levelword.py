@@ -14,7 +14,9 @@ level one integer in that mixed radix, written by `spelling.py` with its own hid
 symbol, so that a board's text is never read as a level, nor a level's word as a board. The
 parts a level places are the board's own digits (`boardtext.replay`), on a board of its zone. A
 position costs one digit within NEAR of the origin, more beyond; a heading is a whole degree.
-The kinds of part are `Kind`'s, in order: a new kind raises VERSION. Pure Python, no pygame.
+The kinds of part are `Kind`'s, in order: a new kind raises VERSION. A word of an older version
+is read as that version wrote it: 31 had the seven kinds before the Tank and boards with no hues
+(D-501). Pure Python, no pygame.
 """
 
 from __future__ import annotations
@@ -29,7 +31,10 @@ from nektoids.graph.spelling import spell, unspell
 from nektoids.levels.level import FORMAT, Item, ItemKind, Level
 from nektoids.levels.objectives import Count, Goal, Target, Verb, objective_to_dict
 
-VERSION = 31  # of the word, its hidden symbol: boards' count from 1 (D-205), levels' from 31
+VERSION = 32  # of the word, its hidden symbol: boards' count from 1 (D-205), levels' from 31
+# The versions still read, newest first: each, the kinds whose stock it holds, and the version of
+# the board's text its parts are written in (D-501).
+READABLE = {32: (tuple(Kind), 2), 31: (tuple(Kind)[:7], 1)}
 NEAR = 32  # positions from -NEAR to NEAR - 1 cost one digit [u]
 BITS = range(62)  # ... farther ones, their size in bits, then their bits
 ITEMS = range(64)  # how many items
@@ -43,7 +48,17 @@ STAYS = range(1, 61)  # a stay's seconds (objectives.SECONDS, D-307)
 LABELS = ("Title", "Author", "Description", "Level", "Board")
 WORDS = ("Level", "Board")  # a word, its first run of characters: what follows is left out
 LABEL = re.compile(r"(?:^|(?<=\s))(" + "|".join(LABELS) + r"):")
-BOARD_TAGS = ("zone", "parts", "cell", "kind", "facing", "wire", "how", "step")  # its questions
+BOARD_TAGS = (
+    "zone",
+    "parts",
+    "cell",
+    "kind",
+    "facing",
+    "hue",
+    "wire",
+    "how",
+    "step",
+)  # the board's
 UNTITLED = ("", "Say what the level asks.")  # a text without them, as a blank level (D-419)
 
 Choose = Callable[[str, Sequence], object]
@@ -74,19 +89,26 @@ def to_word(level: Level) -> str:
 def from_word(text: str) -> tuple[Play, bool]:
     """What a level's word holds, and whether a wrong character was put right; ValueError, with
     a reason a player can read, for a text that holds no level."""
-    try:
-        number, corrected = unspell(text, VERSION, "level")
-    except ValueError:
+    version, newest = None, None
+    for readable in READABLE:
+        try:
+            number, corrected = unspell(text, readable, "level")
+        except ValueError as error:
+            newest = newest or error
+            continue
+        version = readable
+        break
+    if version is None:
         if _is_board(text):
             raise ValueError("that is a board's text: paste it on the Board") from None
-        raise
+        raise newest
 
     def choose(tag: str, options: Sequence) -> object:
         nonlocal number
         number, choice = divmod(number, len(options))
         return options[choice]
 
-    play = _replay(choose)
+    play = _replay(choose, version)
     if number:
         raise ValueError("this text holds more than a level")
     return play, corrected
@@ -136,9 +158,11 @@ def read_shared(text: str) -> Level:
 # The replay, the same for both ways
 
 
-def _replay(choose: Choose) -> Play:
+def _replay(choose: Choose, version: int = VERSION) -> Play:
     """Build what a level's word holds decision by decision; `choose(tag, options)` picks one
-    of `options`. Its tags are not the board's, whose questions `boardtext.replay` asks."""
+    of `options`. Its tags are not the board's, whose questions `boardtext.replay` asks. A word
+    of an older `version` holds what that version did (`READABLE`)."""
+    kinds, board_version = READABLE[version]
     x, y = _integer(choose), _integer(choose)
     start = (float(x), float(y), float(choose("heading", HEADINGS)))
     items = []
@@ -146,8 +170,8 @@ def _replay(choose: Choose) -> Play:
         kind = choose("item", list(ItemKind))
         at = (float(_integer(choose)), float(_integer(choose)))
         items.append(Item(kind, at, float(choose("setting", SETTINGS))))
-    stock = {kind.value: choose("stock", STOCK) for kind in Kind}
-    placed = boardtext.replay(choose)
+    stock = {kind.value: choose("stock", STOCK) for kind in kinds}
+    placed = boardtext.replay(choose, board_version)
     parts = [{**part, "locked": True} for part in placed.to_dict()["parts"]]
     zone = len(placed.cells)
     board = {"zone": zone, "stock": {k: n for k, n in stock.items() if n != 0}, "parts": parts}
@@ -176,7 +200,7 @@ def _word(text: str) -> str:
 
 def _is_board(text: str) -> bool:
     try:
-        unspell(text, boardtext.VERSION, "board")
+        boardtext.unspell_any(text)
     except ValueError:
         return False
     return True
