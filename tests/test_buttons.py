@@ -14,7 +14,7 @@ from nektoids.editor.buttons import (
     tip,
 )
 from nektoids.editor.layout import make_layout
-from nektoids.editor.picking import NOTHING, clicked
+from nektoids.editor.picking import NOTHING, clicked, crossing
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import hex_disc, hex_distance, to_pixel
 from nektoids.levels.arenas import sandbox
@@ -134,3 +134,21 @@ def test_a_tooltip_names_the_button_its_key_and_what_is_left_of_a_part():
     assert tip(Button.UNDO, board, kinds, key_hints=False) == "Undo"
     assert tip(Kind.EYE, board, kinds) == "Eye (1), 2 left"
     assert tip(Kind.SUM, board, kinds, key_hints=False) == "Sum"  # unlimited: no count
+
+
+def test_empty_cells_picked_light_delete_when_a_wire_crosses_them_and_it_takes_those():
+    board = Board(hex_disc(2))
+    kinds = frozenset({Kind.SUM, Kind.DOUBLE})
+    buttons = shown(kinds, editor=True)
+    total, double = board.place(Kind.SUM, (-2, 0)), board.place(Kind.DOUBLE, (2, 0))
+    wire = board.connect(total.id, double.id)
+    through = wire.path[1]  # a free cell the wire crosses
+    pick = clicked(clicked(NOTHING, board, through), board, wire.path[2])  # two of its cells
+    looks = states(board, buttons, Button.SELECT, pick, False, False, kinds)
+    assert looks[Button.DELETE] is State.LIT and looks[Button.LOCK] is State.GREYED  # D-431
+    assert crossing(pick, board) == [wire]  # once, though it crosses both
+    off = next(c for c in board.cells if c not in wire.path)
+    lone = clicked(NOTHING, board, off)
+    assert states(board, buttons, Button.SELECT, lone, False, False, kinds)[Button.DELETE] is (
+        State.GREYED
+    )

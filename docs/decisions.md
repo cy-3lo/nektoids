@@ -2715,3 +2715,9 @@ lay on top of it, the loop unseen (invariant 6). A wire of two cells now takes t
 them: the router goes round, `exits` (a board as text, D-205) agrees, and a path laid on that
 edge is refused. Between neighbours a straight drag across therefore follows the one straight
 wire; D-429's last sentence, two wires sharing an edge, no longer happens.
+
+**D-431 — 2026-10-09 — Empty cells picked, Delete is lit when a wire crosses one of them, and deletes every wire that crosses them; Select stays chosen, the cells picked. Amends D-402.**
+The physicist's. A wire could be deleted only by a click on it, Delete held; empty cells picked
+greyed every button but a part's. Now Delete takes each wire through the cells picked once, one
+step for undo, darkened first while the mouse is on its button, as parts picked are (D-401). A
+click on the board with Delete held still takes the one wire under the pointer.

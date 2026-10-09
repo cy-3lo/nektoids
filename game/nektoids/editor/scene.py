@@ -92,6 +92,7 @@ from nektoids.editor.picking import (
     Picked,
     begin,
     clicked,
+    crossing,
     extend,
     kept,
     moved,
@@ -857,6 +858,8 @@ class BoardScene(Frame):
             if self.board.remaining(button) == 0:
                 return "none left"
             return "it may become only a part of its group, still left"
+        if self.pick.what is Picked.CELLS and button is Button.DELETE:
+            return "no wire crosses the cells picked"
         if self.pick.what is Picked.CELLS:
             return "empty cells picked: a part's button fills them"
         if button in TURNING:
@@ -883,6 +886,10 @@ class BoardScene(Frame):
             for node in loose:
                 if node.facing is not None:
                     self._turn(node.cell, -TURNING[button] if back else TURNING[button])
+        elif button is Button.DELETE and self.pick.what is Picked.CELLS:
+            for wire in crossing(self.pick, self.board):  # the wires through them (D-431)
+                self._delete_wire(wire)
+            self.held = Button.SELECT
         elif button is Button.DELETE:
             for node in loose:
                 self._delete_part(node)
@@ -1288,6 +1295,8 @@ class BoardScene(Frame):
         on_delete = button_at(self.shown_buttons(), size, origin, self.mouse) is Button.DELETE
         if self.keyboard or not on_delete:
             return frozenset(), []
+        if self.pick.what is Picked.CELLS:
+            return frozenset(), crossing(self.pick, self.board)  # D-431
         ids = frozenset(n.id for n in parts(self.pick, self.board) if not n.fixed)
         return ids, [w for w in self.board.wires if w.source in ids or w.target in ids]
 
@@ -1455,6 +1464,8 @@ class BoardScene(Frame):
             return "Click an eye or a thruster to turn it. S: back to Select."
         if isinstance(held, Kind):
             return "Click or drag over empty cells to place them. S: back to Select."
+        if self.pick.what is Picked.CELLS and crossing(self.pick, self.board):
+            return "A part's button puts one in each. Del deletes the wires through them."
         if self.pick.what is Picked.CELLS:
             return "A part's button, or its number, puts one in each, in the order picked."
         if picked:
