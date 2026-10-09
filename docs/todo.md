@@ -42,7 +42,7 @@ mockups (D-401 to D-406); Diagnostic in the drawer, the board kept editable, its
 place of meters, its beads denser (D-407, D-409, D-415, D-416); chapter 0's cards read again
 (D-408); the Editor's keys in place of its Wheel (D-410); the run's drag and wheel (D-411).
 
-## 16. Memory (stage 3, D-500)
+## 16. Memory and colour (stage 3, D-500, D-501)
 
 Built on `stage/3-memory`, branched from `main` once #125 is merged. Each item is planned, and
 its decisions taken, when it starts.
@@ -54,8 +54,17 @@ its decisions taken, when it starts.
 - [x] **Loops on the board** (D-428, brought onto `main` before v1.1). A wire may come back
   round to a part before it, as the dynamics always allowed (D-017). A tank on a loop that
   holds its level, Doubles making up for the fork, comes with the tanks.
-- [ ] **Lights that change in time.** A light's power as a schedule, deterministic: a flash that
-  goes dark, lights that switch on in turn. Set in the Editor, written in the level's file and
-  its word (D-413), drawn so that the player sees it change (invariant 6).
-- [ ] **Levels for memory.** A chapter whose levels need what the eyes no longer read: go where
-  the light flashed; visit the lights in the order they lit.
+- [ ] **Colours** (D-501). A signal in two channels, (r, b); white is both. Each a PR into the
+  stage, each playable:
+  - [ ] Channels inside, nothing seen: the state (N, n, 2), the laws on the last axis, every part
+    white; every shipped level's proof plays the same, positions equal tick by tick.
+  - [ ] Parts painted r, b or w with a Paint button on the Board: eyes, Sources, thrusters
+    (white pushes with the mean); a board's text a version up, reading the old as all white;
+    undo and redo.
+  - [ ] Lights coloured, r, b or w, in the level's format and the Editor.
+  - [ ] Beads in two hues, a stream a channel, never blended; the hues in the palette.
+  - [ ] Filter and Paint, two operators, painted with the same button; white's laws decided then.
+- [ ] **Levels for memory and colour.** Memory with no schedule, the light hidden by shadows
+  (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to red and
+  flee blue; two lights a colour-blind circuit cannot tell apart; a valve built from parts
+  (D-501).

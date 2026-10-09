@@ -2729,3 +2729,21 @@ The physicist's, in Diagnostic: the beads ran too fast to follow. Slowing them a
 packed them closer than a bead is wide at full rate, so the rate at full scale falls with the
 speed and a wire shows as many beads as before, D-416's point. Every circuit takes it, as
 D-416's did.
+
+**D-501 — 2026-10-09 — Stage 3 takes colours, a signal in two channels (r, b), and gives back lights that change in time, which go to the ideas for a later stage. Parts are painted red, blue or white; two new operators, Filter and Paint. A tank is an operator. The lamp and the valve stay in the ideas. Amends D-500.**
+The physicist's, planning the todo's §16. A signal becomes two rates, (r, b), each in
+[0, RATE_MAX]; white is both. Today's laws act channel by channel, unchanged. A part is painted
+r, b or w (white until painted) with a new button on the Board: an eye passes the channels of its
+colour, a Source sends (1, 0), (0, 1) or (1, 1), a thruster pushes with r, with b, or, white,
+with their mean (r + b)/2. A light is r, b or w, white shining (P, P). So white light, white eyes
+and white thrusters play every level and saved board as they play today, positions equal tick by
+tick; the run's hash changes, the state having one more axis. A wire carries a stream of beads a
+channel, never one blended hue (invariant 6). Filter r passes red and stops blue, (r, b) →
+(r, 0); Paint r turns all to red, (r, b) → (min(R, r + b), 0); white's laws are decided when
+they are built. The signal hues are two of their own in the palette, apart for colour-blind eyes:
+`accent2` keeps its job, what goes wrong (D-047). A tank is an OPERATOR, swapped with the
+operators, its button at E under Sum and Difference. Out: the lamp stays in stage 5, nothing
+reading it yet (D-018); no Sink, a part with no wire out being one; the valve stays in the ideas.
+Colours do not make a valve, being linear channel by channel, but today's parts do:
+max(0, a − b) = |max(a, b) − b|, with max(a, b) = (a + b + |a − b|)/2, a level's puzzle. Lights
+that change in time leave the stage, so its memory levels hide the light with shadows (D-019).
