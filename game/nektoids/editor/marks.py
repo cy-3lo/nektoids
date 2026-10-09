@@ -27,7 +27,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.editor.geometry import EYE_DISC, SQUARE_POINT
-from nektoids.graph.dynamics import RATE_MAX, white
+from nektoids.graph.dynamics import RATE_MAX, painted
 from nektoids.graph.hexgrid import Cell
 from nektoids.graph.network import Network, body_disc
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
@@ -130,7 +130,14 @@ def at_work(
     return AtWork(
         intake=intake(arena, eye_mount, eye_facing, eyes, pose, radius, frame, specks, stretch),
         flames=flames(
-            white(y[net.thrusters]), thr_facing, thrusters, pose, radius, frame, specks, stretch
+            painted(net, y[None], net.thrusters)[0],
+            thr_facing,
+            thrusters,
+            pose,
+            radius,
+            frame,
+            specks,
+            stretch,
         ),
         eyes=to_plane(eyes, pose, radius),
         thrusters=to_plane(thrusters, pose, radius),

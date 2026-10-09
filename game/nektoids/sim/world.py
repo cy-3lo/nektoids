@@ -16,9 +16,9 @@ dt [s]:
 A sensor's rate comes from its kind's sense, an actuator's effect from its kind's action, each
 named in the table of kinds and mapped here to its function, `SENSES` and `ACTIONS` (D-203). So
 after a tick, as after a restart or a drag, y's sensor rows are what the sensors read where
-the bodies are. Every light, sensor and actuator is white so far (D-501): a sensor's reading goes
-into both channels, and an actuator acts on their mean, `dynamics.white`. Nothing is changed in
-place. Pure numpy, no pygame.
+the bodies are. The light is white so far (D-501): a sensor sends its reading in the channels of
+its paint, and an actuator acts on the channel of its paint, a white one on their mean. Nothing is
+changed in place. Pure numpy, no pygame.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ import hashlib
 import numpy as np
 
 from nektoids.graph import dynamics
-from nektoids.graph.dynamics import CHANNELS, RATE_MAX
+from nektoids.graph.dynamics import CHANNELS, RATE_MAX, masks
 from nektoids.graph.network import Network
 from nektoids.sim.arena import Arena
 from nektoids.sim.contact import collide
@@ -66,21 +66,24 @@ def readings(
     arena: Arena, net: Network, pos: np.ndarray, heading: np.ndarray, radius: np.ndarray
 ) -> np.ndarray:
     """(N, n, C): each sensor's rate where the bodies are, by its kind's sense, in
-    [0, RATE_MAX], white: the same in every channel; 0 in the other rows."""
+    [0, RATE_MAX], in the channels of its paint (D-501), the light being white; 0 in the other
+    rows."""
     given = np.zeros((pos.shape[0], net.n, CHANNELS))
     for kind, nodes in net.senses:
         rates = SENSES[kind.spec.sense](arena, pos, heading, radius, *parts(net, nodes))
-        given[:, nodes] = np.clip(rates, 0.0, RATE_MAX)[:, :, None]
+        given[:, nodes] = np.clip(rates, 0.0, RATE_MAX)[:, :, None] * masks(
+            net.hues[i] for i in nodes
+        )
     return given
 
 
 def push(net: Network, y: np.ndarray, radius: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """The force (N, 2) in the body's frame [f] and the torque (N,) [f u] that the actuators of
-    rates y (N, n, C) exert, each kind's by its action, from its nodes' outputs: white, the mean
-    of the channels (D-501)."""
-    out = dynamics.white(dynamics.outputs(net, y))
+    rates y (N, n, C) exert, each kind's by its action, from its nodes' outputs as their paint
+    reads them, `dynamics.painted` (D-501)."""
+    out = dynamics.outputs(net, y)
     pushes = [
-        ACTIONS[kind.spec.action](out[:, nodes], radius, *parts(net, nodes))
+        ACTIONS[kind.spec.action](dynamics.painted(net, out, nodes), radius, *parts(net, nodes))
         for kind, nodes in net.actions
     ]
     if not pushes:

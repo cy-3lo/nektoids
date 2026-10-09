@@ -28,7 +28,7 @@ from nektoids.graph.hexgrid import (
     neighbour,
     opposite,
 )
-from nektoids.graph.kinds import Kind
+from nektoids.graph.kinds import Hue, Kind
 
 FACING_NAMES = ("E", "NE", "NW", "W", "SW", "SE")  # hex directions 0..5, for `to_dict`
 
@@ -41,6 +41,7 @@ class Node:
     locked: bool = False  # pre-placed by the level: cannot be removed
     facing: int | None = None  # hex direction on the body (eyes, thrusters); None for the rest
     pinned: bool = False  # locked by the player: stays put, as it is, until freed (D-406)
+    hue: Hue = Hue.WHITE  # what it is painted (D-501): white for a part that cannot be painted
 
     @property
     def fixed(self) -> bool:
@@ -130,13 +131,18 @@ class Board:
     # Components
 
     def place(
-        self, kind: Kind, cell: Cell, locked: bool = False, facing: int | None = None
+        self,
+        kind: Kind,
+        cell: Cell,
+        locked: bool = False,
+        facing: int | None = None,
+        hue: Hue = Hue.WHITE,
     ) -> Node | Refused:
         """Put a component on a cell no other holds. The wires crossing it are routed again round
         it, in the order they were drawn (D-086); if one finds no way round, nothing changes.
 
         Eyes and thrusters point along `facing`, or their kind's default if it is None;
-        operators have no direction.
+        operators have no direction. A part that may be painted takes `hue`; the rest are white.
         """
         if cell not in self._on_board:
             return Refused("outside the zone")
@@ -149,7 +155,8 @@ class Board:
             facing = None
         elif facing is None:
             facing = kind.default_facing
-        node = Node(self._next_id, kind, cell, locked=locked, facing=facing)
+        hue = hue if kind.paintable else Hue.WHITE
+        node = Node(self._next_id, kind, cell, locked=locked, facing=facing, hue=hue)
         self.nodes[node.id] = node
         saved = list(self.wires)
         crossing = [i for i, wire in enumerate(saved) if cell in wire.path[1:-1]]
@@ -176,8 +183,9 @@ class Board:
 
     def replace(self, node_id: int, kind: Kind) -> tuple[Node, int] | Refused:
         """A part of `kind` where node `node_id` is (D-068): on its cell, facing its way if both
-        turn, with each of its wires the new part can take, routed again in the order they were
-        drawn. Returns the new node and how many wires could not follow, which go."""
+        turn, painted as it was if both may be painted (D-501), with each of its wires the new
+        part can take, routed again in the order they were drawn. Returns the new node and how
+        many wires could not follow, which go."""
         old = self.nodes[node_id]
         if old.fixed:
             return Refused(_why_fixed(old))
@@ -187,7 +195,7 @@ class Board:
         ends = [(w.source, w.target) for w in self.wires if node_id in (w.source, w.target)]
         self.remove_node(node_id)
         facing = old.facing if kind.default_facing is not None else None
-        node = self.place(kind, old.cell, facing=facing)
+        node = self.place(kind, old.cell, facing=facing, hue=old.hue)
         if isinstance(node, Refused):
             self.restore(before)
             return node
@@ -275,6 +283,17 @@ class Board:
         turned = replace(node, facing=(node.facing + steps) % 6)
         self.nodes[node_id] = turned
         return turned
+
+    def paint(self, node_id: int, hue: Hue) -> Node | Refused:
+        """Paint an eye, a Source or a thruster `hue` (D-501)."""
+        node = self.nodes[node_id]
+        if not node.kind.paintable:
+            return Refused(f"{node.kind.spec.name}s cannot be painted")
+        if node.fixed:
+            return Refused(_why_fixed(node))
+        painted = replace(node, hue=hue)
+        self.nodes[node_id] = painted
+        return painted
 
     # Wires
 
@@ -372,7 +391,7 @@ class Board:
             a = "an" if kind[0] in "aeiou" else "a"
             return Refused(f"the board has something where the level places {a} {kind}")
         ids = itertools.count(self._next_id)
-        nodes += [Node(next(ids), n.kind, n.cell, True, n.facing) for n in new]
+        nodes += [replace(n, id=next(ids), locked=True, pinned=False) for n in new]
         state = BoardState(tuple(sorted(nodes, key=lambda n: n.id)), tuple(self.wires), ())
         refused = _misfit(state, other._on_board, other.total)
         if refused is not None:
@@ -453,6 +472,7 @@ class Board:
                     "facing": None if node.facing is None else FACING_NAMES[node.facing],
                     "locked": node.locked,
                     **({"pinned": True} if node.pinned else {}),
+                    **({"hue": node.hue.value} if node.hue is not Hue.WHITE else {}),
                 }
                 for node in (self.nodes[i] for i in ids)
             ],
@@ -482,6 +502,7 @@ class Board:
                 tuple(part["cell"]),
                 locked=part["locked"],
                 facing=None if facing is None else FACING_NAMES.index(facing),
+                hue=Hue(part.get("hue", Hue.WHITE.value)),
             )
             if isinstance(placed, Refused):
                 raise ValueError(f"part {part}: {placed.reason}")
@@ -625,9 +646,9 @@ def _uses_each_edge_once(path: tuple[Cell, ...]) -> bool:
     return True
 
 
-def _placed(nodes: Iterable[Node]) -> list[tuple[str, Cell, int | None]]:
+def _placed(nodes: Iterable[Node]) -> list[tuple[str, Cell, int | None, str]]:
     """Parts as placed, whatever their ids: to tell whether two boards' locked parts agree."""
-    return sorted((n.kind.value, n.cell, n.facing) for n in nodes)
+    return sorted((n.kind.value, n.cell, n.facing, n.hue.value) for n in nodes)
 
 
 def _count(n: int) -> str:
@@ -666,9 +687,9 @@ def _misfit(state: BoardState, zone: set[Cell], total) -> Refused | None:
     return None
 
 
-def _where(node: Node) -> tuple[Kind, Cell, int | None]:
-    """A part as placed, whatever its id: its kind, its cell, its facing."""
-    return node.kind, node.cell, node.facing
+def _where(node: Node) -> tuple[Kind, Cell, int | None, Hue]:
+    """A part as placed, whatever its id: its kind, its cell, its facing, its hue."""
+    return node.kind, node.cell, node.facing, node.hue
 
 
 def _why_fixed(node: Node) -> str:

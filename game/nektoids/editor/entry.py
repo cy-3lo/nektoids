@@ -30,7 +30,7 @@ from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.layout import Rect, View, fitted_view
 from nektoids.editor.streams import EYE_FACE, THRUSTER_BACK
 from nektoids.graph.board import Board, Kind
-from nektoids.graph.dynamics import RATE_MAX, initial_state, step, white
+from nektoids.graph.dynamics import RATE_MAX, initial_state, shown, step
 from nektoids.graph.hexgrid import Cell, W, to_pixel
 from nektoids.graph.kinds import TANK_TAU
 from nektoids.sim.optics import FACING_STEP
@@ -108,8 +108,8 @@ class Entry:
 
     @property
     def y(self) -> np.ndarray:
-        """Every node's rate now, white (n,): the mean of its channels (D-501)."""
-        return white(self.state[0])
+        """Every node's rate now, (n,), as the Board shows it (`dynamics.shown`, D-501)."""
+        return shown(self.circuit.net, self.state)[0]
 
     def eyes(self) -> np.ndarray:
         """What each eye reads now: its reading; the Eye's own rises and falls, the Tank's input

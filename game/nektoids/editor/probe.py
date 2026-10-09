@@ -19,7 +19,7 @@ from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT
 from nektoids.editor.layout import Rect
 from nektoids.graph.board import Board
-from nektoids.graph.dynamics import initial_state, step, white
+from nektoids.graph.dynamics import initial_state, shown, step
 from nektoids.graph.network import Network
 from nektoids.levels.level import Level
 from nektoids.sim import world
@@ -67,8 +67,8 @@ class Probe:
 
     @property
     def y(self) -> np.ndarray:
-        """Every node's rate now, white (n,): the mean of its channels (D-501)."""
-        return white(self.state[0])
+        """Every node's rate now, (n,), as the Board shows it (`dynamics.shown`, D-501)."""
+        return shown(self.net, self.state)[0]
 
     @property
     def pose(self) -> Pose:

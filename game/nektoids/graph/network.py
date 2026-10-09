@@ -18,7 +18,7 @@ import numpy as np
 
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import Cell, to_pixel
-from nektoids.graph.kinds import Category
+from nektoids.graph.kinds import Category, Hue
 from nektoids.graph.laws import Law
 
 SENSOR, ACTUATOR = Category.SENSOR, Category.ACTUATOR
@@ -48,6 +48,7 @@ class Network:
     eyes: np.ndarray  # indices of the eyes, ascending
     sources: np.ndarray  # indices of the sources, ascending
     thrusters: np.ndarray  # indices of the thrusters, ascending
+    hues: tuple[Hue, ...]  # what each node is painted (D-501); white if it cannot be
 
     @property
     def n(self) -> int:
@@ -68,6 +69,7 @@ class Network:
             [board.nodes[i].facing for i in ids],
             ids=ids,
             mount=body_mounts(board.cells, [board.nodes[i].cell for i in ids]),
+            hues=[board.nodes[i].hue for i in ids],
         )
 
     @classmethod
@@ -78,10 +80,12 @@ class Network:
         facing: Sequence[int | None] | None = None,
         ids: Sequence[int] | None = None,
         mount: np.ndarray | None = None,
+        hues: Sequence[Hue] | None = None,
     ) -> Network:
         """Network of nodes 0..n-1 of the given kinds and directed wires (source, target).
 
-        mount: (n, 2) positions on the body in body radii; all at the centre if None.
+        mount: (n, 2) positions on the body in body radii; all at the centre if None. hues: what
+        each node is painted (D-501); all white if None.
 
         Raises ValueError for what no board could hold: a wire out of range, out of a thruster or
         into a sensor, a duplicate wire, or more inputs than the kind takes. Loops and a wire from
@@ -117,8 +121,9 @@ class Network:
             facing = [kind.default_facing for kind in kinds]
         ids = tuple(range(n)) if ids is None else tuple(ids)
         mount = np.zeros((n, 2)) if mount is None else np.array(mount, dtype=np.float64)
-        if len(ids) != n or len(facing) != n or mount.shape != (n, 2):
-            raise ValueError("ids, facing and mount need one entry per node")
+        hues = (Hue.WHITE,) * n if hues is None else tuple(hues)
+        if len(ids) != n or len(facing) != n or mount.shape != (n, 2) or len(hues) != n:
+            raise ValueError("ids, facing, mount and hues need one entry per node")
 
         def indices(kind: Kind) -> np.ndarray:
             return _frozen(np.array([i for i, k in enumerate(kinds) if k is kind], dtype=np.int64))
@@ -139,6 +144,7 @@ class Network:
             eyes=indices(Kind.EYE),
             sources=indices(Kind.SOURCE),
             thrusters=indices(Kind.THRUSTER),
+            hues=hues,
         )
 
 

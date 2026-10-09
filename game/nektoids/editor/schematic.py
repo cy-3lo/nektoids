@@ -29,7 +29,7 @@ from nektoids.editor.devdrive import (
 )
 from nektoids.editor.layout import SCREEN, Rect
 from nektoids.graph.analysis import LoopReport, loop_report, problems
-from nektoids.graph.dynamics import RATE_MAX, given_rates, initial_state, step, white
+from nektoids.graph.dynamics import RATE_MAX, given_rates, initial_state, shown, step
 from nektoids.graph.equations import node_equations, report_lines
 from nektoids.graph.network import Network
 from nektoids.levels.scenarios import Scenario
@@ -72,8 +72,8 @@ class SchematicScene:
 
     @property
     def y(self) -> np.ndarray:
-        """The rate of every node now, white, shape (n,): the mean of its channels (D-501)."""
-        return white(self.state[0])
+        """The rate of every node now, shape (n,), as the Board shows it (`dynamics.shown`)."""
+        return shown(self.net, self.state)[0]
 
     # Per frame
 
