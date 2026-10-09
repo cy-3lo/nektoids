@@ -71,17 +71,17 @@ def chain_to(
             else:
                 board.connect(wire.source, wire.target, wire.path)
         return Chain(chain.path[: i + 1], chain.steps[:i])
-    way = board.orient(chain.last, node_id)
     if trail is None:
-        there = wired(board, *way)
-    else:  # both ways along one edge, between neighbours: the one the drag runs goes
-        followed = [
-            w
-            for w in board.wires
-            if {w.source, w.target} == {chain.last, node_id} and retraces(w, trail)
-        ]
-        followed.sort(key=lambda w: (w.source, w.target) != way)
-        there = followed[0] if followed else None
+        there = wired(board, *board.orient(chain.last, node_id))
+    else:
+        there = next(
+            (
+                w
+                for w in board.wires
+                if {w.source, w.target} == {chain.last, node_id} and retraces(w, trail)
+            ),
+            None,
+        )
     if there is not None:
         if not cut(there):
             return None

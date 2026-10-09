@@ -234,6 +234,17 @@ def test_wires_run_from_outputs_to_inputs_and_may_close_a_loop():
     assert len(board.wires) == 2
 
 
+def test_neighbours_wired_both_ways_never_share_their_edge():
+    board, (gain, half) = build([((2, 3), Kind.DOUBLE), ((3, 3), Kind.HALVE)])
+    there = board.connect(gain.id, half.id)
+    back = board.connect(half.id, gain.id)  # D-430: round, not on the edge between them
+    assert len(there.path) == 2 and len(back.path) > 2
+    board.remove_wire(back)
+    assert board.connect(half.id, gain.id, (half.cell, gain.cell)) == Refused(
+        "its path takes an edge another wire has"
+    )
+
+
 def test_sum_and_difference_take_two_inputs_and_give_one_output():
     board, (a, b, c, total, left, right) = build(
         [

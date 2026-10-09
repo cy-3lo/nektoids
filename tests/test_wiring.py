@@ -124,5 +124,5 @@ def test_between_neighbours_only_a_drag_straight_across_takes_the_wire_away():
     run(board, total, double)  # neighbours: no cell between
     drag(board, double, total, ((0, 1), (-1, 1)))  # round a corner: the loop
     assert pairs(board) == {(total, double), (double, total)}
-    drag(board, double, total, ())  # straight across: the one the drag runs goes
-    assert pairs(board) == {(total, double)}
+    drag(board, double, total, ())  # straight across: the straight one goes (D-430)
+    assert pairs(board) == {(double, total)}
