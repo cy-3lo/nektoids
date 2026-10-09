@@ -112,7 +112,8 @@ from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
     BAR,
-    BEAD,
+    BEAD_AMBER,
+    BEAD_VIOLET,
     BODY,
     BODY_OUTLINE,
     BUTTON,
@@ -278,6 +279,7 @@ WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
 BODY_OF = {Hue.AMBER: PAINT_AMBER, Hue.VIOLET: PAINT_VIOLET}  # a painted part's body (D-503)
+BEAD_OF = {Hue.AMBER: BEAD_AMBER, Hue.VIOLET: BEAD_VIOLET}  # a bead of each channel
 FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 16  # a menu row's info disc [px]
 INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit under it (D-094)
@@ -1465,12 +1467,13 @@ def _draw_wires(screen: pygame.Surface, circuit: Circuit, belt: bool) -> None:
     radius = max(2, round(BEAD_RADIUS * view.size))
     for k, path in enumerate(circuit.paths):
         points = wire_points(path, view.size, view.origin)
-        flux = float(circuit.flux[k])
-        pygame.draw.lines(screen, WIRE, False, points, 2)  # one colour: the beads show the rate
+        pygame.draw.lines(screen, WIRE, False, points, 2)  # neutral: the beads show the rates
         along = cumulative_lengths(points)
-        for s in circuit.beads.positions(k, BEAD_RATE_AT_FULL / RATE_MAX * flux, belt=belt):
-            x, y = point_at(points, along, s * view.size)
-            pygame.draw.circle(screen, BEAD, (round(x), round(y)), radius)
+        for hue in Hue:  # a stream a channel, in its colour (D-502, D-503)
+            flux = BEAD_RATE_AT_FULL / RATE_MAX * float(circuit.flux[k, hue.channel])
+            for s in circuit.beads.positions(circuit.stream(k, hue.channel), flux, belt=belt):
+                x, y = point_at(points, along, s * view.size)
+                pygame.draw.circle(screen, BEAD_OF[hue], (round(x), round(y)), radius)
 
 
 def _draw_parts(
@@ -1490,8 +1493,8 @@ def _draw_parts(
         angle = placed_angle(kind, facing)
         hue = circuit.board.nodes[node_id].hue
         draw_part(screen, fonts, kind, angle, (cx, cy), size, False, level=level, hue=hue)
-        if meters and kind in (Kind.EYE, Kind.THRUSTER):
-            _draw_meter(screen, (cx + METER_AT * size, cy), size, rate)
+        if meters and kind in (Kind.EYE, Kind.THRUSTER):  # its own channel, in its colour
+            _draw_meter(screen, (cx + METER_AT * size, cy), size, rate, BODY_OF[hue])
         if plain:
             continue
         name = cached_text(fonts.small, label(net, i), DIM_TEXT)
@@ -1501,9 +1504,9 @@ def _draw_parts(
 
 
 def _draw_meter(
-    screen: pygame.Surface, centre: tuple[float, float], size: float, rate: float
+    screen: pygame.Surface, centre: tuple[float, float], size: float, rate: float, ink=METER
 ) -> None:
-    """A part's level meter: filled from the foot up to its rate, in the colour of its face."""
+    """A part's level meter: filled from the foot up to its rate, in `ink`: its colour."""
     outline = pygame.Rect(0, 0, METER_WIDTH, round(METER_HEIGHT * size))
     outline.center = (round(centre[0]), round(centre[1]))
     filled = outline.inflate(-4, -4)
@@ -1511,4 +1514,4 @@ def _draw_meter(
     filled.height = round(filled.height * min(1.0, rate / RATE_MAX))
     filled.bottom = foot
     pygame.draw.rect(screen, RULE, outline, 1)
-    pygame.draw.rect(screen, METER, filled)
+    pygame.draw.rect(screen, ink, filled)

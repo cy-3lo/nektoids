@@ -84,7 +84,7 @@ class SchematicScene:
     def _tick(self, tick: int) -> None:
         eyes, sources = self._sensor_inputs(tick)
         self.state = step(self.net, self.state, eyes, DT, sources)
-        self.circuit.advance(self.y, DT)
+        self.circuit.advance(self.state[0], DT)
 
     def _sensor_inputs(self, tick: int) -> tuple[np.ndarray, np.ndarray]:
         """What the eyes (following the waveform) and the sources send at `tick`."""
@@ -98,7 +98,7 @@ class SchematicScene:
         given = given_rates(self.net, eyes, sources)
         known = self.net.sensors
         self.state[:, known] = given[:, known]
-        self.circuit.show(self.y)
+        self.circuit.show(self.state[0])
 
     # Input
 

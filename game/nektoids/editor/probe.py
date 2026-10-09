@@ -87,7 +87,7 @@ class Probe:
 
     def tick(self, dt: float = DT) -> None:
         self.state = step(self.net, self.state, self.eyes()[None, :], dt)
-        self.circuit.advance(self.y, dt)
+        self.circuit.advance(self.state[0], dt)
         self.ticks += 1
 
     def place(self, x: float, y: float) -> None:

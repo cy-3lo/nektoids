@@ -226,6 +226,11 @@ class ArenaScene(Frame):
         return dynamics.shown(self.net, self.state[k : k + 1])[0]
 
     @property
+    def channels(self) -> np.ndarray:
+        """The selected swimmer's rates now in each channel, shape (n, C) (D-502)."""
+        return self.state[0 if self.selected is None else self.selected]
+
+    @property
     def level(self) -> Level:
         return self.levels[self.index]
 
@@ -298,7 +303,7 @@ class ArenaScene(Frame):
         self.eyes = self._read_eyes()
         hues = [self.net.hues[i] for i in self.net.eyes]
         self.state[:, self.net.eyes] = self.eyes[:, :, None] * masks(hues)  # by their paint
-        self.circuit.show(self.y)
+        self.circuit.show(self.channels)
         if self.show_map:
             self._map()
 
@@ -396,7 +401,7 @@ class ArenaScene(Frame):
         self.circuit.beads.phase = list(then.phase)
         self.arena = then.arena
         self.eyes = painted(self.net, self.state, self.net.eyes)
-        self.circuit.show(self.y)
+        self.circuit.show(self.channels)
 
     def _snapshot(self) -> Snapshot:
         return Snapshot(
@@ -414,7 +419,7 @@ class ArenaScene(Frame):
         )
         self.eyes = painted(self.net, self.state, self.net.eyes)  # where they now are
         self.kept = follow(self.level, self.kept, self.pos, self.radius, DT, self.arena)
-        self.circuit.advance(self.y, DT)
+        self.circuit.advance(self.channels, DT)
 
     @property
     def outcome(self) -> Outcome | None:

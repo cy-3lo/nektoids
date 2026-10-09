@@ -101,10 +101,10 @@ class Entry:
         self.state = initial_state(self.circuit.net)
         for _ in range(round((SETTLE_TANK if kind is Kind.TANK else SETTLE) / DT)):
             self.state = step(self.circuit.net, self.state, self.eyes()[None, :], DT)
-        self.circuit.show(self.y)
+        self.circuit.show(self.state[0])
         if kind in KEEP_TIME:
             self._keep_time(KEEP_TIME[kind])
-        self.circuit.beads.fill((BEAD_RATE_AT_FULL / RATE_MAX * self.circuit.flux).tolist())
+        self.circuit.beads.fill(self.circuit.rates())
 
     @property
     def y(self) -> np.ndarray:
@@ -126,7 +126,7 @@ class Entry:
         """A frame: its ticks run, the beads move."""
         for _ in range(TICKS_PER_FRAME):
             self.state = step(self.circuit.net, self.state, self.eyes()[None, :], DT)
-            self.circuit.advance(self.y, DT)
+            self.circuit.advance(self.state[0], DT)
             self.time += DT
         self.frame += 1
 
@@ -142,10 +142,10 @@ class Entry:
 
     def _keep_time(self, ratio: float) -> None:
         """The beads out of the part leave as one comes in, and `ratio` times as often: wire 0
-        comes in, wire 1 goes out. A bead reaches the end of wire 0 when its phase is
+        comes in, wire 1 goes out, both amber. A bead reaches the end of wire 0 when its phase is
         `length × flux / speed`, modulo 1; wire 1's phase is set to wrap then."""
         beads = self.circuit.beads
-        flux = BEAD_RATE_AT_FULL / RATE_MAX * float(self.circuit.flux[0])
+        flux = BEAD_RATE_AT_FULL / RATE_MAX * float(self.circuit.flux[0, 0])
         arrives = beads.lengths[0] * flux / beads.speed
         beads.phase[1] = (ratio * (beads.phase[0] - arrives)) % 1.0
 
