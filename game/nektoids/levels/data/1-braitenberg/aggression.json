@@ -17,5 +17,5 @@
   "time_limit": 20,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "SWORD",
-  "proof": {"board": "1jkWQx9goWg6SD1", "ticks": 548, "parts": 4}
+  "proof": {"board": "1jkWQx9goWg6SD1", "ticks": 549, "parts": 4}
 }
