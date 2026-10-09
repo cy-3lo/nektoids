@@ -45,7 +45,7 @@ def random_board(rng, radius):
     for cell in cells[: rng.randint(0, len(cells) // 2)]:
         kind = rng.choice(list(Kind))
         facing = rng.randrange(6) if kind.default_facing is not None else None
-        board.place(kind, cell, facing=facing, hue=rng.choice(list(Hue)))  # white if it cannot
+        board.place(kind, cell, facing=facing, hue=rng.choice(list(Hue)))  # amber if it cannot
     ids = sorted(board.nodes)
     for _ in range(rng.randint(0, 2 * len(ids))):
         if len(ids) > 1:
@@ -110,7 +110,7 @@ def test_a_board_too_long_for_a_block_takes_several():
     for cell in board.cells:  # all 37 cells
         kind = rng.choice(list(Kind))
         facing = rng.randrange(6) if kind.default_facing is not None else None
-        board.place(kind, cell, facing=facing, hue=rng.choice(list(Hue)))  # white if it cannot
+        board.place(kind, cell, facing=facing, hue=rng.choice(list(Hue)))  # amber if it cannot
     text = to_text(board)
     assert len(text) > spelling.BLOCK + spelling.CHECKS
     assert parts_and_wires(from_text(text)) == parts_and_wires(board)
@@ -152,18 +152,18 @@ def test_a_text_of_another_version_is_refused(monkeypatch):
         from_text(text)
 
 
-def test_a_text_of_version_1_still_reads_its_parts_white():
+def test_a_text_of_version_1_still_reads_its_parts_amber():
     board = from_text("2Svbskor23U3aec")  # Fear's, as v1.1 wrote it (D-501)
     assert parts_and_wires(board) == parts_and_wires(fear())
-    assert all(node.hue is Hue.WHITE for node in board.nodes.values())
+    assert all(node.hue is Hue.AMBER for node in board.nodes.values())
 
 
 def test_a_painted_board_comes_back_painted():
     board = fear()
     eye = next(n for n in board.nodes.values() if n.kind is Kind.EYE)
     thruster = next(n for n in board.nodes.values() if n.kind is Kind.THRUSTER)
-    board.paint(eye.id, Hue.RED)
-    board.paint(thruster.id, Hue.RED)
+    board.paint(eye.id, Hue.VIOLET)
+    board.paint(thruster.id, Hue.VIOLET)
     again = from_text(to_text(board))
     assert {n.cell: n.hue for n in again.nodes.values()} == {
         n.cell: n.hue for n in board.nodes.values()

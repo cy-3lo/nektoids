@@ -58,7 +58,7 @@ def test_the_motion_drawn_is_what_the_next_tick_does():
     _, net = crossed()
     arena = Arena(lights=(Light(20.0, 4.0, 8.0),))
     pos, heading, radius = np.array([[3.0, 2.0]]), np.array([0.4]), np.ones(1)
-    y = np.array([[[0.6, 0.1], [0.2, 0.4], [0.3, 0.0], [0.9, 0.5]]])  # (1, n, C), white and red
+    y = np.array([[[0.6, 0.1], [0.2, 0.4], [0.3, 0.0], [0.9, 0.5]]])  # (1, n, C), amber and violet
     vel, spin = motion(net, y[0], 1.0)
     after, turned, _, _ = step(arena, net, pos, heading, radius, y, DT)
     c, s = math.cos(0.4), math.sin(0.4)

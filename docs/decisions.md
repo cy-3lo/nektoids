@@ -2763,3 +2763,13 @@ operators: Paint, painted, turns what comes in to its colour, (w, r) to (min(R, 
 (0, min(R, w + r)), the one law that adds the channels together; Filter, painted, passes its
 colour alone, (w, 0) or (0, r); Swap exchanges them, (r, w). Their names on the board are settled
 when they are built: an operator called Paint beside the Paint button would read as one thing.
+
+**D-503 — 2026-10-09 — The two colours are amber and violet; white is no colour but the neutral: wires and operators. Every eye, Source and thruster is amber or violet, amber unless painted, and every light so far is amber. The Paint button holds a colour, shown on its brush: pressed with parts picked, it paints them that colour; with none, it switches the colour, and is held for the clicks. Amends D-502.**
+The physicist's, from the mockups: with white both a colour and the neutral, a white Sum could not
+be told from a part of the white channel. Now colour marks only what reads or acts in a channel,
+and the parts that carry whatever comes in are grey, as the wires are: the board says by itself
+which parts belong to a channel. A rate is (a, v), amber channel 0 and violet 1, so every level and
+proof runs bit-identical, violet at zero. Amber is drawn lighter than accent2, L 0.80 at hue 75°,
+so that colour-blind eyes tell it from the warning red; violet is L 0.66 at 300°. A part saved
+without a hue is amber. With a brush that holds its colour, a pick of mixed colours comes out of
+one press in one colour, and nothing is left to guess about which.

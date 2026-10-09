@@ -45,7 +45,7 @@ class Button(Enum):
     TURN_LEFT = "turn left"
     TURN_RIGHT = "turn right"
     WIRE = "wire"
-    PAINT = "paint"  # an eye, a Source or a thruster: white or red in turn (D-502)
+    PAINT = "paint"  # eyes, Sources, thrusters: its brush's colour, amber or violet (D-503)
 
 
 PLACES: dict[Button | Kind, Cell] = {

@@ -10,8 +10,8 @@ or |x_1 - x_2| for a Difference. Eyes and sources are given, not computed. The s
 of equations, so a loop is no special case: it is just a feedback that the state remembers, and
 it can settle, hold a value, latch or oscillate.
 
-The state is `y` of shape (N, n, C) for N agents, C = CHANNELS: each node's rate in white and in
-red (D-501, D-502), each channel following the same equations on its own. The caller keeps it
+The state is `y` of shape (N, n, C) for N agents, C = CHANNELS: each node's rate in amber and in
+violet (D-501 to D-503), each channel following the same equations on its own. The caller keeps it
 from tick to tick, and it belongs in the hash of the run. A painted part reads or sends its own
 channel alone, `painted`. A tick reads every output, then steps every state by its law,
 each from the same y, so the order in which kinds are stepped cannot change a result. The tick
@@ -41,7 +41,7 @@ def masks(hues) -> np.ndarray:
     return np.array([np.eye(CHANNELS)[hue.channel] for hue in hues]).reshape(-1, CHANNELS)
 
 
-WHITE_LIGHT = masks([Hue.WHITE])[0]  # every light so far (D-502): a red eye sees none of it
+AMBER_LIGHT = masks([Hue.AMBER])[0]  # every light so far (D-503): a violet eye sees none of it
 
 
 def painted(net: Network, y: np.ndarray, nodes: np.ndarray) -> np.ndarray:
@@ -54,7 +54,7 @@ def painted(net: Network, y: np.ndarray, nodes: np.ndarray) -> np.ndarray:
 def shown(net: Network, y: np.ndarray) -> np.ndarray:
     """(N, n): one rate a node, as the Board shows it until a wire's beads show each channel:
     a painted part's in its own channel, `painted`; any other node's larger channel, so that a
-    red signal alone is seen whole through the operators."""
+    violet signal alone is seen whole through the operators."""
     rates = y.max(axis=-1)
     paintable = np.array([kind.paintable for kind in net.kinds], dtype=bool)
     nodes = np.flatnonzero(paintable)
@@ -90,14 +90,14 @@ def max_dt(net: Network) -> float:
 def given_rates(net: Network, eyes: np.ndarray, sources: np.ndarray | None = None) -> np.ndarray:
     """(N, n, C): the rates of the sensors, zero elsewhere.
 
-    eyes: the light at each eye, (N, n_eyes, C), or (N, n_eyes) for white light; clipped to
+    eyes: the light at each eye, (N, n_eyes, C), or (N, n_eyes) for amber light; clipped to
     [0, RATE_MAX]. sources: override of SOURCE_RATE, (n_sources,) or (N, n_sources); only the
     developer view passes it. An eye sends the light of its own channel, a Source its rate in
-    its own channel, by their paint (D-502).
+    its own channel, by their paint (D-503).
     """
     eyes = np.asarray(eyes, dtype=np.float64)
     if eyes.ndim == 2:
-        eyes = eyes[:, :, None] * WHITE_LIGHT
+        eyes = eyes[:, :, None] * AMBER_LIGHT
     if eyes.ndim != 3 or eyes.shape[1:] != (len(net.eyes), CHANNELS):
         raise ValueError(
             f"eyes must have shape (N, {len(net.eyes)}[, {CHANNELS}]), got {eyes.shape}"

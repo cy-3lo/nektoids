@@ -14,7 +14,7 @@ come fit the same text; a zone is one of RADII codes, the discs and room for oth
 
 The integer is written in base 59, with check characters, by `spelling.py`; the version of the
 format is its hidden first symbol, so a level's word fails the checks. A text of an older
-version is read as that version wrote it: version 1 had no hues, its parts white. Pure Python,
+version is read as that version wrote it: version 1 had no hues, its parts amber. Pure Python,
 no pygame.
 """
 
@@ -84,7 +84,7 @@ def unspell_any(text: str) -> tuple[int, bool, int]:
 
 def replay(choose: Choose, version: int = VERSION) -> Board:
     """Build a board decision by decision; `choose(tag, options)` picks one of `options`. A text
-    of `version` 1 holds no hues: its parts are white."""
+    of `version` 1 holds no hues: its parts are amber."""
     radius = choose("zone", [*range(DISCS), *[None] * (RADII - DISCS)])
     if radius is None:
         raise ValueError("a body this version of the game does not have")
@@ -95,7 +95,7 @@ def replay(choose: Choose, version: int = VERSION) -> Board:
         if kind is None:
             raise ValueError("a part this version of the game does not have")
         facing = choose("facing", range(6)) if kind.default_facing is not None else None
-        hue = choose("hue", list(Hue)) if version >= 2 and kind.paintable else Hue.WHITE
+        hue = choose("hue", list(Hue)) if version >= 2 and kind.paintable else Hue.AMBER
         board.place(kind, cell, facing=facing, hue=hue)
     while True:
         ids = sorted(board.nodes)

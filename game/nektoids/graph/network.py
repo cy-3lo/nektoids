@@ -48,7 +48,7 @@ class Network:
     eyes: np.ndarray  # indices of the eyes, ascending
     sources: np.ndarray  # indices of the sources, ascending
     thrusters: np.ndarray  # indices of the thrusters, ascending
-    hues: tuple[Hue, ...]  # what each node is painted (D-501); white if it cannot be
+    hues: tuple[Hue, ...]  # what each node is painted (D-503); amber, unread, if neutral
 
     @property
     def n(self) -> int:
@@ -85,7 +85,7 @@ class Network:
         """Network of nodes 0..n-1 of the given kinds and directed wires (source, target).
 
         mount: (n, 2) positions on the body in body radii; all at the centre if None. hues: what
-        each node is painted (D-501); all white if None.
+        each node is painted (D-503); all amber if None.
 
         Raises ValueError for what no board could hold: a wire out of range, out of a thruster or
         into a sensor, a duplicate wire, or more inputs than the kind takes. Loops and a wire from
@@ -121,7 +121,7 @@ class Network:
             facing = [kind.default_facing for kind in kinds]
         ids = tuple(range(n)) if ids is None else tuple(ids)
         mount = np.zeros((n, 2)) if mount is None else np.array(mount, dtype=np.float64)
-        hues = (Hue.WHITE,) * n if hues is None else tuple(hues)
+        hues = (Hue.AMBER,) * n if hues is None else tuple(hues)
         if len(ids) != n or len(facing) != n or mount.shape != (n, 2) or len(hues) != n:
             raise ValueError("ids, facing, mount and hues need one entry per node")
 

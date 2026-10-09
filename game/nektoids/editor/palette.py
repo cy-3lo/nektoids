@@ -131,9 +131,13 @@ PALETTE = make_palette(
     tint_hue=273.0, tint_chroma=0.022, accent1_hue=187.0, accent2_hue=ACCENT2_HUE, light_hue=85.0
 )
 P = PALETTE
-# The signal's red (D-502), on a red part's body: accent2's hue, darker, so that it stands apart
-# from a white part even in grey and for colour-blind eyes.
-PAINT_RED = oklch(0.62, 0.13, ACCENT2_HUE)
+# The signal's two colours (D-503), on the body of a part that reads or acts in a channel: amber,
+# lighter than accent2 so that colour-blind eyes tell it from the warning red; violet, darker,
+# apart from amber and from the neutral parts even in grey. Their beads, a little brighter.
+PAINT_AMBER = oklch(0.80, 0.13, 75.0)
+PAINT_VIOLET = oklch(0.66, 0.14, 300.0)
+BEAD_AMBER = oklch(0.84, 0.14, 75.0)
+BEAD_VIOLET = oklch(0.72, 0.15, 300.0)
 
 # Every view
 BACKGROUND = P.base
@@ -179,7 +183,7 @@ GRID_LINE = mix(
     P.line, P.dim, 0.5
 )  # the zone's cells: lighter than the buttons' ground, not to mix with them
 BODY_OUTLINE = P.raised  # the swimmer's symbol behind the board, a shade under the grid
-COMPONENT = P.parts  # every part's body, white or unpainted
+COMPONENT = P.parts  # a neutral part's body: an operator's (D-503)
 LOCK_RING = mix(P.parts, P.bright, 0.4)
 PIN_RING = P.accent1.mid  # a part the player locked: theirs, in the accent (D-406)
 EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)

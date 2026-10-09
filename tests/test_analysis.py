@@ -24,7 +24,7 @@ def halve_ring():
 
 
 def relax(net, start, eyes, ticks=1500):
-    """From white rates `start` (1, n), the state (1, n, C) after `ticks` ticks (D-502)."""
+    """From amber rates `start` (1, n), the state (1, n, C) after `ticks` ticks (D-503)."""
     y = np.stack([start, np.zeros_like(start)], axis=-1)
     for _ in range(ticks):
         y = step(net, y, eyes, DT)

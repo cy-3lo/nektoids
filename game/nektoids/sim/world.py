@@ -2,7 +2,7 @@
 
 The state of N swimmers is four arrays that the caller keeps (the arena view, a test): pos (N, 2)
 [u], heading (N,) [rad], radius (N,) [u], and y (N, n, C), the rates of their nodes in each
-channel, white and red (D-017, D-502); and
+channel, amber and violet (D-017, D-503); and
 the plane they swim in, each obstacle where its spring has it (`Arena.moved`, D-424). A tick of
 dt [s]:
 
@@ -17,7 +17,7 @@ A sensor's rate comes from its kind's sense, an actuator's effect from its kind'
 named in the table of kinds and mapped here to its function, `SENSES` and `ACTIONS` (D-203). So
 after a tick, as after a restart or a drag, y's sensor rows are what the sensors read where
 the bodies are. Each part has its own channel, by its paint (D-502): an eye reads the light of its
-channel, every light being white so far, a Source sends in its channel, an actuator acts on its
+channel, every light being amber so far, a Source sends in its channel, an actuator acts on its
 channel alone. Nothing is changed in place. Pure numpy, no pygame.
 """
 
@@ -28,7 +28,7 @@ import hashlib
 import numpy as np
 
 from nektoids.graph import dynamics
-from nektoids.graph.dynamics import CHANNELS, RATE_MAX, WHITE_LIGHT, masks
+from nektoids.graph.dynamics import AMBER_LIGHT, CHANNELS, RATE_MAX, masks
 from nektoids.graph.network import Network
 from nektoids.sim.arena import Arena
 from nektoids.sim.contact import collide
@@ -66,13 +66,13 @@ def readings(
     arena: Arena, net: Network, pos: np.ndarray, heading: np.ndarray, radius: np.ndarray
 ) -> np.ndarray:
     """(N, n, C): each sensor's rate where the bodies are, by its kind's sense, in
-    [0, RATE_MAX], in its own channel by its paint (D-502): an eye's the light's, white so far,
-    so that a red eye reads nothing; 0 in the other rows."""
+    [0, RATE_MAX], in its own channel by its paint (D-502): an eye's the light's, amber so far,
+    so that a violet eye reads nothing; 0 in the other rows."""
     given = np.zeros((pos.shape[0], net.n, CHANNELS))
     for kind, nodes in net.senses:
         rates = SENSES[kind.spec.sense](arena, pos, heading, radius, *parts(net, nodes))
         own = masks(net.hues[i] for i in nodes)
-        seen = own * WHITE_LIGHT if kind.spec.sense == "light" else own
+        seen = own * AMBER_LIGHT if kind.spec.sense == "light" else own
         given[:, nodes] = np.clip(rates, 0.0, RATE_MAX)[:, :, None] * seen
     return given
 

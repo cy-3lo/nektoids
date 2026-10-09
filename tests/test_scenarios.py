@@ -16,7 +16,7 @@ SETTLE = 1500  # ticks: 12 s, long after every lag here has settled
 
 def run(title, eyes, ticks=SETTLE, sources=None, start=None):
     """The rates (1, n) of the board `title` after `ticks` ticks of constant sensors (one agent),
-    white: the state's white channel, its red checked at 0 (D-502); `start` white too."""
+    amber: the state's amber channel, its violet checked at 0 (D-503); `start` amber too."""
     scenario = BY_TITLE[title]
     net = Network.from_board(scenario.board)
     if sources is None:

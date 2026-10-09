@@ -176,6 +176,7 @@ class BoardScene(Frame):
         self.probing = False  # the probe held in Diagnostic's map, following the mouse
         self.guide_cells: frozenset[Cell] = frozenset()  # a tutorial step's cells; main.py's
         self.held: Button | Kind = Button.SELECT  # the button in hand (D-401, D-402)
+        self.brush: Hue = Hue.AMBER  # the colour Paint paints, on its brush (D-503)
         self.pick: Pick = NOTHING  # what Select has picked, in the order clicked (D-402)
         self.cursor: Cell | None = None  # the keyboard's cell: the arrows move it, Enter clicks
         self.wire_chain: Chain | None = None  # Wire held: the parts clicked, wired one to the next
@@ -825,7 +826,9 @@ class BoardScene(Frame):
             self._edit(EditButton.UNDO if button is Button.UNDO else EditButton.REDO)
             return
         look = self.button_states().get(button)
-        if button is Button.SELECT or look is State.CHOSEN:
+        if button is Button.PAINT and not (look is State.LIT and self.pick):
+            self._switch_brush()  # nothing picked: the other colour, held (D-503)
+        elif button is Button.SELECT or look is State.CHOSEN:
             self._hold(Button.SELECT)
         elif look is State.GREYED:
             self._refuse(self._why_not(button), None)
@@ -886,10 +889,10 @@ class BoardScene(Frame):
             for node in loose:
                 if node.facing is not None:
                     self._turn(node.cell, -TURNING[button] if back else TURNING[button])
-        elif button is Button.PAINT:  # all to the hue after the first's, alike (D-502)
-            paintable = [n for n in loose if n.kind.paintable]
-            for node in paintable:
-                self._paint(node.cell, paintable[0].hue.next)
+        elif button is Button.PAINT:  # all the brush's colour (D-503)
+            for node in loose:
+                if node.kind.paintable:
+                    self._paint(node.cell, self.brush)
         elif button is Button.DELETE and self.pick.what is Picked.CELLS:
             for wire in crossing(self.pick, self.board):  # the wires through them (D-431)
                 self._delete_wire(wire)
@@ -956,11 +959,10 @@ class BoardScene(Frame):
         elif held is Button.WIRE:
             self._wire_click(cell)
         elif held is Button.PAINT:
-            node = self.board.node_at(cell) if cell is not None else None
-            if node is None:
+            if cell is None or self.board.node_at(cell) is None:
                 self._refuse("click an eye, a Source or a thruster", cell)
             else:
-                self._paint(cell, node.hue.next)
+                self._paint(cell, self.brush)
 
     def _place_held(self, cell: Cell | None) -> None:
         """The part held placed on `cell`; it stays held while one of its kind is left, then
@@ -1075,6 +1077,12 @@ class BoardScene(Frame):
             self._refuse(result.reason, cell)
         else:
             self.message = ""
+
+    def _switch_brush(self) -> None:
+        """Paint pressed with nothing picked: its brush the other colour, and Paint held for the
+        clicks (D-503)."""
+        if self.held is Button.PAINT or self._hold(Button.PAINT):
+            self.brush = self.brush.next
 
     def _paint(self, cell: Cell, hue: Hue) -> None:
         """Paint the part on `cell` `hue` (D-501)."""

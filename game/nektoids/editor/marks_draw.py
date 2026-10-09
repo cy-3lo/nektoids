@@ -16,13 +16,13 @@ from nektoids.editor.palette import (
     FLAME,
     INTAKE,
     MOTION,
-    PAINT_RED,
-    PART_OUTLINE,
+    PAINT_AMBER,
+    PAINT_VIOLET,
     THRUSTER_BACK,
 )
 from nektoids.graph.kinds import Hue
 
-OUTLINE_OF = {Hue.WHITE: PART_OUTLINE, Hue.RED: PAINT_RED}  # a part's outline by its paint
+OUTLINE_OF = {Hue.AMBER: PAINT_AMBER, Hue.VIOLET: PAINT_VIOLET}  # an outline by its paint
 
 SPECK = 3  # a speck's side, and the pitch of the grid the specks sit on [px]
 FACE_WIDTH = 2  # an eye's face, a thruster's back [px]
@@ -43,7 +43,7 @@ def draw_over(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
 
 
 def draw_parts(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
-    """Each part's outline, red if painted red (D-502), and its face in its accent."""
+    """Each part's outline in its paint (D-503), and its face in its accent."""
     for outlines, hues, colour in (
         (body.eyes, body.eye_hues, EYE_FACE),
         (body.thrusters, body.thruster_hues, THRUSTER_BACK),

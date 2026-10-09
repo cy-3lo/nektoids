@@ -41,7 +41,7 @@ class Node:
     locked: bool = False  # pre-placed by the level: cannot be removed
     facing: int | None = None  # hex direction on the body (eyes, thrusters); None for the rest
     pinned: bool = False  # locked by the player: stays put, as it is, until freed (D-406)
-    hue: Hue = Hue.WHITE  # what it is painted (D-501): white for a part that cannot be painted
+    hue: Hue = Hue.AMBER  # what it is painted (D-503); amber, unread, for a neutral part
 
     @property
     def fixed(self) -> bool:
@@ -136,13 +136,13 @@ class Board:
         cell: Cell,
         locked: bool = False,
         facing: int | None = None,
-        hue: Hue = Hue.WHITE,
+        hue: Hue = Hue.AMBER,
     ) -> Node | Refused:
         """Put a component on a cell no other holds. The wires crossing it are routed again round
         it, in the order they were drawn (D-086); if one finds no way round, nothing changes.
 
         Eyes and thrusters point along `facing`, or their kind's default if it is None;
-        operators have no direction. A part that may be painted takes `hue`; the rest are white.
+        operators have no direction. A part that may be painted takes `hue`; the rest are neutral.
         """
         if cell not in self._on_board:
             return Refused("outside the zone")
@@ -155,7 +155,7 @@ class Board:
             facing = None
         elif facing is None:
             facing = kind.default_facing
-        hue = hue if kind.paintable else Hue.WHITE
+        hue = hue if kind.paintable else Hue.AMBER
         node = Node(self._next_id, kind, cell, locked=locked, facing=facing, hue=hue)
         self.nodes[node.id] = node
         saved = list(self.wires)
@@ -472,7 +472,7 @@ class Board:
                     "facing": None if node.facing is None else FACING_NAMES[node.facing],
                     "locked": node.locked,
                     **({"pinned": True} if node.pinned else {}),
-                    **({"hue": node.hue.value} if node.hue is not Hue.WHITE else {}),
+                    **({"hue": node.hue.value} if node.hue is not Hue.AMBER else {}),
                 }
                 for node in (self.nodes[i] for i in ids)
             ],
@@ -502,7 +502,7 @@ class Board:
                 tuple(part["cell"]),
                 locked=part["locked"],
                 facing=None if facing is None else FACING_NAMES.index(facing),
-                hue=Hue(part.get("hue", Hue.WHITE.value)),
+                hue=Hue(part.get("hue", Hue.AMBER.value)),
             )
             if isinstance(placed, Refused):
                 raise ValueError(f"part {part}: {placed.reason}")

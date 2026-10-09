@@ -54,18 +54,19 @@ its decisions taken, when it starts.
 - [x] **Loops on the board** (D-428, brought onto `main` before v1.1). A wire may come back
   round to a part before it, as the dynamics always allowed (D-017). A tank on a loop that
   holds its level, Doubles making up for the fork, comes with the tanks.
-- [ ] **Colours** (D-501, D-502). A signal in two channels, (w, r): white and red, each its own.
+- [ ] **Colours** (D-501 to D-503). A signal in two channels, (a, v): amber and violet; wires
+  and operators neutral, white.
   Each a PR into the stage, each playable:
   - [ ] Channels inside, nothing seen: the state (N, n, 2), the laws on the last axis, every part
-    white; every shipped level's proof plays the same, positions equal tick by tick.
-  - [ ] Parts painted white or red with a Paint button on the Board: eyes, Sources, thrusters,
-    each its own channel; a board's text and a level's word a version up, the old still read;
+    amber; every shipped level's proof plays the same, positions equal tick by tick.
+  - [ ] Parts painted amber or violet with a Paint button on the Board, its brush's colour
+    switched with nothing picked: eyes, Sources, thrusters, each its own channel; a board's text and a level's word a version up, the old still read;
     undo and redo.
-  - [ ] Lights coloured, white or red, in the level's format and the Editor.
-  - [ ] Beads in two streams, red half a spacing behind, never blended; a stream's beads 0.5 hex
+  - [ ] Lights coloured, amber or violet, in the level's format and the Editor.
+  - [ ] Beads in two streams, violet half a spacing behind, never blended; a stream's beads 0.5 hex
     sizes apart at full rate.
   - [ ] Paint, Filter and Swap, three operators; Paint and Filter painted with the same button.
 - [ ] **Levels for memory and colour.** Memory with no schedule, the light hidden by shadows
-  (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to the red light
-  and flee the white one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
+  (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to the violet light
+  and flee the amber one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
   (D-501).

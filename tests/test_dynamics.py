@@ -25,23 +25,23 @@ DT = 1 / 120  # the tick of the simulation [s]
 H = DT / TAU  # 1/2: the step of the lag
 
 
-W, R = Hue.WHITE.channel, Hue.RED.channel
+A, V = Hue.AMBER.channel, Hue.VIOLET.channel
 
 
 def both(y):
-    """White rates (N, n) as the state holds them, (N, n, C): in the white channel, red at 0."""
+    """Amber rates (N, n) as the state holds them, (N, n, C): violet at 0."""
     y = np.asarray(y, dtype=float)
     return np.stack([y, np.zeros_like(y)], axis=-1)
 
 
 def one(y):
-    """The white rates (N, n) of a state (N, n, C), its red checked at 0 (D-502)."""
-    assert not y[..., R].any()
-    return y[..., W]
+    """The amber rates (N, n) of a state (N, n, C), its violet checked at 0 (D-503)."""
+    assert not y[..., V].any()
+    return y[..., A]
 
 
-# The tests below run the dynamics in white, as every level is today (D-502): on rates (N, n),
-# through the state's white channel, every step checked to leave red at 0.
+# The tests below run the dynamics in amber, as every level is today (D-503): on rates (N, n),
+# through the state's amber channel, every step checked to leave violet at 0.
 
 
 def initial_state(net, agents=1):
@@ -299,34 +299,34 @@ def test_random_dags_relax_to_what_an_independent_evaluator_gives():
         np.testing.assert_allclose(y[0], expected, rtol=1e-9, atol=1e-12)
 
 
-def test_each_channel_runs_as_a_white_run_of_its_own_sensors_bit_for_bit():
-    rng = np.random.default_rng(11)  # D-502: no law of these mixes white and red
+def test_each_channel_runs_as_an_amber_run_of_its_own_sensors_bit_for_bit():
+    rng = np.random.default_rng(11)  # D-503: no law of these mixes amber and violet
     for _ in range(60):
         kinds, edges = random_graph(rng, int(rng.integers(1, 14)), loops=True)
         kinds = [Kind.TANK if k is DBL and rng.random() < 0.3 else k for k in kinds]
         net = Network.from_edges(kinds, edges)
-        white, red = (rng.uniform(0.0, RATE_MAX, size=(1, net.n)) for _ in range(2))
-        given = np.stack([white, red], axis=-1)  # each sensor's rate in each channel
+        amber, violet = (rng.uniform(0.0, RATE_MAX, size=(1, net.n)) for _ in range(2))
+        given = np.stack([amber, violet], axis=-1)  # each sensor's rate in each channel
         y = dynamics.initial_state(net)
-        alone = {W: initial_state(net), R: initial_state(net)}
+        alone = {A: initial_state(net), V: initial_state(net)}
         for _ in range(200):
             y = dynamics.step_given(net, y, given, DT)
-            for c, rates in ((W, white), (R, red)):
+            for c, rates in ((A, amber), (V, violet)):
                 alone[c] = one(dynamics.step_given(net, both(alone[c]), both(rates), DT))
-        assert np.array_equal(y[..., W], alone[W]) and np.array_equal(y[..., R], alone[R])
+        assert np.array_equal(y[..., A], alone[A]) and np.array_equal(y[..., V], alone[V])
 
 
-def test_a_red_source_leaves_white_dark_and_a_red_eye_sees_no_white_light():
+def test_a_violet_source_leaves_amber_dark_and_a_violet_eye_sees_no_amber_light():
     kinds = [SRC, SUM, Kind.TANK, DIF, DBL, THR, EYE]
     edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 1), (4, 5)]
-    hues = [Hue.RED, *[Hue.WHITE] * 4, Hue.RED, Hue.RED]
+    hues = [Hue.VIOLET, *[Hue.AMBER] * 4, Hue.VIOLET, Hue.VIOLET]
     net = Network.from_edges(kinds, edges, hues=hues)
     y = dynamics.initial_state(net)
     for _ in range(600):
-        y = dynamics.step(net, y, eyes_row(0.9), DT)  # white light on the red eye
-    assert y[0, :, R].max() > 0.1 and not y[0, :, W].any()
-    assert y[0, 6].tolist() == [0.0, 0.0]  # the red eye reads nothing
-    assert dynamics.painted(net, y, net.thrusters)[0, 0] == y[0, 5, R]  # it pushes with red
+        y = dynamics.step(net, y, eyes_row(0.9), DT)  # amber light on the violet eye
+    assert y[0, :, V].max() > 0.1 and not y[0, :, A].any()
+    assert y[0, 6].tolist() == [0.0, 0.0]  # the violet eye reads nothing
+    assert dynamics.painted(net, y, net.thrusters)[0, 0] == y[0, 5, V]  # it pushes with violet
 
 
 # Braitenberg

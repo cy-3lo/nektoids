@@ -46,11 +46,11 @@ def test_a_level_placing_painted_parts_reads_back_painted():
     level = LEVELS["Fear"]
     board = dict(level.board)
     board["parts"] = [
-        {**part, "hue": "red"} if part["locked"] else part for part in level.board["parts"]
+        {**part, "hue": "violet"} if part["locked"] else part for part in level.board["parts"]
     ]
     painted = replace(level, board=board)
     parts = from_word(to_word(painted))[0].board["parts"]
-    assert parts and all(part["hue"] == "red" for part in parts)
+    assert parts and all(part["hue"] == "violet" for part in parts)
 
 
 def test_a_made_level_far_from_the_origin_with_every_kind_of_item_and_goal_reads_back():

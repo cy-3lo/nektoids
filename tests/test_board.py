@@ -728,15 +728,15 @@ def test_a_part_the_player_locks_stays_put_its_wires_free_and_survives_erase_all
 def test_an_eye_a_source_or_a_thruster_takes_paint_and_keeps_it_through_a_swap_and_a_save():
     board = Board(hex_disc(2))  # D-502
     eye, total = board.place(Kind.EYE, (0, 0)), board.place(Kind.SUM, (1, 0))
-    assert board.paint(eye.id, Hue.RED).hue is Hue.RED and Hue.RED.next is Hue.WHITE
-    assert isinstance(board.paint(total.id, Hue.RED), Refused)  # an operator: white
+    assert board.paint(eye.id, Hue.VIOLET).hue is Hue.VIOLET and Hue.VIOLET.next is Hue.AMBER
+    assert isinstance(board.paint(total.id, Hue.VIOLET), Refused)  # an operator: neutral
     source, _ = board.replace(eye.id, Kind.SOURCE)
-    assert source.hue is Hue.RED  # a part that may be painted keeps its paint
+    assert source.hue is Hue.VIOLET  # a part that may be painted keeps its paint
     double, _ = board.replace(source.id, Kind.DOUBLE)
-    assert double.hue is Hue.WHITE
-    thruster = board.place(Kind.THRUSTER, (-1, 0), hue=Hue.RED)
+    assert double.hue is Hue.AMBER  # unread: neutral
+    thruster = board.place(Kind.THRUSTER, (-1, 0), hue=Hue.VIOLET)
     data = board.to_dict()
-    assert [part.get("hue") for part in data["parts"]] == [None, None, "red"]
-    assert Board.from_dict(json.loads(json.dumps(data))).node_at((-1, 0)).hue is Hue.RED
+    assert [part.get("hue") for part in data["parts"]] == [None, None, "violet"]
+    assert Board.from_dict(json.loads(json.dumps(data))).node_at((-1, 0)).hue is Hue.VIOLET
     board.lock(thruster.id)
-    assert isinstance(board.paint(thruster.id, Hue.WHITE), Refused)  # the level's
+    assert isinstance(board.paint(thruster.id, Hue.AMBER), Refused)  # the level's

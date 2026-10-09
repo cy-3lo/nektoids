@@ -148,7 +148,8 @@ from nektoids.editor.palette import (
     OBSTACLE,
     OUTSIDE,
     OUTSIDE_LINE,
-    PAINT_RED,
+    PAINT_AMBER,
+    PAINT_VIOLET,
     PANEL,
     PIN_RING,
     REFUSED,
@@ -276,7 +277,7 @@ MENU_ANGLE = {kind: 90.0 for kind in Kind if kind.default_facing is not None}
 WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever the zoom [px]
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
 FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
-BODY_OF = {Hue.WHITE: COMPONENT, Hue.RED: PAINT_RED}  # a part's body by its paint (D-502)
+BODY_OF = {Hue.AMBER: PAINT_AMBER, Hue.VIOLET: PAINT_VIOLET}  # a painted part's body (D-503)
 FACE_WIDTH = 0.1  # [hex sizes]
 INFO_ICON = 16  # a menu row's info disc [px]
 INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit under it (D-094)
@@ -496,9 +497,8 @@ def _draw_buttons(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> No
             angle = placed_angle(b, b.default_facing)
             draw_part(screen, fonts, b, angle, at, size - PART_SMALLER, False, fill, face)
         else:
-            fonts.icons.draw(
-                screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), GREYED if greyed else TEXT
-            )
+            ink = GREYED if greyed else BODY_OF[scene.brush] if b is Button.PAINT else TEXT
+            fonts.icons.draw(screen, BUTTON_ICON[b], at, round(ICON_ON_BUTTON * size), ink)
     for b, centre in places.items():  # a tutorial's target, pulsing (D-337)
         if f"button:{b.value}" in scene.lit:
             pygame.draw.polygon(screen, scene.lit_ink, hexagon(centre, key_size), 3)
@@ -600,11 +600,11 @@ def draw_part(
     face=None,
     pinned: bool = False,
     level: float | None = None,
-    hue: Hue = Hue.WHITE,
+    hue: Hue = Hue.AMBER,
 ):
-    """A part, its body in its paint, `hue` (D-501), and over its fill, if `level` is given, how
-    full it is: a tank's."""
-    fill = fill or BODY_OF[hue]
+    """A part, its body in its paint, `hue`, if it is painted, else neutral (D-503), and over
+    its fill, if `level` is given, how full it is: a tank's."""
+    fill = fill or (BODY_OF[hue] if kind.paintable else COMPONENT)
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if level is not None and (filled := filled_to(outline, level / RATE_MAX)):
