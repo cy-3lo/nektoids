@@ -73,17 +73,28 @@ its decisions taken, when it starts.
   and flee the amber one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
   (D-501).
 
-## 17. Flows, explored before their stage (`explore/flows`, D-600 to D-603)
+## 17. Flows (stage 4, D-600 to D-604)
 
+Built on `stage/4-flows`, branched from `stage/3-memory`, `explore/flows` merged in. The
+prototype stays in `prototypes/stokes/`.
+
+- [ ] **Thrusters on the outer ring.** Placed, dragged and loaded only on a cell with a
+  neighbour outside the zone; a board's text with an inner one refused, saying why. Turning's
+  start board and the proofs of Turning, Latch, Spot the violet and Dragster II moved to it.
+- [ ] **The swimmer moves by the Stokes solve.** `prototypes/stokes/viewer/flow.py` into
+  `sim/flow.py`, vectorised over the bodies, no `@`; the lights' and obstacles' inverse built
+  once with the arena and handed on by `moved`; `world.step` takes its velocity and spin. Every
+  proof run again: its ticks re-recorded, its time allowed raised where it loses by time; a
+  board that no longer wins goes to the physicist.
+- [ ] **The flow drawn.** Tracers as in D-603, a fixed field over the visible plane, switched
+  on and off in the run view; visual only, reseeded on restart, seek, pan and zoom. Checked in
+  the browser.
 - [ ] **A pinned swimmer's flow.** Against an obstacle, the solve still reports and draws the
   velocity the swimmer would have if free (7 u/s), and the tracers show that flow. The contact
   force belongs in the Stokes problem: an unknown force on the swimmer, set so that its
   velocity into the obstacle is zero, one more solve per contact (a 2×2 system in a crevice).
 - [ ] **Gaps in the fixed field of tracers.** Move a tracer from a crowded cell to an empty one
   now and then, away from the swimmer, so that the field heals.
-- [ ] **The fixed field in the browser.** Not timed yet there (0.65 ms a frame natively).
 - [ ] **Tuning by eye.** ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
-  brightness and their tails (`prototypes/stokes/viewer/`).
-- [ ] **Into the game, once decided.** `flow.py` is written to move into `sim/`: an action in
-  `ACTIONS`, the obstacles' inverse with the arena, the tracers a toggleable overlay; then
-  flow sensing (`ideas.md` §4).
+  brightness and their tails.
+- [ ] **Then flow sensing** (`ideas.md` §4), a stage of its own.
