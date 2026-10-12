@@ -5,11 +5,11 @@
   "author": "@Cy-3LO",
   "start": {"at": [8, 18], "heading": 0},
   "items": [
-    {"kind": "light", "at": [23, 18], "power": 4},
-    {"kind": "light", "at": [21, 8], "power": 4},
-    {"kind": "light", "at": [15, 18], "power": 4},
-    {"kind": "obstacle", "at": [12, 19], "radius": 2},
-    {"kind": "obstacle", "at": [18, 11], "radius": 2}
+    {"kind": "light", "at": [22, 15], "power": 2},
+    {"kind": "light", "at": [24, 9], "power": 2},
+    {"kind": "light", "at": [17, 21], "power": 2},
+    {"kind": "obstacle", "at": [11, 17], "radius": 2},
+    {"kind": "obstacle", "at": [16, 12], "radius": 2}
   ],
   "board": {
     "zone": 19,
@@ -25,8 +25,8 @@
     "parts": [],
     "wires": []
   },
-  "time_limit": 37,
+  "time_limit": 14,
   "objectives": [{"verb": "reach", "count": "all", "target": "light"}],
   "passkey": "SNAIL",
-  "proof": {"board": "ZWyWkpi61C4KdQ5CZBRk", "ticks": 3964, "parts": 6}
+  "proof": {"board": "ZWyWkpi61C4KdQ5CZBRk", "ticks": 1472, "parts": 6}
 }

@@ -2930,3 +2930,11 @@ swimmer's right", stay true and its 10 s too. A full push crossed Half's ring in
 alone stayed 3 s in Minus's before touching its light: 4 s keeps each lesson, Half's proof winning
 in 13.6 s of 15. A full drive wins Patience in 13.6 s, before the halved one (33 s): its puzzle is
 gone, and the level is the physicist's to retune; its two tests are marked expected to fail.
+
+**D-607 — 2026-10-12 — Patience is laid out again for the flow: its three lights dimmed to power 2 and moved, (22, 15), (24, 9), (17, 21), its obstacles at (11, 17) and (16, 12), 14 s allowed. A full drive overshoots the last light again; the halved drive wins in 12.3 s, doubled eyes in 10.0 s. Amends D-606.**
+The physicist's, from a search of 600 layouts round the old one: the test file's full drives
+must lose given 1.5 times the proof's time, the halved drive win. Of 250 random full or doubled
+drives on the chosen layout none wins; of 500 mixed boards the drive boards that win have
+doubled eyes, 7 or 8 parts, so none beats the proof's 6. A sample, not a proof. Dimmer lights
+steer the eyes later, so a fast swimmer passes them. The first layout found put the start 2.2 u
+from an obstacle of radius 2; that obstacle moved one cell, to (11, 17).

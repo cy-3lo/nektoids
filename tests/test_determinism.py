@@ -361,25 +361,21 @@ def test_greed_plain_aggression_stays_on_the_bright_light_and_a_drive_overshoots
     assert play(DRIVEN, "Greed")[0] is Outcome.TIME_UP
 
 
-PATIENCE_OPEN = "D-606: a full drive wins Patience before a halved one; the level is to retune"
-
-
-@pytest.mark.xfail(strict=True, reason=PATIENCE_OPEN)
 def test_patience_a_halved_drive_gets_out_of_the_dark_and_touches_all_three_lights_in_time():
     for doubled in (False, True):
         ended, ticks, _ = play(patient(doubled), "Patience")
-        assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Patience"].time_limit
+        assert ended is Outcome.WON and ticks * DT < 0.9 * LEVELS["Patience"].time_limit  # D-606
         assert play(patient(doubled), "Patience")[1] == ticks  # the same tick, every run
     assert (
         play(patient(True), "Patience")[1] < play(patient(), "Patience")[1]
     )  # eight parts, faster
 
 
-@pytest.mark.xfail(strict=True, reason=PATIENCE_OPEN)
-def test_patience_without_a_drive_nothing_moves_and_with_a_full_one_it_overshoots():
-    level = LEVELS["Patience"]
-    pos, _, y = last(run(CROSSED, "Patience", 5.0))
-    assert pos.tolist() == [list(level.start_at)] and np.all(y[:, CROSSED.eyes] == 0.0)
+def test_patience_without_a_drive_it_creeps_and_with_a_full_one_it_overshoots():
+    level = LEVELS["Patience"]  # its lights dim, power 2: a full drive passes the last (D-606)
+    pos, _, _ = last(run(CROSSED, "Patience", 5.0))
+    assert np.hypot(*(pos[0] - level.start_at)) < 2.0  # in 5 s: the lights barely seen
+    assert play(CROSSED, "Patience")[0] is Outcome.TIME_UP
     doubled_drive = built(
         "Patience",
         [*EYES, *THRUSTERS, *DOUBLES, (Kind.SOURCE, (-1, 0), None)],
@@ -445,8 +441,8 @@ BEFORE_SENTENCES = {
     ("Greed", "greedy()"): (Outcome.WON, 2201, ((2, 2, 1.0),)),  # D-313; round a light, D-424
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2520, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2520, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 3964, ((3, 3, 1.0),)),  # D-317, D-424
-    ("Patience", "patient(True)"): (Outcome.WON, 1962, ((3, 3, 1.0),)),  # D-424
+    ("Patience", "patient()"): (Outcome.WON, 1472, ((3, 3, 1.0),)),  # D-317, D-424
+    ("Patience", "patient(True)"): (Outcome.WON, 1205, ((3, 3, 1.0),)),  # D-424
 }
 
 
