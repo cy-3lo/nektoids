@@ -3,8 +3,9 @@
 Lengths in u, the base body radius; x right, y up. A level builds its arena once. Its lights are
 fixed; each obstacle sits on a spring and gives a little when a swimmer pushes on it (D-424):
 `moved` is the same plane with each obstacle displaced from its rest, as a run carries it from
-tick to tick. The arrays the optics need are built once for each, read-only. Pure numpy, no
-pygame.
+tick to tick. The arrays the optics need are built once for each, read-only; the inverse mobility of
+its lights and obstacles at rest, which the flow needs (D-601), once for the level and handed on
+by `moved`. Pure numpy, no pygame.
 """
 
 from __future__ import annotations
@@ -63,6 +64,7 @@ class Arena:
     lights: tuple[Light, ...] = ()
     obstacles: tuple[Disc, ...] = ()
     offsets: np.ndarray | None = None  # (M, 2) each obstacle from its rest, on its spring [u]
+    inverse: np.ndarray | None = None  # (3K, 3K) `clamped_inverse` handed on; None: not yet built
 
     def __post_init__(self) -> None:
         """ValueError for what no level should hold: a light touching an obstacle, a power or a
@@ -118,7 +120,19 @@ class Arena:
 
     def moved(self, offsets: np.ndarray) -> Arena:
         """The same plane, each obstacle `offsets` (M, 2) [u] from its rest."""
-        return Arena(self.lights, self.obstacles, np.array(offsets, dtype=np.float64))
+        return Arena(
+            self.lights, self.obstacles, np.array(offsets, dtype=np.float64), self.clamped_inverse
+        )
+
+    @cached_property
+    def clamped_inverse(self) -> np.ndarray:
+        """(3K, 3K): the inverse grand mobility of the K lights and obstacles at rest, the
+        clamped spheres of the flow (D-601), built once and handed on by `moved`; read-only."""
+        if self.inverse is not None:
+            return self.inverse
+        from nektoids.sim import flow  # flow needs motion, which needs this module
+
+        return _frozen(flow.clamped_inverse(self))
 
     @cached_property
     def disc_radius(self) -> np.ndarray:

@@ -36,8 +36,8 @@ def test_a_winning_board_run_again_wins_at_the_tick_it_won_at_a_few_ticks_a_fram
     replay = Replay(ORBIT, ORBITER, DT)
     while replay.advance(120) is None:  # a second of the run a frame
         assert 0.0 < replay.progress < 1.0
-    assert replay.outcome is Outcome.WON and replay.tick == 1132  # as the pinned run (D-357)
-    assert replay.advance(120) is Outcome.WON and replay.tick == 1132  # over: no further
+    assert replay.outcome is Outcome.WON and replay.tick == 1195  # as the pinned run (D-357, D-606)
+    assert replay.advance(120) is Outcome.WON and replay.tick == 1195  # over: no further
     empty = Replay(ORBIT, ORBIT.blank_board(), DT)  # no part: it stays where it starts
     assert empty.advance(10_000) is Outcome.TIME_UP and empty.progress == 1.0
 

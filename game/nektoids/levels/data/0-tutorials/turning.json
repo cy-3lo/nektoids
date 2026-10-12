@@ -17,7 +17,7 @@
   "time_limit": 10,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
   "tutorial": {
-    "ghosts": [{"kind": "thruster", "cell": [-2, 1], "facing": "E"}],
+    "ghosts": [{"kind": "thruster", "cell": [-1, 2], "facing": "E"}],
     "steps": [
       {
         "show": [{"tab": "board"}, {"level": "board"}],
@@ -28,12 +28,12 @@
         ]
       },
       {
-        "show": [{"cell": [-2, 0]}, {"cell": [-2, 1]}],
+        "show": [{"cell": [-2, 0]}, {"cell": [-1, 2]}],
         "say": [
           "Behind the **Source**, the **Thruster** pushes straight ahead. Off the centre, a push turns the swimmer.",
           "Move the **Thruster** to the swimmer's right: drag it to the cell where it goes."
         ],
-        "until": {"moved": {"kind": "thruster", "cell": [-2, 1]}}
+        "until": {"moved": {"kind": "thruster", "cell": [-1, 2]}}
       },
       {
         "show": {"tab": "run"},
@@ -47,5 +47,5 @@
       }
     ]
   },
-  "proof": {"board": "3pnGfzxdgV", "ticks": 350, "parts": 2}
+  "proof": {"board": "3pwkbFj3nH", "ticks": 805, "parts": 2}
 }

@@ -81,11 +81,13 @@ over; its prototype stays local, off the public repository.
 - [x] **Thrusters on the outer ring** (D-605). Anywhere on the Board, but idle off the rim: faded,
   no push, no flame, said in the run's status line. Turning's start board and the proofs of
   Turning, Latch, Spot the violet and Dragster II moved to it.
-- [ ] **The swimmer moves by the Stokes solve.** `prototypes/stokes/viewer/flow.py` into
+- [x] **The swimmer moves by the Stokes solve** (D-606). `prototypes/stokes/viewer/flow.py` into
   `sim/flow.py`, vectorised over the bodies, no `@`; the lights' and obstacles' inverse built
   once with the arena and handed on by `moved`; `world.step` takes its velocity and spin. Every
   proof run again: its ticks re-recorded, its time allowed raised where it loses by time; a
   board that no longer wins goes to the physicist.
+- [ ] **Patience, retuned.** A full drive wins it in 13.6 s, before the halved one (33 s, D-606);
+  its two tests in `test_determinism.py` are marked expected to fail until it is.
 - [ ] **The flow drawn.** Tracers as in D-603, a fixed field over the visible plane, switched
   on and off in the run view; visual only, reseeded on restart, seek, pan and zoom. Checked in
   the browser.

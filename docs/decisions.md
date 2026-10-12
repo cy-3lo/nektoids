@@ -2914,3 +2914,19 @@ beads show it. A part's entry (D-082) is no body: its thruster pushes. Each move
 its row, so its lever: Turning's start (-1, 0) → (-2, 0), its tutorial's target (-1, 1) →
 (-2, 1); Latch's (-1, 0) → (-2, 0); Spot the violet's (1, -2) → (-1, -2) and (-1, 2) → (-3, 2);
 Dragster II's nine on the rim, its Sources inside. Every proof wins at the tick it did.
+
+**D-606 — 2026-10-12 — The swimmer moves by the Stokes solve of D-601 and D-602: `sim/flow.py`, its thrusters point forces on the rim, the lights and obstacles held spheres. Times allowed are 1.1 times the proof's, in whole seconds, where that is longer than they were: Patience 37 s, Latch 36 s, Dragster 5 s, Greed 21 s. Turning's thruster goes to the body's right side, (-1, 2), and Half and Minus ask for 4 s in their rings, not 3. Amends D-022.**
+The physicist's (D-604), the times by his rule. The prototype's lean solve is ported whole and
+checked against it to 1e-12: vectorised over the bodies, every product a sum along a fixed axis,
+never `@` (invariant 1); a force inside the hydrodynamic sphere is left out, as it moves nothing.
+The held spheres' inverse mobility is built once at rest and handed on by `Arena.moved`; the
+swimmer's flow reaches each obstacle where its spring has it now, so no thruster sits inside one.
+The velocity and spin drawn on the body are the solve's. Two thrusters at the sides move a body
+at 7.125 u/s (6 before), one behind at 1.875 (3), a rim thruster turns it at 3.08 rad/s (2.25).
+Every shipped proof still wins, and no board in the tests changes outcome but three, all through
+the slower rear pusher. Turning's thruster behind and to the right, (-2, 1), looped round and took
+19.6 s; on the right side it turns at once and wins in 6.7 s, so the card's words, "to the
+swimmer's right", stay true and its 10 s too. A full push crossed Half's ring in 3.2 s and an eye
+alone stayed 3 s in Minus's before touching its light: 4 s keeps each lesson, Half's proof winning
+in 13.6 s of 15. A full drive wins Patience in 13.6 s, before the halved one (33 s): its puzzle is
+gone, and the level is the physicist's to retune; its two tests are marked expected to fail.

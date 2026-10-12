@@ -1,7 +1,7 @@
 {
   "version": 6,
   "title": "Half",
-  "spec": "Stay in the ring for 3 s.",
+  "spec": "Stay in the ring for 4 s.",
   "author": "@Cy-3LO",
   "start": {"at": [-8, 0], "heading": 0},
   "items": [{"kind": "mark", "at": [4, 0], "radius": 3}],
@@ -12,14 +12,14 @@
     "wires": []
   },
   "time_limit": 15,
-  "objectives": [{"verb": "stay", "count": "one", "target": "mark", "seconds": 3}],
+  "objectives": [{"verb": "stay", "count": "one", "target": "mark", "seconds": 4}],
   "tutorial": {
     "steps": [
       {
         "show": [{"tab": "board"}, {"level": "board"}],
         "until": {"screen": "board"},
         "say": [
-          "Stay 3 s in the ring. At full push the swimmer crosses it in 2 s: too fast.",
+          "Stay 4 s in the ring. At full push the swimmer crosses it in about 3 s: too fast.",
           "Press the **Board** button or tab, or press Tab."
         ]
       },
@@ -37,5 +37,5 @@
       }
     ]
   },
-  "proof": {"board": "2FqtG2w76Cs", "ticks": 1083, "parts": 3}
+  "proof": {"board": "2FqtG2w76Cs", "ticks": 1635, "parts": 3}
 }

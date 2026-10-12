@@ -32,9 +32,8 @@ from nektoids.graph.hexgrid import Cell
 from nektoids.graph.kinds import Hue
 from nektoids.graph.network import Network, body_disc
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
-from nektoids.sim.motion import stokes
 from nektoids.sim.optics import FACING_STEP, TINY, discs, exposure, eye_poses, visible
-from nektoids.sim.world import parts, push
+from nektoids.sim.world import parts, swimming
 
 FLAME_LENGTH = 4.0  # [body radii] every flame, whatever its rate, on average: its specks end
 FADE = 0.25  # within this fraction of it either side, from 3 to 5 body radii (D-345)
@@ -130,7 +129,7 @@ def at_work(
     thr_mount, thr_facing = parts(net, net.thrusters)
     eyes = outlines(eye_mount, eye_facing, EYE_DISC, scale)
     thrusters = outlines(thr_mount, thr_facing, SQUARE_POINT, scale)
-    vel, spin = motion(net, y, radius)
+    vel, spin = motion(arena, net, y, pose, radius)
     centre, heading = pose[:2], pose[2]
     return AtWork(
         intake=intake(
@@ -301,12 +300,17 @@ def intake(
     return np.concatenate(found)
 
 
-def motion(net: Network, y: np.ndarray, radius: float) -> tuple[np.ndarray, float]:
+def motion(
+    arena: Arena, net: Network, y: np.ndarray, pose: Pose, radius: float
+) -> tuple[np.ndarray, float]:
     """The velocity (2,) in the body's frame [u/s] and the spin [rad/s] that the thrust of
-    rates `y` (n, C) gives a body of `radius` [u] (D-022): what the next tick does."""
-    size = np.array([radius])
-    vel, spin = stokes(*push(net, y[None, :], size), size)  # as the run sums it (D-203)
-    return vel[0], float(spin[0])
+    rates `y` (n, C) gives a body of `radius` [u] at `pose` in `arena`, by the flow round it
+    (D-601, D-602): what the next tick does."""
+    pos, heading = np.array([pose[:2]], dtype=np.float64), np.array([pose[2]])
+    swum = swimming(arena, net, pos, heading, np.array([radius]), y[None, :])  # as the run does
+    c, s = math.cos(pose[2]), math.sin(pose[2])
+    vx, vy = swum.velocity[0]
+    return np.array([c * vx + s * vy, -s * vx + c * vy]), float(swum.spin[0])
 
 
 def velocity_segment(

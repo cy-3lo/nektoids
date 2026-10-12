@@ -6,8 +6,8 @@ channel, amber and violet (D-017, D-503); and
 the plane they swim in, each obstacle where its spring has it (`Arena.moved`, D-424). A tick of
 dt [s]:
 
-1. move: with what the actuators do now, the thrusters' push, against the Stokes drag of a
-   sphere (`push`, `motion`);
+1. move: with what the actuators do now, the thrusters' point forces on the rim, by the Stokes
+   flow round the body, the lights and the obstacles (`swimming`, `flow`, D-601, D-602);
 2. touch: back outside the lights and obstacles, an obstacle giving a little (`contact`); the
    plane is open (D-028);
 3. sense: each sensor reads where the bodies now are, the eyes the light (`readings`, `optics`);
@@ -30,9 +30,10 @@ import numpy as np
 from nektoids.graph import dynamics
 from nektoids.graph.dynamics import CHANNELS, RATE_MAX, masks
 from nektoids.graph.network import Network
+from nektoids.sim import flow
 from nektoids.sim.arena import Arena
 from nektoids.sim.contact import collide
-from nektoids.sim.motion import advance, stokes, thrust
+from nektoids.sim.motion import points
 from nektoids.sim.optics import eye_rates
 
 
@@ -58,10 +59,10 @@ def steady(
 
 # A sense reads the world: (arena, pos, heading, radius, mount, facing) -> rates (N, k, C) of the
 # k sensors at `mount` (k, 2) facing `facing` (k,), in each channel; a sensor keeps its own. An
-# action acts on the body: (rates (N, k), radius, mount, facing) -> force (N, 2) in the body's
-# frame [f] and torque (N,) [f u].
+# action acts on the body: (rates (N, k), radius, mount, facing) -> where its k point forces act
+# (N, k, 2) [u] and what they push the body with (N, k, 2) [f], in the body's frame (D-602).
 SENSES = {"light": eye_rates, "steady": steady}
-ACTIONS = {"push": thrust}
+ACTIONS = {"push": points}
 
 
 def readings(
@@ -77,21 +78,49 @@ def readings(
     return given
 
 
-def push(net: Network, y: np.ndarray, radius: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """The force (N, 2) in the body's frame [f] and the torque (N,) [f u] that the actuators of
-    rates y (N, n, C) exert, each kind's by its action, from its nodes' outputs in their own
-    channels, `dynamics.painted` (D-502)."""
+def pushes(net: Network, y: np.ndarray, radius: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Where the actuators of rates y (N, n, C) act (N, K, 2) [u] and what they push the body with
+    (N, K, 2) [f], in the body's frame: each kind's by its action, from its nodes' outputs in
+    their own channels, `dynamics.painted` (D-502); the idle ones off the rim left out (D-605)."""
     out = dynamics.outputs(net, y)
-    pushes = [
+    found = [
         ACTIONS[kind.spec.action](dynamics.painted(net, out, nodes), radius, *parts(net, nodes))
         for kind, nodes in net.actions
     ]
-    if not pushes:
-        return np.zeros((y.shape[0], 2)), np.zeros(y.shape[0])
-    force, torque = pushes[0]
-    for more, turn in pushes[1:]:  # one action alone is taken as it is, never added to a zero
-        force, torque = force + more, torque + turn
+    if not found:
+        return np.zeros((y.shape[0], 0, 2)), np.zeros((y.shape[0], 0, 2))
+    return np.concatenate([t for t, _ in found], 1), np.concatenate([f for _, f in found], 1)
+
+
+def push(net: Network, y: np.ndarray, radius: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """The force (N, 2) in the body's frame [f] and the torque (N,) [f u] about its centre that
+    the actuators of rates y (N, n, C) exert (`pushes`), added one by one in a fixed order."""
+    tips, forces = pushes(net, y, radius)
+    force, torque = np.zeros((y.shape[0], 2)), np.zeros(y.shape[0])
+    for k in range(tips.shape[1]):
+        force = force + forces[:, k]
+        torque = torque + tips[:, k, 0] * forces[:, k, 1] - tips[:, k, 1] * forces[:, k, 0]
     return force, torque
+
+
+def swimming(
+    arena: Arena,
+    net: Network,
+    pos: np.ndarray,
+    heading: np.ndarray,
+    radius: np.ndarray,
+    y: np.ndarray,
+) -> flow.Swim:
+    """How the bodies at pos (N, 2) [u], heading (N,) [rad], of radius (N,) [u] move now, their
+    nodes at rates y (N, n, C): the actuators' point forces turned into the world's frame and
+    the Stokes flow solved round them (D-601, D-602)."""
+    tips, forces = pushes(net, y, radius)
+    cos, sin = np.cos(heading)[:, None], np.sin(heading)[:, None]
+
+    def turned(v: np.ndarray) -> np.ndarray:
+        return np.stack((cos * v[..., 0] - sin * v[..., 1], sin * v[..., 0] + cos * v[..., 1]), 2)
+
+    return flow.swim(arena, pos, radius, pos[:, None, :] + turned(tips), turned(forces))
 
 
 def step(
@@ -109,8 +138,8 @@ def step(
     pos (N, 2) [u], heading (N,) [rad], radius (N,) [u], y (N, n, C) the nodes' rates; dt [s], with
     0 < dt <= the laws' limit (`graph.dynamics.step_given` raises ValueError otherwise).
     """
-    vel, spin = stokes(*push(net, y, radius), radius)
-    pos, heading = advance(pos, heading, vel, spin, dt)
+    swum = swimming(arena, net, pos, heading, radius, y)
+    pos, heading = pos + dt * swum.velocity, heading + dt * swum.spin  # explicit Euler (D-022)
     rest = arena.offsets if arena.offsets is not None else arena.at_rest
     pos, offsets = collide(arena, rest, pos, radius, dt)
     arena = arena.moved(offsets)

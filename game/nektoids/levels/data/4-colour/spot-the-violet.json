@@ -22,5 +22,5 @@
     {"verb": "reach", "count": "all", "target": "mark"},
     {"verb": "reach", "count": "none", "target": "light"}
   ],
-  "proof": {"board": "4xp9FgAwbQPkFaKcmAbp4zn8w260EChWMmX", "ticks": 1585, "parts": 10}
+  "proof": {"board": "4xp9FgAwbQPkFaKcmAbp4zn8w260EChWMmX", "ticks": 2004, "parts": 10}
 }

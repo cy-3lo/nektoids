@@ -12,7 +12,7 @@
     "parts": [],
     "wires": []
   },
-  "time_limit": 30,
+  "time_limit": 36,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
-  "proof": {"board": "1jrxjdJ8d1zUd2Vq", "ticks": 2522, "parts": 4}
+  "proof": {"board": "1jrxjdJ8d1zUd2Vq", "ticks": 3892, "parts": 4}
 }
