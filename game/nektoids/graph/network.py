@@ -17,7 +17,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.graph.board import Board, Kind
-from nektoids.graph.hexgrid import Cell, to_pixel
+from nektoids.graph.hexgrid import Cell, on_rim, to_pixel
 from nektoids.graph.kinds import Category, Hue
 from nektoids.graph.laws import Law
 
@@ -43,12 +43,14 @@ class Network:
     given: np.ndarray  # (n,) bool: its rate is given, not computed: the sensors
     laws: tuple[tuple[Law, np.ndarray, np.ndarray], ...]  # each law, its nodes, their slots
     senses: tuple[tuple[Kind, np.ndarray], ...]  # each sensor kind, its nodes; table order
-    actions: tuple[tuple[Kind, np.ndarray], ...]  # each actuator kind, its nodes; table order
+    actions: tuple[tuple[Kind, np.ndarray], ...]  # each actuator kind, its nodes on the rim
+    # (D-605), the others idle; table order
     outdeg: np.ndarray  # (n,) int: number of wires leaving each node
     eyes: np.ndarray  # indices of the eyes, ascending
     sources: np.ndarray  # indices of the sources, ascending
     thrusters: np.ndarray  # indices of the thrusters, ascending
     hues: tuple[Hue, ...]  # what each node is painted (D-503); amber, unread, if neutral
+    rim: np.ndarray  # (n,) bool: on the zone's outer ring, the body's rim (D-605)
 
     @property
     def n(self) -> int:
@@ -70,6 +72,7 @@ class Network:
             ids=ids,
             mount=body_mounts(board.cells, [board.nodes[i].cell for i in ids]),
             hues=[board.nodes[i].hue for i in ids],
+            rim=[on_rim(set(board.cells), board.nodes[i].cell) for i in ids],
         )
 
     @classmethod
@@ -81,11 +84,13 @@ class Network:
         ids: Sequence[int] | None = None,
         mount: np.ndarray | None = None,
         hues: Sequence[Hue] | None = None,
+        rim: Sequence[bool] | None = None,
     ) -> Network:
         """Network of nodes 0..n-1 of the given kinds and directed wires (source, target).
 
         mount: (n, 2) positions on the body in body radii; all at the centre if None. hues: what
-        each node is painted (D-503); all amber if None.
+        each node is painted (D-503); all amber if None. rim: whether each node is on the body's
+        rim (D-605), an actuator off it acting on nothing; all on it if None.
 
         Raises ValueError for what no board could hold: a wire out of range, out of a thruster or
         into a sensor, a duplicate wire, or more inputs than the kind takes. Loops and a wire from
@@ -122,11 +127,15 @@ class Network:
         ids = tuple(range(n)) if ids is None else tuple(ids)
         mount = np.zeros((n, 2)) if mount is None else np.array(mount, dtype=np.float64)
         hues = (Hue.AMBER,) * n if hues is None else tuple(hues)
+        rim = np.ones(n, dtype=bool) if rim is None else np.array(rim, dtype=bool).reshape(-1)
         if len(ids) != n or len(facing) != n or mount.shape != (n, 2) or len(hues) != n:
             raise ValueError("ids, facing, mount and hues need one entry per node")
+        if len(rim) != n:
+            raise ValueError("rim needs one entry per node")
 
-        def indices(kind: Kind) -> np.ndarray:
-            return _frozen(np.array([i for i, k in enumerate(kinds) if k is kind], dtype=np.int64))
+        def indices(kind: Kind, where: np.ndarray | None = None) -> np.ndarray:
+            chosen = [i for i, k in enumerate(kinds) if k is kind and (where is None or where[i])]
+            return _frozen(np.array(chosen, dtype=np.int64))
 
         return cls(
             ids=ids,
@@ -139,12 +148,18 @@ class Network:
             given=_frozen(np.array([kind.spec.law is None for kind in kinds], dtype=bool)),
             laws=_by_law(kinds, slots, hues),
             senses=tuple((k, indices(k)) for k in Kind if k.category is SENSOR and k in kinds),
-            actions=tuple((k, indices(k)) for k in Kind if k.category is ACTUATOR and k in kinds),
+            actions=tuple(
+                (k, indices(k, rim))
+                for k in Kind
+                if k.category is ACTUATOR
+                and any(kk is k and r for kk, r in zip(kinds, rim, strict=True))
+            ),
             outdeg=_frozen(outdeg),
             eyes=indices(Kind.EYE),
             sources=indices(Kind.SOURCE),
             thrusters=indices(Kind.THRUSTER),
             hues=hues,
+            rim=_frozen(rim),
         )
 
 

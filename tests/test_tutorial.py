@@ -167,8 +167,10 @@ def test_chapter_0_has_the_tutorials_its_first_two_lead_the_others_explain():
         {"screen": "run"},
         {"outcome": "won"},
     ]
-    assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (-1, 1), E)]
-    assert turning.steps[1].until == {"moved": {"kind": "thruster", "cell": [-1, 1]}}  # D-338
+    assert [(g.kind, g.cell, g.facing) for g in turning.ghosts] == [(Kind.THRUSTER, (-2, 1), E)]
+    assert turning.steps[1].until == {
+        "moved": {"kind": "thruster", "cell": [-2, 1]}
+    }  # D-338, D-605
     for title in ("Eyes", "Half", "Minus", "Diagnostic"):  # they explain: nothing waited for
         tutorial = Tutorial.from_dict(LEVELS[title].tutorial)
         waits = [step.until for step in tutorial.steps[1:] if step.until]
@@ -193,14 +195,14 @@ def test_a_card_that_waits_for_a_part_moved_lets_a_move_through_and_nothing_else
     tutorial, board = Tutorial.from_dict(level.tutorial), level.new_board()
     tutorial.index = 1  # on the Board: move it
     step = tutorial.step
-    assert allows(step, Action("move", cell=(-1, 0))) and allows(
+    assert allows(step, Action("move", cell=(-2, 0))) and allows(
         step, Action("tool", tool=Tool.MOVE)
     )
     assert not allows(step, Action("tool", tool=Tool.WIRE)) and not allows(step, Action("view"))
     context = Context(board, Tool.MOVE, Screen.BOARD, None, 0.0, Drawer.PARTS)
     tutorial.follow(context)
     assert tutorial.step is step  # still behind the Source
-    board.move_node(board.node_at((-1, 0)).id, (-1, 1))
+    board.move_node(board.node_at((-2, 0)).id, (-2, 1))
     tutorial.follow(context)
     assert tutorial.step.until == {"screen": "run"}
 

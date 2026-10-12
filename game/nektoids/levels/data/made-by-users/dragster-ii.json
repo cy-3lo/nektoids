@@ -9,5 +9,5 @@
   "board": {"zone": 19, "stock": {"source": 9, "thruster": 9}, "parts": [], "wires": []},
   "time_limit": 1,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
-  "proof": {"board": "rt1P5vW0wCZN0J94ZtJ7oDWZKa8BxRPUKXWn6aiHC5EH4", "ticks": 69, "parts": 18}
+  "proof": {"board": "49LtFyofERaziEchLrwEBzBd5HCgwNufA7LcNEEhhL5JtYEqN", "ticks": 69, "parts": 18}
 }
