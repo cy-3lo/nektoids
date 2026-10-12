@@ -717,6 +717,8 @@ def _draw_status(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> Non
     else:
         text = f"{keys}  Tab: board.  Esc: Chapters."
     text, colour = (scene.message, REFUSED) if scene.message else (text, DIM_TEXT)
+    if scene.idle and not scene.message:  # standing, until the board changes (D-605)
+        text, colour = scene.idle, REFUSED
     if scene.said and not scene.message:  # a passkey that opened a level (D-075)
         text, colour = scene.said, LIGHT
     draw_status_line(screen, scene, fonts, text, colour)

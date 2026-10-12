@@ -139,6 +139,15 @@ class Board:
         """How many parts on the board are `idle`."""
         return sum(self.idle(node) for node in self.nodes.values())
 
+    def idle_note(self) -> str:
+        """What the run says while thrusters stand idle (D-605); "" if none does."""
+        count = self.idle_count()
+        if count == 0:
+            return ""
+        if count == 1:
+            return "A thruster inside the rim pushes nothing: move it out."
+        return f"{_count(count).capitalize()} thrusters inside the rim push nothing: move them out."
+
     # Components
 
     def place(

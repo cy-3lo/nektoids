@@ -17,7 +17,7 @@ REACH = 1.4
 def _circuit(facing: int) -> Circuit:
     board = Board(hex_disc(2))
     board.place(Kind.EYE, (1, 0), facing=facing)
-    board.place(Kind.THRUSTER, (-1, 0), facing=facing)
+    board.place(Kind.THRUSTER, (-2, 0), facing=facing)  # on the rim (D-605)
     return Circuit(board, (0, 0, 400, 300), 0.6)
 
 

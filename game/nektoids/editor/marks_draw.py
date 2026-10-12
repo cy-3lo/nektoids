@@ -14,12 +14,15 @@ from nektoids.editor.marks import AtWork
 from nektoids.editor.palette import (
     EYE_FACE,
     FLAME,
+    IDLE,
     INTAKE,
     MOTION,
     PAINT_AMBER,
     PAINT_VIOLET,
     PART_OUTLINE,
+    SHADOW,
     THRUSTER_BACK,
+    mix,
 )
 from nektoids.graph.kinds import Hue
 
@@ -44,16 +47,20 @@ def draw_over(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
 
 
 def draw_parts(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
-    """Each part's outline in its paint (D-503), and its face in its accent."""
-    for outlines, hues, colour in (
-        (body.eyes, body.eye_hues, EYE_FACE),
-        (body.thrusters, body.thruster_hues, THRUSTER_BACK),
+    """Each part's outline in its paint (D-503), and its face in its accent; an idle thruster's
+    faded into the plane (D-605)."""
+    for outlines, hues, colour, idle in (
+        (body.eyes, body.eye_hues, EYE_FACE, (False,) * len(body.eyes)),
+        (body.thrusters, body.thruster_hues, THRUSTER_BACK, body.idle),
     ):
         for k, outline in enumerate(outlines):
             points = _on_screen(view, outline)
             ink = PART_OUTLINE if hues is None else OUTLINE_OF[hues[k]]  # no colour shown (D-509)
+            face = colour
+            if idle[k]:
+                ink, face = mix(ink, SHADOW, IDLE), mix(face, SHADOW, IDLE)
             pygame.draw.aalines(screen, ink, False, points)
-            pygame.draw.aaline(screen, colour, points[-1], points[0], FACE_WIDTH)
+            pygame.draw.aaline(screen, face, points[-1], points[0], FACE_WIDTH)
 
 
 def draw_motion(

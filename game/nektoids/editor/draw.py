@@ -137,6 +137,7 @@ from nektoids.editor.palette import (
     GRID_LINE,
     HEADING,
     HOVER,
+    IDLE,
     INTAKE,
     INTAKE_FAINT,
     KEY_DARK,
@@ -424,6 +425,7 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             pinned=node.pinned,
             hue=node.hue,
             colours=scene.colours,
+            idle=board.idle(node),
         )
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
@@ -621,11 +623,14 @@ def draw_part(
     level: float | None = None,
     hue: Hue = Hue.AMBER,
     colours: bool = True,
+    idle: bool = False,
 ):
     """A part, its body in its paint, `hue`, if it is painted, else neutral (D-503); on a level
     that shows no colour, as every part was before (D-509). Over its fill, if `level` is given,
-    how full it is: a tank's."""
+    how full it is: a tank's. An `idle` one, a thruster off the rim, faded into the zone (D-605)."""
     fill = fill or (BODY_OF[hue] if kind.paintable and colours else COMPONENT)
+    if idle:
+        fill, face = mix(fill, ZONE, IDLE), mix(face or FACE.get(kind, fill), ZONE, IDLE)
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if level is not None and (filled := filled_to(outline, level / RATE_MAX)):
@@ -1546,6 +1551,7 @@ def _draw_parts(
             level=level,
             hue=hue,
             colours=colours,
+            idle=not net.rim[i] and kind.spec.action is not None,  # D-605
         )
         if meters and kind in (Kind.EYE, Kind.THRUSTER):  # its own channel, in its colour
             ink = BODY_OF[hue] if colours else METER

@@ -62,7 +62,9 @@ class Network:
         return np.sort(np.concatenate((self.eyes, self.sources)))
 
     @classmethod
-    def from_board(cls, board: Board) -> Network:
+    def from_board(cls, board: Board, rim: bool = True) -> Network:
+        """The board compiled; its parts off the zone's outer ring idle (D-605), unless `rim` is
+        False, for a board that is no body: a part's entry (D-082)."""
         ids = sorted(board.nodes)
         index = {node_id: i for i, node_id in enumerate(ids)}
         return cls.from_edges(
@@ -72,7 +74,7 @@ class Network:
             ids=ids,
             mount=body_mounts(board.cells, [board.nodes[i].cell for i in ids]),
             hues=[board.nodes[i].hue for i in ids],
-            rim=[on_rim(set(board.cells), board.nodes[i].cell) for i in ids],
+            rim=[not rim or on_rim(set(board.cells), board.nodes[i].cell) for i in ids],
         )
 
     @classmethod

@@ -78,9 +78,9 @@ its decisions taken, when it starts.
 Built on `stage/4-flows`, branched from `stage/3-memory`, the exploration's decisions brought
 over; its prototype stays local, off the public repository.
 
-- [ ] **Thrusters on the outer ring.** Placed, dragged and loaded only on a cell with a
-  neighbour outside the zone; a board's text with an inner one refused, saying why. Turning's
-  start board and the proofs of Turning, Latch, Spot the violet and Dragster II moved to it.
+- [x] **Thrusters on the outer ring** (D-605). Anywhere on the Board, but idle off the rim: faded,
+  no push, no flame, said in the run's status line. Turning's start board and the proofs of
+  Turning, Latch, Spot the violet and Dragster II moved to it.
 - [ ] **The swimmer moves by the Stokes solve.** `prototypes/stokes/viewer/flow.py` into
   `sim/flow.py`, vectorised over the bodies, no `@`; the lights' and obstacles' inverse built
   once with the arena and handed on by `moved`; `world.step` takes its velocity and spin. Every

@@ -34,13 +34,15 @@ class Circuit:
         body: bool = False,
         view: View | None = None,
         travelling: bool = False,
+        rim: bool = True,
     ):
         """area: where to draw it [px]; margin: room kept round it [hex sizes]. body: fit the
         swimmer's whole body too, not only the parts and the wires. view: drawn through this
         view instead, as the Board shows the board (the Run preview, D-060). travelling: beads
-        that keep their speed once out (`beads.Travelling`), as a part's entry runs them."""
+        that keep their speed once out (`beads.Travelling`), as a part's entry runs them. rim:
+        thrusters off the zone's outer ring idle (D-605); False for a board that is no body."""
         self.board = board
-        self.net = net = Network.from_board(board)
+        self.net = net = Network.from_board(board, rim)
         self.cells: list[Cell] = [board.nodes[i].cell for i in net.ids]
         self.paths = [wire.path for wire in board.wires]
         unit = [wire_points(path, 1.0, (0.0, 0.0)) for path in self.paths]

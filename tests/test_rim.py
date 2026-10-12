@@ -24,8 +24,11 @@ def test_a_thruster_may_stand_inside_the_rim_idle_and_only_an_actuator_is_idle()
     rim = board.place(Kind.THRUSTER, (-2, 0), facing=E)
     source = board.place(Kind.SOURCE, (0, 0))
     assert board.idle(inside) and not board.idle(rim) and not board.idle(source)
-    assert board.idle_count() == 1
-    assert board.move_node(inside.id, (-2, 1)).cell == (-2, 1) and board.idle_count() == 0
+    assert board.idle_count() == 1 and board.idle_note().startswith("A thruster inside the rim")
+    board.place(Kind.THRUSTER, (0, 1), facing=E)
+    assert board.idle_note().startswith("Two thrusters inside the rim push nothing")
+    board.remove_node(board.node_at((0, 1)).id)
+    assert board.move_node(inside.id, (-2, 1)).cell == (-2, 1) and board.idle_note() == ""
 
 
 def test_an_idle_thruster_pushes_nothing_yet_keeps_its_rate():

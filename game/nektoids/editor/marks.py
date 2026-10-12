@@ -106,6 +106,7 @@ class AtWork:
     thrusters: np.ndarray  # (j, m, 2) each thruster's, its face its back
     eye_hues: tuple[Hue, ...] | None  # what each eye is painted (D-502); None: no colour shown
     thruster_hues: tuple[Hue, ...] | None  # ... each thruster (D-509)
+    idle: tuple[bool, ...]  # each thruster off the rim, pushing nothing, no flame (D-605)
     velocity: np.ndarray | None  # (2, 2) from the rim along the velocity; None while still
     spin: np.ndarray | None  # (m, 2) the arc from the heading; None while it does not turn
 
@@ -145,7 +146,7 @@ def at_work(
             hues=[net.hues[i] for i in net.eyes],
         ),
         flames=flames(
-            painted(net, y[None], net.thrusters)[0],
+            painted(net, y[None], net.thrusters)[0] * net.rim[net.thrusters],  # idle: none
             thr_facing,
             thrusters,
             pose,
@@ -158,6 +159,7 @@ def at_work(
         thrusters=to_plane(thrusters, pose, radius),
         eye_hues=tuple(net.hues[i] for i in net.eyes) if colours else None,
         thruster_hues=tuple(net.hues[i] for i in net.thrusters) if colours else None,
+        idle=tuple(not net.rim[i] for i in net.thrusters),
         velocity=velocity_segment(centre, heading, radius, vel),
         spin=spin_arc(centre, heading, radius, spin),
     )

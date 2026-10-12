@@ -193,6 +193,7 @@ class ArenaScene(Frame):
         self.clock.paused = True  # a run waits for Play, to open the drawer it wants (D-060)
         self.circuit = Circuit(board, DRAWER_BODY, CIRCUIT_MARGIN, body=True)  # in Inside
         self.parts = complexity(board)  # what this board scores (D-045)
+        self.idle = board.idle_note()  # thrusters off the rim, said in the status line (D-605)
         self.scores: frozenset[Score] = frozenset()  # the level's wins this session: main.py's
         self.eye_mount, self.eye_facing = world.parts(self.net, self.net.eyes)
         self.selected: int | None = 0  # the swimmer whose wiring the panel shows

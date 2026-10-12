@@ -188,6 +188,7 @@ LOCK_RING = mix(P.parts, P.bright, 0.4)
 PIN_RING = P.accent1.mid  # a part the player locked: theirs, in the accent (D-406)
 EYE_FACE = P.accent1.mid  # the flat face an eye reads the light through (D-020)
 THRUSTER_BACK = P.accent1.mid  # the back a thruster pushes from
+IDLE = 0.6  # a thruster off the rim, idle (D-605): so far faded into the zone, or the plane
 WIRE = mix(P.dim, P.parts, 0.4)
 WIRING = P.bright  # the wire being drawn, where it would run: white, apart from the shadows
 WIRING_OK = P.accent1.bright  # ... and it may connect there (D-087)

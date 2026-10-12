@@ -2901,3 +2901,16 @@ Dragster II's proofs). Branched from stage 3, which touches `sim/world.py` too, 
 reaches `main` after it. Out still: flow sensing, obstacles moving in the solve, swimmers
 coupled to each other, a pinned swimmer's contact force in the solve (next, once the flow is
 drawn). The todo's §17 lists the work.
+
+**D-605 — 2026-10-12 — A thruster acts from the body's rim, the zone's outer ring. One inside it may stand there, while the player moves parts round, but it is idle: drawn faded on the Board, on the body and in Diagnostic, it pushes nothing and shows no flame, and the run's status line says so. Turning, Latch, Spot the violet and Dragster II have their thrusters moved to the rim. Applies D-602, D-604.**
+The physicist's, first as a rule the Board enforced, then softened while it was built: refusing
+a thruster inside made moving groups of parts awkward. The reason is D-602's: a thruster's
+reaction inside the body's sphere moves nothing, so under the Stokes solve an inner thruster
+would idle anyway; the rule makes it idle now, under today's motion too, so the levels can be
+checked before the motion changes. The rim is the zone's cells with a neighbour off it
+(`hexgrid.on_rim`); its edge cells sit 0.87 body radii out on a zone of 19 cells, the reaction
+still 0.37 u outside the hydrodynamic sphere. Its rate is still computed and its meter and
+beads show it. A part's entry (D-082) is no body: its thruster pushes. Each moved thruster keeps
+its row, so its lever: Turning's start (-1, 0) → (-2, 0), its tutorial's target (-1, 1) →
+(-2, 1); Latch's (-1, 0) → (-2, 0); Spot the violet's (1, -2) → (-1, -2) and (-1, 2) → (-3, 2);
+Dragster II's nine on the rim, its Sources inside. Every proof wins at the tick it did.

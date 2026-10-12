@@ -49,11 +49,12 @@ def light(circuit: Circuit, y: np.ndarray, frame: int, reach: float, first: int)
 
 def flames(circuit: Circuit, y: np.ndarray, frame: int, reach: float, first: int) -> list[Point]:
     """The specks of each thruster's flame, out of its back, `reach` long at most, as many as
-    its rate (`marks.flames`) [px]; `first`: its streams in the specks' table."""
+    its rate (`marks.flames`) [px]; `first`: its streams in the specks' table. One off the rim
+    has none: it pushes nothing (D-605)."""
     (middle, _), half = THRUSTER_BACK
     found = []
     for k, i in enumerate(circuit.net.thrusters):
-        rate = float(y[i]) / RATE_MAX
+        rate = float(y[i]) / RATE_MAX if circuit.net.rim[i] else 0.0
         stream = first + FLAMES_AFTER + k
         gone, _, across = SPECKS.stream(FLAME_SPECKS * rate, frame, FLAME_LIFE, stream, FADE)
         found += _off_face(circuit, int(i), middle, half, gone, across, FLAME_SPREAD, -1.0, reach)
