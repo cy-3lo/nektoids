@@ -154,7 +154,7 @@ def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
     for layout, rows in (
         (FITS, FITS.menu_items),
         (FILES, (*FILES.win_rows, *FILES.file_buttons)),
-        (RUN_NAVIGATOR, (*RUN_NAVIGATOR.view_buttons, *RUN_NAVIGATOR.goal_rows)),
+        (RUN_NAVIGATOR, RUN_NAVIGATOR.goal_rows),
     ):
         assert len(layout.info_buttons) == len(rows) > 0
         for _, rect in rows:
@@ -164,6 +164,11 @@ def test_only_the_open_drawer_has_rows_each_inside_it_and_on_screen():
         tops = [rect[1] for _, rect in rows]
         assert tops == sorted(tops) and len(set(tops)) == len(tops)  # one under the other
     assert LAYOUT.win_rows == () and FILES.menu_items == () and FOLDED.info_buttons == ()
+    icons = [rect for _, rect in RUN_NAVIGATOR.view_buttons]  # in a row, in the drawer (D-608)
+    assert len({rect[1] for rect in icons}) == 1 and len(icons) == 5
+    for rect in icons:
+        assert contains(RUN_NAVIGATOR.drawer_area, rect[:2])
+        assert contains(RUN_NAVIGATOR.drawer_area, (rect[0] + rect[2] - 1, rect[1] + rect[3] - 1))
 
 
 def test_parts_has_every_kind_once_and_a_click_on_a_row_picks_it():
@@ -317,7 +322,7 @@ def test_the_boards_drawers_are_parts_files_and_diagnostic_and_no_action_atop_a_
     assert [title for title, _ in FILES.section_titles] == ["Wins this session", "Save/Load"]
     run = make_layout(Drawer.NAVIGATOR, env=Env.RUN)
     assert [title for title, _ in run.section_titles] == ["View", "Overview", "Objectives"]
-    assert [button for button, _ in run.view_buttons] == list(RUN_VIEWS)  # rays, motion, streams
+    assert [button for button, _ in run.view_buttons] == list(RUN_VIEWS)  # rays, motion, flames...
     for button, rect in run.view_buttons:
         assert view_button_at(run, (rect[0] + 20, rect[1] + rect[3] // 2)) == button
 

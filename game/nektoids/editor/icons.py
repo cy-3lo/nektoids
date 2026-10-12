@@ -88,7 +88,9 @@ VIEW_ICON = {
     ViewButton.CENTRE: "location-crosshairs",
     ViewButton.RAYS: "lightbulb",
     ViewButton.MOTION: "gauge-high",
-    ViewButton.STREAMS: "wind",
+    ViewButton.FLAMES: "fire",
+    ViewButton.INTAKE: "tower-observation",
+    ViewButton.FLOW: "wind",
 }
 
 

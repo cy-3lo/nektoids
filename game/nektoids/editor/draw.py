@@ -200,7 +200,9 @@ TIP = {
     ViewButton.CENTRE: "Centre the view",
     ViewButton.RAYS: "Show or hide the light's rays",
     ViewButton.MOTION: "Show or hide the swimmer's velocity and spin",
-    ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
+    ViewButton.FLAMES: "Show or hide the thrusters' flames",
+    ViewButton.INTAKE: "Show or hide the light the eyes draw in",
+    ViewButton.FLOW: "Show or hide the flow round the swimmer",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
     FileButton.ERASE: "Takes every wire and every part off the board, but the level's own. Undo"
@@ -267,7 +269,9 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.CENTRE: "Centre",
     ViewButton.RAYS: "Rays",
     ViewButton.MOTION: "Motion",
-    ViewButton.STREAMS: "Streams",
+    ViewButton.FLAMES: "Flames",
+    ViewButton.INTAKE: "Eyes' light",
+    ViewButton.FLOW: "Flow",
 }
 LIT_EDGE = 3  # the accent along the open drawer's icon, and over the open tab [px]
 TAB_NAME = {"board": "Board", "run": "Run", "editor": "Editor"}  # D-356

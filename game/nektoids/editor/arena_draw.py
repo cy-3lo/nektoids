@@ -77,7 +77,6 @@ from nektoids.editor.draw import (
     draw_info,
     draw_level_map,
     draw_note,
-    draw_row,
     draw_status_line,
     draw_symbol,
     draw_tabs,
@@ -90,7 +89,7 @@ from nektoids.editor.draw import (
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, Rect, ViewButton, level_of
 from nektoids.editor.marks import at_work, stretch_at
-from nektoids.editor.marks_draw import draw_motion, draw_parts, draw_under
+from nektoids.editor.marks_draw import SPECK, draw_motion, draw_parts, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -101,10 +100,14 @@ from nektoids.editor.palette import (
     DIM_TEXT,
     DIVIDER,
     EYE_SHADES,
+    FLOW_ADDED,
+    FLOW_CUT,
+    FLOW_KEEP,
     FULL,
     LIGHT,
     LIT,
     MARK,
+    NOTHING,
     OBSTACLE,
     PANEL,
     PLOT_FRAME,
@@ -200,6 +203,33 @@ def _map_surface(scene: ArenaScene, size: tuple[int, int]) -> pygame.Surface:
     return _map_cache["surface"]
 
 
+_flow_cache: dict = {"key": None, "specks": None, "lut": None}
+
+
+def _draw_flow(screen: pygame.Surface, scene: ArenaScene) -> None:
+    """The tracers (D-608), specks on a grid of SPECK pixels, each a comet: a layer at a third of
+    the screen's resolution, faded each frame and added onto the plane, scaled up."""
+    area, tracers, view = pygame.Rect(scene.arena_area), scene.tracers, scene.view
+    size = (area.width // SPECK + 1, area.height // SPECK + 1)
+    if _flow_cache["key"] != (size, tracers.seeded):  # a new field: its tails start again
+        specks = pygame.Surface(size)
+        specks.fill(NOTHING)
+        lut = np.array([specks.map_rgb(colour) for colour in FLOW_ADDED])
+        _flow_cache.update(key=(size, tracers.seeded), specks=specks, lut=lut)
+    specks = _flow_cache["specks"]
+    specks.fill(FLOW_KEEP, special_flags=pygame.BLEND_RGB_MULT)
+    specks.fill(FLOW_CUT, special_flags=pygame.BLEND_RGB_SUB)
+    if len(tracers.x):
+        px = ((view.origin[0] + view.scale * tracers.x[:, 0] - area.left) // SPECK).astype(int)
+        py = ((view.origin[1] - view.scale * tracers.x[:, 1] - area.top) // SPECK).astype(int)
+        inside = (px >= 0) & (px < size[0]) & (py >= 0) & (py < size[1])
+        pixels = pygame.surfarray.pixels2d(specks)
+        pixels[px[inside], py[inside]] = _flow_cache["lut"][tracers.levels()[inside]]
+        del pixels  # the surface unlocked
+    scaled = pygame.transform.scale(specks, (size[0] * SPECK, size[1] * SPECK))
+    screen.blit(scaled, area.topleft, special_flags=pygame.BLEND_RGB_ADD)
+
+
 def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
     view, arena = scene.view, scene.arena
     pygame.draw.rect(screen, SHADOW, scene.arena_area)  # the open plane, as far as it shows
@@ -209,6 +239,8 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
     elif scene.show_rays:
         t, area = scene.clock.seconds, scene.arena_area
         draw_rays(screen, view, area, arena, scene.rays, t, scene.pos, scene.radius)
+    if scene.settings.flow:
+        _draw_flow(screen, scene)
     draw_marks(screen, view, scene.level.marks, lit=scene.marks_lit)
     draw_items(screen, fonts, view, arena)
     for light in np.flatnonzero(scene.lights_reached):  # by any swimmer
@@ -303,8 +335,7 @@ def _draw_swimmers(screen: pygame.Surface, scene: ArenaScene) -> None:
             stretch=stretch_at(view.scale, float(scene.radius[k])),
             colours=scene.colours,
         )
-        if scene.settings.streams:
-            draw_under(screen, view, body)
+        draw_under(screen, view, body, scene.settings.intake, scene.settings.flames)
         width = swimmer_width(radius)  # in proportion (D-410)
         draw_symbol(screen, DARK, centre, radius + 1, heading, width + 2)  # on a light map
         draw_symbol(screen, colour, centre, radius, heading, width)
@@ -409,6 +440,11 @@ def _draw_control_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -
         _, y, _, _ = timeline_rect(scene.layout)
         draw_tip(screen, fonts, _elapsed(scene), midbottom=(scene.pointer[0], y - 8))
         return
+    if isinstance(button, ViewButton):  # Navigator's, beside the drawer (D-608)
+        x, y, w, h = dict(scene.layout.view_buttons)[button]
+        key = f" ({VIEW_KEYS[button]})" if scene.settings.key_hints else ""
+        draw_tip(screen, fonts, TIP[button] + key, midtop=(x + w // 2, y + h + 8))
+        return
     x, y, w, _ = dict(control_rects(scene.layout))[button]
     key = f" ({BUTTON_KEYS[button]})" if scene.settings.key_hints else ""
     draw_tip(screen, fonts, _tip(scene, button) + key, midbottom=(x + w // 2, y - 10))
@@ -439,20 +475,11 @@ def _draw_rows(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
             ViewButton.PAN: scene.hand,
             ViewButton.RAYS: scene.show_rays,
             ViewButton.MOTION: scene.settings.motion,
-            ViewButton.STREAMS: scene.settings.streams,
+            ViewButton.FLAMES: scene.settings.flames,
+            ViewButton.INTAKE: scene.settings.intake,
+            ViewButton.FLOW: scene.settings.flow,
         }.get(button, False)
-        key = ("key", VIEW_KEYS[button])
-        draw_row(
-            screen,
-            scene,
-            fonts,
-            rect,
-            button,
-            ROW_NAME[button],
-            key,
-            active,
-            icon=VIEW_ICON[button],
-        )
+        draw_button(screen, fonts, rect, VIEW_ICON[button], active)  # its name in a tip (D-608)
 
 
 def draw_overview(

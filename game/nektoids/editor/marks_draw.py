@@ -34,10 +34,19 @@ MOTION_WIDTH = 2  # the velocity's segment, the spin's arc [px]
 SHORTEST = 2.0  # a segment or an arc shorter than this is not drawn [px]
 
 
-def draw_under(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
-    """The specks, drawn before the swimmer: the light drawn in, then the flames."""
-    _specks(screen, view, body.intake, INTAKE)
-    _specks(screen, view, body.flames, FLAME)
+def draw_under(
+    screen: pygame.Surface,
+    view: ArenaView,
+    body: AtWork,
+    intake: bool = True,
+    flames: bool = True,
+) -> None:
+    """The specks, drawn before the swimmer: the light drawn in, then the flames, each if shown
+    (D-608)."""
+    if intake:
+        _specks(screen, view, body.intake, INTAKE)
+    if flames:
+        _specks(screen, view, body.flames, FLAME)
 
 
 def draw_over(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:

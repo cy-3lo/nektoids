@@ -88,7 +88,7 @@ over; its prototype stays local, off the public repository.
   board that no longer wins goes to the physicist.
 - [x] **Patience, retuned** (D-607). A full drive wins it in 13.6 s, before the halved one (33 s, D-606);
   its two tests in `test_determinism.py` are marked expected to fail until it is.
-- [ ] **The flow drawn.** Tracers as in D-603, a fixed field over the visible plane, switched
+- [x] **The flow drawn** (D-608). Tracers as in D-603, a fixed field over the visible plane, switched
   on and off in the run view; visual only, reseeded on restart, seek, pan and zoom. Checked in
   the browser.
 - [ ] **A pinned swimmer's flow.** Against an obstacle, the solve still reports and draws the

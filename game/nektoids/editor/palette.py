@@ -228,6 +228,15 @@ MARK = mix(P.muted, P.dim, 0.5)  # a mark, an empty circle and its centre, in ev
 # The swimmer at work (D-076): its flames and the light it draws in, of one lightness (OKLab L
 # 0.56), dimmer than the swimmer
 FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks drifting out
+# the flow's tracers, slow to fast (D-608): mud, hue 100, the physicist's; not 85, the amber paint's
+FLOW = tuple(oklch(0.30 + 0.04 * k, 0.0225 + 0.0051 * k, 100.0) for k in range(8))
+FLOW_ADDED = tuple(tuple(max(0, c - s) for c, s in zip(f, P.deep, strict=True)) for f in FLOW)
+# ... each added onto the plane, SHADOW; and its layer, faded each frame by FLOW_KEEP / 256, a
+# comet's tail dark in about a second (D-603), then FLOW_CUT taken off: the product rounds up,
+# and the dimmest would stay as a haze
+FLOW_KEEP = (244, 244, 244)
+FLOW_CUT = (1, 1, 1)
+NOTHING = (0, 0, 0)  # a layer added onto the screen, empty
 INTAKE = mix(P.muted, P.dim, 0.6)  # the light an eye draws in, specks drifting to its face
 SELECTED = mix(P.accent1.dark, BUTTON, 0.4)  # the text selected in a field, behind it (D-418)
 FLAME_FAINT = mix(FLAME, PANEL, 0.3)  # ... on Diagnostic's circuit, behind it (D-415)

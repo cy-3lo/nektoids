@@ -80,12 +80,14 @@ from nektoids.editor.arena_view import (
 )
 from nektoids.editor.circuit import Circuit
 from nektoids.editor.devdrive import DT, Clock
+from nektoids.editor.flowfield import Tracers
 from nektoids.editor.frame import Frame
 from nektoids.editor.layout import (
     KEY_ALIASES,
     Drawer,
     Env,
     Layout,
+    ViewButton,
     contains,
     drawer_key,
     make_layout,
@@ -210,10 +212,11 @@ class ArenaScene(Frame):
         self.seek_to: int | None = None  # the tick the run races ahead to, if it does
         self.scrubbing = False  # the timeline held down: the run follows the mouse along it
         self.pointer = (0, 0)  # where the mouse is [px]
-        self.control_target: ArenaButton | str | None = None  # a control, or "timeline"
+        self.control_target: ArenaButton | ViewButton | str | None = None  # or "timeline"
         self.control_frames = 0  # ... for this many frames
         self.map_version = 0  # goes up each time the light map changes
         self.map_ms = 0.0  # what computing it took, for the status line [ms]
+        self.tracers = Tracers()  # the flow drawn, if shown (D-608); never the run's state
         self._load()
 
     @property
@@ -241,7 +244,7 @@ class ArenaScene(Frame):
         return captioned(self.label or level_label(self.index), self.level.title), self.level.spec
 
     @property
-    def control_tip(self) -> ArenaButton | str | None:
+    def control_tip(self) -> ArenaButton | ViewButton | str | None:
         """The control whose tooltip shows now, if any."""
         rested = self.control_frames >= self.settings.tooltip_frames
         return self.control_target if rested else None
@@ -298,6 +301,7 @@ class ArenaScene(Frame):
         self._moved()
         self.recording: Recording[Snapshot] = Recording(self._snapshot())
         self.seek_to = None
+        self.tracers.clear()
 
     def _moved(self) -> None:
         """A swimmer moved or turned: what the eyes read now, even paused; the map if shown."""
@@ -344,7 +348,11 @@ class ArenaScene(Frame):
         if kept != self.view:
             self._look(kept)
         on_line = contains(timeline_rect(self.layout), self.pointer)
-        target = control_at(self.layout, self.pointer) or ("timeline" if on_line else None)
+        target = (
+            control_at(self.layout, self.pointer)
+            or view_button_at(self.layout, self.pointer)  # Navigator's icons (D-608)
+            or ("timeline" if on_line else None)
+        )
         self.control_frames = self.control_frames + 1 if target is self.control_target else 0
         self.control_target = target
         if self.outcome is not None:
@@ -367,6 +375,14 @@ class ArenaScene(Frame):
                 break
         if len(ticks) and self.show_map:
             self._map()  # the swimmers' shadows moved
+        if self.settings.flow:
+            self._follow_flow(len(ticks) * DT)
+
+    def _follow_flow(self, seconds: float) -> None:
+        """The tracers `seconds` [s] on, in the flow round the first swimmer as it is now."""
+        swum = world.swimming(self.arena, self.net, self.pos, self.heading, self.radius, self.state)
+        rect = shown(self.view, self.arena_area)
+        self.tracers.follow(self.arena, self.pos[0], float(self.radius[0]), swum, rect, seconds)
 
     def _advance(self, tick: int) -> None:
         """From `tick` to the next: as recorded if the run got there before, else run on."""
@@ -396,7 +412,9 @@ class ArenaScene(Frame):
         self.seek_to = target if target > frontier else None
 
     def _restore(self, then: Snapshot) -> None:
-        """The run as it was at a recorded tick, in copies: what follows changes them in place."""
+        """The run as it was at a recorded tick, in copies: what follows changes them in place;
+        the tracers seeded again round it."""
+        self.tracers.clear()
         self.pos, self.heading = then.pos.copy(), then.heading.copy()
         self.state, self.kept = then.state.copy(), tuple(k.copy() for k in then.kept)
         self.circuit.beads.phase = list(then.phase)
@@ -597,8 +615,13 @@ class ArenaScene(Frame):
             self.show_rays = not self.show_rays
         elif button is ArenaButton.MOTION:  # for the session, as the settings are (D-076)
             self.settings.motion = not self.settings.motion
-        elif button is ArenaButton.STREAMS:
-            self.settings.streams = not self.settings.streams
+        elif button is ArenaButton.FLAMES:
+            self.settings.flames = not self.settings.flames
+        elif button is ArenaButton.INTAKE:
+            self.settings.intake = not self.settings.intake
+        elif button is ArenaButton.FLOW:
+            self.settings.flow = not self.settings.flow
+            self.tracers.clear()
         elif button in (ArenaButton.PLAY, ArenaButton.STEP) and self.outcome is not None:
             return  # over: 0 starts it again
         elif button is ArenaButton.PLAY:

@@ -46,6 +46,7 @@ from nektoids.editor.draw import (
     Fonts,
     cached_text,
     draw_bar,
+    draw_button,
     draw_drawer,
     draw_field,
     draw_heading,
@@ -66,7 +67,6 @@ from nektoids.editor.layout import (
     FIELD_PAD,
     HINT_LINE,
     SPEC_LINES,
-    VIEW_KEYS,
     Brief,
     EditButton,
     FileButton,
@@ -433,12 +433,8 @@ def _draw_rows(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> None
         draw_row(
             screen, scene, fonts, rect, start, name, ("none", ""), icon=icon, badge=label or None
         )
-    for button, rect in scene.layout.view_buttons:
-        key = ("key", VIEW_KEYS[button])
-        icon = VIEW_ICON[button]
-        draw_row(
-            screen, scene, fonts, rect, button, ROW_NAME[button], key, scene.show_rays, icon=icon
-        )
+    for button, rect in scene.layout.view_buttons:  # an icon button, as the run's (D-608)
+        draw_button(screen, fonts, rect, VIEW_ICON[button], scene.show_rays)
     if scene.layout.overview is not None:
         draw_overview(screen, scene, fonts, (*scene.pos[0], scene.heading))
 
