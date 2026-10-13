@@ -2980,3 +2980,9 @@ relative form, max(0, (u_ext − V − Ω × r_s)·n), in which a drift cancels 
 head wind, stays one switch away, and play decides. The level format and the board's word take
 new versions. Out still: a uniform stream, shears and vortices, swimmers coupled to each other,
 items or parts that change in time. The todo's §18 lists the work.
+
+**D-701 — 2026-10-13 — An obstacle's spring gives 0.33 u under a head-on push of two thrusters at full rate, not 0.9: stiffer again, near D-424's 0.3. Amends D-610.**
+The physicist's, for stage 5: what the lights and obstacles hold against the pumps' and sources'
+flow is solved once, with each obstacle at rest (D-700), and that holds best when an obstacle
+moves little. Three runs of the outcome table moved a few ticks, Shadows' driven one 665 → 670,
+Patience's 1471 → 1475 and 1203 → 1212; no outcome changed.
