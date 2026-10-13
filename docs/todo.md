@@ -95,8 +95,8 @@ over; its prototype stays local, off the public repository.
   velocity the swimmer would have if free (7 u/s), and the tracers show that flow. The contact
   force belongs in the Stokes problem: an unknown force on the swimmer, set so that its
   velocity into the obstacle is zero, one more solve per contact (a 2×2 system in a crevice).
-- [ ] **Gaps in the fixed field of tracers.** Move a tracer from a crowded cell to an empty one
-  now and then, away from the swimmer, so that the field heals.
+- [x] **Gaps in the fixed field of tracers** (D-704). The tracers a slab of the fluid: each leaves
+  it or splits as the flow leaves the plane or comes into it; sources put out, sinks swallow.
 - [ ] **Tuning by eye** (first pass: D-610; springs: D-701). ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
   brightness and their tails.
 - [x] **Then flow sensing**, a stage of its own: §18 (D-700).

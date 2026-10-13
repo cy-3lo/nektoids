@@ -3000,3 +3000,19 @@ aim at them yet, and they cast no shadow.
 The physicist's, from the level maker: a pump was ten times too strong. Its flow falls as 1/r
 only, about 4.5 F/r u/s on its axis, so at 1 f a step a pump at 8 still pushed 7 u/s, a swimmer's
 full speed, 5 u away; now 0.7 u/s there and about 2.4 u/s where a swimmer touches it.
+
+**D-704 — 2026-10-13 — The tracers are a thin slab of the fluid round the plane: each leaves it at the rate dw/dz, where the flow leaves the plane, or splits in two at the rate -dw/dz, where it comes in, so they stay as dense as seeded; a source puts out new ones on its rim, n Q / 2R a second, and a sink swallows those that reach it. Carried in substeps of at most 0.2 u near fast flow. Amends D-603, D-608.**
+The physicist's: sources should make tracers, sinks take them. A fixed count could not: the
+flow is 3D, and in the plane its divergence is -dw/dz, nonzero round a source, Q / 4 pi R^3,
+and round every stokeslet, hat (R . F) / R^2, so tracers bunched where the fluid leaves the
+plane and gaps opened where it comes in, behind a swimmer too (the todo's "gaps in the fixed
+field"). With n the tracers' density, dn/dt + div(n u) = -n dw/dz keeps a uniform field uniform.
+`flow.rise_at` gives dw/dz in closed form from `flow_at`'s singularities, checked against the
+divergence of `flow_at` by differences to 1e-9. Near a source the flow is 32 u/s at the rim, so
+one Euler step carried a new tracer twice as far as it goes and the start's dw/dz alone took
+every one out at once: a tracer moves by the midpoint rule in substeps of at most 0.2 u, at most
+8, dw/dz integrated along them. Over 10 s the count stays within 6 % round a pump, a source, a
+sink and a swimmer; past twice the count seeded, the most crowded cells would lose their oldest
+first, a guard. The leaving and splitting draw from the tracers' own seeded generator: a run is
+the same with them shown or not (invariant 1). A frame of tracers costs 0.9 ms natively for 920
+of them in Patience, against 0.44.

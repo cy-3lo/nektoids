@@ -321,6 +321,48 @@ def flow_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: S
     Faxén term, rotlet), the reactions as point forces with a core BLOB, and the pumps' and
     sources' flow (D-700). Inside a source the distance is held at its radius: bounded, and on a
     sphere's surface its rigid motion, 0 for a clamped one."""
+    sx, sy, a, fx, fy, tz = _singularities(arena, pos, radius, swum)
+    dx, dy = _held_at(x, sx, sy, a)
+    ux, uy, _ = apply(dx, dy, a * a, fx, fy, tz)
+    if arena.pumps or arena.sources:
+        sx, sy, _ = stirred(arena, x, np.zeros(len(x)))
+        ux, uy = ux + sx, uy + sy
+    return np.stack((ux, uy), axis=1)
+
+
+def rise_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: Swim) -> np.ndarray:
+    """(P,): dw/dz [1/s] at points x (P, 2) [u] in the plane, of the flow `flow_at` gives: how
+    fast the fluid leaves the plane, up and down, where positive, and comes into it where
+    negative; the in-plane flow's divergence, negated (D-704). A rotlet keeps to the plane; a
+    sphere's stokeslet F, with its Faxén term, rises as hat (R . F) / R^2, a source as
+    Q / (4 pi R^3), each distance held at the radius as `flow_at` holds it."""
+    sx, sy, a, fx, fy, _ = _singularities(arena, pos, radius, swum)
+    dx, dy = _held_at(x, sx, sy, a)
+    rise = _rising(dx, dy, a * a, fx, fy)
+    if arena.pumps:
+        dx, dy = _held_off(x, arena.pump_xy)
+        f = arena.pump_force
+        rise = rise + _rising(dx, dy, STIR_RADIUS**2, f[:, 0], f[:, 1])
+    if arena.sources:
+        dx, dy = _held_off(x, arena.source_xy)
+        r2 = dx * dx + dy * dy
+        rise = rise + (arena.source_rate / (4.0 * np.pi * r2 * np.sqrt(r2))).sum(axis=1)
+    return rise
+
+
+def _rising(dx, dy, s, fx, fy) -> np.ndarray:
+    """(P,): dw/dz of point forces (fx, fy) (q,) [f] of radius squared s at offsets (dx, dy)
+    (P, q) [u] from them, summed over them: hat (R . F) / R^2."""
+    r2 = dx * dx + dy * dy
+    r = np.sqrt(r2)
+    hat = _C * (1.0 - s / r2) / r
+    return (hat * (dx * fx + dy * fy) / r2).sum(axis=1)
+
+
+def _singularities(arena: Arena, pos: np.ndarray, radius: float, swum: Swim):
+    """Centres (Q,) [u] x and y, radii (Q,) [u], forces (Q,) [f] x and y and torques (Q,) [f u]
+    of what makes the first swimmer's flow: its body, the clamped spheres and its thrusters'
+    reactions, cored by BLOB."""
     xy, size = clamped(arena)
     tips, forces = swum.tips[0], swum.forces[0]
     sx = np.concatenate(([pos[0]], xy[:, 0], tips[:, 0]))
@@ -330,11 +372,13 @@ def flow_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: S
     fx = np.concatenate(([load[0]], held[:, 0], -forces[:, 0]))
     fy = np.concatenate(([load[1]], held[:, 1], -forces[:, 1]))
     tz = np.concatenate(([load[2]], held[:, 2], np.zeros(len(tips))))
+    return sx, sy, a, fx, fy, tz
+
+
+def _held_at(x: np.ndarray, sx, sy, a) -> tuple[np.ndarray, np.ndarray]:
+    """Offsets (P, Q) [u] of points x (P, 2) from centres (sx, sy) (Q,), each no nearer than its
+    radius a (Q,)."""
     dx, dy = x[:, None, 0] - sx[None], x[:, None, 1] - sy[None]
     r = np.sqrt(dx * dx + dy * dy)
     scale = np.maximum(r, a) / np.maximum(r, 1e-12)  # held at the radius inside
-    ux, uy, _ = apply(dx * scale, dy * scale, a * a, fx, fy, tz)
-    if arena.pumps or arena.sources:
-        sx, sy, _ = stirred(arena, x, np.zeros(len(x)))
-        ux, uy = ux + sx, uy + sy
-    return np.stack((ux, uy), axis=1)
+    return dx * scale, dy * scale

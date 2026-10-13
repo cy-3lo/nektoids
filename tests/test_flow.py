@@ -210,3 +210,28 @@ def test_a_pump_or_a_source_may_not_touch_another_item():
     with pytest.raises(ValueError):
         Arena(pumps=(Pump(0.0, 0.0, 0, 1.0),), sources=(Source(0.9, 0.0, 1.0),))
     Arena(pumps=(Pump(0.0, 0.0, 0, 1.0),), sources=(Source(1.1, 0.0, 1.0),))
+
+
+def test_rise_is_the_planes_divergence_negated_round_every_kind_of_singularity():
+    arena = Arena(
+        (Light(6.0, 0.0, 4.0),),
+        (Disc(-5.0, 4.0, 2.0),),
+        pumps=(Pump(0.0, -6.0, 1, 0.8),),
+        sources=(Source(-6.0, -4.0, 30.0), Source(8.0, 6.0, -30.0)),
+    )
+    pos = np.array([0.5, 0.2])  # D-704
+    tips, forces = np.array([[[0.0, 1.0], [0.0, -1.0]]]), np.array([[[1.0, 0.3], [1.0, 0.0]]])
+    swum = flow.swim(arena, pos[None], np.ones(1), pos + tips, forces)
+    x = np.random.default_rng(1).uniform(-10.0, 10.0, (400, 2))
+    clear = [(pos, 1.6), ((6, 0), 1.5), ((-5, 4), 2.5), ((0, -6), 1.0), ((-6, -4), 1.0)]
+    clear += [((8, 6), 1.0), ((0.5, 1.2), 0.6), ((0.5, -0.8), 0.6)]
+    x = x[np.all([np.hypot(*(x - c).T) > r for c, r in clear], axis=0)]
+    e = 1e-5
+
+    def u(p):
+        return flow.flow_at(arena, p, pos, 1.0, swum)
+
+    div = u(x + [e, 0])[:, 0] - u(x - [e, 0])[:, 0] + u(x + [0, e])[:, 1] - u(x - [0, e])[:, 1]
+    rise = flow.rise_at(arena, x, pos, 1.0, swum)
+    np.testing.assert_allclose(rise, -div / (2 * e), atol=1e-7)
+    assert np.abs(rise).max() > 0.1
