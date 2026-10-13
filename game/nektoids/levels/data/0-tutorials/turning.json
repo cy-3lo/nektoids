@@ -4,7 +4,7 @@
   "spec": "Reach the ring by turning round the obstacle.",
   "author": "@Cy-3LO",
   "start": {"at": [0, 0], "heading": 0},
-  "items": [{"kind": "obstacle", "at": [0, 3], "radius": 1}, {"kind": "mark", "at": [0, 6], "radius": 1}],
+  "items": [{"kind": "obstacle", "at": [0, 3], "radius": 1}, {"kind": "mark", "at": [0, 5], "radius": 1}],
   "board": {
     "zone": 19,
     "stock": {"thruster": 1},
@@ -47,5 +47,5 @@
       }
     ]
   },
-  "proof": {"board": "3pwkbFj3nH", "ticks": 805, "parts": 2}
+  "proof": {"board": "3pwkbFj3nH", "ticks": 289, "parts": 2}
 }

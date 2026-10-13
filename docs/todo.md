@@ -91,7 +91,7 @@ over; its prototype stays local, off the public repository.
 - [x] **The flow drawn** (D-608). Tracers as in D-603, a fixed field over the visible plane, switched
   on and off in the run view; visual only, reseeded on restart, seek, pan and zoom. Checked in
   the browser.
-- [ ] **A pinned swimmer's flow.** Against an obstacle, the solve still reports and draws the
+- [x] **A pinned swimmer's flow** (D-609). Against an obstacle, the solve still reports and draws the
   velocity the swimmer would have if free (7 u/s), and the tracers show that flow. The contact
   force belongs in the Stokes problem: an unknown force on the swimmer, set so that its
   velocity into the obstacle is zero, one more solve per contact (a 2×2 system in a crevice).

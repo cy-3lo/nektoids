@@ -78,3 +78,43 @@ def test_an_obstacle_changes_a_swimmers_motion_and_its_inverse_is_built_once():
     assert near.velocity[0, 0] != pytest.approx(7.125) and abs(near.velocity[0, 1]) > 1e-3
     moved = arena.moved(np.array([[0.1, 0.0]]))
     assert moved.clamped_inverse is arena.clamped_inverse  # handed on, not built again
+
+
+SIDES = ([[0.0, 1.0], [0.0, -1.0]], [[1.0, 0.0], [1.0, 0.0]])  # two side thrusters, full push
+
+
+def test_a_light_holds_a_body_pushing_into_it_and_lets_one_slide_along_it():
+    head_on = Arena(lights=(Light(2.0, 0.0, 4.0),))  # touching, ahead
+    held = _alone(*SIDES, head_on)
+    assert abs(held.velocity[0, 0]) < 1e-12 and held.contact[0, 0] < 0.0  # pushed back
+    assert held.load[0, 0] == pytest.approx(2.0 + held.contact[0, 0])  # the fluid gets it too
+    aside = Arena(lights=(Light(math.sqrt(2.0), math.sqrt(2.0), 4.0),))  # touching, at 45°
+    slid = _alone(*SIDES, aside)
+    normal = np.array([-1.0, -1.0]) / math.sqrt(2.0)  # from the light to the body
+    assert slid.velocity[0] @ normal == pytest.approx(0.0, abs=1e-12)
+    assert slid.velocity[0, 0] > 1.0  # along it, still
+    apart = _alone(*SIDES, Arena(lights=(Light(2.5, 0.0, 4.0),)))  # 0.5 u off: free
+    assert apart.contact.tolist() == [[0.0, 0.0]]
+
+
+def test_a_body_pushing_an_obstacle_comes_to_rest_the_spring_holding_the_contact():
+    from nektoids.graph.board import Kind
+    from nektoids.graph.dynamics import initial_state
+    from nektoids.graph.network import Network
+    from nektoids.sim.contact import SPRING
+    from nektoids.sim.world import step, swimming
+
+    kinds = [Kind.SOURCE, Kind.DOUBLE, Kind.THRUSTER, Kind.THRUSTER]  # full rate on each
+    mount = [[0.0, 0.0], [0.0, 0.0], [0.0, 1.0], [0.0, -1.0]]
+    net = Network.from_edges(kinds, [(0, 1), (1, 2), (1, 3)], mount=mount)
+    arena = Arena(obstacles=(Disc(6.0, 0.0, 2.0),))
+    pos, heading, radius = np.array([[0.0, 0.0]]), np.zeros(1), np.ones(1)
+    y = initial_state(net, 1)
+    for _ in range(600):  # 5 s: there in well under one, then still
+        pos, heading, y, arena = step(arena, net, pos, heading, radius, y, 1 / 120)
+    swum = swimming(arena, net, pos, heading, radius, y)
+    thrust = swum.load[0, 0] - swum.contact[0, 0]  # 1 f: a Source's rate on each
+    assert abs(swum.velocity[0, 0]) < 1e-3  # at rest against it
+    assert 0.5 * thrust < -swum.contact[0, 0] < thrust  # most of the thrust, by contact; the rest
+    # through the fluid, which the obstacle's clamp takes (D-601)
+    assert SPRING * arena.offsets[0, 0] == pytest.approx(-swum.contact[0, 0], rel=1e-3)  # k u = C

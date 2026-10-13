@@ -141,7 +141,7 @@ def step(
     swum = swimming(arena, net, pos, heading, radius, y)
     pos, heading = pos + dt * swum.velocity, heading + dt * swum.spin  # explicit Euler (D-022)
     rest = arena.offsets if arena.offsets is not None else arena.at_rest
-    pos, offsets = collide(arena, rest, pos, radius, dt)
+    pos, offsets = collide(arena, rest, pos, radius, dt, swum.pushes)  # D-609
     arena = arena.moved(offsets)
     seen = readings(arena, net, pos, heading, radius)
     return pos, heading, dynamics.step_given(net, y, seen, dt), arena

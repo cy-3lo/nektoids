@@ -2947,3 +2947,16 @@ cell of the plane in view, carried each frame by the flow round the first swimme
 are specks on the game's 3 px grid, comets fading in about a second, added onto the plane under
 the items. Five labelled rows did not fit Navigator over three objectives, so the options are
 icons, each named with its key in a tooltip, kept on screen. 834 tracers and the whole run's frame cost 2.9 ms natively.
+
+**D-609 — 2026-10-13 — A body touching a light or an obstacle is pushed by it in the Stokes solve, along their centres, frictionless: as hard as it takes for the body to close in no faster than the other gives, a light not at all, an obstacle as its drag and spring let it, zeta du/dt = C - k u. The force is the body's, so the fluid gets it too: pinned, the body pumps. The obstacles move by those pushes; Turning's ring comes to (0, 5). Amends D-424, D-601.**
+The physicist's, the todo's §17. Without it the solve, the drawn velocity and the tracers showed
+a free swimmer while it pressed on a sphere. Within 0.01 u a body touches: sliding along a sphere
+it drifts about 1e-3 u off it a tick, and a tighter test would flicker. Each contact's force
+comes from two unit responses of the body's sphere, reflections included, and three passes over
+the contacts. First tried, an obstacle's spring force k u taken as known fought the projection
+of D-424 and settled wrong; solved with the obstacle's own drag, body and obstacle close in
+together, and at rest the spring holds the contact, k u = C. That is about 0.7 of the thrust:
+the rest reaches the obstacle through the fluid, which its clamp takes (D-601), so D-424's
+k u = F, a law without fluid, no longer holds exactly. `contact.collide` still shares any
+overlap left. Turning's swimmer, deflected less by the obstacle, circled past its ring; at
+(0, 5) it wins in 2.4 s, and the left side still loses. Other proofs moved by at most 31 ticks.

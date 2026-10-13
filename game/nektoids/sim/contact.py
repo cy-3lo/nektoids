@@ -64,16 +64,23 @@ def confine(arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
 
 
 def collide(
-    arena: Arena, offsets: np.ndarray, pos: np.ndarray, radius: np.ndarray, dt: float
+    arena: Arena,
+    offsets: np.ndarray,
+    pos: np.ndarray,
+    radius: np.ndarray,
+    dt: float,
+    pushes: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """The bodies at `pos` (N, 2) [u] of `radius` (N,) [u] and the obstacles `offsets` (M, 2) [u]
-    from their rest, a step of `dt` [s] on: each obstacle drawn back by its spring, then every
-    overlap shared between body and obstacle, a light keeping its place. New arrays."""
+    from their rest, a step of `dt` [s] on: each obstacle pushed by the bodies touching it,
+    `pushes` (M, 2) [f] (the flow's, D-609), and drawn back by its spring, then every overlap
+    left shared between body and obstacle, a light keeping its place. New arrays."""
     pos = np.array(pos, dtype=np.float64).reshape(-1, 2)
     radius = np.asarray(radius, dtype=np.float64)
     size = arena.disc_radius
     offsets = np.array(offsets, dtype=np.float64).reshape(-1, 2)
-    offsets *= np.maximum(0.0, 1.0 - dt * SPRING / drag(size))[:, None]  # ζ du/dt = -k u
+    pushed = np.zeros_like(offsets) if pushes is None else pushes
+    offsets += dt * (pushed - SPRING * offsets) / drag(size)[:, None]  # ζ du/dt = C - k u
     body = drag(radius)
     for _ in range(CONTACT_PASSES):
         for centre in arena.light_xy:

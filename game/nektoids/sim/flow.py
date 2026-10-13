@@ -27,12 +27,16 @@ from dataclasses import dataclass
 import numpy as np
 
 from nektoids.sim.arena import LIGHT_RADIUS, Arena
+from nektoids.sim.contact import SPRING, drag
 from nektoids.sim.motion import VISCOSITY
 
 HYDRO = 0.5  # the swimmer's hydrodynamic radius, in body radii: thrusters 0.5 R outside it
 SPIN = 0.75  # the radius whose rotational drag it has, in body radii: struts and thrusters add
 # more drag to turning than to moving; HYDRO's would turn it 7 times as fast as D-022's
 BLOB = 0.25  # [u] the core a point's flow sees round a point force: no singularity (D-603)
+TOUCH = 0.01  # [u] a body this near a light or an obstacle touches it: one sliding along it
+# drifts (V dt)^2 / 2(R + r), about 1e-3 u, off it each tick (D-609)
+CONTACT_PASSES = 3  # over the lights and obstacles a body touches, each held in turn
 
 _C = 1.0 / (8.0 * np.pi * VISCOSITY)
 
@@ -43,10 +47,13 @@ class Swim:
 
     velocity: np.ndarray  # (N, 2) [u/s]
     spin: np.ndarray  # (N,) [rad/s]
-    load: np.ndarray  # (N, 3) the thrusters' force [f] and torque [f u] on each body
+    load: np.ndarray  # (N, 3) what each body puts on the fluid, its thrusters' and contacts'
+    # force [f] and torque [f u] about its centre
     tips: np.ndarray  # (N, k, 2) the thrusters [u]
     forces: np.ndarray  # (N, k, 2) what each pushes its body with [f]; the fluid gets the opposite
     reactions: np.ndarray  # (N, M, 3) force and torque the fluid puts on each clamped sphere
+    contact: np.ndarray  # (N, 2) [f] what the lights and obstacles touched push each body with
+    pushes: np.ndarray  # (M, 2) [f] what the bodies push each obstacle with, against its spring
 
 
 def apply(dx, dy, s, fx, fy, tz) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -114,10 +121,15 @@ def swim(
 ) -> Swim:
     """The motion of N swimmers at pos (N, 2) [u] of radius (N,) [u], each pushed by k point
     forces (N, k, 2) [f] at tips (N, k, 2) [u], the fluid getting the opposite there. A force
-    inside the hydrodynamic sphere, or on it, moves nothing (D-602) and is left out."""
+    inside the hydrodynamic sphere, or on it, moves nothing (D-602) and is left out.
+
+    A body touching a light or an obstacle is pushed by it along their centres, frictionless
+    (D-609), as hard as it takes for the body to close in no faster than the other gives: a
+    light not at all, an obstacle as its drag and spring let it, zeta du/dt = C - k u (D-424).
+    That force is the body's, so the fluid gets it too: pinned, its thrust held, the body pumps.
+    The obstacles get `pushes`, which `contact.collide` moves them by."""
     pos = np.asarray(pos, dtype=np.float64).reshape(-1, 2)
     radius = np.asarray(radius, dtype=np.float64)
-    n = pos.shape[0]
     a, b = HYDRO * radius, SPIN * radius
     arm_x, arm_y = tips[..., 0] - pos[:, None, 0], tips[..., 1] - pos[:, None, 1]
     outside = arm_x * arm_x + arm_y * arm_y > (a * a)[:, None]
@@ -125,7 +137,70 @@ def swim(
     tips = np.where(outside[..., None], tips, pos[:, None, :] + np.stack((a, 0 * a), 1)[:, None])
     arm_x, arm_y = tips[..., 0] - pos[:, None, 0], tips[..., 1] - pos[:, None, 1]
     fx, fy = forces[..., 0], forces[..., 1]
-    load = np.stack((fx.sum(axis=1), fy.sum(axis=1), (arm_x * fy - arm_y * fx).sum(axis=1)), 1)
+    thrust = np.stack((fx.sum(axis=1), fy.sum(axis=1), (arm_x * fy - arm_y * fx).sum(axis=1)), 1)
+    load = thrust
+    velocity, spin, reactions = _respond(arena, pos, a, b, load, tips, fx, fy)
+    lights = len(arena.lights)
+    centres = np.concatenate((arena.light_xy, arena.disc_xy))  # (K, 2): lights, then obstacles
+    reach = np.concatenate((np.full(lights, LIGHT_RADIUS), arena.disc_radius))
+    gives = np.concatenate((np.zeros(lights), 1.0 / drag(arena.disc_radius)))  # 1 / zeta [u/f s]
+    away = pos[:, None, :] - centres[None]  # (N, K, 2)
+    far = np.sqrt((away * away).sum(axis=2))
+    normal = away / np.maximum(far, 1e-12)[..., None]  # out of each, towards the body
+    touch = far <= radius[:, None] + reach[None] + TOUCH
+    offsets = arena.offsets if arena.offsets is not None else arena.at_rest
+    pushed = -(offsets[None] * normal[:, lights:]).sum(axis=2)  # (N, M) [u] given, away from it
+    preload = np.concatenate((np.zeros((len(pos), lights)), SPRING * pushed * gives[lights:]), 1)
+    held = np.zeros(far.shape)  # (N, K) [f], each contact's force, along its normal
+    if touch.any():
+        none = np.zeros_like(fx)
+        units = [
+            _respond(arena, pos, a, b, np.tile(unit, (len(pos), 1)), tips, none, none)
+            for unit in (np.array([1.0, 0.0, 0.0]), np.array([0.0, 1.0, 0.0]))
+        ]
+        for _ in range(CONTACT_PASSES):  # each contact in turn, a few passes over them
+            for k in range(len(centres)):
+                if not touch[:, k].any():
+                    continue
+                nx, ny = normal[:, k, 0], normal[:, k, 1]
+                give = [  # the response to a unit push along the normal: velocity, spin, held
+                    _rows(nx, units[0][q]) + _rows(ny, units[1][q]) for q in range(3)
+                ]
+                along = give[0][:, 0] * nx + give[0][:, 1] * ny  # > 0: a mobility
+                into = -(velocity[:, 0] * nx + velocity[:, 1] * ny)  # how fast it closes in
+                # the body closes in as fast as the touched one gives: zeta du/dt = C - k u
+                need = (into + held[:, k] * along + preload[:, k]) / (along + gives[k])
+                more = np.where(touch[:, k], np.maximum(0.0, need), 0.0)
+                step, held[:, k] = more - held[:, k], more
+                velocity = velocity + step[:, None] * give[0]
+                spin = spin + step * give[1]
+                reactions = reactions + step[:, None, None] * give[2]
+                load = load + step[:, None] * np.stack((nx, ny, 0 * nx), axis=1)
+    contact = (held[..., None] * normal).sum(axis=1)
+    pushes = -(held[:, lights:, None] * normal[:, lights:]).sum(axis=0)  # (M, 2) on obstacles
+    return Swim(velocity, spin, load, tips, forces, reactions, contact, pushes)
+
+
+def _rows(scale: np.ndarray, array: np.ndarray) -> np.ndarray:
+    """`array` (N, ...) with each row times scale (N,)."""
+    return scale.reshape(-1, *([1] * (array.ndim - 1))) * array
+
+
+def _respond(
+    arena: Arena,
+    pos: np.ndarray,
+    a: np.ndarray,
+    b: np.ndarray,
+    load: np.ndarray,
+    tips: np.ndarray,
+    fx: np.ndarray,
+    fy: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Velocity (N, 2) [u/s], spin (N,) [rad/s] and the held spheres' reactions (N, M, 3) of
+    bodies of hydrodynamic radius a (N,) [u], turning as of radius b (N,) [u], that put `load`
+    (N, 3) [f, f u] on the fluid, and point forces -(fx, fy) (N, k) [f] at tips (N, k, 2) [u]."""
+    n = pos.shape[0]
+    arm_x, arm_y = tips[..., 0] - pos[:, None, 0], tips[..., 1] - pos[:, None, 1]
     # its own drag, and the flow of its thrusters' reactions at its centre
     drag = 6.0 * np.pi * VISCOSITY * a
     ux, uy, om = apply(-arm_x, -arm_y, (a * a)[:, None], -fx, -fy, 0.0)
@@ -134,7 +209,7 @@ def swim(
     xy, size = clamped(arena)
     m = xy.shape[0]
     if m == 0:
-        return Swim(velocity, spin, load, tips, forces, np.zeros((n, 0, 3)))
+        return velocity, spin, np.zeros((n, 0, 3))
     # the clamped spheres, held: the flow of the swimmer and of the reactions at each
     sx = np.concatenate((pos[:, None, 0], tips[..., 0]), axis=1)  # (N, 1 + k)
     sy = np.concatenate((pos[:, None, 1], tips[..., 1]), axis=1)
@@ -161,8 +236,7 @@ def swim(
         reactions[..., 1],
         reactions[..., 2],
     )
-    velocity = velocity + np.stack((ux, uy), axis=1)
-    return Swim(velocity, spin + om, load, tips, forces, reactions)
+    return velocity + np.stack((ux, uy), axis=1), spin + om, reactions
 
 
 def flow_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: Swim) -> np.ndarray:
