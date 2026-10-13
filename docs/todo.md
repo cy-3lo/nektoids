@@ -81,7 +81,7 @@ over; its prototype stays local, off the public repository.
 - [x] **Thrusters on the outer ring** (D-605). Anywhere on the Board, but idle off the rim: faded,
   no push, no flame, said in the run's status line. Turning's start board and the proofs of
   Turning, Latch, Spot the violet and Dragster II moved to it.
-- [x] **The swimmer moves by the Stokes solve** (D-606). `prototypes/stokes/viewer/flow.py` into
+- [x] **The swimmer moves by the Stokes solve** (D-606). The prototype's lean solve into
   `sim/flow.py`, vectorised over the bodies, no `@`; the lights' and obstacles' inverse built
   once with the arena and handed on by `moved`; `world.step` takes its velocity and spin. Every
   proof run again: its ticks re-recorded, its time allowed raised where it loses by time; a
