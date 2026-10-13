@@ -1,18 +1,18 @@
-"""Contacts: lights and obstacles are solid and frictionless (D-022, D-424); the plane is open, no
-walls (D-028).
+"""Contacts: lights, obstacles, pumps and sources are solid and frictionless (D-022, D-424,
+D-700); the plane is open, no walls (D-028).
 
 After each step, a body that overlaps a light or an obstacle is moved radially out until it
 touches it. For an overdamped body this cancels the velocity into the contact and keeps the
 rest: it slides. Contacts exert no torque. A few fixed passes settle a body in a crevice.
 
-Lights are fixed. Each obstacle is a sphere in the same fluid as the swimmers, held at its rest
-by a spring (D-424): a body pushing on it moves it, and it comes back. Neither has inertia, so
-an overlap is shared as their drags say, ζ = 6πμR each: the body takes ζ_o / (ζ_b + ζ_o) of it,
-the obstacle the rest. The spring pulls the obstacle back, ζ_o du/dt = -k u, by an Euler step as
-the swimmers move (D-022): under a steady push F the obstacle then settles exactly where the
-spring holds it, k u = F, whatever its size, a head-on push of two thrusters at full rate moving
-it SPRING_GIVE; and let go it comes back by a factor 1 - k dt / ζ_o a step, never past its rest,
-k dt / ζ_o being at most 1/3 for the smallest obstacle, 1 u.
+Lights, pumps and sources are fixed. Each obstacle is a sphere in the same fluid as the swimmers,
+held at its rest by a spring (D-424): a body pushing on it moves it, and it comes back. Neither has
+inertia, so an overlap is shared as their drags say, ζ = 6πμR each: the body takes ζ_o / (ζ_b + ζ_o)
+of it, the obstacle the rest. The spring pulls the obstacle back, ζ_o du/dt = -k u, by an Euler step
+as the swimmers move (D-022): under a steady push F the obstacle then settles exactly where the
+spring holds it, k u = F, whatever its size, a head-on push of two thrusters at full rate moving it
+SPRING_GIVE; and let go it comes back by a factor 1 - k dt / ζ_o a step, never past its rest, k dt /
+ζ_o being at most 1/3 for the smallest obstacle, 1 u.
 
 Vectorised over the bodies; the Python loops run over the passes and the items only, in a fixed
 order (invariant 1). Lengths in u, the base body radius. Pure numpy.
@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from nektoids.sim.arena import LIGHT_RADIUS, Arena
+from nektoids.sim.arena import Arena
 from nektoids.sim.motion import THRUST, VISCOSITY
 from nektoids.sim.optics import TINY
 
@@ -50,10 +50,11 @@ def _outwards(pos: np.ndarray, centre, touch) -> tuple[np.ndarray, np.ndarray, n
 
 def confine(arena: Arena, pos: np.ndarray, radius: np.ndarray) -> np.ndarray:
     """(N, 2): the centres `pos` (N, 2) [u] of bodies of `radius` (N,) [u], put back outside every
-    light and obstacle, which do not move, as a new array: where a body is put by hand."""
+    light, obstacle, pump and source, which do not move, as a new array: where a body is put by
+    hand."""
     pos = np.array(pos, dtype=np.float64).reshape(-1, 2)
     radius = np.asarray(radius, dtype=np.float64)
-    discs = [(c, LIGHT_RADIUS) for c in arena.light_xy]
+    discs = list(zip(arena.solid_xy, arena.solid_radius, strict=True))
     discs += list(zip(arena.disc_xy, arena.disc_radius, strict=True))
     for _ in range(CONTACT_PASSES):
         for centre, r in discs:
@@ -74,7 +75,8 @@ def collide(
     """The bodies at `pos` (N, 2) [u] of `radius` (N,) [u] and the obstacles `offsets` (M, 2) [u]
     from their rest, a step of `dt` [s] on: each obstacle pushed by the bodies touching it,
     `pushes` (M, 2) [f] (the flow's, D-609), and drawn back by its spring, then every overlap
-    left shared between body and obstacle, a light keeping its place. New arrays."""
+    left shared between body and obstacle, a light, a pump or a source keeping its place. New
+    arrays."""
     pos = np.array(pos, dtype=np.float64).reshape(-1, 2)
     radius = np.asarray(radius, dtype=np.float64)
     size = arena.disc_radius
@@ -83,8 +85,8 @@ def collide(
     offsets += dt * (pushed - SPRING * offsets) / drag(size)[:, None]  # ζ du/dt = C - k u
     body = drag(radius)
     for _ in range(CONTACT_PASSES):
-        for centre in arena.light_xy:
-            depth, ux, uy = _outwards(pos, centre, radius + LIGHT_RADIUS)
+        for centre, r in zip(arena.solid_xy, arena.solid_radius, strict=True):
+            depth, ux, uy = _outwards(pos, centre, radius + r)
             pos[:, 0] += depth * ux
             pos[:, 1] += depth * uy
         for m, r in enumerate(size):

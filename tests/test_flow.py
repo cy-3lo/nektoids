@@ -9,7 +9,8 @@ import numpy as np
 import pytest
 
 from nektoids.sim import flow
-from nektoids.sim.arena import Arena, Disc, Light
+from nektoids.sim.arena import STIR_RADIUS, Arena, Disc, Light, Pump, Source
+from nektoids.sim.motion import VISCOSITY
 
 PROTOTYPE = Path(__file__).parents[1] / "prototypes" / "stokes" / "viewer" / "flow.py"
 EMPTY = Arena()
@@ -118,3 +119,94 @@ def test_a_body_pushing_an_obstacle_comes_to_rest_the_spring_holding_the_contact
     assert 0.5 * thrust < -swum.contact[0, 0] < thrust  # most of the thrust, by contact; the rest
     # through the fluid, which the obstacle's clamp takes (D-601)
     assert SPRING * arena.offsets[0, 0] == pytest.approx(-swum.contact[0, 0], rel=1e-3)  # k u = C
+
+
+STILL = (np.zeros((0, 2)), np.zeros((0, 2)))  # no thrust: the body only drifts
+
+
+def _drifting(arena: Arena, at) -> flow.Swim:
+    """One thrustless body of radius 1 at `at` (2,) [u] in `arena`."""
+    tips, forces = STILL
+    return flow.swim(arena, np.array([at], float), np.ones(1), tips[None], forces[None])
+
+
+def test_a_pump_carries_a_body_along_its_axis_twice_as_fast_as_beside_it_and_turns_it():
+    arena = Arena(pumps=(Pump(0.0, 0.0, 0, 1.0),))  # pushes the fluid along +x
+    ahead, beside, below = (_drifting(arena, at) for at in ((40.0, 0.0), (0.0, 40.0), (0.0, -40.0)))
+    assert ahead.velocity[0, 1] == 0.0 and ahead.spin[0] == 0.0 and ahead.velocity[0, 0] > 0.0
+    assert beside.velocity[0, 1] == pytest.approx(0.0, abs=1e-15)
+    assert ahead.velocity[0, 0] / beside.velocity[0, 0] == pytest.approx(2.0, rel=1e-3)  # far field
+    assert beside.spin[0] > 0.0 and below.spin[0] == pytest.approx(-beside.spin[0])  # omega / 2
+    stokeslet = 1.0 / (8.0 * math.pi * VISCOSITY * 40.0)
+    assert beside.velocity[0, 0] == pytest.approx(stokeslet, rel=1e-3)
+
+
+def test_a_source_carries_a_body_radially_by_its_rate_and_does_not_turn_it():
+    arena = Arena(sources=(Source(0.0, 0.0, 30.0),))
+    out = _drifting(arena, (3.0, 4.0))
+    radial = 30.0 / (4.0 * math.pi * 25.0) * np.array([0.6, 0.8])
+    np.testing.assert_allclose(out.velocity[0], radial, rtol=1e-12)
+    assert out.spin[0] == 0.0
+    sink = _drifting(Arena(sources=(Source(0.0, 0.0, -30.0),)), (3.0, 4.0))
+    np.testing.assert_allclose(sink.velocity[0], -radial, rtol=1e-12)
+
+
+def test_a_sink_draws_a_body_in_and_holds_it_at_its_rim():
+    from nektoids.sim.contact import collide
+
+    arena = Arena(sources=(Source(0.0, 0.0, -50.0),))
+    pos, radius, dt = np.array([[3.0, 0.0]]), np.ones(1), 1 / 120
+    for _ in range(600):  # 5 s: drawn in in about 2
+        swum = _drifting(arena, pos[0])
+        pos, _ = collide(arena, arena.at_rest, pos + dt * swum.velocity, radius, dt, swum.pushes)
+    assert np.hypot(*pos[0]) == pytest.approx(1.0 + STIR_RADIUS, abs=flow.TOUCH)
+    assert abs(swum.velocity[0, 0]) < 1e-9 and swum.contact[0, 0] > 0.0  # held off, pushed out
+
+
+def test_a_mirrored_plane_with_pumps_and_sources_moves_a_mirrored_swimmer_mirrored():
+    light, obstacle = (Light(5.0, 0.0, 6.0),), (Disc(2.0, 4.0, 2.0),)
+    arena = Arena(light, obstacle, pumps=(Pump(-3.0, 2.0, 1, 1.0),), sources=(Source(6, 5, 9),))
+    mirror = Arena(
+        light,
+        (Disc(2.0, -4.0, 2.0),),
+        pumps=(Pump(-3.0, -2.0, 5, 1.0),),
+        sources=(Source(6, -5, 9),),
+    )
+    tips, forces = SIDES
+    one = _alone(tips, forces, arena)
+    other = _alone([[0.0, -1.0], [0.0, 1.0]], forces, mirror)
+    assert other.velocity[0].tolist() == pytest.approx([one.velocity[0, 0], -one.velocity[0, 1]])
+    assert other.spin[0] == pytest.approx(-one.spin[0]) and one.spin[0] != pytest.approx(0.0)
+    on_axis = Arena(light, pumps=(Pump(-4.0, 0.0, 0, 1.0),), sources=(Source(-6.0, 0.0, 9),))
+    straight = _alone(tips, forces, on_axis)
+    assert straight.velocity[0, 1] == pytest.approx(0.0, abs=1e-15)
+    assert straight.spin[0] == pytest.approx(0.0, abs=1e-15)
+
+
+def test_the_lights_and_obstacles_hold_against_a_pump_solved_once():
+    arena = Arena((Light(5.0, 0.0, 6.0),), (Disc(2.0, 4.0, 2.0),), pumps=(Pump(0, 0, 0, 1.0),))
+    held = arena.stirred_reactions
+    assert held.shape == (2, 3) and held[0, 0] < 0.0  # the light holds against the stream
+    assert arena.moved(np.array([[0.1, 0.0]])).stirred_reactions is held  # handed on
+    assert not Arena((Light(5.0, 0.0, 6.0),)).stirred_reactions.any()
+
+
+def test_the_tracers_see_a_pump_and_are_kept_out_of_it():
+    from nektoids.editor.flowfield import _outside
+
+    arena = Arena(pumps=(Pump(0.0, 0.0, 0, 1.0),))
+    far = np.array([100.0, 100.0])
+    swum = _drifting(arena, far)
+    x = np.array([[5.0, 0.0], [0.1, 0.0]])
+    u = flow.flow_at(arena, x[:1], far, 1.0, swum)
+    expected = flow.stirred(arena, x[:1], np.zeros(1))
+    assert u[0, 0] == pytest.approx(expected[0][0], rel=1e-3) and u[0, 0] > 0.0
+    assert np.hypot(*_outside(arena, far, 1.0, x)[1]) == pytest.approx(STIR_RADIUS)
+
+
+def test_a_pump_or_a_source_may_not_touch_another_item():
+    with pytest.raises(ValueError):
+        Arena((Light(1.0, 0.0, 4.0),), pumps=(Pump(0.0, 0.0, 0, 1.0),))
+    with pytest.raises(ValueError):
+        Arena(pumps=(Pump(0.0, 0.0, 0, 1.0),), sources=(Source(0.9, 0.0, 1.0),))
+    Arena(pumps=(Pump(0.0, 0.0, 0, 1.0),), sources=(Source(1.1, 0.0, 1.0),))

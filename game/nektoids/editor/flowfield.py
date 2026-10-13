@@ -82,10 +82,10 @@ class Tracers:
 
 
 def _outside(arena: Arena, pos: np.ndarray, radius: float, x: np.ndarray) -> np.ndarray:
-    """Points x (P, 2) [u] put back outside the lights, the obstacles and the swimmer, radially."""
-    xy, size = flow.clamped(arena)
-    centres = np.concatenate((pos[None], xy))
-    reach = np.concatenate(([radius], size))
+    """Points x (P, 2) [u] put back outside the lights, the obstacles, the pumps, the sources and
+    the swimmer, radially."""
+    centres = np.concatenate((pos[None], arena.solid_xy, arena.disc_xy))
+    reach = np.concatenate(([radius], arena.solid_radius, arena.disc_radius))
     dx = x[:, None, 0] - centres[None, :, 0]
     dy = x[:, None, 1] - centres[None, :, 1]
     d = np.maximum(np.sqrt(dx * dx + dy * dy), 1e-9)

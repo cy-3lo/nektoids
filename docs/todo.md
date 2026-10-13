@@ -106,11 +106,10 @@ over; its prototype stays local, off the public repository.
 Built on `stage/5-flow-sensing`, branched from `stage/4-flows`; stage 4's open items above are
 merged in as they land.
 
-- [ ] **Pumps and sources in the solve.** `Arena` holds them, fixed; their flow at the swimmer
-  (V += u, Ω += ω/2) and in `flow_at`, so the tracers show it; the lights' and obstacles'
-  reactions to them solved once, at load; the swimmer meets them as it meets a light.
-  - [ ] A thrustless swimmer drifts along a pump's axis and away from a source; a sink holds it
-    at its rim; a symmetric layout gives a straight path.
+- [x] **Pumps and sources in the solve** (D-700). `Arena` holds them, fixed; their flow at the
+  swimmer (V += u, Ω += ω/2) and in `flow_at`, so the tracers show it; the lights' and
+  obstacles' reactions to them solved once, at load; the swimmer meets them as it meets a light.
+  A tick costs 164 µs natively with two pumps and two sources among five spheres, against 109.
 - [ ] **Pumps and sources in the level maker.** The level format's next version, older levels
   with none; placed, turned and signed as a light is set; drawn so they read with the tracers
   off: a pump a disc with an arrow, a source rays out, a sink rays in; shared as text.
