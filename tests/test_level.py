@@ -7,7 +7,17 @@ import pytest
 from nektoids.graph.board import Board, Kind
 from nektoids.graph.hexgrid import NE, hex_disc
 from nektoids.levels.arenas import DATA, EVERY_LEVEL, ORDER, SANDBOX, arenas, sandbox
-from nektoids.levels.level import FORMAT, Item, ItemKind, Level, is_passkey, load, to_json
+from nektoids.levels.level import (
+    FORMAT,
+    PUMP_STEP,
+    SOURCE_STEP,
+    Item,
+    ItemKind,
+    Level,
+    is_passkey,
+    load,
+    to_json,
+)
 from nektoids.levels.objectives import Count, Goal, Target, Verb
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import OBSTACLE_RADIUS
@@ -114,11 +124,11 @@ def test_the_sandbox_hands_out_every_part_without_limit_on_a_zone_a_ring_wider()
 def test_a_level_without_its_version_or_of_another_is_refused():
     data = a_level()
     del data["version"]
-    with pytest.raises(ValueError, match="without its version: this game reads version 6"):
+    with pytest.raises(ValueError, match="without its version: this game reads version 7"):
         Level.from_dict(data)
-    with pytest.raises(ValueError, match="of version 7: this game reads version 6 and those"):
-        Level.from_dict(a_level(version=7))  # D-201
-    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 6  # 1 upgraded (D-506)
+    with pytest.raises(ValueError, match="of version 8: this game reads version 7 and those"):
+        Level.from_dict(a_level(version=8))  # D-201
+    assert Level.from_dict(a_level()).to_dict()["version"] == FORMAT == 7  # 1 upgraded (D-702)
 
 
 def test_a_level_may_be_signed_and_one_of_version_4_is_read_unsigned():
@@ -238,3 +248,28 @@ def test_only_the_levels_that_show_colour_say_so():
     assert not levels["Aggression"].colours and "colours" not in levels["Aggression"].to_dict()
     assert levels["Dragster"].colours and levels["Dragster"].to_dict()["colours"] is True
     assert sandbox().colours
+
+
+def test_a_pump_faces_a_hex_direction_and_sources_and_sinks_give_and_take_in_steps():
+    items = [
+        {"kind": "pump", "at": [0, 10], "force": 2, "facing": 1},
+        {"kind": "sink", "at": [10, 0], "rate": 3},
+        {"kind": "source", "at": [-10, 0], "rate": 1},
+    ]
+    level = Level.from_dict(a_level(items=items, objectives=[]))  # D-702
+    pump, sink, source = level.items
+    assert pump == Item(ItemKind.PUMP, (0.0, 10.0), 2.0, facing=1)
+    assert pump.to_dict() == items[0] and sink.to_dict() == items[1]
+    arena = level.arena
+    assert arena.pumps[0].facing == 1 and arena.pumps[0].force == 2 * PUMP_STEP
+    assert [s.rate for s in arena.sources] == [-3 * SOURCE_STEP, SOURCE_STEP]  # in item order
+    assert Level.from_dict(json.loads(json.dumps(level.to_dict()))) == level
+
+
+def test_only_a_pump_has_a_facing_and_it_is_a_hex_direction():
+    pumped = {"kind": "pump", "at": [0, 10], "force": 2, "facing": 6}
+    with pytest.raises(ValueError, match="faces 0 to 5"):
+        Level.from_dict(a_level(items=[pumped], objectives=[]))
+    lit = {"kind": "light", "at": [0, 10], "power": 2, "facing": 1}
+    with pytest.raises(ValueError):
+        Level.from_dict(a_level(items=[lit], objectives=[]))

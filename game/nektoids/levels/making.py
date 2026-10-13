@@ -20,7 +20,7 @@ from itertools import product
 
 from nektoids.graph.board import Board, Kind
 from nektoids.levels.lattice import HEADING, Range, snap, snapped
-from nektoids.levels.level import Item, ItemKind, Level
+from nektoids.levels.level import FACINGS, Item, ItemKind, Level
 from nektoids.levels.levelword import read_shared
 from nektoids.levels.objectives import (
     THING,
@@ -33,14 +33,17 @@ from nektoids.levels.objectives import (
     settings,
     targets,
 )
-from nektoids.sim.arena import BASE_RADIUS, Colour
+from nektoids.sim.arena import BASE_RADIUS, STIR_RADIUS, Colour
 
 SETTING = {  # what each item's setting may be: a whole number, 1 to 8 (D-301, D-311, D-318)
     ItemKind.LIGHT: Range(1.0, 8.0, 1.0),  # its power
     ItemKind.OBSTACLE: Range(1.0, 8.0, 1.0, "u"),  # its radius
     ItemKind.MARK: Range(1.0, 8.0, 1.0, "u"),  # its radius: Fear's ring, the widest shipped
+    ItemKind.PUMP: Range(1.0, 8.0, 1.0),  # its force, in PUMP_STEP (D-702)
+    ItemKind.SOURCE: Range(1.0, 8.0, 1.0),  # its rate, in SOURCE_STEP
+    ItemKind.SINK: Range(1.0, 8.0, 1.0),  # its rate, in SOURCE_STEP
 }
-NEW = {ItemKind.LIGHT: 1.0, ItemKind.OBSTACLE: 1.0, ItemKind.MARK: 1.0}  # the least (D-314)
+NEW = dict.fromkeys(ItemKind, 1.0)  # the least (D-314)
 TIME = Range(1.0, 120.0, 1.0, "s")  # the time allowed, which every level has (D-311, D-347)
 GOALS_MOST = 2  # goals a made level asks, besides its time (D-308)
 BLANK_TIME = 30.0  # a blank plane's time allowed [s] (D-310)
@@ -58,11 +61,15 @@ class Unmade(ValueError):
 
 
 def placed(
-    level: Level, kind: ItemKind, at: tuple[float, float], colour: Colour = Colour.WHITE
+    level: Level,
+    kind: ItemKind,
+    at: tuple[float, float],
+    colour: Colour = Colour.WHITE,
+    facing: int = 0,
 ) -> Level:
     """A new item of `kind` at the lattice point nearest `at`, set as NEW says, last in order; a
-    light of `colour` (D-506)."""
-    item = Item(kind, snapped(at), NEW[kind], colour)
+    light of `colour` (D-506), a pump facing `facing` (D-702)."""
+    item = Item(kind, snapped(at), NEW[kind], colour, facing if kind is ItemKind.PUMP else 0)
     return _checked(replace(level, items=(*level.items, item)))
 
 
@@ -105,6 +112,16 @@ def group_adjusted(level: Level, indices: Sequence[int], steps: int) -> Level:
     for k in indices:
         item = items[k]
         items[k] = replace(item, value=SETTING[item.kind].stepped(item.value, steps))
+    return _checked(replace(level, items=tuple(items)))
+
+
+def group_turned(level: Level, indices: Sequence[int], steps: int) -> Level:
+    """Each pump among items `indices` turned `steps` hex directions, counter-clockwise; the
+    other items as they were (D-702)."""
+    items = list(level.items)
+    for k in indices:
+        if items[k].kind is ItemKind.PUMP:
+            items[k] = replace(items[k], facing=(items[k].facing + steps) % FACINGS)
     return _checked(replace(level, items=tuple(items)))
 
 
@@ -347,6 +364,9 @@ def _checked(level: Level) -> Level:
     for disc in arena.obstacles:
         if math.hypot(disc.x - x, disc.y - y) < disc.radius + BASE_RADIUS:
             raise Unmade("the swimmer would start inside an obstacle")
+    for stir in arena.pumps + arena.sources:
+        if math.hypot(stir.x - x, stir.y - y) < STIR_RADIUS + BASE_RADIUS:
+            raise Unmade("the swimmer would start inside a pump, a source or a sink")
     for goal in level.objectives:  # each aims at something the level has (D-307)
         if not _has(level, goal.target):
             raise Unmade(
