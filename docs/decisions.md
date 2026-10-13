@@ -2939,12 +2939,11 @@ doubled eyes, 7 or 8 parts, so none beats the proof's 6. A sample, not a proof. 
 steer the eyes later, so a fast swimmer passes them. The first layout found put the start 2.2 u
 from an obstacle of radius 2; that obstacle moved one cell, to (11, 17).
 
-**D-608 — 2026-10-12 — The flow is drawn by tracers, switched on and off in the run (V, off at first): D-603's fixed field over the plane in view, in mud, oklch hue 100, dim to bright as they speed up. Navigator's view options become icon buttons in a row, and Streams splits in two: Rays, Motion, Flames (W, a fire), the light the eyes draw in (E, a watchtower) and Flow (V, the wind). Amends D-076, D-603.**
+**D-608 — 2026-10-12 — The flow is drawn by tracers, switched on and off in the run (V, off at first): D-603's fixed field over the plane in view, in mud, oklch hue 100, dim to bright as they speed up. Navigator's view options become icon buttons in a row, and Streams splits in two: Rays (X, a sun), Motion (M, a gauge), Flames (W, the Thruster's rocket), the light the eyes draw in (E, a lightbulb) and Flow (V, the wind). Amends D-076, D-603.**
 The physicist's: tracers in shades of mud, not D-603's greys, greener than hue 85, which is too
 near the amber paint (75) for a speck in the wake not to read as a bead. One tracer per 1.25 u
 cell of the plane in view, carried each frame by the flow round the first swimmer
 (`flow.flow_at`); seeded again on a restart, a seek or another view; never the run's state. They
 are specks on the game's 3 px grid, comets fading in about a second, added onto the plane under
 the items. Five labelled rows did not fit Navigator over three objectives, so the options are
-icons, each named with its key in a tooltip. Font Awesome Free has no lighthouse; the watchtower
-stands in. 834 tracers and the whole run's frame cost 2.9 ms natively.
+icons, each named with its key in a tooltip, kept on screen. 834 tracers and the whole run's frame cost 2.9 ms natively.

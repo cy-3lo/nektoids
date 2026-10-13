@@ -86,10 +86,10 @@ VIEW_ICON = {
     ViewButton.ZOOM_OUT: "magnifying-glass-minus",
     ViewButton.PAN: "hand",
     ViewButton.CENTRE: "location-crosshairs",
-    ViewButton.RAYS: "lightbulb",
+    ViewButton.RAYS: "sun",  # its rays spreading (D-608)
     ViewButton.MOTION: "gauge-high",
-    ViewButton.FLAMES: "fire",
-    ViewButton.INTAKE: "tower-observation",
+    ViewButton.FLAMES: "rocket",  # the Thruster's own
+    ViewButton.INTAKE: "lightbulb",  # the light drawn in
     ViewButton.FLOW: "wind",
 }
 

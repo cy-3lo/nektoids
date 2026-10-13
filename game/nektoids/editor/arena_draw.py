@@ -443,7 +443,7 @@ def _draw_control_tip(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -
     if isinstance(button, ViewButton):  # Navigator's, beside the drawer (D-608)
         x, y, w, h = dict(scene.layout.view_buttons)[button]
         key = f" ({VIEW_KEYS[button]})" if scene.settings.key_hints else ""
-        draw_tip(screen, fonts, TIP[button] + key, midtop=(x + w // 2, y + h + 8))
+        draw_tip(screen, fonts, ROW_NAME[button] + key, midtop=(x + w // 2, y + h + 8))
         return
     x, y, w, _ = dict(control_rects(scene.layout))[button]
     key = f" ({BUTTON_KEYS[button]})" if scene.settings.key_hints else ""

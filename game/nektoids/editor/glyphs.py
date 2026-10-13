@@ -45,8 +45,7 @@ GLYPH = {
     "lightbulb": 0xF0EB,
     "gauge-high": 0xF625,
     "wind": 0xF72E,
-    "fire": 0xF06D,  # a thruster's flames (D-608)
-    "tower-observation": 0xE586,  # the light the eyes draw in: a lighthouse, nearly
+    "sun": 0xF185,  # the light's rays (D-608)
     "check": 0xF00C,
     "backward-fast": 0xF049,
     "reply": 0xF3E5,

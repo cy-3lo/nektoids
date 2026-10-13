@@ -1317,9 +1317,9 @@ def draw_button(
 
 def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
     """A tooltip: `text` placed by keywords of `Rect.get_rect` (e.g. midright=(x, y)), in a box
-    8 px wider on each side."""
+    8 px wider on each side, moved in whole if it would leave the screen."""
     shown = fonts.text.render(text, True, TEXT)
-    box = shown.get_rect(**where).inflate(16, 10)
+    box = shown.get_rect(**where).inflate(16, 10).clamp(screen.get_rect())
     pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=5)
     pygame.draw.rect(screen, RULE, box, 1, border_radius=5)
     screen.blit(shown, shown.get_rect(center=box.center))
