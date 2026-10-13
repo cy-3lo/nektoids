@@ -2889,7 +2889,7 @@ field shows the whole plane and costs 0.65 ms a frame natively for 1410 tracers;
 swimmer moves them for good, so it opens gaps, and a pinned one pumps its neighbourhood clear.
 `np.bincount` crashes in pygbag's numpy 2.0.2 and is not used.
 
-**D-604 — 2026-10-12 — Stage 4, flows, is decided: the swimmer moves by the Stokes solve of D-601 and D-602, thrusters sit only on the board's outer ring, and the flow is drawn on demand, its tracers switched on and off in a run. The levels stay, but for the boards the outer ring moves and the times allowed the new speeds need. Built on `stage/4-flows`, branched from `stage/3-memory`, with `explore/flows` merged in; its decisions go on from D-600. Applies D-105, D-400.**
+**D-604 — 2026-10-12 — Stage 4, flows, is decided: the swimmer moves by the Stokes solve of D-601 and D-602, thrusters sit only on the board's outer ring, and the flow is drawn on demand, its tracers switched on and off in a run. The levels stay, but for the boards the outer ring moves and the times allowed the new speeds need. Built on `stage/4-flows`, branched from `stage/3-memory`, the exploration's decisions brought over and its prototype kept local; its decisions go on from D-600. Applies D-105, D-400.**
 The physicist's, after the prototype: the solve is fast enough, so the game takes it whole, not
 a flow drawn over today's motion, which would show a force-free swimmer while the body moved as
 a towed sphere. Speeds change: two thrusters at the sides 6 → 7.1 u/s, one behind 3 → 1.9 u/s,

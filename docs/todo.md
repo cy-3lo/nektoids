@@ -75,8 +75,8 @@ its decisions taken, when it starts.
 
 ## 17. Flows (stage 4, D-600 to D-604)
 
-Built on `stage/4-flows`, branched from `stage/3-memory`, `explore/flows` merged in. The
-prototype stays in `prototypes/stokes/`.
+Built on `stage/4-flows`, branched from `stage/3-memory`, the exploration's decisions brought
+over; its prototype stays local, off the public repository.
 
 - [ ] **Thrusters on the outer ring.** Placed, dragged and loaded only on a cell with a
   neighbour outside the zone; a board's text with an inner one refused, saying why. Turning's
