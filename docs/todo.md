@@ -99,4 +99,24 @@ over; its prototype stays local, off the public repository.
   now and then, away from the swimmer, so that the field heals.
 - [ ] **Tuning by eye** (first pass: D-610). ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
   brightness and their tails.
-- [ ] **Then flow sensing** (`ideas.md` §4), a stage of its own.
+- [x] **Then flow sensing**, a stage of its own: §18 (D-700).
+
+## 18. Flow sensing (stage 5, D-700)
+
+Built on `stage/5-flow-sensing`, branched from `stage/4-flows`; stage 4's open items above are
+merged in as they land.
+
+- [ ] **Pumps and sources in the solve.** `Arena` holds them, fixed; their flow at the swimmer
+  (V += u, Ω += ω/2) and in `flow_at`, so the tracers show it; the lights' and obstacles'
+  reactions to them solved once, at load; the swimmer meets them as it meets a light.
+  - [ ] A thrustless swimmer drifts along a pump's axis and away from a source; a sink holds it
+    at its rim; a symmetric layout gives a straight path.
+- [ ] **Pumps and sources in the level maker.** The level format's next version, older levels
+  with none; placed, turned and signed as a light is set; drawn so they read with the tracers
+  off: a pump a disc with an arrow, a source rays out, a sink rays in; shared as text.
+- [ ] **The flow sensor.** A sense `flow` in `sim/world.py`, a kind in the table, turned like an
+  eye; the board's word at its next version; its icon on the Board and in Diagnostic. It reads
+  the absolute flow first; the relative form one switch away (D-700). Its name is the
+  physicist's to give.
+- [ ] **Levels for flows.** Find the sink; go up a pump's jet; follow a wall by its echo. Camille
+  plays them.

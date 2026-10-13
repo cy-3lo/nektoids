@@ -2966,3 +2966,17 @@ The physicist's, from play: obstacles hardly moved under a push, at rest the spr
 the contact's share of it (D-609), and the flow read thin. No proof's tick changed; three runs of
 the outcome table moved a few ticks. A head-on push now settles in about 1.35 s for the largest
 obstacle, radius 8, so its test waits 16 s. 1612 tracers and the run's frame cost 3.1 ms natively.
+
+**D-700 — 2026-10-13 — Stage 5, flow sensing, is decided: flows the swimmer did not make, set in the level maker, and a part that reads them on the Board. Two items, a pump, a point force on the fluid turned in 60° steps, and a source or sink, a point source of either sign, each a solid sphere of radius 0.5 u; one part, a flow sensor, turned like an eye, that reads the flow past it along its facing, never negative. Built on `stage/5-flow-sensing`, branched from `stage/4-flows`; its decisions go on from D-700. Applies D-105, D-604.**
+The physicist's, after stage 4's swimmer. The physics stays D-601's: a pump is the RPY stokeslet
+of a sphere of radius 0.5 u, its holder taking the reaction, so it is not one of the clamped
+spheres; a source is u = Q r̂ / 4π r², harmonic, so Faxén's laws hold exactly, V += u(x),
+Ω += ω(x)/2. Both are fixed, so the lights' and obstacles' reactions to them are solved once, at
+load, with D-601's inverse; a tick adds one broadcast over them. The swimmer meets both as it
+meets a light. The sensor reads, first, the absolute flow, max(0, u_ext·n), u_ext being all but
+the swimmer's own singularities (its body and its thrusters' reactions), so it keeps the lights'
+and obstacles' echo of its swimming, by which a wall can be felt. This is a first try: the
+relative form, max(0, (u_ext − V − Ω × r_s)·n), in which a drift cancels and swimming reads as a
+head wind, stays one switch away, and play decides. The level format and the board's word take
+new versions. Out still: a uniform stream, shears and vortices, swimmers coupled to each other,
+items or parts that change in time. The todo's §18 lists the work.
