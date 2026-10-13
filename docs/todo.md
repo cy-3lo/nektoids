@@ -72,3 +72,18 @@ its decisions taken, when it starts.
   (D-019): round an obstacle, the tank holding the bearing it last read. Colour: go to the violet light
   and flee the amber one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
   (D-501).
+
+## 17. Flows, explored before their stage (`explore/flows`, D-600 to D-603)
+
+- [ ] **A pinned swimmer's flow.** Against an obstacle, the solve still reports and draws the
+  velocity the swimmer would have if free (7 u/s), and the tracers show that flow. The contact
+  force belongs in the Stokes problem: an unknown force on the swimmer, set so that its
+  velocity into the obstacle is zero, one more solve per contact (a 2×2 system in a crevice).
+- [ ] **Gaps in the fixed field of tracers.** Move a tracer from a crowded cell to an empty one
+  now and then, away from the swimmer, so that the field heals.
+- [ ] **The fixed field in the browser.** Not timed yet there (0.65 ms a frame natively).
+- [ ] **Tuning by eye.** ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
+  brightness and their tails (`prototypes/stokes/viewer/`).
+- [ ] **Into the game, once decided.** `flow.py` is written to move into `sim/`: an action in
+  `ACTIONS`, the obstacles' inverse with the arena, the tracers a toggleable overlay; then
+  flow sensing (`ideas.md` §4).

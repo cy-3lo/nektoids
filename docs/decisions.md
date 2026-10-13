@@ -2850,3 +2850,41 @@ side, crossed to violet thrusters, steers to it. A violet Aggression runs into t
 ahead, an amber one too. Two of three layouts were refused by simulation: two whites on either
 side let a plain violet Aggression slip between them; a white too near the start drowns V in the
 pairs' own difference. Ten parts on the largest zone; two Sums handed out besides.
+
+**D-600 — 2026-10-10 — Flows (`ideas.md` §4) are explored before their stage opens: on a local branch, `explore/flows`, from `main`, in a prototype outside `game/`, kept off the public repository. Nothing in the game's scope changes, and the flows stage, when it opens, takes these numbers on. Applies D-105, D-400.**
+The physicist's question: can a Stokesian swimmer be solved fast enough for the game? The
+prototype answers it before any scope is set. It is numpy only, as pygbag allows (no JAX, no
+scipy), and its viewer folder bundles alone, so it runs in the browser as it does natively. The
+memory stage holds the 500s, so this exploration takes the next hundred (D-200).
+
+**D-601 — 2026-10-10 — The flow is Stokes flow round spheres in 3D whose centres lie in the plane, coupled by the far-field Rotne-Prager-Yamakawa mobility. Obstacles and lights are clamped spheres of any radius; none overlaps another, so only the far-field terms are needed. Their mobility is inverted once, at load, and a tick is two broadcasts and one product with that inverse.**
+By z → −z symmetry only (Ux, Uy, Ωz) couple to (Fx, Fy, Tz): each pair's block is 3×3,
+exactly. With the obstacles held, the full mixed problem is block elimination,
+F_o = −M_oo⁻¹ (M_os F_s + G_o g), V_s = M_ss F_s + M_so F_o + G_s g, and M_oo, obstacle to
+obstacle, does not change while they stay put. The cost, at 7 to 20 obstacles: 64–70 µs a tick
+natively, 150–210 µs in the browser; unequal radii cost nothing measurable. The springs of
+D-424 are left out of the flow: the fluid moves an obstacle at most 0.1 u, at about 0.3 u/s
+against the swimmer's 7 u/s, and only a contact moves one more, where far-field RPY fails anyway
+(no lubrication). Obstacles that do move would need M_oo rebuilt: a direct solve, 60–90 µs,
+beats conjugate gradients preconditioned by each sphere's own resistance up to 50 spheres
+(6–37 iterations at about 25 µs each). Checked against PyGRPY's matrices.
+
+**D-602 — 2026-10-10 — The swimmer propels itself: each thruster is a point force on the rim of the body, which gets f there while the fluid gets −f, so the swimmer is force- and torque-free. Its hydrodynamic radius is 0.5 u, ℓ = 0.5 u from it to the thrusters; it is drawn, and meets obstacles, as a sphere of radius 1 u (D-045), so no thruster ever enters one. Thrust stays 1 f; it turns against the drag of a sphere of radius 0.75 u.**
+A reaction at the body's surface or inside it moves nothing: by Faxén, the thruster's own flow
+at the body, f/(6πμa) at R = a, cancels the drag. The force must be delivered ℓ outside, and
+speed grows with d/a: at d = 2a a radial push gives 31 % of D-022's speed, a tangential one
+59 %. With a = 0.5 the drag halves, so thrust stays the game's: two thrusters at the sides
+move a body at 7.1 u/s (6 today), one behind at 1.9 u/s (3). Rotational drag goes as a³ and
+turned the body 7× faster than today; scaling the body's torque down would break torque balance
+(and by 1/8 gives no spin at all), so only the swimmer's own rotational drag is that of radius
+b = 0.75: Ω = (p × f)/(8πμ)(1/b³ − 1/d³), 3.08 rad/s for a rim thruster against 2.25 today. Its
+couplings with obstacles and tracers keep a = 0.5. A far obstacle changes its velocity as 1/R³,
+a stresslet out and a stokeslet back.
+
+**D-603 — 2026-10-10 — Tracers show the flow: specks drawn as the game's flames (3 px squares on a 3 px grid) in the arena's palette, darker as they slow, each a comet whose tail fades in about a second. By default they are a fixed field over the whole screen, one per 1.25 u cell, never renewed; key F seeds them where the flow is fast and drops them when slow instead.**
+The physicist's, from the viewer. Their velocity is the flow of every source, the swimmer and
+the obstacles as spheres and the thrusters' reactions as point forces with a 0.25 u core.
+Brightness runs on a log scale from 0.015 to 1 u/s, stopping short of a light's white. A fixed
+field shows the whole plane and costs 0.65 ms a frame natively for 1410 tracers; a passing
+swimmer moves them for good, so it opens gaps, and a pinned one pumps its neighbourhood clear.
+`np.bincount` crashes in pygbag's numpy 2.0.2 and is not used.
