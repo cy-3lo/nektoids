@@ -13,12 +13,13 @@ from nektoids.levels.level import START_NUDGE
 from nektoids.levels.objectives import REACH, Outcome, begin, follow, outcome
 from nektoids.levels.sandbox import tutorial_board
 from nektoids.sim.arena import LIGHT_RADIUS
-from nektoids.sim.motion import SPEED
 from nektoids.sim.optics import eye_rates
 from nektoids.sim.world import parts, state_hash, step
 
 DT = 1.0 / 120.0
 LEVELS = {level.title: level for level in arenas()}
+
+SIDE_SPEED = 3.5625  # [u/s] a Source forked onto two side thrusters, each at half rate (D-602)
 
 
 def wired(*wires):
@@ -101,9 +102,9 @@ def test_other_starts_give_another_run():
 # Behaviour
 
 
-def test_crossed_wiring_charges_the_light_and_wins_within_twelve_seconds():
+def test_crossed_wiring_charges_the_light_and_wins_within_fifteen_seconds():
     ended, ticks, _ = play(CROSSED, "Aggression")
-    assert ended is Outcome.WON and ticks * DT < 12.0
+    assert ended is Outcome.WON and ticks * DT < 15.0  # 14.1 s by the flow (D-606)
     assert play(CROSSED, "Aggression")[1] == ticks  # the same tick, every run
 
 
@@ -125,7 +126,7 @@ def test_aggression_crossed_eyes_at_the_front_corners_win():
     upper, lower = (board.place(Kind.EYE, cell, facing=E) for cell in ((2, -2), (0, 2)))
     for eye, thruster in ((upper, right), (lower, left)):
         assert not isinstance(board.connect(eye.id, thruster.id), Refused)
-    assert play(Network.from_board(board), "Aggression")[:2] == (Outcome.WON, 549)  # D-425
+    assert play(Network.from_board(board), "Aggression")[:2] == (Outcome.WON, 591)  # D-425, D-606
 
 
 def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
@@ -137,7 +138,7 @@ def test_uncrossed_wiring_turns_its_back_to_the_light_and_stops_in_the_dark():
     nearest = min(np.hypot(*(pos[0] - light)) - touch for pos, _, _ in states)
     assert nearest > 0.8 * begun  # never a fifth of the way to reaching it
     _, _, y = states[-1]
-    assert np.all(y[:, UNCROSSED.eyes] < 0.01)  # still fading: it slows as it darkens
+    assert np.all(y[:, UNCROSSED.eyes] < 0.03)  # still fading: it slows as it darkens
 
 
 def test_shadows_the_eyes_see_nothing_and_a_swimmer_without_a_drive_never_moves():
@@ -350,7 +351,7 @@ def patient(doubled=False):
 
 def test_greed_doubled_eyes_touch_the_bright_light_and_then_the_dim_one_in_time():
     ended, ticks, _ = play(greedy(), "Greed")
-    assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Greed"].time_limit
+    assert ended is Outcome.WON and ticks * DT < 0.9 * LEVELS["Greed"].time_limit  # D-606
     assert play(greedy(), "Greed")[1] == ticks  # the same tick, every run
 
 
@@ -363,17 +364,18 @@ def test_greed_plain_aggression_stays_on_the_bright_light_and_a_drive_overshoots
 def test_patience_a_halved_drive_gets_out_of_the_dark_and_touches_all_three_lights_in_time():
     for doubled in (False, True):
         ended, ticks, _ = play(patient(doubled), "Patience")
-        assert ended is Outcome.WON and ticks * DT < 0.6 * LEVELS["Patience"].time_limit
+        assert ended is Outcome.WON and ticks * DT < 0.9 * LEVELS["Patience"].time_limit  # D-606
         assert play(patient(doubled), "Patience")[1] == ticks  # the same tick, every run
     assert (
         play(patient(True), "Patience")[1] < play(patient(), "Patience")[1]
     )  # eight parts, faster
 
 
-def test_patience_without_a_drive_nothing_moves_and_with_a_full_one_it_overshoots():
-    level = LEVELS["Patience"]
-    pos, _, y = last(run(CROSSED, "Patience", 5.0))
-    assert pos.tolist() == [list(level.start_at)] and np.all(y[:, CROSSED.eyes] == 0.0)
+def test_patience_without_a_drive_it_creeps_and_with_a_full_one_it_overshoots():
+    level = LEVELS["Patience"]  # its lights dim, power 2: a full drive passes the last (D-606)
+    pos, _, _ = last(run(CROSSED, "Patience", 5.0))
+    assert np.hypot(*(pos[0] - level.start_at)) < 2.0  # in 5 s: the lights barely seen
+    assert play(CROSSED, "Patience")[0] is Outcome.TIME_UP
     doubled_drive = built(
         "Patience",
         [*EYES, *THRUSTERS, *DOUBLES, (Kind.SOURCE, (-1, 0), None)],
@@ -392,12 +394,16 @@ def test_after_a_tick_the_eyes_in_the_state_read_where_the_body_now_is():
 
 
 def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no_walls():
-    net = Network.from_edges([Kind.SOURCE, Kind.THRUSTER, Kind.THRUSTER], [(0, 1), (0, 2)])
+    sides = [[0.0, 0.0], [0.0, 1.0], [0.0, -1.0]]  # on the rim, left and right (D-605)
+    kinds = [Kind.SOURCE, Kind.THRUSTER, Kind.THRUSTER]
+    net = Network.from_edges(kinds, [(0, 1), (0, 2)], mount=sides)
     pos, heading, _ = last(run(net, "Aggression", 15.0))  # from (9, 15), heading E
-    lag = SPEED * TAU  # the thrusters take TAU to reach their rate (D-017)
+    lag = SIDE_SPEED * TAU  # the thrusters take TAU to reach their rate (D-017)
     nudged = 9.0 + START_NUDGE[0]  # D-425
-    assert pos[0, 0] == pytest.approx(nudged + SPEED * 15.0 - lag, abs=1e-9)  # far past x = 40
-    assert pos[0, 1] == 15.0 + START_NUDGE[1] and heading.tolist() == [0.0]  # straight on
+    far = nudged + SIDE_SPEED * 15.0 - lag  # far past x = 40, the light's flow aside
+    assert pos[0, 0] == pytest.approx(far, rel=1e-2)
+    assert pos[0, 1] == pytest.approx(15.0 + START_NUDGE[1], abs=0.05)  # straight on, but for
+    assert abs(heading[0]) < 0.01  # the light it passes, a held sphere in the flow (D-601)
 
 
 # Objectives as sentences (D-307): every level's runs end as they did, to the tick and the bit.
@@ -416,25 +422,29 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # when chapter 1's thrusters were locked on the body's sides (D-354): Fear's and Love's boards
 # had theirs there already, and the smallest love's two halves push as its one thruster did.
 # Orbit's again when its rings went out onto the physicist's orbiter's circle (D-357).
+# All again when the swimmer moved by the Stokes flow (D-606): every outcome the same, the
+# ticks apart, rear pushers slower.
+# Shadows', Greed's and Patience's again when contacts pushed in the flow (D-609): a few ticks.
+# Shadows' and Patience's again when the springs went three times softer (D-610).
 BEFORE_SENTENCES = {
-    ("Aggression", "CROSSED"): (Outcome.WON, 1037, ((1, 1, 1.0),)),
+    ("Aggression", "CROSSED"): (Outcome.WON, 1687, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
-    ("Shadows", "DRIVEN"): (Outcome.WON, 439, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
+    ("Shadows", "DRIVEN"): (Outcome.WON, 665, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
-    ("Fear", "fear(NW, SW)"): (Outcome.WON, 382, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
+    ("Fear", "fear(NW, SW)"): (Outcome.WON, 370, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
     ("Fear", "fear(NE, SE)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
-    ("Love", "love(E, E)"): (Outcome.WON, 882, ((1, 1, 1.0), (1, 1, 1.0))),  # D-317
-    ("Love", "love_on_the_axis()"): (Outcome.WON, 1178, ((1, 1, 1.0), (1, 1, 1.0))),
-    ("Love", "love(NE, SE)"): (Outcome.LOST, 381, ((0, 1, 0.29999999999999943), (0, 1, 0.0))),
-    ("Orbit", "ORBITER"): (Outcome.WON, 1132, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312, D-357
-    ("Orbit", "HALVED"): (Outcome.WON, 2263, ((4, 4, 1.0), (1, 1, 1.0))),  # D-357
-    ("Orbit", "CROSSED"): (Outcome.LOST, 426, ((0, 4, 0.0), (0, 1, 0.0))),
-    ("Greed", "greedy()"): (Outcome.WON, 1118, ((2, 2, 1.0),)),  # D-313; round a light, D-424
-    ("Greed", "CROSSED"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2400, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1196, ((3, 3, 1.0),)),  # D-317, D-424
-    ("Patience", "patient(True)"): (Outcome.WON, 1152, ((3, 3, 1.0),)),  # D-424
+    ("Love", "love(E, E)"): (Outcome.WON, 872, ((1, 1, 1.0), (1, 1, 1.0))),  # D-317
+    ("Love", "love_on_the_axis()"): (Outcome.WON, 1157, ((1, 1, 1.0), (1, 1, 1.0))),
+    ("Love", "love(NE, SE)"): (Outcome.LOST, 369, ((0, 1, 0.2933333333333328), (0, 1, 0.0))),
+    ("Orbit", "ORBITER"): (Outcome.WON, 1195, ((4, 4, 1.0), (1, 1, 1.0))),  # D-312, D-357
+    ("Orbit", "HALVED"): (Outcome.WON, 2387, ((4, 4, 1.0), (1, 1, 1.0))),  # D-357
+    ("Orbit", "CROSSED"): (Outcome.LOST, 522, ((0, 4, 0.0), (0, 1, 0.0))),
+    ("Greed", "greedy()"): (Outcome.WON, 2232, ((2, 2, 1.0),)),  # D-313; round a light, D-424
+    ("Greed", "CROSSED"): (Outcome.TIME_UP, 2520, ((1, 2, 0.5),)),
+    ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2520, ((1, 2, 0.5),)),
+    ("Patience", "patient()"): (Outcome.WON, 1471, ((3, 3, 1.0),)),  # D-317, D-424
+    ("Patience", "patient(True)"): (Outcome.WON, 1203, ((3, 3, 1.0),)),  # D-424
 }
 
 

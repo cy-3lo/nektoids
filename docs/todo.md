@@ -73,17 +73,30 @@ its decisions taken, when it starts.
   and flee the amber one; two lights a colour-blind circuit cannot tell apart; a valve built from parts
   (D-501).
 
-## 17. Flows, explored before their stage (`explore/flows`, D-600 to D-603)
+## 17. Flows (stage 4, D-600 to D-604)
 
-- [ ] **A pinned swimmer's flow.** Against an obstacle, the solve still reports and draws the
+Built on `stage/4-flows`, branched from `stage/3-memory`, the exploration's decisions brought
+over; its prototype stays local, off the public repository.
+
+- [x] **Thrusters on the outer ring** (D-605). Anywhere on the Board, but idle off the rim: faded,
+  no push, no flame, said in the run's status line. Turning's start board and the proofs of
+  Turning, Latch, Spot the violet and Dragster II moved to it.
+- [x] **The swimmer moves by the Stokes solve** (D-606). The prototype's lean solve into
+  `sim/flow.py`, vectorised over the bodies, no `@`; the lights' and obstacles' inverse built
+  once with the arena and handed on by `moved`; `world.step` takes its velocity and spin. Every
+  proof run again: its ticks re-recorded, its time allowed raised where it loses by time; a
+  board that no longer wins goes to the physicist.
+- [x] **Patience, retuned** (D-607). A full drive wins it in 13.6 s, before the halved one (33 s, D-606);
+  its two tests in `test_determinism.py` are marked expected to fail until it is.
+- [x] **The flow drawn** (D-608). Tracers as in D-603, a fixed field over the visible plane, switched
+  on and off in the run view; visual only, reseeded on restart, seek, pan and zoom. Checked in
+  the browser.
+- [x] **A pinned swimmer's flow** (D-609). Against an obstacle, the solve still reports and draws the
   velocity the swimmer would have if free (7 u/s), and the tracers show that flow. The contact
   force belongs in the Stokes problem: an unknown force on the swimmer, set so that its
   velocity into the obstacle is zero, one more solve per contact (a 2×2 system in a crevice).
 - [ ] **Gaps in the fixed field of tracers.** Move a tracer from a crowded cell to an empty one
   now and then, away from the swimmer, so that the field heals.
-- [ ] **The fixed field in the browser.** Not timed yet there (0.65 ms a frame natively).
-- [ ] **Tuning by eye.** ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
-  brightness and their tails (`prototypes/stokes/viewer/`).
-- [ ] **Into the game, once decided.** `flow.py` is written to move into `sim/`: an action in
-  `ACTIONS`, the obstacles' inverse with the arena, the tracers a toggleable overlay; then
-  flow sensing (`ideas.md` §4).
+- [ ] **Tuning by eye** (first pass: D-610). ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
+  brightness and their tails.
+- [ ] **Then flow sensing** (`ideas.md` §4), a stage of its own.

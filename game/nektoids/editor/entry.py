@@ -106,7 +106,9 @@ class Entry:
         demo = DEMOS[kind]
         board = _built(demo)
         self.kind, self.time, self.frame = kind, 0.0, 0
-        self.circuit = Circuit(board, ENTRY_AREA, MARGIN, view=_seen(board), travelling=True)
+        self.circuit = Circuit(
+            board, ENTRY_AREA, MARGIN, view=_seen(board), travelling=True, rim=False
+        )
         self.readings = np.array(demo.readings)
         self.state = initial_state(self.circuit.net)
         for _ in range(round((SETTLE_TANK if kind is Kind.TANK else SETTLE) / DT)):

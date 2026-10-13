@@ -26,6 +26,7 @@ from nektoids.graph.hexgrid import (
     disc_radius,
     hex_disc,
     neighbour,
+    on_rim,
     opposite,
 )
 from nektoids.graph.kinds import Hue, Kind
@@ -127,6 +128,25 @@ class Board:
     def wires_in(self, cell: Cell) -> list[Wire]:
         """Wires that cross `cell` (not the ones that start or end there)."""
         return [wire for wire in self.wires if cell in wire.path[1:-1]]
+
+    def idle(self, node: Node) -> bool:
+        """Whether `node` acts on the body yet sits off the zone's outer ring, so does nothing in a
+        run (D-605): a thruster's reaction inside the body's sphere moves nothing (D-602). It may
+        stand there all the same, while the player moves parts round; it is drawn dimmed."""
+        return node.kind.spec.action is not None and not on_rim(self._on_board, node.cell)
+
+    def idle_count(self) -> int:
+        """How many parts on the board are `idle`."""
+        return sum(self.idle(node) for node in self.nodes.values())
+
+    def idle_note(self) -> str:
+        """What the run says while thrusters stand idle (D-605); "" if none does."""
+        count = self.idle_count()
+        if count == 0:
+            return ""
+        if count == 1:
+            return "A thruster inside the rim pushes nothing: move it out."
+        return f"{_count(count).capitalize()} thrusters inside the rim push nothing: move them out."
 
     # Components
 

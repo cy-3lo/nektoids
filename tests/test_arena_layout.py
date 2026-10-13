@@ -94,9 +94,9 @@ def test_a_key_means_the_same_here_as_in_the_board():
     # Turning the swimmer left and right, as the Board turns a part (D-025).
     assert TURN_KEYS == (TOOL_KEYS[Tool.TURN_LEFT], TOOL_KEYS[Tool.TURN_RIGHT])
     others = {*BUTTON_KEYS.values(), MAP_KEY, POLAR_KEY}
-    # Motion and Streams take Move's and Wire's letters, as the Board never shows them (D-069,
+    # Motion and Flames take Move's and Wire's letters, as the Board never shows them (D-069,
     # D-076); nothing else means a Board tool here (D-021)
-    shared = {BUTTON_KEYS[ArenaButton.MOTION], BUTTON_KEYS[ArenaButton.STREAMS]}
+    shared = {BUTTON_KEYS[ArenaButton.MOTION], BUTTON_KEYS[ArenaButton.FLAMES]}
     assert (
         others & set(TOOL_KEYS.values()) == shared == {TOOL_KEYS[Tool.MOVE], TOOL_KEYS[Tool.WIRE]}
     )

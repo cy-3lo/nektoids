@@ -66,6 +66,12 @@ def hex_distance(a: Cell, b: Cell) -> int:
     return max(abs(dq), abs(dr), abs(dq + dr))
 
 
+def on_rim(zone: set[Cell], cell: Cell) -> bool:
+    """Whether `cell` of `zone` lies on its outer ring: a neighbour of it is off the zone. On the
+    Board that is the body's rim (D-018), where a thruster acts (D-605)."""
+    return any(neighbour(cell, d) not in zone for d in range(len(DIRECTIONS)))
+
+
 def hex_disc(radius: int) -> list[Cell]:
     """Cells within `radius` steps of (0, 0), row by row: a hexagon of 3 r (r + 1) + 1 cells."""
     span = range(-radius, radius + 1)

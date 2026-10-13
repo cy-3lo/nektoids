@@ -64,8 +64,8 @@ def test_diagnostic_comes_with_an_eye_looking_back_and_to_the_right_and_never_mo
     assert ended("Diagnostic", board=board) is Outcome.TIME_UP
 
 
-@pytest.mark.parametrize(("cell", "outcome"), [((-1, 1), Outcome.WON), ((-1, -1), Outcome.TIME_UP)])
+@pytest.mark.parametrize(("cell", "outcome"), [((-1, 2), Outcome.WON), ((1, -2), Outcome.TIME_UP)])
 def test_turning_moved_to_the_right_goes_round_the_obstacle_and_to_the_left_away(cell, outcome):
     board = LEVELS["Turning"].new_board()  # the swimmer's right turns it left, round (D-338)
-    board.move_node(board.node_at((-1, 0)).id, cell)
+    board.move_node(board.node_at((-2, 0)).id, cell)  # on the rim (D-605)
     assert ended("Turning", board=board) is outcome

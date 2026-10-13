@@ -56,7 +56,9 @@ class ArenaButton(Enum):
     CENTRE = "centre"  # on the swimmers and the lights, all in view
     LIGHT = "light"  # the light's rays, shown or not
     MOTION = "motion"  # the swimmer's velocity and spin, shown or not (D-076)
-    STREAMS = "streams"  # its flames and the light it draws in, shown or not
+    FLAMES = "flames"  # its thrusters' flames, shown or not (D-608)
+    INTAKE = "intake"  # the light its eyes draw in, shown or not
+    FLOW = "flow"  # the flow round it, its tracers, shown or not (D-608)
 
 
 CONTROLS = (ArenaButton.RESTART, ArenaButton.PLAY, ArenaButton.STEP, ArenaButton.FAST)
@@ -67,12 +69,14 @@ VIEW_BUTTON = {  # Navigator's rows, as the run's buttons
     ViewButton.CENTRE: ArenaButton.CENTRE,
     ViewButton.RAYS: ArenaButton.LIGHT,
     ViewButton.MOTION: ArenaButton.MOTION,
-    ViewButton.STREAMS: ArenaButton.STREAMS,
+    ViewButton.FLAMES: ArenaButton.FLAMES,
+    ViewButton.INTAKE: ArenaButton.INTAKE,
+    ViewButton.FLOW: ArenaButton.FLOW,
 }
 # One key, one meaning, on the Board and here: the view's keys are the Board's own, and no key
 # the Board uses means anything else here (R rotates there, so starting again is 0: t = 0). The
 # drawers' keys may differ, each the initial of a drawer of its environment (D-069), and so may
-# Navigator's Motion and Streams, M and W, Move and Wire on the Board, which never shows them.
+# Navigator's Motion and Flames, M and W, Move and Wire on the Board, which never shows them.
 BUTTON_KEYS = {
     ArenaButton.BOARD: "Tab",  # on to the next tab, the Board's, as from every tab (D-304)
     ArenaButton.NEXT: "Enter",

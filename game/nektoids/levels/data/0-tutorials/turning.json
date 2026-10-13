@@ -4,20 +4,20 @@
   "spec": "Reach the ring by turning round the obstacle.",
   "author": "@Cy-3LO",
   "start": {"at": [0, 0], "heading": 0},
-  "items": [{"kind": "obstacle", "at": [0, 3], "radius": 1}, {"kind": "mark", "at": [0, 6], "radius": 1}],
+  "items": [{"kind": "obstacle", "at": [0, 3], "radius": 1}, {"kind": "mark", "at": [0, 5], "radius": 1}],
   "board": {
     "zone": 19,
     "stock": {"thruster": 1},
     "parts": [
       {"kind": "source", "cell": [0, 0], "facing": null, "locked": true},
-      {"kind": "thruster", "cell": [-1, 0], "facing": "E", "locked": false}
+      {"kind": "thruster", "cell": [-2, 0], "facing": "E", "locked": false}
     ],
-    "wires": [{"from": 0, "to": 1, "path": [[0, 0], [-1, 0]]}]
+    "wires": [{"from": 0, "to": 1, "path": [[0, 0], [-1, 0], [-2, 0]]}]
   },
   "time_limit": 10,
   "objectives": [{"verb": "reach", "count": "all", "target": "mark"}],
   "tutorial": {
-    "ghosts": [{"kind": "thruster", "cell": [-1, 1], "facing": "E"}],
+    "ghosts": [{"kind": "thruster", "cell": [-1, 2], "facing": "E"}],
     "steps": [
       {
         "show": [{"tab": "board"}, {"level": "board"}],
@@ -28,12 +28,12 @@
         ]
       },
       {
-        "show": [{"cell": [-1, 0]}, {"cell": [-1, 1]}],
+        "show": [{"cell": [-2, 0]}, {"cell": [-1, 2]}],
         "say": [
           "Behind the **Source**, the **Thruster** pushes straight ahead. Off the centre, a push turns the swimmer.",
           "Move the **Thruster** to the swimmer's right: drag it to the cell where it goes."
         ],
-        "until": {"moved": {"kind": "thruster", "cell": [-1, 1]}}
+        "until": {"moved": {"kind": "thruster", "cell": [-1, 2]}}
       },
       {
         "show": {"tab": "run"},
@@ -47,5 +47,5 @@
       }
     ]
   },
-  "proof": {"board": "yQfK18rfF", "ticks": 350, "parts": 2}
+  "proof": {"board": "3pwkbFj3nH", "ticks": 276, "parts": 2}
 }

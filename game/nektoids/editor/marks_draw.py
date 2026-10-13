@@ -14,12 +14,15 @@ from nektoids.editor.marks import AtWork
 from nektoids.editor.palette import (
     EYE_FACE,
     FLAME,
+    IDLE,
     INTAKE,
     MOTION,
     PAINT_AMBER,
     PAINT_VIOLET,
     PART_OUTLINE,
+    SHADOW,
     THRUSTER_BACK,
+    mix,
 )
 from nektoids.graph.kinds import Hue
 
@@ -31,10 +34,19 @@ MOTION_WIDTH = 2  # the velocity's segment, the spin's arc [px]
 SHORTEST = 2.0  # a segment or an arc shorter than this is not drawn [px]
 
 
-def draw_under(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
-    """The specks, drawn before the swimmer: the light drawn in, then the flames."""
-    _specks(screen, view, body.intake, INTAKE)
-    _specks(screen, view, body.flames, FLAME)
+def draw_under(
+    screen: pygame.Surface,
+    view: ArenaView,
+    body: AtWork,
+    intake: bool = True,
+    flames: bool = True,
+) -> None:
+    """The specks, drawn before the swimmer: the light drawn in, then the flames, each if shown
+    (D-608)."""
+    if intake:
+        _specks(screen, view, body.intake, INTAKE)
+    if flames:
+        _specks(screen, view, body.flames, FLAME)
 
 
 def draw_over(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
@@ -44,16 +56,20 @@ def draw_over(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
 
 
 def draw_parts(screen: pygame.Surface, view: ArenaView, body: AtWork) -> None:
-    """Each part's outline in its paint (D-503), and its face in its accent."""
-    for outlines, hues, colour in (
-        (body.eyes, body.eye_hues, EYE_FACE),
-        (body.thrusters, body.thruster_hues, THRUSTER_BACK),
+    """Each part's outline in its paint (D-503), and its face in its accent; an idle thruster's
+    faded into the plane (D-605)."""
+    for outlines, hues, colour, idle in (
+        (body.eyes, body.eye_hues, EYE_FACE, (False,) * len(body.eyes)),
+        (body.thrusters, body.thruster_hues, THRUSTER_BACK, body.idle),
     ):
         for k, outline in enumerate(outlines):
             points = _on_screen(view, outline)
             ink = PART_OUTLINE if hues is None else OUTLINE_OF[hues[k]]  # no colour shown (D-509)
+            face = colour
+            if idle[k]:
+                ink, face = mix(ink, SHADOW, IDLE), mix(face, SHADOW, IDLE)
             pygame.draw.aalines(screen, ink, False, points)
-            pygame.draw.aaline(screen, colour, points[-1], points[0], FACE_WIDTH)
+            pygame.draw.aaline(screen, face, points[-1], points[0], FACE_WIDTH)
 
 
 def draw_motion(

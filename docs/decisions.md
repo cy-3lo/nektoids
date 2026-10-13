@@ -2888,3 +2888,81 @@ Brightness runs on a log scale from 0.015 to 1 u/s, stopping short of a light's 
 field shows the whole plane and costs 0.65 ms a frame natively for 1410 tracers; a passing
 swimmer moves them for good, so it opens gaps, and a pinned one pumps its neighbourhood clear.
 `np.bincount` crashes in pygbag's numpy 2.0.2 and is not used.
+
+**D-604 — 2026-10-12 — Stage 4, flows, is decided: the swimmer moves by the Stokes solve of D-601 and D-602, thrusters sit only on the board's outer ring, and the flow is drawn on demand, its tracers switched on and off in a run. The levels stay, but for the boards the outer ring moves and the times allowed the new speeds need. Built on `stage/4-flows`, branched from `stage/3-memory`, the exploration's decisions brought over and its prototype kept local; its decisions go on from D-600. Applies D-105, D-400.**
+The physicist's, after the prototype: the solve is fast enough, so the game takes it whole, not
+a flow drawn over today's motion, which would show a force-free swimmer while the body moved as
+a towed sphere. Speeds change: two thrusters at the sides 6 → 7.1 u/s, one behind 3 → 1.9 u/s,
+a rim thruster's spin 2.25 → 3.08 rad/s, and lights and obstacles pull on a passing swimmer.
+A thruster's reaction inside the hydrodynamic sphere moves nothing (D-602), so thrusters go on
+the outer ring alone, where the zone's edge cells still keep it 0.37 u out of the sphere; four
+shipped boards hold inner ones (Turning's start and proof, Latch's, Spot the violet's and
+Dragster II's proofs). Branched from stage 3, which touches `sim/world.py` too, so stage 4
+reaches `main` after it. Out still: flow sensing, obstacles moving in the solve, swimmers
+coupled to each other, a pinned swimmer's contact force in the solve (next, once the flow is
+drawn). The todo's §17 lists the work.
+
+**D-605 — 2026-10-12 — A thruster acts from the body's rim, the zone's outer ring. One inside it may stand there, while the player moves parts round, but it is idle: drawn faded on the Board, on the body and in Diagnostic, it pushes nothing and shows no flame, and the run's status line says so. Turning, Latch, Spot the violet and Dragster II have their thrusters moved to the rim. Applies D-602, D-604.**
+The physicist's, first as a rule the Board enforced, then softened while it was built: refusing
+a thruster inside made moving groups of parts awkward. The reason is D-602's: a thruster's
+reaction inside the body's sphere moves nothing, so under the Stokes solve an inner thruster
+would idle anyway; the rule makes it idle now, under today's motion too, so the levels can be
+checked before the motion changes. The rim is the zone's cells with a neighbour off it
+(`hexgrid.on_rim`); its edge cells sit 0.87 body radii out on a zone of 19 cells, the reaction
+still 0.37 u outside the hydrodynamic sphere. Its rate is still computed and its meter and
+beads show it. A part's entry (D-082) is no body: its thruster pushes. Each moved thruster keeps
+its row, so its lever: Turning's start (-1, 0) → (-2, 0), its tutorial's target (-1, 1) →
+(-2, 1); Latch's (-1, 0) → (-2, 0); Spot the violet's (1, -2) → (-1, -2) and (-1, 2) → (-3, 2);
+Dragster II's nine on the rim, its Sources inside. Every proof wins at the tick it did.
+
+**D-606 — 2026-10-12 — The swimmer moves by the Stokes solve of D-601 and D-602: `sim/flow.py`, its thrusters point forces on the rim, the lights and obstacles held spheres. Times allowed are 1.1 times the proof's, in whole seconds, where that is longer than they were: Patience 37 s, Latch 36 s, Dragster 5 s, Greed 21 s. Turning's thruster goes to the body's right side, (-1, 2), and Half and Minus ask for 4 s in their rings, not 3. Amends D-022.**
+The physicist's (D-604), the times by his rule. The prototype's lean solve is ported whole and
+checked against it to 1e-12: vectorised over the bodies, every product a sum along a fixed axis,
+never `@` (invariant 1); a force inside the hydrodynamic sphere is left out, as it moves nothing.
+The held spheres' inverse mobility is built once at rest and handed on by `Arena.moved`; the
+swimmer's flow reaches each obstacle where its spring has it now, so no thruster sits inside one.
+The velocity and spin drawn on the body are the solve's. Two thrusters at the sides move a body
+at 7.125 u/s (6 before), one behind at 1.875 (3), a rim thruster turns it at 3.08 rad/s (2.25).
+Every shipped proof still wins, and no board in the tests changes outcome but three, all through
+the slower rear pusher. Turning's thruster behind and to the right, (-2, 1), looped round and took
+19.6 s; on the right side it turns at once and wins in 6.7 s, so the card's words, "to the
+swimmer's right", stay true and its 10 s too. A full push crossed Half's ring in 3.2 s and an eye
+alone stayed 3 s in Minus's before touching its light: 4 s keeps each lesson, Half's proof winning
+in 13.6 s of 15. A full drive wins Patience in 13.6 s, before the halved one (33 s): its puzzle is
+gone, and the level is the physicist's to retune; its two tests are marked expected to fail.
+
+**D-607 — 2026-10-12 — Patience is laid out again for the flow: its three lights dimmed to power 2 and moved, (22, 15), (24, 9), (17, 21), its obstacles at (11, 17) and (16, 12), 14 s allowed. A full drive overshoots the last light again; the halved drive wins in 12.3 s, doubled eyes in 10.0 s. Amends D-606.**
+The physicist's, from a search of 600 layouts round the old one: the test file's full drives
+must lose given 1.5 times the proof's time, the halved drive win. Of 250 random full or doubled
+drives on the chosen layout none wins; of 500 mixed boards the drive boards that win have
+doubled eyes, 7 or 8 parts, so none beats the proof's 6. A sample, not a proof. Dimmer lights
+steer the eyes later, so a fast swimmer passes them. The first layout found put the start 2.2 u
+from an obstacle of radius 2; that obstacle moved one cell, to (11, 17).
+
+**D-608 — 2026-10-12 — The flow is drawn by tracers, switched on and off in the run (V, off at first): D-603's fixed field over the plane in view, in mud, oklch hue 100, dim to bright as they speed up. Navigator's view options become icon buttons in a row, and Streams splits in two: Rays (X, a sun), Motion (M, a gauge), Flames (W, the Thruster's rocket), the light the eyes draw in (E, a lightbulb) and Flow (V, the wind). Amends D-076, D-603.**
+The physicist's: tracers in shades of mud, not D-603's greys, greener than hue 85, which is too
+near the amber paint (75) for a speck in the wake not to read as a bead. One tracer per 1.25 u
+cell of the plane in view, carried each frame by the flow round the first swimmer
+(`flow.flow_at`); seeded again on a restart, a seek or another view; never the run's state. They
+are specks on the game's 3 px grid, comets fading in about a second, added onto the plane under
+the items. Five labelled rows did not fit Navigator over three objectives, so the options are
+icons, each named with its key in a tooltip, kept on screen. 834 tracers and the whole run's frame cost 2.9 ms natively.
+
+**D-609 — 2026-10-13 — A body touching a light or an obstacle is pushed by it in the Stokes solve, along their centres, frictionless: as hard as it takes for the body to close in no faster than the other gives, a light not at all, an obstacle as its drag and spring let it, zeta du/dt = C - k u. The force is the body's, so the fluid gets it too: pinned, the body pumps. The obstacles move by those pushes; Turning's ring comes to (0, 5). Amends D-424, D-601.**
+The physicist's, the todo's §17. Without it the solve, the drawn velocity and the tracers showed
+a free swimmer while it pressed on a sphere. Within 0.01 u a body touches: sliding along a sphere
+it drifts about 1e-3 u off it a tick, and a tighter test would flicker. Each contact's force
+comes from two unit responses of the body's sphere, reflections included, and three passes over
+the contacts. First tried, an obstacle's spring force k u taken as known fought the projection
+of D-424 and settled wrong; solved with the obstacle's own drag, body and obstacle close in
+together, and at rest the spring holds the contact, k u = C. That is about 0.7 of the thrust:
+the rest reaches the obstacle through the fluid, which its clamp takes (D-601), so D-424's
+k u = F, a law without fluid, no longer holds exactly. `contact.collide` still shares any
+overlap left. Turning's swimmer, deflected less by the obstacle, circled past its ring; at
+(0, 5) it wins in 2.4 s, and the left side still loses. Other proofs moved by at most 31 ticks.
+
+**D-610 — 2026-10-13 — Tuned by eye: an obstacle's spring three times softer, a head-on push of two thrusters at full rate moving it 0.9 u, not 0.3; the flow's tracers one per 0.9 u cell, not 1.25, about twice as many; their tails kept 250/256 a frame, not 244, dark in about 2 s. Amends D-424, D-603, D-608.**
+The physicist's, from play: obstacles hardly moved under a push, at rest the spring holding only
+the contact's share of it (D-609), and the flow read thin. No proof's tick changed; three runs of
+the outcome table moved a few ticks. A head-on push now settles in about 1.35 s for the largest
+obstacle, radius 8, so its test waits 16 s. 1612 tracers and the run's frame cost 3.1 ms natively.

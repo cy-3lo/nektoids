@@ -50,6 +50,8 @@ DRAWER_TOP = 40  # the first row or section title, under the drawer's own title 
 ROW_HEIGHT = 40  # a drawer's row [px]
 OVERVIEW_HEIGHT = 168  # Navigator's overview, under its rows [px]
 ZOOM_BUTTON = 28  # zoom out and in, either end of the zoom bar, under the overview [px]
+VIEW_BUTTON = 36  # Navigator's view options, icon buttons in a row (D-608) [px]
+VIEW_GAP = 7  # ... between two [px]
 FOOT_MARGIN = 6  # under the objectives, at the drawer's foot [px]
 WHEEL_HEIGHT = 236  # the Wheel at a drawer's foot: the cell, its icons, piles and all, its line
 WHEEL_TITLE = "The Wheel"  # its title, at the foot of Tools and of Parts; a click folds it (D-069)
@@ -184,7 +186,9 @@ class ViewButton(Enum):
     CENTRE = "centre"  # bring cell (0, 0) back to the middle, at the same zoom
     RAYS = "rays"  # the run's only: the light's rays, shown or not
     MOTION = "motion"  # the run's only: the swimmer's velocity and spin, shown or not (D-076)
-    STREAMS = "streams"  # the run's only: its flames and the light it draws in, shown or not
+    FLAMES = "flames"  # the run's only: its thrusters' flames, shown or not (D-076, D-608)
+    INTAKE = "intake"  # the run's only: the light its eyes draw in, shown or not
+    FLOW = "flow"  # the run's only: the flow round the swimmer, its tracers, shown or not (D-608)
 
 
 class Drawer(Enum):  # D-051
@@ -329,9 +333,17 @@ VIEW_KEYS = {
     ViewButton.CENTRE: "C",
     ViewButton.RAYS: "X",  # as in x-rays: L turns left (D-025)
     ViewButton.MOTION: "M",  # Move on the Board, where these three do not show (D-069)
-    ViewButton.STREAMS: "W",  # as in wind, its icon; Wire on the Board
+    ViewButton.FLAMES: "W",  # as in wake; Wire on the Board
+    ViewButton.INTAKE: "E",  # as in eyes
+    ViewButton.FLOW: "V",  # as in velocity: F is fast (D-608)
 }
-RUN_VIEWS = (ViewButton.RAYS, ViewButton.MOTION, ViewButton.STREAMS)  # Navigator's, in the run
+RUN_VIEWS = (  # in the run
+    ViewButton.RAYS,
+    ViewButton.MOTION,
+    ViewButton.FLAMES,
+    ViewButton.INTAKE,
+    ViewButton.FLOW,
+)
 EDITOR_VIEWS = (ViewButton.RAYS,)  # ... in the Editor: the light, which the plane's shadows show
 # With Ctrl (Cmd on a Mac), matched on the key code, which follows the layout; Ctrl+Y redoes too.
 EDIT_KEYS = {EditButton.UNDO: "Ctrl+Z", EditButton.REDO: "Ctrl+Y"}
@@ -580,7 +592,11 @@ def make_layout(
         files_rule=rows.files_rule,
         start_rows=tuple(rows.of(Start)),
         steppers=tuple(rows.steppers),
-        info_buttons=tuple((what, _info_disc(what, rect)) for what, rect in rows.items),
+        info_buttons=tuple(  # not the view's icons: a tooltip names them (D-608)
+            (what, _info_disc(what, rect))
+            for what, rect in rows.items
+            if not isinstance(what, ViewButton)
+        ),
         tabs=tuple(tabs),
         board_area=(left, TOP, width - left, main - TOP),
         controls_area=(left, main, width - left, CONTROLS_HEIGHT) if env is Env.RUN else None,
@@ -826,15 +842,17 @@ class _Rows:
         self.y += SLIDER_HEIGHT + WORD_GAP
 
     def view(self, env: Env) -> None:
-        """The view's options as rows, in the run the rays, the swimmer's motion and its streams
-        (D-076), in the Editor the rays; then the overview and, under it, the zoom: a bar between
-        its two buttons (D-065)."""
+        """The view's options as icon buttons in a row (D-608), in the run the rays, the
+        swimmer's motion, its flames, the light its eyes draw in and the flow (D-076), in the
+        Editor the rays; then the
+        overview and, under it, the zoom: a bar between its two buttons (D-065)."""
         options = {Env.RUN: RUN_VIEWS, Env.EDITOR: EDITOR_VIEWS}.get(env, ())
         if options:
             self._title("View", self.sections)
-            for button in options:
-                self._row(button)
-            self.y += SECTION_GAP
+            for k, button in enumerate(options):
+                x = BAR_WIDTH + MARGIN + k * (VIEW_BUTTON + VIEW_GAP)
+                self.items.append((button, (x, self.y, VIEW_BUTTON, VIEW_BUTTON)))
+            self.y += VIEW_BUTTON + ROW_PITCH - ROW_HEIGHT + SECTION_GAP
         self._title("Overview", self.sections)
         x, width = BAR_WIDTH + MARGIN, DRAWER_WIDTH - 2 * MARGIN
         self.overview = (x, self.y + 4, width, OVERVIEW_HEIGHT)

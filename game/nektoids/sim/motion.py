@@ -52,6 +52,22 @@ def thrust(
     return np.stack((force_x, force_y), axis=1), np.asarray(radius, dtype=np.float64) * moment
 
 
+def points(
+    rates: np.ndarray, radius: np.ndarray, mount: np.ndarray, facing: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """The thrusters as point forces in the body's frame: where each acts (N, k, 2) [u], at
+    R m_k, and what it pushes the body with (N, k, 2) [f], THRUST y_k f_k (D-602). Arguments as
+    `thrust`."""
+    rates = np.asarray(rates, dtype=np.float64)
+    mount = np.asarray(mount, dtype=np.float64).reshape(-1, 2)
+    angle = FACING_STEP * np.asarray(facing, dtype=np.float64)
+    radius = np.asarray(radius, dtype=np.float64)
+    tips = radius[:, None, None] * mount[None, :, :] * np.ones((rates.shape[0], 1, 1))
+    push = THRUST * rates
+    forces = np.stack((push * np.cos(angle), push * np.sin(angle)), axis=2)
+    return tips, forces
+
+
 def stokes(
     force: np.ndarray, torque: np.ndarray, radius: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:

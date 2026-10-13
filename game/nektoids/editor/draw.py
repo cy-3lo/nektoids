@@ -137,6 +137,7 @@ from nektoids.editor.palette import (
     GRID_LINE,
     HEADING,
     HOVER,
+    IDLE,
     INTAKE,
     INTAKE_FAINT,
     KEY_DARK,
@@ -199,7 +200,9 @@ TIP = {
     ViewButton.CENTRE: "Centre the view",
     ViewButton.RAYS: "Show or hide the light's rays",
     ViewButton.MOTION: "Show or hide the swimmer's velocity and spin",
-    ViewButton.STREAMS: "Show or hide the swimmer's flames and the light its eyes draw in",
+    ViewButton.FLAMES: "Show or hide the thrusters' flames",
+    ViewButton.INTAKE: "Show or hide the light the eyes draw in",
+    ViewButton.FLOW: "Show or hide the flow round the swimmer",
     EditButton.UNDO: "Undo",
     EditButton.REDO: "Redo",
     FileButton.ERASE: "Takes every wire and every part off the board, but the level's own. Undo"
@@ -266,7 +269,9 @@ ROW_NAME = {  # a drawer's row, by what it does; a part's row takes the part's n
     ViewButton.CENTRE: "Centre",
     ViewButton.RAYS: "Rays",
     ViewButton.MOTION: "Motion",
-    ViewButton.STREAMS: "Streams",
+    ViewButton.FLAMES: "Flames",
+    ViewButton.INTAKE: "Eyes' light",
+    ViewButton.FLOW: "Flow",
 }
 LIT_EDGE = 3  # the accent along the open drawer's icon, and over the open tab [px]
 TAB_NAME = {"board": "Board", "run": "Run", "editor": "Editor"}  # D-356
@@ -424,6 +429,7 @@ def _draw_board(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) -> None
             pinned=node.pinned,
             hue=node.hue,
             colours=scene.colours,
+            idle=board.idle(node),
         )
     for ghost in scene.ghosts:  # over a part that does not face its way yet: where to turn it
         node = board.node_at(ghost.cell)
@@ -621,11 +627,14 @@ def draw_part(
     level: float | None = None,
     hue: Hue = Hue.AMBER,
     colours: bool = True,
+    idle: bool = False,
 ):
     """A part, its body in its paint, `hue`, if it is painted, else neutral (D-503); on a level
     that shows no colour, as every part was before (D-509). Over its fill, if `level` is given,
-    how full it is: a tank's."""
+    how full it is: a tank's. An `idle` one, a thruster off the rim, faded into the zone (D-605)."""
     fill = fill or (BODY_OF[hue] if kind.paintable and colours else COMPONENT)
+    if idle:
+        fill, face = mix(fill, ZONE, IDLE), mix(face or FACE.get(kind, fill), ZONE, IDLE)
     outline = _shape(kind, angle, centre, size)
     pygame.draw.polygon(screen, fill, outline)
     if level is not None and (filled := filled_to(outline, level / RATE_MAX)):
@@ -1308,9 +1317,9 @@ def draw_button(
 
 def draw_tip(screen: pygame.Surface, fonts: Fonts, text: str, **where) -> None:
     """A tooltip: `text` placed by keywords of `Rect.get_rect` (e.g. midright=(x, y)), in a box
-    8 px wider on each side."""
+    8 px wider on each side, moved in whole if it would leave the screen."""
     shown = fonts.text.render(text, True, TEXT)
-    box = shown.get_rect(**where).inflate(16, 10)
+    box = shown.get_rect(**where).inflate(16, 10).clamp(screen.get_rect())
     pygame.draw.rect(screen, TOOLTIP_BG, box, border_radius=5)
     pygame.draw.rect(screen, RULE, box, 1, border_radius=5)
     screen.blit(shown, shown.get_rect(center=box.center))
@@ -1546,6 +1555,7 @@ def _draw_parts(
             level=level,
             hue=hue,
             colours=colours,
+            idle=not net.rim[i] and kind.spec.action is not None,  # D-605
         )
         if meters and kind in (Kind.EYE, Kind.THRUSTER):  # its own channel, in its colour
             ink = BODY_OF[hue] if colours else METER
