@@ -36,7 +36,7 @@ START_NUDGE = (1e-3, -1e-3)  # [u] a run's swimmer starts so far off its whole s
 FORMAT = 7  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
 # 4 a zone written as its size (D-313), 5 an author (D-331), 6 a light's colour (D-506) and
 # whether the level shows colour (D-509), 7 pumps, sources and sinks (D-702)
-PUMP_STEP = 1.0  # [f] a pump's force, a step of its setting: 2, two thrusters' (D-702)
+PUMP_STEP = 0.1  # [f] a pump's force, a step of its setting (D-702, D-703)
 SOURCE_STEP = 4.0 * math.pi  # [u^3/s] a source's or a sink's rate, a step of its setting: its
 # flow s / r^2 u/s at r u (D-702)
 FACINGS = 6  # a pump faces one of six hex directions (D-009)

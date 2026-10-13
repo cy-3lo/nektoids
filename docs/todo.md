@@ -112,7 +112,7 @@ merged in as they land.
   A tick costs 164 µs natively with two pumps and two sources among five spheres, against 109.
 - [x] **Pumps and sources in the level maker** (D-702). Format 7, word 33; keys 6, 7 and 8; a
   pump turned by L and R; drawn so they read with the tracers off.
-- [ ] **Their units, by eye.** A pump's 1 f a step and a source's 4π u³/s (D-702), in levels.
+- [ ] **Their units, by eye.** A pump's 0.1 f a step (D-703) and a source's 4π u³/s (D-702), in levels.
 - [ ] **The flow sensor.** A sense `flow` in `sim/world.py`, a kind in the table, turned like an
   eye; the board's word at its next version; its icon on the Board and in Diagnostic. It reads
   the absolute flow first; the relative form one switch away (D-700). Its name is the

@@ -2995,3 +2995,8 @@ it holds a light's power; a pump's facing is a digit of its own, from version 33
 versions 31 and 32 read as they were written: they know three kinds of item. A swimmer may not
 start touching a pump, a source or a sink, and none touches another item (D-700). Goals do not
 aim at them yet, and they cast no shadow.
+
+**D-703 — 2026-10-13 — A pump's force is 0.1 f a step of its setting, not 1 f. Amends D-702.**
+The physicist's, from the level maker: a pump was ten times too strong. Its flow falls as 1/r
+only, about 4.5 F/r u/s on its axis, so at 1 f a step a pump at 8 still pushed 7 u/s, a swimmer's
+full speed, 5 u away; now 0.7 u/s there and about 2.4 u/s where a swimmer touches it.
