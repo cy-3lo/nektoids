@@ -3016,3 +3016,13 @@ sink and a swimmer; past twice the count seeded, the most crowded cells would lo
 first, a guard. The leaving and splitting draw from the tracers' own seeded generator: a run is
 the same with them shown or not (invariant 1). A frame of tracers costs 0.9 ms natively for 920
 of them in Patience, against 0.44.
+
+**D-705 — 2026-10-13 — The flow sensor is the Hair: a sensor turned like an eye, a feather on it, that reads GAIN max(0, u . n), 1 a u/s, u the water at it, all of the flow but its own body's: the pumps' and sources', and the lights' and obstacles' echo of the body's own flow, from the tick's solve. It reads the plane's flow first, RELATIVE off; its own motion taken out is one switch away. Painted, it reads in its channel. On the Board it sits over Eye and Source, the sensors a triangle, key 1 going round the three. Applies D-700.**
+The physicist's name: hairs read flow by bending, a cricket's cerci, a copepod's setae, the
+lateral line's cupulae, and with the Eye the body has two organs. A sense now receives the tick's
+solve, `world.readings(..., swum)`: what the lights and obstacles held against the move is their
+echo, as D-700 asks. Its rows are a sensor's, `Network.sensors` now every part whose rate is
+given, so the board's checks count it. Its entry rises and falls as the Eye's. Other demos that
+drive a board without a world, the developer view and the probe, read it as 0. The level word
+stays at version 33, never shared: it lists the Hair's stock; version 32's eleven kinds are
+written out. A board's text holds 32 kinds and is unchanged.

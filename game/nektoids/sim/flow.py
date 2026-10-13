@@ -315,6 +315,57 @@ def _respond(
     return velocity + np.stack((ux, uy), axis=1), spin + om, reactions
 
 
+GAIN = 1.0  # [s/u] a Hair's rate for each u/s of water past it the way it points (D-705)
+RELATIVE = False  # a Hair reads the water past the plane, not past itself: D-700's first try
+
+
+def hair_rates(
+    arena: Arena,
+    pos: np.ndarray,
+    heading: np.ndarray,
+    radius: np.ndarray,
+    mount: np.ndarray,
+    facing: np.ndarray,
+    swum: Swim | None = None,
+) -> np.ndarray:
+    """(N, k, C): what the k Hairs of each of N bodies read, the same in each channel:
+    GAIN max(0, u . n), u the flow at each, all but its own body's (D-700): the pumps' and the
+    sources', and what the lights and obstacles hold against it and against the body's own flow,
+    `swum`'s reactions, its echo; with RELATIVE, less the Hair's own velocity, V + Omega x r.
+    Arguments as for `optics.eye_poses`; with no `swum`, no echo and the body still."""
+    from nektoids.graph.dynamics import CHANNELS
+    from nektoids.sim.optics import eye_poses
+
+    points, looks = eye_poses(pos, heading, radius, mount, facing)  # (N, k, 2) each
+    n, k = points.shape[:2]
+    flat = points.reshape(-1, 2)
+    ux, uy, _ = stirred(arena, flat, np.zeros(n * k))
+    ux, uy = ux.reshape(n, k), uy.reshape(n, k)
+    xy, size = clamped(arena)
+    if swum is not None and len(xy):
+        held = swum.reactions  # (N, M, 3)
+        dx = points[:, :, None, 0] - xy[None, None, :, 0]
+        dy = points[:, :, None, 1] - xy[None, None, :, 1]
+        r = np.sqrt(dx * dx + dy * dy)
+        scale = np.maximum(r, size) / np.maximum(r, 1e-12)  # held at its radius inside
+        ex, ey, _ = apply(
+            dx * scale,
+            dy * scale,
+            (size * size)[None, None, :],
+            held[:, None, :, 0],
+            held[:, None, :, 1],
+            held[:, None, :, 2],
+        )
+        ux, uy = ux + ex, uy + ey
+    if RELATIVE and swum is not None:
+        arm_x, arm_y = points[..., 0] - pos[:, None, 0], points[..., 1] - pos[:, None, 1]
+        spin = swum.spin[:, None]
+        ux = ux - swum.velocity[:, None, 0] + spin * arm_y
+        uy = uy - swum.velocity[:, None, 1] - spin * arm_x
+    past = np.maximum(0.0, ux * looks[..., 0] + uy * looks[..., 1])
+    return np.repeat((GAIN * past)[..., None], CHANNELS, axis=2)
+
+
 def flow_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: Swim) -> np.ndarray:
     """(P, 2): the flow [u/s] at points x (P, 2) [u] round the first swimmer of `swum`, at pos
     (2,) [u], of `radius` [u]: the swimmer and the clamped spheres as spheres (stokeslet with its

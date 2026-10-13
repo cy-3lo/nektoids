@@ -64,6 +64,7 @@ class Kind(Enum):
     TINT = "tint"  # the colour operators (D-507): all in, out in its colour
     FILTER = "filter"  # its colour alone through
     SWAP = "swap"  # amber and violet exchanged
+    HAIR = "hair"  # reads the water flowing past it (D-700, D-705)
 
     @property
     def spec(self) -> KindSpec:
@@ -228,5 +229,17 @@ SPEC: dict[Kind, KindSpec] = {
         Relax(Swapped()),
         icon="shuffle",
         shape="rounded square",
+    ),
+    Kind.HAIR: KindSpec(
+        Category.SENSOR,
+        "R",
+        "Hair",
+        "Senses the water flowing past it the way it points: more from a faster flow, nothing "
+        "from one going the other way.",
+        facing=E,
+        icon="feather",
+        shape="eye disc",
+        sense="flow",
+        paintable=True,
     ),
 }

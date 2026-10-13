@@ -113,9 +113,8 @@ merged in as they land.
 - [x] **Pumps and sources in the level maker** (D-702). Format 7, word 33; keys 6, 7 and 8; a
   pump turned by L and R; drawn so they read with the tracers off.
 - [ ] **Their units, by eye.** A pump's 0.1 f a step (D-703) and a source's 4π u³/s (D-702), in levels.
-- [ ] **The flow sensor.** A sense `flow` in `sim/world.py`, a kind in the table, turned like an
-  eye; the board's word at its next version; its icon on the Board and in Diagnostic. It reads
-  the absolute flow first; the relative form one switch away (D-700). Its name is the
-  physicist's to give.
+- [x] **The flow sensor: the Hair** (D-705). A sense `flow`, a kind in the table, turned like an
+  eye, a feather on it; it reads the plane's flow, `flow.RELATIVE` the switch (D-700).
+- [ ] **The Hair's GAIN, by eye**, 1 a u/s (D-705), and absolute or relative, in levels.
 - [ ] **Levels for flows.** Find the sink; go up a pump's jet; follow a wall by its echo. Camille
   plays them.

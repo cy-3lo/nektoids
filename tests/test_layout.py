@@ -296,7 +296,7 @@ def test_parts_lists_sensors_then_actuators_then_operators_and_the_numbers_follo
     titles = ["Sensors", "Actuators", "Math", "Colour", "Memory"]  # D-508: keys 1 to 5
     assert [title for title, _ in LAYOUT.group_titles] == titles
     kinds = [kind for kind, _ in LAYOUT.menu_items]
-    assert kinds[:4] == [Kind.EYE, Kind.SOURCE, Kind.THRUSTER, Kind.SUM]
+    assert kinds[:5] == [Kind.EYE, Kind.SOURCE, Kind.HAIR, Kind.THRUSTER, Kind.SUM]  # D-705
 
 
 def test_folding_a_group_hides_its_items_and_lifts_the_groups_below():

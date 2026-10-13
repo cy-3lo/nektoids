@@ -102,7 +102,7 @@ ZOOM_STEP = 1.25  # hex size factor per click
 # order: a press takes a part of the group, the next press the next one. Within a group, the
 # order the presses go round in.
 MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
-    ("Sensors", (Kind.EYE, Kind.SOURCE)),
+    ("Sensors", (Kind.EYE, Kind.SOURCE, Kind.HAIR)),
     ("Actuators", (Kind.THRUSTER,)),
     ("Math", (Kind.SUM, Kind.DIFFERENCE, Kind.DOUBLE, Kind.HALVE)),
     ("Colour", (Kind.TINT, Kind.FILTER, Kind.SWAP)),

@@ -16,7 +16,8 @@ parts a level places are the board's own digits (`boardtext.replay`), on a board
 position costs one digit within NEAR of the origin, more beyond; a heading is a whole degree.
 The kinds of part are `Kind`'s, in order: a new kind raises VERSION. A word of an older version
 is read as that version wrote it: 31 had the seven kinds before the Tank, boards with no hues
-and white lights (D-501, D-506); 31 and 32 had no pumps, sources or sinks (D-702). Pure Python,
+and white lights (D-501, D-506); 31 and 32 had no pumps, sources or sinks (D-702), nor the Hair
+(D-705). Pure Python,
 no pygame.
 """
 
@@ -39,7 +40,7 @@ VERSION = 33  # of the word, its hidden symbol: boards' count from 1 (D-205), le
 _OLD_ITEMS = (ItemKind.LIGHT, ItemKind.OBSTACLE, ItemKind.MARK)
 READABLE = {
     33: (tuple(Kind), 2, tuple(ItemKind)),
-    32: (tuple(Kind), 2, _OLD_ITEMS),
+    32: (tuple(Kind)[:11], 2, _OLD_ITEMS),  # before the Hair (D-705)
     31: (tuple(Kind)[:7], 1, _OLD_ITEMS),
 }
 NEAR = 32  # positions from -NEAR to NEAR - 1 cost one digit [u]

@@ -235,3 +235,69 @@ def test_rise_is_the_planes_divergence_negated_round_every_kind_of_singularity()
     rise = flow.rise_at(arena, x, pos, 1.0, swum)
     np.testing.assert_allclose(rise, -div / (2 * e), atol=1e-7)
     assert np.abs(rise).max() > 0.1
+
+
+AROUND = np.array([[1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]])  # four Hairs on the rim
+OUT = np.array([0, 3, 1, 4])  # each facing out: E, W, then 60° and 240°
+
+
+def _hairs(arena: Arena, at, facing, swum=None) -> np.ndarray:
+    """(k,): what Hairs at AROUND facing `facing` read on a body of radius 1 at `at`, heading E,
+    in the amber channel."""
+    pos = np.array([at], float)
+    rates = flow.hair_rates(arena, pos, np.zeros(1), np.ones(1), AROUND, facing, swum)
+    return rates[0, :, 0]
+
+
+def test_a_hair_reads_the_flow_past_it_the_way_it_points_never_against_it():
+    arena = Arena(pumps=(Pump(-6.0, 0.0, 0, 0.8),))  # D-705: water along +x, on the axis
+    downstream = _hairs(arena, (0.0, 0.0), np.zeros(4, int))  # all facing E
+    upstream = _hairs(arena, (0.0, 0.0), np.full(4, 3))  # all facing W
+    assert np.all(downstream > 0.0) and np.all(upstream == 0.0)
+    expected = flow.GAIN * flow.flow_at(
+        arena, AROUND, np.array([50.0, 50.0]), 1.0, _drifting(arena, (50.0, 50.0))
+    )
+    np.testing.assert_allclose(downstream, expected[:, 0], rtol=1e-9)
+    mirrored = _hairs(arena, (0.0, 0.0), np.array([0, 3, 1, 5]))  # the third and fourth mirrored
+    assert mirrored[2] == pytest.approx(mirrored[3])
+
+
+def test_still_water_reads_nothing_and_a_swimmer_hears_its_echo_off_a_light():
+    tips, forces = np.array(SIDES[0])[None], np.array(SIDES[1])[None]
+    alone = flow.swim(EMPTY, np.zeros((1, 2)), np.ones(1), tips, forces)
+    assert not _hairs(EMPTY, (0.0, 0.0), OUT, alone).any()  # its own flow is not read
+    lit = Arena(lights=(Light(4.0, 0.0, 4.0),))
+    near = flow.swim(lit, np.zeros((1, 2)), np.ones(1), tips, forces)
+    assert _hairs(lit, (0.0, 0.0), OUT, near).any()  # the light, held, pushes back on the fluid
+    assert not _hairs(lit, (0.0, 0.0), OUT).any()  # no solve: no echo
+
+
+def test_relative_a_swimmer_reads_its_head_wind_and_a_drifting_body_hardly_any(monkeypatch):
+    monkeypatch.setattr(flow, "RELATIVE", True)  # D-700's other form, one switch away
+    tips, forces = np.array(SIDES[0])[None], np.array(SIDES[1])[None]
+    alone = flow.swim(EMPTY, np.zeros((1, 2)), np.ones(1), tips, forces)
+    ahead, behind = _hairs(EMPTY, (0.0, 0.0), OUT, alone)[:2]
+    assert ahead == 0.0 and behind == pytest.approx(flow.GAIN * alone.velocity[0, 0])
+    arena = Arena(pumps=(Pump(-6.0, 0.0, 0, 0.8),))
+    drifting = _drifting(arena, (0.0, 0.0))
+    felt = _hairs(arena, (0.0, 0.0), np.zeros(4, int), drifting)
+    monkeypatch.setattr(flow, "RELATIVE", False)
+    carried = _hairs(arena, (0.0, 0.0), np.zeros(4, int), drifting)
+    assert felt.max() < 0.25 * carried.min()  # it moves with the water it is in
+
+
+def test_a_hair_on_a_board_reads_in_its_own_channel_where_the_body_has_moved():
+    from nektoids.graph.board import Hue, Kind
+    from nektoids.graph.dynamics import initial_state
+    from nektoids.graph.network import Network
+    from nektoids.sim.world import readings, swimming
+
+    net = Network.from_edges(
+        [Kind.HAIR, Kind.THRUSTER], [(0, 1)], [0, 0], mount=AROUND[:2], hues=[Hue.VIOLET, Hue.AMBER]
+    )
+    arena = Arena(pumps=(Pump(-6.0, 0.0, 0, 0.8),))
+    pos, heading, radius = np.zeros((1, 2)), np.zeros(1), np.ones(1)
+    swum = swimming(arena, net, pos, heading, radius, initial_state(net, 1))
+    seen = readings(arena, net, pos, heading, radius, swum)
+    assert seen[0, 0, 0] == 0.0 and seen[0, 0, 1] > 0.0  # violet: its channel alone
+    assert not seen[0, 1].any()  # the thruster's row: not a sensor's

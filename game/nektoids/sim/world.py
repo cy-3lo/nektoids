@@ -10,7 +10,8 @@ dt [s]:
    flow round the body, the lights and the obstacles (`swimming`, `flow`, D-601, D-602);
 2. touch: back outside the lights and obstacles, an obstacle giving a little (`contact`); the
    plane is open (D-028);
-3. sense: each sensor reads where the bodies now are, the eyes the light (`readings`, `optics`);
+3. sense: each sensor reads where the bodies now are, the eyes the light (`readings`, `optics`),
+   the Hairs the flow the move was solved in (`flow.hair_rates`, D-705);
 4. think: the nodes follow, one step of their laws (`graph.dynamics`).
 
 A sensor's rate comes from its kind's sense, an actuator's effect from its kind's action, each
@@ -51,29 +52,41 @@ def steady(
     radius: np.ndarray,
     mount: np.ndarray,
     facing: np.ndarray,
+    swum: flow.Swim | None = None,
 ) -> np.ndarray:
     """A Source's rate (N, k, C): SOURCE_RATE in every channel, whatever the world; its paint
     keeps one (D-503). It senses nothing."""
     return np.full((pos.shape[0], len(mount), CHANNELS), dynamics.SOURCE_RATE)
 
 
-# A sense reads the world: (arena, pos, heading, radius, mount, facing) -> rates (N, k, C) of the
-# k sensors at `mount` (k, 2) facing `facing` (k,), in each channel; a sensor keeps its own. An
+# A sense reads the world: (arena, pos, heading, radius, mount, facing, swum) -> rates (N, k, C)
+# of the k sensors at `mount` (k, 2) facing `facing` (k,), in each channel, `swum` the tick's
+# solve, or None before the first; a sensor keeps its own. An
 # action acts on the body: (rates (N, k), radius, mount, facing) -> where its k point forces act
 # (N, k, 2) [u] and what they push the body with (N, k, 2) [f], in the body's frame (D-602).
-SENSES = {"light": eye_rates, "steady": steady}
+def light(arena, pos, heading, radius, mount, facing, swum=None) -> np.ndarray:
+    """An eye's rates (N, k, C): `optics.eye_rates`; the flow is not seen."""
+    return eye_rates(arena, pos, heading, radius, mount, facing)
+
+
+SENSES = {"light": light, "steady": steady, "flow": flow.hair_rates}
 ACTIONS = {"push": points}
 
 
 def readings(
-    arena: Arena, net: Network, pos: np.ndarray, heading: np.ndarray, radius: np.ndarray
+    arena: Arena,
+    net: Network,
+    pos: np.ndarray,
+    heading: np.ndarray,
+    radius: np.ndarray,
+    swum: flow.Swim | None = None,
 ) -> np.ndarray:
     """(N, n, C): each sensor's rate where the bodies are, by its kind's sense, in
     [0, RATE_MAX], in its own channel by its paint (D-503): an eye reads the lights that shine in
-    its colour (D-506); 0 in the other rows."""
+    its colour (D-506), a Hair the flow `swum` was solved in (D-705); 0 in the other rows."""
     given = np.zeros((pos.shape[0], net.n, CHANNELS))
     for kind, nodes in net.senses:
-        rates = SENSES[kind.spec.sense](arena, pos, heading, radius, *parts(net, nodes))
+        rates = SENSES[kind.spec.sense](arena, pos, heading, radius, *parts(net, nodes), swum)
         given[:, nodes] = np.clip(rates, 0.0, RATE_MAX) * masks(net.hues[i] for i in nodes)
     return given
 
@@ -143,7 +156,7 @@ def step(
     rest = arena.offsets if arena.offsets is not None else arena.at_rest
     pos, offsets = collide(arena, rest, pos, radius, dt, swum.pushes)  # D-609
     arena = arena.moved(offsets)
-    seen = readings(arena, net, pos, heading, radius)
+    seen = readings(arena, net, pos, heading, radius, swum)
     return pos, heading, dynamics.step_given(net, y, seen, dt), arena
 
 

@@ -45,6 +45,7 @@ GLYPH = {
     "lightbulb": 0xF0EB,
     "gauge-high": 0xF625,
     "wind": 0xF72E,
+    "feather": 0xF52D,  # a Hair (D-705)
     "fan": 0xF863,  # a pump (D-702)
     "up-right-and-down-left-from-center": 0xF424,  # a source
     "down-left-and-up-right-to-center": 0xF422,  # a sink
@@ -90,4 +91,4 @@ GLYPH = {
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side.
-POINTS_TO = {"rocket": 45.0, "eye": 90.0}
+POINTS_TO = {"rocket": 45.0, "eye": 90.0, "feather": 45.0}

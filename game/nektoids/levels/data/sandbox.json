@@ -26,7 +26,8 @@
       "tank": null,
       "tint": null,
       "filter": null,
-      "swap": null
+      "swap": null,
+      "hair": null
     },
     "parts": [],
     "wires": []
