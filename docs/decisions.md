@@ -2986,3 +2986,12 @@ The physicist's, for stage 5: what the lights and obstacles hold against the pum
 flow is solved once, with each obstacle at rest (D-700), and that holds best when an obstacle
 moves little. Three runs of the outcome table moved a few ticks, Shadows' driven one 665 → 670,
 Patience's 1471 → 1475 and 1203 → 1212; no outcome changed.
+
+**D-702 — 2026-10-13 — Pumps, sources and sinks are placed in the level maker, as lights are: keys 6, 7 and 8, a setting of 1 to 8, a pump's force in steps of 1 f, a source's or a sink's rate in steps of 4π u³/s, its flow s/r² u/s at r u. A pump faces a hex direction, east when placed, turned by L and R with the swimmer's start; drawn as discs in the flow's brightest mud, a pump with an arrow the way it pushes, a source with six arrows out, a sink with six in. The level's file takes format 7, its word version 33. Applies D-700.**
+The physicist's units, to tune by eye: a pump at 2 pushes as two thrusters, and a sink at 8
+draws in at 3.6 u/s at the swimmer's rim, which two thrusters at the sides, 7 u/s, escape. A
+sink is its own kind, not a negative source, so a setting stays 1 to 8 and the word holds it as
+it holds a light's power; a pump's facing is a digit of its own, from version 33. Words of
+versions 31 and 32 read as they were written: they know three kinds of item. A swimmer may not
+start touching a pump, a source or a sink, and none touches another item (D-700). Goals do not
+aim at them yet, and they cast no shadow.

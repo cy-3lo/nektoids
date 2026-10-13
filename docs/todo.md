@@ -110,9 +110,9 @@ merged in as they land.
   swimmer (V += u, Ω += ω/2) and in `flow_at`, so the tracers show it; the lights' and
   obstacles' reactions to them solved once, at load; the swimmer meets them as it meets a light.
   A tick costs 164 µs natively with two pumps and two sources among five spheres, against 109.
-- [ ] **Pumps and sources in the level maker.** The level format's next version, older levels
-  with none; placed, turned and signed as a light is set; drawn so they read with the tracers
-  off: a pump a disc with an arrow, a source rays out, a sink rays in; shared as text.
+- [x] **Pumps and sources in the level maker** (D-702). Format 7, word 33; keys 6, 7 and 8; a
+  pump turned by L and R; drawn so they read with the tracers off.
+- [ ] **Their units, by eye.** A pump's 1 f a step and a source's 4π u³/s (D-702), in levels.
 - [ ] **The flow sensor.** A sense `flow` in `sim/world.py`, a kind in the table, turned like an
   eye; the board's word at its next version; its icon on the Board and in Diagnostic. It reads
   the absolute flow first; the relative form one switch away (D-700). Its name is the

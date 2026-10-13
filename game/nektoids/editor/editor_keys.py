@@ -62,7 +62,7 @@ KEYS = {  # what the tooltips name; an object's is its number
     Key.COPY: "Ctrl+C",
     Key.PASTE: "Ctrl+V",
     Key.CUT: "Del",
-    **{p: str(k) for k, p in enumerate(RIGHT)},  # 0 the swimmer, 1 to 5 the items
+    **{p: str(k) for k, p in enumerate(RIGHT)},  # 0 the swimmer, 1 to 8 the items
 }
 NAMES = {
     **{k: k.value.capitalize() for k in Key},
@@ -71,6 +71,9 @@ NAMES = {
     Piece.VIOLET_LIGHT: "Violet light",
     Piece.OBSTACLE: "Obstacle",
     Piece.MARK: "Mark",
+    Piece.PUMP: "Pump",
+    Piece.SOURCE: "Source",
+    Piece.SINK: "Sink",
     Piece.START: "Swimmer",
 }
 ACTS_ON_ITEMS = (Key.BIGGER, Key.SMALLER, Key.COPY, Key.CUT)

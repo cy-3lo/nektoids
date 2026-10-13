@@ -140,6 +140,9 @@ class Piece(Enum):  # Objects' rows: what the Editor puts on the plane (D-301), 
     VIOLET_LIGHT = "violet light"  # by violet eyes alone
     OBSTACLE = "obstacle"
     MARK = "mark"  # a zone, which only the objectives read (D-306)
+    PUMP = "pump"  # a point force on the fluid (D-702)
+    SOURCE = "source"
+    SINK = "sink"
 
 
 class Brief(Enum):  # Text's fields, in the Editor: the level's name, what it asks, its maker

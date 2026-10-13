@@ -162,6 +162,7 @@ from nektoids.editor.palette import (
     SCROLL_THUMB,
     SELECTED,
     SHADOW,
+    STIR,
     TAB_STRIP,
     TEXT,
     THRUSTER_BACK,
@@ -183,7 +184,7 @@ from nektoids.graph.board import Board, Hue, Kind, Refused
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.graph.hexgrid import Cell, to_pixel
 from nektoids.graph.network import label
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Colour
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, STIR_RADIUS, Colour
 
 TITLE_SIZE = 24  # [px] a drawer's title: its headings are 20 (D-420)
 
@@ -827,10 +828,11 @@ def draw_level_map(
     view=None,
     body: AtWork | None = None,
 ) -> None:
-    """The level seen whole and small in `area`: its obstacles, its marks, its lights, and
-    the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the main screen shows of it,
-    outlined (Diagnostic's map, the run's overview, D-058, D-060); `view`, how it is seen, else the
-    level seen whole; `body`, the swimmer at work, drawn round it (Diagnostic's map, D-076)."""
+    """The level seen whole and small in `area`: its obstacles, its marks, its lights, its pumps,
+    sources and sinks, and the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the
+    main screen shows of it, outlined (Diagnostic's map, the run's overview, D-058, D-060);
+    `view`, how it is seen, else the level seen whole; `body`, the swimmer at work, drawn round
+    it (Diagnostic's map, D-076)."""
     view, arena = view or level_view(level, tuple(area)), level.arena
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     with clipped(screen, area):
@@ -844,6 +846,9 @@ def draw_level_map(
         for light in arena.lights:  # in its colour (D-506)
             centre, radius = view.to_screen(light.x, light.y), LIGHT_RADIUS * view.scale
             pygame.draw.circle(screen, LIGHT_OF[light.colour], centre, radius)
+        for stir in arena.pumps + arena.sources:  # D-702
+            centre = view.to_screen(stir.x, stir.y)
+            pygame.draw.circle(screen, STIR, centre, max(1.5, STIR_RADIUS * view.scale))
         x, y, heading = pose
         if body is not None:
             draw_under(screen, view, body)

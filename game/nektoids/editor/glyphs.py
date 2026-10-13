@@ -45,6 +45,9 @@ GLYPH = {
     "lightbulb": 0xF0EB,
     "gauge-high": 0xF625,
     "wind": 0xF72E,
+    "fan": 0xF863,  # a pump (D-702)
+    "up-right-and-down-left-from-center": 0xF424,  # a source
+    "down-left-and-up-right-to-center": 0xF422,  # a sink
     "sun": 0xF185,  # the light's rays (D-608)
     "check": 0xF00C,
     "backward-fast": 0xF049,
