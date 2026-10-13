@@ -97,6 +97,6 @@ over; its prototype stays local, off the public repository.
   velocity into the obstacle is zero, one more solve per contact (a 2×2 system in a crevice).
 - [ ] **Gaps in the fixed field of tracers.** Move a tracer from a crowded cell to an empty one
   now and then, away from the swimmer, so that the field heals.
-- [ ] **Tuning by eye.** ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
+- [ ] **Tuning by eye** (first pass: D-610). ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
   brightness and their tails.
 - [ ] **Then flow sensing** (`ideas.md` §4), a stage of its own.

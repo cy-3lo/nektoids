@@ -232,9 +232,9 @@ FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks d
 FLOW = tuple(oklch(0.30 + 0.04 * k, 0.0225 + 0.0051 * k, 100.0) for k in range(8))
 FLOW_ADDED = tuple(tuple(max(0, c - s) for c, s in zip(f, P.deep, strict=True)) for f in FLOW)
 # ... each added onto the plane, SHADOW; and its layer, faded each frame by FLOW_KEEP / 256, a
-# comet's tail dark in about a second (D-603), then FLOW_CUT taken off: the product rounds up,
+# comet's tail dark in about 2 s (D-603, D-610), then FLOW_CUT taken off: the product rounds up,
 # and the dimmest would stay as a haze
-FLOW_KEEP = (244, 244, 244)
+FLOW_KEEP = (250, 250, 250)
 FLOW_CUT = (1, 1, 1)
 NOTHING = (0, 0, 0)  # a layer added onto the screen, empty
 INTAKE = mix(P.muted, P.dim, 0.6)  # the light an eye draws in, specks drifting to its face

@@ -100,7 +100,7 @@ def push_head_on(radius: float, force: float, seconds: float, release: float = 0
 
 def test_a_head_on_push_of_two_full_thrusters_moves_an_obstacle_spring_give_whatever_its_size():
     for radius in (1.0, 3.0, 8.0):  # D-424: k u = F at rest, a sphere's drag only sets how fast
-        along = push_head_on(radius, 2.0 * THRUST, 4.0)
+        along = push_head_on(radius, 2.0 * THRUST, 16.0)  # softer since D-610: slower to settle
         assert along[-1] == pytest.approx(SPRING_GIVE, rel=1e-3)
         assert np.all(along >= 0.0) and np.all(along <= SPRING_GIVE * (1 + 1e-3))  # no overshoot
     small, large = (

@@ -15,7 +15,7 @@ import numpy as np
 from nektoids.sim import flow
 from nektoids.sim.arena import Arena
 
-CELL = 1.25  # [u] one tracer per cell of this side (D-603)
+CELL = 0.9  # [u] one tracer per cell of this side (D-603, D-610)
 SLOW = 0.015  # [u/s] the dimmest speed shown...
 FAST = 1.0  # [u/s] ... and the brightest, on a log scale between
 LEVELS = 8  # how many brightnesses

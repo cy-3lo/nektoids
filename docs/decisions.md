@@ -2960,3 +2960,9 @@ the rest reaches the obstacle through the fluid, which its clamp takes (D-601), 
 k u = F, a law without fluid, no longer holds exactly. `contact.collide` still shares any
 overlap left. Turning's swimmer, deflected less by the obstacle, circled past its ring; at
 (0, 5) it wins in 2.4 s, and the left side still loses. Other proofs moved by at most 31 ticks.
+
+**D-610 — 2026-10-13 — Tuned by eye: an obstacle's spring three times softer, a head-on push of two thrusters at full rate moving it 0.9 u, not 0.3; the flow's tracers one per 0.9 u cell, not 1.25, about twice as many; their tails kept 250/256 a frame, not 244, dark in about 2 s. Amends D-424, D-603, D-608.**
+The physicist's, from play: obstacles hardly moved under a push, at rest the spring holding only
+the contact's share of it (D-609), and the flow read thin. No proof's tick changed; three runs of
+the outcome table moved a few ticks. A head-on push now settles in about 1.35 s for the largest
+obstacle, radius 8, so its test waits 16 s. 1612 tracers and the run's frame cost 3.1 ms natively.
