@@ -2733,6 +2733,6 @@ D-416's did.
 **D-433 — 2026-10-14 — Stages 1 and 2, with the fixes D-418 to D-432, ship as v1.1: `main` at the merge of #142 is tagged v1.1, and its GitHub release carries `nektoids-web.zip`, the HTML5 build for cy-3lo.itch.io/nektoids. Applies D-106.**
 As for v1.0: the build is `pygbag --build --archive game`, pygbag 0.9.3, made from the tagged
 commit. Before the tag it was served locally and played in headless Chrome: the title card drew,
-Wiring was wired, run and won, with nothing in the console. The itch.io page takes the same
-archive, the description and a devlog for 1.1. Stages 3 to 5 stay on their branches and come
+Wiring was wired, run and won, with nothing in the console. The physicist uploaded the same
+archive to the itch.io page, with its description and a devlog for 1.1. Stages 3 to 5 stay on their branches and come
 in a later release.
