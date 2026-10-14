@@ -33,7 +33,8 @@ chapter 2's new levels, obstacles before Shadows, and chapter 4's, Made by users
 ## 14. The repository's face
 
 - [ ] **Put the banners up** (D-417): `docs/banner/github.png` as the repository's social
-  preview (Settings, General); `itch-cover.png` and `itch-banner.png` on the itch.io page.
+  preview (Settings, General). `itch-cover.png` and `itch-banner.png` are on the itch.io
+  page (D-433).
 
 ## 15. The Board, built with fewer moves (stage 2, done, D-400 to D-417)
 
