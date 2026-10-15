@@ -1,8 +1,9 @@
 """The flow drawn: tracers carried by it over the plane in view (D-603, D-608).
 
-A field: one tracer in every CELL-sided cell of the plane in view, at random in it, none in a light,
-an obstacle, a pump, a source or the swimmer; one that leaves the view comes back on the other side.
-Each frame it moves as the flow round the first swimmer goes (`flow.flow_at`).
+A field: one tracer in every CELL-sided cell of the plane in view, coarser on Diagnostic's map
+(D-706), at random in it, none in a light, an obstacle, a pump, a source or the swimmer; one that
+leaves the view comes back on the other side. Each frame it moves as the flow round the first
+swimmer goes (`flow.flow_at`).
 
 The tracers are a thin slab of the fluid round the plane, which the flow leaves, up and down,
 where dw/dz > 0 and comes into where it is negative (`flow.rise_at`, integrated along each step,
@@ -43,7 +44,9 @@ Rect = tuple[float, float, float, float]  # left, bottom, right, top [u]
 class Tracers:
     """The tracers of the plane in view; empty until `follow` first sees it."""
 
-    def __init__(self) -> None:
+    def __init__(self, cell: float = CELL) -> None:
+        """cell: one tracer seeded in each cell of this side [u]; coarser on a small map (D-706)."""
+        self.cell = cell
         self.rect: Rect | None = None
         self.x = np.zeros((0, 2))  # (P, 2) [u]
         self.speed = np.zeros(0)  # (P,) [u/s], as they last moved
@@ -78,7 +81,7 @@ class Tracers:
             draw = self.rng.random(len(x))
             leaves = draw < -np.expm1(-np.maximum(rise, 0.0))  # out of the slab...
             splits = draw < np.expm1(np.maximum(-rise, 0.0))  # ... or a second one into it
-            twins = x[splits] + _scattered(self.rng, int(splits.sum()))
+            twins = x[splits] + _scattered(self.rng, int(splits.sum()), self.cell)
             x = np.concatenate((x[~leaves], twins))
             speed = np.concatenate((speed[~leaves], speed[splits]))
             kept = ~_in_sinks(arena, x)
@@ -87,7 +90,7 @@ class Tracers:
             x[:, 1] = (x[:, 1] - bottom) % (top - bottom) + bottom
             new, fast = self._put_out(arena, rect, seconds)
             x, self.speed = np.concatenate((x, new)), np.concatenate((self.speed, fast))
-            keep = _thinned(x, rect, max(0, len(x) - self.most))
+            keep = _thinned(x, rect, max(0, len(x) - self.most), self.cell)
             self.x, self.speed = x[keep], self.speed[keep]
 
     def _put_out(self, arena: Arena, rect: Rect, seconds: float) -> tuple[np.ndarray, np.ndarray]:
@@ -97,7 +100,8 @@ class Tracers:
         rate = arena.source_rate
         x, y = arena.source_xy[:, 0], arena.source_xy[:, 1]
         shown = (rate > 0.0) & (x >= left) & (x < right) & (y >= bottom) & (y < top)
-        self.owed = self.owed + np.where(shown, seconds * rate / (2 * STIR_RADIUS * CELL**2), 0.0)
+        owed = seconds * rate / (2 * STIR_RADIUS * self.cell**2)
+        self.owed = self.owed + np.where(shown, owed, 0.0)
         count = self.owed.astype(np.int64)
         self.owed = self.owed - count
         centre = np.repeat(arena.source_xy, count, axis=0)
@@ -112,12 +116,13 @@ class Tracers:
 
     def _seed(self, arena: Arena, pos: np.ndarray, radius: float, rect: Rect) -> None:
         left, bottom, right, top = rect
+        cell = self.cell
         ix, iy = np.meshgrid(
-            np.arange(int(np.ceil((right - left) / CELL))),
-            np.arange(int(np.ceil((top - bottom) / CELL))),
+            np.arange(int(np.ceil((right - left) / cell))),
+            np.arange(int(np.ceil((top - bottom) / cell))),
         )
-        corner = np.stack((left + CELL * ix.ravel(), bottom + CELL * iy.ravel()), axis=1)
-        x = corner + CELL * np.random.default_rng(SEED).random(corner.shape)
+        corner = np.stack((left + cell * ix.ravel(), bottom + cell * iy.ravel()), axis=1)
+        x = corner + cell * np.random.default_rng(SEED).random(corner.shape)
         x = x[(x[:, 0] < right) & (x[:, 1] < top)]
         self.x = x[np.all(_outside(arena, pos, radius, x) == x, axis=1)]
         self.speed = np.zeros(len(self.x))
@@ -151,23 +156,23 @@ def _carried(
     return x, total
 
 
-def _scattered(rng: np.random.Generator, count: int) -> np.ndarray:
-    """(count, 2) [u]: offsets at random in a disc of diameter CELL, where a twin lands from the
-    tracer it split from."""
-    angle, reach = 2.0 * np.pi * rng.random(count), 0.5 * CELL * np.sqrt(rng.random(count))
+def _scattered(rng: np.random.Generator, count: int, cell: float = CELL) -> np.ndarray:
+    """(count, 2) [u]: offsets at random in a disc of diameter `cell`, where a twin lands from
+    the tracer it split from."""
+    angle, reach = 2.0 * np.pi * rng.random(count), 0.5 * cell * np.sqrt(rng.random(count))
     return reach[:, None] * np.stack((np.cos(angle), np.sin(angle)), axis=1)
 
 
-def _thinned(x: np.ndarray, rect: Rect, gone: int) -> np.ndarray:
+def _thinned(x: np.ndarray, rect: Rect, gone: int, side: float = CELL) -> np.ndarray:
     """(P,) bool: which of the points x (P, 2) [u] stay when `gone` go, taken from the most
-    crowded CELL-sided cells of `rect` first, the oldest of each first: each cell's k-th newest
+    crowded `side`-sided cells of `rect` first, the oldest of each first: each cell's k-th newest
     goes, k the highest first, the oldest first among them, so that a cell keeps one while
     another has two, and a source's newest stay (D-704)."""
     if gone == 0:
         return np.ones(len(x), dtype=bool)
     left, bottom, right, _ = rect
-    columns = int(np.ceil((right - left) / CELL))
-    cell = np.floor((x[:, 1] - bottom) / CELL) * columns + np.floor((x[:, 0] - left) / CELL)
+    columns = int(np.ceil((right - left) / side))
+    cell = np.floor((x[:, 1] - bottom) / side) * columns + np.floor((x[:, 0] - left) / side)
     order = np.lexsort((-np.arange(len(x)), cell))  # by cell, then newest first
     ranked = cell[order]
     first = np.r_[True, ranked[1:] != ranked[:-1]]

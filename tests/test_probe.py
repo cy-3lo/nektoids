@@ -1,14 +1,16 @@
 """Diagnostic's engine on the Board (D-058, D-407). probe.py imports no pygame."""
 
 import math
+from dataclasses import replace
 
 import pytest
 
 from nektoids.editor.layout import DIAGNOSTIC_BODY, contains
-from nektoids.editor.probe import Probe
-from nektoids.graph.board import Kind
+from nektoids.editor.probe import Pose, Probe
+from nektoids.graph.board import Board, Kind
 from nektoids.graph.dynamics import RATE_MAX
 from nektoids.levels.arenas import arenas
+from nektoids.levels.level import Item, ItemKind
 from nektoids.sim.arena import BASE_RADIUS
 
 LEVELS = {level.title: level for level in arenas()}
@@ -75,3 +77,28 @@ def test_diagnostics_map_shows_the_whole_level_where_the_swimmer_starts():
         assert contains(DIAGNOSTIC_MAP, tuple(round(v) for v in view.to_screen(x, y)))
         for lx, ly in level.arena.light_xy:
             assert contains(DIAGNOSTIC_MAP, tuple(round(v) for v in view.to_screen(lx, ly)))
+
+
+def test_a_hair_reads_the_pumps_flow_where_the_probe_stands():
+    fear = LEVELS["Fear"]  # D-706: the probe held, its Hair reading the flow past it
+    x, y = fear.start_at
+    level = replace(fear, items=fear.items + (Item(ItemKind.PUMP, (x - 4.0, y), 3.0, facing=0),))
+    board = Board(level.new_board().cells)  # its zone, any part in stock
+    hair = board.place(Kind.HAIR, (2, -1))  # facing E, the way the pump pushes the water
+    probe = Probe(board, level, AREA, Pose(x, y, 0.0))
+    probe.tick()
+    index = probe.net.ids.index(hair.id)
+    assert probe.y[index] > 0.0
+    assert probe.pose[:2] == pytest.approx((x, y))  # held: the flow does not carry it
+
+
+def test_diagnostics_map_frames_the_pumps_sources_and_sinks():
+    from nektoids.editor.layout import DIAGNOSTIC_MAP
+    from nektoids.editor.probe import level_view
+
+    fear = LEVELS["Fear"]  # D-706: one far off is still on the map
+    stirs = (Item(ItemKind.PUMP, (40.0, 16.0), 3.0), Item(ItemKind.SINK, (0.0, 0.0), 2.0))
+    level = replace(fear, items=fear.items + stirs)
+    view = level_view(level, DIAGNOSTIC_MAP)
+    for stir in stirs:
+        assert contains(DIAGNOSTIC_MAP, tuple(round(v) for v in view.to_screen(*stir.at)))

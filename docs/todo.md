@@ -115,6 +115,10 @@ merged in as they land.
 - [ ] **Their units, by eye.** A pump's 0.1 f a step (D-703) and a source's 4π u³/s (D-702), in levels.
 - [x] **The flow sensor: the Hair** (D-705). A sense `flow`, a kind in the table, turned like an
   eye, a feather on it; it reads the plane's flow, `flow.RELATIVE` the switch (D-700).
-- [ ] **The Hair's GAIN, by eye**, 1 a u/s (D-705), and absolute or relative, in levels.
+- [x] **The Hair in Diagnostic** (D-706). The probe solves the flow and reads every sense; its
+  map frames the pumps, sources and sinks and draws the tracers; the Hair's face in the accent.
+- [ ] **The Hair's GAIN, by eye**, 3 a u/s (D-706), and absolute or relative, in levels.
+- [ ] **The Hair on the swimmer at work.** The run and Diagnostic's map draw the eyes' and
+  thrusters' outlines on the body (`marks_draw.draw_parts`), not the Hairs'.
 - [ ] **Levels for flows.** Find the sink; go up a pump's jet; follow a wall by its echo. Camille
   plays them.

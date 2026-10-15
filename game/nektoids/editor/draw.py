@@ -45,6 +45,7 @@ from nektoids.editor.buttons_draw import bevel, hexagon, shadows, tag
 from nektoids.editor.circuit import BEAD_RADIUS, METER_AT, METER_HEIGHT, Circuit
 from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.entry import ENTRY_AREA
+from nektoids.editor.flowfield import Tracers
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import (
     EYE_DISC,
@@ -107,7 +108,7 @@ from nektoids.editor.layout import (
     visible_cells,
 )
 from nektoids.editor.marks import AtWork, at_work, stretch_at
-from nektoids.editor.marks_draw import SPECK, draw_over, draw_under
+from nektoids.editor.marks_draw import SPECK, draw_over, draw_tracers, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -135,6 +136,7 @@ from nektoids.editor.palette import (
     GREYED,
     GREYED_FACE,
     GRID_LINE,
+    HAIR_FACE,
     HEADING,
     HOVER,
     IDLE,
@@ -284,7 +286,8 @@ MENU_ANGLE = {kind: 90.0 for kind in Kind if kind.default_facing is not None}
 
 WIRE_WIDTH = 3  # every wire on the board, made, shadow or being drawn, whatever the zoom [px]
 ARROW_HALF = 0.14  # half-length of every arrowhead on a wire [hex sizes]
-FACE = {Kind.EYE: EYE_FACE, Kind.THRUSTER: THRUSTER_BACK}  # the side that reads, that pushes
+# The side that reads, the side that pushes; a Hair's as an eye's (D-706)
+FACE = {Kind.EYE: EYE_FACE, Kind.HAIR: HAIR_FACE, Kind.THRUSTER: THRUSTER_BACK}
 BODY_OF = {Hue.AMBER: PAINT_AMBER, Hue.VIOLET: PAINT_VIOLET}  # a painted part's body (D-503)
 BEAD_OF = {Hue.AMBER: BEAD_AMBER, Hue.VIOLET: BEAD_VIOLET}  # a bead of each channel
 LIGHT_OF = {Colour.WHITE: LIGHT, Colour.AMBER: LIGHT_AMBER, Colour.VIOLET: LIGHT_VIOLET}  # D-506
@@ -295,11 +298,13 @@ INFO_CHARS = 46  # an info box's line, at most: as wide as a part's circuit unde
 INFO_PAD = 12  # inside the info box [px]
 
 # Icon height as a fraction of the hex size.
-ICON_SCALE = {Kind.EYE: 0.68, Kind.THRUSTER: 0.62}  # the rest: 0.5
+ICON_SCALE = {Kind.EYE: 0.68, Kind.HAIR: 0.6, Kind.THRUSTER: 0.62}  # the rest: 0.5
 
 # Icon shift along the facing [hex sizes]: the eye's shape runs from its rim, a radius R behind
-# the centre, to its flat face, half a radius ahead, so its middle lies R/4 behind the centre.
-ICON_AHEAD = {Kind.EYE: -0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)}
+# the centre, to its flat face, half a radius ahead, so its middle lies R/4 behind the centre;
+# the Hair's shape is the eye's (D-706).
+_EYE_MIDDLE = -0.25 * max(math.hypot(u, v) for u, v in EYE_DISC)
+ICON_AHEAD = {Kind.EYE: _EYE_MIDDLE, Kind.HAIR: _EYE_MIDDLE}
 
 
 # IBM Plex Mono, Medium (SIL OFL 1.1, with its licence beside it): every letter as wide as the
@@ -819,6 +824,9 @@ def _win_name(won) -> str:
     return f"{won.score.ticks * DT:.2f} s, {won.score.parts} parts"
 
 
+_map_flow_cache: dict = {}  # the tracers' layer on Diagnostic's map (D-706)
+
+
 def draw_level_map(
     screen: pygame.Surface,
     level,
@@ -827,15 +835,18 @@ def draw_level_map(
     frame: pygame.Rect | None = None,
     view=None,
     body: AtWork | None = None,
+    tracers: Tracers | None = None,
 ) -> None:
     """The level seen whole and small in `area`: its obstacles, its marks, its lights, its pumps,
     sources and sinks, and the swimmer at `pose` (x, y [u], heading [rad]); `frame`, what the
     main screen shows of it, outlined (Diagnostic's map, the run's overview, D-058, D-060);
     `view`, how it is seen, else the level seen whole; `body`, the swimmer at work, drawn round
-    it (Diagnostic's map, D-076)."""
+    it (Diagnostic's map, D-076); `tracers`, the flow under it all (Diagnostic's map, D-706)."""
     view, arena = view or level_view(level, tuple(area)), level.arena
     pygame.draw.rect(screen, SHADOW, area, border_radius=6)
     with clipped(screen, area):
+        if tracers is not None:
+            draw_tracers(screen, area, tracers, view, _map_flow_cache)
         for disc in arena.obstacles:
             pygame.draw.circle(
                 screen, OBSTACLE, view.to_screen(disc.x, disc.y), disc.radius * view.scale
@@ -924,7 +935,9 @@ def _draw_diagnostic(screen: pygame.Surface, scene: BoardScene, fonts: Fonts) ->
             stretch=stretch,
             colours=level.colours,
         )
-        draw_level_map(screen, level, area, probe.pose, view=view, body=body)
+        stirred = level.arena.pumps or level.arena.sources  # the flow drawn only then (D-706)
+        tracers = probe.tracers if stirred else None
+        draw_level_map(screen, level, area, probe.pose, view=view, body=body, tracers=tracers)
     else:
         pygame.draw.rect(screen, SHADOW, area, border_radius=6)
         pygame.draw.rect(screen, RULE, area, 1, border_radius=6)

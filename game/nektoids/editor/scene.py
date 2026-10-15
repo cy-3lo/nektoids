@@ -58,7 +58,7 @@ from nektoids.editor.buttons import (
     states,
     swaps,
 )
-from nektoids.editor.devdrive import TICKS_PER_FRAME
+from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.frame import Frame
 from nektoids.editor.geometry import nearest_wire
 from nektoids.editor.history import History
@@ -289,6 +289,7 @@ class BoardScene(Frame):
             if self.probe is not None:
                 for _ in range(TICKS_PER_FRAME):
                     self.probe.tick()
+                self.probe.follow_flow(DIAGNOSTIC_MAP, TICKS_PER_FRAME * DT)  # D-706
 
     def _tip_target(self, pos: tuple[int, int]) -> object | None:
         """The bar's icons, and the buttons round the board (D-401)."""

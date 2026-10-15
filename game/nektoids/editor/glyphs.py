@@ -90,5 +90,6 @@ GLYPH = {
     "arrow-pointer": 0xF245,  # Select, among the Board's buttons (D-401)
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
-# looks up: turned to face E, its long axis runs along the eye's flat side.
-POINTS_TO = {"rocket": 45.0, "eye": 90.0, "feather": 45.0}
+# looks up: turned to face E, its long axis runs along the eye's flat side. The feather's quill
+# runs to its tip at 45°; taken as pointing at 135°, it lies along the Hair's flat side too (D-706).
+POINTS_TO = {"rocket": 45.0, "eye": 90.0, "feather": 135.0}

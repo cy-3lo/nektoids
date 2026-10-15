@@ -3026,3 +3026,11 @@ given, so the board's checks count it. Its entry rises and falls as the Eye's. O
 drive a board without a world, the developer view and the probe, read it as 0. The level word
 stays at version 33, never shared: it lists the Hair's stock; version 32's eleven kinds are
 written out. A board's text holds 32 kinds and is unchanged.
+
+**D-706 — 2026-10-15 — Diagnostic reads every sense: its probe, held where it stands, solves the flow each tick as a run does and its Hairs read it. Its map frames the pumps, sources and sinks, and draws the flow's tracers when the level has any, one every 9 px. A Hair's GAIN is 3 a u/s, not 1; its flat face is drawn in the eye's accent, and its feather lies along that face, as the eye's long axis does. Amends D-705.**
+From the physicist's first play of the Hair. In Diagnostic it read 0 always, as D-705 said of the
+probe; in a run it read, but only facing downstream, and faintly: 0.1 a step of a pump's setting
+4 u away. The sign stays, max(0, u . n): the face now shows which way that is. The probe's body
+is held, so the flow is a held swimmer's: its thrusters push, it does not move. The map's
+tracers are the run's, seeded coarser: at the map's few px a u, one every 0.9 u filled every
+speck. Levels with no pump or source draw no tracers on the map, as before.

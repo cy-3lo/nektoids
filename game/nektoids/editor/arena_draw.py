@@ -89,7 +89,7 @@ from nektoids.editor.draw import (
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, Rect, ViewButton, level_of
 from nektoids.editor.marks import at_work, stretch_at
-from nektoids.editor.marks_draw import SPECK, draw_motion, draw_parts, draw_under
+from nektoids.editor.marks_draw import draw_motion, draw_parts, draw_tracers, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -100,14 +100,10 @@ from nektoids.editor.palette import (
     DIM_TEXT,
     DIVIDER,
     EYE_SHADES,
-    FLOW_ADDED,
-    FLOW_CUT,
-    FLOW_KEEP,
     FULL,
     LIGHT,
     LIT,
     MARK,
-    NOTHING,
     OBSTACLE,
     PANEL,
     PLOT_FRAME,
@@ -214,27 +210,8 @@ _flow_cache: dict = {"key": None, "specks": None, "lut": None}
 
 
 def _draw_flow(screen: pygame.Surface, scene: ArenaScene) -> None:
-    """The tracers (D-608), specks on a grid of SPECK pixels, each a comet: a layer at a third of
-    the screen's resolution, faded each frame and added onto the plane, scaled up."""
-    area, tracers, view = pygame.Rect(scene.arena_area), scene.tracers, scene.view
-    size = (area.width // SPECK + 1, area.height // SPECK + 1)
-    if _flow_cache["key"] != (size, tracers.seeded):  # a new field: its tails start again
-        specks = pygame.Surface(size)
-        specks.fill(NOTHING)
-        lut = np.array([specks.map_rgb(colour) for colour in FLOW_ADDED])
-        _flow_cache.update(key=(size, tracers.seeded), specks=specks, lut=lut)
-    specks = _flow_cache["specks"]
-    specks.fill(FLOW_KEEP, special_flags=pygame.BLEND_RGB_MULT)
-    specks.fill(FLOW_CUT, special_flags=pygame.BLEND_RGB_SUB)
-    if len(tracers.x):
-        px = ((view.origin[0] + view.scale * tracers.x[:, 0] - area.left) // SPECK).astype(int)
-        py = ((view.origin[1] - view.scale * tracers.x[:, 1] - area.top) // SPECK).astype(int)
-        inside = (px >= 0) & (px < size[0]) & (py >= 0) & (py < size[1])
-        pixels = pygame.surfarray.pixels2d(specks)
-        pixels[px[inside], py[inside]] = _flow_cache["lut"][tracers.levels()[inside]]
-        del pixels  # the surface unlocked
-    scaled = pygame.transform.scale(specks, (size[0] * SPECK, size[1] * SPECK))
-    screen.blit(scaled, area.topleft, special_flags=pygame.BLEND_RGB_ADD)
+    """The tracers (D-608), as `draw_tracers` draws them over the plane in view."""
+    draw_tracers(screen, pygame.Rect(scene.arena_area), scene.tracers, scene.view, _flow_cache)
 
 
 def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
