@@ -45,6 +45,10 @@ GLYPH = {
     "lightbulb": 0xF0EB,
     "gauge-high": 0xF625,
     "wind": 0xF72E,
+    "feather": 0xF52D,  # a Hair (D-705)
+    "fan": 0xF863,  # a pump (D-702)
+    "up-right-and-down-left-from-center": 0xF424,  # a source
+    "down-left-and-up-right-to-center": 0xF422,  # a sink
     "sun": 0xF185,  # the light's rays (D-608)
     "check": 0xF00C,
     "backward-fast": 0xF049,
@@ -86,5 +90,7 @@ GLYPH = {
     "arrow-pointer": 0xF245,  # Select, among the Board's buttons (D-401)
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
-# looks up: turned to face E, its long axis runs along the eye's flat side.
-POINTS_TO = {"rocket": 45.0, "eye": 90.0}
+# looks up: turned to face E, its long axis runs along the eye's flat side. The feather's quill
+# runs to its tip at 45°; taken as pointing at 315°, it lies along the Hair's flat side too, its
+# tip to the Hair's right (D-706).
+POINTS_TO = {"rocket": 45.0, "eye": 90.0, "feather": 315.0}

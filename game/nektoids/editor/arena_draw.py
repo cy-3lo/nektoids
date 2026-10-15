@@ -89,7 +89,7 @@ from nektoids.editor.draw import (
 from nektoids.editor.icons import VIEW_ICON
 from nektoids.editor.layout import MARGIN, VIEW_KEYS, Drawer, Goal, Rect, ViewButton, level_of
 from nektoids.editor.marks import at_work, stretch_at
-from nektoids.editor.marks_draw import SPECK, draw_motion, draw_parts, draw_under
+from nektoids.editor.marks_draw import draw_motion, draw_parts, draw_tracers, draw_under
 from nektoids.editor.palette import (
     ACTIVE,
     BACKGROUND,
@@ -100,14 +100,10 @@ from nektoids.editor.palette import (
     DIM_TEXT,
     DIVIDER,
     EYE_SHADES,
-    FLOW_ADDED,
-    FLOW_CUT,
-    FLOW_KEEP,
     FULL,
     LIGHT,
     LIT,
     MARK,
-    NOTHING,
     OBSTACLE,
     PANEL,
     PLOT_FRAME,
@@ -119,6 +115,7 @@ from nektoids.editor.palette import (
     RULE,
     RUN_SO_FAR,
     SHADOW,
+    STIR,
     TEXT,
     TO_BEAT,
     WIN,
@@ -128,7 +125,7 @@ from nektoids.graph.network import label
 from nektoids.levels.objectives import Outcome, at_start
 from nektoids.levels.proof import to_beat
 from nektoids.levels.score import Score, front
-from nektoids.sim.arena import LIGHT_RADIUS, Arena, Colour
+from nektoids.sim.arena import LIGHT_RADIUS, STIR_RADIUS, STIR_STEP, Arena, Colour
 from nektoids.sim.optics import discs
 
 if TYPE_CHECKING:
@@ -150,6 +147,12 @@ VISITED_GAP = 4  # between a visited light and its ring [px]
 PLOT_PARTS = 4  # the plot of the wins spans at least this many parts
 WIN_DOT = 4  # a win on that plot; this run's ring sits 4 px round it [px]
 MARK_CROSS = 5  # the arms of the cross on a mark's centre [px]
+PUMP_ARROW = 1.5  # [u] a pump's arrow, from its centre along its facing (D-702)
+STIR_TICKS = 6  # a source's or a sink's arrows, round it
+STIR_TICK = (0.8, 1.4)  # [u] from its centre, where each starts and ends
+HEAD = 0.3  # [u] an arrow's head, each side
+HEAD_LEAST = 3  # [px] ... at least
+STIR_LINE = 2  # [px] the arrows' width
 ICON = {
     ArenaButton.RESTART: "backward-fast",  # to t = 0; rotate-left is the Board's Turn left
     ArenaButton.STEP: "forward-step",
@@ -207,27 +210,8 @@ _flow_cache: dict = {"key": None, "specks": None, "lut": None}
 
 
 def _draw_flow(screen: pygame.Surface, scene: ArenaScene) -> None:
-    """The tracers (D-608), specks on a grid of SPECK pixels, each a comet: a layer at a third of
-    the screen's resolution, faded each frame and added onto the plane, scaled up."""
-    area, tracers, view = pygame.Rect(scene.arena_area), scene.tracers, scene.view
-    size = (area.width // SPECK + 1, area.height // SPECK + 1)
-    if _flow_cache["key"] != (size, tracers.seeded):  # a new field: its tails start again
-        specks = pygame.Surface(size)
-        specks.fill(NOTHING)
-        lut = np.array([specks.map_rgb(colour) for colour in FLOW_ADDED])
-        _flow_cache.update(key=(size, tracers.seeded), specks=specks, lut=lut)
-    specks = _flow_cache["specks"]
-    specks.fill(FLOW_KEEP, special_flags=pygame.BLEND_RGB_MULT)
-    specks.fill(FLOW_CUT, special_flags=pygame.BLEND_RGB_SUB)
-    if len(tracers.x):
-        px = ((view.origin[0] + view.scale * tracers.x[:, 0] - area.left) // SPECK).astype(int)
-        py = ((view.origin[1] - view.scale * tracers.x[:, 1] - area.top) // SPECK).astype(int)
-        inside = (px >= 0) & (px < size[0]) & (py >= 0) & (py < size[1])
-        pixels = pygame.surfarray.pixels2d(specks)
-        pixels[px[inside], py[inside]] = _flow_cache["lut"][tracers.levels()[inside]]
-        del pixels  # the surface unlocked
-    scaled = pygame.transform.scale(specks, (size[0] * SPECK, size[1] * SPECK))
-    screen.blit(scaled, area.topleft, special_flags=pygame.BLEND_RGB_ADD)
+    """The tracers (D-608), as `draw_tracers` draws them over the plane in view."""
+    draw_tracers(screen, pygame.Rect(scene.arena_area), scene.tracers, scene.view, _flow_cache)
 
 
 def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None:
@@ -250,12 +234,50 @@ def _draw_field(screen: pygame.Surface, scene: ArenaScene, fonts: Fonts) -> None
 
 def draw_items(screen: pygame.Surface, fonts: Fonts, view: ArenaView, arena: Arena) -> None:
     """The plane's items: the obstacles, grey discs, where their springs have them (D-424); the
-    lights, discs with a bulb, in their colours (D-506)."""
+    lights, discs with a bulb, in their colours (D-506); the pumps, discs with an arrow the way
+    they push, the sources and sinks, discs with arrows out or in (D-702)."""
     for (x, y), radius in zip(arena.disc_xy, arena.disc_radius, strict=True):
         pygame.draw.circle(screen, OBSTACLE, view.to_screen(x, y), radius * view.scale)
+    for pump in arena.pumps:
+        draw_pump(screen, view, (pump.x, pump.y), pump.facing)
+    for source in arena.sources:
+        draw_source(screen, view, (source.x, source.y), source.rate > 0.0)
     for light in arena.lights:
         centre = view.to_screen(light.x, light.y)
         draw_light(screen, fonts, centre, LIGHT_RADIUS * view.scale, LIGHT_OF[light.colour])
+
+
+def draw_pump(screen: pygame.Surface, view: ArenaView, at, facing: int) -> None:
+    """A pump at `at` [u]: a disc, an arrow from its centre the way it pushes, `facing`."""
+    angle = STIR_STEP * facing
+    tip = (at[0] + PUMP_ARROW * math.cos(angle), at[1] + PUMP_ARROW * math.sin(angle))
+    pygame.draw.circle(screen, STIR, view.to_screen(*at), STIR_RADIUS * view.scale)
+    _arrow(screen, view, at, tip)
+
+
+def draw_source(screen: pygame.Surface, view: ArenaView, at, gives: bool) -> None:
+    """A source, if it `gives`, else a sink, at `at` [u]: a disc, arrows round it, out or in."""
+    pygame.draw.circle(screen, STIR, view.to_screen(*at), STIR_RADIUS * view.scale)
+    near, far = STIR_TICK if gives else STIR_TICK[::-1]
+    for k in range(STIR_TICKS):
+        c, s = math.cos(2 * math.pi * k / STIR_TICKS), math.sin(2 * math.pi * k / STIR_TICKS)
+        _arrow(
+            screen, view, (at[0] + near * c, at[1] + near * s), (at[0] + far * c, at[1] + far * s)
+        )
+
+
+def _arrow(screen: pygame.Surface, view: ArenaView, tail, tip) -> None:
+    """An arrow from `tail` to `tip` [u], its head at `tip`."""
+    a, b = view.to_screen(*tail), view.to_screen(*tip)
+    pygame.draw.line(screen, STIR, a, b, STIR_LINE)
+    length = math.hypot(b[0] - a[0], b[1] - a[1])
+    if length == 0.0:
+        return
+    ux, uy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+    head = max(HEAD_LEAST, HEAD * view.scale)
+    for side in (1.0, -1.0):
+        end = (b[0] - head * (ux + side * uy), b[1] - head * (uy - side * ux))
+        pygame.draw.line(screen, STIR, b, end, STIR_LINE)
 
 
 def draw_marks(

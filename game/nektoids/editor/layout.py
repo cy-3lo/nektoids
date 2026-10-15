@@ -102,7 +102,7 @@ ZOOM_STEP = 1.25  # hex size factor per click
 # order: a press takes a part of the group, the next press the next one. Within a group, the
 # order the presses go round in.
 MENU_GROUPS: tuple[tuple[str, tuple[Kind, ...]], ...] = (
-    ("Sensors", (Kind.EYE, Kind.SOURCE)),
+    ("Sensors", (Kind.EYE, Kind.SOURCE, Kind.HAIR)),
     ("Actuators", (Kind.THRUSTER,)),
     ("Math", (Kind.SUM, Kind.DIFFERENCE, Kind.DOUBLE, Kind.HALVE)),
     ("Colour", (Kind.TINT, Kind.FILTER, Kind.SWAP)),
@@ -140,6 +140,9 @@ class Piece(Enum):  # Objects' rows: what the Editor puts on the plane (D-301), 
     VIOLET_LIGHT = "violet light"  # by violet eyes alone
     OBSTACLE = "obstacle"
     MARK = "mark"  # a zone, which only the objectives read (D-306)
+    PUMP = "pump"  # a point force on the fluid (D-702)
+    SOURCE = "source"
+    SINK = "sink"
 
 
 class Brief(Enum):  # Text's fields, in the Editor: the level's name, what it asks, its maker

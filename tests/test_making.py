@@ -35,6 +35,7 @@ from nektoids.levels.making import (
     group_adjusted,
     group_moved,
     group_removed,
+    group_turned,
     lacks,
     moved,
     number,
@@ -352,3 +353,22 @@ def test_erase_all_takes_every_item_and_every_goal_the_swimmer_and_the_time_stay
     gone = erased(level)
     assert gone.items == () and gone.objectives == ()
     assert gone.start == level.start and gone.time_limit == level.time_limit
+
+
+def test_a_pump_is_placed_facing_and_turned_by_hex_directions_the_rest_not():
+    made = placed(LEVEL, ItemKind.PUMP, (30.0, 30.0), facing=2)
+    pump = len(made.items) - 1
+    assert made.items[pump].facing == 2 and made.items[pump].value == NEW[ItemKind.PUMP]
+    assert placed(LEVEL, ItemKind.LIGHT, (30.0, 30.0), facing=2).items[-1].facing == 0
+    turned_all = group_turned(made, range(len(made.items)), 5)
+    assert turned_all.items[pump].facing == 1  # 2 + 5, round the six
+    assert turned_all.items[:pump] == made.items[:pump]  # lights and obstacles do not turn
+
+
+def test_the_swimmer_may_not_start_in_a_pump_nor_one_touch_an_item():
+    x, y, _ = LEVEL.start
+    with pytest.raises(Unmade, match="inside a pump"):
+        placed(LEVEL, ItemKind.SINK, (x + 1.0, y))
+    light = next(item for item in LEVEL.items if item.kind is ItemKind.LIGHT)
+    with pytest.raises(Unmade, match="touches"):
+        placed(LEVEL, ItemKind.SOURCE, (light.at[0] + 1.0, light.at[1]))

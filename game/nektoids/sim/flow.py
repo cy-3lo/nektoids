@@ -16,6 +16,13 @@ obstacles, as a sphere of radius R (D-045). Lights and obstacles are clamped sph
 mobility is inverted once (`clamped_inverse`), at rest, the springs of D-424 left out of it, and
 the swimmer's flow reaches them where they are now. Each swimmer moves alone among them.
 
+Pumps and sources stir the fluid (D-700). A pump is the stokeslet of a sphere of radius
+STIR_RADIUS, its holder taking the reaction, so it is not clamped; a source puts out
+u = Q R_hat / (4 pi R^2), harmonic. Faxén's laws give a sphere in either flow its velocity and
+spin: for a pump, `apply`'s terms with the sum of the radii squared; for a source, u itself, its
+Laplacian and vorticity being nil. Both are fixed, so what the clamped spheres hold against
+their flow is solved once (`stirred_reactions`); neither feels the swimmer's flow back.
+
 Every product is a broadcast and a sum along a fixed axis, never `@`, so a row does not depend
 on the batch it is in (invariant 1). Lengths in u, forces in f, mu the game's. Pure numpy.
 """
@@ -26,7 +33,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from nektoids.sim.arena import LIGHT_RADIUS, Arena
+from nektoids.sim.arena import LIGHT_RADIUS, STIR_RADIUS, Arena
 from nektoids.sim.contact import SPRING, drag
 from nektoids.sim.motion import VISCOSITY
 
@@ -116,12 +123,80 @@ def clamped_inverse(arena: Arena) -> np.ndarray:
     return np.linalg.inv(grand_mobility(xy, radius))
 
 
+def stirred(
+    arena: Arena, x: np.ndarray, a: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(Ux, Uy, Omega_z), each (P,), of spheres of radius a (P,) [u] at x (P, 2) [u] in the flow
+    of the pumps and sources alone (D-700); a point inside one taken as on its surface."""
+    p = len(x)
+    ux, uy, om = np.zeros(p), np.zeros(p), np.zeros(p)
+    if arena.pumps:
+        dx, dy = _held_off(x, arena.pump_xy)
+        f = arena.pump_force
+        ux, uy, om = apply(dx, dy, (a * a)[:, None] + STIR_RADIUS**2, f[:, 0], f[:, 1], 0.0)
+    if arena.sources:
+        dx, dy = _held_off(x, arena.source_xy)
+        r2 = dx * dx + dy * dy
+        out = arena.source_rate / (4.0 * np.pi * r2 * np.sqrt(r2))
+        ux, uy = ux + (out * dx).sum(axis=1), uy + (out * dy).sum(axis=1)
+    return ux, uy, om
+
+
+def _held_off(x: np.ndarray, centres: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Offsets (P, Q) [u] of points x (P, 2) from pumps or sources at centres (Q, 2), each no
+    nearer than STIR_RADIUS: bounded inside one, and a point on its centre taken along +x."""
+    dx, dy = x[:, None, 0] - centres[None, :, 0], x[:, None, 1] - centres[None, :, 1]
+    r = np.sqrt(dx * dx + dy * dy)
+    dx, r = np.where(r > 0.0, dx, STIR_RADIUS), np.where(r > 0.0, r, STIR_RADIUS)
+    scale = np.maximum(r, STIR_RADIUS) / r
+    return dx * scale, dy * scale
+
+
+def stirred_reactions(arena: Arena) -> np.ndarray:
+    """(K, 3): the force [f] and torque [f u] each light and obstacle, held at rest, puts on the
+    fluid against the pumps' and sources' flow (D-700), by `clamped_inverse`."""
+    xy = np.concatenate((arena.light_xy, arena.rest_xy))
+    m = xy.shape[0]
+    if m == 0 or not (arena.pumps or arena.sources):
+        return np.zeros((m, 3))
+    radius = np.concatenate((np.full(len(arena.lights), LIGHT_RADIUS), arena.disc_radius))
+    induced = np.stack(stirred(arena, xy, radius), axis=1).reshape(1, 3 * m)
+    return -(arena.clamped_inverse * induced).sum(axis=1).reshape(m, 3)
+
+
+def _stir(
+    arena: Arena, pos: np.ndarray, a: np.ndarray, velocity, spin, reactions
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Velocity, spin and reactions of bodies at pos (N, 2) [u] of hydrodynamic radius a (N,),
+    with the flow of the pumps and sources and of what the clamped spheres hold against it
+    added (D-700); unchanged, bit for bit, in a plane with neither."""
+    if not (arena.pumps or arena.sources):
+        return velocity, spin, reactions
+    ux, uy, om = stirred(arena, pos, a)
+    xy, size = clamped(arena)
+    if len(xy):
+        held = arena.stirred_reactions
+        bx, by, bo = apply(
+            pos[:, None, 0] - xy[None, :, 0],
+            pos[:, None, 1] - xy[None, :, 1],
+            (a * a)[:, None] + (size * size)[None, :],
+            held[:, 0],
+            held[:, 1],
+            held[:, 2],
+        )
+        ux, uy, om = ux + bx, uy + by, om + bo
+        reactions = reactions + held[None]
+    return velocity + np.stack((ux, uy), axis=1), spin + om, reactions
+
+
 def swim(
     arena: Arena, pos: np.ndarray, radius: np.ndarray, tips: np.ndarray, forces: np.ndarray
 ) -> Swim:
     """The motion of N swimmers at pos (N, 2) [u] of radius (N,) [u], each pushed by k point
     forces (N, k, 2) [f] at tips (N, k, 2) [u], the fluid getting the opposite there. A force
     inside the hydrodynamic sphere, or on it, moves nothing (D-602) and is left out.
+
+    The pumps and sources carry it and turn it (D-700), and it meets them as it meets a light.
 
     A body touching a light or an obstacle is pushed by it along their centres, frictionless
     (D-609), as hard as it takes for the body to close in no faster than the other gives: a
@@ -140,9 +215,10 @@ def swim(
     thrust = np.stack((fx.sum(axis=1), fy.sum(axis=1), (arm_x * fy - arm_y * fx).sum(axis=1)), 1)
     load = thrust
     velocity, spin, reactions = _respond(arena, pos, a, b, load, tips, fx, fy)
-    lights = len(arena.lights)
-    centres = np.concatenate((arena.light_xy, arena.disc_xy))  # (K, 2): lights, then obstacles
-    reach = np.concatenate((np.full(lights, LIGHT_RADIUS), arena.disc_radius))
+    velocity, spin, reactions = _stir(arena, pos, a, velocity, spin, reactions)
+    lights = len(arena.solid_xy)  # what gives nothing: lights, pumps and sources
+    centres = np.concatenate((arena.solid_xy, arena.disc_xy))  # (K, 2): those, then obstacles
+    reach = np.concatenate((arena.solid_radius, arena.disc_radius))
     gives = np.concatenate((np.zeros(lights), 1.0 / drag(arena.disc_radius)))  # 1 / zeta [u/f s]
     away = pos[:, None, :] - centres[None]  # (N, K, 2)
     far = np.sqrt((away * away).sum(axis=2))
@@ -239,12 +315,115 @@ def _respond(
     return velocity + np.stack((ux, uy), axis=1), spin + om, reactions
 
 
+FAINT = 0.02  # [u/s] the water a Hair reads on a log scale above: below, nearly in proportion
+FULL = 1.0  # [u/s] the water past it that a Hair reads RATE_MAX for (D-708)
+
+
+def felt(speed: np.ndarray) -> np.ndarray:
+    """A Hair's rate for water `speed` [u/s] >= 0 past it the way it points, on a log scale, as
+    a sense organ compresses (D-708): log(1 + u/FAINT) / log(1 + FULL/FAINT), 0 for still water,
+    1 at FULL, about u/FAINT/log(1 + FULL/FAINT) for the faintest; the caller caps it."""
+    return np.log1p(speed / FAINT) / np.log1p(FULL / FAINT)
+
+
+RELATIVE = False  # a Hair reads the water past the plane, not past itself: D-700's first try
+
+
+def hair_rates(
+    arena: Arena,
+    pos: np.ndarray,
+    heading: np.ndarray,
+    radius: np.ndarray,
+    mount: np.ndarray,
+    facing: np.ndarray,
+    swum: Swim | None = None,
+) -> np.ndarray:
+    """(N, k, C): what the k Hairs of each of N bodies read, the same in each channel:
+    `felt`(max(0, u . n)), u the flow at each, all but its own body's (D-700): the pumps' and the
+    sources', and what the lights and obstacles hold against it and against the body's own flow,
+    `swum`'s reactions, its echo; with RELATIVE, less the Hair's own velocity, V + Omega x r.
+    Arguments as for `optics.eye_poses`; with no `swum`, no echo and the body still."""
+    from nektoids.graph.dynamics import CHANNELS
+    from nektoids.sim.optics import eye_poses
+
+    points, looks = eye_poses(pos, heading, radius, mount, facing)  # (N, k, 2) each
+    n, k = points.shape[:2]
+    flat = points.reshape(-1, 2)
+    ux, uy, _ = stirred(arena, flat, np.zeros(n * k))
+    ux, uy = ux.reshape(n, k), uy.reshape(n, k)
+    xy, size = clamped(arena)
+    if swum is not None and len(xy):
+        held = swum.reactions  # (N, M, 3)
+        dx = points[:, :, None, 0] - xy[None, None, :, 0]
+        dy = points[:, :, None, 1] - xy[None, None, :, 1]
+        r = np.sqrt(dx * dx + dy * dy)
+        scale = np.maximum(r, size) / np.maximum(r, 1e-12)  # held at its radius inside
+        ex, ey, _ = apply(
+            dx * scale,
+            dy * scale,
+            (size * size)[None, None, :],
+            held[:, None, :, 0],
+            held[:, None, :, 1],
+            held[:, None, :, 2],
+        )
+        ux, uy = ux + ex, uy + ey
+    if RELATIVE and swum is not None:
+        arm_x, arm_y = points[..., 0] - pos[:, None, 0], points[..., 1] - pos[:, None, 1]
+        spin = swum.spin[:, None]
+        ux = ux - swum.velocity[:, None, 0] + spin * arm_y
+        uy = uy - swum.velocity[:, None, 1] - spin * arm_x
+    past = np.maximum(0.0, ux * looks[..., 0] + uy * looks[..., 1])
+    return np.repeat(felt(past)[..., None], CHANNELS, axis=2)
+
+
 def flow_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: Swim) -> np.ndarray:
     """(P, 2): the flow [u/s] at points x (P, 2) [u] round the first swimmer of `swum`, at pos
     (2,) [u], of `radius` [u]: the swimmer and the clamped spheres as spheres (stokeslet with its
-    Faxén term, rotlet), the reactions as point forces with a core BLOB. Inside a source the
-    distance is held at its radius: bounded, and on a sphere's surface its rigid motion, 0 for
-    a clamped one."""
+    Faxén term, rotlet), the reactions as point forces with a core BLOB, and the pumps' and
+    sources' flow (D-700). Inside a source the distance is held at its radius: bounded, and on a
+    sphere's surface its rigid motion, 0 for a clamped one."""
+    sx, sy, a, fx, fy, tz = _singularities(arena, pos, radius, swum)
+    dx, dy = _held_at(x, sx, sy, a)
+    ux, uy, _ = apply(dx, dy, a * a, fx, fy, tz)
+    if arena.pumps or arena.sources:
+        sx, sy, _ = stirred(arena, x, np.zeros(len(x)))
+        ux, uy = ux + sx, uy + sy
+    return np.stack((ux, uy), axis=1)
+
+
+def rise_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: Swim) -> np.ndarray:
+    """(P,): dw/dz [1/s] at points x (P, 2) [u] in the plane, of the flow `flow_at` gives: how
+    fast the fluid leaves the plane, up and down, where positive, and comes into it where
+    negative; the in-plane flow's divergence, negated (D-704). A rotlet keeps to the plane; a
+    sphere's stokeslet F, with its Faxén term, rises as hat (R . F) / R^2, a source as
+    Q / (4 pi R^3), each distance held at the radius as `flow_at` holds it."""
+    sx, sy, a, fx, fy, _ = _singularities(arena, pos, radius, swum)
+    dx, dy = _held_at(x, sx, sy, a)
+    rise = _rising(dx, dy, a * a, fx, fy)
+    if arena.pumps:
+        dx, dy = _held_off(x, arena.pump_xy)
+        f = arena.pump_force
+        rise = rise + _rising(dx, dy, STIR_RADIUS**2, f[:, 0], f[:, 1])
+    if arena.sources:
+        dx, dy = _held_off(x, arena.source_xy)
+        r2 = dx * dx + dy * dy
+        rise = rise + (arena.source_rate / (4.0 * np.pi * r2 * np.sqrt(r2))).sum(axis=1)
+    return rise
+
+
+def _rising(dx, dy, s, fx, fy) -> np.ndarray:
+    """(P,): dw/dz of point forces (fx, fy) (q,) [f] of radius squared s at offsets (dx, dy)
+    (P, q) [u] from them, summed over them: hat (R . F) / R^2."""
+    r2 = dx * dx + dy * dy
+    r = np.sqrt(r2)
+    hat = _C * (1.0 - s / r2) / r
+    return (hat * (dx * fx + dy * fy) / r2).sum(axis=1)
+
+
+def _singularities(arena: Arena, pos: np.ndarray, radius: float, swum: Swim):
+    """Centres (Q,) [u] x and y, radii (Q,) [u], forces (Q,) [f] x and y and torques (Q,) [f u]
+    of what makes the first swimmer's flow: its body, the clamped spheres and its thrusters'
+    reactions, cored by BLOB."""
     xy, size = clamped(arena)
     tips, forces = swum.tips[0], swum.forces[0]
     sx = np.concatenate(([pos[0]], xy[:, 0], tips[:, 0]))
@@ -254,8 +433,13 @@ def flow_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: S
     fx = np.concatenate(([load[0]], held[:, 0], -forces[:, 0]))
     fy = np.concatenate(([load[1]], held[:, 1], -forces[:, 1]))
     tz = np.concatenate(([load[2]], held[:, 2], np.zeros(len(tips))))
+    return sx, sy, a, fx, fy, tz
+
+
+def _held_at(x: np.ndarray, sx, sy, a) -> tuple[np.ndarray, np.ndarray]:
+    """Offsets (P, Q) [u] of points x (P, 2) from centres (sx, sy) (Q,), each no nearer than its
+    radius a (Q,)."""
     dx, dy = x[:, None, 0] - sx[None], x[:, None, 1] - sy[None]
     r = np.sqrt(dx * dx + dy * dy)
     scale = np.maximum(r, a) / np.maximum(r, 1e-12)  # held at the radius inside
-    ux, uy, _ = apply(dx * scale, dy * scale, a * a, fx, fy, tz)
-    return np.stack((ux, uy), axis=1)
+    return dx * scale, dy * scale

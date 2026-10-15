@@ -18,6 +18,7 @@ Python, no pygame.
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
@@ -28,13 +29,17 @@ from nektoids.graph.board import Board
 from nektoids.graph.hexgrid import disc_radius, hex_disc
 from nektoids.levels import objectives as goals
 from nektoids.levels.objectives import Goal, objective_from_dict, objective_to_dict
-from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Colour, Disc, Light
+from nektoids.sim.arena import OBSTACLE_RADIUS, Arena, Colour, Disc, Light, Pump, Source
 
 LINE = 96  # a level file's lines stay this short where they can [characters]
 START_NUDGE = (1e-3, -1e-3)  # [u] a run's swimmer starts so far off its whole start (D-425)
-FORMAT = 6  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
+FORMAT = 7  # a level file's format: 2 has marks (D-306), 3 objectives as sentences (D-307),
 # 4 a zone written as its size (D-313), 5 an author (D-331), 6 a light's colour (D-506) and
-# whether the level shows colour (D-509)
+# whether the level shows colour (D-509), 7 pumps, sources and sinks (D-702)
+PUMP_STEP = 0.1  # [f] a pump's force, a step of its setting (D-702, D-703)
+SOURCE_STEP = 4.0 * math.pi  # [u^3/s] a source's or a sink's rate, a step of its setting: its
+# flow s / r^2 u/s at r u (D-702)
+FACINGS = 6  # a pump faces one of six hex directions (D-009)
 KEYS = (  # what a level file may hold, in the order `to_dict` writes it
     "version",
     "title",
@@ -56,6 +61,9 @@ class ItemKind(Enum):
     LIGHT = "light"
     OBSTACLE = "obstacle"
     MARK = "mark"  # a zone the objectives read, nothing else (D-306)
+    PUMP = "pump"  # a point force on the fluid (D-700)
+    SOURCE = "source"  # a point source of fluid
+    SINK = "sink"  # a point sink
 
     @property
     def setting(self) -> str:
@@ -68,7 +76,14 @@ class ItemKind(Enum):
         return _DEFAULT.get(self)
 
 
-_SETTING = {ItemKind.LIGHT: "power", ItemKind.OBSTACLE: "radius", ItemKind.MARK: "radius"}
+_SETTING = {
+    ItemKind.LIGHT: "power",
+    ItemKind.OBSTACLE: "radius",
+    ItemKind.MARK: "radius",
+    ItemKind.PUMP: "force",
+    ItemKind.SOURCE: "rate",
+    ItemKind.SINK: "rate",
+}
 _DEFAULT = {ItemKind.OBSTACLE: OBSTACLE_RADIUS}
 
 
@@ -76,19 +91,24 @@ _DEFAULT = {ItemKind.OBSTACLE: OBSTACLE_RADIUS}
 class Item:
     kind: ItemKind
     at: tuple[float, float]  # where its centre sits [u]
-    value: float  # its kind's setting: a light's power, an obstacle's radius [u]
+    value: float  # its kind's setting: a light's power, an obstacle's radius [u], a pump's
+    # force or a source's rate in steps (PUMP_STEP, SOURCE_STEP)
     colour: Colour = Colour.WHITE  # a light's (D-506); white, unread, for the rest
+    facing: int = 0  # a pump's hex direction, the way it pushes the fluid; 0, unread, for the rest
 
     def to_dict(self) -> dict:
         at = [whole(v) for v in self.at]
         data = {"kind": self.kind.value, "at": at, self.kind.setting: whole(self.value)}
+        if self.kind is ItemKind.PUMP:
+            data["facing"] = self.facing
         return {**data, "colour": self.colour.value} if self.colour is not Colour.WHITE else data
 
     @classmethod
     def from_dict(cls, data: Mapping) -> Item:
         kind = ItemKind(data["kind"])
         coloured = ("colour",) if kind is ItemKind.LIGHT else ()  # a light's alone (D-506)
-        known(data, ("kind", "at", kind.setting, *coloured), f"a {kind.value}")
+        faced = ("facing",) if kind is ItemKind.PUMP else ()  # a pump's alone (D-702)
+        known(data, ("kind", "at", kind.setting, *coloured, *faced), f"a {kind.value}")
         value = data.get(kind.setting, kind.default)
         if value is None:
             raise ValueError(f"a {kind.value} needs its {kind.setting}")
@@ -98,7 +118,10 @@ class Item:
         except ValueError:
             name = data["colour"]
             raise ValueError(f"a light's colour is white, amber or violet, not {name!r}") from None
-        return cls(kind, (float(x), float(y)), float(value), colour)
+        facing = data.get("facing", 0)
+        if facing not in range(FACINGS) or isinstance(facing, bool):
+            raise ValueError(f"a pump faces 0 to {FACINGS - 1}, not {facing!r}")
+        return cls(kind, (float(x), float(y)), float(value), colour, facing)
 
 
 @dataclass(frozen=True)
@@ -129,7 +152,8 @@ class Level:
 
     @cached_property
     def arena(self) -> Arena:
-        """What the simulation reads: the lights and the obstacles, each in item order."""
+        """What the simulation reads: the lights, the obstacles, the pumps and the sources and
+        sinks, each in item order."""
         lights = tuple(
             Light(*item.at, item.value, item.colour)
             for item in self.items
@@ -138,7 +162,18 @@ class Level:
         obstacles = tuple(
             Disc(*item.at, item.value) for item in self.items if item.kind is ItemKind.OBSTACLE
         )
-        return Arena(lights, obstacles)
+        pumps = tuple(
+            Pump(*item.at, item.facing, PUMP_STEP * item.value)
+            for item in self.items
+            if item.kind is ItemKind.PUMP
+        )
+        sign = {ItemKind.SOURCE: 1.0, ItemKind.SINK: -1.0}
+        sources = tuple(
+            Source(*item.at, sign[item.kind] * SOURCE_STEP * item.value)
+            for item in self.items
+            if item.kind in sign
+        )
+        return Arena(lights, obstacles, pumps=pumps, sources=sources)
 
     def new_board(self) -> Board:
         """The board the player starts the level from, built afresh each time."""
@@ -211,7 +246,8 @@ def upgraded(data: Mapping) -> Mapping:
     version 2 as it is (D-306); version 2's objectives become sentences, its rings marks on its
     lights (D-307, `objectives.upgraded`); version 3's zone, a hexagon's cells, becomes its size
     (D-313); version 4 has no author, and is version 5 as it is (D-331); version 5's lights are
-    white, and it is version 6 as it is (D-506). ValueError for no version, one this game does
+    white, and it is version 6 as it is (D-506); version 6 has no pumps, sources or sinks, and is
+    version 7 as it is (D-702). ValueError for no version, one this game does
     not know, or rings that would mix with the marks a level has."""
     if "version" not in data:
         raise ValueError(f"a level without its version: this game reads version {FORMAT}")

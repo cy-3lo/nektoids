@@ -33,7 +33,9 @@ from nektoids.editor.arena_draw import (
     draw_mark,
     draw_marks,
     draw_overview,
+    draw_pump,
     draw_rays,
+    draw_source,
 )
 from nektoids.editor.arena_view import LINE_STEP, dot_step, lattice, shown
 from nektoids.editor.buttons import State
@@ -122,7 +124,7 @@ from nektoids.levels.lattice import snapped
 from nektoids.levels.level import ItemKind
 from nektoids.levels.making import BLANK_TIME, NEW, ZONES, lacks
 from nektoids.levels.objectives import Count, Outcome, Target, Verb, at_start, settings
-from nektoids.sim.arena import LIGHT_RADIUS, Colour
+from nektoids.sim.arena import LIGHT_RADIUS, STIR_RADIUS, Colour
 
 LIGHT_INK = {Piece.AMBER_LIGHT: LIGHT_AMBER, Piece.VIOLET_LIGHT: LIGHT_VIOLET}  # their keys' bulbs
 
@@ -138,6 +140,12 @@ PIECE_ABOUT = {  # what Objects' rows' info boxes say
     " and the light does not cross: it casts a shadow. Its radius, 1 to 8.",
     Piece.MARK: "Click it, then the plane, or drag it there. A ring only the goals read: the"
     " swimmer neither sees nor touches it. Its radius, 1 to 8.",
+    Piece.PUMP: "Click it, then the plane, or drag it there. It pushes the water the way its"
+    " arrow points, and the swimmer is carried; turn it with L and R. Its force, 1 to 8.",
+    Piece.SOURCE: "Click it, then the plane, or drag it there. Water flows out of it, weaker as"
+    " 1/r² away. Its rate, 1 to 8.",
+    Piece.SINK: "Click it, then the plane, or drag it there. Water flows into it, stronger as"
+    " the swimmer comes near. Its rate, 1 to 8.",
     Piece.START: "Where the swimmer starts, and which way it heads. Drag it, or turn it with L"
     " and R, or the mouse wheel on it.",
 }
@@ -330,9 +338,17 @@ def _draw_in_hand(screen: pygame.Surface, scene: EditorScene, fonts: Fonts) -> N
     if not contains(scene.arena_area, scene.pointer) or places_hit(scene, scene.pointer):
         return
     kind = PLACED[piece]
-    centre = scene.view.to_screen(*snapped(scene.view.to_world(*scene.pointer)))
-    radius = (LIGHT_RADIUS if kind is ItemKind.LIGHT else NEW[kind]) * scene.view.scale
-    _draw_object(screen, fonts, kind, centre, radius, COLOUR.get(piece, Colour.WHITE))
+    at = snapped(scene.view.to_world(*scene.pointer))
+    centre = scene.view.to_screen(*at)
+    if kind is ItemKind.PUMP:  # D-702
+        draw_pump(screen, scene.view, at, 0)
+        radius = STIR_RADIUS * scene.view.scale
+    elif kind in (ItemKind.SOURCE, ItemKind.SINK):
+        draw_source(screen, scene.view, at, kind is ItemKind.SOURCE)
+        radius = STIR_RADIUS * scene.view.scale
+    else:
+        radius = (LIGHT_RADIUS if kind is ItemKind.LIGHT else NEW[kind]) * scene.view.scale
+        _draw_object(screen, fonts, kind, centre, radius, COLOUR.get(piece, Colour.WHITE))
     pygame.draw.circle(screen, LIT, centre, radius + FOCUS_GAP, 2)
 
 

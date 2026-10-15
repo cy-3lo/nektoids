@@ -50,6 +50,9 @@ PIECE_ICON = {
     Piece.VIOLET_LIGHT: "lightbulb",
     Piece.OBSTACLE: "circle",
     Piece.MARK: "circle-plus",  # a + in a circle, as the plane draws a mark (D-306, D-314)
+    Piece.PUMP: "fan",  # D-702
+    Piece.SOURCE: "up-right-and-down-left-from-center",  # arrows out
+    Piece.SINK: "down-left-and-up-right-to-center",  # arrows in
     Piece.START: "location-arrow",
 }
 # Hooked arrows for undo and redo: the round ones are the turn tools'.

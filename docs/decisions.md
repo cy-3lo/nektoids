@@ -2966,3 +2966,88 @@ The physicist's, from play: obstacles hardly moved under a push, at rest the spr
 the contact's share of it (D-609), and the flow read thin. No proof's tick changed; three runs of
 the outcome table moved a few ticks. A head-on push now settles in about 1.35 s for the largest
 obstacle, radius 8, so its test waits 16 s. 1612 tracers and the run's frame cost 3.1 ms natively.
+
+**D-700 — 2026-10-13 — Stage 5, flow sensing, is decided: flows the swimmer did not make, set in the level maker, and a part that reads them on the Board. Two items, a pump, a point force on the fluid turned in 60° steps, and a source or sink, a point source of either sign, each a solid sphere of radius 0.5 u; one part, a flow sensor, turned like an eye, that reads the flow past it along its facing, never negative. Built on `stage/5-flow-sensing`, branched from `stage/4-flows`; its decisions go on from D-700. Applies D-105, D-604.**
+The physicist's, after stage 4's swimmer. The physics stays D-601's: a pump is the RPY stokeslet
+of a sphere of radius 0.5 u, its holder taking the reaction, so it is not one of the clamped
+spheres; a source is u = Q r̂ / 4π r², harmonic, so Faxén's laws hold exactly, V += u(x),
+Ω += ω(x)/2. Both are fixed, so the lights' and obstacles' reactions to them are solved once, at
+load, with D-601's inverse; a tick adds one broadcast over them. The swimmer meets both as it
+meets a light. The sensor reads, first, the absolute flow, max(0, u_ext·n), u_ext being all but
+the swimmer's own singularities (its body and its thrusters' reactions), so it keeps the lights'
+and obstacles' echo of its swimming, by which a wall can be felt. This is a first try: the
+relative form, max(0, (u_ext − V − Ω × r_s)·n), in which a drift cancels and swimming reads as a
+head wind, stays one switch away, and play decides. The level format and the board's word take
+new versions. Out still: a uniform stream, shears and vortices, swimmers coupled to each other,
+items or parts that change in time. The todo's §18 lists the work.
+
+**D-701 — 2026-10-13 — An obstacle's spring gives 0.33 u under a head-on push of two thrusters at full rate, not 0.9: stiffer again, near D-424's 0.3. Amends D-610.**
+The physicist's, for stage 5: what the lights and obstacles hold against the pumps' and sources'
+flow is solved once, with each obstacle at rest (D-700), and that holds best when an obstacle
+moves little. Three runs of the outcome table moved a few ticks, Shadows' driven one 665 → 670,
+Patience's 1471 → 1475 and 1203 → 1212; no outcome changed.
+
+**D-702 — 2026-10-13 — Pumps, sources and sinks are placed in the level maker, as lights are: keys 6, 7 and 8, a setting of 1 to 8, a pump's force in steps of 1 f, a source's or a sink's rate in steps of 4π u³/s, its flow s/r² u/s at r u. A pump faces a hex direction, east when placed, turned by L and R with the swimmer's start; drawn as discs in the flow's brightest mud, a pump with an arrow the way it pushes, a source with six arrows out, a sink with six in. The level's file takes format 7, its word version 33. Applies D-700.**
+The physicist's units, to tune by eye: a pump at 2 pushes as two thrusters, and a sink at 8
+draws in at 3.6 u/s at the swimmer's rim, which two thrusters at the sides, 7 u/s, escape. A
+sink is its own kind, not a negative source, so a setting stays 1 to 8 and the word holds it as
+it holds a light's power; a pump's facing is a digit of its own, from version 33. Words of
+versions 31 and 32 read as they were written: they know three kinds of item. A swimmer may not
+start touching a pump, a source or a sink, and none touches another item (D-700). Goals do not
+aim at them yet, and they cast no shadow.
+
+**D-703 — 2026-10-13 — A pump's force is 0.1 f a step of its setting, not 1 f. Amends D-702.**
+The physicist's, from the level maker: a pump was ten times too strong. Its flow falls as 1/r
+only, about 4.5 F/r u/s on its axis, so at 1 f a step a pump at 8 still pushed 7 u/s, a swimmer's
+full speed, 5 u away; now 0.7 u/s there and about 2.4 u/s where a swimmer touches it.
+
+**D-704 — 2026-10-13 — The tracers are a thin slab of the fluid round the plane: each leaves it at the rate dw/dz, where the flow leaves the plane, or splits in two at the rate -dw/dz, where it comes in, so they stay as dense as seeded; a source puts out new ones on its rim, n Q / 2R a second, and a sink swallows those that reach it. Carried in substeps of at most 0.2 u near fast flow. Amends D-603, D-608.**
+The physicist's: sources should make tracers, sinks take them. A fixed count could not: the
+flow is 3D, and in the plane its divergence is -dw/dz, nonzero round a source, Q / 4 pi R^3,
+and round every stokeslet, hat (R . F) / R^2, so tracers bunched where the fluid leaves the
+plane and gaps opened where it comes in, behind a swimmer too (the todo's "gaps in the fixed
+field"). With n the tracers' density, dn/dt + div(n u) = -n dw/dz keeps a uniform field uniform.
+`flow.rise_at` gives dw/dz in closed form from `flow_at`'s singularities, checked against the
+divergence of `flow_at` by differences to 1e-9. Near a source the flow is 32 u/s at the rim, so
+one Euler step carried a new tracer twice as far as it goes and the start's dw/dz alone took
+every one out at once: a tracer moves by the midpoint rule in substeps of at most 0.2 u, at most
+8, dw/dz integrated along them. Over 10 s the count stays within 6 % round a pump, a source, a
+sink and a swimmer; past twice the count seeded, the most crowded cells would lose their oldest
+first, a guard. The leaving and splitting draw from the tracers' own seeded generator: a run is
+the same with them shown or not (invariant 1). A frame of tracers costs 0.9 ms natively for 920
+of them in Patience, against 0.44.
+
+**D-705 — 2026-10-13 — The flow sensor is the Hair: a sensor turned like an eye, a feather on it, that reads GAIN max(0, u . n), 1 a u/s, u the water at it, all of the flow but its own body's: the pumps' and sources', and the lights' and obstacles' echo of the body's own flow, from the tick's solve. It reads the plane's flow first, RELATIVE off; its own motion taken out is one switch away. Painted, it reads in its channel. On the Board it sits over Eye and Source, the sensors a triangle, key 1 going round the three. Applies D-700.**
+The physicist's name: hairs read flow by bending, a cricket's cerci, a copepod's setae, the
+lateral line's cupulae, and with the Eye the body has two organs. A sense now receives the tick's
+solve, `world.readings(..., swum)`: what the lights and obstacles held against the move is their
+echo, as D-700 asks. Its rows are a sensor's, `Network.sensors` now every part whose rate is
+given, so the board's checks count it. Its entry rises and falls as the Eye's. Other demos that
+drive a board without a world, the developer view and the probe, read it as 0. The level word
+stays at version 33, never shared: it lists the Hair's stock; version 32's eleven kinds are
+written out. A board's text holds 32 kinds and is unchanged.
+
+**D-706 — 2026-10-15 — Diagnostic reads every sense: its probe, held where it stands, solves the flow each tick as a run does and its Hairs read it. Its map frames the pumps, sources and sinks, and draws the flow's tracers when the level has any, one every 9 px. A Hair's flat face is drawn in the eye's accent, and its feather lies along that face, as the eye's long axis does. Amends D-705.**
+From the physicist's first play of the Hair. In Diagnostic it read 0 always, as D-705 said of the
+probe; in a run it read, but only facing downstream, and faintly: 0.1 a step of a pump's setting
+4 u away. The sign stays, max(0, u . n): the face now shows which way that is. GAIN stays 1: 3 was
+tried in play and read too strong. The probe's body
+is held, so the flow is a held swimmer's: its thrusters push, it does not move. The map's
+tracers are the run's, seeded coarser: at the map's few px a u, one every 0.9 u filled every
+speck. Levels with no pump or source draw no tracers on the map, as before.
+
+**D-707 — 2026-10-15 — Diff subtracts across the colours: each input's channels added, A and B, it sends the larger input times 1 - min(A, B)/max(A, B), |A - B| in that input's mix of colours. On inputs of one colour, or of one mix, it is |a - b| channel by channel, as before. Amends D-501 for Diff.**
+From the physicist's play: channel by channel, Diff of amber a and violet b sent (a, b), a Sum.
+Now amber 1 less violet 0.5 is amber 0.5: the stronger signal wins and keeps its colour, a
+comparison the board could not make before without a Tint. Its slope stays 1 (each partial
+derivative is at most 1 in size), so no tick limit moves, and at A = B it is 0 from either side:
+continuous. Every shipped level's proof wins again; Spot the violet's Diffs see one colour, by
+its Swaps. The other laws stay channel by channel.
+
+**D-708 — 2026-10-15 — A Hair reads on a log scale: log(1 + u/FAINT) / log(1 + FULL/FAINT), u = max(0, u . n), FAINT 0.02 u/s, FULL 1 u/s, capped at RATE_MAX; GAIN goes. The flow stays 3D: pumps stokeslets, 1/r, sources 1/r^2. Amends D-705, D-706.**
+From the physicist's play: in proportion, a Hair lost the flow a few u off, a pump of setting 1
+reading 0.09 at 4 u, a source's falling as 1/r^2. Line pumps and sources were weighed, rods
+through a layer: a rod source falls as 1/r, but a rod pump as log r (an infinite one is the
+Stokes paradox), and the swimmer's solve of D-601 would change; kept 3D. A sense organ
+compresses instead: a pump of 1 now reads 0.48 at 4 u and 0.22 at 16 u, a source of 8 0.83 at
+4 u and 0.24 at 16 u. The flow, the tracers and the swimmer's drift are unchanged.

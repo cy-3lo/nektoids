@@ -58,8 +58,8 @@ class Network:
 
     @property
     def sensors(self) -> np.ndarray:
-        """Indices of the nodes whose rate is given, not computed: eyes and sources."""
-        return np.sort(np.concatenate((self.eyes, self.sources)))
+        """Indices of the nodes whose rate is given, not computed: eyes, Sources and Hairs."""
+        return np.flatnonzero(self.given)
 
     @classmethod
     def from_board(cls, board: Board, rim: bool = True) -> Network:

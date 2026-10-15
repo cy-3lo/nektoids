@@ -425,11 +425,12 @@ def test_a_source_on_both_thrusters_drives_the_body_straight_on_at_full_speed_no
 # All again when the swimmer moved by the Stokes flow (D-606): every outcome the same, the
 # ticks apart, rear pushers slower.
 # Shadows', Greed's and Patience's again when contacts pushed in the flow (D-609): a few ticks.
-# Shadows' and Patience's again when the springs went three times softer (D-610).
+# Shadows' and Patience's again when the springs went three times softer (D-610), and stiffer
+# again (D-701).
 BEFORE_SENTENCES = {
     ("Aggression", "CROSSED"): (Outcome.WON, 1687, ((1, 1, 1.0),)),
     ("Aggression", "UNCROSSED"): (Outcome.TIME_UP, 2400, ((0, 1, 0.0),)),
-    ("Shadows", "DRIVEN"): (Outcome.WON, 665, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
+    ("Shadows", "DRIVEN"): (Outcome.WON, 670, ((1, 1, 1.0),)),  # D-317; an obstacle gives, D-424
     ("Shadows", "CROSSED"): (Outcome.TIME_UP, 1800, ((0, 1, 0.0),)),
     ("Fear", "fear(NW, SW)"): (Outcome.WON, 370, ((1, 1, 1.0),)),  # ring 8 u, nearer (D-318)
     ("Fear", "fear(NW, SW, crossed=True)"): (Outcome.TIME_UP, 1200, ((0, 1, 0.0),)),
@@ -443,8 +444,8 @@ BEFORE_SENTENCES = {
     ("Greed", "greedy()"): (Outcome.WON, 2232, ((2, 2, 1.0),)),  # D-313; round a light, D-424
     ("Greed", "CROSSED"): (Outcome.TIME_UP, 2520, ((1, 2, 0.5),)),
     ("Greed", "DRIVEN"): (Outcome.TIME_UP, 2520, ((1, 2, 0.5),)),
-    ("Patience", "patient()"): (Outcome.WON, 1471, ((3, 3, 1.0),)),  # D-317, D-424
-    ("Patience", "patient(True)"): (Outcome.WON, 1203, ((3, 3, 1.0),)),  # D-424
+    ("Patience", "patient()"): (Outcome.WON, 1475, ((3, 3, 1.0),)),  # D-317, D-424
+    ("Patience", "patient(True)"): (Outcome.WON, 1212, ((3, 3, 1.0),)),  # D-424
 }
 
 

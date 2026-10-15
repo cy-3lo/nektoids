@@ -107,20 +107,38 @@ class Scaled:
 
 @dataclass(frozen=True)
 class Difference:
-    """F = |a - b|, the first input less the second, either way round; one input passes."""
+    """F = |a - b|, the first input less the second, either way round; one input passes. Across
+    the colours (D-707): each input's channels added, A and B, F is the larger input times
+    1 - min/max, |A - B| in its own mix of colours; on inputs of one mix, |a - b| channel by
+    channel, as before colour. Its slope is 1: dF_c/da_d = (1 - B/A) delta_cd + (a_c/A)(B/A)
+    and dF_c/db_d = -a_c/A, each at most 1 in size, and F is continuous where A = B, 0 there."""
 
     slope: float = 1.0
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
         if x.shape[2] < 2:
             return np.abs(x[:, :, 0])
-        return np.abs(x[:, :, 0] - x[:, :, 1])
+        a, b = x[:, :, 0], x[:, :, 1]
+        big_a, big_b = _channels(a), _channels(b)
+        first = big_a >= big_b
+        top = np.where(first, big_a, big_b)
+        low = np.where(first, big_b, big_a)
+        keep = np.where(top > 0.0, 1.0 - low / np.where(top > 0.0, top, 1.0), 0.0)
+        return np.abs(keep[..., None] * np.where(first[..., None], a, b))
 
     def painted(self, hue) -> Difference:
         return self
 
     def text(self, terms: list[str]) -> str:
         return f"|{terms[0]} - {terms[1]}|" if len(terms) == 2 else " + ".join(terms)
+
+
+def _channels(x: np.ndarray) -> np.ndarray:
+    """(N, m): the rates x (N, m, C) added over the channels, in order (invariant 1)."""
+    total = x[..., 0]
+    for c in range(1, x.shape[-1]):
+        total = total + x[..., c]
+    return total
 
 
 # The colour operators (D-507): each acts across the channels, the last axis. Tint and Filter

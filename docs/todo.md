@@ -95,8 +95,31 @@ over; its prototype stays local, off the public repository.
   velocity the swimmer would have if free (7 u/s), and the tracers show that flow. The contact
   force belongs in the Stokes problem: an unknown force on the swimmer, set so that its
   velocity into the obstacle is zero, one more solve per contact (a 2×2 system in a crevice).
-- [ ] **Gaps in the fixed field of tracers.** Move a tracer from a crowded cell to an empty one
-  now and then, away from the swimmer, so that the field heals.
-- [ ] **Tuning by eye** (first pass: D-610). ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
+- [x] **Gaps in the fixed field of tracers** (D-704). The tracers a slab of the fluid: each leaves
+  it or splits as the flow leaves the plane or comes into it; sources put out, sinks swallow.
+- [ ] **Tuning by eye** (first pass: D-610; springs: D-701). ℓ, thrust, the rotational radius (0.75 u), the tracers' density, their
   brightness and their tails.
-- [ ] **Then flow sensing** (`ideas.md` §4), a stage of its own.
+- [x] **Then flow sensing**, a stage of its own: §18 (D-700).
+
+## 18. Flow sensing (stage 5, D-700)
+
+Built on `stage/5-flow-sensing`, branched from `stage/4-flows`; stage 4's open items above are
+merged in as they land.
+
+- [x] **Pumps and sources in the solve** (D-700). `Arena` holds them, fixed; their flow at the
+  swimmer (V += u, Ω += ω/2) and in `flow_at`, so the tracers show it; the lights' and
+  obstacles' reactions to them solved once, at load; the swimmer meets them as it meets a light.
+  A tick costs 164 µs natively with two pumps and two sources among five spheres, against 109.
+- [x] **Pumps and sources in the level maker** (D-702). Format 7, word 33; keys 6, 7 and 8; a
+  pump turned by L and R; drawn so they read with the tracers off.
+- [ ] **Their units, by eye.** A pump's 0.1 f a step (D-703) and a source's 4π u³/s (D-702), in levels.
+- [x] **The flow sensor: the Hair** (D-705). A sense `flow`, a kind in the table, turned like an
+  eye, a feather on it; it reads the plane's flow, `flow.RELATIVE` the switch (D-700).
+- [x] **The Hair in Diagnostic** (D-706). The probe solves the flow and reads every sense; its
+  map frames the pumps, sources and sinks and draws the tracers; the Hair's face in the accent.
+- [ ] **The Hair's log scale, by eye**, FAINT 0.02 and FULL 1 u/s (D-708), and absolute or
+  relative, in levels.
+- [ ] **The Hair on the swimmer at work.** The run and Diagnostic's map draw the eyes' and
+  thrusters' outlines on the body (`marks_draw.draw_parts`), not the Hairs'.
+- [ ] **Levels for flows.** Find the sink; go up a pump's jet; follow a wall by its echo. Camille
+  plays them.

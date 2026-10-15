@@ -14,7 +14,8 @@ the overview, the zoom and the rays; Hints, Settings and Chapters at the bar's f
 
 Round the plane, its keys (D-410, `editor_keys.py`), floating over it at its edges: at its left
 the tools in pairs, Select and Hand, Bigger and Smaller, Zoom in and out, Undo and Redo, Copy
-and Paste, Cut and Erase all; at its right the objects, Light, Obstacle, Mark and the Swimmer.
+and Paste, Cut and Erase all; at its right the objects, Light, Obstacle, Mark, Pump, Source,
+Sink and the Swimmer.
 With Select, a click picks the object clicked, Shift or Cmd adds one, a click on the open plane
 drops the pick (`plane_pick.py`); a drag from the open plane picks the objects it crosses, going
 back cutting its path back; a drag from an object moves it, or the whole pick if it is picked,
@@ -25,10 +26,10 @@ Swimmer's key picks the swimmer's start; dragged, it moves it. Bigger, Smaller, 
 on the items picked; Paste puts the copied ones where the mouse is, else beside them; Erase all
 asks first. A value shows a moment under an object placed or set. The mouse wheel over an item
 makes it more or less, over the swimmer turns it, over the open plane zooms there. Keys: S, H,
-1 to 4, < and >, + and -, Del, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z and Ctrl+Y; the arrows move what
-is picked, else the view; L and R turn the swimmer while it is picked; C centres, X shows or
-hides the rays; Esc opens Chapters (D-406); Tab the next tab, Space the run. Each change is a new
-`Level` (`making.py`), which `main.py` hands to the router, the Board and the next run.
+1 to 8, < and >, + and -, Del, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z and Ctrl+Y; the arrows move what
+is picked, else the view; L and R turn the swimmer and the pumps picked (D-702); C centres, X
+shows or hides the rays; Esc opens Chapters (D-406); Tab the next tab, Space the run. Each change
+is a new `Level` (`making.py`), which `main.py` hands to the router, the Board and the next run.
 """
 
 from __future__ import annotations
@@ -131,7 +132,7 @@ from nektoids.editor.textfield import TextField
 from nektoids.graph import boardtext
 from nektoids.graph.board import Board, complexity
 from nektoids.levels.lattice import POSITION, Range
-from nektoids.levels.level import Item, Level
+from nektoids.levels.level import Item, ItemKind, Level
 from nektoids.levels.levelword import to_shared, to_word
 from nektoids.levels.making import (
     AUTHOR_LONGEST,
@@ -152,6 +153,7 @@ from nektoids.levels.making import (
     group_adjusted,
     group_moved,
     group_removed,
+    group_turned,
     number,
     placed,
     read_level,
@@ -1155,11 +1157,27 @@ class EditorScene(Frame):
             self.toggle_drawer(drawer)
         elif typed in KEYS_TYPED:
             self._press_key(KEYS_TYPED[typed])
-        elif typed in TURN_KEYS and Piece.START in self.pick:
-            self._make(lambda level: turned(level, TURN_KEYS[typed]))
-            self._count(Piece.START)
+        elif typed in TURN_KEYS and (Piece.START in self.pick or self._pumps()):
+            self._turn(TURN_KEYS[typed])
         elif typed in VIEWS:
             self._view(VIEWS[typed])
+
+    def _pumps(self) -> list[int]:
+        """The pumps picked, by index (D-702)."""
+        items = self.level.items
+        return [k for k in self.pick if isinstance(k, int) and items[k].kind is ItemKind.PUMP]
+
+    def _turn(self, steps: int) -> None:
+        """The swimmer's start, if picked, turned `steps` x 15°, and each pump picked `steps` hex
+        directions, counter-clockwise if positive, as one step for undo (D-702)."""
+        start, pumps = Piece.START in self.pick, self._pumps()
+
+        def turn(level: Level) -> Level:
+            level = turned(level, steps) if start else level
+            return group_turned(level, pumps, steps) if pumps else level
+
+        self._make(turn)
+        self._count(Piece.START if start else pumps[0])
 
     def _arrow(self, key: int) -> None:
         """What is picked moved 1 u the way of the arrow, a step for undo each; with nothing
@@ -1180,4 +1198,4 @@ def _why_not(key: Key) -> str:
         return "nothing copied yet: pick objects, then Copy"
     if key is Key.ERASE:
         return "nothing to erase"
-    return "pick a light, an obstacle or a mark first"
+    return "pick a light, an obstacle, a mark, a pump, a source or a sink first"

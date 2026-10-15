@@ -62,6 +62,7 @@ PLACES: dict[Button | Kind, Cell] = {
     Button.BRUSH: (-4, 0),  # under Wire, inside the frame: no other button moves (D-501)
     Kind.EYE: (4, -3),  # the groups a row each (D-508): Eye and Source,
     Kind.SOURCE: (5, -3),
+    Kind.HAIR: (5, -4),  # over them both: the sensors a triangle (D-705)
     Kind.THRUSTER: (4, -2),  # the Thruster, the Tank,
     Kind.DOUBLE: (2, 2),
     Kind.HALVE: (3, 2),

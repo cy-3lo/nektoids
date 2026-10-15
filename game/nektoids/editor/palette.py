@@ -230,6 +230,8 @@ MARK = mix(P.muted, P.dim, 0.5)  # a mark, an empty circle and its centre, in ev
 FLAME = mix(P.accent2.dark, P.accent2.mid, 0.5)  # a thruster's flames, specks drifting out
 # the flow's tracers, slow to fast (D-608): mud, hue 100, the physicist's; not 85, the amber paint's
 FLOW = tuple(oklch(0.30 + 0.04 * k, 0.0225 + 0.0051 * k, 100.0) for k in range(8))
+STIR = FLOW[-1]  # a pump, a source or a sink, and its arrows: the flow's brightest mud (D-702)
+HAIR_FACE = EYE_FACE  # the flat face a Hair reads the flow through, as an eye's (D-706)
 FLOW_ADDED = tuple(tuple(max(0, c - s) for c, s in zip(f, P.deep, strict=True)) for f in FLOW)
 # ... each added onto the plane, SHADOW; and its layer, faded each frame by FLOW_KEEP / 256, a
 # comet's tail dark in about 2 s (D-603, D-610), then FLOW_CUT taken off: the product rounds up,

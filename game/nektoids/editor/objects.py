@@ -13,7 +13,7 @@ import numpy as np
 from nektoids.editor.arena_view import ArenaView, body_at
 from nektoids.editor.layout import Piece
 from nektoids.levels.level import ItemKind, Level
-from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, Colour
+from nektoids.sim.arena import BASE_RADIUS, LIGHT_RADIUS, STIR_RADIUS, Colour
 
 PLACED = {
     Piece.LIGHT: ItemKind.LIGHT,
@@ -21,6 +21,9 @@ PLACED = {
     Piece.VIOLET_LIGHT: ItemKind.LIGHT,
     Piece.OBSTACLE: ItemKind.OBSTACLE,
     Piece.MARK: ItemKind.MARK,
+    Piece.PUMP: ItemKind.PUMP,
+    Piece.SOURCE: ItemKind.SOURCE,
+    Piece.SINK: ItemKind.SINK,
 }
 COLOUR = {  # a light's, by its key (D-506)
     Piece.LIGHT: Colour.WHITE,
@@ -33,6 +36,9 @@ ONE = {
     Piece.VIOLET_LIGHT: "a violet light",
     Piece.OBSTACLE: "an obstacle",
     Piece.MARK: "a mark",
+    Piece.PUMP: "a pump",
+    Piece.SOURCE: "a source",
+    Piece.SINK: "a sink",
 }
 MARK_GRAB = 6.0  # a mark is grabbed this near its rim, or its centre [px]
 NAMES = {
@@ -41,6 +47,9 @@ NAMES = {
     Piece.VIOLET_LIGHT: "Violet light",
     Piece.OBSTACLE: "Obstacle",
     Piece.MARK: "Mark",
+    Piece.PUMP: "Pump",
+    Piece.SOURCE: "Source",
+    Piece.SINK: "Sink",
     Piece.START: "Swimmer",  # its start; "Swimmer's start" runs into the row's info disc
 }
 
@@ -68,11 +77,13 @@ def object_at(level: Level, view: ArenaView, point: tuple[float, float]) -> int 
 
 
 def reach(level: Level, focus: int | Piece) -> float:
-    """How far the object `focus` reaches from its centre [u]: the swimmer's or a light's
-    radius, an obstacle's own."""
+    """How far the object `focus` reaches from its centre [u]: the swimmer's, a light's, a
+    pump's or a source's radius, an obstacle's or a mark's own."""
     if focus is Piece.START:
         return BASE_RADIUS
     item = level.items[focus]
+    if item.kind in (ItemKind.PUMP, ItemKind.SOURCE, ItemKind.SINK):
+        return STIR_RADIUS
     return LIGHT_RADIUS if item.kind is ItemKind.LIGHT else item.value  # an obstacle's, a mark's
 
 

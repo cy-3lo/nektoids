@@ -60,7 +60,10 @@ def test_a_made_level_far_from_the_origin_with_every_kind_of_item_and_goal_reads
     for _ in range(20):
         items = tuple(
             Item(
-                kind, (rng.randint(-200, 200) * 3.0, rng.randint(-40, 40) * 3.0), rng.randint(1, 8)
+                kind,
+                (rng.randint(-200, 200) * 3.0, rng.randint(-40, 40) * 3.0),
+                rng.randint(1, 8),
+                facing=rng.randrange(6) if kind is ItemKind.PUMP else 0,
             )
             for kind in rng.choices(list(ItemKind), k=rng.randint(1, 6))
         )
@@ -150,3 +153,21 @@ def test_a_coloured_light_reads_back_coloured():
     coloured = replace(level, items=tuple(lit))
     items = from_word(to_word(coloured))[0].items
     assert [item.colour for item in items if item.kind is ItemKind.LIGHT] == [Colour.VIOLET]
+
+
+@pytest.mark.parametrize(
+    "title, word",  # as v1.2 wrote them, before pumps, sources and sinks (D-702)
+    [("Fear", "WRikQ6jRfzUEptpujiorcFVmc1jEt"), ("Two colours", "AHSdQ8bEV3XbciarhAAR2WFz9osY")],
+)
+def test_a_word_of_version_32_still_reads_as_it_was_written(title, word):
+    assert from_word(word)[0] == from_word(to_word(LEVELS[title]))[0]
+
+
+def test_pumps_sources_and_sinks_read_back_each_as_it_was():
+    stirs = (
+        Item(ItemKind.PUMP, (40.0, 0.0), 3.0, facing=4),
+        Item(ItemKind.SINK, (40.0, 20.0), 8.0),
+        Item(ItemKind.SOURCE, (-40.0, 20.0), 2.0),
+    )
+    level = replace(LEVELS["Fear"], items=LEVELS["Fear"].items + stirs)
+    assert from_word(to_word(level))[0].items[-3:] == stirs

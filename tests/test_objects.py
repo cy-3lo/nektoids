@@ -8,6 +8,7 @@ from nektoids.editor.objects import ONE, object_at, reach, where
 from nektoids.levels.arenas import sandbox
 from nektoids.levels.level import ItemKind
 from nektoids.levels.making import adjusted, placed
+from nektoids.sim.arena import STIR_RADIUS
 
 LEVEL = sandbox()  # lights at (28, 24) and (8, 8); obstacles; the start at (15, 19)
 VIEW = ArenaView(10.0, (0.0, 400.0))  # 10 px/u, the plane's (0, 0) at pixel (0, 400)
@@ -49,3 +50,18 @@ def test_a_mark_is_grabbed_by_its_rim_or_its_centre_and_a_click_inside_finds_the
     lit = placed(zone, ItemKind.LIGHT, (5.0, 30.0))  # a light on its centre: the light first
     assert object_at(lit, VIEW, px(5.0, 30.0)) == 1
     assert ONE[Piece.OBSTACLE] == "an obstacle"
+
+
+def test_a_pump_a_source_and_a_sink_reach_their_sphere_whatever_their_setting():
+    made = placed(LEVEL, ItemKind.PUMP, (3.0, 3.0))  # D-702
+    made = placed(placed(made, ItemKind.SOURCE, (3.0, 9.0)), ItemKind.SINK, (9.0, 3.0))
+    strong = adjusted(adjusted(adjusted(made, 6, 7), 7, 7), 8, 7)
+    assert [reach(strong, k) for k in (6, 7, 8)] == [STIR_RADIUS] * 3
+    assert (
+        object_at(strong, VIEW, px(3.3, 3.0)) == 6 and object_at(strong, VIEW, px(5.0, 3.0)) is None
+    )
+    assert [ONE[p] for p in (Piece.PUMP, Piece.SOURCE, Piece.SINK)] == [
+        "a pump",
+        "a source",
+        "a sink",
+    ]

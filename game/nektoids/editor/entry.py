@@ -30,7 +30,14 @@ from nektoids.editor.devdrive import DT, TICKS_PER_FRAME
 from nektoids.editor.layout import Rect, View, fitted_view
 from nektoids.editor.streams import EYE_FACE, THRUSTER_BACK
 from nektoids.graph.board import Board, Hue, Kind
-from nektoids.graph.dynamics import RATE_MAX, initial_state, shown, step
+from nektoids.graph.dynamics import (
+    RATE_MAX,
+    given_rates,
+    initial_state,
+    masks,
+    shown,
+    step_given,
+)
 from nektoids.graph.hexgrid import Cell, W, to_pixel
 from nektoids.graph.kinds import TANK_TAU
 from nektoids.sim.optics import FACING_STEP
@@ -58,7 +65,7 @@ Point = tuple[float, float]
 class Demo:
     parts: tuple[tuple[Kind, Cell], ...]  # in the order they are placed
     wires: tuple[tuple[Cell, Cell], ...]  # in the order they are made
-    readings: tuple[float, ...]  # each eye's, in the parts' order; the Eye's own moves
+    readings: tuple[float, ...]  # each eye's or Hair's, in the parts' order; a sensor's own moves
     violet: tuple[Cell, ...] = ()  # the parts painted violet; the rest amber (D-503, D-507)
 
 
@@ -76,6 +83,9 @@ DEMOS: dict[Kind, Demo] = {
     ),
     Kind.SOURCE: Demo(
         ((Kind.SOURCE, SENSOR), (Kind.THRUSTER, ITS_THRUSTER)), ((SENSOR, ITS_THRUSTER),), ()
+    ),
+    Kind.HAIR: Demo(  # its reading rises and falls, as the Eye's (D-705)
+        ((Kind.HAIR, SENSOR), (Kind.THRUSTER, ITS_THRUSTER)), ((SENSOR, ITS_THRUSTER),), (EYE_LOW,)
     ),
     Kind.DOUBLE: _through(Kind.DOUBLE, (0.3,)),
     Kind.HALVE: _through(Kind.HALVE, (0.8,)),
@@ -112,7 +122,7 @@ class Entry:
         self.readings = np.array(demo.readings)
         self.state = initial_state(self.circuit.net)
         for _ in range(round((SETTLE_TANK if kind is Kind.TANK else SETTLE) / DT)):
-            self.state = step(self.circuit.net, self.state, self.eyes()[None, :], DT)
+            self.state = step_given(self.circuit.net, self.state, self._given(), DT)
         self.circuit.show(self.state[0])
         if kind in KEEP_TIME:
             self._keep_time(KEEP_TIME[kind])
@@ -123,13 +133,24 @@ class Entry:
         """Every node's rate now, (n,), as the Board shows it (`dynamics.shown`, D-501)."""
         return shown(self.circuit.net, self.state)[0]
 
+    def _given(self) -> np.ndarray:
+        """(1, n, C): the sensors' rates now: the eyes' and the Hairs' readings, `eyes`, each in
+        its own channel, the Sources' SOURCE_RATE."""
+        net, read = self.circuit.net, self.eyes()
+        felt = [i for i in range(net.n) if net.kinds[i] in (Kind.EYE, Kind.HAIR)]
+        given = given_rates(net, read[[k for k, i in enumerate(felt) if i in net.eyes]][None, :])
+        hairs = [(k, i) for k, i in enumerate(felt) if i not in net.eyes]
+        for k, i in hairs:
+            given[0, i] = read[k] * masks([net.hues[i]])[0]
+        return given
+
     def eyes(self) -> np.ndarray:
-        """What each eye reads now: its reading; the Eye's own rises and falls, the Tank's input
-        is on, then off."""
+        """What each eye or Hair reads now: its reading; the Eye's and the Hair's own rise and
+        fall, the Tank's input is on, then off."""
         if self.kind is Kind.TANK:
             on = self.time % TANK_PERIOD < TANK_PERIOD / 2
             return self.readings if on else np.zeros_like(self.readings)
-        if self.kind is not Kind.EYE:
+        if self.kind not in (Kind.EYE, Kind.HAIR):
             return self.readings
         swing = 0.5 - 0.5 * math.cos(2.0 * math.pi * self.time / EYE_PERIOD)
         return np.array([EYE_LOW + (EYE_HIGH - EYE_LOW) * swing])
@@ -137,7 +158,7 @@ class Entry:
     def tick(self) -> None:
         """A frame: its ticks run, the beads move."""
         for _ in range(TICKS_PER_FRAME):
-            self.state = step(self.circuit.net, self.state, self.eyes()[None, :], DT)
+            self.state = step_given(self.circuit.net, self.state, self._given(), DT)
             self.circuit.advance(self.state[0], DT)
             self.time += DT
         self.frame += 1
