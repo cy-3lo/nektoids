@@ -117,7 +117,8 @@ merged in as they land.
   eye, a feather on it; it reads the plane's flow, `flow.RELATIVE` the switch (D-700).
 - [x] **The Hair in Diagnostic** (D-706). The probe solves the flow and reads every sense; its
   map frames the pumps, sources and sinks and draws the tracers; the Hair's face in the accent.
-- [ ] **The Hair's GAIN, by eye**, 1 a u/s (D-705; 3 too strong, D-706), and absolute or relative, in levels.
+- [ ] **The Hair's log scale, by eye**, FAINT 0.02 and FULL 1 u/s (D-708), and absolute or
+  relative, in levels.
 - [ ] **The Hair on the swimmer at work.** The run and Diagnostic's map draw the eyes' and
   thrusters' outlines on the body (`marks_draw.draw_parts`), not the Hairs'.
 - [ ] **Levels for flows.** Find the sink; go up a pump's jet; follow a wall by its echo. Camille

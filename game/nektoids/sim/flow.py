@@ -315,7 +315,17 @@ def _respond(
     return velocity + np.stack((ux, uy), axis=1), spin + om, reactions
 
 
-GAIN = 1.0  # [s/u] a Hair's rate for each u/s of water past it the way it points (D-705)
+FAINT = 0.02  # [u/s] the water a Hair reads on a log scale above: below, nearly in proportion
+FULL = 1.0  # [u/s] the water past it that a Hair reads RATE_MAX for (D-708)
+
+
+def felt(speed: np.ndarray) -> np.ndarray:
+    """A Hair's rate for water `speed` [u/s] >= 0 past it the way it points, on a log scale, as
+    a sense organ compresses (D-708): log(1 + u/FAINT) / log(1 + FULL/FAINT), 0 for still water,
+    1 at FULL, about u/FAINT/log(1 + FULL/FAINT) for the faintest; the caller caps it."""
+    return np.log1p(speed / FAINT) / np.log1p(FULL / FAINT)
+
+
 RELATIVE = False  # a Hair reads the water past the plane, not past itself: D-700's first try
 
 
@@ -329,7 +339,7 @@ def hair_rates(
     swum: Swim | None = None,
 ) -> np.ndarray:
     """(N, k, C): what the k Hairs of each of N bodies read, the same in each channel:
-    GAIN max(0, u . n), u the flow at each, all but its own body's (D-700): the pumps' and the
+    `felt`(max(0, u . n)), u the flow at each, all but its own body's (D-700): the pumps' and the
     sources', and what the lights and obstacles hold against it and against the body's own flow,
     `swum`'s reactions, its echo; with RELATIVE, less the Hair's own velocity, V + Omega x r.
     Arguments as for `optics.eye_poses`; with no `swum`, no echo and the body still."""
@@ -363,7 +373,7 @@ def hair_rates(
         ux = ux - swum.velocity[:, None, 0] + spin * arm_y
         uy = uy - swum.velocity[:, None, 1] - spin * arm_x
     past = np.maximum(0.0, ux * looks[..., 0] + uy * looks[..., 1])
-    return np.repeat((GAIN * past)[..., None], CHANNELS, axis=2)
+    return np.repeat(felt(past)[..., None], CHANNELS, axis=2)
 
 
 def flow_at(arena: Arena, x: np.ndarray, pos: np.ndarray, radius: float, swum: Swim) -> np.ndarray:

@@ -254,10 +254,10 @@ def test_a_hair_reads_the_flow_past_it_the_way_it_points_never_against_it():
     downstream = _hairs(arena, (0.0, 0.0), np.zeros(4, int))  # all facing E
     upstream = _hairs(arena, (0.0, 0.0), np.full(4, 3))  # all facing W
     assert np.all(downstream > 0.0) and np.all(upstream == 0.0)
-    expected = flow.GAIN * flow.flow_at(
+    expected = flow.flow_at(
         arena, AROUND, np.array([50.0, 50.0]), 1.0, _drifting(arena, (50.0, 50.0))
     )
-    np.testing.assert_allclose(downstream, expected[:, 0], rtol=1e-9)
+    np.testing.assert_allclose(downstream, flow.felt(expected[:, 0]), rtol=1e-9)
     mirrored = _hairs(arena, (0.0, 0.0), np.array([0, 3, 1, 5]))  # the third and fourth mirrored
     assert mirrored[2] == pytest.approx(mirrored[3])
 
@@ -277,13 +277,16 @@ def test_relative_a_swimmer_reads_its_head_wind_and_a_drifting_body_hardly_any(m
     tips, forces = np.array(SIDES[0])[None], np.array(SIDES[1])[None]
     alone = flow.swim(EMPTY, np.zeros((1, 2)), np.ones(1), tips, forces)
     ahead, behind = _hairs(EMPTY, (0.0, 0.0), OUT, alone)[:2]
-    assert ahead == 0.0 and behind == pytest.approx(flow.GAIN * alone.velocity[0, 0])
+    assert ahead == 0.0 and behind == pytest.approx(flow.felt(alone.velocity[0, 0]))
     arena = Arena(pumps=(Pump(-6.0, 0.0, 0, 0.8),))
     drifting = _drifting(arena, (0.0, 0.0))
     felt = _hairs(arena, (0.0, 0.0), np.zeros(4, int), drifting)
     monkeypatch.setattr(flow, "RELATIVE", False)
     carried = _hairs(arena, (0.0, 0.0), np.zeros(4, int), drifting)
-    assert felt.max() < 0.25 * carried.min()  # it moves with the water it is in
+    water = flow.FAINT * np.expm1(
+        np.array([felt.max(), carried.min()]) * np.log1p(flow.FULL / flow.FAINT)
+    )
+    assert water[0] < 0.25 * water[1]  # it moves with the water it is in: `felt` undone
 
 
 def test_a_hair_on_a_board_reads_in_its_own_channel_where_the_body_has_moved():
@@ -301,3 +304,12 @@ def test_a_hair_on_a_board_reads_in_its_own_channel_where_the_body_has_moved():
     seen = readings(arena, net, pos, heading, radius, swum)
     assert seen[0, 0, 0] == 0.0 and seen[0, 0, 1] > 0.0  # violet: its channel alone
     assert not seen[0, 1].any()  # the thruster's row: not a sensor's
+
+
+def test_a_hair_reads_on_a_log_scale_so_a_weak_pump_reads_far_off():
+    assert flow.felt(np.array(0.0)) == 0.0 and flow.felt(np.array(flow.FULL)) == 1.0  # D-708
+    weak = Arena(pumps=(Pump(-4.0, 0.0, 0, 0.1),))  # a setting of 1, 4 u behind
+    near = _hairs(weak, (0.0, 0.0), np.zeros(4, int))[0]
+    far = _hairs(Arena(pumps=(Pump(-8.0, 0.0, 0, 0.1),)), (0.0, 0.0), np.zeros(4, int))[0]
+    assert near > 0.3 and far > 0.2  # in proportion, they would be 0.09 and 0.05
+    assert far / near > 0.6  # twice as far, not half the reading

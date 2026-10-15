@@ -3043,3 +3043,11 @@ comparison the board could not make before without a Tint. Its slope stays 1 (ea
 derivative is at most 1 in size), so no tick limit moves, and at A = B it is 0 from either side:
 continuous. Every shipped level's proof wins again; Spot the violet's Diffs see one colour, by
 its Swaps. The other laws stay channel by channel.
+
+**D-708 — 2026-10-15 — A Hair reads on a log scale: log(1 + u/FAINT) / log(1 + FULL/FAINT), u = max(0, u . n), FAINT 0.02 u/s, FULL 1 u/s, capped at RATE_MAX; GAIN goes. The flow stays 3D: pumps stokeslets, 1/r, sources 1/r^2. Amends D-705, D-706.**
+From the physicist's play: in proportion, a Hair lost the flow a few u off, a pump of setting 1
+reading 0.09 at 4 u, a source's falling as 1/r^2. Line pumps and sources were weighed, rods
+through a layer: a rod source falls as 1/r, but a rod pump as log r (an infinite one is the
+Stokes paradox), and the swimmer's solve of D-601 would change; kept 3D. A sense organ
+compresses instead: a pump of 1 now reads 0.48 at 4 u and 0.22 at 16 u, a source of 8 0.83 at
+4 u and 0.24 at 16 u. The flow, the tracers and the swimmer's drift are unchanged.
