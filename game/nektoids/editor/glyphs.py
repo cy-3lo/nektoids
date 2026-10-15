@@ -91,5 +91,6 @@ GLYPH = {
 }
 # Direction an icon points to as drawn by the font [degrees, counter-clockwise from E]. The eye
 # looks up: turned to face E, its long axis runs along the eye's flat side. The feather's quill
-# runs to its tip at 45°; taken as pointing at 135°, it lies along the Hair's flat side too (D-706).
-POINTS_TO = {"rocket": 45.0, "eye": 90.0, "feather": 135.0}
+# runs to its tip at 45°; taken as pointing at 315°, it lies along the Hair's flat side too, its
+# tip to the Hair's right (D-706).
+POINTS_TO = {"rocket": 45.0, "eye": 90.0, "feather": 315.0}
