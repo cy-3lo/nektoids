@@ -315,7 +315,7 @@ def _respond(
     return velocity + np.stack((ux, uy), axis=1), spin + om, reactions
 
 
-GAIN = 3.0  # [s/u] a Hair's rate for each u/s of water past it the way it points (D-706)
+GAIN = 1.0  # [s/u] a Hair's rate for each u/s of water past it the way it points (D-705)
 RELATIVE = False  # a Hair reads the water past the plane, not past itself: D-700's first try
 
 
