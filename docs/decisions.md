@@ -3035,3 +3035,11 @@ tried in play and read too strong. The probe's body
 is held, so the flow is a held swimmer's: its thrusters push, it does not move. The map's
 tracers are the run's, seeded coarser: at the map's few px a u, one every 0.9 u filled every
 speck. Levels with no pump or source draw no tracers on the map, as before.
+
+**D-707 — 2026-10-15 — Diff subtracts across the colours: each input's channels added, A and B, it sends the larger input times 1 - min(A, B)/max(A, B), |A - B| in that input's mix of colours. On inputs of one colour, or of one mix, it is |a - b| channel by channel, as before. Amends D-501 for Diff.**
+From the physicist's play: channel by channel, Diff of amber a and violet b sent (a, b), a Sum.
+Now amber 1 less violet 0.5 is amber 0.5: the stronger signal wins and keeps its colour, a
+comparison the board could not make before without a Tint. Its slope stays 1 (each partial
+derivative is at most 1 in size), so no tick limit moves, and at A = B it is 0 from either side:
+continuous. Every shipped level's proof wins again; Spot the violet's Diffs see one colour, by
+its Swaps. The other laws stay channel by channel.

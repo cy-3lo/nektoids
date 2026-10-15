@@ -175,7 +175,8 @@ SPEC: dict[Kind, KindSpec] = {
         Category.OPERATOR,
         "M",
         "Diff",
-        "Difference of its two inputs.",
+        "Difference of its two inputs. In two colours, the larger input wins: what is left of "
+        "it goes out in its colours.",
         Relax(Difference()),
         max_inputs=2,
         max_outputs=1,

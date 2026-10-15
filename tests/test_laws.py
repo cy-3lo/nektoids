@@ -20,10 +20,39 @@ def test_a_relaxing_law_steps_a_weighted_mean_of_its_state_and_its_target():
     assert law.output(y) is y and law.max_dt == TAU
 
 
+def coloured(*inputs):
+    """x (1, 1, K, C): one agent, one node, its K input slots, each (amber, violet)."""
+    return np.array(inputs, dtype=float).reshape(1, 1, len(inputs), -1)
+
+
 def test_a_difference_is_either_way_round_and_a_lone_input_passes():
-    assert Difference()(rates(0.2, 0.7))[0, 0] == pytest.approx(0.5)
-    assert Difference()(rates(0.7, 0.2))[0, 0] == pytest.approx(0.5)
-    assert Difference()(rates(0.3))[0, 0] == 0.3
+    one = Difference()
+    assert one(rates(0.2, 0.7)[..., None])[0, 0, 0] == pytest.approx(0.5)
+    assert one(rates(0.7, 0.2)[..., None])[0, 0, 0] == pytest.approx(0.5)
+    assert one(rates(0.3)[..., None])[0, 0, 0] == 0.3
+
+
+def test_a_difference_across_colours_sends_what_is_left_in_the_larger_ones_colours():
+    law = Difference()  # D-707
+    assert law(coloured((1.0, 0.0), (0.0, 0.5)))[0, 0] == pytest.approx([0.5, 0.0])
+    assert law(coloured((0.0, 0.3), (0.8, 0.0)))[0, 0] == pytest.approx([0.5, 0.0])
+    assert law(coloured((0.0, 0.3), (0.2, 0.0)))[0, 0] == pytest.approx([0.0, 0.1])
+    assert law(coloured((0.6, 0.2), (0.3, 0.1)))[0, 0] == pytest.approx([0.3, 0.1])  # one mix
+    assert law(coloured((0.4, 0.0), (0.0, 0.4)))[0, 0] == pytest.approx([0.0, 0.0])  # a tie
+    assert law(coloured((0.0, 0.0), (0.0, 0.0)))[0, 0] == pytest.approx([0.0, 0.0])
+    assert law(coloured((0.2, 0.7)))[0, 0] == pytest.approx([0.2, 0.7])  # a lone input passes
+
+
+def test_a_differences_slope_bounds_it_across_colours():
+    law, rng, h = Difference(), np.random.default_rng(3), 1e-6
+    for _ in range(200):
+        x = rng.random((1, 1, 2, 2))
+        for k in range(2):
+            for c in range(2):
+                nudged = x.copy()
+                nudged[0, 0, k, c] += h
+                moved = np.abs(law(nudged) - law(x)).max() / h
+                assert moved <= law.slope + 1e-4
 
 
 def test_a_slow_relaxing_node_is_a_tank_that_keeps_what_has_not_left():

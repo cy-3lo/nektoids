@@ -300,10 +300,11 @@ def test_random_dags_relax_to_what_an_independent_evaluator_gives():
 
 
 def test_each_channel_runs_as_an_amber_run_of_its_own_sensors_bit_for_bit():
-    rng = np.random.default_rng(11)  # D-503: no law of these mixes amber and violet
-    for _ in range(60):
+    rng = np.random.default_rng(11)  # D-503: no law of these mixes amber and violet; Diff
+    for _ in range(60):  # does, its inputs' colours added (D-707), so a Sum stands in for it
         kinds, edges = random_graph(rng, int(rng.integers(1, 14)), loops=True)
         kinds = [Kind.TANK if k is DBL and rng.random() < 0.3 else k for k in kinds]
+        kinds = [SUM if k is DIF else k for k in kinds]
         net = Network.from_edges(kinds, edges)
         amber, violet = (rng.uniform(0.0, RATE_MAX, size=(1, net.n)) for _ in range(2))
         given = np.stack([amber, violet], axis=-1)  # each sensor's rate in each channel
