@@ -123,3 +123,26 @@ merged in as they land.
   thrusters' outlines on the body (`marks_draw.draw_parts`), not the Hairs'.
 - [ ] **Levels for flows.** Find the sink; go up a pump's jet; follow a wall by its echo. Camille
   plays them.
+
+## 19. Collectives (stage 6, D-800)
+
+Built on `stage/6-collectives`, branched from `stage/5-flow-sensing`; stage 5's open items above
+are merged in as they land.
+
+- [ ] **Pushers and pullers.** In the prototype, swimmers in each other's flow, thrusters
+  behind and in front; before any level is designed.
+- [ ] **The Lamp.** A kind at the end of `Kind`, an actuator on the rim, painted, turned in 60°
+  steps; its light in `eye_rates`, cos about its facing, 1/r, shadows, never its own.
+- [ ] **Swimmers in each other's flow.** Each one's singularities in the others' RPY flow, in
+  `flow.swim`, and in `flow_at` for the tracers.
+- [ ] **Swimmers touch.** Their contact solved in the Stokes step, as D-609 solves a light's.
+- [ ] **Several starts.** The level format a list of starts, each placed and turned in the
+  level maker; format and word versions.
+- [ ] **The run with several.** One selected, picked by a click, the others dimmer; the drawer's
+  Diagnostic its board; Fit frames them all.
+- [ ] **Diagnostic among the others.** The probe dragged among the swimmers held at their
+  starts, lamps lit.
+- [ ] **Goals for a group.** Countable: so many within so far of each other, aligned, for so
+  long.
+- [ ] **First levels.** Follow the tail lights; a school; a mill. Camille plays them.
+

@@ -3051,3 +3051,24 @@ through a layer: a rod source falls as 1/r, but a rod pump as log r (an infinite
 Stokes paradox), and the swimmer's solve of D-601 would change; kept 3D. A sense organ
 compresses instead: a pump of 1 now reads 0.48 at 4 u and 0.22 at 16 u, a source of 8 0.83 at
 4 u and 0.24 at 16 u. The flow, the tracers and the swimmer's drift are unchanged.
+
+**D-800 — 2026-10-16 — Stage 6, collectives, is decided: several swimmers in a level, all running the player's one board, and a new actuator, the Lamp, a light on the body with a cos law about its facing, that the other swimmers' eyes read. The swimmers feel each other's flow, and touch. Built on `stage/6-collectives`, branched from `stage/5-flow-sensing`; its decisions go on from D-800. Applies D-105.**
+From the physicist's exploration, a prototype on the game's own code, kept local. Lamps and the
+eyes alone make a flock: a lamp turned back, a tail light, wired crossed (Aggression), gives 10
+swimmers in an open plane one group, aligned, φ about 0.9, at 20 and 50 too; lamps that shine
+all round give clusters without alignment, and a lamp turned forward scatters them. So no new
+sense is needed: the cos law carries the heading. The Lamp is an actuator on the rim, turned in
+60° steps and painted as a thruster; it shines P r max(0, cos α) about its facing, r its rate,
+seen with D-019's 1/r, the eye's cosine and the bodies' shadows by the eyes of its colour, never
+by its own swimmer's (D-018); it is not a solid light. The swimmers are coupled through the
+fluid: each in the others' far-field RPY flow, their bodies' and thrusters' singularities as one
+swimmer's are (D-601, D-602), not each alone among the lights as stage 4 has it; with thrusters
+behind, the prototype's swimmers are pushers, and their flock breaks up, which makes where the
+thrusters go part of the puzzle. Swimmers touch: their contact solved in the Stokes step, as a
+light's and an obstacle's are (D-609), so that its force reaches the fluid. A level places each
+swimmer by hand, as its one start is placed now; a count and an area may come. The run follows
+one swimmer, the selected one, picked by a click, whose board Diagnostic's drawer shows; the
+Board's Diagnostic drags its probe among the others, held at their starts, lamps lit. The level
+format, its word and the board's text take new versions. Out still: swimmers with boards of
+their own (moths, predators), optical flow, lamps that change colour. The todo's §19 lists the
+work.
